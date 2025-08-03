@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/utils/firebase-client';
-import { BookOpen, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
+import { BookOpen, Eye, EyeOff, AlertCircle, Loader2, KeyRound } from 'lucide-react';
 import { Button, Input } from '@/components/ui';
 
 export default function StudentLogin() {
@@ -168,6 +168,19 @@ export default function StudentLogin() {
                 'Sign In'
               )}
             </Button>
+
+            {/* Forgot Password Link */}
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => router.push('/student/login/password-reset')}
+                className="text-sm text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 font-medium inline-flex items-center space-x-1"
+                disabled={loading}
+              >
+                <KeyRound className="w-4 h-4" />
+                <span>Forgot your password?</span>
+              </button>
+            </div>
           </form>
 
           {/* Footer Links */}
