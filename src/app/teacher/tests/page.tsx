@@ -23,6 +23,7 @@ import TeacherLayout from '@/components/teacher/TeacherLayout';
 import CreateTestModal from '@/components/modals/CreateTestModal';
 import { useTeacherAuth } from '@/hooks/useTeacherAuth';
 import { TestService } from '@/apiservices/testService';
+import { SubmissionService } from '@/apiservices/submissionService';
 import { ClassFirestoreService } from '@/apiservices/classFirestoreService';
 import { questionBankService } from '@/apiservices/questionBankFirestoreService';
 import { teacherAccessBankService } from '@/apiservices/teacherAccessBankService';
@@ -48,12 +49,30 @@ export default function TeacherTests() {
   
   // State for tracking student enrollment counts per class
   const [classEnrollmentCounts, setClassEnrollmentCounts] = useState<Record<string, number>>({});
+  
+  // State for tracking test completion counts for live tests
+  const [testCompletionCounts, setTestCompletionCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
     if (teacher) {
       loadTeacherData();
     }
   }, [teacher]);
+
+  // Periodic update for live test completion counts
+  useEffect(() => {
+    if (tests.length === 0) return;
+    
+    const liveTests = tests.filter(test => test.type === 'live');
+    if (liveTests.length === 0) return;
+    
+    // Update completion counts every 30 seconds for live tests
+    const interval = setInterval(() => {
+      loadCompletionCounts(tests);
+    }, 30000); // 30 seconds
+    
+    return () => clearInterval(interval);
+  }, [tests]);
 
   const loadTeacherData = async () => {
     try {
@@ -138,6 +157,9 @@ export default function TeacherTests() {
         const teacherTests = await TestService.getTeacherTests(teacher!.id);
         setTests(teacherTests);
         console.log('✅ Loaded teacher tests:', teacherTests.length);
+        
+        // Load completion counts for live tests
+        await loadCompletionCounts(teacherTests);
       } catch (testError) {
         console.warn('No tests found for teacher (this is normal for new teachers):', testError);
         setTests([]); // Set empty array if no tests
@@ -180,6 +202,37 @@ export default function TeacherTests() {
       console.log('✅ Loaded enrollment counts:', enrollmentCounts);
     } catch (error) {
       console.error('Error loading enrollment counts:', error);
+    }
+  };
+
+  // Function to load completion counts for live tests
+  const loadCompletionCounts = async (tests: Test[]) => {
+    try {
+      const completionCounts: Record<string, number> = {};
+      
+      // Get completion counts for live tests that are currently active
+      await Promise.all(
+        tests.map(async (test) => {
+          if (test.type === 'live') {
+            try {
+              const submissions = await SubmissionService.getTestSubmissions(test.id);
+              // Count only completed submissions (submitted or auto_submitted)
+              const completedSubmissions = submissions.filter(s => 
+                s.status === 'submitted' || s.status === 'auto_submitted'
+              );
+              completionCounts[test.id] = completedSubmissions.length;
+            } catch (error) {
+              console.warn(`Failed to load submissions for test ${test.id}:`, error);
+              completionCounts[test.id] = 0;
+            }
+          }
+        })
+      );
+      
+      setTestCompletionCounts(completionCounts);
+      console.log('✅ Loaded completion counts:', completionCounts);
+    } catch (error) {
+      console.error('Error loading completion counts:', error);
     }
   };
 
@@ -324,7 +377,15 @@ export default function TeacherTests() {
   };
 
   const deleteTest = async (testId: string) => {
-    if (!confirm('Are you sure you want to delete this test? This action cannot be undone.')) {
+    const confirmMessage = `⚠️ WARNING: This will permanently delete the test and ALL related data including:
+
+• Student submissions and grades
+• Test analytics and reports  
+• Student attempts and progress data
+
+This action CANNOT be undone. Are you absolutely sure you want to delete this test?`;
+
+    if (!confirm(confirmMessage)) {
       return;
     }
 
@@ -332,9 +393,10 @@ export default function TeacherTests() {
       // Use Firebase client service directly
       await TestService.deleteTest(testId);
       setTests(prev => prev.filter(test => test.id !== testId));
+      alert('✅ Test and all related data have been successfully deleted.');
     } catch (error) {
       console.error('Error deleting test:', error);
-      alert('Failed to delete test. Please try again.');
+      alert('❌ Failed to delete test. Please try again.');
     }
   };
 
@@ -594,7 +656,7 @@ export default function TeacherTests() {
                             </span>
                             <span className="flex items-center">
                               <Users className="h-4 w-4 mr-1" />
-                              {selectedClass?.enrolledStudents || 0} students
+                              {selectedClass ? (classEnrollmentCounts[selectedClass.id] || 0) : 0} students
                             </span>
                             <span className="flex items-center">
                               <FileText className="h-4 w-4 mr-1" />
@@ -714,7 +776,7 @@ export default function TeacherTests() {
                                           </span>
                                         </div>
                                         <div className="mt-1 text-xs text-green-600 dark:text-green-400">
-                                          Students online: {isLive.studentsOnline} | Completed: {isLive.studentsCompleted}
+                                          Completed: {testCompletionCounts[test.id] || 0}
                                         </div>
                                       </div>
                                     )}
@@ -725,7 +787,7 @@ export default function TeacherTests() {
                                           <AlertCircle className="h-4 w-4 text-blue-600" />
                                           <span className="text-sm font-medium text-blue-800 dark:text-blue-400">
                                             {test.type === 'live' 
-                                              ? `Students can join from ${formatDateTime((test as LiveTest).studentJoinTime)}`
+                                              ? `Students can join from ${formatDateTime((test as LiveTest).scheduledStartTime)}`
                                               : `Available from ${formatDateTime((test as FlexibleTest).availableFrom)}`
                                             }
                                           </span>

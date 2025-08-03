@@ -158,8 +158,8 @@ export class SubmissionService {
             
             // If still no startTime, use current time minus some reasonable duration
             if (!realtimeSession.startTime) {
-              realtimeSession.startTime = Date.now() - (30 * 60 * 1000); // Assume 30 minutes ago
-              console.log('🔧 Using fallback startTime (30min ago):', realtimeSession.startTime);
+              realtimeSession.startTime = Date.now() - (5 * 60 * 1000); // Assume 5 minutes ago instead of 30
+              console.log('🔧 Using conservative fallback startTime (5min ago):', realtimeSession.startTime);
             }
           } else {
             console.warn('⚠️ Attempt document not found for attemptId:', attemptId);
@@ -253,10 +253,11 @@ export class SubmissionService {
         throw new Error('Student ID not found in realtime session. Please try refreshing the page and logging in again.');
       }
 
-      // Ensure we have essential timing data
+      // Ensure we have essential timing data - but avoid arbitrary fallbacks that mess up time calculations
       if (!realtimeSession.startTime) {
-        realtimeSession.startTime = Date.now() - (30 * 60 * 1000); // Default: 30 minutes ago
-        console.warn('⚠️ Using fallback startTime:', realtimeSession.startTime);
+        // Instead of a 30-minute fallback, use current time minus a small amount
+        realtimeSession.startTime = Date.now() - (5 * 60 * 1000); // Default: 5 minutes ago
+        console.warn('⚠️ Using conservative fallback startTime (5min ago):', realtimeSession.startTime);
       }
       
       if (!realtimeSession.lastActivity) {
@@ -291,8 +292,40 @@ export class SubmissionService {
 
       // Get attempt information to determine correct attempt number and class info
       let attemptInfo;
+      let actualTimeSpent = 0;
+      let actualStartTime = Date.now();
+      let actualEndTime = Date.now();
+      
       try {
         attemptInfo = await AttemptManagementService.getAttemptSummary(realtimeSession.testId, realtimeSession.studentId);
+        
+        // Get actual time calculation from attempt management
+        const timeCalc = await AttemptManagementService.updateAttemptTime(attemptId);
+        if (timeCalc) {
+          actualTimeSpent = timeCalc.timeSpent || 0;
+          actualStartTime = Date.now() - (actualTimeSpent * 1000); // Calculate start time from time spent
+          actualEndTime = Date.now();
+          console.log('✅ Got actual time from attempt management:', {
+            timeSpent: actualTimeSpent,
+            calculatedStartTime: new Date(actualStartTime),
+            endTime: new Date(actualEndTime)
+          });
+        } else {
+          console.warn('⚠️ Could not get time calculation from attempt management, using fallback');
+          // Use realtime session data but validate it
+          if (realtimeSession.startTime && realtimeSession.lastActivity && 
+              realtimeSession.lastActivity > realtimeSession.startTime) {
+            actualTimeSpent = Math.floor((realtimeSession.lastActivity - realtimeSession.startTime) / 1000);
+            actualStartTime = realtimeSession.startTime;
+            actualEndTime = realtimeSession.lastActivity;
+          } else {
+            // Last resort: use a minimal time (e.g., 2 minutes for a quick test)
+            actualTimeSpent = 120; // 2 minutes in seconds
+            actualStartTime = Date.now() - (2 * 60 * 1000);
+            actualEndTime = Date.now();
+            console.warn('⚠️ Using minimal fallback time:', actualTimeSpent, 'seconds');
+          }
+        }
       } catch (attemptError) {
         console.error('Error getting attempt summary:', attemptError);
         // Create a fallback attempt info
@@ -304,6 +337,18 @@ export class SubmissionService {
           canCreateNewAttempt: false,
           attempts: []
         };
+        
+        // Fallback time calculation
+        if (realtimeSession.startTime && realtimeSession.lastActivity && 
+            realtimeSession.lastActivity > realtimeSession.startTime) {
+          actualTimeSpent = Math.floor((realtimeSession.lastActivity - realtimeSession.startTime) / 1000);
+          actualStartTime = realtimeSession.startTime;
+          actualEndTime = realtimeSession.lastActivity;
+        } else {
+          actualTimeSpent = 120; // 2 minutes fallback
+          actualStartTime = Date.now() - (2 * 60 * 1000);
+          actualEndTime = Date.now();
+        }
       }
       
       // Get the actual attempt to get className
@@ -318,6 +363,13 @@ export class SubmissionService {
       
       console.log('📊 Attempt info for submission:', attemptInfo);
       console.log('📊 Attempt data for submission:', attemptData);
+      console.log('⏱️ Final time calculation:', {
+        actualTimeSpent: actualTimeSpent,
+        actualStartTime: new Date(actualStartTime),
+        actualEndTime: new Date(actualEndTime),
+        realtimeSessionStart: realtimeSession.startTime ? new Date(realtimeSession.startTime) : 'N/A',
+        realtimeSessionEnd: realtimeSession.lastActivity ? new Date(realtimeSession.lastActivity) : 'N/A'
+      });
 
       // Process answers and calculate scores
       const { finalAnswers, mcqResults, autoGradedScore, manualGradingPending } = 
@@ -343,11 +395,11 @@ export class SubmissionService {
         attemptNumber: attemptInfo.totalAttempts + 1,
         status: isAutoSubmitted ? 'auto_submitted' : 'submitted',
         
-        // Timing
-        startTime: Timestamp.fromMillis(realtimeSession.startTime),
-        endTime: Timestamp.fromMillis(realtimeSession.lastActivity),
+        // Timing - use actual calculated time from attempt management
+        startTime: Timestamp.fromMillis(actualStartTime),
+        endTime: Timestamp.fromMillis(actualEndTime),
         submittedAt: Timestamp.now(),
-        totalTimeSpent: Math.floor((realtimeSession.lastActivity - realtimeSession.startTime) / 1000),
+        totalTimeSpent: actualTimeSpent, // Use the accurate time from attempt management
         timePerQuestion: realtimeSession.timePerQuestion || {},
         
         // Final answers

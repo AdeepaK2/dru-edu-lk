@@ -173,8 +173,11 @@ export class TestService {
         ...doc.data()
       })) as Test[];
       
-      console.log('✅ Found', tests.length, 'tests for teacher');
-      return tests;
+      // Filter out soft-deleted tests in JavaScript (to handle tests without isDeleted field)
+      const activeTests = tests.filter(test => test.isDeleted !== true);
+      
+      console.log('✅ Found', activeTests.length, 'active tests for teacher (filtered from', tests.length, 'total)');
+      return activeTests;
     } catch (error) {
       console.error('Error fetching teacher tests:', error);
       // Return empty array instead of throwing error if it's just a "no results" case
@@ -772,13 +775,66 @@ export class TestService {
         batch.delete(doc.ref);
       });
       
+      // Delete all student submissions for this test
+      const submissionsQuery = query(
+        collection(firestore, 'studentSubmissions'),
+        where('testId', '==', testId)
+      );
+      const submissionsSnapshot = await getDocs(submissionsQuery);
+      submissionsSnapshot.docs.forEach(doc => {
+        batch.delete(doc.ref);
+      });
+      
       // Delete analytics
       batch.delete(doc(firestore, this.COLLECTIONS.ANALYTICS, testId));
       
       await batch.commit();
+      
+      console.log(`✅ Successfully deleted test ${testId} and all related data:`, {
+        attempts: attemptsSnapshot.size,
+        submissions: submissionsSnapshot.size
+      });
     } catch (error) {
       console.error('Error deleting test:', error);
       throw new Error('Failed to delete test');
+    }
+  }
+
+  // Soft delete test (safer option - marks as deleted instead of permanent removal)
+  static async softDeleteTest(testId: string, deletedBy: string): Promise<void> {
+    try {
+      const testRef = doc(firestore, this.COLLECTIONS.TESTS, testId);
+      await updateDoc(testRef, {
+        isDeleted: true,
+        deletedAt: Timestamp.now(),
+        deletedBy: deletedBy,
+        isActive: false,
+        updatedAt: Timestamp.now()
+      });
+      
+      console.log(`✅ Successfully soft-deleted test ${testId} by ${deletedBy}`);
+    } catch (error) {
+      console.error('Error soft-deleting test:', error);
+      throw new Error('Failed to soft-delete test');
+    }
+  }
+
+  // Restore soft-deleted test
+  static async restoreTest(testId: string, restoredBy: string): Promise<void> {
+    try {
+      const testRef = doc(firestore, this.COLLECTIONS.TESTS, testId);
+      await updateDoc(testRef, {
+        isDeleted: false,
+        restoredAt: Timestamp.now(),
+        restoredBy: restoredBy,
+        isActive: true,
+        updatedAt: Timestamp.now()
+      });
+      
+      console.log(`✅ Successfully restored test ${testId} by ${restoredBy}`);
+    } catch (error) {
+      console.error('Error restoring test:', error);
+      throw new Error('Failed to restore test');
     }
   }
 
