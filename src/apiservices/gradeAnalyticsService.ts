@@ -16,8 +16,18 @@ export interface StudentPerformanceData {
   overallAverage: number;
   totalTests: number;
   passedTests: number;
-  weakTopics: string[];
-  strongTopics: string[];
+  weakTopics: Array<{
+    topic: string;
+    averageScore: number;
+    totalQuestions: number;
+    correctAnswers: number;
+  }>;
+  strongTopics: Array<{
+    topic: string;
+    averageScore: number;
+    totalQuestions: number;
+    correctAnswers: number;
+  }>;
   recentTestScores: Array<{
     testId: string;
     testTitle: string;
@@ -44,7 +54,12 @@ export interface ClassAnalytics {
     studentId: string;
     studentName: string;
     averageScore: number;
-    weakTopics: string[];
+    weakTopics: Array<{
+      topic: string;
+      averageScore: number;
+      totalQuestions: number;
+      correctAnswers: number;
+    }>;
   }>;
   subjectPerformance: Array<{
     subject: string;
@@ -258,26 +273,71 @@ export class GradeAnalyticsService {
         email: studentInfo.email
       });
 
-      // Get submissions for this student (without orderBy to avoid index requirement)
-      let submissionsQuery = query(
+      // Get submissions for this student using multiple approaches
+      let submissions: StudentSubmission[] = [];
+      
+      // Approach 1: Get all submissions for this student
+      const allSubmissionsQuery = query(
         collection(firestore, this.COLLECTIONS.SUBMISSIONS),
         where('studentId', '==', studentId)
       );
-
-      // Add class filter if provided
-      if (classId) {
-        submissionsQuery = query(
-          collection(firestore, this.COLLECTIONS.SUBMISSIONS),
-          where('studentId', '==', studentId),
-          where('classId', '==', classId)
-        );
-      }
-
-      const submissionsSnapshot = await getDocs(submissionsQuery);
-      let submissions = submissionsSnapshot.docs.map(doc => ({
+      const allSubmissionsSnapshot = await getDocs(allSubmissionsQuery);
+      submissions = allSubmissionsSnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       })) as StudentSubmission[];
+
+      console.log('📊 All submissions for student:', {
+        studentId,
+        totalSubmissions: submissions.length,
+        submissionDetails: submissions.map(s => ({
+          id: s.id,
+          testId: s.testId,
+          testTitle: s.testTitle,
+          classId: s.classId,
+          status: s.status,
+          percentage: s.percentage,
+          hasAnswers: !!(s.finalAnswers && s.finalAnswers.length > 0)
+        }))
+      });
+
+      // Filter by class if provided
+      if (classId) {
+        console.log('🔍 Filtering submissions by classId:', classId);
+        
+        // First try exact classId match
+        let classFilteredSubmissions = submissions.filter(s => s.classId === classId);
+        
+        // If no matches and classId is empty in submissions, try by test relationship
+        if (classFilteredSubmissions.length === 0) {
+          console.log('⚠️ No submissions with matching classId, checking by test relationship...');
+          
+          // Get tests for this class
+          const classTests = await this.getTestsForClass(classId);
+          const classTestIds = classTests.map(t => t.id);
+          
+          console.log('📚 Tests for class:', {
+            classId,
+            testIds: classTestIds,
+            testTitles: classTests.map(t => t.title)
+          });
+          
+          // Filter submissions by test IDs that belong to this class
+          classFilteredSubmissions = submissions.filter(s => classTestIds.includes(s.testId));
+          
+          console.log('📊 Submissions filtered by test relationship:', {
+            found: classFilteredSubmissions.length,
+            submissions: classFilteredSubmissions.map(s => ({
+              id: s.id,
+              testId: s.testId,
+              testTitle: s.testTitle,
+              percentage: s.percentage
+            }))
+          });
+        }
+        
+        submissions = classFilteredSubmissions;
+      }
 
       // Sort in memory by submission date (most recent first)
       submissions.sort((a, b) => {
@@ -286,10 +346,13 @@ export class GradeAnalyticsService {
         return dateB - dateA;
       });
 
-      console.log('📊 Submissions found for student:', {
-        total: submissions.length,
+      console.log('📊 Final submissions for student performance:', {
+        studentId,
+        classId,
+        totalSubmissions: submissions.length,
+        completedSubmissions: submissions.filter(s => s.status === 'submitted' || s.status === 'auto_submitted').length,
         withAnswers: submissions.filter(s => s.finalAnswers && s.finalAnswers.length > 0).length,
-        classFiltered: !!classId
+        percentages: submissions.map(s => s.percentage)
       });
 
       // Calculate performance metrics
@@ -303,6 +366,15 @@ export class GradeAnalyticsService {
 
       const totalTests = submissions.length;
       const passedTests = completedSubmissions.filter(s => s.passStatus === 'passed').length;
+
+      console.log('📊 Performance calculation:', {
+        studentId,
+        completedSubmissions: completedSubmissions.length,
+        totalTests,
+        passedTests,
+        overallAverage,
+        individualPercentages: completedSubmissions.map(s => s.percentage)
+      });
 
       // Analyze topics
       const { weakTopics, strongTopics } = await this.analyzeStudentTopics(submissions);
@@ -327,8 +399,8 @@ export class GradeAnalyticsService {
         overallAverage,
         totalTests,
         passedTests,
-        weakTopics: weakTopics.map(t => t.topic),
-        strongTopics: strongTopics.map(t => t.topic),
+        weakTopics: weakTopics,
+        strongTopics: strongTopics,
         recentTestScores,
         improvementTrend,
         lastActiveDate: completedSubmissions.length > 0 
@@ -336,12 +408,13 @@ export class GradeAnalyticsService {
           : null
       };
 
-      console.log('✅ Student performance calculated:', {
+      console.log('✅ Final student performance result:', {
         studentId: result.studentId,
+        studentName: result.studentName,
         overallAverage: result.overallAverage,
         totalTests: result.totalTests,
-        weakTopics: result.weakTopics.length,
-        strongTopics: result.strongTopics.length
+        passedTests: result.passedTests,
+        recentScores: result.recentTestScores.length
       });
 
       return result;

@@ -14,12 +14,10 @@ import {
   CheckCircle,
   Eye,
   Download,
-  Filter,
   Search,
   Calendar,
   Clock,
   Award,
-  Brain,
   ChevronRight,
   User,
   XCircle,
@@ -37,7 +35,6 @@ import {
   GradeAnalyticsService, 
   ClassAnalytics, 
   StudentPerformanceData, 
-  TopicAnalysis,
   PerformanceTrend 
 } from '@/apiservices/gradeAnalyticsService';
 import { ClassDocument } from '@/models/classSchema';
@@ -51,15 +48,13 @@ export default function ClassGradeAnalytics() {
   const [classData, setClassData] = useState<ClassDocument | null>(null);
   const [analytics, setAnalytics] = useState<ClassAnalytics | null>(null);
   const [studentPerformances, setStudentPerformances] = useState<StudentPerformanceData[]>([]);
-  const [topicAnalysis, setTopicAnalysis] = useState<TopicAnalysis[]>([]);
   const [performanceTrends, setPerformanceTrends] = useState<PerformanceTrend[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingStudents, setLoadingStudents] = useState(false);
-  const [loadingTopics, setLoadingTopics] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   // UI state
-  const [activeTab, setActiveTab] = useState<'overview' | 'students' | 'topics' | 'trends'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'students' | 'trends'>('overview');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
   
@@ -139,15 +134,6 @@ export default function ClassGradeAnalytics() {
             }
             break;
 
-          case 'topics':
-            if (topicAnalysis.length === 0) {
-              setLoadingTopics(true);
-              const topics = await GradeAnalyticsService.getTopicAnalysis(classId);
-              setTopicAnalysis(topics);
-              setLoadingTopics(false);
-            }
-            break;
-
           case 'trends':
             if (performanceTrends.length === 0) {
               const trends = await GradeAnalyticsService.getPerformanceTrends(classId, 'month');
@@ -184,6 +170,65 @@ export default function ClassGradeAnalytics() {
   const closeStudentModal = () => {
     setIsStudentModalOpen(false);
     setSelectedStudentData(null);
+  };
+
+  // Export class analytics report as CSV
+  const exportReport = () => {
+    if (!analytics || !classData) return;
+
+    // Prepare CSV data
+    const csvData = [];
+    
+    // Header information
+    csvData.push(['Class Analytics Report']);
+    csvData.push(['Class Name:', classData.name]);
+    csvData.push(['Teacher:', teacher?.name || 'N/A']);
+    csvData.push(['Generated:', new Date().toLocaleDateString()]);
+    csvData.push(['']); // Empty row
+    
+    // Class Overview
+    csvData.push(['CLASS OVERVIEW']);
+    csvData.push(['Total Students:', analytics.totalStudents]);
+    csvData.push(['Average Performance:', `${Math.round(analytics.averagePerformance)}%`]);
+    csvData.push(['Tests Completed:', analytics.testsCompleted]);
+    csvData.push(['Pass Rate:', `${Math.round(analytics.passRate)}%`]);
+    csvData.push(['']); // Empty row
+    
+    // Student Performance
+    if (studentPerformances.length > 0) {
+      csvData.push(['STUDENT PERFORMANCE']);
+      csvData.push(['Student Name', 'Email', 'Average Score (%)', 'Total Tests', 'Passed Tests', 'Trend', 'Weak Topics']);
+      
+      studentPerformances.forEach(student => {
+        const weakTopics = student.weakTopics.map(t => `${t.topic} (${Math.round(t.averageScore)}%)`).join('; ');
+        csvData.push([
+          student.studentName,
+          student.studentEmail,
+          Math.round(student.overallAverage),
+          student.totalTests,
+          student.passedTests,
+          student.improvementTrend,
+          weakTopics || 'None'
+        ]);
+      });
+      csvData.push(['']); // Empty row
+    }
+    
+    // Convert to CSV string
+    const csvContent = csvData.map(row => 
+      row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
+    ).join('\n');
+    
+    // Create and download file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `${classData.name}_Analytics_Report_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   if (loading) {
@@ -266,13 +311,9 @@ export default function ClassGradeAnalytics() {
             </div>
             
             <div className="flex items-center space-x-3">
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={exportReport}>
                 <Download className="w-4 h-4 mr-2" />
                 Export Report
-              </Button>
-              <Button variant="outline" size="sm">
-                <Filter className="w-4 h-4 mr-2" />
-                Filter
               </Button>
             </div>
           </div>
@@ -344,7 +385,6 @@ export default function ClassGradeAnalytics() {
               {[
                 { id: 'overview', label: 'Overview', icon: BarChart3 },
                 { id: 'students', label: 'Students', icon: Users },
-                { id: 'topics', label: 'Topics', icon: Brain },
                 { id: 'trends', label: 'Trends', icon: TrendingUp }
               ].map((tab) => {
                 const Icon = tab.icon;
@@ -371,7 +411,7 @@ export default function ClassGradeAnalytics() {
             {activeTab === 'overview' && (
               <div className="space-y-6">
                 {/* Class Quick Actions */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
                   <Button 
                     variant="outline"
                     onClick={() => setActiveTab('students')}
@@ -379,14 +419,6 @@ export default function ClassGradeAnalytics() {
                   >
                     <Users className="w-5 h-5 mr-2" />
                     View All Students
-                  </Button>
-                  <Button 
-                    variant="outline"
-                    onClick={() => setActiveTab('topics')}
-                    className="flex items-center justify-center h-16"
-                  >
-                    <Brain className="w-5 h-5 mr-2" />
-                    Topic Analysis
                   </Button>
                 </div>
 
@@ -493,14 +525,14 @@ export default function ClassGradeAnalytics() {
                                 {Math.round(student.overallAverage)}%
                               </p>
                               <p className="text-sm text-gray-500 dark:text-gray-400">
-                                {student.testsCompleted} tests
+                                {student.totalTests} tests
                               </p>
                             </div>
                             <div className="flex items-center">
-                              {student.recentTrend === 'improving' && (
+                              {student.improvementTrend === 'improving' && (
                                 <TrendingUp className="w-4 h-4 text-green-500" />
                               )}
-                              {student.recentTrend === 'declining' && (
+                              {student.improvementTrend === 'declining' && (
                                 <TrendingDown className="w-4 h-4 text-red-500" />
                               )}
                               <ChevronRight className="w-4 h-4 text-gray-400 ml-2" />
@@ -511,142 +543,30 @@ export default function ClassGradeAnalytics() {
                         {/* Student Details (Expandable) */}
                         {selectedStudent === student.studentId && (
                           <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-700/30">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                              {/* Weak Topics */}
-                              <div>
-                                <h4 className="font-medium text-gray-900 dark:text-white mb-3">
-                                  Areas for Improvement
-                                </h4>
+                            {/* Weak Topics Only */}
+                            <div>
+                              <h4 className="font-medium text-gray-900 dark:text-white mb-3">
+                                Areas for Improvement
+                              </h4>
+                              {student.weakTopics.length > 0 ? (
                                 <div className="space-y-2">
-                                  {student.weakTopics.slice(0, 3).map((topic) => (
+                                  {student.weakTopics.slice(0, 5).map((topic) => (
                                     <div key={topic.topic} className="flex items-center justify-between p-2 bg-red-50 dark:bg-red-900/20 rounded">
                                       <span className="text-sm text-gray-700 dark:text-gray-300">
                                         {topic.topic}
                                       </span>
                                       <span className="text-sm font-medium text-red-600 dark:text-red-400">
-                                        {Math.round(topic.averageScore)}%
+                                        {Math.round(topic.averageScore)}% correct
                                       </span>
                                     </div>
                                   ))}
                                 </div>
-                              </div>
-
-                              {/* Strong Topics */}
-                              <div>
-                                <h4 className="font-medium text-gray-900 dark:text-white mb-3">
-                                  Strong Areas
-                                </h4>
-                                <div className="space-y-2">
-                                  {student.strongTopics.slice(0, 3).map((topic) => (
-                                    <div key={topic.topic} className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-900/20 rounded">
-                                      <span className="text-sm text-gray-700 dark:text-gray-300">
-                                        {topic.topic}
-                                      </span>
-                                      <span className="text-sm font-medium text-green-600 dark:text-green-400">
-                                        {Math.round(topic.averageScore)}%
-                                      </span>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
+                              ) : (
+                                <p className="text-sm text-gray-500 dark:text-gray-400 italic">
+                                  No areas identified for improvement
+                                </p>
+                              )}
                             </div>
-                            
-                            {/* Action buttons */}
-                            <div className="mt-4 flex items-center space-x-3">
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                onClick={() => openStudentModal(student)}
-                              >
-                                <Eye className="w-4 h-4 mr-2" />
-                                View Details
-                              </Button>
-                              <Button size="sm" variant="outline">
-                                <BookOpen className="w-4 h-4 mr-2" />
-                                Recommend Lessons
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {activeTab === 'topics' && (
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                  Topic Performance Analysis
-                </h3>
-                
-                {loadingTopics ? (
-                  <div className="space-y-3">
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="animate-pulse p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
-                        <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-1/3 mb-2"></div>
-                        <div className="h-3 bg-gray-200 dark:bg-gray-600 rounded w-1/2"></div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {topicAnalysis.map((topic) => (
-                      <div key={topic.topic} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                        <div className="flex items-center justify-between mb-3">
-                          <h4 className="font-medium text-gray-900 dark:text-white">
-                            {topic.topic}
-                          </h4>
-                          <div className="flex items-center space-x-2">
-                            <span className={`px-2 py-1 rounded text-xs font-medium ${
-                              topic.difficultyLevel === 'easy'
-                                ? 'bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400'
-                                : topic.difficultyLevel === 'medium'
-                                ? 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400'
-                                : 'bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400'
-                            }`}>
-                              {topic.difficultyLevel}
-                            </span>
-                            <span className="text-sm font-medium text-gray-900 dark:text-white">
-                              {Math.round(topic.averageScore)}%
-                            </span>
-                          </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-3 gap-4 text-sm">
-                          <div>
-                            <p className="text-gray-500 dark:text-gray-400">Questions</p>
-                            <p className="font-medium text-gray-900 dark:text-white">
-                              {topic.totalQuestions}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-gray-500 dark:text-gray-400">Students</p>
-                            <p className="font-medium text-gray-900 dark:text-white">
-                              {topic.totalStudents}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-gray-500 dark:text-gray-400">Struggling</p>
-                            <p className="font-medium text-red-600 dark:text-red-400">
-                              {topic.studentsStruggling}
-                            </p>
-                          </div>
-                        </div>
-
-                        {topic.studentsStruggling > 0 && (
-                          <div className="mt-3 p-3 bg-amber-50 dark:bg-amber-900/20 rounded border border-amber-200 dark:border-amber-900/40">
-                            <div className="flex items-center">
-                              <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 mr-2" />
-                              <span className="text-sm text-amber-700 dark:text-amber-300">
-                                {topic.studentsStruggling} students need help with this topic
-                              </span>
-                            </div>
-                            <Button size="sm" className="mt-2" variant="outline">
-                              <BookOpen className="w-4 h-4 mr-2" />
-                              Recommend Lessons
-                            </Button>
                           </div>
                         )}
                       </div>
@@ -671,37 +591,23 @@ export default function ClassGradeAnalytics() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {performanceTrends.map((trend) => (
-                      <div key={trend.period} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                    {performanceTrends.map((trend, index) => (
+                      <div key={index} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                         <div>
                           <p className="font-medium text-gray-900 dark:text-white">
-                            {trend.period}
+                            {trend.date.toLocaleDateString()}
                           </p>
                           <p className="text-sm text-gray-500 dark:text-gray-400">
-                            {trend.testsCount} tests completed
+                            {trend.testsCompleted} tests completed
                           </p>
                         </div>
                         <div className="text-right">
                           <p className="font-medium text-gray-900 dark:text-white">
                             {Math.round(trend.averageScore)}%
                           </p>
-                          <div className="flex items-center">
-                            {trend.improvementRate > 0 && (
-                              <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
-                            )}
-                            {trend.improvementRate < 0 && (
-                              <TrendingDown className="w-4 h-4 text-red-500 mr-1" />
-                            )}
-                            <span className={`text-sm ${
-                              trend.improvementRate > 0
-                                ? 'text-green-600 dark:text-green-400'
-                                : trend.improvementRate < 0
-                                ? 'text-red-600 dark:text-red-400'
-                                : 'text-gray-500 dark:text-gray-400'
-                            }`}>
-                              {trend.improvementRate > 0 ? '+' : ''}{Math.round(trend.improvementRate)}%
-                            </span>
-                          </div>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            {trend.studentsActive} students active
+                          </p>
                         </div>
                       </div>
                     ))}

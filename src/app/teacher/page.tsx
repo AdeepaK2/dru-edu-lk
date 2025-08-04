@@ -27,32 +27,86 @@ export default function TeacherDashboard() {
 
   // State for dynamic data
   const [actualClassesCount, setActualClassesCount] = useState<number>(0);
+  const [actualStudentsCount, setActualStudentsCount] = useState<number>(0);
+  const [actualPendingTests, setActualPendingTests] = useState<number>(0);
+  const [actualVideosCount, setActualVideosCount] = useState<number>(0);
   const [loadingStats, setLoadingStats] = useState(false);
 
-  // Load actual classes count when teacher is available
+  // Load actual statistics when teacher is available
   useEffect(() => {
     const loadActualStats = async () => {
       if (!teacher?.id) return;
       
       try {
         setLoadingStats(true);
-        console.log('🔍 Loading actual classes for teacher:', teacher.id);
+        console.log('🔍 Loading actual stats for teacher:', teacher.id);
         
-        // Use utility function for consistency
+        // Load classes count
         const classCount = await getTeacherClassCount(teacher.id);
         console.log('📊 Found classes:', classCount);
         setActualClassesCount(classCount);
+
+        // Load students count from all teacher's classes using enrollment service
+        const classes = await ClassFirestoreService.getClassesByTeacher(teacher.id);
+        console.log('📚 Found classes for student count:', classes.length);
+        
+        // Import enrollment service dynamically
+        const { getEnrollmentsByClass } = await import('@/services/studentEnrollmentService');
+        
+        let totalStudents = 0;
+        for (const cls of classes) {
+          try {
+            const enrollments = await getEnrollmentsByClass(cls.id);
+            const activeEnrollments = enrollments.filter(e => e.status === 'Active');
+            totalStudents += activeEnrollments.length;
+            console.log(`📊 Class ${cls.name}: ${activeEnrollments.length} active students`);
+          } catch (error) {
+            console.warn(`Failed to get enrollments for class ${cls.id}:`, error);
+          }
+        }
+        
+        console.log('👥 Total students across all classes:', totalStudents);
+        setActualStudentsCount(totalStudents);
+
+        // Load pending tests count (tests created by this teacher)
+        try {
+          const { TestService } = await import('@/apiservices/testService');
+          const teacherTests = await TestService.getTeacherTests(teacher.id);
+          const pendingTests = teacherTests.filter((test: any) => 
+            test.status === 'draft' || test.status === 'scheduled'
+          );
+          setActualPendingTests(pendingTests.length);
+          console.log('📝 Pending tests:', pendingTests.length);
+        } catch (error) {
+          console.warn('Failed to load pending tests:', error);
+          setActualPendingTests(0);
+        }
+
+        // Load videos count (videos uploaded by this teacher)
+        try {
+          const VideoFirestoreService = await import('@/apiservices/videoFirestoreService');
+          const teacherVideos = await VideoFirestoreService.VideoFirestoreService.getVideosByTeacher(teacher.id);
+          setActualVideosCount(teacherVideos.length);
+          console.log('🎥 Videos uploaded:', teacherVideos.length);
+        } catch (error) {
+          console.warn('Failed to load videos count:', error);
+          setActualVideosCount(0);
+        }
+        
       } catch (error) {
-        console.error('❌ Error loading teacher classes:', error);
-        // Fallback to deprecated field if available, otherwise 0
+        console.error('❌ Error loading teacher stats:', error);
+        // Fallback values
         setActualClassesCount(teacher.classesAssigned || 0);
+        setActualStudentsCount(teacher.studentsCount || 0);
+        setActualPendingTests(0);
+        setActualVideosCount(0);
       } finally {
         setLoadingStats(false);
       }
     };
 
     loadActualStats();
-  }, [teacher?.id, teacher?.classesAssigned]);
+  }, [teacher?.id, teacher?.classesAssigned, teacher?.studentsCount]);
 
   // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
   // Get current date and time in Melbourne timezone - memoized for performance
@@ -70,20 +124,11 @@ export default function TeacherDashboard() {
 
   // Memoized dashboard stats to prevent unnecessary recalculations
   const dashboardStats = useMemo(() => ({
-    totalClasses: actualClassesCount, // Use actual count instead of profile field
-    totalStudents: teacher?.studentsCount || 45,
-    pendingTests: 2,
-    videosUploaded: 12,
-    avgGrade: 85.4
-  }), [actualClassesCount, teacher]);
-
-  // Memoized activities data
-  const recentActivities = useMemo(() => [
-    { id: 1, type: 'test', description: 'New test results available for Grade 10 Math', time: '2 hours ago' },
-    { id: 2, type: 'video', description: 'Uploaded new lesson video: Algebra Basics', time: '1 day ago' },
-    { id: 3, type: 'grade', description: 'Graded 15 assignments for Grade 9 Math', time: '2 days ago' },
-    { id: 4, type: 'class', description: 'Upcoming class: Grade 10 Advanced Math', time: 'Tomorrow 9:00 AM' }
-  ], []);
+    totalClasses: actualClassesCount,
+    totalStudents: actualStudentsCount,
+    pendingTests: actualPendingTests,
+    videosUploaded: actualVideosCount,
+  }), [actualClassesCount, actualStudentsCount, actualPendingTests, actualVideosCount]);
 
   // Memoized quick actions with preloading
   const quickActions = useMemo(() => [
@@ -135,12 +180,15 @@ export default function TeacherDashboard() {
         subjects: teacher.subjects,
         deprecatedClassesAssigned: teacher.classesAssigned, // This field is deprecated
         actualClassesCount,
-        studentsCount: teacher.studentsCount
+        deprecatedStudentsCount: teacher.studentsCount, // This field may be deprecated
+        actualStudentsCount,
+        actualPendingTests,
+        actualVideosCount
       } : null,
       user: user ? { uid: user.uid, email: user.email } : null,
       loadingStats
     });
-  }, [loading, error, isAuthenticated, isTeacher, teacher, user, actualClassesCount, loadingStats]);
+  }, [loading, error, isAuthenticated, isTeacher, teacher, user, actualClassesCount, actualStudentsCount, actualPendingTests, actualVideosCount, loadingStats]);
 
   // NOW WE CAN SAFELY USE CONDITIONAL RETURNS
   // Show loading state
@@ -237,7 +285,7 @@ export default function TeacherDashboard() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
             <div className="flex items-center">
               <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
@@ -268,9 +316,18 @@ export default function TeacherDashboard() {
               </div>
               <div className="ml-4">
                 <p className="text-sm text-gray-600 dark:text-gray-400">Students</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {dashboardStats.totalStudents}
-                </p>
+                <div className="flex items-center">
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {loadingStats ? (
+                      <span className="inline-block w-8 h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></span>
+                    ) : (
+                      dashboardStats.totalStudents
+                    )}
+                  </p>
+                  {loadingStats && (
+                    <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">Loading...</span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -282,9 +339,18 @@ export default function TeacherDashboard() {
               </div>
               <div className="ml-4">
                 <p className="text-sm text-gray-600 dark:text-gray-400">Pending Tests</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {dashboardStats.pendingTests}
-                </p>
+                <div className="flex items-center">
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {loadingStats ? (
+                      <span className="inline-block w-8 h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></span>
+                    ) : (
+                      dashboardStats.pendingTests
+                    )}
+                  </p>
+                  {loadingStats && (
+                    <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">Loading...</span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -296,29 +362,24 @@ export default function TeacherDashboard() {
               </div>
               <div className="ml-4">
                 <p className="text-sm text-gray-600 dark:text-gray-400">Videos</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {dashboardStats.videosUploaded}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center">
-              <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/20 rounded-lg flex items-center justify-center">
-                <BarChart3 className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm text-gray-600 dark:text-gray-400">Avg Grade</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {dashboardStats.avgGrade}%
-                </p>
+                <div className="flex items-center">
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {loadingStats ? (
+                      <span className="inline-block w-8 h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></span>
+                    ) : (
+                      dashboardStats.videosUploaded
+                    )}
+                  </p>
+                  {loadingStats && (
+                    <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">Loading...</span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6">
           {/* Quick Actions */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
@@ -351,79 +412,6 @@ export default function TeacherDashboard() {
                   </Link>
                 );
               })}
-            </div>
-          </div>
-
-          {/* Recent Activity */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Recent Activity
-              </h3>
-              <Button variant="outline" size="sm">
-                View All
-              </Button>
-            </div>
-            
-            <div className="space-y-4">
-              {recentActivities.map((activity) => (
-                <div key={activity.id} className="flex items-start space-x-3">
-                  <div className={`w-2 h-2 rounded-full mt-2 ${
-                    activity.type === 'test' ? 'bg-green-500' :
-                    activity.type === 'video' ? 'bg-purple-500' :
-                    activity.type === 'grade' ? 'bg-blue-500' :
-                    'bg-orange-500'
-                  }`}></div>
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-900 dark:text-white">
-                      {activity.description}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      {activity.time}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Subject Performance Overview */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
-            {teacher?.subjects && teacher.subjects.length > 0 
-              ? teacher.subjects.length === 1 
-                ? `${teacher.subjects[0]} Performance Overview`
-                : 'Subjects Performance Overview'
-              : 'Subject Performance Overview'
-            }
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-              <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                <TrendingUp className="w-6 h-6 text-white" />
-              </div>
-              <h4 className="font-medium text-gray-900 dark:text-white mb-1">Class Average</h4>
-              <p className="text-2xl font-bold text-green-600 dark:text-green-400">85.4%</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">+2.3% from last month</p>
-            </div>
-            
-            <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-              <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                <Users className="w-6 h-6 text-white" />
-              </div>
-              <h4 className="font-medium text-gray-900 dark:text-white mb-1">Active Students</h4>
-              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">42/45</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">93% attendance rate</p>
-            </div>
-            
-            <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-              <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                <Calendar className="w-6 h-6 text-white" />
-              </div>
-              <h4 className="font-medium text-gray-900 dark:text-white mb-1">This Week</h4>
-              <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">8</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Classes scheduled</p>
             </div>
           </div>
         </div>
