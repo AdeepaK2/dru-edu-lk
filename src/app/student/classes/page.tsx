@@ -175,16 +175,6 @@ export default function StudentClassesPage() {
                     </span>
                   </div>
                   
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Users className="w-4 h-4 text-gray-400" />
-                      <span className="text-sm text-gray-600 dark:text-gray-300">Attendance</span>
-                    </div>
-                    <span className="text-sm font-medium text-gray-900 dark:text-white">
-                      {enrollment.attendance}%
-                    </span>
-                  </div>
-
                   {enrollment.grade !== undefined && (
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
@@ -232,30 +222,37 @@ export default function StudentClassesPage() {
                 )}
 
                 {/* Actions */}
-                <div className="flex space-x-2 mt-4">
+                <div className="grid grid-cols-3 gap-2 mt-4">
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex-1"
                     onClick={() => {
-                      // TODO: Navigate to class details
-                      console.log('View class details:', enrollment.className);
+                      // Navigate to tests page for this class
+                      window.location.href = `/student/tests?classId=${enrollment.id}`;
                     }}
                   >
-                    View Details
+                    Tests
                   </Button>
-                  {enrollment.status === 'Active' && (
-                    <Button
-                      size="sm"
-                      className="flex-1 bg-green-600 hover:bg-green-700"
-                      onClick={() => {
-                        // TODO: Navigate to class content/lessons
-                        console.log('Access class content:', enrollment.className);
-                      }}
-                    >
-                      Access Class
-                    </Button>
-                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      // Navigate to study materials page for this class
+                      window.location.href = `/student/study?classId=${enrollment.id}`;
+                    }}
+                  >
+                    Study
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      // Navigate to videos page for this class
+                      window.location.href = `/student/videos?classId=${enrollment.id}`;
+                    }}
+                  >
+                    Videos
+                  </Button>
                 </div>
               </div>
             ))}

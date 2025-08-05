@@ -23,7 +23,7 @@ const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
 
 // Initialize Firebase services
 const auth = getAuth(app);
-const firestore = getFirestore(app);
+const firestore = getFirestore(app, process.env.NEXT_PUBLIC_FIRESTORE_DATABASE_ID || '(default)');
 const storage = getStorage(app);
 
 // Initialize Analytics only on the client side

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Clock, Calendar, AlertCircle, FileText, CheckCircle, Play, ArrowRight, BookOpen, Filter, Info } from 'lucide-react';
+import { Clock, Calendar, AlertCircle, FileText, CheckCircle, Play, ArrowRight, BookOpen, Filter, Info, ChevronDown, ChevronRight } from 'lucide-react';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { Button, Input, Select } from '@/components/ui';
 import { TestService } from '@/apiservices/testService';
@@ -25,6 +25,7 @@ export default function StudentTests() {
   const [error, setError] = useState<string | null>(null);
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [expandedClasses, setExpandedClasses] = useState<Set<string>>(new Set());
   
   // Fetch student data
   useEffect(() => {
@@ -542,6 +543,107 @@ export default function StudentTests() {
     });
   }, [tests, enrollments, selectedSubjectId, searchTerm, subjects]);
 
+  // Group tests by class
+  const testsByClass = useMemo(() => {
+    const grouped: Record<string, {
+      enrollment: StudentEnrollment;
+      tests: Test[];
+      groupedTests: {
+        upcoming: Test[];
+        live: Test[];
+        available: Test[];
+        completed: Test[];
+      };
+    }> = {};
+
+    // Initialize with all enrollments
+    enrollments.forEach(enrollment => {
+      if (!grouped[enrollment.classId]) {
+        grouped[enrollment.classId] = {
+          enrollment,
+          tests: [],
+          groupedTests: {
+            upcoming: [],
+            live: [],
+            available: [],
+            completed: []
+          }
+        };
+      }
+    });
+
+    // Add tests to their respective classes
+    filteredTests.forEach(test => {
+      test.classIds.forEach(classId => {
+        if (grouped[classId]) {
+          grouped[classId].tests.push(test);
+          
+          // Group by status
+          const status = getTestStatus(test);
+          if (status.status === 'live') {
+            grouped[classId].groupedTests.live.push(test);
+          } else if (status.status === 'upcoming') {
+            grouped[classId].groupedTests.upcoming.push(test);
+          } else if (status.status === 'active') {
+            grouped[classId].groupedTests.available.push(test);
+          } else {
+            grouped[classId].groupedTests.completed.push(test);
+          }
+        }
+      });
+    });
+
+    // Sort upcoming tests by date (soonest first)
+    Object.values(grouped).forEach(classData => {
+      classData.groupedTests.upcoming.sort((a, b) => {
+        const getTimestamp = (test: Test) => {
+          if (test.type === 'live') {
+            const liveTest = test as LiveTest;
+            return liveTest.studentJoinTime;
+          } else {
+            const flexTest = test as FlexibleTest;
+            return flexTest.availableFrom;
+          }
+        };
+
+        const aTime = getTimestamp(a);
+        const bTime = getTimestamp(b);
+
+        const getSeconds = (timestamp: any): number => {
+          if (timestamp && typeof timestamp.seconds === 'number') {
+            return timestamp.seconds;
+          } else if (timestamp && typeof timestamp.toDate === 'function') {
+            return timestamp.toDate().getTime() / 1000;
+          } else if (timestamp instanceof Date) {
+            return timestamp.getTime() / 1000;
+          } else if (typeof timestamp === 'string') {
+            return new Date(timestamp).getTime() / 1000;
+          } else if (typeof timestamp === 'number') {
+            return timestamp > 1000000000000 ? timestamp / 1000 : timestamp;
+          }
+          return 0;
+        };
+
+        return getSeconds(aTime) - getSeconds(bTime);
+      });
+    });
+
+    return grouped;
+  }, [filteredTests, enrollments]);
+
+  // Toggle class expansion
+  const toggleClass = (classId: string) => {
+    setExpandedClasses(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(classId)) {
+        newSet.delete(classId);
+      } else {
+        newSet.add(classId);
+      }
+      return newSet;
+    });
+  };
+
   // Group tests by status
   const groupedTests = useMemo(() => {
     const grouped = {
@@ -693,19 +795,21 @@ export default function StudentTests() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
             <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-md">
               <div className="flex items-center">
-                <Play className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-2" />
+                <BookOpen className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-2" />
                 <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Live Tests</p>
-                  <p className="text-xl font-bold text-gray-900 dark:text-white">{groupedTests.live.length}</p>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Classes</p>
+                  <p className="text-xl font-bold text-gray-900 dark:text-white">{Object.keys(testsByClass).length}</p>
                 </div>
               </div>
             </div>
             <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-md">
               <div className="flex items-center">
-                <FileText className="h-5 w-5 text-green-600 dark:text-green-400 mr-2" />
+                <Play className="h-5 w-5 text-green-600 dark:text-green-400 mr-2" />
                 <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Available</p>
-                  <p className="text-xl font-bold text-gray-900 dark:text-white">{groupedTests.available.length}</p>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Live Now</p>
+                  <p className="text-xl font-bold text-gray-900 dark:text-white">
+                    {Object.values(testsByClass).reduce((acc, classData) => acc + classData.groupedTests.live.length, 0)}
+                  </p>
                 </div>
               </div>
             </div>
@@ -714,307 +818,323 @@ export default function StudentTests() {
                 <Calendar className="h-5 w-5 text-purple-600 dark:text-purple-400 mr-2" />
                 <div>
                   <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Upcoming</p>
-                  <p className="text-xl font-bold text-gray-900 dark:text-white">{groupedTests.upcoming.length}</p>
+                  <p className="text-xl font-bold text-gray-900 dark:text-white">
+                    {Object.values(testsByClass).reduce((acc, classData) => acc + classData.groupedTests.upcoming.length, 0)}
+                  </p>
                 </div>
               </div>
             </div>
-            <div className="bg-gray-50 dark:bg-gray-700/20 p-3 rounded-md">
+            <div className="bg-orange-50 dark:bg-orange-900/20 p-3 rounded-md">
               <div className="flex items-center">
-                <CheckCircle className="h-5 w-5 text-gray-600 dark:text-gray-400 mr-2" />
+                <FileText className="h-5 w-5 text-orange-600 dark:text-orange-400 mr-2" />
                 <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Completed</p>
-                  <p className="text-xl font-bold text-gray-900 dark:text-white">{groupedTests.completed.length}</p>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Total Tests</p>
+                  <p className="text-xl font-bold text-gray-900 dark:text-white">{filteredTests.length}</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Live Tests */}
-        {groupedTests.live.length > 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center">
-              <Play className="h-5 w-5 text-green-600 dark:text-green-400 mr-2" />
-              <h2 className="text-lg font-medium text-gray-900 dark:text-white">
-                Live Now
-              </h2>
-              <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300">
-                {groupedTests.live.length} test{groupedTests.live.length !== 1 ? 's' : ''}
-              </span>
-            </div>
+        {/* Classes */}
+        {Object.entries(testsByClass).map(([classId, classData]) => {
+          const isExpanded = expandedClasses.has(classId);
+          const hasTests = classData.tests.length > 0;
+          const totalTests = classData.tests.length;
+          const liveCount = classData.groupedTests.live.length;
+          const upcomingCount = classData.groupedTests.upcoming.length;
+          const availableCount = classData.groupedTests.available.length;
+          const completedCount = classData.groupedTests.completed.length;
 
-            <div className="divide-y divide-gray-200 dark:divide-gray-700">
-              {groupedTests.live.map((test) => {
-                const liveTest = test as LiveTest;
-                
-                // Get associated class
-                const classId = test.classIds[0]; // Just get first one for now
-                const enrollment = enrollments.find(e => e.classId === classId);
-                const className = enrollment?.className || 'Unknown Class';
-                const subject = enrollment?.subject || 'Unknown Subject';
-
-                // Get button configuration
-                const buttonConfig = getTestButton(test);
-                const ButtonIcon = buttonConfig.icon;
-
-                return (
-                  <div key={test.id} className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                      <div className="mb-4 md:mb-0">
-                        <div className="flex items-center">
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                            {test.title}
-                          </h3>
-                          <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300">
-                            Live Now
-                          </span>
-                        </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-                          {subject} • {className}
-                        </p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                          Duration: {liveTest.duration} minutes • Ends at {formatDateTime(liveTest.actualEndTime)}
-                        </p>
-                        {/* Show attempt info if exists */}
-                        {testAttempts[test.id] && (
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            {canAttemptTest(test).reason}
-                          </p>
-                        )}
-                      </div>
-                      <div>
-                        <Button 
-                          onClick={buttonConfig.action}
-                          disabled={buttonConfig.disabled}
-                          variant={buttonConfig.variant}
-                          className={`inline-flex items-center ${
-                            buttonConfig.variant === 'primary' && !buttonConfig.disabled 
-                              ? 'bg-green-600 hover:bg-green-700' 
-                              : ''
-                          }`}
-                        >
-                          <ButtonIcon className="w-4 h-4 mr-2" />
-                          {buttonConfig.text}
-                        </Button>
-                      </div>
+          return (
+            <div key={classId} className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+              {/* Class Header */}
+              <div 
+                className="p-6 border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                onClick={() => toggleClass(classId)}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    {isExpanded ? (
+                      <ChevronDown className="h-5 w-5 text-gray-400 mr-3" />
+                    ) : (
+                      <ChevronRight className="h-5 w-5 text-gray-400 mr-3" />
+                    )}
+                    <div>
+                      <h2 className="text-lg font-medium text-gray-900 dark:text-white">
+                        {classData.enrollment.className}
+                      </h2>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                        {classData.enrollment.subject}
+                      </p>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Available Tests */}
-        {groupedTests.available.length > 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center">
-              <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-2" />
-              <h2 className="text-lg font-medium text-gray-900 dark:text-white">
-                Available Tests
-              </h2>
-              <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
-                {groupedTests.available.length} test{groupedTests.available.length !== 1 ? 's' : ''}
-              </span>
-            </div>
-
-            <div className="divide-y divide-gray-200 dark:divide-gray-700">
-              {groupedTests.available.map((test) => {
-                const flexTest = test as FlexibleTest;
-                
-                // Get associated class
-                const classId = test.classIds[0]; // Just get first one for now
-                const enrollment = enrollments.find(e => e.classId === classId);
-                const className = enrollment?.className || 'Unknown Class';
-                const subject = enrollment?.subject || 'Unknown Subject';
-
-                // Get button configuration
-                const buttonConfig = getTestButton(test);
-                const ButtonIcon = buttonConfig.icon;
-
-                return (
-                  <div key={test.id} className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                      <div className="mb-4 md:mb-0">
-                        <div className="flex items-center">
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                            {test.title}
-                          </h3>
-                          <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
-                            Available
-                          </span>
-                        </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-                          {subject} • {className}
-                        </p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                          Duration: {flexTest.duration || 'No time limit'} minutes • Available until {formatDateTime(flexTest.availableTo)}
-                        </p>
-                        {/* Show attempt info if exists */}
-                        {testAttempts[test.id] && (
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            {canAttemptTest(test).reason}
-                          </p>
-                        )}
-                      </div>
-                      <div>
-                        <Button 
-                          onClick={buttonConfig.action}
-                          disabled={buttonConfig.disabled}
-                          variant={buttonConfig.variant}
-                          className="inline-flex items-center"
-                        >
-                          <ButtonIcon className="w-4 h-4 mr-2" />
-                          {buttonConfig.text}
-                        </Button>
-                      </div>
-                    </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    {/* Test count badges */}
+                    {liveCount > 0 && (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300">
+                        {liveCount} Live
+                      </span>
+                    )}
+                    {upcomingCount > 0 && (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300">
+                        {upcomingCount} Upcoming
+                      </span>
+                    )}
+                    {availableCount > 0 && (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
+                        {availableCount} Available
+                      </span>
+                    )}
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300">
+                      {totalTests} Total
+                    </span>
                   </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
+                </div>
+              </div>
 
-        {/* Upcoming Tests */}
-        {groupedTests.upcoming.length > 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center">
-              <Calendar className="h-5 w-5 text-purple-600 dark:text-purple-400 mr-2" />
-              <h2 className="text-lg font-medium text-gray-900 dark:text-white">
-                Upcoming Tests
-              </h2>
-              <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300">
-                {groupedTests.upcoming.length} test{groupedTests.upcoming.length !== 1 ? 's' : ''}
-              </span>
-            </div>
-
-            <div className="divide-y divide-gray-200 dark:divide-gray-700">
-              {groupedTests.upcoming.map((test) => {
-                // Get start time based on test type
-                const startTime = test.type === 'live' 
-                  ? (test as LiveTest).studentJoinTime 
-                  : (test as FlexibleTest).availableFrom;
-                
-                // Get associated class
-                const classId = test.classIds[0]; // Just get first one for now
-                const enrollment = enrollments.find(e => e.classId === classId);
-                const className = enrollment?.className || 'Unknown Class';
-                const subject = enrollment?.subject || 'Unknown Subject';
-
-                return (
-                  <div key={test.id} className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                      <div>
-                        <div className="flex items-center">
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                            {test.title}
-                          </h3>
-                          <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300">
-                            Upcoming
-                          </span>
-                        </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-                          {subject} • {className}
-                        </p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                          Scheduled for {formatDateTime(startTime)}
-                        </p>
-                      </div>
-                      <div className="mt-4 md:mt-0 flex items-center text-gray-500 dark:text-gray-400">
-                        <Clock className="w-4 h-4 mr-2" />
-                        <span>Starts in {calculateTimeRemaining(startTime)}</span>
-                      </div>
+              {/* Class Content */}
+              {isExpanded && (
+                <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {!hasTests ? (
+                    <div className="p-8 text-center">
+                      <FileText className="mx-auto h-8 w-8 text-gray-400 mb-3" />
+                      <p className="text-gray-600 dark:text-gray-300">No tests available for this class</p>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
+                  ) : (
+                    <>
+                      {/* Live Tests */}
+                      {classData.groupedTests.live.length > 0 && (
+                        <>
+                          <div className="px-6 py-3 bg-green-50 dark:bg-green-900/20">
+                            <div className="flex items-center">
+                              <Play className="h-4 w-4 text-green-600 dark:text-green-400 mr-2" />
+                              <span className="text-sm font-medium text-green-800 dark:text-green-300">
+                                Live Now ({classData.groupedTests.live.length})
+                              </span>
+                            </div>
+                          </div>
+                          {classData.groupedTests.live.map((test) => {
+                            const liveTest = test as LiveTest;
+                            const buttonConfig = getTestButton(test);
+                            const ButtonIcon = buttonConfig.icon;
 
-        {/* Completed Tests */}
-        {groupedTests.completed.length > 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center">
-              <CheckCircle className="h-5 w-5 text-gray-600 dark:text-gray-400 mr-2" />
-              <h2 className="text-lg font-medium text-gray-900 dark:text-white">
-                Completed Tests
-              </h2>
-              <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300">
-                {groupedTests.completed.length} test{groupedTests.completed.length !== 1 ? 's' : ''}
-              </span>
-            </div>
+                            return (
+                              <div key={test.id} className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700">
+                                <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                                  <div className="mb-4 md:mb-0">
+                                    <div className="flex items-center">
+                                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                                        {test.title}
+                                      </h3>
+                                      <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300">
+                                        Live Now
+                                      </span>
+                                    </div>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                                      Duration: {liveTest.duration} minutes • Ends at {formatDateTime(liveTest.actualEndTime)}
+                                    </p>
+                                    {testAttempts[test.id] && (
+                                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                        {canAttemptTest(test).reason}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <div>
+                                    <Button 
+                                      onClick={buttonConfig.action}
+                                      disabled={buttonConfig.disabled}
+                                      variant={buttonConfig.variant}
+                                      className={`inline-flex items-center ${
+                                        buttonConfig.variant === 'primary' && !buttonConfig.disabled 
+                                          ? 'bg-green-600 hover:bg-green-700' 
+                                          : ''
+                                      }`}
+                                    >
+                                      <ButtonIcon className="w-4 h-4 mr-2" />
+                                      {buttonConfig.text}
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </>
+                      )}
 
-            <div className="divide-y divide-gray-200 dark:divide-gray-700">
-              {groupedTests.completed.slice(0, 5).map((test) => {
-                // Get associated class
-                const classId = test.classIds[0]; // Just get first one for now
-                const enrollment = enrollments.find(e => e.classId === classId);
-                const className = enrollment?.className || 'Unknown Class';
-                const subject = enrollment?.subject || 'Unknown Subject';
+                      {/* Upcoming Tests */}
+                      {classData.groupedTests.upcoming.length > 0 && (
+                        <>
+                          <div className="px-6 py-3 bg-purple-50 dark:bg-purple-900/20">
+                            <div className="flex items-center">
+                              <Calendar className="h-4 w-4 text-purple-600 dark:text-purple-400 mr-2" />
+                              <span className="text-sm font-medium text-purple-800 dark:text-purple-300">
+                                Upcoming ({classData.groupedTests.upcoming.length})
+                              </span>
+                            </div>
+                          </div>
+                          {classData.groupedTests.upcoming.map((test) => {
+                            const startTime = test.type === 'live' 
+                              ? (test as LiveTest).studentJoinTime 
+                              : (test as FlexibleTest).availableFrom;
 
-                // Get button configuration
-                const buttonConfig = getTestButton(test);
-                const ButtonIcon = buttonConfig.icon;
+                            return (
+                              <div key={test.id} className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700">
+                                <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                                  <div>
+                                    <div className="flex items-center">
+                                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                                        {test.title}
+                                      </h3>
+                                      <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300">
+                                        Upcoming
+                                      </span>
+                                    </div>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                                      Scheduled for {formatDateTime(startTime)}
+                                    </p>
+                                  </div>
+                                  <div className="mt-4 md:mt-0 flex items-center text-gray-500 dark:text-gray-400">
+                                    <Clock className="w-4 h-4 mr-2" />
+                                    <span>Starts in {calculateTimeRemaining(startTime)}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </>
+                      )}
 
-                return (
-                  <div key={test.id} className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                      <div>
-                        <div className="flex items-center">
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                            {test.title}
-                          </h3>
-                          <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300">
-                            Completed
-                          </span>
-                        </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-                          {subject} • {className}
-                        </p>
-                        {/* Show attempt info if exists */}
-                        {testAttempts[test.id] && (
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            Best Score: {testAttempts[test.id].bestScore || 0} • {testAttempts[test.id].completedAttempts?.length || 0} completed attempt{(testAttempts[test.id].completedAttempts?.length || 0) !== 1 ? 's' : ''}
-                            {testAttempts[test.id].activeAttempts?.length > 0 && (
-                              <span> • {testAttempts[test.id].activeAttempts.length} in progress</span>
-                            )}
-                          </p>
-                        )}
-                      </div>
-                      <div className="mt-4 md:mt-0">
-                        <Button 
-                          onClick={buttonConfig.action}
-                          disabled={buttonConfig.disabled}
-                          variant={buttonConfig.variant}
-                          className="inline-flex items-center"
-                        >
-                          <ButtonIcon className="w-4 h-4 mr-2" />
-                          {buttonConfig.text}
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-              
-              {groupedTests.completed.length > 5 && (
-                <div className="p-4 text-center">
-                  <button
-                    onClick={() => router.push('/student/results')}
-                    className="text-blue-600 dark:text-blue-400 hover:underline text-sm font-medium"
-                  >
-                    View all {groupedTests.completed.length} completed tests
-                  </button>
+                      {/* Available Tests */}
+                      {classData.groupedTests.available.length > 0 && (
+                        <>
+                          <div className="px-6 py-3 bg-blue-50 dark:bg-blue-900/20">
+                            <div className="flex items-center">
+                              <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400 mr-2" />
+                              <span className="text-sm font-medium text-blue-800 dark:text-blue-300">
+                                Available ({classData.groupedTests.available.length})
+                              </span>
+                            </div>
+                          </div>
+                          {classData.groupedTests.available.map((test) => {
+                            const flexTest = test as FlexibleTest;
+                            const buttonConfig = getTestButton(test);
+                            const ButtonIcon = buttonConfig.icon;
+
+                            return (
+                              <div key={test.id} className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700">
+                                <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                                  <div className="mb-4 md:mb-0">
+                                    <div className="flex items-center">
+                                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                                        {test.title}
+                                      </h3>
+                                      <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
+                                        Available
+                                      </span>
+                                    </div>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                                      Duration: {flexTest.duration || 'No time limit'} minutes • Available until {formatDateTime(flexTest.availableTo)}
+                                    </p>
+                                    {testAttempts[test.id] && (
+                                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                        {canAttemptTest(test).reason}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <div>
+                                    <Button 
+                                      onClick={buttonConfig.action}
+                                      disabled={buttonConfig.disabled}
+                                      variant={buttonConfig.variant}
+                                      className="inline-flex items-center"
+                                    >
+                                      <ButtonIcon className="w-4 h-4 mr-2" />
+                                      {buttonConfig.text}
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </>
+                      )}
+
+                      {/* Completed Tests */}
+                      {classData.groupedTests.completed.length > 0 && (
+                        <>
+                          <div className="px-6 py-3 bg-gray-50 dark:bg-gray-700/20">
+                            <div className="flex items-center">
+                              <CheckCircle className="h-4 w-4 text-gray-600 dark:text-gray-400 mr-2" />
+                              <span className="text-sm font-medium text-gray-800 dark:text-gray-300">
+                                Completed ({classData.groupedTests.completed.length})
+                              </span>
+                            </div>
+                          </div>
+                          {classData.groupedTests.completed.slice(0, 3).map((test) => {
+                            const buttonConfig = getTestButton(test);
+                            const ButtonIcon = buttonConfig.icon;
+
+                            return (
+                              <div key={test.id} className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700">
+                                <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                                  <div>
+                                    <div className="flex items-center">
+                                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                                        {test.title}
+                                      </h3>
+                                      <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300">
+                                        Completed
+                                      </span>
+                                    </div>
+                                    {testAttempts[test.id] && (
+                                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                        Best Score: {testAttempts[test.id].bestScore || 0} • {testAttempts[test.id].completedAttempts?.length || 0} completed attempt{(testAttempts[test.id].completedAttempts?.length || 0) !== 1 ? 's' : ''}
+                                        {testAttempts[test.id].activeAttempts?.length > 0 && (
+                                          <span> • {testAttempts[test.id].activeAttempts.length} in progress</span>
+                                        )}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <div className="mt-4 md:mt-0">
+                                    <Button 
+                                      onClick={buttonConfig.action}
+                                      disabled={buttonConfig.disabled}
+                                      variant={buttonConfig.variant}
+                                      className="inline-flex items-center"
+                                    >
+                                      <ButtonIcon className="w-4 h-4 mr-2" />
+                                      {buttonConfig.text}
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                          
+                          {classData.groupedTests.completed.length > 3 && (
+                            <div className="p-4 text-center">
+                              <button
+                                onClick={() => router.push('/student/results')}
+                                className="text-blue-600 dark:text-blue-400 hover:underline text-sm font-medium"
+                              >
+                                View all {classData.groupedTests.completed.length} completed tests
+                              </button>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </>
+                  )}
                 </div>
               )}
             </div>
-          </div>
-        )}
+          );
+        })}
 
         {/* No Tests */}
-        {filteredTests.length === 0 && (
+        {Object.keys(testsByClass).length === 0 && (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-12 text-center">
             <Info className="mx-auto h-12 w-12 text-gray-400 mb-4" />
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">

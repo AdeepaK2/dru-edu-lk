@@ -61,7 +61,7 @@ function initializeFirebaseAdmin() {
 
 // Initialize services
 const adminInstance = initializeFirebaseAdmin();
-const db: Firestore = getFirestore();
+const db: Firestore = getFirestore(adminInstance.app(), process.env.FIRESTORE_DATABASE_ID || '(default)');
 const auth: Auth = getAuth();
 // const storage: Storage = getStorage(); // Commented out until we fix bucket config
 // const rtdb: Database = getDatabase(); // Commented out until we need Realtime Database

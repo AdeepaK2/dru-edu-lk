@@ -36,5 +36,5 @@ try {
 
 // Export Firebase Admin services
 export const adminAuth = getAuth(adminApp);
-export const adminFirestore = getFirestore(adminApp);
+export const adminFirestore = getFirestore(adminApp, process.env.FIRESTORE_DATABASE_ID || '(default)');
 export { adminApp };
