@@ -309,7 +309,16 @@ export default function TestPage() {
         // If there's a valid active attempt, resume it
         if (activeAttemptId && validActiveAttempt) {
           console.log('🔄 Resuming existing attempt:', activeAttemptId);
-          router.push(`/student/test/${testId}/take?attemptId=${activeAttemptId}`);
+          
+          // Check if this is an essay test and route accordingly
+          const essayQuestions = test?.questions.filter(q => q.type === 'essay' || q.questionType === 'essay') || [];
+          const isEssayOnlyTest = essayQuestions.length > 0 && essayQuestions.length === (test?.questions.length || 0);
+          
+          if (isEssayOnlyTest) {
+            router.push(`/student/test/${testId}/take-essay?attemptId=${activeAttemptId}`);
+          } else {
+            router.push(`/student/test/${testId}/take?attemptId=${activeAttemptId}`);
+          }
           return;
         }
       }
@@ -349,8 +358,16 @@ export default function TestPage() {
       
       console.log('✅ New attempt created:', attemptId);
       
-      // Navigate to the test taking page with the attempt ID
-      router.push(`/student/test/${testId}/take?attemptId=${attemptId}`);
+      // Check if this is an essay test and route accordingly
+      const essayQuestions = test?.questions.filter(q => q.type === 'essay' || q.questionType === 'essay') || [];
+      const isEssayOnlyTest = essayQuestions.length > 0 && essayQuestions.length === (test?.questions.length || 0);
+      
+      // Navigate to the appropriate test taking page with the attempt ID
+      if (isEssayOnlyTest) {
+        router.push(`/student/test/${testId}/take-essay?attemptId=${attemptId}`);
+      } else {
+        router.push(`/student/test/${testId}/take?attemptId=${attemptId}`);
+      }
     } catch (error) {
       console.error('Error starting test:', error);
       alert('Failed to start test. Please try again.');
@@ -526,9 +543,24 @@ export default function TestPage() {
             Back to Tests
           </button>
           
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-            {test.title}
-          </h1>
+          <div className="flex items-center space-x-3 mb-2">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              {test.title}
+            </h1>
+            {/* Test Type Badge */}
+            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+              test.questions?.some(q => q.type === 'essay' || q.questionType === 'essay')
+                ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
+                : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+            }`}>
+              {test.questions?.some(q => q.type === 'essay' || q.questionType === 'essay')
+                ? test.questions?.every(q => q.type === 'essay' || q.questionType === 'essay')
+                  ? '📝 Essay Test'
+                  : '📝📊 Mixed Test'
+                : '📊 MCQ Test'
+              }
+            </span>
+          </div>
           <p className="text-gray-600 dark:text-gray-300">
             {test.description || 'No description provided.'}
           </p>
