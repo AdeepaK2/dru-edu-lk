@@ -264,6 +264,33 @@ export class VideoFirestoreService {
   }
 
   /**
+   * Get videos assigned to a specific student
+   */
+  static async getVideosByStudent(studentId: string): Promise<VideoDocument[]> {
+    try {
+      console.log('Fetching videos for student ID:', studentId);
+      
+      // Get all videos and filter client-side
+      const allVideos = await this.getAllVideos();
+      console.log('Total videos found:', allVideos.length);
+      
+      const studentVideos = allVideos.filter(video => {
+        const hasStudent = video.assignedStudentIds?.includes(studentId);
+        if (hasStudent) {
+          console.log('Video assigned to student:', video.title, video.assignedStudentIds);
+        }
+        return hasStudent;
+      });
+      
+      console.log('Videos filtered for student:', studentVideos.length);
+      return studentVideos;
+    } catch (error) {
+      console.error(`Error fetching videos for student ${studentId}:`, error);
+      throw new Error(`Failed to fetch videos for student: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
    * Get a video by ID
    */
   static async getVideoById(videoId: string): Promise<VideoDocument | null> {

@@ -19,17 +19,17 @@ import {
   BookOpen,
   Users
 } from 'lucide-react';
-import { Button, Input, TextArea } from '@/components/ui';
-import { useTeacherAuth } from '@/hooks/useTeacherAuth';
-import TeacherLayout from '@/components/teacher/TeacherLayout';
-import Link from 'next/link';
 
 // Import services and types
 import { TestService } from '@/apiservices/testService';
 import { SubmissionService } from '@/apiservices/submissionService';
+import { useTeacherAuth } from '@/hooks/useTeacherAuth';
 import { Test } from '@/models/testSchema';
-import { StudentSubmission } from '@/models/studentSubmissionSchema';
 import { PdfAttachment } from '@/models/studentSubmissionSchema';
+import { Button, TextArea } from '@/components/ui';
+import TeacherLayout from '@/components/teacher/TeacherLayout';
+import { doc, updateDoc, Timestamp } from 'firebase/firestore';
+import { firestore } from '@/utils/firebase-client';
 
 interface SubmissionWithStudent {
   id: string;
@@ -37,32 +37,23 @@ interface SubmissionWithStudent {
   studentId: string;
   studentName: string;
   studentEmail: string;
-  submittedAt: string; // Formatted date string
+  submittedAt: string;
   status: string;
-  totalScore?: number;
-  maxScore?: number;
-  essayAnswers: Array<{
-    questionId: string;
-    questionText: string;
-    textContent: string;
-    pdfFiles: PdfAttachment[];
-    points: number;
-    maxPoints: number;
-  }>;
-  essayResults?: Array<{
-    questionId: string;
-    marksAwarded?: number;
+  submissionPdf?: PdfAttachment;
+  additionalNotes?: string;
+  overallGrade?: {
+    totalMarks: number;
     maxMarks: number;
-    feedback?: string;
-  }>;
-  finalAnswers?: any[];
+    feedback: string;
+    gradedAt?: Date;
+  };
   answers?: any;
+  finalAnswers?: any[];
 }
 
-interface EssayGrade {
-  questionId: string;
-  score: number;
-  maxScore: number;
+interface OverallGrade {
+  totalMarks: number;
+  maxMarks: number;
   feedback: string;
 }
 
@@ -75,7 +66,7 @@ export default function MarkSubmissions() {
   const [test, setTest] = useState<Test | null>(null);
   const [submissions, setSubmissions] = useState<SubmissionWithStudent[]>([]);
   const [selectedSubmission, setSelectedSubmission] = useState<SubmissionWithStudent | null>(null);
-  const [grades, setGrades] = useState<Record<string, EssayGrade[]>>({});
+  const [overallGrades, setOverallGrades] = useState<Record<string, OverallGrade>>({});
   const [loading, setLoading] = useState(true);
   const [savingGrades, setSavingGrades] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -96,9 +87,7 @@ export default function MarkSubmissions() {
         // Load submissions for this test
         const submissionData = await SubmissionService.getSubmissionsByTest(testId);
         
-        // Filter and format submissions with essay questions
-        const essayQuestions = testData.questions.filter(q => q.type === 'essay' || q.questionType === 'essay');
-        
+        // Process submissions for single PDF format only
         const processedSubmissions: SubmissionWithStudent[] = submissionData.map((submission: any) => {
           // Handle submission date properly
           let submissionDate = 'Unknown date';
@@ -116,64 +105,88 @@ export default function MarkSubmissions() {
             }
           }
           
+          // Get submission PDF from finalAnswers for essay questions
+          let submissionPdf = null;
+          let additionalNotes = '';
+          
+          if (submission.finalAnswers && Array.isArray(submission.finalAnswers)) {
+            // Look for essay questions with PDF files
+            for (const answer of submission.finalAnswers) {
+              if (answer.questionType === 'essay' && answer.pdfFiles && answer.pdfFiles.length > 0) {
+                submissionPdf = answer.pdfFiles[0]; // Use the first PDF file
+                break;
+              }
+              // Also check for additional notes
+              if (answer.textContent) {
+                additionalNotes = answer.textContent;
+              }
+            }
+            
+            // Special case: Look for submission_pdf question (essay test single PDF submission)
+            const submissionPdfAnswer = submission.finalAnswers.find((answer: any) => 
+              answer.questionId === 'submission_pdf'
+            );
+            if (submissionPdfAnswer && submissionPdfAnswer.pdfFiles && submissionPdfAnswer.pdfFiles.length > 0) {
+              submissionPdf = submissionPdfAnswer.pdfFiles[0];
+            }
+          }
+          
+          // Fallback: Check legacy format for backward compatibility
+          if (!submissionPdf) {
+            submissionPdf = submission.answers?.['submission_pdf']?.pdfFiles?.[0] || null;
+          }
+          if (!additionalNotes) {
+            additionalNotes = submission.answers?.['additional_notes']?.textContent || '';
+          }
+          
+          console.log('📝 Processing submission:', submission.id, {
+            hasSubmissionPdf: !!submissionPdf,
+            finalAnswersCount: submission.finalAnswers?.length || 0,
+            legacyAnswers: !!submission.answers
+          });
+          
           return {
-            ...submission,
+            id: submission.id,
+            testId: submission.testId,
+            studentId: submission.studentId,
             studentName: submission.studentName || 'Unknown Student',
             studentEmail: submission.studentEmail || 'unknown@email.com',
             submittedAt: submissionDate,
-            essayResults: submission.essayResults || [], // Include existing essay results
-            essayAnswers: essayQuestions.map(question => {
-              // Try to get answer from finalAnswers first, then from answers
-              let answer = submission.finalAnswers?.find((a: any) => a.questionId === question.id);
-              if (!answer) {
-                answer = submission.answers?.[question.id];
-              }
-              
-              console.log('📝 Processing essay answer for question:', question.id, {
-                answer,
-                answerPdfFiles: answer?.pdfFiles,
-                submissionFinalAnswers: submission.finalAnswers,
-                submissionAnswers: submission.answers
-              });
-              
-              return {
-                questionId: question.id,
-                questionText: question.questionText,
-                textContent: answer?.textContent || '',
-                pdfFiles: answer?.pdfFiles || [],
-                points: answer?.score || 0,
-                maxPoints: question.points || question.marks || 0
-              };
-            })
+            status: submission.status,
+            submissionPdf,
+            additionalNotes,
+            overallGrade: submission.overallGrade || null,
+            answers: submission.answers,
+            finalAnswers: submission.finalAnswers
           };
         });
         
         setSubmissions(processedSubmissions);
         
-        // Initialize grades state - load existing grades from essay results
-        const initialGrades: Record<string, EssayGrade[]> = {};
+        // Initialize overall grades from existing data
+        const initialOverallGrades: Record<string, OverallGrade> = {};
+        const totalMarks = testData.questions
+          .filter(q => q.type === 'essay' || q.questionType === 'essay')
+          .reduce((sum, q) => sum + (q.points || q.marks || 0), 0);
+        
         processedSubmissions.forEach(submission => {
-          initialGrades[submission.id] = submission.essayAnswers.map(answer => {
-            // Check if there's an existing essay result for this question
-            const existingEssayResult = submission.essayResults?.find(
-              (result: any) => result.questionId === answer.questionId
-            );
-            
-            return {
-              questionId: answer.questionId,
-              score: existingEssayResult?.marksAwarded || 0,
-              maxScore: answer.maxPoints,
-              feedback: existingEssayResult?.feedback || ''
+          if (submission.overallGrade) {
+            initialOverallGrades[submission.id] = submission.overallGrade;
+          } else {
+            // Initialize with default values
+            initialOverallGrades[submission.id] = {
+              totalMarks: 0,
+              maxMarks: totalMarks,
+              feedback: ''
             };
-          });
+          }
         });
         
-        console.log('📊 Initialized grades with existing data:', initialGrades);
-        setGrades(initialGrades);
+        setOverallGrades(initialOverallGrades);
         
       } catch (err: any) {
-        console.error('Error loading marking data:', err);
-        setError(err.message || 'Failed to load test submissions');
+        console.error('Error loading data:', err);
+        setError(err.message || 'Failed to load submissions');
       } finally {
         setLoading(false);
       }
@@ -182,56 +195,70 @@ export default function MarkSubmissions() {
     loadData();
   }, [testId]);
 
-  // Update grade for a specific question
-  const updateGrade = (submissionId: string, questionId: string, score: number, feedback: string) => {
-    // Ensure score is a valid number
-    const validScore = typeof score === 'number' ? score : Number(score) || 0;
+  // Update overall grade for single PDF submissions
+  const updateOverallGrade = (submissionId: string, totalMarks: number, feedback: string) => {
+    const validMarks = typeof totalMarks === 'number' ? totalMarks : Number(totalMarks) || 0;
     
-    setGrades(prev => ({
-      ...prev,
-      [submissionId]: prev[submissionId]?.map(grade => 
-        grade.questionId === questionId 
-          ? { ...grade, score: validScore, feedback }
-          : grade
-      ) || []
-    }));
+    setOverallGrades(prev => {
+      const existing = prev[submissionId];
+      return {
+        ...prev,
+        [submissionId]: {
+          totalMarks: validMarks,
+          maxMarks: existing?.maxMarks || 0,
+          feedback
+        }
+      };
+    });
   };
 
   // Save grades for a submission
   const saveGrades = async (submissionId: string) => {
     setSavingGrades(true);
     try {
-      const submissionGrades = grades[submissionId] || [];
+      const submission = submissions.find(s => s.id === submissionId);
+      if (!submission) throw new Error('Submission not found');
+
+      const grade = overallGrades[submissionId];
+      if (!grade) throw new Error('Grade not found');
+
+      // Save grade directly to Firestore
+      const submissionRef = doc(firestore, 'studentSubmissions', submissionId);
+      const updateData = {
+        overallGrade: {
+          totalMarks: grade.totalMarks,
+          maxMarks: grade.maxMarks,
+          feedback: grade.feedback,
+          gradedAt: Timestamp.fromDate(new Date())
+        },
+        totalScore: grade.totalMarks,
+        percentage: grade.maxMarks > 0 ? Math.round((grade.totalMarks / grade.maxMarks) * 100) : 0,
+        passStatus: grade.maxMarks > 0 && grade.totalMarks >= (grade.maxMarks * 0.6) ? 'passed' : 'failed',
+        manualGradingPending: false,
+        updatedAt: Timestamp.now()
+      };
       
-      // Validate and clean the grades data
-      const validatedGrades = submissionGrades.map(grade => ({
-        questionId: grade.questionId,
-        score: typeof grade.score === 'number' ? grade.score : Number(grade.score) || 0,
-        maxScore: typeof grade.maxScore === 'number' ? grade.maxScore : Number(grade.maxScore) || 0,
-        feedback: grade.feedback || ''
-      }));
+      await updateDoc(submissionRef, updateData);
       
-      await SubmissionService.updateEssayGrades(submissionId, validatedGrades);
-      
-      console.log('✅ Grades saved successfully');
+      console.log('✅ Grade saved successfully to database');
       
       // Update local submission data
       setSubmissions(prev => prev.map(sub => 
         sub.id === submissionId 
-          ? {
-              ...sub,
-              essayAnswers: sub.essayAnswers.map(answer => {
-                const grade = submissionGrades.find(g => g.questionId === answer.questionId);
-                return grade ? { ...answer, points: grade.score } : answer;
-              })
+          ? { 
+              ...sub, 
+              overallGrade: {
+                ...grade,
+                gradedAt: new Date()
+              }
             }
           : sub
       ));
       
-      alert('Grades saved successfully!');
+      alert('Grade saved successfully!');
     } catch (error) {
-      console.error('Error saving grades:', error);
-      alert('Failed to save grades. Please try again.');
+      console.error('Error saving grade:', error);
+      alert('Failed to save grade. Please try again.');
     } finally {
       setSavingGrades(false);
     }
@@ -242,20 +269,14 @@ export default function MarkSubmissions() {
     window.open(fileUrl, '_blank');
   };
 
-  // Get total score for a submission (including saved grades)
+  // Get total score for a submission
   const getTotalScore = (submissionId: string) => {
-    const submission = submissions.find(s => s.id === submissionId);
-    if (!submission) return 0;
-    
-    // Use grades from state (which now includes loaded essay results)
-    const submissionGrades = grades[submissionId] || [];
-    return submissionGrades.reduce((total, grade) => total + grade.score, 0);
+    return overallGrades[submissionId]?.totalMarks || 0;
   };
 
   // Get max possible score
   const getMaxScore = (submissionId: string) => {
-    const submissionGrades = grades[submissionId] || [];
-    return submissionGrades.reduce((total, grade) => total + grade.maxScore, 0);
+    return overallGrades[submissionId]?.maxMarks || 0;
   };
 
   if (loading) {
@@ -280,6 +301,17 @@ export default function MarkSubmissions() {
             <div className="ml-3">
               <h3 className="text-sm font-medium text-red-800 dark:text-red-200">Error</h3>
               <p className="mt-1 text-sm text-red-700 dark:text-red-300">{error}</p>
+              <div className="mt-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => router.back()}
+                  className="flex items-center space-x-2"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Back to Tests</span>
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -293,287 +325,318 @@ export default function MarkSubmissions() {
         {/* Header */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => router.back()}
-                className="flex items-center space-x-2"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                <span>Back to Tests</span>
-              </Button>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                  Mark Essay Submissions
+            <div>
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={() => router.back()}
+                  className="flex items-center text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                >
+                  <ArrowLeft className="h-5 w-5 mr-1" />
+                  Back
+                </button>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  Mark Submissions - {test?.title}
                 </h1>
-                <p className="text-gray-600 dark:text-gray-300">
-                  {test?.title} - Review and grade student essay answers
-                </p>
+                {/* Test Type Badge */}
+                {test && (
+                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                    test.questions?.some(q => q.type === 'essay' || q.questionType === 'essay')
+                      ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
+                      : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+                  }`}>
+                    {test.questions?.some(q => q.type === 'essay' || q.questionType === 'essay')
+                      ? test.questions?.every(q => q.type === 'essay' || q.questionType === 'essay')
+                        ? '📝 Essay Test'
+                        : '📝📊 Mixed Test'
+                      : '📊 MCQ Test'
+                    }
+                  </span>
+                )}
               </div>
+              <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                {test?.questions?.some(q => q.type === 'essay' || q.questionType === 'essay')
+                  ? 'Review and grade essay submissions'
+                  : 'Review MCQ test submissions'
+                }
+              </p>
             </div>
-            <div className="flex items-center bg-blue-50 dark:bg-blue-900/20 px-4 py-2 rounded-lg">
-              <GraduationCap className="w-5 h-5 text-blue-600 dark:text-blue-400 mr-2" />
-              <span className="text-blue-600 dark:text-blue-400 font-medium">
-                {submissions.length} Submissions
-              </span>
+            
+            <div className="flex items-center space-x-4">
+              <div className="text-sm text-gray-600 dark:text-gray-300">
+                <div className="flex items-center space-x-2">
+                  <Users className="h-4 w-4" />
+                  <span>{submissions.length} submissions</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Test Info */}
-        {test && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="text-center">
-                <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                </div>
-                <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                  {test.questions.filter(q => q.type === 'essay' || q.questionType === 'essay').length}
+        {/* Submissions List */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-lg font-medium text-gray-900 dark:text-white">
+              Student Submissions
+            </h2>
+          </div>
+          
+          <div className="divide-y divide-gray-200 dark:divide-gray-700">
+            {submissions.length === 0 ? (
+              <div className="p-8 text-center">
+                <FileText className="mx-auto h-12 w-12 text-gray-400" />
+                <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
+                  No submissions yet
+                </h3>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  Students haven't submitted their essays yet.
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Essay Questions</p>
               </div>
-              
-              <div className="text-center">
-                <div className="w-8 h-8 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <Users className="w-4 h-4 text-green-600 dark:text-green-400" />
+            ) : (
+              submissions.map((submission) => (
+                <div key={submission.id} className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3">
+                        <div className="flex-shrink-0">
+                          <User className="h-8 w-8 text-gray-400" />
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-medium text-gray-900 dark:text-white">
+                            {submission.studentName}
+                          </h3>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            {submission.studentEmail}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="mt-2 flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
+                        <div className="flex items-center space-x-1">
+                          <Calendar className="h-4 w-4" />
+                          <span>Submitted: {submission.submittedAt}</span>
+                        </div>
+                        
+                        {submission.submissionPdf && (
+                          <div className="flex items-center space-x-1">
+                            <FileText className="h-4 w-4" />
+                            <span>PDF Submitted</span>
+                          </div>
+                        )}
+                        
+                        <div className="flex items-center space-x-1">
+                          <GraduationCap className="h-4 w-4" />
+                          <span>
+                            Score: {getTotalScore(submission.id)}/{getMaxScore(submission.id)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center space-x-3">
+                      {submission.submissionPdf && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => downloadPdf(submission.submissionPdf!.fileUrl, submission.submissionPdf!.fileName)}
+                          className="flex items-center space-x-2"
+                        >
+                          <Download className="w-4 h-4" />
+                          <span>Download PDF</span>
+                        </Button>
+                      )}
+                      
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedSubmission(submission)}
+                        className="flex items-center space-x-2"
+                      >
+                        <Eye className="w-4 h-4" />
+                        <span>Grade</span>
+                      </Button>
+                    </div>
+                  </div>
                 </div>
-                <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                  {submissions.length}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Submissions</p>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Grading Panel */}
+        {selectedSubmission && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-medium text-gray-900 dark:text-white">
+                  Grading: {selectedSubmission.studentName}
+                </h2>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedSubmission(null)}
+                >
+                  Close
+                </Button>
               </div>
-              
-              <div className="text-center">
-                <div className="w-8 h-8 bg-yellow-100 dark:bg-yellow-900/20 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <Clock className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
+            </div>
+            
+            <div className="p-6 space-y-6">
+              {/* Student Info */}
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Student</label>
+                    <p className="text-sm text-gray-900 dark:text-white">{selectedSubmission.studentName}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Submitted</label>
+                    <p className="text-sm text-gray-900 dark:text-white">{selectedSubmission.submittedAt}</p>
+                  </div>
                 </div>
-                <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                  {submissions.filter(sub => getTotalScore(sub.id) === 0).length}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Pending</p>
               </div>
-              
-              <div className="text-center">
-                <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/20 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <CheckCircle className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+
+              {/* Submission PDF */}
+              {selectedSubmission.submissionPdf ? (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Answer Sheet
+                  </label>
+                  <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <FileText className="h-8 w-8 text-red-600" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">
+                            {selectedSubmission.submissionPdf.fileName}
+                          </p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            PDF Document
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => downloadPdf(
+                          selectedSubmission.submissionPdf!.fileUrl, 
+                          selectedSubmission.submissionPdf!.fileName
+                        )}
+                        className="flex items-center space-x-2"
+                      >
+                        <Download className="w-4 h-4" />
+                        <span>Download</span>
+                      </Button>
+                    </div>
+                  </div>
                 </div>
-                <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                  {submissions.filter(sub => getTotalScore(sub.id) > 0).length}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Graded</p>
+              ) : (
+                <div className="border border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center">
+                  <FileText className="mx-auto h-12 w-12 text-gray-400" />
+                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                    No answer sheet submitted
+                  </p>
+                </div>
+              )}
+
+              {/* Additional Notes */}
+              {selectedSubmission.additionalNotes && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Student Notes
+                  </label>
+                  <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                    <p className="text-sm text-gray-900 dark:text-white">
+                      {selectedSubmission.additionalNotes}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Grading Section */}
+              <div className="border-t pt-6">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                  Overall Grade
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Total Marks
+                    </label>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="number"
+                        min="0"
+                        max={getMaxScore(selectedSubmission.id)}
+                        value={overallGrades[selectedSubmission.id]?.totalMarks || 0}
+                        onChange={(e) => updateOverallGrade(
+                          selectedSubmission.id,
+                          Number(e.target.value),
+                          overallGrades[selectedSubmission.id]?.feedback || ''
+                        )}
+                        className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                      />
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        / {getMaxScore(selectedSubmission.id)}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Percentage
+                    </label>
+                    <div className="px-3 py-2 bg-gray-50 dark:bg-gray-700 rounded-md">
+                      <span className="text-sm text-gray-900 dark:text-white">
+                        {getMaxScore(selectedSubmission.id) > 0 
+                          ? Math.round((getTotalScore(selectedSubmission.id) / getMaxScore(selectedSubmission.id)) * 100)
+                          : 0
+                        }%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Feedback
+                  </label>
+                  <TextArea
+                    value={overallGrades[selectedSubmission.id]?.feedback || ''}
+                    onChange={(e) => updateOverallGrade(
+                      selectedSubmission.id,
+                      overallGrades[selectedSubmission.id]?.totalMarks || 0,
+                      e.target.value
+                    )}
+                    placeholder="Provide overall feedback for the student's performance..."
+                    rows={4}
+                    className="w-full"
+                  />
+                </div>
+                
+                <div className="mt-6 flex justify-end">
+                  <Button
+                    onClick={() => saveGrades(selectedSubmission.id)}
+                    disabled={savingGrades}
+                    className="flex items-center space-x-2"
+                  >
+                    {savingGrades ? (
+                      <>
+                        <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4" />
+                        <span>Save Grade</span>
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
         )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Submissions List */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-lg font-medium text-gray-900 dark:text-white">
-                Student Submissions
-              </h2>
-            </div>
-            
-            <div className="max-h-96 overflow-y-auto">
-              {submissions.map((submission) => {
-                const totalScore = getTotalScore(submission.id);
-                const maxScore = getMaxScore(submission.id);
-                const isGraded = totalScore > 0;
-                
-                return (
-                  <div
-                    key={submission.id}
-                    onClick={() => setSelectedSubmission(submission)}
-                    className={`p-4 border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 ${
-                      selectedSubmission?.id === submission.id ? 'bg-blue-50 dark:bg-blue-900/20' : ''
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <h3 className="font-medium text-gray-900 dark:text-white">
-                          {submission.studentName}
-                        </h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          {submission.studentEmail}
-                        </p>
-                        <div className="mt-1 flex items-center text-xs text-gray-500 dark:text-gray-400">
-                          <Calendar className="w-3 h-3 mr-1" />
-                          Submitted: {submission.submittedAt || 'Unknown date'}
-                        </div>
-                      </div>
-                      
-                      <div className="text-right">
-                        {isGraded ? (
-                          <div className="flex items-center text-green-600 dark:text-green-400">
-                            <CheckCircle className="w-4 h-4 mr-1" />
-                            <span className="text-sm font-medium">
-                              {totalScore}/{maxScore}
-                            </span>
-                          </div>
-                        ) : (
-                          <div className="flex items-center text-yellow-600 dark:text-yellow-400">
-                            <Clock className="w-4 h-4 mr-1" />
-                            <span className="text-sm">Pending</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Grading Panel */}
-          <div className="lg:col-span-2">
-            {selectedSubmission ? (
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-                <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h2 className="text-lg font-medium text-gray-900 dark:text-white">
-                        Grading: {selectedSubmission.studentName}
-                      </h2>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Total Score: {getTotalScore(selectedSubmission.id)}/{getMaxScore(selectedSubmission.id)}
-                      </p>
-                    </div>
-                    <Button
-                      onClick={() => saveGrades(selectedSubmission.id)}
-                      disabled={savingGrades}
-                      className="flex items-center space-x-2"
-                    >
-                      <Save className="w-4 h-4" />
-                      <span>{savingGrades ? 'Saving...' : 'Save Grades'}</span>
-                    </Button>
-                  </div>
-                </div>
-                
-                <div className="p-6 space-y-6">
-                  {selectedSubmission.essayAnswers.map((answer, index) => {
-                    const currentGrade = grades[selectedSubmission.id]?.find(g => g.questionId === answer.questionId);
-                    
-                    return (
-                      <div key={answer.questionId} className="border border-gray-200 dark:border-gray-700 rounded-lg p-6">
-                        <div className="mb-4">
-                          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                            Question {index + 1}
-                          </h3>
-                          <p className="text-gray-700 dark:text-gray-300">
-                            {answer.questionText}
-                          </p>
-                        </div>
-                        
-                        {/* Student's Text Answer */}
-                        <div className="mb-4">
-                          <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
-                            Student's Answer:
-                          </h4>
-                          <div className="bg-gray-50 dark:bg-gray-700 rounded-md p-4">
-                            <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-                              {answer.textContent || 'No text answer provided'}
-                            </p>
-                          </div>
-                        </div>
-                        
-                        {/* PDF Attachments */}
-                        {answer.pdfFiles.length > 0 && (
-                          <div className="mb-4">
-                            <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
-                              PDF Attachments:
-                            </h4>
-                            <div className="space-y-2">
-                              {answer.pdfFiles.map((pdf, pdfIndex) => (
-                                <div
-                                  key={`${pdf.fileUrl}-${pdfIndex}`}
-                                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-md"
-                                >
-                                  <div className="flex items-center space-x-3">
-                                    <FileText className="h-5 w-5 text-red-600" />
-                                    <div>
-                                      <p className="text-sm font-medium text-gray-900 dark:text-white">
-                                        {pdf.fileName}
-                                      </p>
-                                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                                        {(pdf.fileSize / (1024 * 1024)).toFixed(2)} MB
-                                      </p>
-                                    </div>
-                                  </div>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => downloadPdf(pdf.fileUrl, pdf.fileName)}
-                                    className="flex items-center space-x-1"
-                                  >
-                                    <Download className="w-3 h-3" />
-                                    <span>View</span>
-                                  </Button>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        
-                        {/* Grading Section */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                              Score (out of {answer.maxPoints})
-                            </label>
-                            <Input
-                              type="number"
-                              min="0"
-                              max={answer.maxPoints}
-                              value={currentGrade?.score || 0}
-                              onChange={(e) => updateGrade(
-                                selectedSubmission.id,
-                                answer.questionId,
-                                parseInt(e.target.value) || 0,
-                                currentGrade?.feedback || ''
-                              )}
-                              className="w-full"
-                            />
-                          </div>
-                          
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                              Feedback
-                            </label>
-                            <TextArea
-                              value={currentGrade?.feedback || ''}
-                              onChange={(e) => updateGrade(
-                                selectedSubmission.id,
-                                answer.questionId,
-                                currentGrade?.score || 0,
-                                e.target.value
-                              )}
-                              placeholder="Provide feedback for the student..."
-                              rows={3}
-                              className="w-full"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : (
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-12 text-center">
-                <GraduationCap className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                  Select a Submission
-                </h3>
-                <p className="text-gray-500 dark:text-gray-400">
-                  Choose a student submission from the list to start grading
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
       </div>
     </TeacherLayout>
   );

@@ -180,15 +180,28 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
               {/* Video Player Container */}
               <div className="relative aspect-video bg-black">
                 {video.videoUrl ? (
-                  <video
-                    controls
-                    className="w-full h-full"
-                    poster={video.thumbnailUrl}
-                    preload="metadata"
-                  >
-                    <source src={video.videoUrl} type="video/mp4" />
-                    Your browser does not support the video tag.
-                  </video>
+                  video.videoUrl.includes('youtube.com/embed/') ? (
+                    // YouTube embed
+                    <iframe
+                      src={video.videoUrl}
+                      title={video.title}
+                      className="w-full h-full"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                    />
+                  ) : (
+                    // Regular video file
+                    <video
+                      controls
+                      className="w-full h-full"
+                      poster={video.thumbnailUrl}
+                      preload="metadata"
+                    >
+                      <source src={video.videoUrl} type="video/mp4" />
+                      Your browser does not support the video tag.
+                    </video>
+                  )
                 ) : (
                   <div className="flex items-center justify-center h-full text-white">
                     <div className="text-center">

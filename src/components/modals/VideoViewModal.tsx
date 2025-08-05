@@ -49,14 +49,27 @@ export default function VideoViewModal({
         <div className="p-6 space-y-6">
           {/* Video Player */}
           <div className="aspect-video bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden">
-            <video
-              src={video.videoUrl}
-              poster={video.thumbnailUrl || undefined}
-              controls
-              className="w-full h-full object-cover"
-            >
-              Your browser does not support the video tag.
-            </video>
+            {video.videoUrl.includes('youtube.com/embed/') ? (
+              // YouTube embed
+              <iframe
+                src={video.videoUrl}
+                title={video.title}
+                className="w-full h-full"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+              />
+            ) : (
+              // Regular video file
+              <video
+                src={video.videoUrl}
+                poster={video.thumbnailUrl || undefined}
+                controls
+                className="w-full h-full object-cover"
+              >
+                Your browser does not support the video tag.
+              </video>
+            )}
           </div>
 
           {/* Video Details */}
