@@ -204,6 +204,16 @@ export default function TestResultPage() {
         setSubmission(submissionData);
         setTest(testData);
         
+        // Override pass status for essay tests that haven't been manually graded
+        const isEssayTest = testData.questions?.some(q => q.type === 'essay' || q.questionType === 'essay');
+        const hasBeenManuallyGraded = !submissionData.manualGradingPending && submissionData.totalScore !== undefined;
+        
+        if (isEssayTest && !hasBeenManuallyGraded) {
+          // For essay tests that haven't been graded by teacher, show pending_review instead of failed
+          submissionData.passStatus = 'pending_review';
+          console.log('🔄 Essay test detected - setting status to pending_review until teacher grades');
+        }
+        
         // Debug logging to see what we're getting
         console.log('🔍 SUBMISSION DATA LOADED:', {
           submissionId: submissionData.id,
@@ -212,6 +222,9 @@ export default function TestResultPage() {
           essayResults: submissionData.essayResults,
           essayResultsCount: submissionData.essayResults?.length || 0,
           manualGradingPending: submissionData.manualGradingPending,
+          passStatus: submissionData.passStatus,
+          isEssayTest,
+          hasBeenManuallyGraded,
           finalAnswers: submissionData.finalAnswers?.map(fa => ({
             questionId: fa.questionId,
             questionType: fa.questionType,
@@ -506,14 +519,14 @@ export default function TestResultPage() {
   };
 
   // Get status text
-  const getStatusText = (passStatus?: string) => {
+  const getStatusText = (passStatus?: string, isEssay?: boolean) => {
     switch (passStatus) {
       case 'passed':
         return 'Passed';
       case 'failed':
         return 'Failed';
       case 'pending_review':
-        return 'Pending Review';
+        return isEssay ? 'Awaiting Teacher Review' : 'Pending Review';
       default:
         return 'Not Graded';
     }
@@ -566,7 +579,7 @@ export default function TestResultPage() {
               <div className={`inline-flex items-center px-3 py-2 rounded-full text-sm font-medium ${getStatusColor(submission.passStatus)}`}>
                 {getStatusIcon(submission.passStatus)}
                 <span className="ml-2">
-                  {getStatusText(submission.passStatus)}
+                  {getStatusText(submission.passStatus, test.questions?.some(q => q.type === 'essay' || q.questionType === 'essay'))}
                   {submission.passStatus === 'passed' && ' 🎉'}
                 </span>
               </div>
@@ -725,15 +738,21 @@ export default function TestResultPage() {
         )}
         
         {/* Manual grading pending notice */}
-        {submission.manualGradingPending && (
+        {(submission.manualGradingPending || submission.passStatus === 'pending_review') && (
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md p-4 flex">
             <Info className="h-5 w-5 text-blue-500 mr-3 flex-shrink-0" />
             <div>
               <h3 className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                Manual Grading Pending
+                {test.questions?.some(q => q.type === 'essay' || q.questionType === 'essay') 
+                  ? 'Awaiting Teacher Review' 
+                  : 'Manual Grading Pending'
+                }
               </h3>
               <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                Some questions in this test require manual grading by your teacher. Your final score will be updated once all questions have been graded.
+                {test.questions?.some(q => q.type === 'essay' || q.questionType === 'essay')
+                  ? 'Your essay submission has been received and is awaiting review by your teacher. You will be notified once your test has been graded and your final results are available.'
+                  : 'Some questions in this test require manual grading by your teacher. Your final score will be updated once all questions have been graded.'
+                }
               </p>
             </div>
           </div>

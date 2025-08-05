@@ -599,6 +599,26 @@ export class SubmissionService {
       }
     }
 
+    // Special handling for essay test submission PDF (single PDF for all questions)
+    if (session.answers['submission_pdf']) {
+      const submissionPdfAnswer = session.answers['submission_pdf'];
+      const submissionPdfFinalAnswer: FinalAnswer = {
+        questionId: 'submission_pdf',
+        questionType: 'essay',
+        questionText: 'Complete Answer Sheet (PDF)',
+        questionMarks: 0,
+        selectedOption: 0,
+        selectedOptionText: '',
+        textContent: submissionPdfAnswer.textContent || '',
+        pdfFiles: submissionPdfAnswer.pdfFiles || [],
+        timeSpent: submissionPdfAnswer.timeSpent || 0,
+        changeCount: submissionPdfAnswer.changeHistory?.length || 0,
+        wasReviewed: submissionPdfAnswer.isMarkedForReview || false
+      };
+      finalAnswers.push(submissionPdfFinalAnswer);
+      console.log('📁 Added submission PDF to final answers:', submissionPdfFinalAnswer);
+    }
+
     return { finalAnswers, mcqResults, autoGradedScore, manualGradingPending };
   }
 
@@ -807,6 +827,65 @@ export class SubmissionService {
     }
   }
 
+  // Get submissions by student ID
+  static async getSubmissionsByStudent(studentId: string): Promise<StudentSubmission[]> {
+    try {
+      console.log('📋 Getting submissions for student:', studentId);
+      
+      const q = query(
+        collection(firestore, this.COLLECTIONS.SUBMISSIONS),
+        where('studentId', '==', studentId)
+      );
+      
+      const querySnapshot = await getDocs(q);
+      const submissions: StudentSubmission[] = [];
+      
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        submissions.push({
+          ...data,
+          id: doc.id
+        } as StudentSubmission);
+      });
+      
+      console.log('📋 Found submissions:', submissions.length);
+      return submissions;
+    } catch (error) {
+      console.error('Error getting submissions by student:', error);
+      throw new Error(`Failed to get submissions: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  // Get submissions by student and class
+  static async getSubmissionsByStudentAndClass(studentId: string, classId: string): Promise<StudentSubmission[]> {
+    try {
+      console.log('📋 Getting submissions for student:', studentId, 'class:', classId);
+      
+      const q = query(
+        collection(firestore, this.COLLECTIONS.SUBMISSIONS),
+        where('studentId', '==', studentId),
+        where('classId', '==', classId)
+      );
+      
+      const querySnapshot = await getDocs(q);
+      const submissions: StudentSubmission[] = [];
+      
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        submissions.push({
+          ...data,
+          id: doc.id
+        } as StudentSubmission);
+      });
+      
+      console.log('📋 Found submissions for class:', submissions.length);
+      return submissions;
+    } catch (error) {
+      console.error('Error getting submissions by student and class:', error);
+      throw new Error(`Failed to get submissions: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
   // Get submissions by test ID for marking
   static async getSubmissionsByTest(testId: string): Promise<StudentSubmission[]> {
     try {
@@ -932,6 +1011,40 @@ export class SubmissionService {
       console.log('✅ Essay grades updated successfully');
     } catch (error) {
       console.error('Error updating essay grades:', error);
+      throw error;
+    }
+  }
+
+  // Update overall grade for a submission (for teacher marking interface)
+  static async updateSubmissionGrade(submissionId: string, grade: {
+    totalMarks: number;
+    maxMarks: number;
+    feedback: string;
+    gradedAt: Date;
+  }): Promise<void> {
+    try {
+      const submissionRef = doc(firestore, this.COLLECTIONS.SUBMISSIONS, submissionId);
+      
+      // Update submission with overall grade
+      const updateData = {
+        overallGrade: {
+          totalMarks: grade.totalMarks,
+          maxMarks: grade.maxMarks,
+          feedback: grade.feedback,
+          gradedAt: Timestamp.fromDate(grade.gradedAt)
+        },
+        totalScore: grade.totalMarks,
+        percentage: grade.maxMarks > 0 ? Math.round((grade.totalMarks / grade.maxMarks) * 100) : 0,
+        passStatus: grade.maxMarks > 0 && grade.totalMarks >= (grade.maxMarks * 0.6) ? 'passed' : 'failed',
+        manualGradingPending: false,
+        updatedAt: Timestamp.now()
+      };
+      
+      await updateDoc(submissionRef, updateData);
+      
+      console.log('✅ Submission grade updated successfully');
+    } catch (error) {
+      console.error('Error updating submission grade:', error);
       throw error;
     }
   }

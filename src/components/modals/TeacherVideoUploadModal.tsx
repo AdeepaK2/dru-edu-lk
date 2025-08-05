@@ -12,6 +12,7 @@ import {
 import { Button, Input, Modal, TextArea } from '@/components/ui';
 import { VideoFirestoreService } from '@/apiservices/videoFirestoreService';
 import { LessonFirestoreService } from '@/apiservices/lessonFirestoreService';
+import { StudentFirestoreService } from '@/apiservices/studentFirestoreService';
 import { VideoData } from '@/models/videoSchema';
 import { LessonDocument } from '@/models/lessonSchema';
 
@@ -36,6 +37,22 @@ export default function TeacherVideoUploadModal({
   availableClasses,
   preselectedSubjectId
 }: TeacherVideoUploadModalProps) {
+  
+  // Helper function to extract YouTube video ID and generate thumbnail
+  const getYouTubeVideoInfo = (url: string) => {
+    const regex = /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/;
+    const match = url.match(regex);
+    const videoId = match?.[1];
+    
+    if (videoId) {
+      // Generate YouTube thumbnail URL and embed URL
+      const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+      const embedUrl = `https://www.youtube.com/embed/${videoId}`;
+      return { videoId, thumbnailUrl, embedUrl };
+    }
+    
+    return null;
+  };
   
   // Debug props
   useEffect(() => {
@@ -65,11 +82,14 @@ export default function TeacherVideoUploadModal({
     subjectId: '',
     lessonId: '',
     assignedClassIds: [] as string[],
+    assignedStudentIds: [] as string[], // Individual students
     tags: [] as string[],
     visibility: 'private' as 'public' | 'private' | 'unlisted',
-    price: 0
+    price: 0,
+    videoUrl: '' // Add videoUrl for link mode
   });
 
+  const [uploadMode, setUploadMode] = useState<'upload' | 'link'>('upload'); // Add upload mode state
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -78,6 +98,8 @@ export default function TeacherVideoUploadModal({
   const [tagInput, setTagInput] = useState('');
   const [availableLessons, setAvailableLessons] = useState<LessonDocument[]>([]);
   const [loadingLessons, setLoadingLessons] = useState(false);
+  const [availableStudents, setAvailableStudents] = useState<any[]>([]);
+  const [loadingStudents, setLoadingStudents] = useState(false);
 
   // Get classes for selected subject
   const filteredClasses = availableClasses.filter(cls => 
@@ -107,6 +129,27 @@ export default function TeacherVideoUploadModal({
     loadLessons();
   }, [formData.subjectId]);
 
+  // Load available students when modal opens
+  useEffect(() => {
+    const loadStudents = async () => {
+      if (!isOpen) return;
+
+      setLoadingStudents(true);
+      try {
+        // Get all students - you can modify this to filter by teacher's students only
+        const students = await StudentFirestoreService.getAllStudents();
+        setAvailableStudents(students);
+      } catch (error) {
+        console.error('Error loading students:', error);
+        setAvailableStudents([]);
+      } finally {
+        setLoadingStudents(false);
+      }
+    };
+
+    loadStudents();
+  }, [isOpen]);
+
   // Reset lesson selection when subject changes
   useEffect(() => {
     if (formData.lessonId && !availableLessons.find(lesson => lesson.id === formData.lessonId)) {
@@ -128,6 +171,15 @@ export default function TeacherVideoUploadModal({
       assignedClassIds: prev.assignedClassIds.includes(classId)
         ? prev.assignedClassIds.filter(id => id !== classId)
         : [...prev.assignedClassIds, classId]
+    }));
+  };
+
+  const handleStudentSelection = (studentId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      assignedStudentIds: prev.assignedStudentIds.includes(studentId)
+        ? prev.assignedStudentIds.filter(id => id !== studentId)
+        : [...prev.assignedStudentIds, studentId]
     }));
   };
 
@@ -205,10 +257,33 @@ export default function TeacherVideoUploadModal({
       setError('Please select a subject');
       return false;
     }
-    if (!videoFile) {
-      setError('Please select a video file to upload');
-      return false;
+    
+    // Validate based on upload mode
+    if (uploadMode === 'upload') {
+      if (!videoFile) {
+        setError('Please select a video file to upload');
+        return false;
+      }
+    } else if (uploadMode === 'link') {
+      if (!formData.videoUrl.trim()) {
+        setError('Please enter a video URL');
+        return false;
+      }
+      // Basic URL validation
+      try {
+        new URL(formData.videoUrl);
+      } catch {
+        setError('Please enter a valid video URL');
+        return false;
+      }
+      // Check if it's a YouTube URL
+      const isYouTubeUrl = formData.videoUrl.includes('youtube.com') || formData.videoUrl.includes('youtu.be');
+      if (!isYouTubeUrl) {
+        setError('Currently only YouTube URLs are supported');
+        return false;
+      }
     }
+    
     return true;
   };
 
@@ -221,16 +296,34 @@ export default function TeacherVideoUploadModal({
     setUploadProgress(0);
     
     try {
-      // Upload video file
-      const videoUrl = await VideoFirestoreService.uploadVideo(
-        videoFile!,
-        (progress) => setUploadProgress(progress)
-      );
+      let videoUrl = '';
       
-      // Upload thumbnail if provided
+      if (uploadMode === 'upload') {
+        // Upload video file
+        videoUrl = await VideoFirestoreService.uploadVideo(
+          videoFile!,
+          (progress) => setUploadProgress(progress)
+        );
+      } else {
+        // Convert YouTube URL to embed format
+        const youtubeInfo = getYouTubeVideoInfo(formData.videoUrl);
+        if (youtubeInfo) {
+          videoUrl = youtubeInfo.embedUrl;
+        } else {
+          videoUrl = formData.videoUrl.trim();
+        }
+      }
+      
+      // Upload thumbnail if provided (works for both modes)
       let thumbnailUrl = '';
       if (thumbnailFile) {
         thumbnailUrl = await VideoFirestoreService.uploadThumbnail(thumbnailFile);
+      } else if (uploadMode === 'link') {
+        // Auto-generate thumbnail for YouTube videos
+        const youtubeInfo = getYouTubeVideoInfo(formData.videoUrl);
+        if (youtubeInfo) {
+          thumbnailUrl = youtubeInfo.thumbnailUrl;
+        }
       }
       
       // Get subject name
@@ -249,6 +342,7 @@ export default function TeacherVideoUploadModal({
         lessonId: formData.lessonId || undefined,
         lessonName: selectedLesson?.name || undefined,
         assignedClassIds: formData.assignedClassIds,
+        assignedStudentIds: formData.assignedStudentIds,
         tags: formData.tags,
         teacherId,
         visibility: formData.visibility,
@@ -282,15 +376,19 @@ export default function TeacherVideoUploadModal({
         subjectId: preselectedSubjectId || '',
         lessonId: '',
         assignedClassIds: [],
+        assignedStudentIds: [],
         tags: [],
         visibility: 'private',
-        price: 0
+        price: 0,
+        videoUrl: ''
       });
+      setUploadMode('upload'); // Reset to default mode
       setVideoFile(null);
       setThumbnailFile(null);
       setError(null);
       setTagInput('');
       setAvailableLessons([]);
+      setAvailableStudents([]);
       setUploadProgress(0);
       onClose();
     }
@@ -347,14 +445,19 @@ export default function TeacherVideoUploadModal({
                 <Loader2 className="h-5 w-5 text-blue-400 animate-spin" />
                 <div className="ml-3 flex-1">
                   <p className="text-sm text-blue-700 dark:text-blue-300">
-                    Uploading video... {uploadProgress}%
+                    {uploadMode === 'upload' 
+                      ? `Uploading video... ${uploadProgress}%`
+                      : 'Creating video entry...'
+                    }
                   </p>
-                  <div className="mt-2 bg-blue-200 dark:bg-blue-800 rounded-full h-2">
-                    <div 
-                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${uploadProgress}%` }}
-                    />
-                  </div>
+                  {uploadMode === 'upload' && (
+                    <div className="mt-2 bg-blue-200 dark:bg-blue-800 rounded-full h-2">
+                      <div 
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${uploadProgress}%` }}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -461,35 +564,95 @@ export default function TeacherVideoUploadModal({
                 )}
               </div>
 
-              {/* Video File Upload */}
+              {/* Upload Mode Toggle */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Video File *
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                  Video Source *
                 </label>
-                <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6">
-                  <div className="text-center">
-                    <Video className="mx-auto h-12 w-12 text-gray-400" />
-                    <div className="mt-4">
-                      <label htmlFor="video-upload" className="cursor-pointer">
-                        <span className="mt-2 block text-sm font-medium text-gray-900 dark:text-white">
-                          {videoFile ? videoFile.name : 'Click to upload video'}
-                        </span>
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
-                          MP4, MOV, AVI up to 500MB
-                        </span>
-                      </label>
-                      <input
-                        id="video-upload"
-                        type="file"
-                        accept="video/*"
-                        onChange={handleVideoFileChange}
-                        disabled={uploading}
-                        className="hidden"
-                      />
+                <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+                  <button
+                    type="button"
+                    onClick={() => setUploadMode('upload')}
+                    className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                      uploadMode === 'upload'
+                        ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
+                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                    }`}
+                    disabled={uploading}
+                  >
+                    <Upload className="w-4 h-4 inline mr-2" />
+                    Upload File
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setUploadMode('link')}
+                    className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                      uploadMode === 'link'
+                        ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
+                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                    }`}
+                    disabled={uploading}
+                  >
+                    <Video className="w-4 h-4 inline mr-2" />
+                    Insert Link
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  {uploadMode === 'upload' 
+                    ? 'Upload a video file from your device'
+                    : 'Insert a YouTube video link'
+                  }
+                </p>
+              </div>
+
+              {/* Video File Upload or URL Input */}
+              {uploadMode === 'upload' ? (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Video File *
+                  </label>
+                  <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6">
+                    <div className="text-center">
+                      <Video className="mx-auto h-12 w-12 text-gray-400" />
+                      <div className="mt-4">
+                        <label htmlFor="video-upload" className="cursor-pointer">
+                          <span className="mt-2 block text-sm font-medium text-gray-900 dark:text-white">
+                            {videoFile ? videoFile.name : 'Click to upload video'}
+                          </span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            MP4, MOV, AVI up to 500MB
+                          </span>
+                        </label>
+                        <input
+                          id="video-upload"
+                          type="file"
+                          accept="video/*"
+                          onChange={handleVideoFileChange}
+                          disabled={uploading}
+                          className="hidden"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    YouTube Video URL *
+                  </label>
+                  <Input
+                    type="url"
+                    value={formData.videoUrl}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange('videoUrl', e.target.value)}
+                    placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..."
+                    disabled={uploading}
+                    required
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Enter a valid YouTube video URL. Make sure the video is public or unlisted.
+                  </p>
+                </div>
+              )}
 
               {/* Thumbnail Upload */}
               <div>
@@ -547,6 +710,42 @@ export default function TeacherVideoUploadModal({
                           />
                           <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">
                             {cls.name}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Individual Student Assignment */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Assign to Individual Students
+                </label>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                  Recommend this video to specific students (e.g., advanced students from lower grades)
+                </p>
+                <div className="border border-gray-300 dark:border-gray-600 rounded-md p-3 max-h-32 overflow-y-auto">
+                  {loadingStudents ? (
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Loading students...</p>
+                  ) : availableStudents.length === 0 ? (
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      No students available for individual assignment
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {availableStudents.map(student => (
+                        <label key={student.id} className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={formData.assignedStudentIds.includes(student.id)}
+                            onChange={() => handleStudentSelection(student.id)}
+                            disabled={uploading}
+                            className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                          />
+                          <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                            {student.name} ({student.email})
                           </span>
                         </label>
                       ))}
@@ -700,10 +899,17 @@ export default function TeacherVideoUploadModal({
             >
               {uploading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
+              ) : uploadMode === 'upload' ? (
                 <Upload className="w-4 h-4" />
+              ) : (
+                <Video className="w-4 h-4" />
               )}
-              <span>{uploading ? 'Uploading...' : 'Upload Video'}</span>
+              <span>
+                {uploading 
+                  ? (uploadMode === 'upload' ? 'Uploading...' : 'Creating...') 
+                  : (uploadMode === 'upload' ? 'Upload Video' : 'Add Video')
+                }
+              </span>
             </Button>
           </div>
         </form>

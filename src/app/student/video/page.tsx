@@ -15,11 +15,13 @@ import Link from 'next/link';
 // Import services and types
 import { ClassFirestoreService } from '@/apiservices/classFirestoreService';
 import { TeacherFirestoreService } from '@/apiservices/teacherFirestoreService';
+import { VideoFirestoreService } from '@/apiservices/videoFirestoreService';
 import { getEnrollmentsByStudent } from '@/services/studentEnrollmentService';
 
 export default function StudentVideos() {
   const { student } = useStudentAuth();
   const [studentClasses, setStudentClasses] = useState<any[]>([]);
+  const [individualVideos, setIndividualVideos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -90,6 +92,16 @@ export default function StudentVideos() {
         
         console.log('🔍 Student classes with details loaded:', classesWithDetails);
         setStudentClasses(classesWithDetails);
+        
+        // Load videos individually assigned to this student
+        try {
+          const assignedVideos = await VideoFirestoreService.getVideosByStudent(student.id);
+          console.log('🔍 Individual videos assigned to student:', assignedVideos);
+          setIndividualVideos(assignedVideos);
+        } catch (videoErr) {
+          console.error('Error loading individual videos:', videoErr);
+          setIndividualVideos([]);
+        }
         
       } catch (err: any) {
         console.error('Error loading student classes:', err);
@@ -173,6 +185,60 @@ export default function StudentVideos() {
           />
         </div>
       </div>
+
+      {/* Teacher Selected Videos Section */}
+      {individualVideos.length > 0 && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                🎯 Teacher Selected Videos for You
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400 text-sm">
+                Special video recommendations from your teachers
+              </p>
+            </div>
+            <div className="bg-blue-50 dark:bg-blue-900/20 px-3 py-1 rounded-full">
+              <span className="text-blue-600 dark:text-blue-400 font-medium text-sm">
+                {individualVideos.length} video{individualVideos.length > 1 ? 's' : ''}
+              </span>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {individualVideos.map((video) => (
+              <div key={video.id} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+                <div className="flex items-start space-x-3">
+                  <div className="flex-shrink-0">
+                    <div className="w-16 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
+                      <Play className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                      {video.title}
+                    </h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
+                      {video.description}
+                    </p>
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+                        {video.subjectName}
+                      </span>
+                      <Link 
+                        href={`/student/video/${video.id}/watch`}
+                        className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded transition-colors"
+                      >
+                        Watch
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Classes Grid */}
       <div>

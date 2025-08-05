@@ -924,11 +924,24 @@ export default function StudentTests() {
                               <div key={test.id} className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700">
                                 <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                                   <div className="mb-4 md:mb-0">
-                                    <div className="flex items-center">
+                                    <div className="flex items-center space-x-2">
                                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                                         {test.title}
                                       </h3>
-                                      <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300">
+                                      {/* Test Type Badge */}
+                                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                        test.questions?.some(q => q.type === 'essay' || q.questionType === 'essay')
+                                          ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
+                                          : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+                                      }`}>
+                                        {test.questions?.some(q => q.type === 'essay' || q.questionType === 'essay')
+                                          ? test.questions?.every(q => q.type === 'essay' || q.questionType === 'essay')
+                                            ? '📝 Essay'
+                                            : '📝📊 Mixed'
+                                          : '📊 MCQ'
+                                        }
+                                      </span>
+                                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300">
                                         Live Now
                                       </span>
                                     </div>
@@ -983,11 +996,24 @@ export default function StudentTests() {
                               <div key={test.id} className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700">
                                 <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                                   <div>
-                                    <div className="flex items-center">
+                                    <div className="flex items-center space-x-2">
                                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                                         {test.title}
                                       </h3>
-                                      <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300">
+                                      {/* Test Type Badge */}
+                                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                        test.questions?.some(q => q.type === 'essay' || q.questionType === 'essay')
+                                          ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
+                                          : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+                                      }`}>
+                                        {test.questions?.some(q => q.type === 'essay' || q.questionType === 'essay')
+                                          ? test.questions?.every(q => q.type === 'essay' || q.questionType === 'essay')
+                                            ? '📝 Essay'
+                                            : '📝📊 Mixed'
+                                          : '📊 MCQ'
+                                        }
+                                      </span>
+                                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300">
                                         Upcoming
                                       </span>
                                     </div>
@@ -1026,11 +1052,24 @@ export default function StudentTests() {
                               <div key={test.id} className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700">
                                 <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                                   <div className="mb-4 md:mb-0">
-                                    <div className="flex items-center">
+                                    <div className="flex items-center space-x-2">
                                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                                         {test.title}
                                       </h3>
-                                      <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
+                                      {/* Test Type Badge */}
+                                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                        test.questions?.some(q => q.type === 'essay' || q.questionType === 'essay')
+                                          ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
+                                          : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+                                      }`}>
+                                        {test.questions?.some(q => q.type === 'essay' || q.questionType === 'essay')
+                                          ? test.questions?.every(q => q.type === 'essay' || q.questionType === 'essay')
+                                            ? '📝 Essay'
+                                            : '📝📊 Mixed'
+                                          : '📊 MCQ'
+                                        }
+                                      </span>
+                                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
                                         Available
                                       </span>
                                     </div>
@@ -1080,11 +1119,24 @@ export default function StudentTests() {
                               <div key={test.id} className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700">
                                 <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                                   <div>
-                                    <div className="flex items-center">
+                                    <div className="flex items-center space-x-2">
                                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                                         {test.title}
                                       </h3>
-                                      <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300">
+                                      {/* Test Type Badge */}
+                                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                        test.questions?.some(q => q.type === 'essay' || q.questionType === 'essay')
+                                          ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
+                                          : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+                                      }`}>
+                                        {test.questions?.some(q => q.type === 'essay' || q.questionType === 'essay')
+                                          ? test.questions?.every(q => q.type === 'essay' || q.questionType === 'essay')
+                                            ? '📝 Essay'
+                                            : '📝📊 Mixed'
+                                          : '📊 MCQ'
+                                        }
+                                      </span>
+                                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300">
                                         Completed
                                       </span>
                                     </div>

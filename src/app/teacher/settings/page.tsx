@@ -45,7 +45,7 @@ interface PasswordChangeData {
 }
 
 export default function TeacherSettings() {
-  const { teacher } = useTeacherAuth();
+  const { teacher, loading: authLoading, error: authError } = useTeacherAuth();
   const [activeTab, setActiveTab] = useState<'profile' | 'password'>('profile');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
@@ -338,13 +338,15 @@ export default function TeacherSettings() {
     handleProfileInputChange('profileImageUrl', '');
   };
 
-  if (!teacher) {
+  if (authLoading || !teacher) {
     return (
       <TeacherLayout>
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <div className="w-16 h-16 border-t-4 border-blue-600 border-solid rounded-full animate-spin mx-auto"></div>
-            <p className="mt-4 text-gray-600 dark:text-gray-300 font-medium">Loading...</p>
+            <p className="mt-4 text-gray-600 dark:text-gray-300 font-medium">
+              {authLoading ? 'Authenticating...' : 'Loading...'}
+            </p>
           </div>
         </div>
       </TeacherLayout>

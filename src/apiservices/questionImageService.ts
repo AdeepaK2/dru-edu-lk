@@ -4,7 +4,7 @@ import {
   getDownloadURL, 
   deleteObject 
 } from 'firebase/storage';
-import { storage } from '@/utils/firebase-client';
+import { storage, auth } from '@/utils/firebase-client';
 
 // Constants for storage paths
 const QUESTION_IMAGES_PATH = 'questions/images';
@@ -77,6 +77,23 @@ export class QuestionImageService {
       console.log('🔍 QuestionImageService: Starting upload to path:', path);
       console.log('🔍 File details:', { name: file.name, size: file.size, type: file.type });
       
+      // Check authentication status before upload
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        throw new Error('User not authenticated. Please log in again.');
+      }
+      
+      console.log('🔍 Current user for upload:', currentUser.uid);
+      
+      // Get fresh token to ensure we have latest claims
+      try {
+        const token = await currentUser.getIdToken(true);
+        console.log('🔍 Fresh token obtained for upload');
+      } catch (tokenError) {
+        console.error('❌ Failed to get fresh token:', tokenError);
+        throw new Error('Authentication token refresh failed. Please log in again.');
+      }
+      
       const timestamp = Date.now();
       const fileName = `${timestamp}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
       const fullPath = `${path}/${fileName}`;
@@ -107,6 +124,13 @@ export class QuestionImageService {
               errorMessage = 'Upload was canceled.';
             } else if (error.code === 'storage/quota-exceeded') {
               errorMessage = 'Upload failed: Storage quota exceeded.';
+            } else if (error.code === 'storage/unknown') {
+              // Check if it's a 412 error (common with auth issues)
+              if (error.message.includes('412')) {
+                errorMessage = 'Upload failed: Authentication issue. Please refresh the page and try again.';
+              } else {
+                errorMessage = 'Upload failed: Unknown storage error. Please try again or contact support.';
+              }
             }
             
             reject(new Error(errorMessage));

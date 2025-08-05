@@ -746,14 +746,32 @@ export default function QuestionForm({
         </div>
 
         <div>
-          <Select
-            label="Points"
-            value={formData.points.toString()}
-            onChange={(e) => handleInputChange('points', parseInt(e.target.value))}
-            options={pointsOptions}
-            required
-            disabled={loading}
-          />
+          {questionType === 'essay' ? (
+            <Input
+              label="Points"
+              type="number"
+              min="1"
+              value={formData.points.toString()}
+              onChange={(e) => handleInputChange('points', parseInt(e.target.value) || 1)}
+              placeholder="Enter points (e.g., 10, 15, 20)"
+              required
+              disabled={loading}
+              style={{ 
+                MozAppearance: 'textfield',
+                WebkitAppearance: 'none'
+              }}
+              className="[&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            />
+          ) : (
+            <Select
+              label="Points"
+              value={formData.points.toString()}
+              onChange={(e) => handleInputChange('points', parseInt(e.target.value))}
+              options={pointsOptions}
+              required
+              disabled={loading}
+            />
+          )}
         </div>
 
         {questionType === 'mcq' && (
