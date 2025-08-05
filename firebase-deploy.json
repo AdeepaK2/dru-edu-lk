@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "deploy:firestore:production": "firebase deploy --only firestore --project dru-edu --database production",
+    "deploy:firestore:default": "firebase deploy --only firestore --project dru-edu --database (default)",
+    "deploy:indexes:production": "firebase deploy --only firestore:indexes --project dru-edu --database production",
+    "deploy:rules:production": "firebase deploy --only firestore:rules --project dru-edu --database production"
+  }
+}

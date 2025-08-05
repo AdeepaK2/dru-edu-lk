@@ -9,6 +9,7 @@ dru-edu-firebase-adminsdk-fbsvc-ea48ac613a.json
 .env.local
 .env.development.local
 .env.test.local
+.env.production
 .env.production.local
 secrets.json
 
