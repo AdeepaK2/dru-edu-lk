@@ -34,7 +34,7 @@ import { QuestionBank } from '@/models/questionBankSchema';
 import { Timestamp } from 'firebase/firestore';
 
 export default function TeacherTests() {
-  const { teacher } = useTeacherAuth();
+  const { teacher, loading: authLoading, error: authError } = useTeacherAuth();
   const [tests, setTests] = useState<Test[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -54,10 +54,20 @@ export default function TeacherTests() {
   const [testCompletionCounts, setTestCompletionCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
+    if (authLoading) {
+      console.log('⏳ Authentication still loading, waiting...');
+      return;
+    }
+
+    if (authError) {
+      console.error('❌ Authentication error:', authError);
+      return;
+    }
+
     if (teacher) {
       loadTeacherData();
     }
-  }, [teacher]);
+  }, [teacher, authLoading, authError]);
 
   // Periodic update for live test completion counts
   useEffect(() => {
@@ -400,7 +410,7 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
     }
   };
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <TeacherLayout>
         <div className="space-y-6">

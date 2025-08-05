@@ -29,7 +29,7 @@ import QuestionBankModal from '@/components/modals/QuestionBankModal';
 
 export default function TeacherQuestionBanks() {
   const router = useRouter();
-  const { teacher } = useTeacherAuth();
+  const { teacher, loading: authLoading, error: authError } = useTeacherAuth();
   const { showToast } = useToast();
 
   // State management
@@ -58,7 +58,23 @@ export default function TeacherQuestionBanks() {
   // Fetch question banks that the teacher has access to
   useEffect(() => {
     const fetchQuestionBanks = async () => {
+      // Don't proceed if auth is still loading
+      if (authLoading) {
+        console.log('⏳ Authentication still loading, waiting...');
+        return;
+      }
+
+      // Check for auth errors
+      if (authError) {
+        console.error('❌ Authentication error:', authError);
+        setError(authError);
+        setLoading(false);
+        return;
+      }
+
+      // Check if teacher is authenticated
       if (!teacher?.id) {
+        console.log('❌ Teacher not authenticated, skipping fetch');
         setLoading(false);
         return;
       }
@@ -89,7 +105,7 @@ export default function TeacherQuestionBanks() {
     };
 
     fetchQuestionBanks();
-  }, [teacher?.id]);
+  }, [teacher?.id, authLoading, authError]);
 
   // Filter question banks based on search, grade, and subject
   const filteredBanks = useMemo(() => {
@@ -207,13 +223,15 @@ export default function TeacherQuestionBanks() {
     setEditingBank(null);
   };
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <TeacherLayout>
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <div className="w-16 h-16 border-t-4 border-blue-600 border-solid rounded-full animate-spin mx-auto"></div>
-            <p className="mt-4 text-gray-600 dark:text-gray-300 font-medium">Loading question banks...</p>
+            <p className="mt-4 text-gray-600 dark:text-gray-300 font-medium">
+              {authLoading ? 'Authenticating...' : 'Loading question banks...'}
+            </p>
           </div>
         </div>
       </TeacherLayout>

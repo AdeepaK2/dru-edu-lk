@@ -298,7 +298,22 @@ export default function TeacherMeetingPage() {
   };
 
   const getAllTimeSlots = (): TimeSlot[] => {
-    return availabilitySlots.flatMap(availability => generateTimeSlots(availability));
+    const now = new Date();
+    
+    return availabilitySlots
+      .filter(availability => {
+        // Filter out past availability dates
+        const availabilityDate = new Date(availability.date);
+        return availabilityDate >= new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      })
+      .flatMap(availability => {
+        const slots = generateTimeSlots(availability);
+        // Filter out past time slots within the same day
+        return slots.filter(slot => {
+          const slotDateTime = new Date(`${slot.date}T${slot.startTime}`);
+          return slotDateTime > now;
+        });
+      });
   };
 
   const getMeetingStatus = (meeting: TimeSlot) => {
@@ -531,13 +546,25 @@ export default function TeacherMeetingPage() {
 
               {/* Availability List */}
               <div className="space-y-4">
-                {availabilitySlots.length === 0 ? (
+                {availabilitySlots.filter(slot => {
+                  // Only show current and future availability slots
+                  const now = new Date();
+                  const slotDate = new Date(slot.date);
+                  return slotDate >= new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                }).length === 0 ? (
                   <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                     <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p>No availability slots added yet</p>
+                    <p>No upcoming availability slots</p>
                   </div>
                 ) : (
-                  availabilitySlots.map((slot) => (
+                  availabilitySlots
+                    .filter(slot => {
+                      // Only show current and future availability slots
+                      const now = new Date();
+                      const slotDate = new Date(slot.date);
+                      return slotDate >= new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                    })
+                    .map((slot) => (
                     <div
                       key={slot.id}
                       className="p-4 border border-gray-200 dark:border-gray-600 rounded-lg"
@@ -634,14 +661,26 @@ export default function TeacherMeetingPage() {
           </div>
 
           <div className="p-6">
-            {bookedMeetings.length === 0 ? (
+            {bookedMeetings.filter(meeting => {
+              // Only show current and future meetings
+              const now = new Date();
+              const meetingDate = new Date(`${meeting.date}T${meeting.startTime}`);
+              return meetingDate > now;
+            }).length === 0 ? (
               <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                 <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>No meetings scheduled yet</p>
+                <p>No upcoming meetings scheduled</p>
               </div>
             ) : (
               <div className="space-y-4">
-                {bookedMeetings.map((meeting) => {
+                {bookedMeetings
+                  .filter(meeting => {
+                    // Only show current and future meetings
+                    const now = new Date();
+                    const meetingDate = new Date(`${meeting.date}T${meeting.startTime}`);
+                    return meetingDate > now;
+                  })
+                  .map((meeting) => {
                   const meetingStatus = getMeetingStatus(meeting);
                   return (
                     <div

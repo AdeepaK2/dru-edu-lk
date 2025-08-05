@@ -39,6 +39,27 @@ export const useImageUpload = () => {
     
     console.log('✅ User authenticated:', currentUser.uid);
     
+    // Force token refresh to ensure we have the latest claims and a fresh token
+    try {
+      console.log('🔄 Refreshing authentication token...');
+      await currentUser.getIdToken(true); // Force refresh
+      console.log('✅ Authentication token refreshed successfully');
+      
+      // Verify user has teacher role claims
+      const tokenResult = await currentUser.getIdTokenResult();
+      console.log('🔑 User claims:', tokenResult.claims);
+      
+      if (!tokenResult.claims.teacher && tokenResult.claims.role !== 'teacher') {
+        console.error('❌ User does not have teacher role claims');
+        return { imageUrl: '', error: 'Access denied. Teacher permissions required for image upload.' };
+      }
+      
+      console.log('✅ Teacher role verified');
+    } catch (error) {
+      console.error('❌ Error refreshing token or checking claims:', error);
+      return { imageUrl: '', error: 'Authentication error. Please log in again.' };
+    }
+    
     if (!file) {
       return { imageUrl: '', error: 'No file provided' };
     }

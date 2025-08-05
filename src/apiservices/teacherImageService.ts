@@ -1,4 +1,4 @@
-import { storage } from '@/utils/firebase-client';
+import { storage, auth } from '@/utils/firebase-client';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 
 export class TeacherImageService {
@@ -22,7 +22,6 @@ export class TeacherImageService {
       }
 
       // Check if user is authenticated
-      const { auth } = await import('@/utils/firebase-client');
       const currentUser = auth.currentUser;
       
       if (!currentUser) {
@@ -31,6 +30,26 @@ export class TeacherImageService {
 
       console.log('Current user:', currentUser.uid);
       console.log('Teacher ID:', teacherId);
+
+      // Force token refresh to ensure we have the latest claims and a fresh token
+      try {
+        console.log('🔄 Refreshing authentication token for profile image upload...');
+        await currentUser.getIdToken(true); // Force refresh
+        console.log('✅ Authentication token refreshed successfully');
+        
+        // Verify user has teacher role claims
+        const tokenResult = await currentUser.getIdTokenResult();
+        console.log('🔑 User claims for profile upload:', tokenResult.claims);
+        
+        if (!tokenResult.claims.teacher && tokenResult.claims.role !== 'teacher') {
+          throw new Error('Access denied. Teacher permissions required for profile image upload.');
+        }
+        
+        console.log('✅ Teacher role verified for profile upload');
+      } catch (error) {
+        console.error('❌ Error refreshing token or checking claims for profile upload:', error);
+        throw new Error('Authentication error. Please log in again.');
+      }
 
       // Create a unique filename with timestamp
       const timestamp = Date.now();
@@ -67,6 +86,13 @@ export class TeacherImageService {
               errorMessage = 'Storage quota exceeded. Please contact support.';
             } else if (error.code === 'storage/invalid-format') {
               errorMessage = 'Invalid file format. Please use JPG, PNG, or GIF images.';
+            } else if (error.code === 'storage/unknown') {
+              // Check if it's a 412 error (common with auth issues)
+              if (error.message.includes('412')) {
+                errorMessage = 'Upload failed: Authentication issue. Please refresh the page and try again.';
+              } else {
+                errorMessage = 'Upload failed: Unknown storage error. Please try again or contact support.';
+              }
             } else {
               errorMessage = `Upload failed: ${error.message}`;
             }

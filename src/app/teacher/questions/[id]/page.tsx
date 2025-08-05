@@ -34,7 +34,7 @@ export default function TeacherQuestionBankDetail() {
   const router = useRouter();
   const params = useParams();
   const bankId = params.id as string;
-  const { teacher } = useTeacherAuth();
+  const { teacher, loading: authLoading, error: authError } = useTeacherAuth();
   const { showToast } = useToast();
 
   // State management
@@ -60,6 +60,28 @@ export default function TeacherQuestionBankDetail() {
   // Load question bank and its questions
   useEffect(() => {
     const loadData = async () => {
+      // Don't proceed if auth is still loading
+      if (authLoading) {
+        console.log('⏳ Authentication still loading, waiting...');
+        return;
+      }
+
+      // Check for auth errors
+      if (authError) {
+        console.error('❌ Authentication error:', authError);
+        setError(authError);
+        setLoading(false);
+        return;
+      }
+
+      // Check if teacher is authenticated
+      if (!teacher?.id) {
+        console.error('❌ Teacher not authenticated');
+        setError('Teacher not authenticated. Please log in again.');
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       setError(null);
       
@@ -76,10 +98,6 @@ export default function TeacherQuestionBankDetail() {
         console.log('🔍 Question bank loaded:', bank);
         
         // Check if teacher has access to this question bank using proper access control
-        if (!teacher?.id) {
-          throw new Error('Teacher not authenticated');
-        }
-        
         const hasAccess = await teacherAccessBankService.hasAccess(teacher.id, bankId);
         if (!hasAccess) {
           throw new Error('You do not have access to this question bank');
@@ -110,7 +128,7 @@ export default function TeacherQuestionBankDetail() {
     };
     
     loadData();
-  }, [bankId, teacher?.id]);
+  }, [bankId, teacher?.id, authLoading, authError]);
 
   // Filter questions based on search and filters
   const filteredQuestions = questions.filter(question => {
@@ -314,13 +332,15 @@ export default function TeacherQuestionBankDetail() {
     }
   };
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <TeacherLayout>
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <div className="w-16 h-16 border-t-4 border-blue-600 border-solid rounded-full animate-spin mx-auto"></div>
-            <p className="mt-4 text-gray-600 dark:text-gray-300 font-medium">Loading question bank...</p>
+            <p className="mt-4 text-gray-600 dark:text-gray-300 font-medium">
+              {authLoading ? 'Authenticating...' : 'Loading question bank...'}
+            </p>
           </div>
         </div>
       </TeacherLayout>
