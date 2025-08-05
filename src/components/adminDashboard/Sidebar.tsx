@@ -24,6 +24,7 @@ const menuItems = [
   { label: 'Teachers', icon: <GraduationCap size={20} />, path: '/admin/teachers' },
   { label: 'Subjects', icon: <Library size={20} />, path: '/admin/subjects' },
   { label: 'Classes', icon: <BookOpen size={20} />, path: '/admin/classes' },
+  { label: 'Books', icon: <BookOpen size={20} />, path: '/admin/books' },
   { label: 'Video Portal', icon: <Video size={20} />, path: '/admin/videos' },
   { label: 'Meetings', icon: <Video size={20} />, path: '/admin/meetings' },
   { label: 'Transactions', icon: <CreditCard size={20} />, path: '/admin/transactions' },

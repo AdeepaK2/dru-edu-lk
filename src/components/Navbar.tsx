@@ -10,7 +10,7 @@ const Navbar: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
-            <div className="flex items-center space-x-3">
+            <Link href="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity duration-200">
               <div className="w-10 h-10 rounded-full flex items-center justify-center">
                 <Image 
                   src="/Logo.png" 
@@ -21,13 +21,21 @@ const Navbar: React.FC = () => {
                 />
               </div>
               <h1 className="text-2xl font-bold text-white tracking-tight">Dr. U Education</h1>
-            </div>
+            </Link>
           </div>
           <div className="hidden md:block">
             <div className="ml-10 flex items-center space-x-6">
               <a href="#about" className="text-white/90 hover:text-white hover:bg-white/10 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">About</a>
-              <a href="#subjects" className="text-white/90 hover:text-white hover:bg-white/10 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">Subjects</a>
-              <a href="#testimonials" className="text-white/90 hover:text-white hover:bg-white/10 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">Reviews</a>
+              
+              {/* Courses page link */}
+              <Link href="/courses" className="text-white/90 hover:text-white hover:bg-white/10 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">Courses</Link>
+              
+              {/* Books page link */}
+              <Link href="/books" className="text-white/90 hover:text-white hover:bg-white/10 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">Books</Link>
+              
+              {/* Schedule page link */}
+              <Link href="/schedule" className="text-white/90 hover:text-white hover:bg-white/10 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">Schedule</Link>
+              
               <a href="#contact" className="text-white/90 hover:text-white hover:bg-white/10 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">Contact</a>
               
               {/* Login Dropdown */}

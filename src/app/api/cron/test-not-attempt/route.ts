@@ -280,46 +280,64 @@ async function sendMissedTestEmail(student: any, test: any) {
       message: {
         subject: `Test Not Attempted - ${student.name}`,
         html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-              <h2 style="color: #dc3545; margin-top: 0;">Test Not Attempted</h2>
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Test Not Attempted</title>
+          </head>
+          <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="background: linear-gradient(135deg, #dc3545, #c82333); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+              <h1 style="margin: 0; font-size: 28px;">Test Not Attempted</h1>
+              <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;">Important notification about ${student.name}</p>
             </div>
             
-            <p>Dear ${student.parent?.name || 'Parent/Guardian'},</p>
-            
-            <p>We hope this message finds you well. We are writing to inform you that your child <strong>${student.name}</strong> did not attempt the following test:</p>
-            
-            <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
-              <h3 style="margin-top: 0; color: #495057;">Test Details</h3>
-              <p><strong>Test Title:</strong> ${test.title}</p>
-              <p><strong>Subject:</strong> ${test.subjectName}</p>
-              <p><strong>Test Type:</strong> ${testType}</p>
-              <p><strong>Test Ended:</strong> ${endTime}</p>
-              ${test.description ? `<p><strong>Description:</strong> ${test.description}</p>` : ''}
+            <div style="background: white; padding: 30px; border: 1px solid #ddd; border-top: none;">
+              <p style="margin-top: 0;">Dear ${student.parent?.name || 'Parent/Guardian'},</p>
+              
+              <p>We hope this message finds you well. We are writing to inform you that your child <strong>${student.name}</strong> did not attempt the following test:</p>
+              
+              <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #dc3545;">
+                <h3 style="margin: 0 0 15px 0; color: #01143d; font-size: 18px;">Test Details</h3>
+                <p style="margin: 8px 0; color: #666;"><strong>Test Title:</strong> ${test.title}</p>
+                <p style="margin: 8px 0; color: #666;"><strong>Subject:</strong> ${test.subjectName || 'N/A'}</p>
+                <p style="margin: 8px 0; color: #666;"><strong>Test Type:</strong> ${testType}</p>
+                <p style="margin: 8px 0; color: #666;"><strong>Test Ended:</strong> ${endTime}</p>
+                ${test.description ? `<p style="margin: 8px 0; color: #666;"><strong>Description:</strong> ${test.description}</p>` : ''}
+              </div>
+              
+              <p>Please discuss with your child about the importance of participating in all scheduled assessments. If there were any technical difficulties or other issues that prevented participation, please contact us so we can assist.</p>
+              
+              <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin: 25px 0;">
+                <h3 style="margin: 0 0 15px 0; color: #0088e0; font-size: 16px;">What to do next:</h3>
+                <ul style="margin: 0; padding-left: 20px; color: #666;">
+                  <li style="margin: 8px 0;">Speak with ${student.name} about the missed test</li>
+                  <li style="margin: 8px 0;">Contact the teacher if there were technical issues</li>
+                  <li style="margin: 8px 0;">Ensure ${student.name} is prepared for upcoming tests</li>
+                  <li style="margin: 8px 0;">Check the student portal for any makeup test opportunities</li>
+                </ul>
+              </div>
+              
+              <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #ffc107;">
+                <p style="margin: 0; color: #856404;"><strong>Contact Information:</strong></p>
+                <p style="margin: 8px 0 0 0; color: #856404;">If you have any questions or concerns, please contact us at <a href="mailto:support@dru-edu.com" style="color: #0088e0;">support@dru-edu.com</a></p>
+              </div>
+              
+              <div style="text-align: center; padding-top: 20px; border-top: 1px solid #eee;">
+                <p style="margin: 0; color: #666;">Best regards,</p>
+                <p style="margin: 5px 0; font-weight: bold; color: #01143d;">Academic Team</p>
+                <p style="margin: 0; color: #666;">DRU Education</p>
+              </div>
+              
+              <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 25px; text-align: center;">
+                <p style="margin: 0; font-size: 12px; color: #6c757d;">
+                  This is an automated notification. Please do not reply to this email.
+                </p>
+              </div>
             </div>
-            
-            <p>Please discuss with your child about the importance of participating in all scheduled assessments. If there were any technical difficulties or other issues that prevented participation, please contact us so we can assist.</p>
-            
-            <div style="background-color: #e3f2fd; padding: 15px; border-radius: 5px; margin: 20px 0;">
-              <p style="margin: 0;"><strong>What to do next:</strong></p>
-              <ul style="margin: 10px 0;">
-                <li>Speak with ${student.name} about the missed test</li>
-                <li>Contact the teacher if there were technical issues</li>
-                <li>Ensure ${student.name} is prepared for upcoming tests</li>
-              </ul>
-            </div>
-            
-            <p>If you have any questions or concerns, please don't hesitate to contact us.</p>
-            
-            <p>Best regards,<br>
-            <strong>Academic Team</strong><br>
-            DRU Education</p>
-            
-            <hr style="border: none; border-top: 1px solid #dee2e6; margin: 30px 0;">
-            <p style="font-size: 12px; color: #6c757d;">
-              This is an automated notification. Please do not reply to this email.
-            </p>
-          </div>
+          </body>
+          </html>
         `
       }
     };

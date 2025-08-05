@@ -47,12 +47,14 @@ export function StudentDetailModal({ isOpen, onClose, student, classId }: Studen
     
     setLoadingLessons(true);
     try {
-      // Get lesson IDs from weak topics
+      // Generate lesson recommendations based on weak topics
       const weakTopics = student.weakTopics.slice(0, 3);
       const allLessonIds: string[] = [];
       
       for (const topic of weakTopics) {
-        allLessonIds.push(...topic.lessonsRecommended);
+        // Generate lesson IDs based on topic names (placeholder implementation)
+        const lessonId = `lesson-${topic.topic.toLowerCase().replace(/\s+/g, '-')}`;
+        allLessonIds.push(lessonId);
       }
       
       // Remove duplicates
@@ -194,7 +196,7 @@ export function StudentDetailModal({ isOpen, onClose, student, classId }: Studen
             </div>
             <div className="mt-2">
               <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                {student.testsCompleted}
+                {student.totalTests}
               </span>
             </div>
           </div>
@@ -206,25 +208,25 @@ export function StudentDetailModal({ isOpen, onClose, student, classId }: Studen
             </div>
             <div className="mt-2">
               <span className="text-sm font-medium text-gray-900 dark:text-white">
-                {student.lastActivity.toLocaleDateString()}
+                {student.lastActiveDate?.toDate().toLocaleDateString() || 'Never'}
               </span>
             </div>
           </div>
 
           <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
             <div className="flex items-center space-x-2">
-              {student.recentTrend === 'improving' && <TrendingUp className="w-5 h-5 text-green-500" />}
-              {student.recentTrend === 'declining' && <TrendingDown className="w-5 h-5 text-red-500" />}
-              {student.recentTrend === 'stable' && <BarChart3 className="w-5 h-5 text-gray-500" />}
+              {student.improvementTrend === 'improving' && <TrendingUp className="w-5 h-5 text-green-500" />}
+              {student.improvementTrend === 'declining' && <TrendingDown className="w-5 h-5 text-red-500" />}
+              {student.improvementTrend === 'stable' && <BarChart3 className="w-5 h-5 text-gray-500" />}
               <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Trend</span>
             </div>
             <div className="mt-2">
               <span className={`text-sm font-medium capitalize ${
-                student.recentTrend === 'improving' ? 'text-green-600 dark:text-green-400' :
-                student.recentTrend === 'declining' ? 'text-red-600 dark:text-red-400' :
+                student.improvementTrend === 'improving' ? 'text-green-600 dark:text-green-400' :
+                student.improvementTrend === 'declining' ? 'text-red-600 dark:text-red-400' :
                 'text-gray-600 dark:text-gray-400'
               }`}>
-                {student.recentTrend}
+                {student.improvementTrend}
               </span>
             </div>
           </div>
@@ -289,32 +291,30 @@ export function StudentDetailModal({ isOpen, onClose, student, classId }: Studen
       <>
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-medium text-gray-900 dark:text-white">Test Results History</h3>
-          <Badge variant="secondary">{student.testsCompleted} completed</Badge>
+          <Badge variant="secondary">{student.totalTests} completed</Badge>
         </div>
 
         <div className="space-y-3">
-          {student.testScores.map((test) => (
+          {student.recentTestScores.map((test) => (
             <div key={test.testId} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
                   <h4 className="font-medium text-gray-900 dark:text-white">{test.testTitle}</h4>
                   <div className="flex items-center space-x-4 mt-1">
                     <span className="text-sm text-gray-500 dark:text-gray-400">
-                      {test.submittedAt.toLocaleDateString()}
+                      {test.completedAt.toDate().toLocaleDateString()}
                     </span>
-                    <Badge 
-                      variant={test.passStatus === 'passed' ? 'success' : test.passStatus === 'failed' ? 'destructive' : 'secondary'}
-                    >
-                      {test.passStatus}
+                    <Badge variant="secondary">
+                      Completed
                     </Badge>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className={`text-lg font-bold ${getPerformanceColor(test.percentage)}`}>
-                    {Math.round(test.percentage)}%
+                  <div className="text-lg font-bold text-gray-900 dark:text-white">
+                    {test.score} points
                   </div>
                   <div className="text-sm text-gray-500 dark:text-gray-400">
-                    {test.score}/{test.score ? Math.round(test.score / test.percentage * 100) : 0} points
+                    Score
                   </div>
                 </div>
               </div>
@@ -356,13 +356,11 @@ export function StudentDetailModal({ isOpen, onClose, student, classId }: Studen
                       <span className="ml-2 font-medium">{Math.round((topic.correctAnswers / topic.totalQuestions) * 100)}%</span>
                     </div>
                   </div>
-                  {topic.lessonsRecommended.length > 0 && (
-                    <div className="mt-2">
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
-                        {topic.lessonsRecommended.length} lesson(s) recommended
-                      </span>
-                    </div>
-                  )}
+                  <div className="mt-2">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      Lesson recommendations available
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>

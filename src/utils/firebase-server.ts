@@ -2,8 +2,8 @@ import * as admin from 'firebase-admin';
 import { getApps, cert } from 'firebase-admin/app';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
 import { getAuth, Auth } from 'firebase-admin/auth';
-import { getStorage, Storage } from 'firebase-admin/storage';
-import { getDatabase, Database } from 'firebase-admin/database';
+// import { getStorage, Storage } from 'firebase-admin/storage'; // Commented out until needed
+// import { getDatabase, Database } from 'firebase-admin/database'; // Commented out until needed
 
 // Set default timezone to Melbourne
 if (typeof process !== 'undefined' && process.env && !process.env.TZ) {
@@ -47,7 +47,7 @@ function initializeFirebaseAdmin() {
 
       admin.initializeApp({
         credential: cert(serviceAccount as admin.ServiceAccount),
-        databaseURL: 'https://dru-edu-default-rtdb.asia-southeast1.firebasedatabase.app',
+        // databaseURL: 'https://dru-edu-default-rtdb.asia-southeast1.firebasedatabase.app',
         storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
       });
       console.log('Firebase Admin initialized successfully');
@@ -63,8 +63,8 @@ function initializeFirebaseAdmin() {
 const adminInstance = initializeFirebaseAdmin();
 const db: Firestore = getFirestore();
 const auth: Auth = getAuth();
-const storage: Storage = getStorage();
-const rtdb: Database = getDatabase();
+// const storage: Storage = getStorage(); // Commented out until we fix bucket config
+// const rtdb: Database = getDatabase(); // Commented out until we need Realtime Database
 
 // Firestore helpers
 const firestore = {
@@ -144,75 +144,75 @@ const authentication = {
   }
 };
 
-// Storage helpers
-const fileStorage = {
-  bucket: storage.bucket(),
+// Storage helpers (commented out until bucket config is fixed)
+// const fileStorage = {
+//   bucket: storage.bucket(),
   
-  getFileUrl(filePath: string): string {
-    return `https://storage.googleapis.com/${process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET}/${filePath}`;
-  },
+//   getFileUrl(filePath: string): string {
+//     return `https://storage.googleapis.com/${process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET}/${filePath}`;
+//   },
   
-  async uploadFile(filePath: string, content: Buffer, metadata?: any): Promise<void> {
-    const file = storage.bucket().file(filePath);
-    await file.save(content, { metadata });
-  },
+//   async uploadFile(filePath: string, content: Buffer, metadata?: any): Promise<void> {
+//     const file = storage.bucket().file(filePath);
+//     await file.save(content, { metadata });
+//   },
   
-  async getFile(filePath: string): Promise<Buffer> {
-    const [content] = await storage.bucket().file(filePath).download();
-    return content;
-  },
+//   async getFile(filePath: string): Promise<Buffer> {
+//     const [content] = await storage.bucket().file(filePath).download();
+//     return content;
+//   },
   
-  async deleteFile(filePath: string): Promise<void> {
-    await storage.bucket().file(filePath).delete();
-  },
+//   async deleteFile(filePath: string): Promise<void> {
+//     await storage.bucket().file(filePath).delete();
+//   },
   
-  async getDownloadUrl(filePath: string): Promise<string> {
-    const [url] = await storage.bucket().file(filePath).getSignedUrl({
-      action: 'read',
-      expires: Date.now() + 15 * 60 * 1000, // 15 minutes
-    });
-    return url;
-  }
-};
+//   async getDownloadUrl(filePath: string): Promise<string> {
+//     const [url] = await storage.bucket().file(filePath).getSignedUrl({
+//       action: 'read',
+//       expires: Date.now() + 15 * 60 * 1000, // 15 minutes,
+//     });
+//     return url;
+//   }
+// };
 
-// Realtime Database helpers
-const realtimeDb = {
-  ref: (path: string) => rtdb.ref(path),
+// Realtime Database helpers (commented out until needed)
+// const realtimeDb = {
+//   ref: (path: string) => rtdb.ref(path),
   
-  async getData(path: string): Promise<any> {
-    const snapshot = await rtdb.ref(path).once('value');
-    return snapshot.val();
-  },
+//   async getData(path: string): Promise<any> {
+//     const snapshot = await rtdb.ref(path).once('value');
+//     return snapshot.val();
+//   },
   
-  async setData(path: string, data: any): Promise<void> {
-    await rtdb.ref(path).set(data);
-  },
+//   async setData(path: string, data: any): Promise<void> {
+//     await rtdb.ref(path).set(data);
+//   },
   
-  async updateData(path: string, data: any): Promise<void> {
-    await rtdb.ref(path).update(data);
-  },
+//   async updateData(path: string, data: any): Promise<void> {
+//     await rtdb.ref(path).update(data);
+//   },
   
-  async pushData(path: string, data: any): Promise<string> {
-    const ref = await rtdb.ref(path).push(data);
-    return ref.key as string;
-  },
+//   async pushData(path: string, data: any): Promise<string> {
+//     const ref = await rtdb.ref(path).push(data);
+//     return ref.key as string;
+//   },
   
-  async removeData(path: string): Promise<void> {
-    await rtdb.ref(path).remove();
-  }
-};
+//   async removeData(path: string): Promise<void> {
+//     await rtdb.ref(path).remove();
+//   }
+// };
 
 // Export the Firebase server instance
 export const firebaseAdmin = {
   admin: adminInstance,
   db,
   auth,
-  storage,
-  rtdb,
+  // storage, // Commented out until bucket config is fixed
+  // rtdb, // Commented out until needed
   firestore,
   authentication,
-  fileStorage,
-  realtimeDb
+  // fileStorage, // Commented out until bucket config is fixed
+  // realtimeDb // Commented out until needed
 };
 
 export default firebaseAdmin;
