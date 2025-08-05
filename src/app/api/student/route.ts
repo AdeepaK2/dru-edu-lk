@@ -96,8 +96,16 @@ export async function POST(req: NextRequest) {
     const validatedData = studentSchema.safeParse(body);
     
     if (!validatedData.success) {
+      const errorMessages = validatedData.error.issues.map(issue => 
+        `${issue.path.join('.')}: ${issue.message}`
+      ).join(', ');
+      
       return NextResponse.json(
-        { error: "Invalid input data", details: validatedData.error.issues },
+        { 
+          error: "Validation failed", 
+          message: errorMessages,
+          details: validatedData.error.issues 
+        },
         { status: 400 }
       );
     }
