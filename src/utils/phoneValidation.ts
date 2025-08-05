@@ -1,5 +1,5 @@
 // Phone validation utility functions
-export const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+export const phoneRegex = /^[\+]?[\d\s\-\(\)]{9,17}$/;
 
 /**
  * Validates phone number format

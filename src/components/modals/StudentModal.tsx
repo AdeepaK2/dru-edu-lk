@@ -51,6 +51,7 @@ export default function StudentModal({
   // Initialize form data when modal opens or initialData changes
   useEffect(() => {
     if (isOpen) {
+      setErrors({}); // Clear errors when modal opens
       if (initialData) {
         setFormData({
           name: initialData.name,
@@ -107,17 +108,38 @@ export default function StudentModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate phone numbers
+    // Validate phone numbers with more lenient validation
     const newErrors: Record<string, string> = {};
     
-    const studentPhoneValidation = validatePhoneNumber(formData.phone);
-    if (!studentPhoneValidation.isValid) {
-      newErrors.studentPhone = studentPhoneValidation.message || 'Invalid phone number';
+    // Basic phone validation - just check if it's not empty and has reasonable length
+    if (!formData.phone.trim()) {
+      newErrors.studentPhone = 'Student phone number is required';
+    } else if (formData.phone.replace(/\D/g, '').length < 9) {
+      newErrors.studentPhone = 'Student phone number must have at least 9 digits';
     }
     
-    const parentPhoneValidation = validatePhoneNumber(formData.parent.phone);
-    if (!parentPhoneValidation.isValid) {
-      newErrors.parentPhone = parentPhoneValidation.message || 'Invalid phone number';
+    if (!formData.parent.phone.trim()) {
+      newErrors.parentPhone = 'Parent phone number is required';
+    } else if (formData.parent.phone.replace(/\D/g, '').length < 9) {
+      newErrors.parentPhone = 'Parent phone number must have at least 9 digits';
+    }
+    
+    // Basic email validation
+    if (!formData.email.includes('@')) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+    
+    if (!formData.parent.email.includes('@')) {
+      newErrors.parentEmail = 'Please enter a valid parent email address';
+    }
+    
+    // Basic name validation
+    if (!formData.name.trim()) {
+      newErrors.name = 'Student name is required';
+    }
+    
+    if (!formData.parent.name.trim()) {
+      newErrors.parentName = 'Parent name is required';
     }
     
     setErrors(newErrors);
@@ -160,6 +182,7 @@ export default function StudentModal({
         lastPayment: 'N/A'
       }
     });
+    setErrors({}); // Clear errors when closing
     onClose();
   };
 
@@ -173,6 +196,26 @@ export default function StudentModal({
     >
       <form onSubmit={handleSubmit}>
         <div className="px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+          {/* Error Summary */}
+          {Object.keys(errors).length > 0 && (
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+              <div className="flex">
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-red-800">
+                    Please fix the following errors:
+                  </h3>
+                  <div className="mt-2 text-sm text-red-700">
+                    <ul className="list-disc list-inside space-y-1">
+                      {Object.entries(errors).map(([field, message]) => (
+                        <li key={field}>{message}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Student Information */}
             <div className="space-y-4">
@@ -187,6 +230,7 @@ export default function StudentModal({
                 onChange={(e) => handleInputChange('name', e.target.value)}
                 placeholder="Enter student's full name"
                 required
+                error={errors.name}
               />
 
               <Input
@@ -196,6 +240,7 @@ export default function StudentModal({
                 onChange={(e) => handleInputChange('email', e.target.value)}
                 placeholder="Enter student's email address"
                 required
+                error={errors.email}
               />
 
               <Input
@@ -203,8 +248,9 @@ export default function StudentModal({
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => handleInputChange('phone', e.target.value)}
-                placeholder="Enter student's phone number"
+                placeholder="Enter student's phone number (e.g., +61412345678 or 0412345678)"
                 required
+                error={errors.studentPhone}
               />
 
               <Input
@@ -229,6 +275,7 @@ export default function StudentModal({
                 onChange={(e) => handleParentChange('name', e.target.value)}
                 placeholder="Enter parent's full name"
                 required
+                error={errors.parentName}
               />
 
               <Input
@@ -238,6 +285,7 @@ export default function StudentModal({
                 onChange={(e) => handleParentChange('email', e.target.value)}
                 placeholder="Enter parent's email address"
                 required
+                error={errors.parentEmail}
               />
 
               <Input
@@ -245,8 +293,9 @@ export default function StudentModal({
                 type="tel"
                 value={formData.parent.phone}
                 onChange={(e) => handleParentChange('phone', e.target.value)}
-                placeholder="Enter parent's phone number"
+                placeholder="Enter parent's phone number (e.g., +61412345678 or 0412345678)"
                 required
+                error={errors.parentPhone}
               />
             </div>
           </div>
