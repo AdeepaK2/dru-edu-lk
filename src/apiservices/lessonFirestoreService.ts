@@ -132,8 +132,7 @@ export class LessonFirestoreService {
       const q = query(
         collection(db, LESSONS_COLLECTION),
         where('subjectId', '==', subjectId),
-        orderBy('order', 'asc'),
-        orderBy('createdAt', 'desc')
+        orderBy('order', 'asc')
       );
         const querySnapshot = await getDocs(q);
       return querySnapshot.docs.map(doc => {
@@ -159,8 +158,7 @@ export class LessonFirestoreService {
     const q = query(
       collection(db, LESSONS_COLLECTION),
       where('subjectId', '==', subjectId),
-      orderBy('order', 'asc'),
-      orderBy('createdAt', 'desc')
+      orderBy('order', 'asc')
     );
 
     return onSnapshot(
@@ -260,8 +258,7 @@ export class LessonFirestoreService {
       const q = query(
         collection(db, LESSON_SETS_COLLECTION),
         where('subjectId', '==', subjectId),
-        orderBy('order', 'asc'),
-        orderBy('createdAt', 'desc')
+        orderBy('order', 'asc')
       );
         const querySnapshot = await getDocs(q);
       return querySnapshot.docs.map(doc => {
@@ -287,8 +284,7 @@ export class LessonFirestoreService {
     const q = query(
       collection(db, LESSON_SETS_COLLECTION),
       where('subjectId', '==', subjectId),
-      orderBy('order', 'asc'),
-      orderBy('createdAt', 'desc')
+      orderBy('order', 'asc')
     );
 
     return onSnapshot(
