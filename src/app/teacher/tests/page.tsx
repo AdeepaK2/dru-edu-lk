@@ -23,9 +23,11 @@ import TeacherLayout from '@/components/teacher/TeacherLayout';
 import CreateTestModal from '@/components/modals/CreateTestModal';
 import { useTeacherAuth } from '@/hooks/useTeacherAuth';
 import { TestService } from '@/apiservices/testService';
+import { SubmissionService } from '@/apiservices/submissionService';
 import { ClassFirestoreService } from '@/apiservices/classFirestoreService';
 import { questionBankService } from '@/apiservices/questionBankFirestoreService';
 import { teacherAccessBankService } from '@/apiservices/teacherAccessBankService';
+import { getEnrollmentsByClass } from '@/services/studentEnrollmentService';
 import { Test, LiveTest, FlexibleTest } from '@/models/testSchema';
 import { ClassDocument } from '@/models/classSchema';
 import { QuestionBank } from '@/models/questionBankSchema';
@@ -44,12 +46,33 @@ export default function TeacherTests() {
   // New state for class-based view
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'overview' | 'class-detail'>('overview');
+  
+  // State for tracking student enrollment counts per class
+  const [classEnrollmentCounts, setClassEnrollmentCounts] = useState<Record<string, number>>({});
+  
+  // State for tracking test completion counts for live tests
+  const [testCompletionCounts, setTestCompletionCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
     if (teacher) {
       loadTeacherData();
     }
   }, [teacher]);
+
+  // Periodic update for live test completion counts
+  useEffect(() => {
+    if (tests.length === 0) return;
+    
+    const liveTests = tests.filter(test => test.type === 'live');
+    if (liveTests.length === 0) return;
+    
+    // Update completion counts every 30 seconds for live tests
+    const interval = setInterval(() => {
+      loadCompletionCounts(tests);
+    }, 30000); // 30 seconds
+    
+    return () => clearInterval(interval);
+  }, [tests]);
 
   const loadTeacherData = async () => {
     try {
@@ -134,10 +157,16 @@ export default function TeacherTests() {
         const teacherTests = await TestService.getTeacherTests(teacher!.id);
         setTests(teacherTests);
         console.log('✅ Loaded teacher tests:', teacherTests.length);
+        
+        // Load completion counts for live tests
+        await loadCompletionCounts(teacherTests);
       } catch (testError) {
         console.warn('No tests found for teacher (this is normal for new teachers):', testError);
         setTests([]); // Set empty array if no tests
       }
+
+      // Load enrollment counts for each class
+      await loadEnrollmentCounts(assignedClasses);
     } catch (error) {
       console.error('Error loading teacher data:', error);
       alert('Failed to load teacher data. Please refresh the page.');
@@ -145,6 +174,65 @@ export default function TeacherTests() {
       setLoading(false);
       setLoadingClasses(false);
       setLoadingQuestionBanks(false);
+    }
+  };
+
+  // Function to load enrollment counts for classes
+  const loadEnrollmentCounts = async (classes: ClassDocument[]) => {
+    try {
+      const enrollmentCounts: Record<string, number> = {};
+      
+      // Load enrollment count for each class
+      await Promise.all(
+        classes.map(async (classItem) => {
+          try {
+            const enrollments = await getEnrollmentsByClass(classItem.id);
+            // Only count active enrollments
+            const activeEnrollments = enrollments.filter(e => e.status === 'Active');
+            enrollmentCounts[classItem.id] = activeEnrollments.length;
+            console.log(`✅ Class ${classItem.name}: ${activeEnrollments.length} active students`);
+          } catch (error) {
+            console.warn(`Failed to load enrollments for class ${classItem.id}:`, error);
+            enrollmentCounts[classItem.id] = 0;
+          }
+        })
+      );
+      
+      setClassEnrollmentCounts(enrollmentCounts);
+      console.log('✅ Loaded enrollment counts:', enrollmentCounts);
+    } catch (error) {
+      console.error('Error loading enrollment counts:', error);
+    }
+  };
+
+  // Function to load completion counts for live tests
+  const loadCompletionCounts = async (tests: Test[]) => {
+    try {
+      const completionCounts: Record<string, number> = {};
+      
+      // Get completion counts for live tests that are currently active
+      await Promise.all(
+        tests.map(async (test) => {
+          if (test.type === 'live') {
+            try {
+              const submissions = await SubmissionService.getTestSubmissions(test.id);
+              // Count only completed submissions (submitted or auto_submitted)
+              const completedSubmissions = submissions.filter(s => 
+                s.status === 'submitted' || s.status === 'auto_submitted'
+              );
+              completionCounts[test.id] = completedSubmissions.length;
+            } catch (error) {
+              console.warn(`Failed to load submissions for test ${test.id}:`, error);
+              completionCounts[test.id] = 0;
+            }
+          }
+        })
+      );
+      
+      setTestCompletionCounts(completionCounts);
+      console.log('✅ Loaded completion counts:', completionCounts);
+    } catch (error) {
+      console.error('Error loading completion counts:', error);
     }
   };
 
@@ -220,6 +308,12 @@ export default function TeacherTests() {
     window.location.href = `/teacher/tests/${testId}/mark`;
   };
 
+  // Navigate to results page
+  const handleViewResults = (testId: string) => {
+    // Navigate to the results page
+    window.location.href = `/teacher/tests/${testId}/results`;
+  };
+
   const formatDateTime = (timestamp: any) => {
     let date: Date;
     
@@ -283,7 +377,15 @@ export default function TeacherTests() {
   };
 
   const deleteTest = async (testId: string) => {
-    if (!confirm('Are you sure you want to delete this test? This action cannot be undone.')) {
+    const confirmMessage = `⚠️ WARNING: This will permanently delete the test and ALL related data including:
+
+• Student submissions and grades
+• Test analytics and reports  
+• Student attempts and progress data
+
+This action CANNOT be undone. Are you absolutely sure you want to delete this test?`;
+
+    if (!confirm(confirmMessage)) {
       return;
     }
 
@@ -291,9 +393,10 @@ export default function TeacherTests() {
       // Use Firebase client service directly
       await TestService.deleteTest(testId);
       setTests(prev => prev.filter(test => test.id !== testId));
+      alert('✅ Test and all related data have been successfully deleted.');
     } catch (error) {
       console.error('Error deleting test:', error);
-      alert('Failed to delete test. Please try again.');
+      alert('❌ Failed to delete test. Please try again.');
     }
   };
 
@@ -355,19 +458,6 @@ export default function TeacherTests() {
                       )}
                     </div>
                   )}
-                </div>
-                <div className="flex items-center space-x-3">
-                  {teacherClasses.length === 0 && !loadingClasses && (
-                    <div className="text-sm text-gray-500 dark:text-gray-400 mr-4">
-                      Need class assignment
-                    </div>
-                  )}
-                  <button
-                    onClick={() => loadTeacherData()}
-                    className="inline-flex items-center px-3 py-1 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    🔄 Debug Reload
-                  </button>
                 </div>
               </div>
             </div>
@@ -435,7 +525,7 @@ export default function TeacherTests() {
                           <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
                             <span className="flex items-center">
                               <Users className="h-4 w-4 mr-1" />
-                              {classItem.enrolledStudents || 0} students
+                              {classEnrollmentCounts[classItem.id] || 0} students
                             </span>
                             <span className="flex items-center">
                               <FileText className="h-4 w-4 mr-1" />
@@ -464,13 +554,13 @@ export default function TeacherTests() {
                   <Users className="h-8 w-8 text-purple-600" />
                   <div className="ml-4">
                     <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                      Assigned Classes
+                      Total Students
                     </p>
                     <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                      {loadingClasses ? '-' : teacherClasses.length}
+                      {Object.values(classEnrollmentCounts).reduce((sum, count) => sum + count, 0)}
                     </p>
                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                      {getTeacherSubjects().length} unique subject{getTeacherSubjects().length !== 1 ? 's' : ''}
+                      Across {teacherClasses.length} class{teacherClasses.length !== 1 ? 'es' : ''}
                     </p>
                   </div>
                 </div>
@@ -566,7 +656,7 @@ export default function TeacherTests() {
                             </span>
                             <span className="flex items-center">
                               <Users className="h-4 w-4 mr-1" />
-                              {selectedClass?.enrolledStudents || 0} students
+                              {selectedClass ? (classEnrollmentCounts[selectedClass.id] || 0) : 0} students
                             </span>
                             <span className="flex items-center">
                               <FileText className="h-4 w-4 mr-1" />
@@ -686,7 +776,7 @@ export default function TeacherTests() {
                                           </span>
                                         </div>
                                         <div className="mt-1 text-xs text-green-600 dark:text-green-400">
-                                          Students online: {isLive.studentsOnline} | Completed: {isLive.studentsCompleted}
+                                          Completed: {testCompletionCounts[test.id] || 0}
                                         </div>
                                       </div>
                                     )}
@@ -697,7 +787,7 @@ export default function TeacherTests() {
                                           <AlertCircle className="h-4 w-4 text-blue-600" />
                                           <span className="text-sm font-medium text-blue-800 dark:text-blue-400">
                                             {test.type === 'live' 
-                                              ? `Students can join from ${formatDateTime((test as LiveTest).studentJoinTime)}`
+                                              ? `Students can join from ${formatDateTime((test as LiveTest).scheduledStartTime)}`
                                               : `Available from ${formatDateTime((test as FlexibleTest).availableFrom)}`
                                             }
                                           </span>
@@ -706,37 +796,26 @@ export default function TeacherTests() {
                                     )}
                                   </div>
 
-                                  <div className="flex items-center space-x-2 ml-4">
-                                    <button
-                                      className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                                      title="View Details"
-                                    >
-                                      <Eye className="h-4 w-4" />
-                                    </button>
-                                    
+                                  <div className="flex items-center space-x-3 ml-4">
                                     {/* Show marking button for essay tests */}
                                     {hasEssayQuestions(test) && (
                                       <button
                                         onClick={() => handleMarkSubmissions(test.id)}
-                                        className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
-                                        title="Mark Submissions"
+                                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
                                       >
-                                        <GraduationCap className="h-4 w-4" />
+                                        <CheckSquare className="h-4 w-4 mr-2" />
+                                        Mark Answers
                                       </button>
                                     )}
                                     
                                     <button
-                                      className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors"
-                                      title="View Analytics"
+                                      onClick={() => handleViewResults(test.id)}
+                                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
                                     >
-                                      <BarChart3 className="h-4 w-4" />
+                                      <BarChart3 className="h-4 w-4 mr-2" />
+                                      View Results
                                     </button>
-                                    <button
-                                      className="p-2 text-gray-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition-colors"
-                                      title="Settings"
-                                    >
-                                      <Settings className="h-4 w-4" />
-                                    </button>
+                                    
                                     <button
                                       onClick={() => deleteTest(test.id)}
                                       className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"

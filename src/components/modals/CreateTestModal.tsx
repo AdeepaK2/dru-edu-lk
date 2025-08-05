@@ -436,7 +436,7 @@ export default function CreateTestModal({
       } else {
         // Live test
         const startTime = new Date(formData.scheduledStartTime);
-        const studentJoinTime = new Date(startTime.getTime() - 5 * 60 * 1000); // 5 minutes before
+        const studentJoinTime = new Date(startTime.getTime()); // Students can join exactly at start time
         const endTime = new Date(startTime.getTime() + (formData.duration + formData.bufferTime) * 60 * 1000);
 
         testData = {
@@ -1118,7 +1118,7 @@ export default function CreateTestModal({
                       <div className="text-sm text-blue-800 dark:text-blue-200">
                         <p className="font-medium mb-1">Live Test Schedule:</p>
                         <ul className="space-y-1 text-xs">
-                          <li>• Students can join 5 minutes before start time</li>
+                          <li>• Students can join at the exact start time</li>
                           <li>• Test runs for the specified duration</li>
                           <li>• Buffer time is added for technical issues</li>
                           <li>• All students take the test simultaneously</li>

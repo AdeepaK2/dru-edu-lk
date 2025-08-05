@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { Menu } from 'lucide-react';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 import StudentSidebar from '@/components/student/StudentSidebar';
@@ -13,10 +14,19 @@ interface StudentLayoutProps {
 export default function StudentLayout({ children }: StudentLayoutProps) {
   const { user, student, loading, error, isAuthenticated } = useStudentAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const pathname = usePathname();
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
+
+  // If we're on a login-related route, bypass authentication checks
+  const isLoginRoute = pathname?.startsWith('/student/login');
+  
+  // For login routes, just render the children without auth checks
+  if (isLoginRoute) {
+    return <>{children}</>;
+  }
 
   if (loading) {
     return (

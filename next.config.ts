@@ -12,6 +12,7 @@ const nextConfig: NextConfig = {
         trailingSlash: true,
         images: {
           unoptimized: true,
+          domains: ['images.unsplash.com'],
         },
       }
     : {
@@ -19,6 +20,7 @@ const nextConfig: NextConfig = {
         output: 'standalone',
         images: {
           formats: ['image/webp', 'image/avif'],
+          domains: ['images.unsplash.com'],
         },
       }
   ),

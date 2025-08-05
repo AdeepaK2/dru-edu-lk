@@ -87,7 +87,7 @@ export interface SimplifiedLiveTest extends BaseSimplifiedTest {
   bufferTime: number; // additional time in minutes (default 5)
   
   // Calculated times
-  studentJoinTime: Timestamp; // 5 minutes before start
+  studentJoinTime: Timestamp; // Exactly at start time
   actualEndTime: Timestamp; // start + duration + buffer
   
   // Live test status
