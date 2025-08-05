@@ -827,6 +827,65 @@ export class SubmissionService {
     }
   }
 
+  // Get submissions by student ID
+  static async getSubmissionsByStudent(studentId: string): Promise<StudentSubmission[]> {
+    try {
+      console.log('📋 Getting submissions for student:', studentId);
+      
+      const q = query(
+        collection(firestore, this.COLLECTIONS.SUBMISSIONS),
+        where('studentId', '==', studentId)
+      );
+      
+      const querySnapshot = await getDocs(q);
+      const submissions: StudentSubmission[] = [];
+      
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        submissions.push({
+          ...data,
+          id: doc.id
+        } as StudentSubmission);
+      });
+      
+      console.log('📋 Found submissions:', submissions.length);
+      return submissions;
+    } catch (error) {
+      console.error('Error getting submissions by student:', error);
+      throw new Error(`Failed to get submissions: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  // Get submissions by student and class
+  static async getSubmissionsByStudentAndClass(studentId: string, classId: string): Promise<StudentSubmission[]> {
+    try {
+      console.log('📋 Getting submissions for student:', studentId, 'class:', classId);
+      
+      const q = query(
+        collection(firestore, this.COLLECTIONS.SUBMISSIONS),
+        where('studentId', '==', studentId),
+        where('classId', '==', classId)
+      );
+      
+      const querySnapshot = await getDocs(q);
+      const submissions: StudentSubmission[] = [];
+      
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        submissions.push({
+          ...data,
+          id: doc.id
+        } as StudentSubmission);
+      });
+      
+      console.log('📋 Found submissions for class:', submissions.length);
+      return submissions;
+    } catch (error) {
+      console.error('Error getting submissions by student and class:', error);
+      throw new Error(`Failed to get submissions: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
   // Get submissions by test ID for marking
   static async getSubmissionsByTest(testId: string): Promise<StudentSubmission[]> {
     try {
