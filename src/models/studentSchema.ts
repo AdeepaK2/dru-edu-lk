@@ -2,8 +2,8 @@
 import { z } from 'zod';
 import { Timestamp } from 'firebase/firestore';
 
-// Phone number validation regex for international formats
-const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+// Phone number validation regex for international formats - more lenient
+const phoneRegex = /^[\+]?[\d\s\-\(\)]{9,17}$/;
 
 // Parent information validation schema
 export const parentInfoSchema = z.object({
@@ -12,7 +12,7 @@ export const parentInfoSchema = z.object({
   phone: z.string()
     .min(9, 'Phone number must be at least 9 characters')
     .max(17, 'Phone number must be no more than 17 characters')
-    .regex(phoneRegex, 'Invalid phone number format. Use format: +61412345678'),
+    .regex(phoneRegex, 'Invalid phone number format. Example: +61412345678 or 0412345678'),
 });
 
 // Payment information validation schema
@@ -29,7 +29,7 @@ export const studentSchema = z.object({
   phone: z.string()
     .min(9, 'Phone number must be at least 9 characters')
     .max(17, 'Phone number must be no more than 17 characters')
-    .regex(phoneRegex, 'Invalid phone number format. Use format: +61412345678'),
+    .regex(phoneRegex, 'Invalid phone number format. Example: +61412345678 or 0412345678'),
   status: z.enum(['Active', 'Suspended', 'Inactive']).default('Active'),
   coursesEnrolled: z.number().default(0),
   enrollmentDate: z.string().optional(),

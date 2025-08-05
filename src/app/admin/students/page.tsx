@@ -141,9 +141,15 @@ export default function StudentsManagement() {
     return () => unsubscribe();
   }, [showEnrollmentDetailModal, selectedStudentRequests]);
   
-  // Use simple console logging for now
-  const showSuccess = (message: string) => console.log('Success:', message);
-  const showError = (message: string) => console.error('Error:', message);
+  // Use alert for now - can be replaced with a proper toast system later
+  const showSuccess = (message: string) => {
+    console.log('Success:', message);
+    alert(`✅ Success: ${message}`);
+  };
+  const showError = (message: string) => {
+    console.error('Error:', message);
+    alert(`❌ Error: ${message}`);
+  };
 
   // Group enrollment requests by student email
   const groupedEnrollmentRequests = useMemo(() => {
@@ -193,7 +199,8 @@ export default function StudentsManagement() {
       
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create student');
+        const errorMessage = errorData.message || errorData.error || 'Failed to create student';
+        throw new Error(errorMessage);
       }
 
       const savedStudent = await response.json();
