@@ -106,6 +106,9 @@ export interface BaseTest {
   
   // Status and timing
   status: TestStatus;
+  isDeleted?: boolean; // For soft deletion
+  deletedAt?: Timestamp; // When it was soft deleted
+  deletedBy?: string; // Who deleted it
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
@@ -120,7 +123,7 @@ export interface LiveTest extends BaseTest {
   bufferTime: number; // additional time in minutes (default 5)
   
   // Calculated times
-  studentJoinTime: Timestamp; // 5 minutes before start
+  studentJoinTime: Timestamp; // Exactly at start time
   actualEndTime: Timestamp; // start + duration + buffer
   
   // Live test status

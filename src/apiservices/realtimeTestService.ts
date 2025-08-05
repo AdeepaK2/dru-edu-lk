@@ -337,10 +337,76 @@ export class RealtimeTestService {
       const db = this.init();
       const sessionRef = ref(db, `testSessions/${attemptId}`);
       const snapshot = await get(sessionRef);
-      return snapshot.val() as RealtimeTestSession | null;
+      const session = snapshot.val() as RealtimeTestSession | null;
+      
+      // If session exists but is missing critical fields, log it
+      if (session && (!session.testId || !session.studentId)) {
+        console.warn('⚠️ Retrieved session missing critical fields:', {
+          hasTestId: !!session.testId,
+          hasStudentId: !!session.studentId,
+          hasAnswers: !!session.answers,
+          allFields: Object.keys(session)
+        });
+      }
+      
+      return session;
     } catch (error) {
       console.error('Error getting session:', error);
       return null;
+    }
+  }
+
+  // Repair session integrity by restoring missing critical fields
+  static async repairSessionIntegrity(
+    attemptId: string,
+    testId?: string,
+    studentId?: string,
+    studentName?: string,
+    classId?: string
+  ): Promise<void> {
+    try {
+      const db = this.init();
+      const session = await this.getSession(attemptId);
+      
+      if (!session) {
+        console.warn('⚠️ Cannot repair session - session not found');
+        return;
+      }
+
+      const updates: Record<string, any> = {};
+      let needsUpdate = false;
+
+      // Restore missing critical fields
+      if (!session.testId && testId) {
+        updates[`testSessions/${attemptId}/testId`] = testId;
+        needsUpdate = true;
+        console.log('🔧 Repairing session: adding testId');
+      }
+
+      if (!session.studentId && studentId) {
+        updates[`testSessions/${attemptId}/studentId`] = studentId;
+        needsUpdate = true;
+        console.log('🔧 Repairing session: adding studentId');
+      }
+
+      if (!session.studentName && studentName) {
+        updates[`testSessions/${attemptId}/studentName`] = studentName;
+        needsUpdate = true;
+        console.log('🔧 Repairing session: adding studentName');
+      }
+
+      if (!session.classId && classId) {
+        updates[`testSessions/${attemptId}/classId`] = classId;
+        needsUpdate = true;
+        console.log('🔧 Repairing session: adding classId');
+      }
+
+      if (needsUpdate) {
+        await update(ref(db), updates);
+        console.log('✅ Session integrity repaired for attempt:', attemptId);
+      }
+    } catch (error) {
+      console.error('Error repairing session integrity:', error);
     }
   }
 

@@ -747,6 +747,15 @@ export default function TestTakePage() {
           
           setAttemptId(newAttemptId);
           
+          // Store student info in localStorage for fallback in submission service (even for resumed attempts)
+          try {
+            localStorage.setItem('studentId', student.id);
+            localStorage.setItem('studentName', student.name || 'Anonymous Student');
+            console.log('✅ Stored student info in localStorage for fallback (resumed attempt)');
+          } catch (storageError) {
+            console.warn('⚠️ Could not store student info in localStorage:', storageError);
+          }
+          
           // 🔥 CRITICAL: Get the actual remaining time from attempt management FIRST
           console.log('⏰ Getting actual remaining time from attempt management...');
           const timeCalc = await AttemptManagementService.updateAttemptTime(newAttemptId);
@@ -799,6 +808,15 @@ export default function TestTakePage() {
           
           // Start test session in Realtime DB for new attempt
           const { RealtimeTestService } = await import('@/apiservices/realtimeTestService');
+          
+          // Store student info in localStorage for fallback in submission service
+          try {
+            localStorage.setItem('studentId', student.id);
+            localStorage.setItem('studentName', student.name || 'Anonymous Student');
+            console.log('✅ Stored student info in localStorage for fallback');
+          } catch (storageError) {
+            console.warn('⚠️ Could not store student info in localStorage:', storageError);
+          }
           
           await RealtimeTestService.startTestSession(
             newAttemptId,

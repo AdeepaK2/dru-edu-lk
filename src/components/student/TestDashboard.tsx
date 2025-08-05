@@ -284,7 +284,7 @@ export default function StudentTestDashboard() {
                             <div className="text-sm text-red-700 dark:text-red-300 mt-1 space-y-1">
                               <p><strong>Start Time:</strong> {formatDateTime(liveTest!.scheduledStartTime)}</p>
                               <p><strong>Duration:</strong> {liveTest!.duration} minutes</p>
-                              <p><strong>Join Window:</strong> 5 minutes before start time</p>
+                              <p><strong>Join Window:</strong> From start time</p>
                               {!isAvailable && (
                                 <p><strong>Status:</strong> {getTimeUntil(liveTest!.studentJoinTime)}</p>
                               )}

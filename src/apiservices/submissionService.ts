@@ -77,6 +77,200 @@ export class SubmissionService {
         throw new Error('Realtime session not found');
       }
 
+      // Debug: Log the entire realtime session structure
+      console.log('🔍 Full realtime session structure:', JSON.stringify(realtimeSession, null, 2));
+      console.log('🔍 Available fields in realtime session:', Object.keys(realtimeSession));
+      console.log('🔍 Session studentId:', realtimeSession.studentId);
+      console.log('🔍 Session testId:', realtimeSession.testId);
+      console.log('🔍 Session answers count:', Object.keys(realtimeSession.answers || {}).length);
+
+      // Try to repair session integrity if critical fields are missing
+      const hasMissingCriticalData = !realtimeSession.testId || !realtimeSession.studentId;
+      if (hasMissingCriticalData) {
+        console.warn('⚠️ Attempting to repair session integrity before fallback logic...');
+        
+        // Try to get missing data from localStorage first
+        const fallbackTestId = typeof window !== 'undefined' ? 
+          (window.location.pathname.match(/\/test\/([^\/]+)/) || [])[1] : null;
+        const fallbackStudentId = typeof window !== 'undefined' ? 
+          localStorage.getItem('studentId') : null;
+        const fallbackStudentName = typeof window !== 'undefined' ? 
+          localStorage.getItem('studentName') : null;
+        
+        await RealtimeTestService.repairSessionIntegrity(
+          attemptId,
+          realtimeSession.testId || fallbackTestId || undefined,
+          realtimeSession.studentId || fallbackStudentId || undefined,
+          realtimeSession.studentName || fallbackStudentName || undefined,
+          realtimeSession.classId
+        );
+        
+        // Re-fetch the session after repair attempt
+        const repairedSession = await RealtimeTestService.getSession(attemptId);
+        if (repairedSession) {
+          Object.assign(realtimeSession, repairedSession);
+          console.log('🔧 Session after repair attempt:', {
+            hasTestId: !!realtimeSession.testId,
+            hasStudentId: !!realtimeSession.studentId
+          });
+        }
+      }
+
+      // Check if this is a partially corrupted session that only has answer data
+      const hasOnlyAnswerData = !realtimeSession.testId && !realtimeSession.studentId && realtimeSession.answers;
+      const missingCriticalData = !realtimeSession.testId || !realtimeSession.studentId;
+      
+      if (hasOnlyAnswerData || missingCriticalData) {
+        console.warn('⚠️ Detected session missing critical metadata. Attempting to reconstruct...');
+        
+        // Try to get missing data from the attempt document first
+        try {
+          const { getDoc: getDocFromFirestore, doc: docFromFirestore } = await import('firebase/firestore');
+          const attemptDoc = await getDocFromFirestore(docFromFirestore(firestore, 'attempts', attemptId));
+          
+          if (attemptDoc.exists()) {
+            const attemptData = attemptDoc.data() as TestAttempt;
+            console.log('🔍 Attempt document data:', JSON.stringify(attemptData, null, 2));
+            
+            if (!realtimeSession.testId && attemptData.testId) {
+              realtimeSession.testId = attemptData.testId;
+              console.log('🔧 Using testId from attempt document:', attemptData.testId);
+            }
+            if (!realtimeSession.studentId && attemptData.studentId) {
+              realtimeSession.studentId = attemptData.studentId;
+              console.log('🔧 Using studentId from attempt document:', attemptData.studentId);
+            }
+            if (!realtimeSession.studentName && attemptData.studentName) {
+              realtimeSession.studentName = attemptData.studentName;
+              console.log('🔧 Using studentName from attempt document:', attemptData.studentName);
+            }
+            if (!realtimeSession.classId && attemptData.classId) {
+              realtimeSession.classId = attemptData.classId;
+              console.log('🔧 Using classId from attempt document:', attemptData.classId);
+            }
+            
+            // Set reasonable defaults for missing timing data
+            if (!realtimeSession.startTime && (attemptData as any).startTime) {
+              const startTimeMs = (attemptData as any).startTime.toMillis ? (attemptData as any).startTime.toMillis() : (attemptData as any).startTime;
+              realtimeSession.startTime = startTimeMs;
+              console.log('🔧 Using startTime from attempt document:', startTimeMs);
+            }
+            
+            // If still no startTime, use current time minus some reasonable duration
+            if (!realtimeSession.startTime) {
+              realtimeSession.startTime = Date.now() - (5 * 60 * 1000); // Assume 5 minutes ago instead of 30
+              console.log('🔧 Using conservative fallback startTime (5min ago):', realtimeSession.startTime);
+            }
+          } else {
+            console.warn('⚠️ Attempt document not found for attemptId:', attemptId);
+          }
+        } catch (attemptError) {
+          console.error('❌ Error accessing attempt document:', attemptError);
+        }
+        
+        // If studentId is still missing, try to get it from browser storage or URL
+        if (!realtimeSession.studentId) {
+          try {
+            // Check if studentId is available in localStorage/sessionStorage
+            if (typeof window !== 'undefined') {
+              const storedStudentId = localStorage.getItem('studentId') || sessionStorage.getItem('studentId');
+              const storedStudentName = localStorage.getItem('studentName') || sessionStorage.getItem('studentName');
+              
+              if (storedStudentId) {
+                realtimeSession.studentId = storedStudentId;
+                console.log('🔧 Using studentId from browser storage:', storedStudentId);
+              }
+              
+              if (storedStudentName && !realtimeSession.studentName) {
+                realtimeSession.studentName = storedStudentName;
+                console.log('🔧 Using studentName from browser storage:', storedStudentName);
+              }
+            }
+          } catch (storageError) {
+            console.error('❌ Error accessing browser storage for studentId:', storageError);
+          }
+        }
+
+        // If studentId is still missing, try to get it from Firebase Auth
+        if (!realtimeSession.studentId) {
+          try {
+            const { auth } = await import('@/utils/firebase-client');
+            const currentUser = auth.currentUser;
+            
+            if (currentUser) {
+              // Try to get the student document using the user's UID
+              const { query, collection, where, getDocs } = await import('firebase/firestore');
+              const { firestore } = await import('@/utils/firebase-client');
+              
+              const studentsQuery = query(
+                collection(firestore, 'students'),
+                where('uid', '==', currentUser.uid)
+              );
+              
+              const studentsSnapshot = await getDocs(studentsQuery);
+              
+              if (!studentsSnapshot.empty) {
+                const studentDoc = studentsSnapshot.docs[0];
+                realtimeSession.studentId = studentDoc.id;
+                realtimeSession.studentName = studentDoc.data().name || currentUser.displayName || 'Anonymous Student';
+                console.log('🔧 Using studentId from Firebase Auth:', studentDoc.id);
+              }
+            }
+          } catch (authError) {
+            console.error('❌ Error accessing Firebase Auth for studentId:', authError);
+          }
+        }
+        
+        // If testId is still missing, try to extract from URL
+        if (!realtimeSession.testId) {
+          try {
+            if (typeof window !== 'undefined' && window.location) {
+              const urlMatch = window.location.pathname.match(/\/test\/([^\/]+)\/take/);
+              if (urlMatch && urlMatch[1]) {
+                realtimeSession.testId = urlMatch[1];
+                console.log('🔧 Extracted testId from URL:', urlMatch[1]);
+              }
+            }
+          } catch (urlError) {
+            console.error('❌ Error extracting testId from URL:', urlError);
+          }
+        }
+      }
+
+      // Final validation with additional fallbacks
+      if (!realtimeSession.testId) {
+        console.error('❌ Test ID still missing after all fallback attempts.');
+        console.error('Available fields:', Object.keys(realtimeSession));
+        console.error('Session data:', realtimeSession);
+        throw new Error('Test ID not found in realtime session. Please try refreshing the page and starting the test again.');
+      }
+      
+      if (!realtimeSession.studentId) {
+        console.error('❌ Student ID still missing after all fallback attempts.');
+        console.error('Available fields:', Object.keys(realtimeSession));
+        console.error('Session data:', realtimeSession);
+        console.error('LocalStorage studentId:', typeof window !== 'undefined' ? localStorage.getItem('studentId') : 'N/A (server)');
+        throw new Error('Student ID not found in realtime session. Please try refreshing the page and logging in again.');
+      }
+
+      // Ensure we have essential timing data - but avoid arbitrary fallbacks that mess up time calculations
+      if (!realtimeSession.startTime) {
+        // Instead of a 30-minute fallback, use current time minus a small amount
+        realtimeSession.startTime = Date.now() - (5 * 60 * 1000); // Default: 5 minutes ago
+        console.warn('⚠️ Using conservative fallback startTime (5min ago):', realtimeSession.startTime);
+      }
+      
+      if (!realtimeSession.lastActivity) {
+        realtimeSession.lastActivity = Date.now();
+        console.warn('⚠️ Using current time as lastActivity:', realtimeSession.lastActivity);
+      }
+
+      console.log('📊 Realtime session data:', {
+        testId: realtimeSession.testId,
+        studentId: realtimeSession.studentId,
+        studentName: realtimeSession.studentName
+      });
+
       // Get test data
       const testDoc = await getDoc(doc(firestore, this.COLLECTIONS.TESTS, realtimeSession.testId));
       if (!testDoc.exists()) {
@@ -84,16 +278,98 @@ export class SubmissionService {
       }
       const test = { id: testDoc.id, ...testDoc.data() } as Test;
 
+      // Validate test data
+      if (!test.questions || !Array.isArray(test.questions)) {
+        console.warn('Test questions not found or invalid, using empty array');
+        test.questions = [];
+      }
+
+      console.log('📊 Test data loaded:', {
+        testId: test.id,
+        title: test.title,
+        questionsCount: test.questions?.length || 0
+      });
+
       // Get attempt information to determine correct attempt number and class info
-      const attemptInfo = await AttemptManagementService.getAttemptSummary(realtimeSession.testId, realtimeSession.studentId);
+      let attemptInfo;
+      let actualTimeSpent = 0;
+      let actualStartTime = Date.now();
+      let actualEndTime = Date.now();
+      
+      try {
+        attemptInfo = await AttemptManagementService.getAttemptSummary(realtimeSession.testId, realtimeSession.studentId);
+        
+        // Get actual time calculation from attempt management
+        const timeCalc = await AttemptManagementService.updateAttemptTime(attemptId);
+        if (timeCalc) {
+          actualTimeSpent = timeCalc.timeSpent || 0;
+          actualStartTime = Date.now() - (actualTimeSpent * 1000); // Calculate start time from time spent
+          actualEndTime = Date.now();
+          console.log('✅ Got actual time from attempt management:', {
+            timeSpent: actualTimeSpent,
+            calculatedStartTime: new Date(actualStartTime),
+            endTime: new Date(actualEndTime)
+          });
+        } else {
+          console.warn('⚠️ Could not get time calculation from attempt management, using fallback');
+          // Use realtime session data but validate it
+          if (realtimeSession.startTime && realtimeSession.lastActivity && 
+              realtimeSession.lastActivity > realtimeSession.startTime) {
+            actualTimeSpent = Math.floor((realtimeSession.lastActivity - realtimeSession.startTime) / 1000);
+            actualStartTime = realtimeSession.startTime;
+            actualEndTime = realtimeSession.lastActivity;
+          } else {
+            // Last resort: use a minimal time (e.g., 2 minutes for a quick test)
+            actualTimeSpent = 120; // 2 minutes in seconds
+            actualStartTime = Date.now() - (2 * 60 * 1000);
+            actualEndTime = Date.now();
+            console.warn('⚠️ Using minimal fallback time:', actualTimeSpent, 'seconds');
+          }
+        }
+      } catch (attemptError) {
+        console.error('Error getting attempt summary:', attemptError);
+        // Create a fallback attempt info
+        attemptInfo = {
+          testId: realtimeSession.testId,
+          studentId: realtimeSession.studentId,
+          totalAttempts: 0,
+          attemptsAllowed: 1,
+          canCreateNewAttempt: false,
+          attempts: []
+        };
+        
+        // Fallback time calculation
+        if (realtimeSession.startTime && realtimeSession.lastActivity && 
+            realtimeSession.lastActivity > realtimeSession.startTime) {
+          actualTimeSpent = Math.floor((realtimeSession.lastActivity - realtimeSession.startTime) / 1000);
+          actualStartTime = realtimeSession.startTime;
+          actualEndTime = realtimeSession.lastActivity;
+        } else {
+          actualTimeSpent = 120; // 2 minutes fallback
+          actualStartTime = Date.now() - (2 * 60 * 1000);
+          actualEndTime = Date.now();
+        }
+      }
       
       // Get the actual attempt to get className
-      const { getDoc: getDocFromFirestore, doc: docFromFirestore } = await import('firebase/firestore');
-      const attemptDoc = await getDocFromFirestore(docFromFirestore(firestore, 'attempts', attemptId));
-      const attemptData = attemptDoc.exists() ? attemptDoc.data() as TestAttempt : null;
+      let attemptData = null;
+      try {
+        const { getDoc: getDocFromFirestore, doc: docFromFirestore } = await import('firebase/firestore');
+        const attemptDoc = await getDocFromFirestore(docFromFirestore(firestore, 'attempts', attemptId));
+        attemptData = attemptDoc.exists() ? attemptDoc.data() as TestAttempt : null;
+      } catch (attemptDocError) {
+        console.error('Error getting attempt document:', attemptDocError);
+      }
       
       console.log('📊 Attempt info for submission:', attemptInfo);
       console.log('📊 Attempt data for submission:', attemptData);
+      console.log('⏱️ Final time calculation:', {
+        actualTimeSpent: actualTimeSpent,
+        actualStartTime: new Date(actualStartTime),
+        actualEndTime: new Date(actualEndTime),
+        realtimeSessionStart: realtimeSession.startTime ? new Date(realtimeSession.startTime) : 'N/A',
+        realtimeSessionEnd: realtimeSession.lastActivity ? new Date(realtimeSession.lastActivity) : 'N/A'
+      });
 
       // Process answers and calculate scores
       const { finalAnswers, mcqResults, autoGradedScore, manualGradingPending } = 
@@ -119,11 +395,11 @@ export class SubmissionService {
         attemptNumber: attemptInfo.totalAttempts + 1,
         status: isAutoSubmitted ? 'auto_submitted' : 'submitted',
         
-        // Timing
-        startTime: Timestamp.fromMillis(realtimeSession.startTime),
-        endTime: Timestamp.fromMillis(realtimeSession.lastActivity),
+        // Timing - use actual calculated time from attempt management
+        startTime: Timestamp.fromMillis(actualStartTime),
+        endTime: Timestamp.fromMillis(actualEndTime),
         submittedAt: Timestamp.now(),
-        totalTimeSpent: Math.floor((realtimeSession.lastActivity - realtimeSession.startTime) / 1000),
+        totalTimeSpent: actualTimeSpent, // Use the accurate time from attempt management
         timePerQuestion: realtimeSession.timePerQuestion || {},
         
         // Final answers
@@ -204,6 +480,13 @@ export class SubmissionService {
     }
 
     for (const question of test.questions) {
+      console.log('🔍 Processing question:', {
+        id: question.id,
+        type: question.type,
+        hasQuestionData: !!question.questionData,
+        hasOptions: !!(question.questionData?.options || question.options)
+      });
+      
       const answer = session.answers[question.id];
       const questionData = question; // Assuming question data is embedded
 
@@ -228,7 +511,9 @@ export class SubmissionService {
         if (question.type === 'mcq' && answer.selectedOption !== undefined) {
           // Helper function to get option display text
           const getOptionText = (option: any, index: number): string => {
-            if (option && option.text && option.text.trim()) {
+            if (typeof option === 'string') {
+              return option;
+            } else if (option && option.text && option.text.trim()) {
               return option.text;
             }
             return String.fromCharCode(65 + index); // A, B, C, D
@@ -241,7 +526,15 @@ export class SubmissionService {
           let selectedOptionIndex: number;
           if (typeof answer.selectedOption === 'string') {
             // Find the index of the selected option by its ID
-            selectedOptionIndex = question.questionData?.options?.findIndex(opt => opt.id === answer.selectedOption) ?? -1;
+            const options = question.questionData?.options || question.options || [];
+            selectedOptionIndex = options.findIndex(opt => {
+              if (typeof opt === 'string') {
+                return opt === answer.selectedOption;
+              } else if (opt && typeof opt === 'object' && 'id' in opt) {
+                return opt.id === answer.selectedOption;
+              }
+              return false;
+            });
             if (selectedOptionIndex === -1) {
               console.warn(`Selected option ID ${answer.selectedOption} not found in question options`);
               selectedOptionIndex = 0; // Default to first option
@@ -259,16 +552,17 @@ export class SubmissionService {
           autoGradedScore += marksAwarded;
 
           // Create MCQ result with proper option text handling
+          const options = question.questionData?.options || question.options || [];
           const mcqResult: MCQResult = {
             questionId: question.id || '',
             questionText: questionData.questionText || '',
             selectedOption: selectedOptionIndex,
-            selectedOptionText: question.questionData?.options?.[selectedOptionIndex] 
-              ? getOptionText(question.questionData.options[selectedOptionIndex], selectedOptionIndex)
+            selectedOptionText: options[selectedOptionIndex] 
+              ? getOptionText(options[selectedOptionIndex], selectedOptionIndex)
               : 'No answer selected',
             correctOption: correctOptionIndex,
-            correctOptionText: question.questionData?.options?.[correctOptionIndex] 
-              ? getOptionText(question.questionData.options[correctOptionIndex], correctOptionIndex)
+            correctOptionText: options[correctOptionIndex] 
+              ? getOptionText(options[correctOptionIndex], correctOptionIndex)
               : 'No correct option defined',
             isCorrect,
             marksAwarded,
