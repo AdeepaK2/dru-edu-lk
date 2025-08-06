@@ -1,12 +1,25 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 
 const Navbar: React.FC = () => {
+  const pathname = usePathname();
+  const [isDarkBg, setIsDarkBg] = useState(true);
+  
+  useEffect(() => {
+    // Set navbar style based on the current page
+    // We're now using dark backgrounds for all pages including About
+    setIsDarkBg(true);
+  }, [pathname]);
+  
+  // Don't make navbar sticky on the About page
+  const isAboutPage = pathname === '/about';
+  
   return (
-    <nav className="bg-white/15 backdrop-blur-md border-b border-white/30 sticky top-0 z-50">
+    <nav className={`backdrop-blur-md z-50 bg-white/15 border-b border-white/30 ${isAboutPage ? '' : 'sticky top-0'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
@@ -25,7 +38,7 @@ const Navbar: React.FC = () => {
           </div>
           <div className="hidden md:block">
             <div className="ml-10 flex items-center space-x-6">
-              <a href="#about" className="text-white/90 hover:text-white hover:bg-white/10 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">About</a>
+              <Link href="/about" className="text-white/90 hover:text-white hover:bg-white/10 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">About</Link>
               
               {/* Courses page link */}
               <Link href="/courses" className="text-white/90 hover:text-white hover:bg-white/10 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">Courses</Link>
@@ -35,8 +48,6 @@ const Navbar: React.FC = () => {
               
               {/* Schedule page link */}
               <Link href="/schedule" className="text-white/90 hover:text-white hover:bg-white/10 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">Schedule</Link>
-              
-              <a href="#contact" className="text-white/90 hover:text-white hover:bg-white/10 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">Contact</a>
               
               {/* Login Dropdown */}
               <div className="relative group">

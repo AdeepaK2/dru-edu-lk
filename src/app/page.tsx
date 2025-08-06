@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
+import { Footer, ChatBot } from "@/components/ui";
 
 export default function Home() {
   return (
@@ -522,13 +523,13 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
             <Link 
               href="/enroll" 
-              className="bg-[#0088e0] hover:bg-[#0066b3] text-white font-semibold py-4 px-8 rounded-full transition-all duration-300 transform hover:scale-105"
+              className="bg-[#0088e0] hover:bg-[#0066b3] text-white font-semibold py-4 px-8 rounded-full transition-all duration-300 transform hover:scale-105 relative z-20 cursor-pointer"
             >
               Enroll Now
             </Link>
             <a 
-              href="tel:+61234567890" 
-              className="border-2 border-white hover:bg-white hover:text-[#01143d] text-white font-semibold py-4 px-8 rounded-full transition-all duration-300"
+              href="tel:+61478716402" 
+              className="border-2 border-white hover:bg-white hover:text-[#01143d] text-white font-semibold py-4 px-8 rounded-full transition-all duration-300 relative z-20 cursor-pointer"
             >
               Call Us Today
             </a>
@@ -537,28 +538,27 @@ export default function Home() {
           <div className="grid md:grid-cols-3 gap-8 text-white">
             <div>
               <h3 className="text-lg font-semibold mb-2">Location</h3>
-              <p className="text-white/80">Melbourne, Victoria</p>
+              <a href="https://maps.google.com/?q=Dr+U+Education+Melbourne+Victoria" target="_blank" rel="noopener noreferrer" className="text-white/80 hover:text-white transition-colors duration-200 relative z-20 cursor-pointer inline-block">Melbourne, Victoria</a>
             </div>
             <div>
               <h3 className="text-lg font-semibold mb-2">Phone</h3>
-              <p className="text-white/80">+61 234 567 890</p>
+              <a href="tel:+61478716402" className="text-white/80 hover:text-white transition-colors duration-200 relative z-20 cursor-pointer inline-block">0478 716 402</a>
             </div>
             <div>
               <h3 className="text-lg font-semibold mb-2">Email</h3>
-              <p className="text-white/80">info@drueducation.com.au</p>
+              <a href="mailto:info@drueducation.com.au" className="text-white/80 hover:text-white transition-colors duration-200 relative z-20 cursor-pointer inline-block">info@drueducation.com.au</a>
             </div>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-black/20 border-t border-white/10 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p className="text-white/60">
-            © 2025 Dr. U Education. All rights reserved. | VCE Math & Science Coaching Melbourne
-          </p>
-        </div>
-      </footer>
+      <div className="relative z-10">
+        <Footer />
+      </div>
+      
+      {/* AI Chat Bot */}
+      <ChatBot />
     </div>
   );
 }
