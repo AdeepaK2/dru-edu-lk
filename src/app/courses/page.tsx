@@ -1,6 +1,7 @@
 import Navbar from "@/components/Navbar";
 import Link from "next/link";
 import Image from "next/image";
+import { ChatBot } from "@/components/ui";
 
 export default function CoursesPage() {
   const courseCategories = [
@@ -364,6 +365,9 @@ export default function CoursesPage() {
           <p className="text-white/80">© 2025 Dr. U Education Centre. All rights reserved.</p>
         </div>
       </footer>
+      
+      {/* AI Chat Bot */}
+      <ChatBot />
     </div>
   );
 }

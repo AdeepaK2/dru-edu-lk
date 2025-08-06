@@ -5,6 +5,8 @@ export { default as Toast } from './Toast';
 export { default as ConfirmDialog } from './ConfirmDialog';
 export { ToastProvider, useToast } from './ToastProvider';
 export { default as TeacherAvatar } from './TeacherAvatar';
+export { default as Footer } from './Footer';
+export { default as ChatBot } from './ChatBot';
 
 // Form Components
 export { default as Input } from './form/Input';
