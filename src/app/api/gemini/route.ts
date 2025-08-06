@@ -61,7 +61,7 @@ Our classes are kept small to ensure personalized attention, and our teaching me
 
 export async function POST(request: NextRequest) {
   try {
-    const { messages } = await request.json();
+    const { messages, publications } = await request.json();
     
     if (!messages || !Array.isArray(messages)) {
       return NextResponse.json({ error: 'Invalid request format' }, { status: 400 });
@@ -71,10 +71,49 @@ export async function POST(request: NextRequest) {
     const latestUserMessage = messages[messages.length - 1]?.content || '';
     
     // Create context for the AI with course information and the conversation history
-    const systemContext = `You are an assistant for Dr. U Education, a premier educational institute in Melbourne, Australia. 
+    let systemContext = `You are an assistant for Dr. U Education, a premier educational institute in Melbourne, Australia. 
     Use the following information about courses, locations, and institute details to answer questions:
-    ${COURSE_DATA}
+    ${COURSE_DATA}`;
+
+    // Add publications data if provided
+    if (publications && Array.isArray(publications) && publications.length > 0) {
+      systemContext += `\n\nAvailable Books and Publications:\n`;
+      publications.forEach((pub: any) => {
+        systemContext += `
+- **${pub.title}** ${pub.subtitle ? `(${pub.subtitle})` : ''}
+  - Author: ${pub.author}
+  - Price: ${pub.formattedPrice}${pub.formattedShipping ? ` (+ ${pub.formattedShipping} shipping)` : ''}
+  - Type: ${pub.type}`;
+        
+        // Only add fields if they have meaningful values
+        if (pub.pages) systemContext += `\n  - Pages: ${pub.pages}`;
+        if (pub.category) systemContext += `\n  - Category: ${pub.category}`;
+        if (pub.subject && pub.subject !== 'N/A') systemContext += `\n  - Subject: ${pub.subject}`;
+        if (pub.grade && pub.grade !== 'N/A') systemContext += `\n  - Grade: ${pub.grade}`;
+        if (pub.language && pub.language !== 'English') systemContext += `\n  - Language: ${pub.language}`;
+        if (pub.description && pub.description !== 'No description available') systemContext += `\n  - Description: ${pub.description}`;
+        
+        // Only show features if they exist and are not empty/N/A
+        if (pub.features && pub.features.length > 0 && !pub.features.includes('N/A') && pub.features.join('').trim() !== '') {
+          systemContext += `\n  - Features: ${pub.features.join(', ')}`;
+        }
+        
+        // Only show tags if they exist and are not empty/N/A
+        if (pub.tags && pub.tags.length > 0 && !pub.tags.includes('N/A') && pub.tags.join('').trim() !== '') {
+          systemContext += `\n  - Tags: ${pub.tags.join(', ')}`;
+        }
+        
+        // Only show rating if it's greater than 0 or has reviews
+        if ((pub.rating && pub.rating > 0) || (pub.ratingCount && pub.ratingCount > 0)) {
+          systemContext += `\n  - Rating: ${pub.rating || 0}/5 (${pub.ratingCount || 0} reviews)`;
+        }
+        
+        systemContext += '\n';
+      });
+      systemContext += `\nWhen users ask about books, publications, or study materials, provide detailed information from this list. Include prices, descriptions, and relevant details. Format your response with proper markdown for better readability.`;
+    }
     
+    systemContext += `\n
     Always be polite, helpful, and concise in your responses. If someone asks about course details, provide specific information from the course data.
     If you don't know the answer or if someone asks about something not in the data, suggest they contact the institute directly using the contact information provided.
     Do not make up information that is not provided in the context. Focus primarily on information related to courses, scheduling, locations, and general institute information.`;
@@ -87,15 +126,7 @@ export async function POST(request: NextRequest) {
     
     // Build the Gemini API request payload
     // For simplicity, we'll include all context in a single prompt
-    let fullPrompt = `You are an assistant for Dr. U Education, a premier educational institute in Melbourne, Australia. 
-Use the following information about courses, locations, and institute details to answer questions:
-${COURSE_DATA}
-
-Always be polite, helpful, and concise in your responses. If someone asks about course details, provide specific information from the course data.
-If you don't know the answer or if someone asks about something not in the data, suggest they contact the institute directly using the contact information provided.
-Do not make up information that is not provided in the context. Focus primarily on information related to courses, scheduling, locations, and general institute information.
-
-`;
+    let fullPrompt = systemContext + "\n\n";
 
     // Add conversation history if there are previous messages
     if (messages.length > 1) {

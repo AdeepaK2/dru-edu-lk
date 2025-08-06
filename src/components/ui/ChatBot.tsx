@@ -22,7 +22,66 @@ const ChatBot: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [publications, setPublications] = useState<any[]>([]);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  // Fetch publications data on component mount
+  useEffect(() => {
+    const fetchPublications = async () => {
+      try {
+        const response = await fetch('/api/publications/public');
+        if (response.ok) {
+          const data = await response.json();
+          setPublications(data.publications || []);
+        }
+      } catch (error) {
+        console.error('Error fetching publications:', error);
+      }
+    };
+
+    fetchPublications();
+  }, []);
+
+  // Simple markdown renderer for assistant messages
+  const renderMarkdown = (text: string) => {
+    // Convert **bold** to <strong>
+    let formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    
+    // Convert bullet points (* item) to proper list items
+    const lines = formatted.split('\n');
+    let inList = false;
+    const processedLines = [];
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const isBulletPoint = line.trim().startsWith('* ');
+      
+      if (isBulletPoint) {
+        if (!inList) {
+          processedLines.push('<ul class="list-disc list-inside ml-4 mt-2 space-y-1">');
+          inList = true;
+        }
+        const content = line.replace(/^\s*\*\s+/, '');
+        processedLines.push(`<li class="text-sm">${content}</li>`);
+      } else {
+        if (inList) {
+          processedLines.push('</ul>');
+          inList = false;
+        }
+        if (line.trim()) {
+          processedLines.push(`<p class="mb-2">${line}</p>`);
+        } else {
+          processedLines.push('<br>');
+        }
+      }
+    }
+    
+    if (inList) {
+      processedLines.push('</ul>');
+    }
+    
+    return processedLines.join('');
+  };
 
   const handleSendMessage = async () => {
     if (!input.trim()) return;
@@ -45,13 +104,27 @@ const ChatBot: React.FC = () => {
         content: msg.content
       }));
 
+      // Check if the user is asking about books/publications
+      const isBookQuery = input.toLowerCase().includes('book') || 
+                         input.toLowerCase().includes('publication') ||
+                         input.toLowerCase().includes('material') ||
+                         input.toLowerCase().includes('textbook');
+
+      // Prepare the request body
+      const requestBody: any = { messages: apiMessages };
+
+      // Include publications data if this is a book-related query
+      if (isBookQuery && publications.length > 0) {
+        requestBody.publications = publications;
+      }
+
       // Send to your API endpoint
       const response = await fetch('/api/gemini', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ messages: apiMessages })
+        body: JSON.stringify(requestBody)
       });
 
       if (!response.ok) {
@@ -171,7 +244,14 @@ const ChatBot: React.FC = () => {
                       : 'bg-gray-100 text-gray-800 rounded-tl-none'
                   }`}
                 >
-                  <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                  {msg.role === 'assistant' ? (
+                    <div 
+                      className="text-sm"
+                      dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.content) }}
+                    />
+                  ) : (
+                    <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                  )}
                   <p className={`text-xs mt-1 ${
                     msg.role === 'user' ? 'text-white/70' : 'text-gray-500'
                   }`}>
