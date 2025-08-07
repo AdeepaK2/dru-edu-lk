@@ -6,7 +6,7 @@ import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { 
   AlertCircle, ArrowLeft, CheckCircle, XCircle, 
   Clock, Award, BarChart, ChevronDown, ChevronUp, 
-  FileText, Info, AlertTriangle, RefreshCw, Target, Download
+  FileText, Info, AlertTriangle, RefreshCw, Target, Download, Trophy
 } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { StudentSubmission, FinalAnswer, MCQResult, EssayResult } from '@/models/studentSubmissionSchema';
@@ -32,11 +32,12 @@ export default function TestResultPage() {
   const [submission, setSubmission] = useState<StudentSubmission | null>(null);
   const [test, setTest] = useState<Test | null>(null);
   const [attemptInfo, setAttemptInfo] = useState<AttemptSummary | null>(null);
-  
+  const [allAttempts, setAllAttempts] = useState<any[]>([]);
+  const [bestAttempt, setBestAttempt] = useState<any | null>(null);
+
   // UI states
-  const [startingNewAttempt, setStartingNewAttempt] = useState(false);
-  
-  // Load data
+  const [showAllAttempts, setShowAllAttempts] = useState(false);
+  const [startingNewAttempt, setStartingNewAttempt] = useState(false);  // Load data
   useEffect(() => {
     const loadData = async () => {
       if (!testId || !student) return;
@@ -89,6 +90,76 @@ export default function TestResultPage() {
         }
         
         const testData = { id: testDoc.id, ...testDoc.data() } as Test;
+
+        // Load actual submission data for each attempt to get accurate scores
+        if (attemptData.attempts.length > 0) {
+          console.log('🔍 Loading submission data for attempts:', attemptData.attempts);
+          
+          const attemptsWithScores = await Promise.all(
+            attemptData.attempts.map(async (attempt) => {
+              try {
+                // Get the actual submission for this attempt to get accurate scores
+                const attemptSubmission = await SubmissionService.getSubmission(attempt.attemptId);
+                
+                if (attemptSubmission) {
+                  console.log('✅ Found submission for attempt', attempt.attemptNumber, ':', {
+                    submissionId: attemptSubmission.id,
+                    totalScore: attemptSubmission.totalScore,
+                    percentage: attemptSubmission.percentage,
+                    maxScore: attemptSubmission.maxScore
+                  });
+                  
+                  return {
+                    id: attempt.attemptId,
+                    attemptNumber: attempt.attemptNumber,
+                    status: attempt.status,
+                    score: attemptSubmission.totalScore || attemptSubmission.autoGradedScore || 0,
+                    maxScore: attemptSubmission.maxScore || testData.totalMarks || 0,
+                    percentage: attemptSubmission.percentage || 0,
+                    submittedAt: attempt.submittedAt || attemptSubmission.submittedAt,
+                    autoGradedScore: attemptSubmission.totalScore || attemptSubmission.autoGradedScore || 0,
+                  };
+                } else {
+                  console.warn('⚠️ No submission found for attempt', attempt.attemptNumber, 'using attempt data');
+                  // Fallback to attempt data (which might have incomplete scores)
+                  return {
+                    id: attempt.attemptId,
+                    attemptNumber: attempt.attemptNumber,
+                    status: attempt.status,
+                    score: attempt.score || 0,
+                    maxScore: testData.totalMarks || 0,
+                    percentage: attempt.percentage || 0,
+                    submittedAt: attempt.submittedAt,
+                    autoGradedScore: attempt.score || 0,
+                  };
+                }
+              } catch (error) {
+                console.error('❌ Error loading submission for attempt', attempt.attemptNumber, ':', error);
+                // Fallback to attempt data
+                return {
+                  id: attempt.attemptId,
+                  attemptNumber: attempt.attemptNumber,
+                  status: attempt.status,
+                  score: attempt.score || 0,
+                  maxScore: testData.totalMarks || 0,
+                  percentage: attempt.percentage || 0,
+                  submittedAt: attempt.submittedAt,
+                  autoGradedScore: attempt.score || 0,
+                };
+              }
+            })
+          );
+          
+          console.log('🔍 Final attempts with scores:', attemptsWithScores);
+          setAllAttempts(attemptsWithScores);
+          
+          // Find best attempt
+          const bestAttemptData = attemptsWithScores.reduce((best, current) => 
+            (current.percentage || 0) > (best?.percentage || 0) ? current : best, 
+            attemptsWithScores[0]
+          );
+          setBestAttempt(bestAttemptData);
+        }
         
         // Check if we need to compute results using new simplified service
         if (!submissionData.mcqResults || submissionData.mcqResults.length === 0) {
@@ -315,6 +386,38 @@ export default function TestResultPage() {
     return result;
   };
 
+  // Get attempt status badge
+  const getAttemptStatusBadge = (attempt: any) => {
+    const status = attempt.status || 'submitted';
+    
+    switch (status) {
+      case 'submitted':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+            Completed
+          </span>
+        );
+      case 'graded':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+            Graded
+          </span>
+        );
+      case 'pending':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">
+            Pending
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300">
+            {status}
+          </span>
+        );
+    }
+  };
+
   // Handle starting a new attempt
   const handleReAttempt = async () => {
     if (!attemptInfo || !attemptInfo.canCreateNewAttempt || startingNewAttempt) return;
@@ -339,24 +442,6 @@ export default function TestResultPage() {
       alert('Failed to start new attempt. Please try again.');
       setStartingNewAttempt(false);
     }
-  };
-
-  // Get status badge for attempt
-  const getAttemptStatusBadge = (attempt: StudentSubmission) => {
-    const statusConfig = {
-      'submitted': { color: 'bg-green-100 text-green-800', text: 'Completed' },
-      'auto_submitted': { color: 'bg-yellow-100 text-yellow-800', text: 'Auto-submitted' },
-      'expired': { color: 'bg-red-100 text-red-800', text: 'Expired' },
-      'terminated': { color: 'bg-red-100 text-red-800', text: 'Terminated' }
-    };
-    
-    const config = statusConfig[attempt.status] || { color: 'bg-gray-100 text-gray-800', text: attempt.status };
-    
-    return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.color}`}>
-        {config.text}
-      </span>
-    );
   };
 
   // Handle going back
@@ -604,6 +689,18 @@ export default function TestResultPage() {
                 </div>
               </div>
               
+              {bestAttempt && bestAttempt.id !== submission.id && (
+                <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+                  <div className="text-sm text-green-600 dark:text-green-400">Best Score</div>
+                  <div className="text-2xl font-bold text-green-700 dark:text-green-300">
+                    {bestAttempt.percentage || 0}%
+                  </div>
+                  <div className="text-xs text-green-600 dark:text-green-400">
+                    Attempt #{bestAttempt.attemptNumber}
+                  </div>
+                </div>
+              )}
+              
               <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
                 <div className="text-sm text-gray-600 dark:text-gray-400">Status</div>
                 <div className="text-sm font-medium text-gray-900 dark:text-white">
@@ -620,8 +717,76 @@ export default function TestResultPage() {
             
             {/* Note: Multiple attempts display is being updated */}
             {attemptInfo && attemptInfo.attempts.length > 1 && (
-              <div className="text-sm text-gray-500 dark:text-gray-400 italic text-center py-4">
-                You have {attemptInfo.attempts.length} attempts for this test. Viewing current submission above.
+              <div>
+                <button
+                  onClick={() => setShowAllAttempts(!showAllAttempts)}
+                  className="flex items-center text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 mb-3"
+                >
+                  {showAllAttempts ? (
+                    <>
+                      <ChevronUp className="h-4 w-4 mr-1" />
+                      Hide all attempts
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="h-4 w-4 mr-1" />
+                      Show all attempts ({allAttempts.length})
+                    </>
+                  )}
+                </button>
+                
+                {showAllAttempts && (
+                  <div className="space-y-3">
+                    {allAttempts.map((attempt, index) => (
+                      <div 
+                        key={attempt.id}
+                        className={`border rounded-lg p-4 ${
+                          attempt.id === submission.id 
+                            ? 'border-blue-300 bg-blue-50 dark:bg-blue-900/20' 
+                            : 'border-gray-200 dark:border-gray-600'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-4">
+                            <div>
+                              <div className="font-medium text-gray-900 dark:text-white">
+                                Attempt #{attempt.attemptNumber}
+                                {attempt.id === submission.id && (
+                                  <span className="ml-2 text-sm text-blue-600 dark:text-blue-400">(Current)</span>
+                                )}
+                              </div>
+                              <div className="text-sm text-gray-600 dark:text-gray-400">
+                                {formatDateTime(attempt.submittedAt)}
+                              </div>
+                            </div>
+                            
+                            <div className="text-center">
+                              <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                                {attempt.percentage || 0}%
+                              </div>
+                              <div className="text-sm text-gray-600 dark:text-gray-400">
+                                {attempt.score || 0} / {attempt.maxScore || 0}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center space-x-3">
+                            {getAttemptStatusBadge(attempt)}
+                            
+                            {attempt.id !== submission.id && (
+                              <button
+                                onClick={() => router.push(`/student/test/${testId}/result?submissionId=${attempt.id}`)}
+                                className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
+                              >
+                                View Details
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
