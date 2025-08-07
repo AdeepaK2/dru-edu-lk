@@ -273,7 +273,7 @@ export default function StudentResults() {
 
   // Calculate overall stats
   const overallStats = {
-    totalTests: studentClasses.reduce((sum, c) => sum + c.completedTests, 0),
+    totalTests: testResults.length, // Use the length of distinct test results instead of sum from classes
     averageScore: studentClasses.length > 0 
       ? Math.round(studentClasses.reduce((sum, c) => sum + c.averageScore, 0) / studentClasses.length)
       : 0,
