@@ -245,6 +245,36 @@ export default function TestResultPage() {
         setSubmission(submissionData);
         setTest(testData);
         
+        // Debug logging to see what class information we have
+        console.log('🔍 CLASS INFO DEBUG:', {
+          submissionClassName: submissionData.className,
+          submissionClassId: submissionData.classId,
+          testClassNames: testData.classNames,
+          testClassIds: testData.classIds,
+          studentInfo: {
+            id: student?.id,
+            name: student?.name
+          }
+        });
+
+        // If we don't have class name, try to fetch it
+        if ((!submissionData.className || submissionData.className === 'Unknown Class') && submissionData.classId) {
+          try {
+            console.log('🔍 Attempting to fetch class information for classId:', submissionData.classId);
+            const { ClassFirestoreService } = await import('@/apiservices/classFirestoreService');
+            const classData = await ClassFirestoreService.getClassById(submissionData.classId);
+            
+            if (classData && classData.name) {
+              console.log('✅ Found class name:', classData.name);
+              // Update the submission data with the correct class name
+              submissionData.className = classData.name;
+              setSubmission({...submissionData});
+            }
+          } catch (classError) {
+            console.warn('⚠️ Could not fetch class information:', classError);
+          }
+        }
+        
         // Override pass status for essay tests that haven't been manually graded
         const isEssayTest = testData.questions?.some(q => q.type === 'essay' || q.questionType === 'essay');
         const hasBeenManuallyGraded = !submissionData.manualGradingPending && submissionData.totalScore !== undefined;
@@ -308,6 +338,37 @@ export default function TestResultPage() {
     loadData();
   }, [testId, student, submissionId]);
   
+  // Get the correct class name from available sources
+  const getClassName = () => {
+    // Priority order:
+    // 1. submission.className (direct from submission)
+    // 2. test.classNames[0] if test has class names and matches submission.classId
+    // 3. Use classId as fallback
+    
+    if (submission?.className && submission.className !== 'Unknown Class') {
+      return submission.className;
+    }
+    
+    if (test?.classNames && test.classNames.length > 0) {
+      // If we have classIds in test, try to find matching class name
+      if (test.classIds && submission?.classId) {
+        const classIndex = test.classIds.indexOf(submission.classId);
+        if (classIndex >= 0 && test.classNames[classIndex]) {
+          return test.classNames[classIndex];
+        }
+      }
+      // Otherwise use the first class name
+      return test.classNames[0];
+    }
+    
+    // Fallback to classId if available
+    if (submission?.classId) {
+      return `Class ${submission.classId}`;
+    }
+    
+    return 'Unknown Class';
+  };
+
   // Find the most recent submission for this test and student
   const findMostRecentSubmissionId = async (testId: string, studentId: string) => {
     try {
@@ -623,7 +684,7 @@ export default function TestResultPage() {
                 )}
               </div>
               <p className="text-gray-600 dark:text-gray-300">
-                {test.subjectName || 'Unknown Subject'} • {submission.className || 'Unknown Class'}
+                {test.subjectName || 'Unknown Subject'} • {getClassName()}
               </p>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                 Submitted on {formatDateTime(submission.submittedAt)}
