@@ -169,8 +169,19 @@ export default function StudentResults() {
       
       console.log('Detailed performance data:', performanceData);
       
-      // Convert recent test scores to TestResult format
-      const testResults: TestResult[] = performanceData.recentTestScores.map((testScore) => ({
+      // Convert recent test scores to TestResult format and group by test ID to show only best attempts
+      const testScoresByTestId = new Map<string, any>();
+      
+      // Group test scores by test ID and keep the best score for each test
+      performanceData.recentTestScores.forEach((testScore) => {
+        const existingScore = testScoresByTestId.get(testScore.testId);
+        if (!existingScore || testScore.score > existingScore.score) {
+          testScoresByTestId.set(testScore.testId, testScore);
+        }
+      });
+      
+      // Convert the best attempts to TestResult format
+      const testResults: TestResult[] = Array.from(testScoresByTestId.values()).map((testScore) => ({
         id: testScore.testId,
         testTitle: testScore.testTitle,
         subject: studentClasses.find(c => c.id === classId)?.subject || 'Unknown',
@@ -183,6 +194,9 @@ export default function StudentResults() {
         lessonTopics: [], // This would need to be populated from test questions
         difficultQuestions: [] // This would need to be retrieved from submission
       }));
+      
+      // Sort by completion date (most recent first)
+      testResults.sort((a, b) => b.completedAt.getTime() - a.completedAt.getTime());
       
       setTestResults(testResults);
       
@@ -468,7 +482,7 @@ export default function StudentResults() {
                       Test Results
                     </h2>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Your performance across all tests
+                      Your best performance for each test
                     </p>
                   </div>
                   
@@ -490,9 +504,14 @@ export default function StudentResults() {
                           >
                             <div className="flex items-center justify-between">
                               <div className="flex-1">
-                                <h3 className="font-medium text-gray-900 dark:text-white">
-                                  {result.testTitle}
-                                </h3>
+                                <div className="flex items-center space-x-2 mb-1">
+                                  <h3 className="font-medium text-gray-900 dark:text-white">
+                                    {result.testTitle}
+                                  </h3>
+                                  <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400 rounded-full">
+                                    Best Attempt
+                                  </span>
+                                </div>
                                 <p className="text-sm text-gray-500 dark:text-gray-400">
                                   {result.completedAt.toLocaleDateString()} • {result.subject}
                                 </p>
