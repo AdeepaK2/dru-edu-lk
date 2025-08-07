@@ -21,7 +21,6 @@ export interface TestConfig {
   questionType?: 'mcq' | 'essay'; // New field for question type preference
   totalQuestions: number;
   shuffleQuestions: boolean;
-  showQuestionsOneByOne: boolean;
   allowReviewBeforeSubmit: boolean;
   
   // Scoring

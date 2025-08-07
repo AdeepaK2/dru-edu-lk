@@ -6,7 +6,7 @@ import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { 
   AlertCircle, ArrowLeft, CheckCircle, XCircle, 
   Clock, Award, BarChart, ChevronDown, ChevronUp, 
-  FileText, Info, AlertTriangle, RefreshCw, Target, Download
+  FileText, Info, AlertTriangle, RefreshCw, Target, Download, Trophy
 } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { StudentSubmission, FinalAnswer, MCQResult, EssayResult } from '@/models/studentSubmissionSchema';
@@ -32,14 +32,12 @@ export default function TestResultPage() {
   const [submission, setSubmission] = useState<StudentSubmission | null>(null);
   const [test, setTest] = useState<Test | null>(null);
   const [attemptInfo, setAttemptInfo] = useState<AttemptSummary | null>(null);
-  const [allAttempts, setAllAttempts] = useState<StudentSubmission[]>([]);
-  const [bestAttempt, setBestAttempt] = useState<StudentSubmission | null>(null);
-  
+  const [allAttempts, setAllAttempts] = useState<any[]>([]);
+  const [bestAttempt, setBestAttempt] = useState<any | null>(null);
+
   // UI states
   const [showAllAttempts, setShowAllAttempts] = useState(false);
-  const [startingNewAttempt, setStartingNewAttempt] = useState(false);
-  
-  // Load data
+  const [startingNewAttempt, setStartingNewAttempt] = useState(false);  // Load data
   useEffect(() => {
     const loadData = async () => {
       if (!testId || !student) return;
@@ -82,34 +80,7 @@ export default function TestResultPage() {
         const attemptData = await AttemptManagementService.getAttemptSummary(testId, student.id);
         setAttemptInfo(attemptData);
         
-        // Convert attempt summary to submission format for backward compatibility
-        const submissionAttempts = attemptData.attempts.map(a => ({
-          id: a.attemptId,
-          attemptNumber: a.attemptNumber,
-          status: a.status || 'submitted',
-          score: a.score || 0,
-          percentage: a.percentage || 0,
-          submittedAt: a.submittedAt || null,
-          autoGradedScore: a.score || 0,
-          maxScore: test?.totalMarks || 0
-        } as any));
-        
-        setAllAttempts(submissionAttempts);
-        
-        // Get best attempt (find the one with highest score)
-        if (attemptData.attempts.length > 0) {
-          const bestAttemptData = attemptData.attempts.reduce((best, current) => 
-            (current.percentage || 0) > (best?.percentage || 0) ? current : best, 
-            attemptData.attempts[0]
-          );
-          
-          setBestAttempt({
-            id: bestAttemptData.attemptId,
-            attemptNumber: bestAttemptData.attemptNumber,
-            score: bestAttemptData.score || 0,
-            percentage: bestAttemptData.percentage || 0
-          } as any);
-        }        // Get the test
+        // Get the test data
         const testDoc = await getDoc(doc(firestore, 'tests', testId));
         
         if (!testDoc.exists()) {
@@ -119,6 +90,76 @@ export default function TestResultPage() {
         }
         
         const testData = { id: testDoc.id, ...testDoc.data() } as Test;
+
+        // Load actual submission data for each attempt to get accurate scores
+        if (attemptData.attempts.length > 0) {
+          console.log('🔍 Loading submission data for attempts:', attemptData.attempts);
+          
+          const attemptsWithScores = await Promise.all(
+            attemptData.attempts.map(async (attempt) => {
+              try {
+                // Get the actual submission for this attempt to get accurate scores
+                const attemptSubmission = await SubmissionService.getSubmission(attempt.attemptId);
+                
+                if (attemptSubmission) {
+                  console.log('✅ Found submission for attempt', attempt.attemptNumber, ':', {
+                    submissionId: attemptSubmission.id,
+                    totalScore: attemptSubmission.totalScore,
+                    percentage: attemptSubmission.percentage,
+                    maxScore: attemptSubmission.maxScore
+                  });
+                  
+                  return {
+                    id: attempt.attemptId,
+                    attemptNumber: attempt.attemptNumber,
+                    status: attempt.status,
+                    score: attemptSubmission.totalScore || attemptSubmission.autoGradedScore || 0,
+                    maxScore: attemptSubmission.maxScore || testData.totalMarks || 0,
+                    percentage: attemptSubmission.percentage || 0,
+                    submittedAt: attempt.submittedAt || attemptSubmission.submittedAt,
+                    autoGradedScore: attemptSubmission.totalScore || attemptSubmission.autoGradedScore || 0,
+                  };
+                } else {
+                  console.warn('⚠️ No submission found for attempt', attempt.attemptNumber, 'using attempt data');
+                  // Fallback to attempt data (which might have incomplete scores)
+                  return {
+                    id: attempt.attemptId,
+                    attemptNumber: attempt.attemptNumber,
+                    status: attempt.status,
+                    score: attempt.score || 0,
+                    maxScore: testData.totalMarks || 0,
+                    percentage: attempt.percentage || 0,
+                    submittedAt: attempt.submittedAt,
+                    autoGradedScore: attempt.score || 0,
+                  };
+                }
+              } catch (error) {
+                console.error('❌ Error loading submission for attempt', attempt.attemptNumber, ':', error);
+                // Fallback to attempt data
+                return {
+                  id: attempt.attemptId,
+                  attemptNumber: attempt.attemptNumber,
+                  status: attempt.status,
+                  score: attempt.score || 0,
+                  maxScore: testData.totalMarks || 0,
+                  percentage: attempt.percentage || 0,
+                  submittedAt: attempt.submittedAt,
+                  autoGradedScore: attempt.score || 0,
+                };
+              }
+            })
+          );
+          
+          console.log('🔍 Final attempts with scores:', attemptsWithScores);
+          setAllAttempts(attemptsWithScores);
+          
+          // Find best attempt
+          const bestAttemptData = attemptsWithScores.reduce((best, current) => 
+            (current.percentage || 0) > (best?.percentage || 0) ? current : best, 
+            attemptsWithScores[0]
+          );
+          setBestAttempt(bestAttemptData);
+        }
         
         // Check if we need to compute results using new simplified service
         if (!submissionData.mcqResults || submissionData.mcqResults.length === 0) {
@@ -204,6 +245,36 @@ export default function TestResultPage() {
         setSubmission(submissionData);
         setTest(testData);
         
+        // Debug logging to see what class information we have
+        console.log('🔍 CLASS INFO DEBUG:', {
+          submissionClassName: submissionData.className,
+          submissionClassId: submissionData.classId,
+          testClassNames: testData.classNames,
+          testClassIds: testData.classIds,
+          studentInfo: {
+            id: student?.id,
+            name: student?.name
+          }
+        });
+
+        // If we don't have class name, try to fetch it
+        if ((!submissionData.className || submissionData.className === 'Unknown Class') && submissionData.classId) {
+          try {
+            console.log('🔍 Attempting to fetch class information for classId:', submissionData.classId);
+            const { ClassFirestoreService } = await import('@/apiservices/classFirestoreService');
+            const classData = await ClassFirestoreService.getClassById(submissionData.classId);
+            
+            if (classData && classData.name) {
+              console.log('✅ Found class name:', classData.name);
+              // Update the submission data with the correct class name
+              submissionData.className = classData.name;
+              setSubmission({...submissionData});
+            }
+          } catch (classError) {
+            console.warn('⚠️ Could not fetch class information:', classError);
+          }
+        }
+        
         // Override pass status for essay tests that haven't been manually graded
         const isEssayTest = testData.questions?.some(q => q.type === 'essay' || q.questionType === 'essay');
         const hasBeenManuallyGraded = !submissionData.manualGradingPending && submissionData.totalScore !== undefined;
@@ -267,6 +338,37 @@ export default function TestResultPage() {
     loadData();
   }, [testId, student, submissionId]);
   
+  // Get the correct class name from available sources
+  const getClassName = () => {
+    // Priority order:
+    // 1. submission.className (direct from submission)
+    // 2. test.classNames[0] if test has class names and matches submission.classId
+    // 3. Use classId as fallback
+    
+    if (submission?.className && submission.className !== 'Unknown Class') {
+      return submission.className;
+    }
+    
+    if (test?.classNames && test.classNames.length > 0) {
+      // If we have classIds in test, try to find matching class name
+      if (test.classIds && submission?.classId) {
+        const classIndex = test.classIds.indexOf(submission.classId);
+        if (classIndex >= 0 && test.classNames[classIndex]) {
+          return test.classNames[classIndex];
+        }
+      }
+      // Otherwise use the first class name
+      return test.classNames[0];
+    }
+    
+    // Fallback to classId if available
+    if (submission?.classId) {
+      return `Class ${submission.classId}`;
+    }
+    
+    return 'Unknown Class';
+  };
+
   // Find the most recent submission for this test and student
   const findMostRecentSubmissionId = async (testId: string, studentId: string) => {
     try {
@@ -345,6 +447,38 @@ export default function TestResultPage() {
     return result;
   };
 
+  // Get attempt status badge
+  const getAttemptStatusBadge = (attempt: any) => {
+    const status = attempt.status || 'submitted';
+    
+    switch (status) {
+      case 'submitted':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+            Completed
+          </span>
+        );
+      case 'graded':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+            Graded
+          </span>
+        );
+      case 'pending':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">
+            Pending
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300">
+            {status}
+          </span>
+        );
+    }
+  };
+
   // Handle starting a new attempt
   const handleReAttempt = async () => {
     if (!attemptInfo || !attemptInfo.canCreateNewAttempt || startingNewAttempt) return;
@@ -369,24 +503,6 @@ export default function TestResultPage() {
       alert('Failed to start new attempt. Please try again.');
       setStartingNewAttempt(false);
     }
-  };
-
-  // Get status badge for attempt
-  const getAttemptStatusBadge = (attempt: StudentSubmission) => {
-    const statusConfig = {
-      'submitted': { color: 'bg-green-100 text-green-800', text: 'Completed' },
-      'auto_submitted': { color: 'bg-yellow-100 text-yellow-800', text: 'Auto-submitted' },
-      'expired': { color: 'bg-red-100 text-red-800', text: 'Expired' },
-      'terminated': { color: 'bg-red-100 text-red-800', text: 'Terminated' }
-    };
-    
-    const config = statusConfig[attempt.status] || { color: 'bg-gray-100 text-gray-800', text: attempt.status };
-    
-    return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.color}`}>
-        {config.text}
-      </span>
-    );
   };
 
   // Handle going back
@@ -568,7 +684,7 @@ export default function TestResultPage() {
                 )}
               </div>
               <p className="text-gray-600 dark:text-gray-300">
-                {test.subjectName || 'Unknown Subject'} • {submission.className || 'Unknown Class'}
+                {test.subjectName || 'Unknown Subject'} • {getClassName()}
               </p>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                 Submitted on {formatDateTime(submission.submittedAt)}
@@ -660,8 +776,8 @@ export default function TestResultPage() {
               </div>
             </div>
             
-            {/* All Attempts List */}
-            {allAttempts.length > 1 && (
+            {/* Note: Multiple attempts display is being updated */}
+            {attemptInfo && attemptInfo.attempts.length > 1 && (
               <div>
                 <button
                   onClick={() => setShowAllAttempts(!showAllAttempts)}
@@ -710,7 +826,7 @@ export default function TestResultPage() {
                                 {attempt.percentage || 0}%
                               </div>
                               <div className="text-sm text-gray-600 dark:text-gray-400">
-                                {attempt.autoGradedScore || 0} / {attempt.maxScore}
+                                {attempt.score || 0} / {attempt.maxScore || 0}
                               </div>
                             </div>
                           </div>

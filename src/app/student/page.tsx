@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Users, 
   BookOpen, 
@@ -21,8 +21,175 @@ import { Button } from '@/components/ui';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 import Link from 'next/link';
 
+// Upcoming test interface
+interface UpcomingTest {
+  id: string;
+  title: string;
+  subject: string;
+  date: string;
+  time: string;
+}
+
 export default function StudentDashboard() {
   const { student } = useStudentAuth();
+
+  // State for real data
+  const [dashboardStats, setDashboardStats] = useState({
+    totalClasses: 0,
+    completedTests: 0,
+    studyMaterials: 0,
+    videosWatched: 0,
+    currentGrade: 0
+  });
+  
+  const [upcomingTests, setUpcomingTests] = useState<UpcomingTest[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Load dashboard data
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      if (!student?.id) return;
+      
+      try {
+        setLoading(true);
+        
+        // Load real data from services
+        const [classesData, testsData, studyMaterialsData, submissionsData] = await Promise.all([
+          loadStudentClasses(),
+          loadUpcomingTests(),
+          loadStudyMaterials(),
+          loadCompletedSubmissions()
+        ]);
+        
+        // Calculate stats from real data
+        const stats = {
+          totalClasses: classesData.length,
+          completedTests: submissionsData.length,
+          studyMaterials: studyMaterialsData.length,
+          videosWatched: 0, // TODO: Implement video tracking
+          currentGrade: calculateAverageGrade(submissionsData)
+        };
+        
+        setDashboardStats(stats);
+        setUpcomingTests(testsData);
+        
+      } catch (error) {
+        console.error('Error loading dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadDashboardData();
+  }, [student?.id]);
+
+  // Helper functions to load real data
+  const loadStudentClasses = async () => {
+    try {
+      const { ClassFirestoreService } = await import('@/apiservices/classFirestoreService');
+      if (!student?.id) return [];
+      return await ClassFirestoreService.getClassesByStudent(student.id);
+    } catch (error) {
+      console.error('Error loading classes:', error);
+      return [];
+    }
+  };
+
+  const loadUpcomingTests = async () => {
+    try {
+      const { TestService } = await import('@/apiservices/testService');
+      if (!student?.id) return [];
+      
+      // First get student's classes
+      const classes = await loadStudentClasses();
+      const classIds = classes.map((cls: any) => cls.id);
+      
+      const tests = await TestService.getStudentTests(student.id, classIds);
+      
+      // Filter for upcoming tests and sort by date
+      const upcoming = tests
+        .filter((test: any) => {
+          if (test.type === 'live') {
+            return new Date(test.scheduledStartTime.toDate()) > new Date();
+          } else if (test.type === 'flexible') {
+            return new Date(test.availableTo.toDate()) > new Date();
+          }
+          return false;
+        })
+        .sort((a: any, b: any) => {
+          const dateA = a.type === 'live' ? a.scheduledStartTime.toDate() : a.availableTo.toDate();
+          const dateB = b.type === 'live' ? b.scheduledStartTime.toDate() : b.availableTo.toDate();
+          return dateA - dateB;
+        })
+        .slice(0, 3); // Show only first 3 upcoming tests
+      
+      return upcoming.map((test: any) => ({
+        id: test.id,
+        subject: test.subjectName || 'Unknown Subject',
+        title: test.title,
+        date: test.type === 'live' 
+          ? test.scheduledStartTime.toDate().toISOString().split('T')[0]
+          : test.availableTo.toDate().toISOString().split('T')[0],
+        time: test.type === 'live' 
+          ? test.scheduledStartTime.toDate().toLocaleTimeString('en-AU', { 
+              hour: '2-digit', 
+              minute: '2-digit',
+              timeZone: 'Australia/Melbourne'
+            })
+          : 'Flexible'
+      }));
+    } catch (error) {
+      console.error('Error loading upcoming tests:', error);
+      return [];
+    }
+  };
+
+  const loadStudyMaterials = async () => {
+    try {
+      const { getStudyMaterialsByClass } = await import('@/apiservices/studyMaterialFirestoreService');
+      if (!student?.id) return [];
+      
+      // Get study materials for all student's classes
+      const classes = await loadStudentClasses();
+      const allMaterials = [];
+      
+      for (const cls of classes) {
+        const materials = await getStudyMaterialsByClass((cls as any).id);
+        allMaterials.push(...materials);
+      }
+      
+      return allMaterials;
+    } catch (error) {
+      console.error('Error loading study materials:', error);
+      return [];
+    }
+  };
+
+  const loadCompletedSubmissions = async () => {
+    try {
+      const { SubmissionService } = await import('@/apiservices/submissionService');
+      if (!student?.id) return [];
+      
+      const submissions = await SubmissionService.getStudentSubmissions(student.id);
+      return submissions.filter((sub: any) => sub.status === 'submitted' || sub.status === 'auto_submitted');
+    } catch (error) {
+      console.error('Error loading submissions:', error);
+      return [];
+    }
+  };
+
+  const calculateAverageGrade = (submissions: any[]) => {
+    if (submissions.length === 0) return 0;
+    
+    const gradesWithScores = submissions.filter((sub: any) => 
+      sub.percentage !== undefined && sub.percentage !== null
+    );
+    
+    if (gradesWithScores.length === 0) return 0;
+    
+    const totalPercentage = gradesWithScores.reduce((sum: number, sub: any) => sum + sub.percentage, 0);
+    return Math.round((totalPercentage / gradesWithScores.length) * 10) / 10; // Round to 1 decimal place
+  };
 
   // Get current date and time in Melbourne timezone
   const getMelbourneDateTime = () => {
@@ -37,22 +204,7 @@ export default function StudentDashboard() {
     }).format(new Date());
   };
 
-  // Mock data - replace with real data later
-  const dashboardStats = {
-    totalClasses: 5,
-    completedTests: 8,
-    studyMaterials: 24,
-    videosWatched: 15,
-    currentGrade: 87.5
-  };
-
-  const recentActivities = [
-    { id: 1, type: 'test', description: 'Completed Math Quiz - Grade 10', time: '2 hours ago', score: '85%' },
-    { id: 2, type: 'video', description: 'Watched: Introduction to Physics', time: '1 day ago' },
-    { id: 3, type: 'study', description: 'Downloaded Chemistry Notes Chapter 5', time: '2 days ago' },
-    { id: 4, type: 'class', description: 'Upcoming: Advanced Mathematics', time: 'Tomorrow 10:00 AM' }
-  ];
-
+  // Quick actions data
   const quickActions = [
     { 
       id: 'classes', 
@@ -88,11 +240,17 @@ export default function StudentDashboard() {
     }
   ];
 
-  const upcomingTests = [
-    { id: 1, subject: 'Mathematics', title: 'Algebra & Functions', date: '2025-07-22', time: '10:00 AM' },
-    { id: 2, subject: 'Physics', title: 'Motion & Forces', date: '2025-07-24', time: '2:00 PM' },
-    { id: 3, subject: 'Chemistry', title: 'Chemical Reactions', date: '2025-07-26', time: '11:00 AM' }
-  ];
+  // Show loading state while data is being fetched
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -184,13 +342,13 @@ export default function StudentDashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6">
           {/* Quick Actions */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
               Quick Actions
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {quickActions.map((action) => {
                 const Icon = action.icon;
                 return (
@@ -216,46 +374,6 @@ export default function StudentDashboard() {
                   </Link>
                 );
               })}
-            </div>
-          </div>
-
-          {/* Recent Activity */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Recent Activity
-              </h3>
-              <Button variant="outline" size="sm">
-                View All
-              </Button>
-            </div>
-            
-            <div className="space-y-4">
-              {recentActivities.map((activity) => (
-                <div key={activity.id} className="flex items-start space-x-3">
-                  <div className={`w-2 h-2 rounded-full mt-2 ${
-                    activity.type === 'test' ? 'bg-red-500' :
-                    activity.type === 'video' ? 'bg-purple-500' :
-                    activity.type === 'study' ? 'bg-green-500' :
-                    'bg-blue-500'
-                  }`}></div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm text-gray-900 dark:text-white">
-                        {activity.description}
-                      </p>
-                      {activity.score && (
-                        <span className="text-xs font-medium text-green-600 bg-green-100 px-2 py-1 rounded-full">
-                          {activity.score}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      {activity.time}
-                    </p>
-                  </div>
-                </div>
-              ))}
             </div>
           </div>
         </div>
