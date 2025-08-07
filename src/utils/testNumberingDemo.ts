@@ -180,7 +180,6 @@ async function createDemoTest(
       questionSelectionMethod: 'manual' as const,
       totalQuestions: 5,
       shuffleQuestions: false,
-      showQuestionsOneByOne: true,
       allowReviewBeforeSubmit: true,
       passingScore: 70,
       showResultsImmediately: true

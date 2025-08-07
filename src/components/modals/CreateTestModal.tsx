@@ -62,7 +62,6 @@ interface TestFormData {
 
   // Step 4: Final Configuration
   shuffleQuestions: boolean;
-  showQuestionsOneByOne: boolean;
   allowReviewBeforeSubmit: boolean;
   passingScore: number;
   showResultsImmediately: boolean;
@@ -91,7 +90,6 @@ const INITIAL_FORM_DATA: TestFormData = {
   selectedLessonIds: [],
   
   shuffleQuestions: true,
-  showQuestionsOneByOne: false,
   allowReviewBeforeSubmit: true,
   passingScore: 50,
   showResultsImmediately: false,
@@ -162,6 +160,20 @@ export default function CreateTestModal({
       loadExistingTestNumbers();
     }
   }, [isOpen, selectedClassId]);
+
+  // Auto-set showResultsImmediately based on question type
+  useEffect(() => {
+    if (formData.questionType) {
+      // MCQ tests can show results immediately since they auto-grade
+      // Essay tests should not show results immediately since they need manual grading
+      const shouldShowResults = formData.questionType === 'mcq';
+      
+      // Only update if the current value doesn't match the expected default
+      if (formData.showResultsImmediately !== shouldShowResults) {
+        updateFormData({ showResultsImmediately: shouldShowResults });
+      }
+    }
+  }, [formData.questionType, formData.showResultsImmediately]);
 
   const loadLessons = async () => {
     if (!formData.selectedQuestionBankId) return;
@@ -373,7 +385,6 @@ export default function CreateTestModal({
         questionType: formData.questionType as 'mcq' | 'essay',
         totalQuestions: formData.totalQuestions,
         shuffleQuestions: formData.shuffleQuestions,
-        showQuestionsOneByOne: formData.showQuestionsOneByOne,
         allowReviewBeforeSubmit: formData.allowReviewBeforeSubmit,
         passingScore: formData.passingScore,
         showResultsImmediately: formData.showResultsImmediately,
@@ -1847,34 +1858,12 @@ export default function CreateTestModal({
                     <label className="flex items-center space-x-3">
                       <input
                         type="checkbox"
-                        checked={formData.showQuestionsOneByOne}
-                        onChange={(e) => updateFormData({ showQuestionsOneByOne: e.target.checked })}
+                        checked={formData.allowReviewBeforeSubmit}
+                        onChange={(e) => updateFormData({ allowReviewBeforeSubmit: e.target.checked })}
                         className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                       />
                       <div>
                         <span className="text-sm font-medium text-gray-900 dark:text-white">
-                          Show Questions One by One
-                        </span>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          Students see one question at a time (cannot go back)
-                        </p>
-                      </div>
-                    </label>
-
-                    <label className="flex items-center space-x-3">
-                      <input
-                        type="checkbox"
-                        checked={formData.allowReviewBeforeSubmit}
-                        onChange={(e) => updateFormData({ allowReviewBeforeSubmit: e.target.checked })}
-                        className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                        disabled={formData.showQuestionsOneByOne}
-                      />
-                      <div>
-                        <span className={`text-sm font-medium ${
-                          formData.showQuestionsOneByOne 
-                            ? 'text-gray-400 dark:text-gray-600' 
-                            : 'text-gray-900 dark:text-white'
-                        }`}>
                           Allow Review Before Submit
                         </span>
                         <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -1923,6 +1912,19 @@ export default function CreateTestModal({
                       <p className="text-xs text-gray-500 dark:text-gray-400">
                         Students see their score and correct answers right after submission
                       </p>
+                      {formData.questionType && (
+                        <p className="text-xs mt-1 font-medium">
+                          {formData.questionType === 'mcq' ? (
+                            <span className="text-green-600 dark:text-green-400">
+                              ✓ Recommended for MCQ tests (auto-graded)
+                            </span>
+                          ) : (
+                            <span className="text-orange-600 dark:text-orange-400">
+                              ⚠ Not recommended for Essay tests (require manual grading)
+                            </span>
+                          )}
+                        </p>
+                      )}
                     </div>
                   </label>
                 </div>
