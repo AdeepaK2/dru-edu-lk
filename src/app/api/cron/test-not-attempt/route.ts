@@ -4,23 +4,15 @@ import { Timestamp } from 'firebase-admin/firestore';
 
 // This API route checks for students who didn't attempt recently ended tests
 // and sends notification emails to their parents
-export async function POST(request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
-    console.log('🔍 Starting missed test attempt check...');
-
-    // Verify cron job authorization (optional security measure)
-    // Temporarily disabled for testing
-    /*
-    const apiKey = request.headers.get('x-api-key');
-    const cronSecret = process.env.CRON_SECRET;
-    
-    if (cronSecret && apiKey !== cronSecret) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Invalid API Key' },
-        { status: 401 }
-      );
+    // Verify this is a valid cron job request (Vercel sets specific headers)
+    const authHeader = request.headers.get('authorization');
+    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    */
+
+    console.log('🔍 Starting missed test attempt check...');
 
     // Calculate time range - check tests that ended in the last 2 hours
     const now = Timestamp.now();
@@ -378,11 +370,8 @@ function formatTestEndTime(test: any): string {
   }
 }
 
-// Also support GET requests for manual testing
-export async function GET(request: NextRequest) {
-  return NextResponse.json({
-    message: 'Missed Test Attempt Checker API',
-    usage: 'POST to this endpoint to check for missed test attempts and send parent notifications',
-    note: 'This endpoint is designed to be called by cron jobs'
-  });
+// Also support POST requests for manual testing/alternative access
+export async function POST(request: NextRequest) {
+  // Delegate to GET function for consistency
+  return GET(request);
 }
