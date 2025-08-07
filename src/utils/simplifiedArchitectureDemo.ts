@@ -45,7 +45,6 @@ export async function createSimplifiedTestDemo() {
         questionSelectionMethod: 'manual',
         totalQuestions: questionRefs.length,
         shuffleQuestions: false,
-        showQuestionsOneByOne: true,
         allowReviewBeforeSubmit: true,
         passingScore: 70,
         showResultsImmediately: true

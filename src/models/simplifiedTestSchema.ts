@@ -21,7 +21,6 @@ export interface TestConfig {
   questionSelectionMethod: QuestionSelectionMethod;
   totalQuestions: number;
   shuffleQuestions: boolean;
-  showQuestionsOneByOne: boolean;
   allowReviewBeforeSubmit: boolean;
   
   // Scoring

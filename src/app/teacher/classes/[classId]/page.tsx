@@ -137,18 +137,6 @@ export default function ClassDetails() {
       count: materialsLoading ? undefined : materialsCount
     },
     {
-      id: 'tests',
-      label: 'Tests',
-      icon: FileText,
-      count: 5 // This would come from actual data
-    },
-    {
-      id: 'practice-tests',
-      label: 'Practice Tests',
-      icon: GraduationCap,
-      count: 8 // This would come from actual data
-    },
-    {
       id: 'students',
       label: 'Students',
       icon: Users,
@@ -258,8 +246,6 @@ export default function ClassDetails() {
           {/* Tab Content */}
           <div className="p-6">
             {activeTab === 'study-materials' && <StudyMaterialsTab classId={classId} />}
-            {activeTab === 'tests' && <TestsTab classId={classId} />}
-            {activeTab === 'practice-tests' && <PracticeTestsTab classId={classId} />}
             {activeTab === 'students' && (
               <StudentsTab 
                 classId={classId} 
@@ -561,129 +547,6 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
         preSelectedLessonId={selectedLessonId}
       />
     </>
-  );
-}
-
-// Tests Tab Component
-function TestsTab({ classId }: { classId: string }) {
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Tests
-        </h3>
-        <Button className="flex items-center space-x-2">
-          <Plus className="w-4 h-4" />
-          <span>Create Test</span>
-        </Button>
-      </div>
-
-      {/* Tests List */}
-      <div className="space-y-4">
-        {[1, 2, 3].map((item) => (
-          <div key={item} className="border border-gray-200 dark:border-gray-700 rounded-lg p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
-                  <FileText className="w-6 h-6 text-green-600 dark:text-green-400" />
-                </div>
-                <div>
-                  <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    Mid-term Test {item}
-                  </h4>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    20 questions • 60 minutes • Due: Jan 30, 2025
-                  </p>
-                </div>
-              </div>
-              <div className="flex space-x-2">
-                <Button variant="outline" size="sm">
-                  View Results
-                </Button>
-                <Button variant="outline" size="sm">
-                  <Edit className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-4 gap-4 text-center">
-              <div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">85%</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Average Score</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">24/30</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Completed</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">6</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Pending</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">A</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Grade</p>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// Practice Tests Tab Component
-function PracticeTestsTab({ classId }: { classId: string }) {
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Practice Tests
-        </h3>
-        <Button className="flex items-center space-x-2">
-          <Plus className="w-4 h-4" />
-          <span>Create Practice Test</span>
-        </Button>
-      </div>
-
-      {/* Practice Tests Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {[1, 2, 3, 4].map((item) => (
-          <div key={item} className="border border-gray-200 dark:border-gray-700 rounded-lg p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/20 rounded-lg flex items-center justify-center">
-                  <GraduationCap className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-900 dark:text-white">
-                    Practice Test {item}
-                  </h4>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    15 questions • No time limit
-                  </p>
-                </div>
-              </div>
-              <Button variant="outline" size="sm">
-                <Edit className="w-4 h-4" />
-              </Button>
-            </div>
-            
-            <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
-              Practice questions to help students prepare for upcoming tests.
-            </p>
-            
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-500 dark:text-gray-400">
-                Last updated: 3 days ago
-              </span>
-              <span className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300 px-2 py-1 rounded-full text-xs">
-                Active
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
   );
 }
 
