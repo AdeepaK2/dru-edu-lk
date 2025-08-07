@@ -160,22 +160,22 @@ export default function Home() {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative py-20 px-4 sm:px-6 lg:px-8">
+      <section className="relative pt-2 pb-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto text-center relative z-10">
-          <div className="mb-8">
+          <div className="mb-4">
             <span className="inline-block bg-white/20 backdrop-blur-sm text-white px-6 py-2 rounded-full text-sm font-medium border border-white/30">
               🏆 Melbourne's Premier Education Centre
             </span>
           </div>
           <h1 className="text-6xl md:text-8xl font-extrabold text-white mb-8 leading-tight">
-            Excel in Your
+            Master Your
             <span className="block bg-gradient-to-r from-[#0088e0] to-[#00b4d8] bg-clip-text text-transparent">
-              Studies
+              VCE Journey
             </span>
           </h1>
-          <p className="text-xl md:text-2xl text-white/90 mb-12 max-w-4xl mx-auto leading-relaxed font-light">
-            Transform your academic journey with personalized coaching, expert guidance, 
-            and proven methods that unlock your true potential.
+          <p className="text-lg md:text-xl text-white/90 mb-12 max-w-4xl mx-auto leading-relaxed font-light">
+            Experience personalized learning with close student monitoring, frequent assessments, and expert guidance. 
+            We track your progress through regular practice tests and provide tailored support - proven by past results to ensure your VCE success!
           </p>
           <div className="flex justify-center">
             <Link 
@@ -603,54 +603,6 @@ export default function Home() {
                 <h3 className="text-lg font-bold text-[#01143d] text-center group-hover:text-[#0088e0] transition-colors">{subject.name}</h3>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials Section */}
-      <section id="testimonials" className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-[#01143d] mb-4">Student Success Stories</h2>
-            <p className="text-xl text-gray-600">Hear from our successful VCE graduates</p>
-          </div>
-          
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-gray-50 p-6 rounded-lg">
-              <div className="flex items-center mb-4">
-                <div className="flex text-[#0088e0]">
-                  {"★".repeat(5)}
-                </div>
-              </div>
-              <p className="text-gray-600 mb-4 italic">
-                "Dr. U Education helped me achieve a 99+ ATAR. The personalized attention and expert teaching made all the difference."
-              </p>
-              <div className="font-semibold text-[#01143d]">- Sarah M., University of Melbourne</div>
-            </div>
-            
-            <div className="bg-gray-50 p-6 rounded-lg">
-              <div className="flex items-center mb-4">
-                <div className="flex text-[#0088e0]">
-                  {"★".repeat(5)}
-                </div>
-              </div>
-              <p className="text-gray-600 mb-4 italic">
-                "The Math Methods course was exceptional. I went from struggling to excelling in just one semester."
-              </p>
-              <div className="font-semibold text-[#01143d]">- James L., Monash University</div>
-            </div>
-            
-            <div className="bg-gray-50 p-6 rounded-lg">
-              <div className="flex items-center mb-4">
-                <div className="flex text-[#0088e0]">
-                  {"★".repeat(5)}
-                </div>
-              </div>
-              <p className="text-gray-600 mb-4 italic">
-                "Amazing support for Physics and Chemistry. The teachers really know how to explain complex concepts clearly."
-              </p>
-              <div className="font-semibold text-[#01143d]">- Emily R., RMIT University</div>
-            </div>
           </div>
         </div>
       </section>
