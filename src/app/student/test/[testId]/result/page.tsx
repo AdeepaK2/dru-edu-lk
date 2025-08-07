@@ -32,11 +32,8 @@ export default function TestResultPage() {
   const [submission, setSubmission] = useState<StudentSubmission | null>(null);
   const [test, setTest] = useState<Test | null>(null);
   const [attemptInfo, setAttemptInfo] = useState<AttemptSummary | null>(null);
-  const [allAttempts, setAllAttempts] = useState<StudentSubmission[]>([]);
-  const [bestAttempt, setBestAttempt] = useState<StudentSubmission | null>(null);
   
   // UI states
-  const [showAllAttempts, setShowAllAttempts] = useState(false);
   const [startingNewAttempt, setStartingNewAttempt] = useState(false);
   
   // Load data
@@ -82,34 +79,7 @@ export default function TestResultPage() {
         const attemptData = await AttemptManagementService.getAttemptSummary(testId, student.id);
         setAttemptInfo(attemptData);
         
-        // Convert attempt summary to submission format for backward compatibility
-        const submissionAttempts = attemptData.attempts.map(a => ({
-          id: a.attemptId,
-          attemptNumber: a.attemptNumber,
-          status: a.status || 'submitted',
-          score: a.score || 0,
-          percentage: a.percentage || 0,
-          submittedAt: a.submittedAt || null,
-          autoGradedScore: a.score || 0,
-          maxScore: test?.totalMarks || 0
-        } as any));
-        
-        setAllAttempts(submissionAttempts);
-        
-        // Get best attempt (find the one with highest score)
-        if (attemptData.attempts.length > 0) {
-          const bestAttemptData = attemptData.attempts.reduce((best, current) => 
-            (current.percentage || 0) > (best?.percentage || 0) ? current : best, 
-            attemptData.attempts[0]
-          );
-          
-          setBestAttempt({
-            id: bestAttemptData.attemptId,
-            attemptNumber: bestAttemptData.attemptNumber,
-            score: bestAttemptData.score || 0,
-            percentage: bestAttemptData.percentage || 0
-          } as any);
-        }        // Get the test
+        // Get the test data
         const testDoc = await getDoc(doc(firestore, 'tests', testId));
         
         if (!testDoc.exists()) {
@@ -634,18 +604,6 @@ export default function TestResultPage() {
                 </div>
               </div>
               
-              {bestAttempt && bestAttempt.id !== submission.id && (
-                <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
-                  <div className="text-sm text-green-600 dark:text-green-400">Best Score</div>
-                  <div className="text-2xl font-bold text-green-700 dark:text-green-300">
-                    {bestAttempt.percentage || 0}%
-                  </div>
-                  <div className="text-xs text-green-600 dark:text-green-400">
-                    Attempt #{bestAttempt.attemptNumber}
-                  </div>
-                </div>
-              )}
-              
               <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
                 <div className="text-sm text-gray-600 dark:text-gray-400">Status</div>
                 <div className="text-sm font-medium text-gray-900 dark:text-white">
@@ -660,78 +618,10 @@ export default function TestResultPage() {
               </div>
             </div>
             
-            {/* All Attempts List */}
-            {allAttempts.length > 1 && (
-              <div>
-                <button
-                  onClick={() => setShowAllAttempts(!showAllAttempts)}
-                  className="flex items-center text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 mb-3"
-                >
-                  {showAllAttempts ? (
-                    <>
-                      <ChevronUp className="h-4 w-4 mr-1" />
-                      Hide all attempts
-                    </>
-                  ) : (
-                    <>
-                      <ChevronDown className="h-4 w-4 mr-1" />
-                      Show all attempts ({allAttempts.length})
-                    </>
-                  )}
-                </button>
-                
-                {showAllAttempts && (
-                  <div className="space-y-3">
-                    {allAttempts.map((attempt, index) => (
-                      <div 
-                        key={attempt.id}
-                        className={`border rounded-lg p-4 ${
-                          attempt.id === submission.id 
-                            ? 'border-blue-300 bg-blue-50 dark:bg-blue-900/20' 
-                            : 'border-gray-200 dark:border-gray-600'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-4">
-                            <div>
-                              <div className="font-medium text-gray-900 dark:text-white">
-                                Attempt #{attempt.attemptNumber}
-                                {attempt.id === submission.id && (
-                                  <span className="ml-2 text-sm text-blue-600 dark:text-blue-400">(Current)</span>
-                                )}
-                              </div>
-                              <div className="text-sm text-gray-600 dark:text-gray-400">
-                                {formatDateTime(attempt.submittedAt)}
-                              </div>
-                            </div>
-                            
-                            <div className="text-center">
-                              <div className="text-lg font-semibold text-gray-900 dark:text-white">
-                                {attempt.percentage || 0}%
-                              </div>
-                              <div className="text-sm text-gray-600 dark:text-gray-400">
-                                {attempt.autoGradedScore || 0} / {attempt.maxScore}
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center space-x-3">
-                            {getAttemptStatusBadge(attempt)}
-                            
-                            {attempt.id !== submission.id && (
-                              <button
-                                onClick={() => router.push(`/student/test/${testId}/result?submissionId=${attempt.id}`)}
-                                className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
-                              >
-                                View Details
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+            {/* Note: Multiple attempts display is being updated */}
+            {attemptInfo && attemptInfo.attempts.length > 1 && (
+              <div className="text-sm text-gray-500 dark:text-gray-400 italic text-center py-4">
+                You have {attemptInfo.attempts.length} attempts for this test. Viewing current submission above.
               </div>
             )}
           </div>
