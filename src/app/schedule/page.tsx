@@ -1,4 +1,5 @@
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/ui/Footer";
 import Link from "next/link";
 
 export default function SchedulePage() {
@@ -202,11 +203,7 @@ export default function SchedulePage() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-black/20 border-t border-white/10 py-8 text-center">
-        <div className="max-w-7xl mx-auto px-4">
-          <p className="text-white/80">© 2025 Dr. U Education Centre. All rights reserved.</p>
-        </div>
-      </footer>
+      <Footer/>
     </div>
   );
 }

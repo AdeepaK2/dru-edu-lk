@@ -1,11 +1,13 @@
 'use client';
 
+
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Book, Search, Filter, ShoppingCart, Star, Plus, Minus } from 'lucide-react';
 import { PublicationDisplayData, PUBLICATION_CATEGORIES } from '../../models/publicationSchema';
 import { usePublicationCart } from '../../hooks/usePublicationCart';
-import Navbar from '../../components/Navbar';
+import Navbar from '@/components/Navbar';
+import Footer from "@/components/ui/Footer"
 
 const BooksPage = () => {
   const [publications, setPublications] = useState<PublicationDisplayData[]>([]);
@@ -496,6 +498,7 @@ const PublicationCard: React.FC<PublicationCardProps> = ({
           </div>
         </div>
       )}
+      <Footer/>
     </div>
   );
 };
