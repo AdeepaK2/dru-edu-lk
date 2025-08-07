@@ -2,9 +2,152 @@ import Image from "next/image";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import { Footer, ChatBot } from "@/components/ui";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Dr. U Education - Premier VCE & Selective School Coaching in Melbourne",
+  description: "Excel in VCE Mathematics, Physics, Chemistry and Selective School entrance exams with Melbourne's premier education centre. Expert coaching with proven results since 2010.",
+  keywords: [
+    "VCE tuition Melbourne",
+    "VCE Math Methods coaching",
+    "VCE Specialist Math tutor",
+    "Selective school preparation Melbourne",
+    "Melbourne High School coaching",
+    "Mac.Robertson Girls coaching",
+    "John Monash Science School prep",
+    "VCE Physics tutor Melbourne",
+    "VCE Chemistry tutor Melbourne",
+    "Mathematics tutor Melbourne",
+    "Dr U Education",
+    "Cranbourne tuition",
+    "Glen Waverley tuition"
+  ],
+  openGraph: {
+    title: "Dr. U Education - Premier VCE & Selective School Coaching",
+    description: "Excel in VCE Mathematics, Physics, Chemistry and Selective School entrance exams with Melbourne's premier education centre.",
+    url: "https://drueducation.com.au",
+    siteName: "Dr. U Education",
+    images: [
+      {
+        url: "https://drueducation.com.au/Logo.png",
+        width: 1200,
+        height: 630,
+        alt: "Dr. U Education - Melbourne's Premier Education Centre",
+      }
+    ],
+    locale: "en_AU",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Dr. U Education - Premier VCE & Selective School Coaching",
+    description: "Excel in VCE Mathematics, Physics, Chemistry and Selective School entrance exams with Melbourne's premier education centre.",
+    images: ["https://drueducation.com.au/Logo.png"],
+  },
+  alternates: {
+    canonical: "https://drueducation.com.au",
+  },
+};
 
 export default function Home() {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": ["EducationalOrganization", "LocalBusiness"],
+    "name": "Dr. U Education",
+    "alternateName": "Dr U Education Centre",
+    "url": "https://drueducation.com.au",
+    "logo": "https://drueducation.com.au/Logo.png",
+    "description": "Premier VCE and Selective School coaching centre in Melbourne offering expert tuition in Mathematics, Physics, Chemistry and more.",
+    "founder": {
+      "@type": "Person",
+      "name": "Dr. Udugama Rakhitha",
+      "jobTitle": "Educational Director"
+    },
+    "address": [
+      {
+        "@type": "PostalAddress",
+        "streetAddress": "Cranbourne Campus",
+        "addressLocality": "Cranbourne",
+        "addressRegion": "VIC",
+        "postalCode": "3977",
+        "addressCountry": "AU"
+      },
+      {
+        "@type": "PostalAddress",
+        "streetAddress": "Glen Waverley Campus",
+        "addressLocality": "Glen Waverley",
+        "addressRegion": "VIC",
+        "postalCode": "3150",
+        "addressCountry": "AU"
+      }
+    ],
+    "areaServed": {
+      "@type": "Place",
+      "name": "Melbourne, Victoria, Australia"
+    },
+    "serviceType": [
+      "VCE Mathematics Coaching",
+      "VCE Physics Tuition",
+      "VCE Chemistry Tuition",
+      "Selective School Preparation",
+      "Academic Coaching"
+    ],
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "4.9",
+      "reviewCount": "150",
+      "bestRating": "5",
+      "worstRating": "1"
+    },
+    "priceRange": "$$",
+    "telephone": "+61-3-XXXX-XXXX",
+    "email": "info@drueducation.com.au",
+    "hasOfferCatalog": {
+      "@type": "OfferCatalog",
+      "name": "VCE and Selective School Courses",
+      "itemListElement": [
+        {
+          "@type": "OfferCatalog",
+          "name": "VCE Mathematics",
+          "itemListElement": [
+            {
+              "@type": "Course",
+              "name": "VCE Math Methods Units 3&4",
+              "description": "Comprehensive VCE Mathematics Methods coaching for Units 3 and 4"
+            },
+            {
+              "@type": "Course",
+              "name": "VCE Specialist Math Units 3&4",
+              "description": "Expert VCE Specialist Mathematics coaching for Units 3 and 4"
+            }
+          ]
+        },
+        {
+          "@type": "OfferCatalog",
+          "name": "VCE Sciences",
+          "itemListElement": [
+            {
+              "@type": "Course",
+              "name": "VCE Physics Units 3&4",
+              "description": "Expert VCE Physics coaching for Units 3 and 4"
+            },
+            {
+              "@type": "Course",
+              "name": "VCE Chemistry Units 3&4",
+              "description": "Comprehensive VCE Chemistry coaching for Units 3 and 4"
+            }
+          ]
+        }
+      ]
+    }
+  };
+
   return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
     <div className="min-h-screen bg-gradient-to-br from-[#01143d] via-[#0a2147] to-[#0088e0] relative overflow-hidden">
       {/* Background decoration */}
       <div className="absolute inset-0 opacity-30">
@@ -560,5 +703,6 @@ export default function Home() {
       {/* AI Chat Bot */}
       <ChatBot />
     </div>
+    </>
   );
 }
