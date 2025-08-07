@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/new-enroll",
       "schedule": "*/30 * * * *"
+    },
+    {
+      "path": "/api/cron/test-not-attempt",
+      "schedule": "0 */1 * * *"
     }
   ]
 }
