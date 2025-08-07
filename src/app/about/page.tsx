@@ -206,11 +206,7 @@ export default function AboutPage() {
       </main>
       
       {/* Footer */}
-      <footer className="bg-black/20 border-t border-white/10 py-8 text-center">
-        <div className="max-w-7xl mx-auto px-4">
-          <p className="text-white/80">© 2025 Dr. U Education Centre. All rights reserved.</p>
-        </div>
-      </footer>
+      <Footer/>
       
       {/* AI Chat Bot */}
       <ChatBot />
