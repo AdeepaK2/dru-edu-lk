@@ -82,6 +82,8 @@ export interface EnrollmentRequest {
   adminNotes?: string;
   processedBy?: string;
   processedAt?: Date;
+  notificationSent?: boolean;
+  notificationSentAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -115,6 +117,8 @@ export interface EnrollmentRequestDocument {
   adminNotes?: string;
   processedBy?: string;
   processedAt?: Timestamp;
+  notificationSent?: boolean;
+  notificationSentAt?: Timestamp;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
@@ -130,6 +134,7 @@ export const convertEnrollmentRequestDocument = (doc: EnrollmentRequestDocument)
     createdAt: doc.createdAt.toDate(),
     updatedAt: doc.updatedAt.toDate(),
     processedAt: doc.processedAt?.toDate(),
+    notificationSentAt: doc.notificationSentAt?.toDate(),
   };
 };
 

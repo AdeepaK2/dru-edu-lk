@@ -18,6 +18,7 @@ export async function POST(request: NextRequest) {
     const enrollmentRequestData = {
       ...validatedData,
       status: 'Pending' as const,
+      notificationSent: false,
       createdAt: firebaseAdmin.admin.firestore.Timestamp.now(),
       updatedAt: firebaseAdmin.admin.firestore.Timestamp.now(),
     };
