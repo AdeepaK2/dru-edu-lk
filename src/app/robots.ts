@@ -5,13 +5,41 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: '*',
-        allow: '/',
-        disallow: ['/admin/', '/student/', '/teacher/', '/api/']
+        allow: [
+          '/',
+          '/about',
+          '/courses',
+          '/schedule',
+          '/books',
+          '/test-study',
+          '/consult',
+          '/enroll'
+        ],
+        disallow: [
+          '/admin/',
+          '/student/',
+          '/teacher/',
+          '/api/'
+        ]
       },
       {
         userAgent: 'Googlebot',
-        allow: ['/'],
-        disallow: ['/admin/', '/student/', '/teacher/', '/api/']
+        allow: [
+          '/',
+          '/about',
+          '/courses',
+          '/schedule',
+          '/books',
+          '/test-study',
+          '/consult',
+          '/enroll'
+        ],
+        disallow: [
+          '/admin/',
+          '/student/',
+          '/teacher/',
+          '/api/'
+        ]
       }
     ],
     sitemap: [
