@@ -10,11 +10,15 @@ import Textarea from '@/components/ui/form/TextArea';
 import { CalendarDays, Clock, MapPin, DollarSign, Users, BookOpen, CheckCircle, ArrowLeft } from 'lucide-react';
 import { ClassDocument } from '@/models/classSchema';
 import { EnrollmentRequestData, enrollmentRequestSchema } from '@/models/enrollmentRequestSchema';
-import { firestore } from '@/utils/firebase-client';
+import { ClassFirestoreService } from '@/apiservices/classFirestoreService';
+import { firestore, auth } from '@/utils/firebase-client';
 import { collection, addDoc, getDocs, query, Timestamp, where } from 'firebase/firestore';
+import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 import { validatePhoneNumber, toInternationalFormat } from '@/utils/phoneValidation';
+import { useGuestAuth } from '@/hooks/useGuestAuth';
 
 interface EnrollmentFormData {
   // Student Information
@@ -43,6 +47,9 @@ const RELATIONSHIP_OPTIONS = [
 ];
 
 export default function EnrollmentPage() {
+  const router = useRouter();
+  const { authLoading, isGuestSession, cleanupGuestSession } = useGuestAuth();
+  
   const [classes, setClasses] = useState<ClassDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -66,10 +73,14 @@ export default function EnrollmentPage() {
     agreedToTerms: false,
   });
 
-  // Fetch available classes
+  // Fetch available classes (after authentication)
   useEffect(() => {
     const fetchClasses = async () => {
+      // Wait for authentication to complete
+      if (authLoading) return;
+      
       try {
+        console.log('Fetching classes...');
         const classesQuery = query(collection(firestore, 'classes'));
         const querySnapshot = await getDocs(classesQuery);
         const classesData = querySnapshot.docs.map(doc => ({
@@ -77,9 +88,13 @@ export default function EnrollmentPage() {
           ...doc.data()
         })) as ClassDocument[];
         
+        console.log('Found classes:', classesData.length);
+        
         // Filter only active classes
         const activeClasses = classesData.filter((cls: ClassDocument) => cls.status === 'Active');
+        console.log('Active classes:', activeClasses.length);
         setClasses(activeClasses);
+        
       } catch (error) {
         console.error('Error fetching classes:', error);
       } finally {
@@ -88,7 +103,7 @@ export default function EnrollmentPage() {
     };
 
     fetchClasses();
-  }, []);
+  }, [authLoading]); // Depend on authLoading to run after authentication
 
   const handleInputChange = (field: keyof EnrollmentFormData, value: string | boolean | string[]) => {
     setFormData(prev => ({
@@ -283,12 +298,14 @@ export default function EnrollmentPage() {
     return schedule.map(slot => `${slot.day}: ${slot.startTime} - ${slot.endTime}`).join(', ');
   };
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-t-4 border-[#0088e0] border-solid rounded-full animate-spin mx-auto"></div>
-          <p className="mt-4 text-gray-600 font-medium">Loading enrollment form...</p>
+          <p className="mt-4 text-gray-600 font-medium">
+            {authLoading ? 'Preparing enrollment form...' : 'Loading enrollment form...'}
+          </p>
         </div>
       </div>
     );
