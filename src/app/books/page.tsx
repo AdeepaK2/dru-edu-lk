@@ -1,7 +1,7 @@
 'use client';
 
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Book, Search, Filter, ShoppingCart, Star, Plus, Minus } from 'lucide-react';
 import { PublicationDisplayData, PUBLICATION_CATEGORIES } from '../../models/publicationSchema';
@@ -13,8 +13,20 @@ const BooksPage = () => {
   const [publications, setPublications] = useState<PublicationDisplayData[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [showCart, setShowCart] = useState(false);
+  const [imageLoadErrors, setImageLoadErrors] = useState<Set<string>>(new Set());
+
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+  
   
   // Cart functionality
   const {
@@ -28,17 +40,31 @@ const BooksPage = () => {
     getCartTotals
   } = usePublicationCart();
 
+  // Memoize cart totals to avoid recalculation
+  const cartTotals = React.useMemo(() => getCartTotals(), [cartItems, getCartTotals]);
+
+  // Memoize cart item getter
+  const getCartItemMemo = useCallback((publicationId: string) => {
+    return getCartItem(publicationId);
+  }, [cartItems, getCartItem]);
+
   useEffect(() => {
     const loadPublications = async () => {
       try {
         setLoading(true);
-        // Use the API route to get active publications (no direct Firebase access)
+        // Use the API route to get active publications with timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        
         const response = await fetch('/api/publications/public', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
           },
+          signal: controller.signal,
         });
+        
+        clearTimeout(timeoutId);
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -70,22 +96,32 @@ const BooksPage = () => {
     loadPublications();
   }, []);
 
-  const filteredPublications = publications.filter(pub => {
-    const matchesSearch = !searchTerm || 
-      pub.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      pub.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (pub.subject && pub.subject.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesCategory = !categoryFilter || pub.category === categoryFilter;
-    const isActive = pub.isActive;
-    return matchesSearch && matchesCategory && isActive;
-  });
+  const filteredPublications = React.useMemo(() => {
+    return publications.filter(pub => {
+      const matchesSearch = !debouncedSearchTerm || 
+        pub.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        pub.author.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        (pub.subject && pub.subject.toLowerCase().includes(debouncedSearchTerm.toLowerCase()));
+      const matchesCategory = !categoryFilter || pub.category === categoryFilter;
+      const isActive = pub.isActive;
+      return matchesSearch && matchesCategory && isActive;
+    });
+  }, [publications, debouncedSearchTerm, categoryFilter]);
 
-  const featuredPublications = filteredPublications.filter(pub => pub.isFeatured);
+  const featuredPublications = React.useMemo(() => {
+    return filteredPublications.filter(pub => pub.isFeatured);
+  }, [filteredPublications]);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-96">
-        <div className="text-lg">Loading publications...</div>
+      <div className="min-h-screen bg-gradient-to-br from-[#01143d] via-[#0a2147] to-[#0088e0] relative overflow-hidden">
+        <Navbar />
+        <div className="flex items-center justify-center min-h-96 pt-32">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+            <div className="text-lg text-white">Loading publications...</div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -171,8 +207,10 @@ const BooksPage = () => {
                     publication={publication} 
                     featured 
                     onAddToCart={addToCart}
-                    cartItem={getCartItem(publication.publicationId)}
+                    cartItem={getCartItemMemo(publication.publicationId)}
                     onUpdateQuantity={updateQuantity}
+                    imageLoadErrors={imageLoadErrors}
+                    setImageLoadErrors={setImageLoadErrors}
                   />
                 ))}
               </div>
@@ -198,8 +236,10 @@ const BooksPage = () => {
                     key={publication.id} 
                     publication={publication} 
                     onAddToCart={addToCart}
-                    cartItem={getCartItem(publication.publicationId)}
+                    cartItem={getCartItemMemo(publication.publicationId)}
                     onUpdateQuantity={updateQuantity}
+                    imageLoadErrors={imageLoadErrors}
+                    setImageLoadErrors={setImageLoadErrors}
                   />
                 ))}
               </div>
@@ -214,14 +254,14 @@ const BooksPage = () => {
       </section>
 
       {/* Floating Cart Button */}
-      {getCartTotals().totalItems > 0 && (
+      {cartTotals.totalItems > 0 && (
         <button
           onClick={() => setShowCart(true)}
           className="fixed bottom-6 right-6 bg-[#0088e0] hover:bg-[#0066b3] text-white p-4 rounded-full shadow-lg transition-all duration-300 z-40 flex items-center gap-2"
         >
           <ShoppingCart size={24} />
           <span className="bg-red-500 text-white text-sm rounded-full w-6 h-6 flex items-center justify-center">
-            {getCartTotals().totalItems}
+            {cartTotals.totalItems}
           </span>
         </button>
       )}
@@ -303,15 +343,15 @@ const BooksPage = () => {
                 <div className="space-y-2 mb-4">
                   <div className="flex justify-between">
                     <span>Subtotal:</span>
-                    <span>${getCartTotals().subtotal.toFixed(2)}</span>
+                    <span>${cartTotals.subtotal.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Shipping:</span>
-                    <span>${getCartTotals().totalShipping.toFixed(2)}</span>
+                    <span>${cartTotals.totalShipping.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between font-bold text-lg">
                     <span>Total:</span>
-                    <span>${getCartTotals().totalAmount.toFixed(2)}</span>
+                    <span>${cartTotals.totalAmount.toFixed(2)}</span>
                   </div>
                 </div>
                 
@@ -335,6 +375,9 @@ const BooksPage = () => {
           </div>
         </div>
       )}
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 };
@@ -345,6 +388,8 @@ interface PublicationCardProps {
   onAddToCart: (publication: PublicationDisplayData, quantity: number) => void;
   cartItem?: { quantity: number };
   onUpdateQuantity: (publicationId: string, quantity: number) => void;
+  imageLoadErrors: Set<string>;
+  setImageLoadErrors: React.Dispatch<React.SetStateAction<Set<string>>>;
 }
 
 const PublicationCard: React.FC<PublicationCardProps> = ({ 
@@ -352,9 +397,15 @@ const PublicationCard: React.FC<PublicationCardProps> = ({
   featured = false, 
   onAddToCart, 
   cartItem, 
-  onUpdateQuantity 
+  onUpdateQuantity,
+  imageLoadErrors,
+  setImageLoadErrors
 }) => {
   const totalPrice = publication.price + (publication.shipping || 0);
+
+  const handleImageError = React.useCallback((publicationId: string) => {
+    setImageLoadErrors(prev => new Set(prev).add(publicationId));
+  }, [setImageLoadErrors]);
 
   return (
     <div className={`group bg-white rounded-2xl border border-gray-100 hover:border-[#0088e0]/30 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 p-6 ${
@@ -368,16 +419,14 @@ const PublicationCard: React.FC<PublicationCardProps> = ({
       )}
       
       {/* Book Cover Image */}
-      {publication.coverImage && (
+      {publication.coverImage && !imageLoadErrors.has(publication.publicationId) && (
         <div className="mb-4">
           <img 
             src={publication.coverImage} 
             alt={publication.title}
             className="w-full h-48 object-cover rounded-lg group-hover:scale-105 transition-transform duration-300"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.src = '/images/placeholder-thumbnail.svg';
-            }}
+            loading="lazy"
+            onError={() => handleImageError(publication.publicationId)}
           />
         </div>
       )}
@@ -498,7 +547,6 @@ const PublicationCard: React.FC<PublicationCardProps> = ({
           </div>
         </div>
       )}
-      <Footer/>
     </div>
   );
 };

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { 
   Users, 
   GraduationCap, 
@@ -8,10 +9,6 @@ import {
   Video, 
   FileQuestion, 
   Activity,
-  Zap,
-  UserPlus,
-  PlusCircle,
-  Upload,
   Shield,
   RefreshCw
 } from 'lucide-react';
@@ -31,6 +28,8 @@ export default function AdminDashboard() {
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [adminLoading, setAdminLoading] = useState(false);
   const [centersInitialized, setCentersInitialized] = useState(false);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [hasInitialLoad, setHasInitialLoad] = useState(false);
   const [stats, setStats] = useState({
     totalStudents: 0,
     totalTeachers: 0,
@@ -42,43 +41,62 @@ export default function AdminDashboard() {
     pendingTransactions: 0,
     systemStatus: 'Loading...'
   });
-  const [statsLoading, setStatsLoading] = useState(true);
 
-  // Fetch dashboard statistics
+  // Fetch dashboard statistics with error handling and timeout
   const fetchDashboardStats = async () => {
+    // Prevent multiple simultaneous calls
+    if (statsLoading && hasInitialLoad) {
+      return;
+    }
+
     try {
       setStatsLoading(true);
       
-      // Fetch data from all services in parallel
+      // Create abort controller with timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+      
+      // Fetch data from all services in parallel with individual error handling
       const [
         studentsData,
         teachersData,
         classesData,
         videosData,
         subjectsData
-      ] = await Promise.all([
-        StudentFirestoreService.getAllStudents().catch(() => []),
-        TeacherFirestoreService.getAllTeachers().catch(() => []),
-        ClassFirestoreService.getAllClasses().catch(() => []),
-        VideoFirestoreService.getAllVideos().catch(() => []),
-        SubjectFirestoreService.getAllSubjects().catch(() => [])
+      ] = await Promise.allSettled([
+        StudentFirestoreService.getAllStudents(),
+        TeacherFirestoreService.getAllTeachers(),
+        ClassFirestoreService.getAllClasses(),
+        VideoFirestoreService.getAllVideos(),
+        SubjectFirestoreService.getAllSubjects()
       ]);
 
+      clearTimeout(timeoutId);
+
+      // Extract data safely from settled promises
+      const students = studentsData.status === 'fulfilled' ? studentsData.value : [];
+      const teachers = teachersData.status === 'fulfilled' ? teachersData.value : [];
+      const classes = classesData.status === 'fulfilled' ? classesData.value : [];
+      const videos = videosData.status === 'fulfilled' ? videosData.value : [];
+      const subjects = subjectsData.status === 'fulfilled' ? subjectsData.value : [];
+
       // Calculate statistics
-      const activeClasses = classesData.filter(cls => cls.status === 'Active').length;
-      const activeSubjects = subjectsData.filter(sub => sub.isActive).length;
+      const activeClasses = classes.filter(cls => cls.status === 'Active').length;
+      const activeSubjects = subjects.filter(sub => sub.isActive).length;
       
       setStats({
-        totalStudents: studentsData.length,
-        totalTeachers: teachersData.length,
-        totalClasses: classesData.length,
-        totalVideos: videosData.length,
-        totalSubjects: subjectsData.length,
+        totalStudents: students.length,
+        totalTeachers: teachers.length,
+        totalClasses: classes.length,
+        totalVideos: videos.length,
+        totalSubjects: subjects.length,
         activeClasses: activeClasses,
         totalQuestions: 0, // Will need QuestionBankFirestoreService for this
         pendingTransactions: 0, // Will need TransactionFirestoreService for this
         systemStatus: 'Healthy'
       });
+
+      setHasInitialLoad(true);
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
       setStats(prev => ({
@@ -93,8 +111,12 @@ export default function AdminDashboard() {
   // Clear loading state when dashboard loads and fetch stats
   useEffect(() => {
     setNavLoading(false);
-    fetchDashboardStats();
-  }, [setNavLoading]);
+    
+    // Only fetch stats if we haven't loaded them yet
+    if (!hasInitialLoad) {
+      fetchDashboardStats();
+    }
+  }, [setNavLoading, hasInitialLoad]);
 
   // Handle admin creation
   const handleAdminCreate = async (adminData: AdminData) => {
@@ -159,14 +181,6 @@ export default function AdminDashboard() {
       alert('Failed to initialize centers: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
   };
-
-  const recentActivities = [
-    { id: 1, action: 'New student enrolled', user: 'John Doe', time: '2 minutes ago' },
-    { id: 2, action: 'Video uploaded', user: 'Prof. Smith', time: '15 minutes ago' },
-    { id: 3, action: 'Payment received', user: 'Jane Wilson', time: '1 hour ago' },
-    { id: 4, action: 'Class created', user: 'Dr. Johnson', time: '2 hours ago' },
-    { id: 5, action: 'Question added', user: 'Admin', time: '3 hours ago' }
-  ];
 
   return (
     <div className="space-y-6">
@@ -319,76 +333,65 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Recent Activity and Quick Actions */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Activity */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-lg font-medium text-gray-900 dark:text-white">Recent Activity</h2>
-          </div>
-          <div className="p-6">
-            <div className="space-y-4">
-              {recentActivities.map((activity) => (
-                <div key={activity.id} className="flex items-center space-x-3">                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-primary-100 dark:bg-primary-900 rounded-full flex items-center justify-center">
-                      <Zap className="w-4 h-4 text-primary-600 dark:text-primary-400" />
-                    </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">
-                      {activity.action}
-                    </p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      by {activity.user} • {activity.time}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Quick Actions */}
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 gap-6">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
           <div className="p-6 border-b border-gray-200 dark:border-gray-700">
             <h2 className="text-lg font-medium text-gray-900 dark:text-white">Quick Actions</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Access commonly used features and navigate to management pages</p>
           </div>
           <div className="p-6">
-            <div className="space-y-3">
-              <button 
-                onClick={() => setShowAdminModal(true)}
-                className="w-full bg-orange-600 hover:bg-orange-700 text-white px-4 py-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center"
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <Link 
+                href="/admin/students"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center group"
               >
-                <Shield className="w-5 h-5 mr-2" />
-                Add New Admin
-              </button>
-              <button className="w-full bg-primary-600 hover:bg-primary-700 text-white px-4 py-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center">
-                <UserPlus className="w-5 h-5 mr-2" />
-                Add New Student
-              </button>              <button className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center">
-                <GraduationCap className="w-5 h-5 mr-2" />
-                Add New Teacher
-              </button>              <button className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center">
-                <Building2 className="w-5 h-5 mr-2" />
-                Create New Class
-              </button>              <button className="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center">
-                <Upload className="w-5 h-5 mr-2" />
-                Upload Video
-              </button>              <button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center">
-                <FileQuestion className="w-5 h-5 mr-2" />
-                Add Question
-              </button>
+                <Users className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
+                Manage Students
+              </Link>
+              
+              <Link 
+                href="/admin/teachers"
+                className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center group"
+              >
+                <GraduationCap className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
+                Manage Teachers
+              </Link>
+              
+              <Link 
+                href="/admin/classes"
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center group"
+              >
+                <Building2 className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
+                Manage Classes
+              </Link>
               
               <button 
+                onClick={() => setShowAdminModal(true)}
+                className="w-full bg-orange-600 hover:bg-orange-700 text-white px-4 py-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center group"
+              >
+                <Shield className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
+                Add New Admin
+              </button>
+              
+              <Link 
+                href="/admin/subjects"
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center group"
+              >
+                <FileQuestion className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
+                Manage Subjects
+              </Link>
+              
+              <button
                 onClick={initializeCenters}
                 disabled={centersInitialized}
-                className={`w-full px-4 py-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center ${
+                className={`w-full px-4 py-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center group ${
                   centersInitialized 
                     ? 'bg-gray-400 cursor-not-allowed text-gray-200' 
                     : 'bg-teal-600 hover:bg-teal-700 text-white'
                 }`}
               >
-                <Building2 className="w-5 h-5 mr-2" />
+                <Building2 className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
                 {centersInitialized ? 'Centers Initialized' : 'Initialize Centers'}
               </button>
             </div>
