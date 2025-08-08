@@ -162,22 +162,22 @@ export default function Home() {
       {/* Hero Section */}
       <section className="relative pt-2 pb-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto text-center relative z-10">
-          <div className="mb-4">
-            <span className="inline-block bg-white/20 backdrop-blur-sm text-white px-6 py-2 rounded-full text-sm font-medium border border-white/30">
+          <div className="mb-4 animate-fadeInUp">
+            <span className="inline-block bg-white/20 backdrop-blur-sm text-white px-6 py-2 rounded-full text-sm font-medium border border-white/30 animate-pulse">
               🏆 Melbourne's Premier Education Centre
             </span>
           </div>
-          <h1 className="text-6xl md:text-8xl font-extrabold text-white mb-8 leading-tight">
+          <h1 className="text-6xl md:text-8xl font-extrabold text-white mb-8 leading-tight animate-fadeInUp delay-200">
             Master Your
-            <span className="block bg-gradient-to-r from-[#0088e0] to-[#00b4d8] bg-clip-text text-transparent">
+            <span className="block bg-gradient-to-r from-[#0088e0] to-[#00b4d8] bg-clip-text text-transparent animate-slideInFromLeft delay-400">
               VCE Journey
             </span>
           </h1>
-          <p className="text-lg md:text-xl text-white/90 mb-12 max-w-4xl mx-auto leading-relaxed font-light">
+          <p className="text-lg md:text-xl text-white/90 mb-12 max-w-4xl mx-auto leading-relaxed font-light animate-fadeInUp delay-600">
             Experience personalized learning with close student monitoring, frequent assessments, and expert guidance. 
             We track your progress through regular practice tests and provide tailored support - proven by past results to ensure your VCE success!
           </p>
-          <div className="flex justify-center">
+          <div className="flex justify-center animate-fadeInUp delay-800">
             <Link 
               href="/enroll" 
               className="group bg-gradient-to-r from-[#0088e0] to-[#00b4d8] hover:from-[#0066b3] hover:to-[#0088e0] text-white font-semibold py-4 px-10 rounded-full transition-all duration-300 transform hover:scale-105 shadow-2xl hover:shadow-[#0088e0]/25"
@@ -196,6 +196,101 @@ export default function Home() {
         <div className="absolute top-20 left-10 w-20 h-20 bg-white/10 rounded-full blur-xl animate-pulse"></div>
         <div className="absolute bottom-32 right-16 w-32 h-32 bg-[#0088e0]/20 rounded-full blur-2xl animate-bounce"></div>
         <div className="absolute top-1/2 right-8 w-16 h-16 bg-white/5 rounded-full blur-lg animate-pulse delay-300"></div>
+      </section>
+
+      {/* Our Learning Approach Section */}
+      <section className="py-24 bg-gradient-to-br from-gray-50 to-white relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-20">
+            <div className="inline-block bg-gradient-to-r from-[#01143d] to-[#0088e0] bg-clip-text text-transparent text-sm font-semibold uppercase tracking-wider mb-4">
+              Our Approach
+            </div>
+            <h2 className="text-5xl font-bold text-[#01143d] mb-6">How We Support Your Success</h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+              Our comprehensive learning methodology ensures every student receives the support they need
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-12">
+            {/* Study Materials & Homework Support */}
+            <div className="group text-center">
+              <div className="relative mb-8 overflow-hidden rounded-2xl shadow-2xl transform transition-all duration-300 hover:scale-105">
+                <Image
+                  src="/images/1.png"
+                  alt="Digital Study Support Materials"
+                  width={400}
+                  height={300}
+                  className="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-110"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+                  <h3 className="text-2xl font-bold mb-2">Digital Study Support</h3>
+                  <p className="text-sm opacity-90">Comprehensive materials and homework guidance</p>
+                </div>
+              </div>
+              <div className="text-left">
+                <h4 className="text-xl font-semibold text-[#01143d] mb-3">Study Materials & Homework</h4>
+                <p className="text-gray-600 leading-relaxed">
+                  We provide digitally delivered study support materials and comprehensive homework assistance. 
+                  In our classes, we push students to learn through interactive sessions and personalized guidance 
+                  to ensure deep understanding of concepts.
+                </p>
+              </div>
+            </div>
+
+            {/* Regular Testing & Progress Monitoring */}
+            <div className="group text-center">
+              <div className="relative mb-8 overflow-hidden rounded-2xl shadow-2xl transform transition-all duration-300 hover:scale-105">
+                <Image
+                  src="/images/2.png"
+                  alt="Online Tests and Progress Monitoring"
+                  width={400}
+                  height={300}
+                  className="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-110"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+                  <h3 className="text-2xl font-bold mb-2">Progress Monitoring</h3>
+                  <p className="text-sm opacity-90">Regular assessments to track improvement</p>
+                </div>
+              </div>
+              <div className="text-left">
+                <h4 className="text-xl font-semibold text-[#01143d] mb-3">Regular Testing & Assessment</h4>
+                <p className="text-gray-600 leading-relaxed">
+                  We conduct online tests regularly to measure progress and identify areas for improvement. 
+                  Combined with physical tests, our comprehensive assessment system ensures students are 
+                  always on track to achieve their academic goals.
+                </p>
+              </div>
+            </div>
+
+            {/* Video Classes & Additional Support */}
+            <div className="group text-center">
+              <div className="relative mb-8 overflow-hidden rounded-2xl shadow-2xl transform transition-all duration-300 hover:scale-105">
+                <Image
+                  src="/images/3.png"
+                  alt="Video Classes and Online Support"
+                  width={400}
+                  height={300}
+                  className="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-110"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+                  <h3 className="text-2xl font-bold mb-2">Video Learning</h3>
+                  <p className="text-sm opacity-90">Flexible online and physical classes</p>
+                </div>
+              </div>
+              <div className="text-left">
+                <h4 className="text-xl font-semibold text-[#01143d] mb-3">Video Classes & Hybrid Learning</h4>
+                <p className="text-gray-600 leading-relaxed">
+                  Our video classes provide additional support alongside traditional physical classes. 
+                  This hybrid approach ensures students have flexible access to quality education, 
+                  allowing them to learn at their own pace while maintaining structured classroom interaction.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* Features Section */}

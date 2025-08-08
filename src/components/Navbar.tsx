@@ -8,12 +8,17 @@ import { usePathname } from 'next/navigation';
 const Navbar: React.FC = () => {
   const pathname = usePathname();
   const [isDarkBg, setIsDarkBg] = useState(true);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   useEffect(() => {
     // Set navbar style based on the current page
     // We're now using dark backgrounds for all pages including About
     setIsDarkBg(true);
   }, [pathname]);
+
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
   
   // Don't make navbar sticky on the About page
   const isAboutPage = pathname === '/about';
@@ -36,6 +41,8 @@ const Navbar: React.FC = () => {
               <h1 className="text-2xl font-bold text-white tracking-tight">Dr. U Education</h1>
             </Link>
           </div>
+          
+          {/* Desktop Navigation */}
           <div className="hidden md:block">
             <div className="ml-10 flex items-center space-x-6">
               <Link href="/about" className="text-white/90 hover:text-white hover:bg-white/10 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">About</Link>
@@ -76,7 +83,84 @@ const Navbar: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {/* Mobile menu button */}
+          <div className="md:hidden">
+            <button
+              onClick={toggleMobileMenu}
+              className="text-white hover:text-white/80 focus:outline-none focus:text-white transition-colors duration-200"
+            >
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                {isMobileMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+          </div>
         </div>
+
+        {/* Mobile menu */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden">
+            <div className="px-2 pt-2 pb-3 space-y-1 bg-white/10 rounded-lg mt-2 backdrop-blur-md border border-white/20">
+              <Link 
+                href="/about" 
+                className="text-white/90 hover:text-white hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium transition-all duration-200"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                About
+              </Link>
+              <Link 
+                href="/courses" 
+                className="text-white/90 hover:text-white hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium transition-all duration-200"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Courses
+              </Link>
+              <Link 
+                href="/books" 
+                className="text-white/90 hover:text-white hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium transition-all duration-200"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Books
+              </Link>
+              <Link 
+                href="/schedule" 
+                className="text-white/90 hover:text-white hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium transition-all duration-200"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Schedule
+              </Link>
+              
+              {/* Mobile Login Section */}
+              <div className="pt-2 border-t border-white/20">
+                <div className="text-white/70 px-3 py-2 text-sm font-medium">Login</div>
+                <Link 
+                  href="/student/login" 
+                  className="text-white/90 hover:text-white hover:bg-white/10 px-3 py-2 rounded-md text-sm transition-all duration-200 flex items-center"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <svg className="w-4 h-4 mr-2 text-[#0088e0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  Student Portal
+                </Link>
+                <Link 
+                  href="/teacher/login" 
+                  className="text-white/90 hover:text-white hover:bg-white/10 px-3 py-2 rounded-md text-sm transition-all duration-200 flex items-center"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <svg className="w-4 h-4 mr-2 text-[#0088e0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C20.832 18.477 19.246 18 17.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                  </svg>
+                  Teacher Portal
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </nav>
   );
