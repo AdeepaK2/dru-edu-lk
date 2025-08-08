@@ -335,6 +335,9 @@ const BooksPage = () => {
           </div>
         </div>
       )}
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 };
@@ -498,7 +501,6 @@ const PublicationCard: React.FC<PublicationCardProps> = ({
           </div>
         </div>
       )}
-      <Footer/>
     </div>
   );
 };
