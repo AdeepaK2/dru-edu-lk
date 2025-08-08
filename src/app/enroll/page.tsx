@@ -45,6 +45,13 @@ const RELATIONSHIP_OPTIONS = [
   { value: 'Other', label: 'Other' },
 ];
 
+// Center location mapping
+const CENTER_LOCATIONS = {
+  '1': 'Glen Waverley',
+  '2': 'Cranbourne',
+  // Add more centers as needed
+} as const;
+
 export default function EnrollmentPage() {
   const router = useRouter();
   const { authLoading, isGuestSession, cleanupGuestSession } = useGuestAuth();
@@ -53,7 +60,7 @@ export default function EnrollmentPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [sortBy, setSortBy] = useState<'name' | 'subject' | 'year' | 'fee'>('name');
+  const [sortBy, setSortBy] = useState<'name' | 'subject' | 'year' | 'fee' | 'location'>('name');
   const [submittedClassCount, setSubmittedClassCount] = useState(0);
   
   const [formData, setFormData] = useState<EnrollmentFormData>({
@@ -177,6 +184,8 @@ export default function EnrollmentPage() {
         return a.year.localeCompare(b.year);
       case 'fee':
         return a.monthlyFee - b.monthlyFee;
+      case 'location':
+        return getCenterLocation(a.centerId).localeCompare(getCenterLocation(b.centerId));
       default:
         return 0;
     }
@@ -220,6 +229,19 @@ export default function EnrollmentPage() {
     }
     
     return errors;
+  };
+
+  // Helper function to get center display name
+  const getCenterDisplayName = (centerId: string | number): string => {
+    const id = centerId.toString();
+    const location = CENTER_LOCATIONS[id as keyof typeof CENTER_LOCATIONS];
+    return location ? `Center ${id} - ${location}` : `Center ${id}`;
+  };
+
+  // Helper function to get just the location name
+  const getCenterLocation = (centerId: string | number): string => {
+    const id = centerId.toString();
+    return CENTER_LOCATIONS[id as keyof typeof CENTER_LOCATIONS] || `Center ${id}`;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -287,7 +309,7 @@ export default function EnrollmentPage() {
             classId: selectedClass.id,
             className: selectedClass.name,
             subject: selectedClass.subject,
-            centerName: `Center ${selectedClass.centerId}`,
+            centerName: getCenterDisplayName(selectedClass.centerId),
             monthlyFee: selectedClass.monthlyFee,
             preferredStartDate: new Date().toISOString().split('T')[0], // Use current date
             additionalNotes: '', // Remove additional notes
@@ -513,12 +535,13 @@ export default function EnrollmentPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">Sort classes by:</label>
                   <Select
                     value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as 'name' | 'subject' | 'year' | 'fee')}
+                    onChange={(e) => setSortBy(e.target.value as 'name' | 'subject' | 'year' | 'fee' | 'location')}
                     options={[
                       { value: 'name', label: 'Class Name' },
                       { value: 'subject', label: 'Subject' },
                       { value: 'year', label: 'Year Level' },
                       { value: 'fee', label: 'Monthly Fee' },
+                      { value: 'location', label: 'Location' },
                     ]}
                   />
                 </div>
@@ -557,7 +580,7 @@ export default function EnrollmentPage() {
                               </div>
                               <div className="flex items-center">
                                 <MapPin className="w-4 h-4 mr-2" />
-                                Center {cls.centerId}
+                                {getCenterDisplayName(cls.centerId)}
                               </div>
                               <div className="flex items-center">
                                 <Clock className="w-4 h-4 mr-2" />
