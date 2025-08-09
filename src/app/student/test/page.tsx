@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Clock, Calendar, AlertCircle, FileText, CheckCircle, Play, ArrowRight, BookOpen, Filter, Info, ChevronDown, ChevronRight } from 'lucide-react';
+import { Clock, Calendar, AlertCircle, FileText, CheckCircle, Play, ArrowRight, BookOpen, Filter, Info, ChevronDown, ChevronRight, ChevronUp } from 'lucide-react';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { Button, Input, Select } from '@/components/ui';
 import { TestService } from '@/apiservices/testService';
@@ -26,6 +26,7 @@ export default function StudentTests() {
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedClasses, setExpandedClasses] = useState<Set<string>>(new Set());
+  const [expandedCompletedSections, setExpandedCompletedSections] = useState<Set<string>>(new Set());
   
   // Fetch student data
   useEffect(() => {
@@ -644,6 +645,19 @@ export default function StudentTests() {
     });
   };
 
+  // Toggle completed tests section expansion
+  const toggleCompletedSection = (classId: string) => {
+    setExpandedCompletedSections(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(classId)) {
+        newSet.delete(classId);
+      } else {
+        newSet.add(classId);
+      }
+      return newSet;
+    });
+  };
+
   // Group tests by status
   const groupedTests = useMemo(() => {
     const grouped = {
@@ -1104,14 +1118,39 @@ export default function StudentTests() {
                       {classData.groupedTests.completed.length > 0 && (
                         <>
                           <div className="px-6 py-3 bg-gray-50 dark:bg-gray-700/20">
-                            <div className="flex items-center">
-                              <CheckCircle className="h-4 w-4 text-gray-600 dark:text-gray-400 mr-2" />
-                              <span className="text-sm font-medium text-gray-800 dark:text-gray-300">
-                                Completed ({classData.groupedTests.completed.length})
-                              </span>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center">
+                                <CheckCircle className="h-4 w-4 text-gray-600 dark:text-gray-400 mr-2" />
+                                <span className="text-sm font-medium text-gray-800 dark:text-gray-300">
+                                  Completed ({classData.groupedTests.completed.length})
+                                </span>
+                              </div>
+                              {classData.groupedTests.completed.length > 3 && (
+                                <button
+                                  onClick={() => toggleCompletedSection(classId)}
+                                  className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium flex items-center"
+                                >
+                                  {expandedCompletedSections.has(classId) ? (
+                                    <>
+                                      <ChevronUp className="h-4 w-4 mr-1" />
+                                      Show Less
+                                    </>
+                                  ) : (
+                                    <>
+                                      <ChevronDown className="h-4 w-4 mr-1" />
+                                      Show All {classData.groupedTests.completed.length}
+                                    </>
+                                  )}
+                                </button>
+                              )}
                             </div>
                           </div>
-                          {classData.groupedTests.completed.slice(0, 3).map((test) => {
+                          
+                          {/* Show first 3 tests or all if expanded */}
+                          {(expandedCompletedSections.has(classId) 
+                            ? classData.groupedTests.completed 
+                            : classData.groupedTests.completed.slice(0, 3)
+                          ).map((test) => {
                             const buttonConfig = getTestButton(test);
                             const ButtonIcon = buttonConfig.icon;
 
@@ -1148,6 +1187,12 @@ export default function StudentTests() {
                                         )}
                                       </p>
                                     )}
+                                    {/* Test Description */}
+                                    {test.description && (
+                                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                        {test.description}
+                                      </p>
+                                    )}
                                   </div>
                                   <div className="mt-4 md:mt-0">
                                     <Button 
@@ -1164,17 +1209,6 @@ export default function StudentTests() {
                               </div>
                             );
                           })}
-                          
-                          {classData.groupedTests.completed.length > 3 && (
-                            <div className="p-4 text-center">
-                              <button
-                                onClick={() => router.push('/student/results')}
-                                className="text-blue-600 dark:text-blue-400 hover:underline text-sm font-medium"
-                              >
-                                View all {classData.groupedTests.completed.length} completed tests
-                              </button>
-                            </div>
-                          )}
                         </>
                       )}
                     </>

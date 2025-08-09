@@ -562,15 +562,6 @@ function StudentsTab({
 }) {
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Add mock stats for each student (TODO: Replace with real data)
-  const studentsWithStats = enrollments.map(enrollment => ({
-    ...enrollment,
-    testResults: Math.floor(Math.random() * 15) + 5, // 5-20 tests
-    videosWatched: Math.floor(Math.random() * 30) + 10, // 10-40 videos
-    lastActivity: getRandomLastActivity(),
-    averageGrade: Math.floor(Math.random() * 30) + 70, // 70-100%
-  }));
-
   // Helper function to generate random last activity
   const getRandomLastActivity = () => {
     const activities = [
@@ -582,6 +573,15 @@ function StudentsTab({
     ];
     return activities[Math.floor(Math.random() * activities.length)];
   };
+
+  // Add mock stats for each student (TODO: Replace with real data)
+  const studentsWithStats = enrollments.map(enrollment => ({
+    ...enrollment,
+    testResults: Math.floor(Math.random() * 15) + 5, // 5-20 tests
+    videosWatched: Math.floor(Math.random() * 30) + 10, // 10-40 videos
+    lastActivity: getRandomLastActivity(),
+    averageGrade: Math.floor(Math.random() * 30) + 70, // 70-100%
+  }));
 
   // Filter students based on search term
   const filteredStudents = studentsWithStats.filter(student =>
@@ -603,7 +603,7 @@ function StudentsTab({
   return (
     <div className="space-y-6">
       {/* Header with stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 text-center">
           <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center mx-auto mb-2">
             <Users className="w-4 h-4 text-blue-600 dark:text-blue-400" />
@@ -622,26 +622,6 @@ function StudentsTab({
             {enrollments.filter(s => s.status === 'Active').length}
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400">Active Students</p>
-        </div>
-        
-        <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 text-center">
-          <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/20 rounded-full flex items-center justify-center mx-auto mb-2">
-            <FileText className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-          </div>
-          <p className="text-lg font-semibold text-gray-900 dark:text-white">
-            {studentsWithStats.length > 0 ? Math.round(studentsWithStats.reduce((acc, s) => acc + (s.averageGrade || 0), 0) / studentsWithStats.length) : 0}%
-          </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Avg Grade</p>
-        </div>
-        
-        <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4 text-center">
-          <div className="w-8 h-8 bg-orange-100 dark:bg-orange-900/20 rounded-full flex items-center justify-center mx-auto mb-2">
-            <Clock className="w-4 h-4 text-orange-600 dark:text-orange-400" />
-          </div>
-          <p className="text-lg font-semibold text-gray-900 dark:text-white">
-            {studentsWithStats.length > 0 ? Math.round(studentsWithStats.reduce((acc, s) => acc + (s.videosWatched || 0), 0) / studentsWithStats.length) : 0}
-          </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Avg Videos</p>
         </div>
       </div>
 
@@ -737,104 +717,12 @@ function StudentsTab({
                     </div>
                   </div>
 
-                  {/* Stats */}
-                  <div className="hidden md:flex items-center space-x-8 mr-6">
-                    <div className="text-center">
-                      <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                        {student.averageGrade}%
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Avg Grade</p>
-                    </div>
-                    
-                    <div className="text-center">
-                      <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                        {student.testResults}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Tests</p>
-                    </div>
-                    
-                    <div className="text-center">
-                      <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                        {student.videosWatched}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Videos</p>
-                    </div>
-                    
-                    <div className="text-center">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">
-                        {student.lastActivity}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Last Active</p>
-                    </div>
-                  </div>
+                  {/* Stats section removed per user request */}
 
-                  {/* Action Buttons */}
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex items-center space-x-1"
-                      onClick={() => {
-                        alert('Student results view coming soon!');
-                      }}
-                    >
-                      <FileText className="w-4 h-4" />
-                      <span className="hidden sm:inline">Results</span>
-                    </Button>
-                    
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex items-center space-x-1"
-                      onClick={() => {
-                        alert('Videos watched view coming soon!');
-                      }}
-                    >
-                      <BookOpen className="w-4 h-4" />
-                      <span className="hidden sm:inline">Videos</span>
-                    </Button>
-                    
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex items-center space-x-1"
-                      onClick={() => {
-                        alert('Student profile view coming soon!');
-                      }}
-                    >
-                      <Edit className="w-4 h-4" />
-                      <span className="hidden sm:inline">Edit</span>
-                    </Button>
-                  </div>
+                  {/* Action Buttons - Removed per user request */}
                 </div>
 
-                {/* Mobile Stats */}
-                <div className="md:hidden mt-4 grid grid-cols-4 gap-4 pt-4 border-t border-gray-200 dark:border-gray-600">
-                  <div className="text-center">
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                      {student.averageGrade}%
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Grade</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                      {student.testResults}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Tests</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                      {student.videosWatched}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Videos</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-xs font-medium text-gray-900 dark:text-white">
-                      {student.lastActivity}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Active</p>
-                  </div>
-                </div>
+                {/* Mobile Stats - Removed per user request */}
               </div>
             ))}
           </div>
