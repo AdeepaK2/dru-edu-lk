@@ -59,7 +59,7 @@ async function createEmailDocument(to: string, studentName: string, password: st
             </ul>
             
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://druedu.com'}/student/login" 
+              <a href="https://www.drueducation.com.au/student/login" 
                  style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
                 Log In to Your Account
               </a>
