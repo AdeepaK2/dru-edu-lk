@@ -60,7 +60,7 @@ async function createTeacherWelcomeEmail(to: string, teacherName: string, passwo
             </ul>
             
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://druedu.com'}/teacher/login" 
+              <a href="https://www.drueducation.com.au/teacher/login" 
                  style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
                 Access Teacher Portal
               </a>
