@@ -68,7 +68,7 @@ export class ClassFirestoreService {
         subject: validatedData.subject,
         subjectId: validatedData.subjectId,
         schedule: validatedData.schedule,
-        monthlyFee: validatedData.monthlyFee,
+        sessionFee: validatedData.sessionFee,
         classId,
         status: 'Active' as const,
         enrolledStudents: 0,

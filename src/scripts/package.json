@@ -1,0 +1,14 @@
+{
+  "name": "migrate-monthly-to-session-fee",
+  "version": "1.0.0",
+  "description": "Migration script to change monthlyFee to sessionFee in Firestore",
+  "main": "migrate-monthly-to-session-fee.js",
+  "scripts": {
+    "migrate": "npx ts-node migrate-monthly-to-session-fee.ts"
+  },
+  "dependencies": {
+    "firebase": "^10.0.0",
+    "ts-node": "^10.0.0",
+    "typescript": "^5.0.0"
+  }
+}
