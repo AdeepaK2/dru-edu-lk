@@ -369,6 +369,19 @@ export default function TestResultPage() {
     return 'Unknown Class';
   };
 
+  // Get full question details by questionId
+  const getQuestionDetails = (questionId: string) => {
+    if (!test?.questions) return null;
+    
+    // Find the question in the test data
+    const question = test.questions.find(q => 
+      (q.questionId && q.questionId === questionId) || 
+      (q.id && q.id === questionId)
+    );
+    
+    return question || null;
+  };
+
   // Find the most recent submission for this test and student
   const findMostRecentSubmissionId = async (testId: string, studentId: string) => {
     try {
@@ -985,157 +998,338 @@ export default function TestResultPage() {
             </p>
           </div>
           
-          {/* Scrollable Questions Area */}
-          <div className="max-h-[600px] overflow-y-auto">
-            <div className="divide-y divide-gray-200 dark:divide-gray-700">
-              {submission.finalAnswers.map((answer, index) => {
-                // Find MCQ result if available
-                const mcqResult = submission.mcqResults?.find(r => r.questionId === answer.questionId);
-                
-                // Find essay result if available
-                const essayResult = submission.essayResults?.find(r => r.questionId === answer.questionId);
-                
-                return (
-                  <div key={answer.questionId} className="p-6">
-                    {/* Question Header */}
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-start space-x-3 flex-1">
-                        <span className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 text-sm font-semibold flex-shrink-0">
-                          {index + 1}
+          {/* Check if this is an essay test */}
+          {(() => {
+            const isEssayTest = test.questions?.every(q => q.type === 'essay' || q.questionType === 'essay');
+            const hasSubmissionPdf = submission.finalAnswers.some(fa => fa.questionId === 'submission_pdf' && fa.pdfFiles && fa.pdfFiles.length > 0);
+            
+            // For essay tests with submission PDF, show download section instead of individual questions
+            if (isEssayTest && hasSubmissionPdf) {
+              const submissionPdfAnswer = submission.finalAnswers.find(fa => fa.questionId === 'submission_pdf');
+              
+              return (
+                <div className="p-6">
+                  <div className="text-center">
+                    <FileText className="mx-auto h-16 w-16 text-blue-500 mb-4" />
+                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                      Essay Test Submission
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-400 mb-6">
+                      Your complete answer sheet has been submitted as a single PDF file.
+                    </p>
+                    
+                    {/* Download Section */}
+                    <div className="max-w-md mx-auto">
+                      {submissionPdfAnswer?.pdfFiles?.map((pdf, pdfIndex) => (
+                        <div
+                          key={`submission-${pdf.fileUrl}-${pdfIndex}`}
+                          className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-900/20 dark:border-blue-800 mb-4"
+                        >
+                          <div className="flex items-center space-x-3">
+                            <div className="flex-shrink-0">
+                              <svg className="w-10 h-10 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                              </svg>
+                            </div>
+                            <div className="text-left">
+                              <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                {pdf.fileName || 'Answer Sheet.pdf'}
+                              </p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                Size: {(pdf.fileSize / 1024 / 1024).toFixed(2)} MB
+                              </p>
+                              <p className="text-xs text-blue-600 dark:text-blue-400">
+                                Complete Essay Submission
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => window.open(pdf.fileUrl, '_blank')}
+                            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-blue-700 dark:hover:bg-blue-600"
+                          >
+                            <Download className="w-4 h-4 mr-2" />
+                            Download
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {/* Grading Status */}
+                    <div className="mt-6 p-4 rounded-lg bg-yellow-50 border border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800">
+                      <div className="flex items-center justify-center">
+                        <Clock className="h-5 w-5 text-yellow-500 mr-3" />
+                        <span className="text-sm text-yellow-700 dark:text-yellow-300">
+                          {submission.manualGradingPending 
+                            ? "Your submission is being reviewed by your teacher. Results will be available once grading is complete."
+                            : "Your submission has been graded. Check the summary above for your results."
+                          }
                         </span>
-                        <div className="flex-1">
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                            {answer.questionText}
-                          </h3>
-                          <div className="flex items-center space-x-3 text-sm text-gray-500 dark:text-gray-400">
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              answer.questionType === 'mcq'
-                                ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
-                                : 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
-                            }`}>
-                              {answer.questionType === 'mcq' ? 'Multiple Choice' : 'Essay'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+            
+            // For MCQ tests or essay tests without submission PDF, show individual questions
+            return (
+              <div className="max-h-[600px] overflow-y-auto">
+                <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {submission.finalAnswers
+                    .filter(answer => answer.questionId !== 'submission_pdf') // Exclude submission_pdf from individual display
+                    .map((answer, index) => {
+                    // Find MCQ result if available
+                    const mcqResult = submission.mcqResults?.find(r => r.questionId === answer.questionId);
+                    
+                    // Find essay result if available
+                    const essayResult = submission.essayResults?.find(r => r.questionId === answer.questionId);
+                    
+                    // Get full question details for images and additional info
+                    const questionDetails = getQuestionDetails(answer.questionId);
+                
+                    
+                    return (
+                      <div key={answer.questionId} className="p-6">
+                        {/* Question Header */}
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex items-start space-x-3 flex-1">
+                            <span className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 text-sm font-semibold flex-shrink-0">
+                              {index + 1}
                             </span>
-                            <span>
+                            <div className="flex-1">
+                              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                                {answer.questionText}
+                              </h3>
+                              
+                              {/* Question Image */}
+                              {questionDetails?.imageUrl && (
+                                <div className="mb-4">
+                                  <img
+                                    src={questionDetails.imageUrl}
+                                    alt={`Question ${index + 1} image`}
+                                    className="max-w-full h-auto max-h-64 object-contain rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700"
+                                    onError={(e) => {
+                                      const target = e.target as HTMLImageElement;
+                                      target.style.display = 'none';
+                                    }}
+                                  />
+                                </div>
+                              )}
+                              
+                              {/* Question Content Text */}
+                              {questionDetails?.content && (
+                                <div className="mb-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                                  <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                                    {questionDetails.content}
+                                  </p>
+                                </div>
+                              )}
+                              
+                              <div className="flex items-center space-x-3 text-sm text-gray-500 dark:text-gray-400">
+                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                  answer.questionType === 'mcq'
+                                    ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                                    : 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
+                                }`}>
+                                  {answer.questionType === 'mcq' ? 'Multiple Choice' : 'Essay'}
+                                </span>
+                                {questionDetails?.imageUrl && (
+                                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300">
+                                    📷 Image
+                                  </span>
+                                )}
+                                <span>
+                                  {(() => {
+                                    if (answer.questionType === 'mcq') {
+                                      return `${mcqResult?.marksAwarded || 0}/${mcqResult?.maxMarks || answer.questionMarks} marks`;
+                                    } else {
+                                      // Essay question
+                                      if (essayResult && essayResult.marksAwarded !== undefined && essayResult.marksAwarded !== null) {
+                                        const marks = Number(essayResult.marksAwarded);
+                                        const maxMarks = Number(essayResult.maxMarks);
+                                        return `${marks}/${maxMarks} marks`;
+                                      } else if (answer.marksAwarded !== undefined && answer.marksAwarded !== null) {
+                                        const marks = Number(answer.marksAwarded);
+                                        const maxMarks = Number(answer.questionMarks);
+                                        return `${marks}/${maxMarks} marks`;
+                                      } else {
+                                        return `${answer.questionMarks} marks (pending)`;
+                                      }
+                                    }
+                                  })()}
+                                </span>
+                                <span>•</span>
+                                <span>{formatDuration(answer.timeSpent)} spent</span>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Result Badge */}
+                          {answer.questionType === 'mcq' && mcqResult && (
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                              mcqResult.isCorrect 
+                                ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                                : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+                            }`}>
+                              {mcqResult.isCorrect ? (
+                                <>
+                                  <CheckCircle className="h-4 w-4 mr-1" />
+                                  Correct
+                                </>
+                              ) : (
+                                <>
+                                  <XCircle className="h-4 w-4 mr-1" />
+                                  Incorrect
+                                </>
+                              )}
+                            </span>
+                          )}
+                          
+                          {answer.questionType === 'essay' && (
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                              (() => {
+                                const isGraded = (essayResult && essayResult.marksAwarded !== undefined && essayResult.marksAwarded !== null) ||
+                                               (answer.marksAwarded !== undefined && answer.marksAwarded !== null);
+                                return isGraded 
+                                  ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+                                  : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300';
+                              })()
+                            }`}>
                               {(() => {
-                                if (answer.questionType === 'mcq') {
-                                  return `${mcqResult?.marksAwarded || 0}/${mcqResult?.maxMarks || answer.questionMarks} marks`;
-                                } else {
-                                  // Essay question
-                                  if (essayResult && essayResult.marksAwarded !== undefined && essayResult.marksAwarded !== null) {
-                                    const marks = Number(essayResult.marksAwarded);
-                                    const maxMarks = Number(essayResult.maxMarks);
-                                    return `${marks}/${maxMarks} marks`;
-                                  } else if (answer.marksAwarded !== undefined && answer.marksAwarded !== null) {
-                                    const marks = Number(answer.marksAwarded);
-                                    const maxMarks = Number(answer.questionMarks);
-                                    return `${marks}/${maxMarks} marks`;
-                                  } else {
-                                    return `${answer.questionMarks} marks (pending)`;
-                                  }
-                                }
+                                const isGraded = (essayResult && essayResult.marksAwarded !== undefined && essayResult.marksAwarded !== null) ||
+                                               (answer.marksAwarded !== undefined && answer.marksAwarded !== null);
+                                return isGraded ? 'Graded' : 'Pending Review';
                               })()}
                             </span>
-                            <span>•</span>
-                            <span>{formatDuration(answer.timeSpent)} spent</span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Result Badge */}
-                      {answer.questionType === 'mcq' && mcqResult && (
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                          mcqResult.isCorrect 
-                            ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
-                            : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
-                        }`}>
-                          {mcqResult.isCorrect ? (
-                            <>
-                              <CheckCircle className="h-4 w-4 mr-1" />
-                              Correct
-                            </>
-                          ) : (
-                            <>
-                              <XCircle className="h-4 w-4 mr-1" />
-                              Incorrect
-                            </>
                           )}
-                        </span>
-                      )}
-                      
-                      {answer.questionType === 'essay' && (
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                          (() => {
-                            const isGraded = (essayResult && essayResult.marksAwarded !== undefined && essayResult.marksAwarded !== null) ||
-                                           (answer.marksAwarded !== undefined && answer.marksAwarded !== null);
-                            return isGraded 
-                              ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
-                              : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300';
-                          })()
-                        }`}>
-                          {(() => {
-                            const isGraded = (essayResult && essayResult.marksAwarded !== undefined && essayResult.marksAwarded !== null) ||
-                                           (answer.marksAwarded !== undefined && answer.marksAwarded !== null);
-                            return isGraded ? 'Graded' : 'Pending Review';
-                          })()}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* MCQ Question Details */}
+                        </div>                    {/* MCQ Question Details */}
                     {answer.questionType === 'mcq' && mcqResult && (
                       <div className="space-y-4">
-                        {/* Your Answer */}
-                        <div>
-                          <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                            Your Answer:
-                          </div>
-                          <div className={`p-4 rounded-lg border-l-4 ${
-                            mcqResult.isCorrect 
-                              ? 'bg-green-50 border-green-400 dark:bg-green-900/20 dark:border-green-600'
-                              : 'bg-red-50 border-red-400 dark:bg-red-900/20 dark:border-red-600'
-                          }`}>
-                            <div className="flex items-center">
-                              {mcqResult.isCorrect 
-                                ? <CheckCircle className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" />
-                                : <XCircle className="h-5 w-5 text-red-500 mr-3 flex-shrink-0" />
-                              }
-                              <span className={`font-medium ${
-                                mcqResult.isCorrect 
-                                  ? 'text-green-800 dark:text-green-300'
-                                  : 'text-red-800 dark:text-red-300'
-                              }`}>
-                                Option {String.fromCharCode(65 + mcqResult.selectedOption)}: {
-                                  typeof mcqResult.selectedOptionText === 'string' 
-                                    ? mcqResult.selectedOptionText 
-                                    : typeof mcqResult.selectedOptionText === 'object' && mcqResult.selectedOptionText && 'text' in mcqResult.selectedOptionText
-                                      ? (mcqResult.selectedOptionText as any).text
-                                      : 'Unknown option'
-                                }
-                              </span>
+                        {/* Show all options if available from question details */}
+                        {questionDetails?.options && questionDetails.options.length > 0 && (
+                          <div>
+                            <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                              All Options:
+                            </div>
+                            <div className="space-y-2">
+                              {questionDetails.options.map((option, optionIndex) => {
+                                const isSelected = mcqResult.selectedOption === optionIndex;
+                                const isCorrect = mcqResult.correctOption === optionIndex;
+                                const optionText = typeof option === 'string' 
+                                  ? option 
+                                  : (option && typeof option === 'object' && 'text' in option) 
+                                    ? (option as any).text 
+                                    : `Option ${String.fromCharCode(65 + optionIndex)}`;
+                                
+                                return (
+                                  <div 
+                                    key={optionIndex}
+                                    className={`p-3 rounded-lg border-l-4 ${
+                                      isSelected && isCorrect
+                                        ? 'bg-green-50 border-green-400 dark:bg-green-900/20 dark:border-green-600'
+                                        : isSelected && !isCorrect
+                                        ? 'bg-red-50 border-red-400 dark:bg-red-900/20 dark:border-red-600'
+                                        : isCorrect
+                                        ? 'bg-green-50 border-green-400 dark:bg-green-900/20 dark:border-green-600'
+                                        : 'bg-gray-50 border-gray-300 dark:bg-gray-700 dark:border-gray-600'
+                                    }`}
+                                  >
+                                    <div className="flex items-center">
+                                      {isSelected && isCorrect ? (
+                                        <CheckCircle className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" />
+                                      ) : isSelected && !isCorrect ? (
+                                        <XCircle className="h-5 w-5 text-red-500 mr-3 flex-shrink-0" />
+                                      ) : isCorrect ? (
+                                        <CheckCircle className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" />
+                                      ) : (
+                                        <div className="h-5 w-5 mr-3 flex-shrink-0" />
+                                      )}
+                                      <span className={`font-medium ${
+                                        isSelected && isCorrect
+                                          ? 'text-green-800 dark:text-green-300'
+                                          : isSelected && !isCorrect
+                                          ? 'text-red-800 dark:text-red-300'
+                                          : isCorrect
+                                          ? 'text-green-800 dark:text-green-300'
+                                          : 'text-gray-700 dark:text-gray-300'
+                                      }`}>
+                                        {String.fromCharCode(65 + optionIndex)}. {optionText}
+                                        {isSelected && (
+                                          <span className="ml-2 text-xs px-2 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
+                                            Your Answer
+                                          </span>
+                                        )}
+                                        {isCorrect && (
+                                          <span className="ml-2 text-xs px-2 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300">
+                                            Correct
+                                          </span>
+                                        )}
+                                      </span>
+                                    </div>
+                                  </div>
+                                );
+                              })}
                             </div>
                           </div>
-                        </div>
+                        )}
 
-                        {/* Correct Answer (always show) */}
-                        <div>
-                          <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                            Correct Answer:
-                          </div>
-                          <div className="p-4 rounded-lg border-l-4 bg-green-50 border-green-400 dark:bg-green-900/20 dark:border-green-600">
-                            <div className="flex items-center">
-                              <CheckCircle className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" />
-                              <span className="font-medium text-green-800 dark:text-green-300">
-                                Option {String.fromCharCode(65 + mcqResult.correctOption)}: {
-                                  typeof mcqResult.correctOptionText === 'string' 
-                                    ? mcqResult.correctOptionText 
-                                    : typeof mcqResult.correctOptionText === 'object' && mcqResult.correctOptionText && 'text' in mcqResult.correctOptionText
-                                      ? (mcqResult.correctOptionText as any).text
-                                      : 'Unknown option'
-                                }
-                              </span>
+                        {/* Fallback: Show your answer and correct answer if options not available */}
+                        {(!questionDetails?.options || questionDetails.options.length === 0) && (
+                          <>
+                            {/* Your Answer */}
+                            <div>
+                              <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                Your Answer:
+                              </div>
+                              <div className={`p-4 rounded-lg border-l-4 ${
+                                mcqResult.isCorrect 
+                                  ? 'bg-green-50 border-green-400 dark:bg-green-900/20 dark:border-green-600'
+                                  : 'bg-red-50 border-red-400 dark:bg-red-900/20 dark:border-red-600'
+                              }`}>
+                                <div className="flex items-center">
+                                  {mcqResult.isCorrect 
+                                    ? <CheckCircle className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" />
+                                    : <XCircle className="h-5 w-5 text-red-500 mr-3 flex-shrink-0" />
+                                  }
+                                  <span className={`font-medium ${
+                                    mcqResult.isCorrect 
+                                      ? 'text-green-800 dark:text-green-300'
+                                      : 'text-red-800 dark:text-red-300'
+                                  }`}>
+                                    Option {String.fromCharCode(65 + mcqResult.selectedOption)}: {
+                                      typeof mcqResult.selectedOptionText === 'string' 
+                                        ? mcqResult.selectedOptionText 
+                                        : typeof mcqResult.selectedOptionText === 'object' && mcqResult.selectedOptionText && 'text' in mcqResult.selectedOptionText
+                                          ? (mcqResult.selectedOptionText as any).text
+                                          : 'Unknown option'
+                                    }
+                                  </span>
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        </div>
+
+                            {/* Correct Answer (always show) */}
+                            <div>
+                              <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                Correct Answer:
+                              </div>
+                              <div className="p-4 rounded-lg border-l-4 bg-green-50 border-green-400 dark:bg-green-900/20 dark:border-green-600">
+                                <div className="flex items-center">
+                                  <CheckCircle className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" />
+                                  <span className="font-medium text-green-800 dark:text-green-300">
+                                    Option {String.fromCharCode(65 + mcqResult.correctOption)}: {
+                                      typeof mcqResult.correctOptionText === 'string' 
+                                        ? mcqResult.correctOptionText 
+                                        : typeof mcqResult.correctOptionText === 'object' && mcqResult.correctOptionText && 'text' in mcqResult.correctOptionText
+                                          ? (mcqResult.correctOptionText as any).text
+                                          : 'Unknown option'
+                                    }
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </>
+                        )}
 
                         {/* Explanation */}
                         {mcqResult.explanation && (
@@ -1288,6 +1482,8 @@ export default function TestResultPage() {
               })}
             </div>
           </div>
+          );
+        })()}
         </div>
         
         {/* Integrity Report - Only show if there were issues */}

@@ -1467,172 +1467,6 @@ export default function CreateTestModal({
                   </div>
                 )}
 
-                {/* Manual Selection Interface */}
-                {formData.questionSelectionMethod === 'manual' && formData.selectedQuestionBankId && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                      Select Questions <span className="text-red-500">*</span>
-                    </label>
-                    
-                    {loadingQuestions ? (
-                      <div className="text-center py-8">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                        <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">Loading questions...</p>
-                      </div>
-                    ) : availableQuestions.length === 0 ? (
-                      <div className="text-center py-8">
-                        <AlertCircle className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                        <p className="text-gray-600 dark:text-gray-300">No questions found in this question bank.</p>
-                      </div>
-                    ) : (
-                      <div>
-                        {/* Selection Summary */}
-                        <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-gray-600 dark:text-gray-300">
-                              Selected: {formData.selectedQuestions.length} / {formData.totalQuestions} questions
-                            </span>
-                            <div className="flex space-x-2">
-                              <button
-                                type="button"
-                                onClick={() => updateFormData({ selectedQuestions: [] })}
-                                className="text-red-600 hover:text-red-700 text-xs"
-                              >
-                                Clear All
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const randomQuestions = [...availableQuestions]
-                                    .sort(() => Math.random() - 0.5)
-                                    .slice(0, formData.totalQuestions);
-                                  updateFormData({ selectedQuestions: randomQuestions });
-                                }}
-                                className="text-blue-600 hover:text-blue-700 text-xs"
-                              >
-                                Random Select
-                              </button>
-                            </div>
-                          </div>
-                          {formData.selectedQuestions.length > formData.totalQuestions && (
-                            <p className="mt-2 text-xs text-orange-600 dark:text-orange-400">
-                              ⚠️ You have selected more questions than needed. Only the first {formData.totalQuestions} will be used.
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Questions List */}
-                        <div className="space-y-3 max-h-96 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded-lg p-3">
-                          {availableQuestions.map((question, index) => {
-                            const isSelected = formData.selectedQuestions.some(q => q.id === question.id);
-                            return (
-                              <div
-                                key={question.id}
-                                className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                                  isSelected
-                                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                                    : 'border-gray-300 dark:border-gray-600 hover:border-gray-400'
-                                }`}
-                                onClick={() => {
-                                  if (isSelected) {
-                                    // Deselect question
-                                    updateFormData({
-                                      selectedQuestions: formData.selectedQuestions.filter(q => q.id !== question.id)
-                                    });
-                                  } else {
-                                    // Select question (if under limit)
-                                    if (formData.selectedQuestions.length < formData.totalQuestions) {
-                                      updateFormData({
-                                        selectedQuestions: [...formData.selectedQuestions, question]
-                                      });
-                                    }
-                                  }
-                                }}
-                              >
-                                <div className="flex items-start space-x-3">
-                                  {/* Selection Checkbox */}
-                                  <div className={`mt-1 w-5 h-5 rounded border-2 flex items-center justify-center ${
-                                    isSelected
-                                      ? 'border-blue-500 bg-blue-500'
-                                      : 'border-gray-300 dark:border-gray-600'
-                                  }`}>
-                                    {isSelected && (
-                                      <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                      </svg>
-                                    )}
-                                  </div>
-
-                                  <div className="flex-1">
-                                    <div className="flex items-center space-x-2 mb-2">
-                                      <span className="text-sm font-medium text-gray-900 dark:text-white">
-                                        Q{index + 1}: {question.title}
-                                      </span>
-                                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                                        question.type === 'mcq'
-                                          ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300'
-                                          : 'bg-purple-100 dark:bg-purple-900/20 text-purple-800 dark:text-purple-300'
-                                      }`}>
-                                        {question.type === 'mcq' ? 'MCQ' : 'Essay'}
-                                      </span>
-                                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                                        question.difficultyLevel === 'easy'
-                                          ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300'
-                                          : question.difficultyLevel === 'medium'
-                                          ? 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300'
-                                          : 'bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-300'
-                                      }`}>
-                                        {question.difficultyLevel}
-                                      </span>
-                                      <span className="text-xs text-gray-500 dark:text-gray-400">
-                                        {question.points} pts
-                                      </span>
-                                    </div>
-
-                                    {/* Question Preview */}
-                                    <div className="text-sm text-gray-600 dark:text-gray-400">
-                                      {question.content ? (
-                                        <p className="line-clamp-2">{question.content}</p>
-                                      ) : question.imageUrl ? (
-                                        <p className="italic">Question with image</p>
-                                      ) : (
-                                        <p className="italic">No preview available</p>
-                                      )}
-                                    </div>
-
-                                    {/* MCQ Options Preview */}
-                                    {question.type === 'mcq' && 'options' in question && question.options && (
-                                      <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                                        {question.options.slice(0, 2).map((option, optIdx) => (
-                                          <span key={option.id} className="mr-3">
-                                            {String.fromCharCode(65 + optIdx)}. {option.text?.substring(0, 30)}...
-                                          </span>
-                                        ))}
-                                        {question.options.length > 2 && (
-                                          <span>+{question.options.length - 2} more options</span>
-                                        )}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-
-                        {/* Selection Status */}
-                        {formData.selectedQuestions.length < formData.totalQuestions && (
-                          <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-                            <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                              Please select {formData.totalQuestions - formData.selectedQuestions.length} more question(s) to proceed.
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-
                 {/* Manual Question Selection Interface */}
                 {formData.questionSelectionMethod === 'manual' && formData.selectedQuestionBankId && (
                   <div>
@@ -1751,21 +1585,65 @@ export default function CreateTestModal({
                                       <span className="text-xs text-gray-500 dark:text-gray-400">
                                         {question.points} pts
                                       </span>
+                                      {question.imageUrl && (
+                                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300">
+                                          📷 Image
+                                        </span>
+                                      )}
                                     </div>
                                     
-                                    <div className="text-sm text-gray-700 dark:text-gray-300">
-                                      {question.content ? (
-                                        <p className="line-clamp-2">{question.content}</p>
-                                      ) : question.imageUrl ? (
-                                        <p className="italic text-gray-500">Question with image</p>
-                                      ) : (
+                                    {/* Question Content */}
+                                    <div className="text-sm text-gray-700 dark:text-gray-300 mb-3">
+                                      {question.content && (
+                                        <p className="line-clamp-3 mb-2">{question.content}</p>
+                                      )}
+                                      
+                                      {/* Question Image */}
+                                      {question.imageUrl && (
+                                        <div className="mt-2">
+                                          <img
+                                            src={question.imageUrl}
+                                            alt={`Question ${index + 1} image`}
+                                            className="max-w-full h-auto max-h-32 object-contain rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700"
+                                            onError={(e) => {
+                                              const target = e.target as HTMLImageElement;
+                                              target.style.display = 'none';
+                                            }}
+                                          />
+                                        </div>
+                                      )}
+                                      
+                                      {/* Fallback text if no content or image */}
+                                      {!question.content && !question.imageUrl && (
                                         <p className="italic text-gray-500">Question {index + 1}</p>
                                       )}
                                     </div>
                                     
+                                    {/* MCQ Options Preview */}
                                     {question.type === 'mcq' && 'options' in question && question.options && (
+                                      <div className="mt-2">
+                                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                                          Options ({question.options.length}):
+                                        </div>
+                                        <div className="space-y-1">
+                                          {question.options.slice(0, 2).map((option, optionIndex) => (
+                                            <div key={optionIndex} className="text-xs text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 px-2 py-1 rounded">
+                                              {String.fromCharCode(65 + optionIndex)}. {option.text?.substring(0, 50)}{option.text && option.text.length > 50 ? '...' : ''}
+                                            </div>
+                                          ))}
+                                          {question.options.length > 2 && (
+                                            <div className="text-xs text-gray-500 dark:text-gray-400 italic">
+                                              ... and {question.options.length - 2} more option{question.options.length - 2 !== 1 ? 's' : ''}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Essay Question Preview */}
+                                    {question.type === 'essay' && (
                                       <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                                        {question.options.length} options
+                                        Essay question • Max words: {question.wordLimit || 'Not specified'}
                                       </div>
                                     )}
                                   </div>
