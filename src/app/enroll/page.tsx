@@ -183,7 +183,7 @@ export default function EnrollmentPage() {
       case 'year':
         return a.year.localeCompare(b.year);
       case 'fee':
-        return a.monthlyFee - b.monthlyFee;
+        return a.sessionFee - b.sessionFee;
       case 'location':
         return getCenterLocation(a.centerId).localeCompare(getCenterLocation(b.centerId));
       default:
@@ -310,7 +310,7 @@ export default function EnrollmentPage() {
             className: selectedClass.name,
             subject: selectedClass.subject,
             centerName: getCenterDisplayName(selectedClass.centerId),
-            monthlyFee: selectedClass.monthlyFee,
+            sessionFee: selectedClass.sessionFee,
             preferredStartDate: new Date().toISOString().split('T')[0], // Use current date
             additionalNotes: '', // Remove additional notes
             agreedToTerms: formData.agreedToTerms,
@@ -540,7 +540,7 @@ export default function EnrollmentPage() {
                       { value: 'name', label: 'Class Name' },
                       { value: 'subject', label: 'Subject' },
                       { value: 'year', label: 'Year Level' },
-                      { value: 'fee', label: 'Monthly Fee' },
+                      { value: 'fee', label: 'Session Fee' },
                       { value: 'location', label: 'Location' },
                     ]}
                   />
@@ -588,7 +588,7 @@ export default function EnrollmentPage() {
                               </div>
                               <div className="flex items-center">
                                 <DollarSign className="w-4 h-4 mr-2" />
-                                ${cls.monthlyFee}/month
+                                ${cls.sessionFee}/session
                               </div>
                             </div>
                             {cls.description && (
@@ -616,19 +616,19 @@ export default function EnrollmentPage() {
                               {cls.name} - {cls.subject} ({cls.year})
                             </span>
                             <span className="text-green-800 font-medium">
-                              ${cls.monthlyFee}/month
+                              ${cls.sessionFee}/session
                             </span>
                           </div>
                         ) : null;
                       })}
                       <div className="border-t border-green-300 pt-2 mt-2">
                         <div className="flex items-center justify-between font-semibold text-green-800">
-                          <span>Total Monthly Fee:</span>
+                          <span>Total Session Fee:</span>
                           <span>
                             ${formData.selectedClassIds.reduce((total, classId) => {
                               const cls = classes.find(c => c.id === classId);
-                              return total + (cls?.monthlyFee || 0);
-                            }, 0)}/month
+                              return total + (cls?.sessionFee || 0);
+                            }, 0)}/session
                           </span>
                         </div>
                       </div>

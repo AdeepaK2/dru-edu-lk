@@ -174,8 +174,8 @@ function generateNotificationEmailHTML(enrollmentRequest: any): string {
                     <span class="info-value">${enrollmentRequest.centerName}</span>
                 </div>
                 <div class="info-row">
-                    <span class="info-label">Monthly Fee:</span>
-                    <span class="info-value">$${enrollmentRequest.monthlyFee}</span>
+                    <span class="info-label">Session Fee:</span>
+                    <span class="info-value">$${enrollmentRequest.sessionFee}</span>
                 </div>
                 <div class="info-row">
                     <span class="info-label">Preferred Start:</span>

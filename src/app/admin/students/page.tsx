@@ -1235,7 +1235,7 @@ export default function StudentsManagement() {
                     </div>
                     
                     <div className="grid md:grid-cols-2 gap-4 text-sm text-gray-600">
-                      <p><strong>Monthly Fee:</strong> ${request.monthlyFee}</p>
+                      <p><strong>Session Fee:</strong> ${request.sessionFee}</p>
                       <p><strong>Preferred Start:</strong> {formatDate(request.preferredStartDate)}</p>
                       <p><strong>Submitted:</strong> {formatDate(request.createdAt)}</p>
                       {request.processedAt && (
