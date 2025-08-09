@@ -21,15 +21,6 @@ import { Button } from '@/components/ui';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 import Link from 'next/link';
 
-// Upcoming test interface
-interface UpcomingTest {
-  id: string;
-  title: string;
-  subject: string;
-  date: string;
-  time: string;
-}
-
 export default function StudentDashboard() {
   const { student } = useStudentAuth();
 
@@ -42,7 +33,7 @@ export default function StudentDashboard() {
     currentGrade: 0
   });
   
-  const [upcomingTests, setUpcomingTests] = useState<UpcomingTest[]>([]);
+  const [enrollments, setEnrollments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Load dashboard data
@@ -54,11 +45,11 @@ export default function StudentDashboard() {
         setLoading(true);
         
         // Load real data from services
-        const [classesData, testsData, studyMaterialsData, submissionsData] = await Promise.all([
+        const [classesData, studyMaterialsData, submissionsData, enrollmentsData] = await Promise.all([
           loadStudentClasses(),
-          loadUpcomingTests(),
           loadStudyMaterials(),
-          loadCompletedSubmissions()
+          loadCompletedSubmissions(),
+          loadStudentEnrollments()
         ]);
         
         // Calculate stats from real data
@@ -71,7 +62,7 @@ export default function StudentDashboard() {
         };
         
         setDashboardStats(stats);
-        setUpcomingTests(testsData);
+        setEnrollments(enrollmentsData);
         
       } catch (error) {
         console.error('Error loading dashboard data:', error);
@@ -86,60 +77,29 @@ export default function StudentDashboard() {
   // Helper functions to load real data
   const loadStudentClasses = async () => {
     try {
+      const { getEnrollmentsByStudent } = await import('@/services/studentEnrollmentService');
       const { ClassFirestoreService } = await import('@/apiservices/classFirestoreService');
       if (!student?.id) return [];
-      return await ClassFirestoreService.getClassesByStudent(student.id);
+      
+      // Get student enrollments first
+      const enrollments = await getEnrollmentsByStudent(student.id);
+      
+      // Get class details for each enrollment
+      const classes = [];
+      for (const enrollment of enrollments) {
+        try {
+          const classData = await ClassFirestoreService.getClassById(enrollment.classId);
+          if (classData) {
+            classes.push(classData);
+          }
+        } catch (classError) {
+          console.warn(`Could not load class ${enrollment.classId}:`, classError);
+        }
+      }
+      
+      return classes;
     } catch (error) {
       console.error('Error loading classes:', error);
-      return [];
-    }
-  };
-
-  const loadUpcomingTests = async () => {
-    try {
-      const { TestService } = await import('@/apiservices/testService');
-      if (!student?.id) return [];
-      
-      // First get student's classes
-      const classes = await loadStudentClasses();
-      const classIds = classes.map((cls: any) => cls.id);
-      
-      const tests = await TestService.getStudentTests(student.id, classIds);
-      
-      // Filter for upcoming tests and sort by date
-      const upcoming = tests
-        .filter((test: any) => {
-          if (test.type === 'live') {
-            return new Date(test.scheduledStartTime.toDate()) > new Date();
-          } else if (test.type === 'flexible') {
-            return new Date(test.availableTo.toDate()) > new Date();
-          }
-          return false;
-        })
-        .sort((a: any, b: any) => {
-          const dateA = a.type === 'live' ? a.scheduledStartTime.toDate() : a.availableTo.toDate();
-          const dateB = b.type === 'live' ? b.scheduledStartTime.toDate() : b.availableTo.toDate();
-          return dateA - dateB;
-        })
-        .slice(0, 3); // Show only first 3 upcoming tests
-      
-      return upcoming.map((test: any) => ({
-        id: test.id,
-        subject: test.subjectName || 'Unknown Subject',
-        title: test.title,
-        date: test.type === 'live' 
-          ? test.scheduledStartTime.toDate().toISOString().split('T')[0]
-          : test.availableTo.toDate().toISOString().split('T')[0],
-        time: test.type === 'live' 
-          ? test.scheduledStartTime.toDate().toLocaleTimeString('en-AU', { 
-              hour: '2-digit', 
-              minute: '2-digit',
-              timeZone: 'Australia/Melbourne'
-            })
-          : 'Flexible'
-      }));
-    } catch (error) {
-      console.error('Error loading upcoming tests:', error);
       return [];
     }
   };
@@ -151,6 +111,13 @@ export default function StudentDashboard() {
       
       // Get study materials for all student's classes
       const classes = await loadStudentClasses();
+      
+      // Check if we have any classes
+      if (classes.length === 0) {
+        console.log('No classes found for student, skipping study materials query');
+        return [];
+      }
+      
       const allMaterials = [];
       
       for (const cls of classes) {
@@ -174,6 +141,19 @@ export default function StudentDashboard() {
       return submissions.filter((sub: any) => sub.status === 'submitted' || sub.status === 'auto_submitted');
     } catch (error) {
       console.error('Error loading submissions:', error);
+      return [];
+    }
+  };
+
+  const loadStudentEnrollments = async () => {
+    try {
+      const { getEnrollmentsByStudent } = await import('@/services/studentEnrollmentService');
+      if (!student?.id) return [];
+      
+      const enrollments = await getEnrollmentsByStudent(student.id);
+      return enrollments;
+    } catch (error) {
+      console.error('Error loading enrollments:', error);
       return [];
     }
   };
@@ -378,157 +358,42 @@ export default function StudentDashboard() {
           </div>
         </div>
 
-        {/* Upcoming Tests and Performance Overview */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Upcoming Tests */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Upcoming Tests
-              </h3>
-              <Link href="/student/test">
-                <Button variant="outline" size="sm">
-                  View All
-                </Button>
-              </Link>
-            </div>
-            
-            <div className="space-y-4">
-              {upcomingTests.map((test) => (
-                <div key={test.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/20 rounded-lg flex items-center justify-center">
-                      <FileText className="w-5 h-5 text-orange-600 dark:text-orange-400" />
-                    </div>
-                    <div>
-                      <h4 className="font-medium text-gray-900 dark:text-white">
-                        {test.title}
-                      </h4>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {test.subject}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">
-                      {new Date(test.date).toLocaleDateString()}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {test.time}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Performance Overview */}
+        {/* Account Information */}
+        {student && (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
-              Performance Overview
+              Account Information
             </h3>
-            <div className="grid grid-cols-1 gap-6">
-              <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <Trophy className="w-6 h-6 text-white" />
-                </div>
-                <h4 className="font-medium text-gray-900 dark:text-white mb-1">Current Average</h4>
-                <p className="text-2xl font-bold text-green-600 dark:text-green-400">87.5%</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">+3.2% from last month</p>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600 dark:text-gray-300">Student ID:</span>
+                <span className="text-sm font-medium text-gray-900 dark:text-white">
+                  {student.id || 'N/A'}
+                </span>
               </div>
-              
-              <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <Target className="w-6 h-6 text-white" />
-                </div>
-                <h4 className="font-medium text-gray-900 dark:text-white mb-1">Tests Completed</h4>
-                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">8/10</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">80% completion rate</p>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600 dark:text-gray-300">Enrollment Date:</span>
+                <span className="text-sm font-medium text-gray-900 dark:text-white">
+                  {student.enrollmentDate ? new Date(student.enrollmentDate).toLocaleDateString() : 'N/A'}
+                </span>
               </div>
-              
-              <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <Play className="w-6 h-6 text-white" />
-                </div>
-                <h4 className="font-medium text-gray-900 dark:text-white mb-1">Videos Watched</h4>
-                <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">15</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">This week</p>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600 dark:text-gray-300">Status:</span>
+                <span className={`text-sm font-medium px-2 py-1 rounded-full ${
+                  student.status === 'Active' 
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                    : student.status === 'Suspended'
+                    ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+                    : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                }`}>
+                  {student.status || 'Active'}
+                </span>
               </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Payment Status & Account Info */}
-        {student && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Payment Status */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
-                Payment Status
-              </h3>
-              <div className="flex items-center space-x-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/20 rounded-full flex items-center justify-center">
-                  <BarChart3 className="w-6 h-6 text-purple-600" />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Status:</span>
-                    <span className={`text-sm font-medium px-3 py-1 rounded-full ${
-                      student.payment?.status === 'Paid'
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                        : student.payment?.status === 'Pending'
-                        ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
-                        : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-                    }`}>
-                      {student.payment?.status || 'Pending'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600 dark:text-gray-300">Last Payment:</span>
-                    <span className="text-sm font-medium text-gray-900 dark:text-white">
-                      {student.payment?.lastPayment || 'N/A'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Account Information */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
-                Account Information
-              </h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600 dark:text-gray-300">Student ID:</span>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    {student.id || 'N/A'}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600 dark:text-gray-300">Enrollment Date:</span>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    {student.enrollmentDate ? new Date(student.enrollmentDate).toLocaleDateString() : 'N/A'}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600 dark:text-gray-300">Status:</span>
-                  <span className={`text-sm font-medium px-2 py-1 rounded-full ${
-                    student.status === 'Active' 
-                      ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                      : student.status === 'Suspended'
-                      ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-                      : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-                  }`}>
-                    {student.status || 'Active'}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600 dark:text-gray-300">Courses Enrolled:</span>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    {student.coursesEnrolled || 0}
-                  </span>
-                </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600 dark:text-gray-300">Courses Enrolled:</span>
+                <span className="text-sm font-medium text-gray-900 dark:text-white">
+                  {enrollments.length}
+                </span>
               </div>
             </div>
           </div>
