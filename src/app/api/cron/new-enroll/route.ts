@@ -13,11 +13,27 @@ export async function GET(request: NextRequest) {
     console.log('🔄 Running enrollment notification cron job...');
 
     // Query for pending enrollment requests that haven't been notified
-    const pendingRequestsQuery = await firebaseAdmin.db
+    // First get all pending requests, then filter client-side to handle missing notificationSent field
+    const allPendingRequestsQuery = await firebaseAdmin.db
       .collection('enrollmentRequests')
       .where('status', '==', 'Pending')
-      .where('notificationSent', '==', false)
       .get();
+
+    console.log(`📊 Found ${allPendingRequestsQuery.docs.length} total pending enrollment requests`);
+
+    // Filter for requests that haven't been notified (either false or undefined)
+    const pendingRequestsQuery = {
+      docs: allPendingRequestsQuery.docs.filter(doc => {
+        const data = doc.data();
+        const hasNotificationSent = data.notificationSent !== undefined;
+        const notificationSent = data.notificationSent === true;
+        console.log(`📋 Request ${doc.id}: hasNotificationSent=${hasNotificationSent}, notificationSent=${notificationSent}`);
+        return data.notificationSent !== true;
+      }),
+      empty: false
+    };
+    
+    pendingRequestsQuery.empty = pendingRequestsQuery.docs.length === 0;
 
     if (pendingRequestsQuery.empty) {
       console.log('✅ No new pending enrollment requests found');
@@ -227,7 +243,7 @@ function generateNotificationEmailHTML(enrollmentRequest: any): string {
             ` : ''}
             
             <div style="text-align: center; margin: 30px 0;">
-                <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://dru-edu.vercel.app'}/admin/students" class="action-button">
+                <a href="https://www.drueducation.com/admin/students" class="action-button">
                     📊 Review in Admin Dashboard
                 </a>
             </div>
