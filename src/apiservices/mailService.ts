@@ -13,15 +13,13 @@ export class MailService {
   // Create a mail document in Firestore using client SDK
   static async createMailDocument(mailData: Omit<MailDocument, 'createdAt' | 'processed'>): Promise<string> {
     try {
-      // Use the same format as the student API route
+      // Use the correct format for Firebase Mail Extension
       const emailData = {
         to: mailData.to,
         message: {
           subject: mailData.subject,
           html: mailData.html
-        },
-        processed: false,
-        createdAt: Timestamp.now()
+        }
       };
 
       // Create document using Firebase client SDK

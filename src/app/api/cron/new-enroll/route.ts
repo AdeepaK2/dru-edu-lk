@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import firebaseAdmin from '@/utils/firebase-server';
-import { MailDocument } from '@/models/mailSchema';
 
 export async function GET(request: NextRequest) {
   try {
@@ -53,12 +52,13 @@ export async function GET(request: NextRequest) {
     // Process each enrollment request
     const emailPromises = pendingRequests.map(async (request: any) => {
       try {
-        // Create notification email document
-        const emailData: MailDocument = {
+        // Create notification email document (correct structure for Firebase Mail Extension)
+        const emailData = {
           to: 'dru.coordinator@gmail.com',
-          subject: `New Enrollment Request - ${request.student.name}`,
-          html: generateNotificationEmailHTML(request),
-          processed: false
+          message: {
+            subject: `New Enrollment Request - ${request.student.name}`,
+            html: generateNotificationEmailHTML(request)
+          }
         };
 
         // Add email to mail collection for processing
