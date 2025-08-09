@@ -17,7 +17,9 @@ import {
   Phone,
   Calendar,
   School,
-  BookOpen
+  BookOpen,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 import { Student, StudentDocument } from '@/models/studentSchema';
 import { EnrollmentRequestDocument, convertEnrollmentRequestDocument } from '@/models/enrollmentRequestSchema';
@@ -66,6 +68,8 @@ export default function StudentsManagement() {
   const [selectedStudentRequests, setSelectedStudentRequests] = useState<EnrollmentRequestDocument[]>([]);
   const [showEnrollmentDetailModal, setShowEnrollmentDetailModal] = useState(false);
   const [processingEnrollment, setProcessingEnrollment] = useState<string | null>(null);
+  const [showApprovedRequests, setShowApprovedRequests] = useState(false);
+  const [showRejectedRequests, setShowRejectedRequests] = useState(false);
   
   // Use real-time data for immediate updates
   const [students, setStudents] = useState<StudentDocument[]>([]);
@@ -151,8 +155,8 @@ export default function StudentsManagement() {
     alert(`❌ Error: ${message}`);
   };
 
-  // Group enrollment requests by student email
-  const groupedEnrollmentRequests = useMemo(() => {
+  // Group enrollment requests by student email and status
+  const { pendingRequests, approvedRequests, rejectedRequests } = useMemo(() => {
     const grouped: Record<string, EnrollmentRequestDocument[]> = {};
     
     enrollmentRequests.forEach(request => {
@@ -163,7 +167,7 @@ export default function StudentsManagement() {
       grouped[email].push(request);
     });
     
-    return Object.entries(grouped).map(([email, requests]) => ({
+    const allGrouped = Object.entries(grouped).map(([email, requests]) => ({
       studentEmail: email,
       studentName: requests[0].student.name,
       requests: requests,
@@ -173,6 +177,12 @@ export default function StudentsManagement() {
       rejectedCount: requests.filter(r => r.status === 'Rejected').length,
       latestRequestDate: Math.max(...requests.map(r => r.createdAt?.toMillis() || 0))
     })).sort((a, b) => b.latestRequestDate - a.latestRequestDate);
+
+    const pending = allGrouped.filter(group => group.pendingCount > 0);
+    const approved = allGrouped.filter(group => group.approvedCount > 0 && group.pendingCount === 0);
+    const rejected = allGrouped.filter(group => group.rejectedCount > 0 && group.pendingCount === 0);
+
+    return { pendingRequests: pending, approvedRequests: approved, rejectedRequests: rejected };
   }, [enrollmentRequests]);
 
   // Student create handler
@@ -1067,120 +1077,258 @@ export default function StudentsManagement() {
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-4">
-              {groupedEnrollmentRequests.map((studentGroup) => (
-                <Card key={studentGroup.studentEmail} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-6">
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900">
-                          {studentGroup.studentName}
-                        </h3>
-                        <p className="text-gray-600">{studentGroup.studentEmail}</p>
-                        <p className="text-sm text-gray-500">
-                          {studentGroup.totalClasses} class{studentGroup.totalClasses !== 1 ? 'es' : ''} requested
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="flex gap-2">
-                          {studentGroup.pendingCount > 0 && (
-                            <Badge variant="warning" className="bg-yellow-100 text-yellow-800">
-                              {studentGroup.pendingCount} Pending
-                            </Badge>
-                          )}
-                          {studentGroup.approvedCount > 0 && (
-                            <Badge variant="success" className="bg-green-100 text-green-800">
-                              {studentGroup.approvedCount} Approved
-                            </Badge>
-                          )}
-                          {studentGroup.rejectedCount > 0 && (
-                            <Badge variant="destructive" className="bg-red-100 text-red-800">
-                              {studentGroup.rejectedCount} Rejected
-                            </Badge>
-                          )}
-                        </div>
-                        <span className="text-sm text-gray-500">
-                          {formatDate(new Date(studentGroup.latestRequestDate))}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-                      <div className="flex items-center text-sm text-gray-600">
-                        <Mail className="w-4 h-4 mr-2" />
-                        {studentGroup.requests[0].student.email}
-                      </div>
-                      <div className="flex items-center text-sm text-gray-600">
-                        <Phone className="w-4 h-4 mr-2" />
-                        {studentGroup.requests[0].student.phone}
-                      </div>
-                      <div className="flex items-center text-sm text-gray-600">
-                        <School className="w-4 h-4 mr-2" />
-                        {studentGroup.requests[0].student.year} - {studentGroup.requests[0].student.school}
-                      </div>
-                    </div>
-                    
-                    <div className="mb-4">
-                      <p className="text-sm text-gray-600">
-                        <strong>Parent:</strong> {studentGroup.requests[0].parent.name} ({studentGroup.requests[0].parent.relationship})
-                        <br />
-                        <strong>Contact:</strong> {studentGroup.requests[0].parent.email} | {studentGroup.requests[0].parent.phone}
-                      </p>
-                    </div>
-                    
-                    <div className="flex justify-between items-center">
-                      <div className="text-sm text-gray-600">
-                        <strong>Classes:</strong> {studentGroup.requests.map(r => r.className).join(', ')}
-                      </div>
-                      
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleViewStudentRequests(studentGroup.requests)}
-                        >
-                          <Eye className="w-4 h-4 mr-1" />
-                          View All Classes
-                        </Button>
-                        
-                        {studentGroup.pendingCount > 0 && (
-                          <>
-                            <Button
-                              size="sm"
-                              onClick={() => handleBatchApproveStudent(studentGroup.requests)}
-                              disabled={processingEnrollment === studentGroup.studentEmail}
-                              className="bg-green-600 hover:bg-green-700 text-white"
-                            >
-                              {processingEnrollment === studentGroup.studentEmail ? (
-                                <>
-                                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-1" />
-                                  Processing...
-                                </>
-                              ) : (
-                                <>
-                                  <CheckCircle className="w-4 h-4 mr-1" />
-                                  Approve All ({studentGroup.pendingCount})
-                                </>
-                              )}
-                            </Button>
+            <div className="space-y-6">
+              {/* Pending Requests - Always Visible */}
+              {pendingRequests.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <Clock className="w-5 h-5 mr-2 text-yellow-600" />
+                    Pending Requests ({pendingRequests.length})
+                  </h3>
+                  <div className="space-y-4">
+                    {pendingRequests.map((studentGroup) => (
+                      <Card key={studentGroup.studentEmail} className="hover:shadow-md transition-shadow">
+                        <CardContent className="p-6">
+                          <div className="flex justify-between items-start mb-4">
+                            <div>
+                              <h4 className="text-lg font-semibold text-gray-900">
+                                {studentGroup.studentName}
+                              </h4>
+                              <p className="text-gray-600">{studentGroup.studentEmail}</p>
+                              <p className="text-sm text-gray-500">
+                                {studentGroup.totalClasses} class{studentGroup.totalClasses !== 1 ? 'es' : ''} requested
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="warning" className="bg-yellow-100 text-yellow-800">
+                                {studentGroup.pendingCount} Pending
+                              </Badge>
+                              <span className="text-sm text-gray-500">
+                                {formatDate(new Date(studentGroup.latestRequestDate))}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                            <div className="flex items-center text-sm text-gray-600">
+                              <Mail className="w-4 h-4 mr-2" />
+                              {studentGroup.requests[0].student.email}
+                            </div>
+                            <div className="flex items-center text-sm text-gray-600">
+                              <Phone className="w-4 h-4 mr-2" />
+                              {studentGroup.requests[0].student.phone}
+                            </div>
+                            <div className="flex items-center text-sm text-gray-600">
+                              <School className="w-4 h-4 mr-2" />
+                              {studentGroup.requests[0].student.year} - {studentGroup.requests[0].student.school}
+                            </div>
+                          </div>
+                          
+                          <div className="mb-4">
+                            <p className="text-sm text-gray-600">
+                              <strong>Parent:</strong> {studentGroup.requests[0].parent.name} ({studentGroup.requests[0].parent.relationship})
+                              <br />
+                              <strong>Contact:</strong> {studentGroup.requests[0].parent.email} | {studentGroup.requests[0].parent.phone}
+                            </p>
+                          </div>
+                          
+                          <div className="flex justify-between items-center">
+                            <div className="text-sm text-gray-600">
+                              <strong>Classes:</strong> {studentGroup.requests.map((r: any) => r.className).join(', ')}
+                            </div>
                             
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleBatchRejectStudent(studentGroup.requests)}
-                              disabled={processingEnrollment === studentGroup.studentEmail}
-                              className="text-red-600 border-red-300 hover:bg-red-50"
-                            >
-                              <XCircle className="w-4 h-4 mr-1" />
-                              Reject All ({studentGroup.pendingCount})
-                            </Button>
-                          </>
-                        )}
-                      </div>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleViewStudentRequests(studentGroup.requests)}
+                              >
+                                <Eye className="w-4 h-4 mr-1" />
+                                View All Classes
+                              </Button>
+                              
+                              <Button
+                                size="sm"
+                                onClick={() => handleBatchApproveStudent(studentGroup.requests)}
+                                disabled={processingEnrollment === studentGroup.studentEmail}
+                                className="bg-green-600 hover:bg-green-700 text-white"
+                              >
+                                {processingEnrollment === studentGroup.studentEmail ? (
+                                  <>
+                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-1" />
+                                    Processing...
+                                  </>
+                                ) : (
+                                  <>
+                                    <CheckCircle className="w-4 h-4 mr-1" />
+                                    Approve All ({studentGroup.pendingCount})
+                                  </>
+                                )}
+                              </Button>
+                              
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleBatchRejectStudent(studentGroup.requests)}
+                                disabled={processingEnrollment === studentGroup.studentEmail}
+                                className="text-red-600 border-red-300 hover:bg-red-50"
+                              >
+                                <XCircle className="w-4 h-4 mr-1" />
+                                Reject All ({studentGroup.pendingCount})
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Approved Requests - Collapsible */}
+              {approvedRequests.length > 0 && (
+                <div>
+                  <button
+                    onClick={() => setShowApprovedRequests(!showApprovedRequests)}
+                    className="flex items-center justify-between w-full text-left p-4 bg-green-50 hover:bg-green-100 rounded-lg transition-colors"
+                  >
+                    <h3 className="text-lg font-semibold text-green-800 flex items-center">
+                      <CheckCircle className="w-5 h-5 mr-2" />
+                      Approved Requests ({approvedRequests.length})
+                    </h3>
+                    {showApprovedRequests ? (
+                      <ChevronDown className="w-5 h-5 text-green-600" />
+                    ) : (
+                      <ChevronRight className="w-5 h-5 text-green-600" />
+                    )}
+                  </button>
+                  
+                  {showApprovedRequests && (
+                    <div className="mt-4 space-y-4">
+                      {approvedRequests.map((studentGroup) => (
+                        <Card key={studentGroup.studentEmail} className="bg-green-50/50">
+                          <CardContent className="p-6">
+                            <div className="flex justify-between items-start mb-4">
+                              <div>
+                                <h4 className="text-lg font-semibold text-gray-900">
+                                  {studentGroup.studentName}
+                                </h4>
+                                <p className="text-gray-600">{studentGroup.studentEmail}</p>
+                                <p className="text-sm text-gray-500">
+                                  {studentGroup.totalClasses} class{studentGroup.totalClasses !== 1 ? 'es' : ''} approved
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge variant="success" className="bg-green-100 text-green-800">
+                                  {studentGroup.approvedCount} Approved
+                                </Badge>
+                                <span className="text-sm text-gray-500">
+                                  {formatDate(new Date(studentGroup.latestRequestDate))}
+                                </span>
+                              </div>
+                            </div>
+                            
+                            <div className="flex justify-between items-center">
+                              <div className="text-sm text-gray-600">
+                                <strong>Classes:</strong> {studentGroup.requests.map((r: any) => r.className).join(', ')}
+                              </div>
+                              
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleViewStudentRequests(studentGroup.requests)}
+                              >
+                                <Eye className="w-4 h-4 mr-1" />
+                                View Details
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
                     </div>
+                  )}
+                </div>
+              )}
+
+              {/* Rejected Requests - Collapsible */}
+              {rejectedRequests.length > 0 && (
+                <div>
+                  <button
+                    onClick={() => setShowRejectedRequests(!showRejectedRequests)}
+                    className="flex items-center justify-between w-full text-left p-4 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
+                  >
+                    <h3 className="text-lg font-semibold text-red-800 flex items-center">
+                      <XCircle className="w-5 h-5 mr-2" />
+                      Rejected Requests ({rejectedRequests.length})
+                    </h3>
+                    {showRejectedRequests ? (
+                      <ChevronDown className="w-5 h-5 text-red-600" />
+                    ) : (
+                      <ChevronRight className="w-5 h-5 text-red-600" />
+                    )}
+                  </button>
+                  
+                  {showRejectedRequests && (
+                    <div className="mt-4 space-y-4">
+                      {rejectedRequests.map((studentGroup) => (
+                        <Card key={studentGroup.studentEmail} className="bg-red-50/50">
+                          <CardContent className="p-6">
+                            <div className="flex justify-between items-start mb-4">
+                              <div>
+                                <h4 className="text-lg font-semibold text-gray-900">
+                                  {studentGroup.studentName}
+                                </h4>
+                                <p className="text-gray-600">{studentGroup.studentEmail}</p>
+                                <p className="text-sm text-gray-500">
+                                  {studentGroup.totalClasses} class{studentGroup.totalClasses !== 1 ? 'es' : ''} rejected
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge variant="destructive" className="bg-red-100 text-red-800">
+                                  {studentGroup.rejectedCount} Rejected
+                                </Badge>
+                                <span className="text-sm text-gray-500">
+                                  {formatDate(new Date(studentGroup.latestRequestDate))}
+                                </span>
+                              </div>
+                            </div>
+                            
+                            <div className="flex justify-between items-center">
+                              <div className="text-sm text-gray-600">
+                                <strong>Classes:</strong> {studentGroup.requests.map((r: any) => r.className).join(', ')}
+                              </div>
+                              
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleViewStudentRequests(studentGroup.requests)}
+                              >
+                                <Eye className="w-4 h-4 mr-1" />
+                                View Details
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* No pending requests message */}
+              {pendingRequests.length === 0 && (approvedRequests.length > 0 || rejectedRequests.length > 0) && (
+                <Card>
+                  <CardContent className="p-8 text-center">
+                    <CheckCircle className="w-12 h-12 text-green-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-600 mb-2">
+                      No pending enrollment requests
+                    </h3>
+                    <p className="text-gray-500">
+                      All enrollment requests have been processed. Check the collapsible sections above for approved and rejected requests.
+                    </p>
                   </CardContent>
                 </Card>
-              ))}
+              )}
             </div>
           )}
         </div>
