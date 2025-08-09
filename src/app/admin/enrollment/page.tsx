@@ -316,7 +316,7 @@ export default function AdminEnrollmentPage() {
                     </div>
                     <div className="flex items-center text-sm text-gray-600">
                       <DollarSign className="w-4 h-4 mr-2" />
-                      ${request.monthlyFee}/month
+                      ${request.sessionFee}/session
                     </div>
                   </div>
                   
@@ -481,8 +481,8 @@ export default function AdminEnrollmentPage() {
                 </div>
                 <div className="flex items-center">
                   <DollarSign className="w-4 h-4 mr-2 text-gray-500" />
-                  <span className="font-medium">Monthly Fee:</span>
-                  <span className="ml-2">${selectedRequest.monthlyFee}</span>
+                  <span className="font-medium">Session Fee:</span>
+                  <span className="ml-2">${selectedRequest.sessionFee}</span>
                 </div>
                 <div className="flex items-center">
                   <Calendar className="w-4 h-4 mr-2 text-gray-500" />

@@ -46,7 +46,7 @@ export default function ClassModal({
     subjectId: '',
     teacherId: '',
     schedule: [{ day: '', startTime: '', endTime: '' }],
-    monthlyFee: 0,
+    sessionFee: 0,
     description: ''
   });
 
@@ -87,7 +87,7 @@ export default function ClassModal({
           subjectId: '', // Will need to be populated from existing data if available
           teacherId: initialData.teacherId || '', // Populate from existing data
           schedule: scheduleSlots.length > 0 ? scheduleSlots : [{ day: '', startTime: '', endTime: '' }],
-          monthlyFee: initialData.monthlyFee || 0,
+          sessionFee: initialData.sessionFee || 0,
           description: initialData.description || ''
         });      } else {
         setFormData({
@@ -98,7 +98,7 @@ export default function ClassModal({
           subjectId: '',
           teacherId: '',
           schedule: [{ day: '', startTime: '', endTime: '' }],
-          monthlyFee: 0,
+          sessionFee: 0,
           description: ''
         });
       }
@@ -182,8 +182,8 @@ export default function ClassModal({
       newErrors.year = 'Year is required';
     }
 
-    if (formData.monthlyFee < 0) {
-      newErrors.monthlyFee = 'Monthly fee must be positive';
+    if (formData.sessionFee < 0) {
+      newErrors.sessionFee = 'Session fee must be positive';
     }
 
     // Validate schedule
@@ -235,7 +235,7 @@ export default function ClassModal({
           startTime: slot.startTime.trim(),
           endTime: slot.endTime.trim()
         })),
-        monthlyFee: Number(formData.monthlyFee)
+        sessionFee: Number(formData.sessionFee)
       };
 
       // Only add description if it has content
@@ -262,7 +262,7 @@ export default function ClassModal({
       subjectId: '',
       teacherId: '',
       schedule: [{ day: '', startTime: '', endTime: '' }],
-      monthlyFee: 0,
+      sessionFee: 0,
       description: ''
     });
     setErrors({});
@@ -404,15 +404,15 @@ export default function ClassModal({
 
             <div>
               <Input
-                label="Monthly Fee (AUD)"
+                label="Session Fee (AUD)"
                 type="number"
-                value={formData.monthlyFee}
-                onChange={(e) => handleInputChange('monthlyFee', parseFloat(e.target.value) || 0)}
-                placeholder="Enter monthly fee"
+                value={formData.sessionFee}
+                onChange={(e) => handleInputChange('sessionFee', parseFloat(e.target.value) || 0)}
+                placeholder="Enter session fee"
                 min="0"
                 step="0.01"
                 required
-                error={errors.monthlyFee}
+                error={errors.sessionFee}
               />
             </div>
 
