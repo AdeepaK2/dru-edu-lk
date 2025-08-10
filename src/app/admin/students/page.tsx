@@ -276,10 +276,24 @@ export default function StudentsManagement() {
       
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to delete student');
+        
+        // Handle specific error cases
+        if (errorData.criticalError) {
+          showError(`Critical Error: ${errorData.message}`);
+        } else if (errorData.message && errorData.message.includes('enrollments')) {
+          showError(`Failed to delete enrollments: ${errorData.details || errorData.error}`);
+        } else {
+          showError(errorData.error || 'Failed to delete student');
+        }
+        return;
       }
 
-      showSuccess('Student deleted successfully!');
+      const result = await response.json();
+      const enrollmentMessage = result.deletedEnrollments > 0 
+        ? ` and ${result.deletedEnrollments} related enrollments`
+        : '';
+      
+      showSuccess(`Student deleted successfully${enrollmentMessage}!`);
       setShowDeleteConfirm(false);
       setStudentToDelete(null);
       // Real-time listener will automatically update the list

@@ -412,8 +412,9 @@ export async function DELETE(req: NextRequest) {
     }
     
     // Check if the student exists
+    let studentDoc: StudentDocument | null = null;
     try {
-      const studentDoc = await firebaseAdmin.firestore.getDoc<StudentDocument>('students', id);
+      studentDoc = await firebaseAdmin.firestore.getDoc<StudentDocument>('students', id);
       if (!studentDoc) {
         return NextResponse.json(
           { error: "Student not found" },
@@ -427,19 +428,58 @@ export async function DELETE(req: NextRequest) {
       );
     }
     
-    // Delete the student from Auth and Firestore in parallel
-    await Promise.all([
-      firebaseAdmin.authentication.deleteUser(id),
-      firebaseAdmin.firestore.deleteDoc('students', id)
-    ]);
+    console.log(`Starting deletion process for student: ${id} (${studentDoc.name})`);
     
-    // Clear cache
+    // Step 1: Delete student enrollments first - THIS MUST SUCCEED
+    let deletedEnrollmentsCount = 0;
+    try {
+      // Import the enrollment service
+      const { deleteAllEnrollmentsByStudent } = await import('@/services/studentEnrollmentService');
+      deletedEnrollmentsCount = await deleteAllEnrollmentsByStudent(id);
+      console.log(`Successfully deleted ${deletedEnrollmentsCount} enrollments for student ${id}`);
+    } catch (enrollmentError: any) {
+      console.error('Failed to delete student enrollments:', enrollmentError);
+      // FAIL THE ENTIRE OPERATION - DO NOT DELETE THE STUDENT
+      return NextResponse.json(
+        { 
+          error: "Failed to delete student enrollments", 
+          details: enrollmentError.message,
+          message: "Student deletion aborted to prevent orphaned data"
+        },
+        { status: 500 }
+      );
+    }
+    
+    // Step 2: Only proceed with student deletion if enrollments were successfully deleted
+    try {
+      await Promise.all([
+        firebaseAdmin.authentication.deleteUser(id),
+        firebaseAdmin.firestore.deleteDoc('students', id)
+      ]);
+    } catch (studentDeletionError: any) {
+      console.error('Failed to delete student after enrollments were deleted:', studentDeletionError);
+      // This is a critical state - enrollments are deleted but student deletion failed
+      return NextResponse.json(
+        { 
+          error: "Failed to delete student account", 
+          details: studentDeletionError.message,
+          criticalError: true,
+          message: "Enrollments were deleted but student account deletion failed. Manual cleanup may be required."
+        },
+        { status: 500 }
+      );
+    }
+    
+    // Step 3: Clear cache only after successful deletion
     cacheUtils.delete(`student:${id}`);
     cacheUtils.delete('students:all');
     
+    console.log(`Successfully completed deletion of student ${id} and ${deletedEnrollmentsCount} related enrollments`);
+    
     return NextResponse.json({
-      message: "Student deleted successfully",
-      id
+      message: "Student and related enrollments deleted successfully",
+      id,
+      deletedEnrollments: deletedEnrollmentsCount
     });
   } catch (error: any) {
     console.error("Error deleting student:", error);
