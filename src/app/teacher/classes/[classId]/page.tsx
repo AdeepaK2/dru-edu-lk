@@ -41,7 +41,8 @@ import {
   unmarkMaterialCompleted,
   incrementViewCount,
   incrementDownloadCount,
-  deleteStudyMaterial
+  deleteStudyMaterial,
+  updateStudyMaterial
 } from '@/apiservices/studyMaterialFirestoreService';
 import { StudyMaterialDisplayData } from '@/models/studyMaterialSchema';
 import StudyMaterialUploadModal from '@/components/modals/StudyMaterialUploadModal';
@@ -280,6 +281,9 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [materialToDelete, setMaterialToDelete] = useState<any>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [materialToEdit, setMaterialToEdit] = useState<any>(null);
+  const [editLoading, setEditLoading] = useState(false);
 
   // Load class data and lessons
   useEffect(() => {
@@ -402,6 +406,37 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
       alert('Failed to delete study material. Please try again.');
     } finally {
       setDeleteLoading(false);
+    }
+  };
+
+  const handleEditMaterial = (material: any) => {
+    setMaterialToEdit({
+      ...material,
+      title: material.title || '',
+      description: material.description || '',
+      isRequired: material.isRequired || false
+    });
+    setShowEditModal(true);
+  };
+
+  const handleEditSubmit = async (editedData: any) => {
+    if (!materialToEdit) return;
+    
+    try {
+      setEditLoading(true);
+      await updateStudyMaterial(materialToEdit.id, {
+        title: editedData.title,
+        description: editedData.description,
+        isRequired: editedData.isRequired
+      });
+      await refreshMaterials();
+      setShowEditModal(false);
+      setMaterialToEdit(null);
+    } catch (error) {
+      console.error('Error updating study material:', error);
+      alert('Failed to update study material. Please try again.');
+    } finally {
+      setEditLoading(false);
     }
   };
 
@@ -597,7 +632,11 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                       <span className="hidden sm:inline">Download</span>
                     </Button>
                   )}
-                  <Button variant="outline" size="sm">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleEditMaterial(material)}
+                  >
                     <Edit className="w-4 h-4" />
                   </Button>
                   <Button 
@@ -856,6 +895,156 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                 )}
               </Button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Material Modal */}
+      {showEditModal && materialToEdit && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full max-h-[80vh] overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Edit Study Material
+              </h3>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                disabled={editLoading}
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                handleEditSubmit({
+                  title: formData.get('title') as string,
+                  description: formData.get('description') as string,
+                  isRequired: formData.get('isRequired') === 'on'
+                });
+              }}
+              className="p-6 space-y-4"
+            >
+              {/* Material Info */}
+              <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
+                    {getFileIcon(materialToEdit.fileType || 'other')}
+                  </div>
+                  <div>
+                    <div className="flex items-center space-x-2">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getFileTypeColor(materialToEdit.fileType || 'other')}`}>
+                        {(materialToEdit.fileType || 'FILE').toUpperCase()}
+                      </span>
+                      {materialToEdit.lessonId && (
+                        <span className="text-sm text-gray-600 dark:text-gray-300">
+                          📚 {getLessonBadge(materialToEdit.lessonId)}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      {materialToEdit.formattedFileSize || '2.3 MB'} • Uploaded {materialToEdit.relativeUploadTime || '2 days ago'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Title Field */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Title *
+                </label>
+                <input
+                  type="text"
+                  name="title"
+                  defaultValue={materialToEdit.title}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  placeholder="Enter material title"
+                />
+              </div>
+
+              {/* Description Field */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Description
+                </label>
+                <textarea
+                  name="description"
+                  defaultValue={materialToEdit.description}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none"
+                  placeholder="Optional description"
+                />
+              </div>
+
+              {/* Required Checkbox */}
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  name="isRequired"
+                  id="isRequired"
+                  defaultChecked={materialToEdit.isRequired}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <label htmlFor="isRequired" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Mark as required material
+                </label>
+              </div>
+
+              {/* Current Stats */}
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
+                <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">Current Statistics</h4>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-600 dark:text-gray-400">Downloads:</span>
+                    <span className="font-medium text-gray-900 dark:text-white ml-1">
+                      {materialToEdit.downloadCount || 0}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600 dark:text-gray-400">Completed:</span>
+                    <span className="font-medium text-gray-900 dark:text-white ml-1">
+                      {materialToEdit.completedBy?.length || 0}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <Button 
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowEditModal(false)}
+                  disabled={editLoading}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit"
+                  disabled={editLoading}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  {editLoading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                      Updating...
+                    </>
+                  ) : (
+                    <>
+                      <Edit className="w-4 h-4 mr-2" />
+                      Update Material
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
           </div>
         </div>
       )}
