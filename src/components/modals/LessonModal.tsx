@@ -29,7 +29,10 @@ export default function LessonModal({
   subjectId,
   subjectName,
 }: LessonModalProps) {
-  const [formData, setFormData] = useState<Partial<LessonData>>(getDefaultLessonData());
+  const [formData, setFormData] = useState<Partial<LessonData>>(() => ({
+    ...getDefaultLessonData(),
+    duration: 60, // Ensure duration defaults to 60
+  }));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [newObjective, setNewObjective] = useState('');
   const [newMaterial, setNewMaterial] = useState('');
