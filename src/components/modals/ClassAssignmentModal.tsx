@@ -372,7 +372,7 @@ export default function ClassAssignmentModal({
                         
                         <div className="flex items-center justify-between text-sm text-gray-500">
                           <span>{classItem.enrolledStudents} students enrolled</span>
-                          <span>Fee: ${classItem.monthlyFee}/month</span>
+                          <span>Fee: ${classItem.sessionFee}/session</span>
                         </div>
                         
                         {classItem.description && (

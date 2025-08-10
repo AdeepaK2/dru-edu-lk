@@ -5,20 +5,23 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/form/Input';
 import Select from '@/components/ui/form/Select';
-import PhoneInput from '@/components/ui/form/PhoneInput';
 import Textarea from '@/components/ui/form/TextArea';
 import { CalendarDays, Clock, MapPin, DollarSign, Users, BookOpen, CheckCircle, ArrowLeft } from 'lucide-react';
 import { ClassDocument } from '@/models/classSchema';
 import { EnrollmentRequestData, enrollmentRequestSchema } from '@/models/enrollmentRequestSchema';
-import { firestore } from '@/utils/firebase-client';
+import { ClassFirestoreService } from '@/apiservices/classFirestoreService';
+import { firestore, auth } from '@/utils/firebase-client';
 import { collection, addDoc, getDocs, query, Timestamp, where } from 'firebase/firestore';
+import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
-import { validatePhoneNumber, toInternationalFormat } from '@/utils/phoneValidation';
+import { useGuestAuth } from '@/hooks/useGuestAuth';
 
 interface EnrollmentFormData {
   // Student Information
-  studentName: string;
+  studentFirstName: string;
+  studentLastName: string;
   studentEmail: string;
   studentPhone: string;
   dateOfBirth: string;
@@ -42,18 +45,27 @@ const RELATIONSHIP_OPTIONS = [
   { value: 'Other', label: 'Other' },
 ];
 
+// Center location mapping
+const CENTER_LOCATIONS = {
+  '1': 'Glen Waverley',
+  '2': 'Cranbourne',
+  // Add more centers as needed
+} as const;
+
 export default function EnrollmentPage() {
+  const router = useRouter();
+  const { authLoading, isGuestSession, cleanupGuestSession } = useGuestAuth();
+  
   const [classes, setClasses] = useState<ClassDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [sortBy, setSortBy] = useState<'name' | 'subject' | 'year' | 'fee'>('name');
+  const [sortBy, setSortBy] = useState<'name' | 'subject' | 'year' | 'fee' | 'location'>('name');
   const [submittedClassCount, setSubmittedClassCount] = useState(0);
-  const [studentCountryCode, setStudentCountryCode] = useState('+61');
-  const [parentCountryCode, setParentCountryCode] = useState('+61');
   
   const [formData, setFormData] = useState<EnrollmentFormData>({
-    studentName: '',
+    studentFirstName: '',
+    studentLastName: '',
     studentEmail: '',
     studentPhone: '',
     dateOfBirth: '',
@@ -66,10 +78,14 @@ export default function EnrollmentPage() {
     agreedToTerms: false,
   });
 
-  // Fetch available classes
+  // Fetch available classes (after authentication)
   useEffect(() => {
     const fetchClasses = async () => {
+      // Wait for authentication to complete
+      if (authLoading) return;
+      
       try {
+        console.log('Fetching classes...');
         const classesQuery = query(collection(firestore, 'classes'));
         const querySnapshot = await getDocs(classesQuery);
         const classesData = querySnapshot.docs.map(doc => ({
@@ -77,9 +93,13 @@ export default function EnrollmentPage() {
           ...doc.data()
         })) as ClassDocument[];
         
+        console.log('Found classes:', classesData.length);
+        
         // Filter only active classes
         const activeClasses = classesData.filter((cls: ClassDocument) => cls.status === 'Active');
+        console.log('Active classes:', activeClasses.length);
         setClasses(activeClasses);
+        
       } catch (error) {
         console.error('Error fetching classes:', error);
       } finally {
@@ -88,7 +108,55 @@ export default function EnrollmentPage() {
     };
 
     fetchClasses();
-  }, []);
+  }, [authLoading]); // Depend on authLoading to run after authentication
+
+  // Helper function to format Australian phone number
+  const formatAustralianPhone = (phone: string): string => {
+    // Remove all non-digits
+    const digits = phone.replace(/\D/g, '');
+    
+    // If it starts with 04, it's already in correct format
+    if (digits.startsWith('04') && digits.length === 10) {
+      return `+61${digits.substring(1)}`;
+    }
+    
+    // If it starts with 4 (without 0), add +61
+    if (digits.startsWith('4') && digits.length === 9) {
+      return `+61${digits}`;
+    }
+    
+    // If it's 10 digits starting with 04, convert
+    if (digits.length === 10 && digits.startsWith('04')) {
+      return `+61${digits.substring(1)}`;
+    }
+    
+    // Default: assume it's a 9-digit mobile starting with 4
+    if (digits.length === 9 && digits.startsWith('4')) {
+      return `+61${digits}`;
+    }
+    
+    // For any other format, just add +61 and hope for the best
+    return `+61${digits}`;
+  };
+
+  // Helper function to validate Australian mobile number
+  const validateAustralianMobile = (phone: string): { isValid: boolean; message: string } => {
+    const digits = phone.replace(/\D/g, '');
+    
+    // Check if it's a valid Australian mobile format
+    if (digits.length === 10 && digits.startsWith('04')) {
+      return { isValid: true, message: 'Valid' };
+    }
+    
+    if (digits.length === 9 && digits.startsWith('4')) {
+      return { isValid: true, message: 'Valid' };
+    }
+    
+    return { 
+      isValid: false, 
+      message: 'Please enter a valid Australian mobile number (e.g., 0412 345 678)' 
+    };
+  };
 
   const handleInputChange = (field: keyof EnrollmentFormData, value: string | boolean | string[]) => {
     setFormData(prev => ({
@@ -115,7 +183,9 @@ export default function EnrollmentPage() {
       case 'year':
         return a.year.localeCompare(b.year);
       case 'fee':
-        return a.monthlyFee - b.monthlyFee;
+        return a.sessionFee - b.sessionFee;
+      case 'location':
+        return getCenterLocation(a.centerId).localeCompare(getCenterLocation(b.centerId));
       default:
         return 0;
     }
@@ -124,7 +194,8 @@ export default function EnrollmentPage() {
   const validateForm = (): string[] => {
     const errors: string[] = [];
     
-    if (!formData.studentName.trim()) errors.push('Student name is required');
+    if (!formData.studentFirstName.trim()) errors.push('Student first name is required');
+    if (!formData.studentLastName.trim()) errors.push('Student last name is required');
     if (!formData.studentEmail.trim()) errors.push('Student email is required');
     if (!formData.studentPhone.trim()) errors.push('Student phone is required');
     if (!formData.dateOfBirth) errors.push('Date of birth is required');
@@ -147,17 +218,30 @@ export default function EnrollmentPage() {
     }
     
     // Phone validation
-    const studentPhoneValidation = validatePhoneNumber(formData.studentPhone, studentCountryCode);
+    const studentPhoneValidation = validateAustralianMobile(formData.studentPhone);
     if (!studentPhoneValidation.isValid) {
       errors.push(`Student phone: ${studentPhoneValidation.message}`);
     }
     
-    const parentPhoneValidation = validatePhoneNumber(formData.parentPhone, parentCountryCode);
+    const parentPhoneValidation = validateAustralianMobile(formData.parentPhone);
     if (!parentPhoneValidation.isValid) {
       errors.push(`Parent phone: ${parentPhoneValidation.message}`);
     }
     
     return errors;
+  };
+
+  // Helper function to get center display name
+  const getCenterDisplayName = (centerId: string | number): string => {
+    const id = centerId.toString();
+    const location = CENTER_LOCATIONS[id as keyof typeof CENTER_LOCATIONS];
+    return location ? `Center ${id} - ${location}` : `Center ${id}`;
+  };
+
+  // Helper function to get just the location name
+  const getCenterLocation = (centerId: string | number): string => {
+    const id = centerId.toString();
+    return CENTER_LOCATIONS[id as keyof typeof CENTER_LOCATIONS] || `Center ${id}`;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -209,9 +293,9 @@ export default function EnrollmentPage() {
         const enrollmentPromises = newClassesToEnroll.map(async (selectedClass) => {
           const enrollmentData: EnrollmentRequestData = {
             student: {
-              name: formData.studentName,
+              name: `${formData.studentFirstName} ${formData.studentLastName}`,
               email: formData.studentEmail,
-              phone: toInternationalFormat(formData.studentPhone, studentCountryCode),
+              phone: formatAustralianPhone(formData.studentPhone),
               dateOfBirth: formData.dateOfBirth,
               year: selectedClass.year, // Use the class's year level
               school: formData.school,
@@ -219,14 +303,14 @@ export default function EnrollmentPage() {
             parent: {
               name: formData.parentName,
               email: formData.parentEmail,
-              phone: toInternationalFormat(formData.parentPhone, parentCountryCode),
+              phone: formatAustralianPhone(formData.parentPhone),
               relationship: formData.relationship,
             },
             classId: selectedClass.id,
             className: selectedClass.name,
             subject: selectedClass.subject,
-            centerName: `Center ${selectedClass.centerId}`,
-            monthlyFee: selectedClass.monthlyFee,
+            centerName: getCenterDisplayName(selectedClass.centerId),
+            sessionFee: selectedClass.sessionFee,
             preferredStartDate: new Date().toISOString().split('T')[0], // Use current date
             additionalNotes: '', // Remove additional notes
             agreedToTerms: formData.agreedToTerms,
@@ -254,7 +338,8 @@ export default function EnrollmentPage() {
       
       // Reset form
       setFormData({
-        studentName: '',
+        studentFirstName: '',
+        studentLastName: '',
         studentEmail: '',
         studentPhone: '',
         dateOfBirth: '',
@@ -283,12 +368,14 @@ export default function EnrollmentPage() {
     return schedule.map(slot => `${slot.day}: ${slot.startTime} - ${slot.endTime}`).join(', ');
   };
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-t-4 border-[#0088e0] border-solid rounded-full animate-spin mx-auto"></div>
-          <p className="mt-4 text-gray-600 font-medium">Loading enrollment form...</p>
+          <p className="mt-4 text-gray-600 font-medium">
+            {authLoading ? 'Preparing enrollment form...' : 'Loading enrollment form...'}
+          </p>
         </div>
       </div>
     );
@@ -358,9 +445,17 @@ export default function EnrollmentPage() {
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">Student Information</h3>
                 <div className="grid md:grid-cols-2 gap-4">
                   <Input
-                    label="Student Name"
-                    value={formData.studentName}
-                    onChange={(e) => handleInputChange('studentName', e.target.value)}
+                    label="First Name"
+                    value={formData.studentFirstName}
+                    onChange={(e) => handleInputChange('studentFirstName', e.target.value)}
+                    placeholder="e.g., John"
+                    required
+                  />
+                  <Input
+                    label="Last Name"
+                    value={formData.studentLastName}
+                    onChange={(e) => handleInputChange('studentLastName', e.target.value)}
+                    placeholder="e.g., Smith"
                     required
                   />
                   <Input
@@ -370,12 +465,11 @@ export default function EnrollmentPage() {
                     onChange={(e) => handleInputChange('studentEmail', e.target.value)}
                     required
                   />
-                  <PhoneInput
-                    label="Student Phone"
+                  <Input
+                    label="Mobile Phone"
                     value={formData.studentPhone}
-                    countryCode={studentCountryCode}
-                    onPhoneChange={(value) => handleInputChange('studentPhone', value)}
-                    onCountryCodeChange={setStudentCountryCode}
+                    onChange={(e) => handleInputChange('studentPhone', e.target.value)}
+                    placeholder="e.g., 0412 345 678"
                     required
                   />
                   <Input
@@ -403,7 +497,9 @@ export default function EnrollmentPage() {
                     label="Parent/Guardian Name"
                     value={formData.parentName}
                     onChange={(e) => handleInputChange('parentName', e.target.value)}
+                    placeholder="e.g., Sarah Smith"
                     required
+                    className="md:col-span-2"
                   />
                   <Input
                     label="Parent/Guardian Email"
@@ -412,12 +508,11 @@ export default function EnrollmentPage() {
                     onChange={(e) => handleInputChange('parentEmail', e.target.value)}
                     required
                   />
-                  <PhoneInput
-                    label="Parent/Guardian Phone"
+                  <Input
+                    label="Mobile Phone"
                     value={formData.parentPhone}
-                    countryCode={parentCountryCode}
-                    onPhoneChange={(value) => handleInputChange('parentPhone', value)}
-                    onCountryCodeChange={setParentCountryCode}
+                    onChange={(e) => handleInputChange('parentPhone', e.target.value)}
+                    placeholder="e.g., 0412 345 678"
                     required
                   />
                   <Select
@@ -426,6 +521,7 @@ export default function EnrollmentPage() {
                     onChange={(e) => handleInputChange('relationship', e.target.value as any)}
                     options={RELATIONSHIP_OPTIONS}
                     required
+                    className="md:col-span-2"
                   />
                 </div>
               </div>
@@ -439,12 +535,13 @@ export default function EnrollmentPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">Sort classes by:</label>
                   <Select
                     value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as 'name' | 'subject' | 'year' | 'fee')}
+                    onChange={(e) => setSortBy(e.target.value as 'name' | 'subject' | 'year' | 'fee' | 'location')}
                     options={[
                       { value: 'name', label: 'Class Name' },
                       { value: 'subject', label: 'Subject' },
                       { value: 'year', label: 'Year Level' },
-                      { value: 'fee', label: 'Monthly Fee' },
+                      { value: 'fee', label: 'Session Fee' },
+                      { value: 'location', label: 'Location' },
                     ]}
                   />
                 </div>
@@ -483,7 +580,7 @@ export default function EnrollmentPage() {
                               </div>
                               <div className="flex items-center">
                                 <MapPin className="w-4 h-4 mr-2" />
-                                Center {cls.centerId}
+                                {getCenterDisplayName(cls.centerId)}
                               </div>
                               <div className="flex items-center">
                                 <Clock className="w-4 h-4 mr-2" />
@@ -491,7 +588,7 @@ export default function EnrollmentPage() {
                               </div>
                               <div className="flex items-center">
                                 <DollarSign className="w-4 h-4 mr-2" />
-                                ${cls.monthlyFee}/month
+                                ${cls.sessionFee}/session
                               </div>
                             </div>
                             {cls.description && (
@@ -519,19 +616,19 @@ export default function EnrollmentPage() {
                               {cls.name} - {cls.subject} ({cls.year})
                             </span>
                             <span className="text-green-800 font-medium">
-                              ${cls.monthlyFee}/month
+                              ${cls.sessionFee}/session
                             </span>
                           </div>
                         ) : null;
                       })}
                       <div className="border-t border-green-300 pt-2 mt-2">
                         <div className="flex items-center justify-between font-semibold text-green-800">
-                          <span>Total Monthly Fee:</span>
+                          <span>Total Session Fee:</span>
                           <span>
                             ${formData.selectedClassIds.reduce((total, classId) => {
                               const cls = classes.find(c => c.id === classId);
-                              return total + (cls?.monthlyFee || 0);
-                            }, 0)}/month
+                              return total + (cls?.sessionFee || 0);
+                            }, 0)}/session
                           </span>
                         </div>
                       </div>

@@ -37,7 +37,7 @@ export const enrollmentRequestSchema = z.object({
   className: z.string().min(1, 'Class name is required'),
   subject: z.string().min(1, 'Subject is required'),
   centerName: z.string().min(1, 'Center name is required'),
-  monthlyFee: z.number().min(0, 'Monthly fee is required'),
+  sessionFee: z.number().min(0, 'Session fee is required'),
   additionalNotes: z.string().optional(),
   preferredStartDate: z.string().min(1, 'Preferred start date is required'),
   agreedToTerms: z.boolean().refine(val => val === true, {
@@ -74,7 +74,7 @@ export interface EnrollmentRequest {
   className: string;
   subject: string;
   centerName: string;
-  monthlyFee: number;
+  sessionFee: number;
   additionalNotes?: string;
   preferredStartDate: string;
   agreedToTerms: boolean;
@@ -109,7 +109,7 @@ export interface EnrollmentRequestDocument {
   className: string;
   subject: string;
   centerName: string;
-  monthlyFee: number;
+  sessionFee: number;
   additionalNotes?: string;
   preferredStartDate: string;
   agreedToTerms: boolean;

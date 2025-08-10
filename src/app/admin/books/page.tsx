@@ -40,8 +40,7 @@ import {
   PublicationDisplayData,
   publicationSchema,
   PUBLICATION_CATEGORIES,
-  PUBLICATION_TYPES,
-  createPublicationId
+  PUBLICATION_TYPES
 } from '@/models/publicationSchema';
 import { PublicationOrder, ORDER_STATUS_LABELS } from '@/models/publicationOrderSchema';
 
@@ -268,54 +267,119 @@ export default function AdminBooksPage() {
     try {
       let updatedFormData = { ...formData };
       
-      // Generate publication ID for new publications
-      const publicationId = editingPublication ? editingPublication.publicationId : createPublicationId();
-      
-      // Upload cover image if a new one is selected
-      if (coverImageFile) {
-        console.log('Uploading cover image...');
-        const result = await uploadImage(coverImageFile, { 
-          type: 'cover', 
-          publicationId 
-        });
+      if (editingPublication) {
+        // For existing publications, use the existing publicationId
+        const publicationId = editingPublication.publicationId;
         
-        if (result.error) {
-          alert(`Cover image upload failed: ${result.error}`);
-          return;
-        }
-        
-        updatedFormData.coverImage = result.imageUrl;
-      }
-      
-      // Upload gallery images if any are selected
-      if (galleryFiles.length > 0) {
-        console.log('Uploading gallery images...');
-        const galleryUrls: string[] = [...(updatedFormData.images || [])];
-        
-        for (const file of galleryFiles) {
-          const result = await uploadImage(file, { 
-            type: 'gallery', 
+        // Upload cover image if a new one is selected
+        if (coverImageFile) {
+          console.log('Uploading cover image...');
+          const result = await uploadImage(coverImageFile, { 
+            type: 'cover', 
             publicationId 
           });
           
           if (result.error) {
-            console.error(`Gallery image upload failed: ${result.error}`);
-            // Continue with other images even if one fails
-          } else {
-            galleryUrls.push(result.imageUrl);
+            alert(`Cover image upload failed: ${result.error}`);
+            return;
           }
+          
+          updatedFormData.coverImage = result.imageUrl;
         }
         
-        updatedFormData.images = galleryUrls;
-      }
+        // Upload gallery images if any are selected
+        if (galleryFiles.length > 0) {
+          console.log('Uploading gallery images...');
+          const galleryUrls: string[] = [...(updatedFormData.images || [])];
+          
+          for (const file of galleryFiles) {
+            const result = await uploadImage(file, { 
+              type: 'gallery', 
+              publicationId 
+            });
+            
+            if (result.error) {
+              console.error(`Gallery image upload failed: ${result.error}`);
+              // Continue with other images even if one fails
+            } else {
+              galleryUrls.push(result.imageUrl);
+            }
+          }
+          
+          updatedFormData.images = galleryUrls;
+        }
 
-      if (editingPublication) {
         // Update existing publication
         await PublicationFirestoreService.updatePublication(editingPublication.id, updatedFormData);
         console.log('Publication updated successfully');
       } else {
-        // Create new publication
-        await PublicationFirestoreService.createPublication(updatedFormData as Omit<Publication, 'publicationId' | 'createdAt' | 'updatedAt'>);
+        // For new publications, create publication first to get the correct publicationId
+        console.log('Creating new publication...');
+        const documentId = await PublicationFirestoreService.createPublication(updatedFormData as Omit<Publication, 'publicationId' | 'createdAt' | 'updatedAt'>);
+        
+        // Get the created publication to obtain the actual publicationId
+        const createdPublication = await PublicationFirestoreService.getPublicationById(documentId);
+        if (!createdPublication) {
+          throw new Error('Failed to retrieve created publication');
+        }
+        
+        const publicationId = createdPublication.publicationId;
+        console.log('Publication created with ID:', publicationId);
+        
+        // Now upload images using the correct publicationId
+        let hasImageUpdates = false;
+        
+        // Upload cover image if selected
+        if (coverImageFile) {
+          console.log('Uploading cover image...');
+          const result = await uploadImage(coverImageFile, { 
+            type: 'cover', 
+            publicationId 
+          });
+          
+          if (result.error) {
+            console.error(`Cover image upload failed: ${result.error}`);
+            // Continue without failing the entire process
+          } else {
+            updatedFormData.coverImage = result.imageUrl;
+            hasImageUpdates = true;
+          }
+        }
+        
+        // Upload gallery images if any are selected
+        if (galleryFiles.length > 0) {
+          console.log('Uploading gallery images...');
+          const galleryUrls: string[] = [...(updatedFormData.images || [])];
+          
+          for (const file of galleryFiles) {
+            const result = await uploadImage(file, { 
+              type: 'gallery', 
+              publicationId 
+            });
+            
+            if (result.error) {
+              console.error(`Gallery image upload failed: ${result.error}`);
+              // Continue with other images even if one fails
+            } else {
+              galleryUrls.push(result.imageUrl);
+            }
+          }
+          
+          if (galleryUrls.length > (updatedFormData.images || []).length) {
+            updatedFormData.images = galleryUrls;
+            hasImageUpdates = true;
+          }
+        }
+        
+        // Update the publication with image URLs if any were uploaded
+        if (hasImageUpdates) {
+          console.log('Updating publication with image URLs...');
+          await PublicationFirestoreService.updatePublication(documentId, {
+            coverImage: updatedFormData.coverImage,
+            images: updatedFormData.images
+          });
+        }
+        
         console.log('Publication created successfully');
       }
       

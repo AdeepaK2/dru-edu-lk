@@ -16,7 +16,7 @@ export const classSchema = z.object({
   subject: z.string().min(1, 'Subject is required'), // Keep for backward compatibility
   subjectId: z.string().min(1, 'Subject ID is required'), // Reference to the subject document ID
   schedule: z.array(timeSlotSchema).min(1, 'At least one time slot is required'),
-  monthlyFee: z.number().min(0, 'Monthly fee must be positive'),
+  sessionFee: z.number().min(0, 'Session fee must be positive'),
   teacherId: z.string().optional(), // Will be assigned later
   description: z.string().optional(),
 });
@@ -58,7 +58,7 @@ export interface ClassDisplayData {
   description: string;
   centerId: string;
   centerName: string;
-  monthlyFee: number;
+  sessionFee: number;
   waitingList?: number;
 }
 
@@ -82,7 +82,7 @@ export function classDocumentToDisplay(doc: ClassDocument, centerName?: string, 
     description: doc.description || '',
     centerId: doc.centerId,
     centerName: centerName || `Center ${doc.centerId}`,
-    monthlyFee: doc.monthlyFee,
+    sessionFee: doc.sessionFee,
     waitingList: doc.waitingList,
   };
 }
@@ -96,7 +96,7 @@ export function formDataToClass(formData: any): ClassData {
     subject: formData.subject,
     subjectId: formData.subjectId,
     schedule: formData.schedule || [],
-    monthlyFee: parseFloat(formData.monthlyFee),
+    sessionFee: parseFloat(formData.sessionFee),
   };
 
   // Only add optional fields if they have values

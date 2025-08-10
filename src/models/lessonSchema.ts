@@ -88,7 +88,7 @@ export const getDefaultLessonData = (): Partial<LessonData> => ({
   subjectId: '',
   order: 1,
   isActive: true,
-  duration: undefined,
+  duration: 60,
   objectives: [],
   materials: [],
   prerequisites: [],

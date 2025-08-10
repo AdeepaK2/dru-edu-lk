@@ -1,59 +1,113 @@
+'use client';
+
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/ui/Footer";
 import Link from "next/link";
+import { useState } from "react";
 
 export default function SchedulePage() {
-  const cranbourneSchedule = [
-    {
-      category: "VCE Subjects",
-      classes: [
-        { subject: "VCE Math Methods [Units 3&4]", day: "Sunday", time: "7.00 am - 11.00 am" },
-        { subject: "VCE Specialist Math [Units 3&4]", day: "Saturday", time: "7.00 am - 11.00 am" },
-        { subject: "VCE Chemistry [Units 3&4]", day: "Monday", time: "7.30 pm - 9.30 pm" },
-        { subject: "VCE Physics [Units 3&4]", day: "Tuesday", time: "6.00 pm - 9.30 pm" },
-        { subject: "VCE Math Methods [Units 1&2]", day: "Thursday", time: "6.00pm - 8.00 pm" },
-        { subject: "VCE Specialist Math [Units 1&2]", day: "Saturday", time: "4.30 pm - 6.30 pm" },
-        { subject: "VCE Chemistry [Units 1&2]", day: "Saturday", time: "2.30 pm - 4.30 pm" },
-        { subject: "VCE Physics [Units 1&2]", day: "Thursday", time: "8.00 pm - 9.30 pm" },
-        { subject: "VCE Accounting [Units 1&2]", day: "Tuesday", time: "6.15 pm - 7.45 pm" },
-        { subject: "VCE Accounting [Units 3&4]", day: "Wednesday", time: "6.00 pm - 8.30 pm" },
-        { subject: "VCE General Maths [Units 3&4]", day: "Tuesday", time: "7.45 pm - 9.15 pm" },
-      ]
-    },
-    {
-      category: "Grade 5 to Grade 10",
-      classes: [
-        { subject: "Y 10 Mathematics", day: "Monday", time: "6.00 pm - 7.30 pm" },
-        { subject: "Y 9 Mathematics", day: "Sunday", time: "1.30 pm - 3.30 pm" },
-        { subject: "Y 8 Mathematics [Selective School]", day: "Sunday", time: "11.00 am - 1.30 pm" },
-        { subject: "Y 8 English [Selective School]", day: "Sunday", time: "9.30 am - 11.00 am" },
-        { subject: "Y 7 Mathematics [Selective School]", day: "Tuesday", time: "6.00 pm - 7.30 pm" },
-        { subject: "Y 6 Mathematics", day: "Saturday", time: "5.30pm - 7.00 pm" },
-        { subject: "John Monash Scholarship [Including Interview Prep]", day: "Saturday", time: "12.30 pm - 2.30 pm" },
-      ]
-    }
+  const [selectedClass, setSelectedClass] = useState<any>(null);
+  const [showModal, setShowModal] = useState(false);
+
+  const handleClassClick = (classItem: any, campus: string) => {
+    setSelectedClass({ ...classItem, campus });
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setSelectedClass(null);
+  };
+  // Time slots for the schedule tables (reduced to key hours with classes)
+  const timeSlots = [
+    "7:00 AM", "9:00 AM", "11:00 AM", "12:00 PM", "1:00 PM", "2:00 PM", 
+    "4:00 PM", "5:00 PM", "6:00 PM", "7:00 PM", "8:00 PM", "9:00 PM"
   ];
 
-  const glenWaverleySchedule = [
-    {
-      category: "All Subjects",
-      classes: [
-        { subject: "VCE Math Methods [Units 3&4]", day: "Sunday", time: "6.00 pm - 9.30 pm" },
-        { subject: "VCE Specialist Math [Units 3&4]", day: "Friday", time: "7.00 pm - 10.30 pm" },
-        { subject: "VCE Physics [Units 3&4]", day: "Saturday", time: "9.00 pm - 10.30 pm" },
-        { subject: "VCE Math Methods [Units 1&2]", day: "Friday", time: "5.00 pm - 7.00 pm" },
-        { subject: "VCE Specialist Math [Units 1&2]", day: "Saturday", time: "7.00 pm - 9.00 pm" },
-        { subject: "VCE Accounting [Units 3&4]", day: "Monday", time: "6.45 pm - 8.45 pm" },
-        { subject: "VCE Accounting [Units 1&2]", day: "Sunday", time: "12.00 pm - 1.30 pm" },
-        { subject: "VCE Business Management [Units 3&4]", day: "Monday", time: "4.45 pm - 6.45 pm" },
-        { subject: "VCE Economics [Units 3&4]", day: "Thursday", time: "7.00 pm - 9.00 pm" },
-        { subject: "VCE General Maths [Units 1&2]", day: "Sunday", time: "11.00 am - 12.30 pm" },
-        { subject: "Y 10 Maths", day: "Wednesday", time: "4.30 pm - 6.00 pm" },
-        { subject: "Y 8 Maths [Selective School]", day: "Wednesday", time: "5.30 pm - 7.30 pm" },
-        { subject: "Y 6 Maths", day: "Wednesday", time: "7.00 pm - 8.30 pm" },
-      ]
-    }
+  const daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+  // Cranbourne schedule organized by day and time
+  const cranbourneClasses = [
+    { subject: "VCE Math Methods [Units 3&4]", day: "Sunday", time: "7:00 AM - 11:00 AM", startHour: 7, duration: 4 },
+    { subject: "VCE Specialist Math [Units 3&4]", day: "Saturday", time: "7:00 AM - 11:00 AM", startHour: 7, duration: 4 },
+    { subject: "VCE Chemistry [Units 3&4]", day: "Monday", time: "7:30 PM - 9:30 PM", startHour: 19.5, duration: 2 },
+    { subject: "VCE Physics [Units 3&4]", day: "Tuesday", time: "6:00 PM - 9:30 PM", startHour: 18, duration: 3.5 },
+    { subject: "VCE Math Methods [Units 1&2]", day: "Thursday", time: "6:00 PM - 8:00 PM", startHour: 18, duration: 2 },
+    { subject: "VCE Specialist Math [Units 1&2]", day: "Saturday", time: "4:30 PM - 6:30 PM", startHour: 16.5, duration: 2 },
+    { subject: "VCE Chemistry [Units 1&2]", day: "Saturday", time: "2:30 PM - 4:30 PM", startHour: 14.5, duration: 2 },
+    { subject: "VCE Physics [Units 1&2]", day: "Thursday", time: "8:00 PM - 9:30 PM", startHour: 20, duration: 1.5 },
+    { subject: "VCE Accounting [Units 1&2]", day: "Tuesday", time: "6:15 PM - 7:45 PM", startHour: 18.25, duration: 1.5 },
+    { subject: "VCE Accounting [Units 3&4]", day: "Wednesday", time: "6:00 PM - 8:30 PM", startHour: 18, duration: 2.5 },
+    { subject: "VCE General Maths [Units 3&4]", day: "Tuesday", time: "7:45 PM - 9:15 PM", startHour: 19.75, duration: 1.5 },
+    { subject: "Y 10 Mathematics", day: "Monday", time: "6:00 PM - 7:30 PM", startHour: 18, duration: 1.5 },
+    { subject: "Y 9 Mathematics", day: "Sunday", time: "1:30 PM - 3:30 PM", startHour: 13.5, duration: 2 },
+    { subject: "Y 8 Mathematics [Selective School]", day: "Sunday", time: "11:00 AM - 1:30 PM", startHour: 11, duration: 2.5 },
+    { subject: "Y 8 English [Selective School]", day: "Sunday", time: "9:30 AM - 11:00 AM", startHour: 9.5, duration: 1.5 },
+    { subject: "Y 7 Mathematics [Selective School]", day: "Tuesday", time: "6:00 PM - 7:30 PM", startHour: 18, duration: 1.5 },
+    { subject: "Y 6 Mathematics", day: "Saturday", time: "5:30 PM - 7:00 PM", startHour: 17.5, duration: 1.5 },
+    { subject: "John Monash Scholarship [Including Interview Prep]", day: "Saturday", time: "12:30 PM - 2:30 PM", startHour: 12.5, duration: 2 },
   ];
+
+  // Glen Waverley schedule organized by day and time
+  const glenWaverleyClasses = [
+    { subject: "VCE Math Methods [Units 3&4]", day: "Sunday", time: "6:00 PM - 9:30 PM", startHour: 18, duration: 3.5 },
+    { subject: "VCE Specialist Math [Units 3&4]", day: "Friday", time: "7:00 PM - 10:30 PM", startHour: 19, duration: 3.5 },
+    { subject: "VCE Physics [Units 3&4]", day: "Saturday", time: "9:00 PM - 10:30 PM", startHour: 21, duration: 1.5 },
+    { subject: "VCE Math Methods [Units 1&2]", day: "Friday", time: "5:00 PM - 7:00 PM", startHour: 17, duration: 2 },
+    { subject: "VCE Specialist Math [Units 1&2]", day: "Saturday", time: "7:00 PM - 9:00 PM", startHour: 19, duration: 2 },
+    { subject: "VCE Accounting [Units 3&4]", day: "Monday", time: "6:45 PM - 8:45 PM", startHour: 18.75, duration: 2 },
+    { subject: "VCE Accounting [Units 1&2]", day: "Sunday", time: "12:00 PM - 1:30 PM", startHour: 12, duration: 1.5 },
+    { subject: "VCE Business Management [Units 3&4]", day: "Monday", time: "4:45 PM - 6:45 PM", startHour: 16.75, duration: 2 },
+    { subject: "VCE Economics [Units 3&4]", day: "Thursday", time: "7:00 PM - 9:00 PM", startHour: 19, duration: 2 },
+    { subject: "VCE General Maths [Units 1&2]", day: "Sunday", time: "11:00 AM - 12:30 PM", startHour: 11, duration: 1.5 },
+    { subject: "Y 10 Maths", day: "Wednesday", time: "4:30 PM - 6:00 PM", startHour: 16.5, duration: 1.5 },
+    { subject: "Y 8 Maths [Selective School]", day: "Wednesday", time: "5:30 PM - 7:30 PM", startHour: 17.5, duration: 2 },
+    { subject: "Y 6 Maths", day: "Wednesday", time: "7:00 PM - 8:30 PM", startHour: 19, duration: 1.5 },
+  ];
+
+  // Function to get classes for a specific day and campus
+  const getClassesForDay = (day: string, classes: any[]) => {
+    const dayMap: { [key: string]: string } = {
+      "Mon": "Monday", "Tue": "Tuesday", "Wed": "Wednesday", 
+      "Thu": "Thursday", "Fri": "Friday", "Sat": "Saturday", "Sun": "Sunday"
+    };
+    return classes.filter(cls => cls.day === dayMap[day]);
+  };
+
+  // Function to determine if a time slot overlaps with a class
+  const getClassAtTimeSlot = (day: string, timeSlot: string, classes: any[]) => {
+    const hour = parseInt(timeSlot.split(':')[0]);
+    const isAM = timeSlot.includes('AM');
+    const isPM = timeSlot.includes('PM');
+    
+    let slotHour = hour;
+    if (isPM && hour !== 12) slotHour += 12;
+    if (isAM && hour === 12) slotHour = 0;
+
+    const dayClasses = getClassesForDay(day, classes);
+    
+    for (const cls of dayClasses) {
+      const startHour = cls.startHour;
+      const endHour = startHour + cls.duration;
+      
+      if (slotHour >= startHour && slotHour < endHour) {
+        return cls;
+      }
+    }
+    return null;
+  };
+
+  // Function to get abbreviated class name
+  const getAbbreviatedClassName = (subject: string) => {
+    return subject
+      .replace("VCE ", "")
+      .replace("Mathematics", "Math")
+      .replace("[Units 3&4]", "3&4")
+      .replace("[Units 1&2]", "1&2")
+      .replace("[Selective School]", "SS")
+      .replace("[Including Interview Prep]", "")
+      .substring(0, 25);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#01143d] via-[#0a2147] to-[#0088e0] relative overflow-hidden">
@@ -99,35 +153,53 @@ export default function SchedulePage() {
               </div>
             </div>
             
-            <div className="grid lg:grid-cols-2 gap-8">
-              {cranbourneSchedule.map((category, categoryIndex) => (
-                <div key={categoryIndex} className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
-                  <div className="bg-gradient-to-r from-[#0088e0] to-[#00b4d8] p-4">
-                    <h3 className="text-xl font-bold text-white">{category.category}</h3>
-                  </div>
-                  <div className="p-6">
-                    <div className="space-y-4">
-                      {category.classes.map((classItem, classIndex) => (
-                        <div key={classIndex} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors duration-200">
-                          <div className="flex-1">
-                            <h4 className="font-semibold text-[#01143d] mb-1">{classItem.subject}</h4>
-                            <div className="flex items-center text-sm text-gray-600">
-                              <svg className="w-4 h-4 mr-2 text-[#0088e0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                              </svg>
-                              <span className="font-medium mr-4">{classItem.day}</span>
-                              <svg className="w-4 h-4 mr-2 text-[#0088e0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
-                              <span>{classItem.time}</span>
-                            </div>
-                          </div>
-                        </div>
+            <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
+              <div className="bg-gradient-to-r from-[#0088e0] to-[#00b4d8] p-4">
+                <h3 className="text-xl font-bold text-white">Weekly Schedule</h3>
+              </div>
+              <div className="overflow-hidden">
+                <table className="w-full table-fixed">
+                  <thead>
+                    <tr className="bg-gray-50">
+                      <th className="p-2 text-left font-semibold text-[#01143d] border-r border-gray-200 w-16">Time</th>
+                      {daysOfWeek.map(day => (
+                        <th key={day} className="p-2 text-center font-semibold text-[#01143d] border-r border-gray-200">
+                          {day}
+                        </th>
                       ))}
-                    </div>
-                  </div>
-                </div>
-              ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {timeSlots.map((timeSlot, index) => (
+                      <tr key={timeSlot} className={index % 2 === 0 ? "bg-white" : "bg-gray-50/50"}>
+                        <td className="p-2 font-medium text-gray-700 border-r border-gray-200 bg-gray-50 text-xs">
+                          {timeSlot.replace(":00", "")}
+                        </td>
+                        {daysOfWeek.map(day => {
+                          const classItem = getClassAtTimeSlot(day, timeSlot, cranbourneClasses);
+                          return (
+                            <td key={day} className="p-1 border-r border-gray-200 text-center">
+                              {classItem ? (
+                                <div 
+                                  className="bg-gradient-to-r from-[#0088e0] to-[#00b4d8] text-white rounded p-1 text-xs font-medium shadow-sm cursor-pointer hover:from-[#0066cc] hover:to-[#0099ff] transition-colors duration-200" 
+                                  title={classItem.subject}
+                                  onClick={() => handleClassClick(classItem, 'Cranbourne')}
+                                >
+                                  <div className="truncate text-xs leading-tight">
+                                    {getAbbreviatedClassName(classItem.subject)}
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="h-6"></div>
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
 
@@ -143,35 +215,53 @@ export default function SchedulePage() {
               </div>
             </div>
             
-            <div className="max-w-4xl mx-auto">
-              {glenWaverleySchedule.map((category, categoryIndex) => (
-                <div key={categoryIndex} className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
-                  <div className="bg-gradient-to-r from-[#0088e0] to-[#00b4d8] p-4">
-                    <h3 className="text-xl font-bold text-white">{category.category}</h3>
-                  </div>
-                  <div className="p-6">
-                    <div className="grid md:grid-cols-2 gap-4">
-                      {category.classes.map((classItem, classIndex) => (
-                        <div key={classIndex} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors duration-200">
-                          <div className="flex-1">
-                            <h4 className="font-semibold text-[#01143d] mb-1">{classItem.subject}</h4>
-                            <div className="flex items-center text-sm text-gray-600">
-                              <svg className="w-4 h-4 mr-2 text-[#0088e0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                              </svg>
-                              <span className="font-medium mr-4">{classItem.day}</span>
-                              <svg className="w-4 h-4 mr-2 text-[#0088e0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
-                              <span>{classItem.time}</span>
-                            </div>
-                          </div>
-                        </div>
+            <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
+              <div className="bg-gradient-to-r from-[#0088e0] to-[#00b4d8] p-4">
+                <h3 className="text-xl font-bold text-white">Weekly Schedule</h3>
+              </div>
+              <div className="overflow-hidden">
+                <table className="w-full table-fixed">
+                  <thead>
+                    <tr className="bg-gray-50">
+                      <th className="p-2 text-left font-semibold text-[#01143d] border-r border-gray-200 w-16">Time</th>
+                      {daysOfWeek.map(day => (
+                        <th key={day} className="p-2 text-center font-semibold text-[#01143d] border-r border-gray-200">
+                          {day}
+                        </th>
                       ))}
-                    </div>
-                  </div>
-                </div>
-              ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {timeSlots.map((timeSlot, index) => (
+                      <tr key={timeSlot} className={index % 2 === 0 ? "bg-white" : "bg-gray-50/50"}>
+                        <td className="p-2 font-medium text-gray-700 border-r border-gray-200 bg-gray-50 text-xs">
+                          {timeSlot.replace(":00", "")}
+                        </td>
+                        {daysOfWeek.map(day => {
+                          const classItem = getClassAtTimeSlot(day, timeSlot, glenWaverleyClasses);
+                          return (
+                            <td key={day} className="p-1 border-r border-gray-200 text-center">
+                              {classItem ? (
+                                <div 
+                                  className="bg-gradient-to-r from-[#0088e0] to-[#00b4d8] text-white rounded p-1 text-xs font-medium shadow-sm cursor-pointer hover:from-[#0066cc] hover:to-[#0099ff] transition-colors duration-200" 
+                                  title={classItem.subject}
+                                  onClick={() => handleClassClick(classItem, 'Glen Waverley')}
+                                >
+                                  <div className="truncate text-xs leading-tight">
+                                    {getAbbreviatedClassName(classItem.subject)}
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="h-6"></div>
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
 
@@ -204,6 +294,86 @@ export default function SchedulePage() {
 
       {/* Footer */}
       <Footer/>
+
+      {/* Class Details Modal */}
+      {showModal && selectedClass && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
+            <div className="bg-gradient-to-r from-[#01143d] to-[#0088e0] p-6 text-white">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="text-xl font-bold mb-2">Class Details</h3>
+                  <p className="text-blue-100 text-sm">{selectedClass.campus} Campus</p>
+                </div>
+                <button
+                  onClick={closeModal}
+                  className="text-white hover:text-gray-200 transition-colors duration-200"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6">
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-semibold text-[#01143d] text-lg mb-2">Subject</h4>
+                  <p className="text-gray-700">{selectedClass.subject}</p>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h5 className="font-semibold text-[#01143d] mb-1">Day</h5>
+                    <p className="text-gray-700">{selectedClass.day}</p>
+                  </div>
+                  <div>
+                    <h5 className="font-semibold text-[#01143d] mb-1">Duration</h5>
+                    <p className="text-gray-700">{selectedClass.duration} hours</p>
+                  </div>
+                </div>
+                
+                <div>
+                  <h5 className="font-semibold text-[#01143d] mb-2">Schedule</h5>
+                  <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="text-center">
+                        <p className="text-xs text-gray-600 uppercase tracking-wide">Start Time</p>
+                        <p className="text-lg font-bold text-[#01143d]">{selectedClass.time.split(' - ')[0]}</p>
+                      </div>
+                      <div className="mx-4">
+                        <svg className="w-6 h-6 text-[#0088e0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                        </svg>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-xs text-gray-600 uppercase tracking-wide">End Time</p>
+                        <p className="text-lg font-bold text-[#01143d]">{selectedClass.time.split(' - ')[1]}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-6 flex gap-3">
+                <button
+                  onClick={closeModal}
+                  className="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-200 transition-colors duration-200"
+                >
+                  Close
+                </button>
+                <Link
+                  href="/enroll"
+                  className="flex-1 bg-gradient-to-r from-[#01143d] to-[#0088e0] text-white py-2 px-4 rounded-lg font-medium text-center hover:from-[#001122] hover:to-[#0066cc] transition-colors duration-200"
+                >
+                  Enroll Now
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
