@@ -40,7 +40,8 @@ import {
   markMaterialCompleted,
   unmarkMaterialCompleted,
   incrementViewCount,
-  incrementDownloadCount
+  incrementDownloadCount,
+  deleteStudyMaterial
 } from '@/apiservices/studyMaterialFirestoreService';
 import { StudyMaterialDisplayData } from '@/models/studyMaterialSchema';
 import StudyMaterialUploadModal from '@/components/modals/StudyMaterialUploadModal';
@@ -276,6 +277,9 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
   const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [selectedMaterial, setSelectedMaterial] = useState<any>(null);
   const [enrollments, setEnrollments] = useState<StudentEnrollment[]>([]);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [materialToDelete, setMaterialToDelete] = useState<any>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // Load class data and lessons
   useEffect(() => {
@@ -377,6 +381,28 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
     );
     
     return { completed, notCompleted };
+  };
+
+  const handleDeleteMaterial = (material: any) => {
+    setMaterialToDelete(material);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!materialToDelete) return;
+    
+    try {
+      setDeleteLoading(true);
+      await deleteStudyMaterial(materialToDelete.id);
+      await refreshMaterials();
+      setShowDeleteConfirm(false);
+      setMaterialToDelete(null);
+    } catch (error) {
+      console.error('Error deleting study material:', error);
+      alert('Failed to delete study material. Please try again.');
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   const getLessonBadge = (lessonId?: string) => {
@@ -559,6 +585,14 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                   <Button variant="outline" size="sm">
                     <Edit className="w-4 h-4" />
                   </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleDeleteMaterial(material)}
+                    className="text-red-600 hover:text-red-700 hover:border-red-300"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
                 </div>
               </div>
             </div>
@@ -716,6 +750,95 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                 onClick={() => setShowCompletionModal(false)}
               >
                 Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && materialToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Delete Study Material
+              </h3>
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                disabled={deleteLoading}
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6">
+              <div className="flex items-center space-x-4 mb-4">
+                <div className="w-12 h-12 bg-red-100 dark:bg-red-900/20 rounded-lg flex items-center justify-center">
+                  <Trash2 className="w-6 h-6 text-red-600 dark:text-red-400" />
+                </div>
+                <div>
+                  <h4 className="font-medium text-gray-900 dark:text-white">
+                    Are you sure you want to delete this material?
+                  </h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                    "{materialToDelete.title}"
+                  </p>
+                </div>
+              </div>
+              
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4">
+                <div className="flex items-start space-x-2">
+                  <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                  <div className="text-sm">
+                    <p className="text-red-800 dark:text-red-200 font-medium mb-1">
+                      This action cannot be undone
+                    </p>
+                    <p className="text-red-700 dark:text-red-300">
+                      This will permanently delete the study material and remove it from all students' access. 
+                      Any completion data will also be lost.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-sm text-gray-600 dark:text-gray-300 space-y-1">
+                <p><span className="font-medium">Type:</span> {(materialToDelete.fileType || 'FILE').toUpperCase()}</p>
+                <p><span className="font-medium">Completed by:</span> {materialToDelete.completedBy?.length || 0} students</p>
+                {materialToDelete.lessonId && (
+                  <p><span className="font-medium">Lesson:</span> {getLessonBadge(materialToDelete.lessonId)}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex justify-end space-x-3 p-6 border-t border-gray-200 dark:border-gray-700">
+              <Button 
+                variant="outline"
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={deleteLoading}
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={confirmDelete}
+                disabled={deleteLoading}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                {deleteLoading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete Material
+                  </>
+                )}
               </Button>
             </div>
           </div>
