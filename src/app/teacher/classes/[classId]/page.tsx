@@ -23,7 +23,9 @@ import {
   Link,
   PlayCircle,
   FileIcon,
-  ExternalLink
+  ExternalLink,
+  UserCheck,
+  X
 } from 'lucide-react';
 import TeacherLayout from '@/components/teacher/TeacherLayout';
 import { Button } from '@/components/ui';
@@ -271,6 +273,9 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
   const [selectedLessonId, setSelectedLessonId] = useState<string | undefined>(undefined);
   const [classData, setClassData] = useState<ClassDocument | null>(null);
   const [lessons, setLessons] = useState<any[]>([]); // Store lessons for badge display
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [selectedMaterial, setSelectedMaterial] = useState<any>(null);
+  const [enrollments, setEnrollments] = useState<StudentEnrollment[]>([]);
 
   // Load class data and lessons
   useEffect(() => {
@@ -285,6 +290,10 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
           const lessonData = await LessonFirestoreService.getLessonsBySubject(data.subjectId);
           setLessons(lessonData);
         }
+
+        // Load enrollments for completion tracking
+        const enrollmentData = await getEnrollmentsByClass(classId);
+        setEnrollments(enrollmentData);
       } catch (err) {
         console.error('Error loading class data:', err);
       }
@@ -351,6 +360,23 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
   const openUploadModal = (lessonId?: string) => {
     setSelectedLessonId(lessonId);
     setShowUploadModal(true);
+  };
+
+  const openCompletionModal = (material: any) => {
+    setSelectedMaterial(material);
+    setShowCompletionModal(true);
+  };
+
+  const getCompletionData = (material: any) => {
+    const completedStudentIds = material.completedBy || [];
+    const completed = enrollments.filter(enrollment => 
+      completedStudentIds.includes(enrollment.studentId)
+    );
+    const notCompleted = enrollments.filter(enrollment => 
+      !completedStudentIds.includes(enrollment.studentId)
+    );
+    
+    return { completed, notCompleted };
   };
 
   const getLessonBadge = (lessonId?: string) => {
@@ -499,10 +525,13 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                     <div className="flex items-center space-x-6 text-xs text-gray-500 dark:text-gray-400">
                       <span>{material.relativeUploadTime || '2 days ago'}</span>
                       <span>{material.downloadCount || 0} downloads</span>
-                      <div className="flex items-center space-x-1">
+                      <button
+                        onClick={() => openCompletionModal(material)}
+                        className="flex items-center space-x-1 hover:text-green-600 dark:hover:text-green-400 transition-colors"
+                      >
                         <CheckCircle className="w-3 h-3 text-green-500" />
                         <span>{material.completedBy?.length || 0} completed</span>
-                      </div>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -546,6 +575,152 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
         classData={classData || undefined}
         preSelectedLessonId={selectedLessonId}
       />
+
+      {/* Completion Details Modal */}
+      {showCompletionModal && selectedMaterial && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Material Completion Status
+              </h3>
+              <button
+                onClick={() => setShowCompletionModal(false)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 overflow-y-auto max-h-[60vh]">
+              {/* Material Info */}
+              <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <h4 className="font-medium text-gray-900 dark:text-white mb-2">
+                  {selectedMaterial.title}
+                </h4>
+                <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-300">
+                  <span className={`px-2 py-1 rounded-full text-xs ${getFileTypeColor(selectedMaterial.fileType || 'other')}`}>
+                    {(selectedMaterial.fileType || 'FILE').toUpperCase()}
+                  </span>
+                  {selectedMaterial.lessonId && (
+                    <span>📚 {getLessonBadge(selectedMaterial.lessonId)}</span>
+                  )}
+                </div>
+              </div>
+
+              {(() => {
+                const { completed, notCompleted } = getCompletionData(selectedMaterial);
+                
+                return (
+                  <div className="space-y-6">
+                    {/* Summary */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 text-center">
+                        <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                          {completed.length}
+                        </div>
+                        <div className="text-sm text-green-700 dark:text-green-300">
+                          Completed
+                        </div>
+                      </div>
+                      <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4 text-center">
+                        <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                          {notCompleted.length}
+                        </div>
+                        <div className="text-sm text-orange-700 dark:text-orange-300">
+                          Not Completed
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Completed Students */}
+                    {completed.length > 0 && (
+                      <div>
+                        <h5 className="font-medium text-gray-900 dark:text-white mb-3 flex items-center">
+                          <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                          Completed ({completed.length})
+                        </h5>
+                        <div className="space-y-2">
+                          {completed.map((enrollment) => (
+                            <div key={enrollment.id} className="flex items-center space-x-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                              <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                                <span className="text-white text-sm font-medium">
+                                  {enrollment.studentName.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                                </span>
+                              </div>
+                              <div className="flex-1">
+                                <div className="font-medium text-gray-900 dark:text-white">
+                                  {enrollment.studentName}
+                                </div>
+                                <div className="text-sm text-gray-600 dark:text-gray-300">
+                                  {enrollment.studentEmail}
+                                </div>
+                              </div>
+                              <CheckCircle className="w-5 h-5 text-green-500" />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Not Completed Students */}
+                    {notCompleted.length > 0 && (
+                      <div>
+                        <h5 className="font-medium text-gray-900 dark:text-white mb-3 flex items-center">
+                          <AlertCircle className="w-4 h-4 text-orange-500 mr-2" />
+                          Not Completed ({notCompleted.length})
+                        </h5>
+                        <div className="space-y-2">
+                          {notCompleted.map((enrollment) => (
+                            <div key={enrollment.id} className="flex items-center space-x-3 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                              <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
+                                <span className="text-white text-sm font-medium">
+                                  {enrollment.studentName.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                                </span>
+                              </div>
+                              <div className="flex-1">
+                                <div className="font-medium text-gray-900 dark:text-white">
+                                  {enrollment.studentName}
+                                </div>
+                                <div className="text-sm text-gray-600 dark:text-gray-300">
+                                  {enrollment.studentEmail}
+                                </div>
+                              </div>
+                              <AlertCircle className="w-5 h-5 text-orange-500" />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Empty state */}
+                    {enrollments.length === 0 && (
+                      <div className="text-center py-8">
+                        <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-500 dark:text-gray-400">
+                          No students enrolled in this class
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* Footer */}
+            <div className="flex justify-end p-6 border-t border-gray-200 dark:border-gray-700">
+              <Button 
+                variant="outline"
+                onClick={() => setShowCompletionModal(false)}
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
