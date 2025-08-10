@@ -917,20 +917,7 @@ export default function TestResultPage() {
               </div>
               
               {/* Questions */}
-              <div className="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg text-center">
-                <FileText className="h-8 w-8 mx-auto text-purple-500 mb-2" />
-                <div className="text-3xl font-bold text-gray-900 dark:text-white">
-                  {submission.questionsAttempted}/{test.questions.length}
-                </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  Questions answered
-                </p>
-                {submission.questionsSkipped > 0 && (
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                    {submission.questionsSkipped} questions skipped
-                  </p>
-                )}
-              </div>
+              
               
               {/* Time */}
               <div className="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg text-center">
