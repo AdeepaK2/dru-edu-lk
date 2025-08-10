@@ -264,6 +264,34 @@ export const getAllEnrollments = async (limitCount: number = 50): Promise<Studen
 };
 
 /**
+ * Delete all enrollments for a specific student
+ * Used when deleting a student account
+ */
+export const deleteAllEnrollmentsByStudent = async (studentId: string): Promise<number> => {
+  try {
+    // Get all enrollments for the student
+    const enrollments = await getEnrollmentsByStudent(studentId);
+    
+    if (enrollments.length === 0) {
+      return 0;
+    }
+    
+    // Delete all enrollments
+    const deletePromises = enrollments.map(enrollment => 
+      deleteStudentEnrollment(enrollment.id)
+    );
+    
+    await Promise.all(deletePromises);
+    
+    console.log(`Deleted ${enrollments.length} enrollments for student ${studentId}`);
+    return enrollments.length;
+  } catch (error) {
+    console.error('Error deleting all enrollments for student:', error);
+    throw error;
+  }
+};
+
+/**
  * Get enrollment statistics for a student
  */
 export const getStudentEnrollmentStats = async (studentId: string) => {
