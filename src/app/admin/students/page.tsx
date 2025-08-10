@@ -23,7 +23,8 @@ import {
 } from 'lucide-react';
 import { Student, StudentDocument } from '@/models/studentSchema';
 import { EnrollmentRequestDocument, convertEnrollmentRequestDocument } from '@/models/enrollmentRequestSchema';
-import { createStudentEnrollment } from '@/services/studentEnrollmentService';
+import { createStudentEnrollment, getEnrollmentsByStudent } from '@/services/studentEnrollmentService';
+import { StudentEnrollment } from '@/models/studentEnrollmentSchema';
 import { firestore } from '@/utils/firebase-client';
 import { 
   collection, 
@@ -75,6 +76,32 @@ export default function StudentsManagement() {
   const [students, setStudents] = useState<StudentDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [studentEnrollmentCounts, setStudentEnrollmentCounts] = useState<Record<string, number>>({});
+
+  // Function to load real enrollment counts for all students
+  const loadEnrollmentCounts = async (studentIds: string[]) => {
+    try {
+      const counts: Record<string, number> = {};
+      
+      // Load enrollment counts for each student
+      await Promise.all(
+        studentIds.map(async (studentId) => {
+          try {
+            const enrollments = await getEnrollmentsByStudent(studentId);
+            const activeEnrollments = enrollments.filter(e => e.status === 'Active');
+            counts[studentId] = activeEnrollments.length;
+          } catch (error) {
+            console.error(`Error loading enrollments for student ${studentId}:`, error);
+            counts[studentId] = 0;
+          }
+        })
+      );
+      
+      setStudentEnrollmentCounts(counts);
+    } catch (error) {
+      console.error('Error loading enrollment counts:', error);
+    }
+  };
 
   // Set up real-time listener for students
   React.useEffect(() => {
@@ -85,7 +112,7 @@ export default function StudentsManagement() {
 
     const unsubscribe = onSnapshot(
       studentsQuery,
-      (snapshot) => {
+      async (snapshot) => {
         const studentsData: StudentDocument[] = [];
         snapshot.forEach((doc) => {
           const data = doc.data();
@@ -97,6 +124,12 @@ export default function StudentsManagement() {
         setStudents(studentsData);
         setLoading(false);
         setError(null);
+        
+        // Load real enrollment counts
+        if (studentsData.length > 0) {
+          const studentIds = studentsData.map(s => s.id);
+          loadEnrollmentCounts(studentIds);
+        }
       },
       (error) => {
         console.error('Error fetching students:', error);
@@ -333,7 +366,9 @@ export default function StudentsManagement() {
           comparison = new Date(a.enrollmentDate).getTime() - new Date(b.enrollmentDate).getTime();
           break;
         case 'coursesEnrolled':
-          comparison = a.coursesEnrolled - b.coursesEnrolled;
+          const aCount = studentEnrollmentCounts[a.id] ?? a.coursesEnrolled ?? 0;
+          const bCount = studentEnrollmentCounts[b.id] ?? b.coursesEnrolled ?? 0;
+          comparison = aCount - bCount;
           break;
         default:
           comparison = a.name.localeCompare(b.name);
@@ -374,6 +409,11 @@ export default function StudentsManagement() {
       request => request.student.email === studentEmail
     );
     setSelectedStudentRequests(updatedRequests);
+  };
+
+  // Function to refresh enrollment counts for specific students
+  const refreshEnrollmentCounts = async (studentIds: string[]) => {
+    await loadEnrollmentCounts(studentIds);
   };
 
   // Handle batch approval of all pending requests for a student
@@ -508,6 +548,9 @@ export default function StudentsManagement() {
           selectedStudentRequests[0].student.email === pendingRequests[0].student.email) {
         refreshModalData(pendingRequests[0].student.email);
       }
+      
+      // Refresh enrollment counts to update the main table
+      await refreshEnrollmentCounts([studentId]);
       
     } catch (error) {
       console.error('Error batch approving enrollments:', error);
@@ -673,6 +716,9 @@ export default function StudentsManagement() {
       
       // Refresh the modal data to update the UI
       refreshModalData(enrollmentRequest.student.email);
+      
+      // Refresh enrollment counts to update the main table
+      await refreshEnrollmentCounts([studentId]);
       
     } catch (error) {
       console.error('Error approving enrollment:', error);
@@ -849,7 +895,13 @@ export default function StudentsManagement() {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Avg Courses</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {students.length > 0 ? Math.round(students.reduce((acc, s) => acc + s.coursesEnrolled, 0) / students.length * 10) / 10 : 0}
+                  {students.length > 0 ? 
+                    Math.round(
+                      students.reduce((acc, s) => 
+                        acc + (studentEnrollmentCounts[s.id] ?? s.coursesEnrolled ?? 0), 0
+                      ) / students.length * 10
+                    ) / 10 : 0
+                  }
                 </p>
               </div>
             </div>
@@ -1000,7 +1052,9 @@ export default function StudentsManagement() {
                       <div className="text-sm text-gray-500 dark:text-gray-400">{student.phone}</div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 dark:text-white">Courses: {student.coursesEnrolled}</div>
+                      <div className="text-sm text-gray-900 dark:text-white">
+                        Courses: {studentEnrollmentCounts[student.id] ?? student.coursesEnrolled ?? 0}
+                      </div>
                       <div className="text-sm text-gray-500 dark:text-gray-400">Since: {student.enrollmentDate}</div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-center">
