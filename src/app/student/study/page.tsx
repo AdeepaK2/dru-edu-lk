@@ -29,7 +29,7 @@ interface StudyMaterial {
   description?: string;
   fileType: string;
   fileUrl?: string;
-  linkUrl?: string;
+  externalUrl?: string; // Changed from linkUrl to externalUrl to match database
   isRequired: boolean;
   uploadedAt: any;
   lessonId?: string;
@@ -481,7 +481,7 @@ export default function StudentStudyPage() {
                               {/* Action Buttons */}
                               {material.fileType === 'link' ? (
                                 <Button
-                                  onClick={() => openLink(material.linkUrl || '')}
+                                  onClick={() => openLink(material.externalUrl || '')}
                                   size="sm"
                                   className="bg-blue-600 hover:bg-blue-700"
                                 >

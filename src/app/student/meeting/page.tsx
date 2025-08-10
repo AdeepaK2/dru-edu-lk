@@ -18,6 +18,7 @@ import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { TimeSlotService, MeetingBookingService } from '@/apiservices/meetingFireStoreServices';
 import { TeacherFirestoreService } from '@/apiservices/teacherFirestoreService';
 import { ClassFirestoreService } from '@/apiservices/classFirestoreService';
+import { MailService } from '@/apiservices/mailService';
 import { getEnrollmentsByStudent } from '@/services/studentEnrollmentService';
 import { TimeSlot as FirestoreTimeSlot, MeetingBooking as FirestoreMeetingBooking } from '@/models/meetingSchema';
 import { TeacherDocument } from '@/models/teacherSchema';
@@ -387,8 +388,47 @@ export default function StudentMeetingPage() {
         notes: ''
       });
 
-      // Show success message
-      setSuccessMessage(`Meeting successfully booked with ${selectedSlot.teacherName} on ${formatDate(selectedSlot.date)} at ${formatTime(selectedSlot.startTime)}`);
+      // Send email notifications to teacher and parent
+      try {
+        console.log('Sending meeting confirmation emails...');
+        
+        // Get teacher details for email
+        const teacherDetails = await TeacherFirestoreService.getTeacherById(selectedSlot.teacherId);
+        const teacherEmail = teacherDetails?.email || '';
+        
+        // Get student's parent details
+        const parentName = student.parent?.name || 'Parent/Guardian';
+        const parentEmail = student.parent?.email || student.email || '';
+        
+        if (teacherEmail && parentEmail) {
+          const emailResult = await MailService.sendMeetingConfirmationEmails(
+            selectedSlot.teacherName,
+            teacherEmail,
+            student.name || 'Student',
+            parentName,
+            parentEmail,
+            selectedSlot.date,
+            selectedSlot.startTime,
+            selectedSlot.endTime,
+            selectedSlot.meetingLink || '',
+            selectedSlot.teacherSubjects[0] || 'General'
+          );
+          
+          console.log('Email notifications sent successfully:', emailResult);
+          setSuccessMessage(`Meeting successfully booked with ${selectedSlot.teacherName} on ${formatDate(selectedSlot.date)} at ${formatTime(selectedSlot.startTime)}. Confirmation emails have been sent to all parties.`);
+        } else {
+          console.warn('Missing email addresses - could not send notifications:', {
+            teacherEmail,
+            parentEmail,
+            teacherDetails
+          });
+          setSuccessMessage(`Meeting successfully booked with ${selectedSlot.teacherName} on ${formatDate(selectedSlot.date)} at ${formatTime(selectedSlot.startTime)}. Note: Email notifications could not be sent due to missing contact information.`);
+        }
+      } catch (emailError) {
+        console.error('Error sending email notifications:', emailError);
+        // Don't fail the booking if emails fail
+        setSuccessMessage(`Meeting successfully booked with ${selectedSlot.teacherName} on ${formatDate(selectedSlot.date)} at ${formatTime(selectedSlot.startTime)}. Note: Email notifications could not be sent.`);
+      }
 
       // Refresh data
       await loadTimeSlotsForTeachers(teachers);
