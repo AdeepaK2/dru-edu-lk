@@ -1337,47 +1337,48 @@ export default function TestResultPage() {
                     {/* Essay Question Details */}
                     {answer.questionType === 'essay' && (
                       <div className="space-y-4">
-                        {/* Your Answer */}
-                        <div>
-                          <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                            Your Answer:
-                          </div>
-                          
-                          {/* Text Answer */}
-                          {answer.textContent && answer.textContent.trim() && (
-                            <div className="p-4 rounded-lg bg-gray-50 border border-gray-200 dark:bg-gray-800 dark:border-gray-600 mb-3">
-                              <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-                                {answer.textContent}
-                              </p>
+                        {/* Only show answer content for non-pure essay tests */}
+                        {!test.questions?.every(q => q.type === 'essay' || q.questionType === 'essay') && (
+                          <div>
+                            <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                              Your Answer:
                             </div>
-                          )}
-                          
-                          {/* PDF Files */}
-                          {answer.pdfFiles && answer.pdfFiles.length > 0 && (
-                            <div className="space-y-2">
-                              <div className="text-xs text-gray-600 dark:text-gray-400 mb-2">
-                                PDF Attachments:
+                            
+                            {/* Text Answer */}
+                            {answer.textContent && answer.textContent.trim() && (
+                              <div className="p-4 rounded-lg bg-gray-50 border border-gray-200 dark:bg-gray-800 dark:border-gray-600 mb-3">
+                                <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                                  {answer.textContent}
+                                </p>
                               </div>
-                              {answer.pdfFiles.map((pdf, pdfIndex) => (
-                                <div
-                                  key={`${pdf.fileUrl}-${pdfIndex}`}
-                                  className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-900/20 dark:border-blue-800"
-                                >
-                                  <div className="flex items-center space-x-3">
-                                    <div className="flex-shrink-0">
-                                      <svg className="w-8 h-8 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
-                                      </svg>
+                            )}
+                            
+                            {/* PDF Files */}
+                            {answer.pdfFiles && answer.pdfFiles.length > 0 && (
+                              <div className="space-y-2">
+                                <div className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+                                  PDF Attachments:
+                                </div>
+                                {answer.pdfFiles.map((pdf, pdfIndex) => (
+                                  <div
+                                    key={`${pdf.fileUrl}-${pdfIndex}`}
+                                    className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-900/20 dark:border-blue-800"
+                                  >
+                                    <div className="flex items-center space-x-3">
+                                      <div className="flex-shrink-0">
+                                        <svg className="w-8 h-8 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                                          <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                                        </svg>
+                                      </div>
+                                      <div>
+                                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                          {pdf.fileName}
+                                        </p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                                          Size: {(pdf.fileSize / 1024 / 1024).toFixed(2)} MB
+                                        </p>
+                                      </div>
                                     </div>
-                                    <div>
-                                      <p className="text-sm font-medium text-gray-900 dark:text-white">
-                                        {pdf.fileName}
-                                      </p>
-                                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                                        Size: {(pdf.fileSize / 1024 / 1024).toFixed(2)} MB
-                                      </p>
-                                    </div>
-                                  </div>
                                   <button
                                     onClick={() => window.open(pdf.fileUrl, '_blank')}
                                     className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-blue-900 dark:text-blue-300 dark:hover:bg-blue-800"
@@ -1399,10 +1400,10 @@ export default function TestResultPage() {
                             </div>
                           )}
                         </div>
+                        )}
 
-                        {/* DEBUG PANEL - Remove in production */}
-                        {/* Grading Results */}
-                        {essayResult ? (
+                        {/* Grading Results - Only show for non-pure essay tests or when graded */}
+                        {!test.questions?.every(q => q.type === 'essay' || q.questionType === 'essay') && essayResult ? (
                           <div className="space-y-3">
                             <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg dark:bg-blue-900/20">
                               <span className="text-sm font-medium text-blue-800 dark:text-blue-300">
@@ -1452,7 +1453,7 @@ export default function TestResultPage() {
                               </div>
                             )}
                           </div>
-                        ) : (
+                        ) : test.questions?.every(q => q.type === 'essay' || q.questionType === 'essay') ? null : (
                           <div className="p-4 rounded-lg bg-yellow-50 border border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800">
                             <div className="flex items-center">
                               <AlertTriangle className="h-5 w-5 text-yellow-500 mr-3 flex-shrink-0" />
