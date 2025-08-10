@@ -53,6 +53,7 @@ export default function LessonModal({
       setFormData({
         ...getDefaultLessonData(),
         subjectId,
+        duration: 60, // Default to 60 minutes for new lessons
       });
     }
     setErrors({});
