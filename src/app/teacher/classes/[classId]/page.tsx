@@ -573,14 +573,29 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                       <span className="hidden sm:inline">Open Link</span>
                     </Button>
                   ) : (
-                    <>
-                      <Button variant="outline" size="sm">
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        <Download className="w-4 h-4" />
-                      </Button>
-                    </>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        if (material.fileUrl) {
+                          // Create a temporary link to download the file
+                          const link = document.createElement('a');
+                          link.href = material.fileUrl;
+                          link.download = material.title || 'download';
+                          link.target = '_blank';
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                          
+                          // Increment download count (optional)
+                          incrementDownloadCount(material.id);
+                        }
+                      }}
+                      className="flex items-center space-x-1"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span className="hidden sm:inline">Download</span>
+                    </Button>
                   )}
                   <Button variant="outline" size="sm">
                     <Edit className="w-4 h-4" />
