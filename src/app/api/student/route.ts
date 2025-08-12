@@ -28,6 +28,22 @@ function generateRandomPassword(length: number = 8): string {
 // Function to create email document for Firebase extension
 async function createEmailDocument(to: string, studentName: string, password: string): Promise<void> {
   try {
+    // Download and encode the class policy and notice PDFs for attachments
+    const bucket = admin.storage().bucket('dru-edu.firebasestorage.app');
+    const pdfPaths = [
+      'class-policy/Class Policy Document.pdf',
+      'class-policy/Notice to Parents .pdf'
+    ];
+    const attachments = await Promise.all(pdfPaths.map(async (path) => {
+      const file = bucket.file(path);
+      const [buffer] = await file.download();
+      return {
+        filename: path.split('/').pop() || 'attachment.pdf',
+        contentType: 'application/pdf',
+        data: buffer.toString('base64')
+      };
+    }));
+    
     const emailData = {
       to: to,
       message: {
@@ -76,6 +92,7 @@ async function createEmailDocument(to: string, studentName: string, password: st
             </p>
           </div>
         `,
+        attachments,
       }
     };
 
