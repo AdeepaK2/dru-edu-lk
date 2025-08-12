@@ -28,22 +28,22 @@ function generateRandomPassword(length: number = 8): string {
 // Function to create email document for Firebase extension
 async function createEmailDocument(to: string, studentName: string, password: string): Promise<void> {
   try {
-    // Download and encode the class policy and notice PDFs for attachments
+    // Generate download URLs for the policy documents
     const bucket = admin.storage().bucket('dru-edu.firebasestorage.app');
-    const pdfPaths = [
-      'class-policy/Class Policy Document.pdf',
-      'class-policy/Notice to Parents .pdf'
-    ];
-    const attachments = await Promise.all(pdfPaths.map(async (path) => {
-      const file = bucket.file(path);
-      const [buffer] = await file.download();
-      return {
-        filename: path.split('/').pop() || 'attachment.pdf',
-        contentType: 'application/pdf',
-        data: buffer.toString('base64')
-      };
-    }));
+    const policyFile = bucket.file('class-policy/Class Policy Document.pdf');
+    const noticeFile = bucket.file('class-policy/Notice to Parents .pdf');
     
+    // Generate signed URLs that expire in 7 days
+    const [policyUrl] = await policyFile.getSignedUrl({
+      action: 'read',
+      expires: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+    
+    const [noticeUrl] = await noticeFile.getSignedUrl({
+      action: 'read',
+      expires: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
     const emailData = {
       to: to,
       message: {
@@ -64,6 +64,16 @@ async function createEmailDocument(to: string, studentName: string, password: st
             
             <div style="background-color: #FEF3C7; border-left: 4px solid #F59E0B; padding: 15px; margin: 20px 0;">
               <p style="margin: 0;"><strong>Important:</strong> Please change your password after your first login for security purposes.</p>
+            </div>
+            
+            <div style="background-color: #EFF6FF; border: 1px solid #DBEAFE; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="color: #1E40AF; margin-top: 0;">Important Documents:</h3>
+              <p>Please review the following important documents:</p>
+              <ul style="margin: 10px 0;">
+                <li><a href="${policyUrl}" style="color: #4F46E5; text-decoration: none; font-weight: 500;">📄 Class Policy Document</a></li>
+                <li><a href="${noticeUrl}" style="color: #4F46E5; text-decoration: none; font-weight: 500;">📄 Notice to Parents</a></li>
+              </ul>
+              <p style="font-size: 12px; color: #6B7280; margin-top: 10px;">Note: These links will expire in 7 days.</p>
             </div>
             
             <p>You can now log in to your student portal to:</p>
@@ -92,11 +102,8 @@ async function createEmailDocument(to: string, studentName: string, password: st
             </p>
           </div>
         `,
-        attachments,
       }
-    };
-
-    // Add email document to the mail collection (Firebase extension will process it)
+    };    // Add email document to the mail collection (Firebase extension will process it)
     await firebaseAdmin.firestore.addDoc('mail', emailData);
     console.log(`Email queued for sending to: ${to}`);
   } catch (error) {
