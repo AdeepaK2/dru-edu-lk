@@ -84,7 +84,7 @@ export default function ClassModal({
           centerId: (initialData.centerId as '1' | '2') || '1',
           year: initialData.year || '',
           subject: initialData.subject || '',
-          subjectId: '', // Will need to be populated from existing data if available
+          subjectId: initialData.subjectId || '', // Use the subjectId from initialData
           teacherId: initialData.teacherId || '', // Populate from existing data
           schedule: scheduleSlots.length > 0 ? scheduleSlots : [{ day: '', startTime: '', endTime: '' }],
           sessionFee: initialData.sessionFee || 0,
