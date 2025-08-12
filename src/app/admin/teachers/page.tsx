@@ -392,7 +392,7 @@ export default function TeacherManagement() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Contact
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-60">
                   Subject/Experience
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -422,16 +422,18 @@ export default function TeacherManagement() {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900 dark:text-white">{teacher.email}</div>
                     <div className="text-sm text-gray-500 dark:text-gray-400">{teacher.phone}</div>
-                  </td>                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900 dark:text-white">
-                      {teacher.subjectGrades && teacher.subjectGrades.length > 0 
-                        ? teacher.subjectGrades.map(sg => `${sg.subjectName} (Grade ${sg.grade})`).join(', ')
-                        : teacher.subjects && teacher.subjects.length > 0 
-                          ? teacher.subjects.join(', ')
-                          : 'No subjects assigned'
-                      }
+                  </td>                  <td className="px-6 py-4 w-60">
+                    <div className="max-h-16 overflow-y-auto">
+                      <div className="text-sm text-gray-900 dark:text-white break-words">
+                        {teacher.subjectGrades && teacher.subjectGrades.length > 0 
+                          ? teacher.subjectGrades.map(sg => `${sg.subjectName} (Grade ${sg.grade})`).join(', ')
+                          : teacher.subjects && teacher.subjects.length > 0 
+                            ? teacher.subjects.join(', ')
+                            : 'No subjects assigned'
+                        }
+                      </div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400 break-words">{teacher.qualifications || 'N/A'}</div>
                     </div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">{teacher.qualifications || 'N/A'}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
