@@ -56,6 +56,10 @@ const Navbar: React.FC = () => {
               {/* Schedule page link */}
               <Link href="/schedule" className="text-white/90 hover:text-white hover:bg-white/10 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">Schedule</Link>
               
+
+              {/* Enroll page link */}
+              <Link href="/enroll" className="bg-[#0088e0] hover:bg-[#0066b3] text-white px-6 py-2 rounded-full text-sm font-semibold transition-all duration-200 flex items-center space-x-2 shadow-lg">Enroll</Link>
+
               {/* Login Dropdown */}
               <div className="relative group">
                 <button className="bg-[#0088e0] hover:bg-[#0066b3] text-white px-6 py-2 rounded-full text-sm font-semibold transition-all duration-200 flex items-center space-x-2 shadow-lg">

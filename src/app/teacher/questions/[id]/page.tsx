@@ -57,6 +57,9 @@ export default function TeacherQuestionBankDetail() {
   const [questionToDelete, setQuestionToDelete] = useState<Question | null>(null);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
 
+  // Add this state for showing search help
+  const [showSearchHelp, setShowSearchHelp] = useState(false);
+
   // Load question bank and its questions
   useEffect(() => {
     const loadData = async () => {
@@ -130,14 +133,75 @@ export default function TeacherQuestionBankDetail() {
     loadData();
   }, [bankId, teacher?.id, authLoading, authError]);
 
-  // Filter questions based on search and filters
+  // Enhanced filter function
   const filteredQuestions = questions.filter(question => {
-    const matchesSearch = question.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (question.content && question.content.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesType = filterType === 'all' || question.type === filterType;
-    const matchesDifficulty = filterDifficulty === 'all' || question.difficultyLevel === filterDifficulty;
+    // If no search term, only apply type and difficulty filters
+    if (!searchTerm.trim()) {
+      const matchesType = filterType === 'all' || question.type === filterType;
+      const matchesDifficulty = filterDifficulty === 'all' || question.difficultyLevel === filterDifficulty;
+      return matchesType && matchesDifficulty;
+    }
+
+    const searchLower = searchTerm.toLowerCase().trim();
     
-    return matchesSearch && matchesType && matchesDifficulty;
+    // Search by question number (Q1, Q2, etc.)
+    const questionIndex = questions.indexOf(question) + 1;
+    const questionNumber = `q${questionIndex}`;
+    const matchesQuestionNumber = questionNumber.includes(searchLower) || 
+                                   `question ${questionIndex}`.includes(searchLower);
+
+    // Search by title
+    const matchesTitle = question.title.toLowerCase().includes(searchLower);
+    
+    // Search by content
+    const matchesContent = question.content?.toLowerCase().includes(searchLower) || false;
+    
+    // Search by MCQ options and explanation
+    let matchesMCQContent = false;
+    if (question.type === 'mcq' && 'options' in question) {
+      // Search in option texts
+      const optionMatches = question.options.some(option => 
+        option.text?.toLowerCase().includes(searchLower)
+      );
+      
+      // Search in explanation
+      const explanationMatches = question.explanation?.toLowerCase().includes(searchLower) || false;
+      
+      matchesMCQContent = optionMatches || explanationMatches;
+    }
+    
+    // Search by Essay suggested answer
+    let matchesEssayContent = false;
+    if (question.type === 'essay' && 'suggestedAnswerContent' in question) {
+      matchesEssayContent = question.suggestedAnswerContent?.toLowerCase().includes(searchLower) || false;
+    }
+    
+    // Search by topic (if available)
+    const matchesTopic = question.topic?.toLowerCase().includes(searchLower) || false;
+    
+    // Search by difficulty level
+    const matchesDifficulty = question.difficultyLevel.toLowerCase().includes(searchLower);
+    
+    // Search by question type
+    const matchesType = question.type.toLowerCase().includes(searchLower) ||
+                       (question.type === 'mcq' && 'multiple choice'.includes(searchLower)) ||
+                       (question.type === 'essay' && 'essay'.includes(searchLower));
+    
+    // Combine all search criteria
+    const matchesSearch = matchesQuestionNumber || 
+                           matchesTitle || 
+                           matchesContent || 
+                           matchesMCQContent || 
+                           matchesEssayContent || 
+                           matchesTopic || 
+                           matchesDifficulty || 
+                           matchesType;
+    
+    // Apply filters
+    const matchesTypeFilter = filterType === 'all' || question.type === filterType;
+    const matchesDifficultyFilter = filterDifficulty === 'all' || question.difficultyLevel === filterDifficulty;
+    
+    return matchesSearch && matchesTypeFilter && matchesDifficultyFilter;
   }).sort((a, b) => {
     // Custom sorting function to order questions logically
     // M1, M2, M3... then E1, E2, E3...
@@ -440,14 +504,45 @@ export default function TeacherQuestionBankDetail() {
               {/* Filters */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <Input
-                    type="text"
-                    placeholder="Search questions..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
+                  <div className="relative flex">
+                    <div className="flex-1 relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <Input
+                        type="text"
+                        placeholder="Search by question number (Q1), content, answers, topic..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10 pr-10"
+                      />
+                      {searchTerm && (
+                        <button
+                          onClick={() => setSearchTerm('')}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                          ×
+                        </button>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => setShowSearchHelp(!showSearchHelp)}
+                      className="ml-2 px-3 py-2 text-gray-400 hover:text-gray-600 border border-gray-300 dark:border-gray-600 rounded-md"
+                      title="Search help"
+                    >
+                      ?
+                    </button>
+                  </div>
+                  {showSearchHelp && (
+                    <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <h4 className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-2">Search Tips:</h4>
+                      <ul className="text-xs text-blue-700 dark:text-blue-400 space-y-1">
+                        <li>• Type "Q1" or "Question 1" to find specific questions by number</li>
+                        <li>• Search question content, MCQ options, or essay answers</li>
+                        <li>• Search by difficulty: "easy", "medium", "hard"</li>
+                        <li>• Search by type: "mcq", "multiple choice", "essay"</li>
+                        <li>• Search by topic if questions have topics assigned</li>
+                      </ul>
+                    </div>
+                  )}
                 </div>
                 
                 <div>
