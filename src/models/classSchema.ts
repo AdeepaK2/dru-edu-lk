@@ -49,6 +49,7 @@ export interface ClassDisplayData {
   classId: string;
   name: string;
   subject: string;
+  subjectId: string; // Add subjectId for editing
   year: string;
   teacher: string;
   teacherId?: string; // Add teacherId for editing
@@ -73,6 +74,7 @@ export function classDocumentToDisplay(doc: ClassDocument, centerName?: string, 
     classId: doc.classId,
     name: doc.name,
     subject: doc.subject,
+    subjectId: doc.subjectId,
     year: doc.year,
     teacher: teacherName || (doc.teacherId ? 'Assigned' : 'Not Assigned'),
     teacherId: doc.teacherId,

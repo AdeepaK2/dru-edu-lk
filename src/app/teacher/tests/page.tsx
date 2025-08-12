@@ -880,17 +880,7 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
                     year: cls.year
                   }))
             }
-            questionBanks={
-              // Filter question banks by subject
-              questionBanks.filter(bank => {
-                const currentSubjectId = selectedClassId 
-                  ? getSelectedClass()?.subjectId 
-                  : getTeacherSubjects()[0]?.id;
-                console.log('🔍 Filtering question banks for subject:', currentSubjectId);
-                console.log('🔍 Bank subject:', bank.subjectId, 'Bank name:', bank.name);
-                return bank.subjectId === currentSubjectId;
-              })
-            }
+            questionBanks={questionBanks}
           />
         )}
 

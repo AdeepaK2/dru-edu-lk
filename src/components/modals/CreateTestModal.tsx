@@ -1198,7 +1198,12 @@ export default function CreateTestModal({
                   >
                     <option value="">Select a question bank...</option>
                     {questionBanks && questionBanks.length > 0 ? (
-                      questionBanks.map(bank => {
+                      // Sort: banks matching subjectId first, then others
+                      [...questionBanks].sort((a, b) => {
+                        if (a.subjectId === subjectId && b.subjectId !== subjectId) return -1;
+                        if (a.subjectId !== subjectId && b.subjectId === subjectId) return 1;
+                        return a.name.localeCompare(b.name);
+                      }).map(bank => {
                         // Calculate type-specific question counts for display
                         let displayText = `${bank.name} (${bank.totalQuestions} questions`;
                         if (formData.questionType === 'mcq') {
@@ -1207,10 +1212,10 @@ export default function CreateTestModal({
                           displayText = `${bank.name} (${bank.essayCount} essay questions`;
                         }
                         displayText += ')';
-                        
                         return (
                           <option key={bank.id} value={bank.id}>
                             {displayText}
+                            {bank.subjectId === subjectId ? ' (This class subject)' : ''}
                           </option>
                         );
                       })

@@ -433,10 +433,25 @@ export async function DELETE(req: NextRequest) {
     // Step 1: Delete student enrollments first - THIS MUST SUCCEED
     let deletedEnrollmentsCount = 0;
     try {
-      // Import the enrollment service
-      const { deleteAllEnrollmentsByStudent } = await import('@/services/studentEnrollmentService');
-      deletedEnrollmentsCount = await deleteAllEnrollmentsByStudent(id);
-      console.log(`Successfully deleted ${deletedEnrollmentsCount} enrollments for student ${id}`);
+      // Delete enrollments using server-side Firebase Admin
+      const enrollmentsSnapshot = await firebaseAdmin.db
+        .collection('studentEnrollments')
+        .where('studentId', '==', id)
+        .get();
+      
+      if (!enrollmentsSnapshot.empty) {
+        // Delete all enrollment documents
+        const batch = firebaseAdmin.db.batch();
+        enrollmentsSnapshot.docs.forEach(doc => {
+          batch.delete(doc.ref);
+        });
+        
+        await batch.commit();
+        deletedEnrollmentsCount = enrollmentsSnapshot.docs.length;
+        console.log(`Successfully deleted ${deletedEnrollmentsCount} enrollments for student ${id}`);
+      } else {
+        console.log(`No enrollments found for student ${id}`);
+      }
     } catch (enrollmentError: any) {
       console.error('Failed to delete student enrollments:', enrollmentError);
       // FAIL THE ENTIRE OPERATION - DO NOT DELETE THE STUDENT
