@@ -135,9 +135,7 @@ export default function TeacherSettings() {
     if (!profileData.phone.trim()) {
       return 'Phone number is required';
     }
-    if (profileData.subjects.length === 0) {
-      return 'At least one subject is required';
-    }
+    // Note: Subjects are now admin-assigned and not validated here
     return null;
   };
 
@@ -174,6 +172,9 @@ export default function TeacherSettings() {
 
     try {
       let finalProfileData = { ...profileData };
+      
+      // Remove subjects from the update data since they're admin-controlled
+      const { subjects, ...updateData } = finalProfileData;
 
       // Upload profile image if a new one is selected
       if (profileImageFile) {
@@ -193,7 +194,7 @@ export default function TeacherSettings() {
             (progress) => setImageUploadProgress(progress)
           );
           
-          finalProfileData.profileImageUrl = imageUrl;
+          updateData.profileImageUrl = imageUrl;
           
           // Clear the file and preview after successful upload
           setProfileImageFile(null);
@@ -210,13 +211,13 @@ export default function TeacherSettings() {
         }
       }
 
-      // Update teacher profile
+      // Update teacher profile (excluding subjects)
       const response = await fetch(`/api/teacher?id=${teacher?.id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(finalProfileData),
+        body: JSON.stringify(updateData),
       });
 
       const result = await response.json();
@@ -225,9 +226,9 @@ export default function TeacherSettings() {
         throw new Error(result.error || 'Failed to update profile');
       }
 
-      // Update local profile data with the new image URL
-      setProfileData(finalProfileData);
-      setMessage({ type: 'success', text: 'Profile updated successfully!' });
+      // Update local profile data with the new image URL, but keep original subjects
+      setProfileData(prev => ({ ...prev, ...updateData, subjects: prev.subjects }));
+      setMessage({ type: 'success', text: 'Profile updated successfully! (Note: Subjects are managed by admin)' });
     } catch (error: any) {
       console.error('Error updating profile:', error);
       setMessage({ type: 'error', text: error.message || 'Failed to update profile' });
@@ -289,11 +290,6 @@ export default function TeacherSettings() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleSubjectChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const subjects = e.target.value.split(',').map(s => s.trim()).filter(s => s.length > 0);
-    handleProfileInputChange('subjects', subjects);
   };
 
   const handleProfileImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -582,23 +578,51 @@ export default function TeacherSettings() {
                       </div>
                     </div>
 
-                    {/* Subjects */}
+                    {/* Subjects - Admin Assigned (Read Only) */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         <BookOpen className="w-4 h-4 inline mr-2" />
-                        Subjects *
+                        Subjects Assigned by Admin *
                       </label>
-                      <Input
-                        type="text"
-                        value={profileData.subjects.join(', ')}
-                        onChange={handleSubjectChange}
-                        placeholder="Enter subjects separated by commas"
-                        disabled={loading}
-                        required
-                      />
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        Separate multiple subjects with commas (e.g., Mathematics, Physics, Chemistry)
-                      </p>
+                      <div className="relative">
+                        <Input
+                          type="text"
+                          value={profileData.subjects.join(', ') || 'No subjects assigned yet'}
+                          readOnly
+                          disabled
+                          className="bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 cursor-not-allowed"
+                        />
+                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                          <Lock className="h-4 w-4 text-gray-400" />
+                        </div>
+                      </div>
+                      <div className="mt-2 space-y-1">
+                        <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center">
+                          <AlertCircle className="w-3 h-3 mr-1" />
+                          <strong>Note:</strong> Subjects are assigned by the administrator and cannot be modified here.
+                        </p>
+                        {profileData.subjects.length > 0 ? (
+                          <div className="mt-3">
+                            <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                              Your Current Subjects:
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                              {profileData.subjects.map((subject, index) => (
+                                <span
+                                  key={index}
+                                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-200"
+                                >
+                                  {subject}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                            Contact your administrator to request subject assignments.
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
 
