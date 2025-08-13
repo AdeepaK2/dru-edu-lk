@@ -34,48 +34,157 @@ async function createEmailDocument(to: string, studentName: string, password: st
       message: {
         subject: "Welcome to Dr U Education - Your Account Details",
         html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <h2 style="color: #4F46E5; text-align: center;">Welcome to Dr U Education!</h2>
-            
-            <p>Dear ${studentName},</p>
-            
-            <p>Welcome to Dr U Education! We're excited to have you join our learning community.</p>
-            
-            <div style="background-color: #F3F4F6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              <h3 style="color: #374151; margin-top: 0;">Your Login Credentials:</h3>
-              <p><strong>Email:</strong> ${to}</p>
-              <p><strong>Password:</strong> <code style="background-color: #E5E7EB; padding: 4px 8px; border-radius: 4px; font-family: monospace;">${password}</code></p>
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Welcome to Dr U Education</title>
+            <style>
+              @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+            </style>
+          </head>
+          <body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+            <div style="max-width: 650px; margin: 0 auto; background-color: #ffffff; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+              
+              <!-- Header with gradient background -->
+              <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center; border-radius: 8px 8px 0 0;">
+                <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.5px;">
+                  🎓 Welcome to Dr U Education!
+                </h1>
+                <p style="color: #e2e8f0; margin: 10px 0 0 0; font-size: 16px; font-weight: 400;">
+                  Your educational journey starts here
+                </p>
+              </div>
+              
+              <!-- Main content -->
+              <div style="padding: 40px 30px;">
+                <div style="margin-bottom: 30px;">
+                  <p style="color: #1a202c; font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">
+                    Dear <strong>${studentName}</strong>,
+                  </p>
+                  <p style="color: #4a5568; font-size: 16px; line-height: 1.6; margin: 0;">
+                    Welcome to Dr U Education! We're thrilled to have you join our learning community and look forward to supporting your academic success.
+                  </p>
+                </div>
+                
+                <!-- Credentials Box -->
+                <div style="background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%); border: 2px solid #e2e8f0; border-radius: 12px; padding: 25px; margin: 30px 0; position: relative;">
+                  <div style="position: absolute; top: -10px; left: 20px; background-color: #ffffff; padding: 0 10px;">
+                    <span style="color: #4299e1; font-weight: 600; font-size: 14px;">🔐 YOUR LOGIN CREDENTIALS</span>
+                  </div>
+                  <div style="margin-top: 10px;">
+                    <div style="margin-bottom: 15px;">
+                      <label style="color: #2d3748; font-weight: 500; font-size: 14px; display: block; margin-bottom: 5px;">Email Address:</label>
+                      <p style="color: #1a202c; font-size: 16px; margin: 0; padding: 8px 12px; background-color: #ffffff; border-radius: 6px; border: 1px solid #e2e8f0;">
+                        ${to}
+                      </p>
+                    </div>
+                    <div>
+                      <label style="color: #2d3748; font-weight: 500; font-size: 14px; display: block; margin-bottom: 5px;">Temporary Password:</label>
+                      <p style="color: #1a202c; font-size: 16px; margin: 0; padding: 8px 12px; background-color: #ffffff; border-radius: 6px; border: 1px solid #e2e8f0; font-family: 'Courier New', monospace; font-weight: 600; letter-spacing: 1px;">
+                        ${password}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Security Notice -->
+                <div style="background-color: #fef5e7; border-left: 4px solid #f6ad55; padding: 16px 20px; margin: 25px 0; border-radius: 0 8px 8px 0;">
+                  <div style="display: flex; align-items: flex-start;">
+                    <span style="font-size: 18px; margin-right: 10px;">⚠️</span>
+                    <div>
+                      <p style="margin: 0; color: #744210; font-weight: 500; font-size: 14px;">
+                        <strong>Security Notice:</strong> Please change your password immediately after your first login for enhanced security.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Features Section -->
+                <div style="margin: 30px 0;">
+                  <h3 style="color: #2d3748; font-size: 18px; font-weight: 600; margin: 0 0 20px 0;">
+                    🚀 What you can do with your student portal:
+                  </h3>
+                  <div style="background-color: #f7fafc; border-radius: 8px; padding: 20px;">
+                    <ul style="margin: 0; padding-left: 20px; color: #4a5568; line-height: 1.8;">
+                      <li style="margin-bottom: 8px;">📚 Access your courses and comprehensive learning materials</li>
+                      <li style="margin-bottom: 8px;">📊 View your grades, progress reports, and performance analytics</li>
+                      <li style="margin-bottom: 8px;">💬 Communicate directly with your teachers and classmates</li>
+                      <li style="margin-bottom: 8px;">📝 Track assignments, deadlines, and upcoming assessments</li>
+                      <li style="margin-bottom: 8px;">🎯 Set learning goals and monitor your achievements</li>
+                    </ul>
+                  </div>
+                </div>
+                
+                <!-- CTA Button -->
+                <div style="text-align: center; margin: 35px 0;">
+                  <a href="https://www.drueducation.com.au/student/login" 
+                     style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; padding: 14px 30px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); transition: all 0.2s;">
+                    🚀 Access Your Student Portal
+                  </a>
+                </div>
+                
+                <!-- Important Documents Section -->
+                <div style="background-color: #edf2f7; border-radius: 12px; padding: 25px; margin: 30px 0;">
+                  <h3 style="color: #2d3748; font-size: 18px; font-weight: 600; margin: 0 0 20px 0; display: flex; align-items: center;">
+                    📋 Required Documents for Physical Classes
+                  </h3>
+                  <p style="color: #4a5568; margin: 0 0 20px 0; font-size: 15px; line-height: 1.6;">
+                    Please review and sign these important documents before attending your first physical class:
+                  </p>
+                  <div style="space-y: 10px;">
+                    <div style="margin-bottom: 15px; padding: 12px; background-color: #ffffff; border-radius: 8px; border-left: 4px solid #4299e1;">
+                      <a href="https://drive.google.com/file/d/1YHJxvAfTVMqRJ5YQeD5fFZdXkt81vSr1/view?usp=sharing" 
+                         style="color: #2b6cb0; text-decoration: none; font-weight: 500; display: flex; align-items: center;">
+                        📜 <span style="margin-left: 8px;">Class Policy Agreement</span>
+                      </a>
+                    </div>
+                    <div style="margin-bottom: 15px; padding: 12px; background-color: #ffffff; border-radius: 8px; border-left: 4px solid #48bb78;">
+                      <a href="https://drive.google.com/file/d/1j_LO0jWJ2-4WRYBZwMwp0eRnFMqOVM-F/view?usp=sharing" 
+                         style="color: #2f855a; text-decoration: none; font-weight: 500; display: flex; align-items: center;">
+                        👨‍👩‍👧‍👦 <span style="margin-left: 8px;">Parent/Guardian Notice</span>
+                      </a>
+                    </div>
+                    <div style="margin-bottom: 0; padding: 12px; background-color: #ffffff; border-radius: 8px; border-left: 4px solid #ed8936;">
+                      <a href="https://drive.google.com/file/d/1qD9nYtOnbHs_AImrAaEU5NTPalXwea6F/view?usp=sharing" 
+                         style="color: #c05621; text-decoration: none; font-weight: 500; display: flex; align-items: center;">
+                        📸 <span style="margin-left: 8px;">Photo Consent Form</span>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Support Section -->
+                <div style="background-color: #f0fff4; border: 1px solid #9ae6b4; border-radius: 8px; padding: 20px; margin: 30px 0;">
+                  <p style="color: #22543d; margin: 0; text-align: center; font-size: 15px;">
+                    💡 <strong>Need Help?</strong> Our support team is here to assist you!<br>
+                    <span style="color: #2f855a;">Email us or contact your assigned academic coordinator.</span>
+                  </p>
+                </div>
+                
+                <!-- Closing -->
+                <div style="margin-top: 40px;">
+                  <p style="color: #4a5568; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+                    We're excited to be part of your educational journey and look forward to helping you achieve your academic goals.
+                  </p>
+                  <p style="color: #2d3748; font-size: 16px; margin: 0;">
+                    <strong>Best regards,</strong><br>
+                    <span style="color: #667eea; font-weight: 600;">The Dr U Education Team</span> 🎓
+                  </p>
+                </div>
+              </div>
+              
+              <!-- Footer -->
+              <div style="background-color: #f8fafc; padding: 25px 30px; border-top: 1px solid #e2e8f0; text-align: center;">
+                <p style="color: #718096; font-size: 13px; margin: 0; line-height: 1.5;">
+                  This is an automated message from Dr U Education.<br>
+                  Please do not reply to this email. For support, contact our help desk.
+                </p>
+              </div>
             </div>
-            
-            <div style="background-color: #FEF3C7; border-left: 4px solid #F59E0B; padding: 15px; margin: 20px 0;">
-              <p style="margin: 0;"><strong>Important:</strong> Please change your password after your first login for security purposes.</p>
-            </div>
-            
-            <p>You can now log in to your student portal to:</p>
-            <ul>
-              <li>Access your courses and learning materials</li>
-              <li>View your grades and progress</li>
-              <li>Communicate with your teachers</li>
-              <li>Track your assignments and deadlines</li>
-            </ul>
-            
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="https://www.drueducation.com.au/student/login" 
-                 style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
-                Log In to Your Account
-              </a>
-            </div>
-            
-            <p>If you have any questions or need assistance, please don't hesitate to contact our support team.</p>
-            
-            <p>Best regards,<br>
-            The Dr U Education Team</p>
-            
-            <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 30px 0;">
-            <p style="font-size: 12px; color: #6B7280; text-align: center;">
-              This is an automated message. Please do not reply to this email.
-            </p>
-          </div>
+          </body>
+          </html>
         `,
       }
     };
