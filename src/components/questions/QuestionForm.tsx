@@ -865,8 +865,20 @@ export default function QuestionForm({
           </div>
 
           <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Explanation *
+              </label>
+              <button
+                type="button"
+                onClick={() => handleInputChange('explanation', 'No explanation provided')}
+                className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                disabled={loading}
+              >
+                No explanation
+              </button>
+            </div>
             <TextArea
-              label="Explanation"
               value={formData.explanation}
               onChange={(e) => handleInputChange('explanation', e.target.value)}
               placeholder="Explain why the correct answer is right and others are wrong"
