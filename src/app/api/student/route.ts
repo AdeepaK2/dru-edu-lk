@@ -575,6 +575,37 @@ export async function DELETE(req: NextRequest) {
       );
     }
     
+    // Step 1.5: Cancel related enrollment requests to prevent orphaned data
+    let cancelledRequestsCount = 0;
+    try {
+      // Find enrollment requests for this student
+      const enrollmentRequestsSnapshot = await firebaseAdmin.db
+        .collection('enrollmentRequests')
+        .where('student.email', '==', studentDoc.email)
+        .get();
+      
+      if (!enrollmentRequestsSnapshot.empty) {
+        // Update all enrollment requests to cancelled status
+        const batch = firebaseAdmin.db.batch();
+        enrollmentRequestsSnapshot.docs.forEach(doc => {
+          batch.update(doc.ref, {
+            status: 'Cancelled',
+            adminNotes: 'Student account was deleted',
+            updatedAt: admin.firestore.Timestamp.now(),
+          });
+        });
+        
+        await batch.commit();
+        cancelledRequestsCount = enrollmentRequestsSnapshot.docs.length;
+        console.log(`Successfully cancelled ${cancelledRequestsCount} enrollment requests for student ${studentDoc.email}`);
+      } else {
+        console.log(`No enrollment requests found for student ${studentDoc.email}`);
+      }
+    } catch (requestError: any) {
+      // Log the error but don't fail the deletion - this is cleanup
+      console.error('Failed to cancel enrollment requests (continuing with deletion):', requestError);
+    }
+    
     // Step 2: Only proceed with student deletion if enrollments were successfully deleted
     try {
       await Promise.all([
@@ -599,12 +630,13 @@ export async function DELETE(req: NextRequest) {
     cacheUtils.delete(`student:${id}`);
     cacheUtils.delete('students:all');
     
-    console.log(`Successfully completed deletion of student ${id} and ${deletedEnrollmentsCount} related enrollments`);
+    console.log(`Successfully completed deletion of student ${id}, ${deletedEnrollmentsCount} related enrollments, and ${cancelledRequestsCount} enrollment requests`);
     
     return NextResponse.json({
-      message: "Student and related enrollments deleted successfully",
+      message: "Student and related data deleted successfully",
       id,
-      deletedEnrollments: deletedEnrollmentsCount
+      deletedEnrollments: deletedEnrollmentsCount,
+      cancelledRequests: cancelledRequestsCount
     });
   } catch (error: any) {
     console.error("Error deleting student:", error);

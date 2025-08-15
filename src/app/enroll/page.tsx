@@ -11,7 +11,7 @@ import { ClassDocument } from '@/models/classSchema';
 import { EnrollmentRequestData, enrollmentRequestSchema } from '@/models/enrollmentRequestSchema';
 import { ClassFirestoreService } from '@/apiservices/classFirestoreService';
 import { firestore, auth } from '@/utils/firebase-client';
-import { collection, addDoc, getDocs, query, Timestamp, where } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, Timestamp, where, updateDoc, doc } from 'firebase/firestore';
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -283,17 +283,74 @@ export default function EnrollmentPage() {
         );
         const existingRequestsSnapshot = await getDocs(existingRequestsQuery);
         
-        // Get the class IDs that already have pending/approved requests
-        const existingClassIds = existingRequestsSnapshot.docs.map(doc => doc.data().classId);
+        // Filter out orphaned "Approved" requests (where student was deleted but requests remain)
+        const validExistingRequests = [];
+        const orphanedApprovedRequests = [];
         
-        // Filter out classes that already have enrollment requests
+        for (const requestDoc of existingRequestsSnapshot.docs) {
+          const requestData = requestDoc.data();
+          
+          if (requestData.status === 'Pending') {
+            // Pending requests are always valid
+            validExistingRequests.push(requestDoc);
+          } else if (requestData.status === 'Approved') {
+            // For approved requests, verify the student still exists
+            const approvedStudentQuery = query(
+              collection(firestore, 'students'),
+              where('email', '==', requestData.student.email)
+            );
+            const approvedStudentSnapshot = await getDocs(approvedStudentQuery);
+            
+            if (!approvedStudentSnapshot.empty) {
+              // Student exists - this should have been caught by the first check
+              // This is a fallback safety check
+              validExistingRequests.push(requestDoc);
+            } else {
+              // Student was deleted but enrollment request remains - orphaned data
+              orphanedApprovedRequests.push(requestDoc);
+            }
+          }
+        }
+        
+        // Clean up orphaned approved requests automatically
+        if (orphanedApprovedRequests.length > 0) {
+          console.log(`Found ${orphanedApprovedRequests.length} orphaned approved enrollment requests for ${formData.studentEmail}. Cleaning up...`);
+          
+          const cleanupPromises = orphanedApprovedRequests.map(async (requestDoc) => {
+            try {
+              await updateDoc(doc(firestore, 'enrollmentRequests', requestDoc.id), {
+                status: 'Cancelled',
+                adminNotes: 'Automatically cancelled - student record was deleted',
+                updatedAt: Timestamp.now(),
+              });
+            } catch (error) {
+              console.error(`Failed to cleanup orphaned request ${requestDoc.id}:`, error);
+            }
+          });
+          
+          await Promise.all(cleanupPromises);
+          
+          const orphanedClassNames = orphanedApprovedRequests.map(doc => doc.data().className).join(', ');
+          console.log(`Cleaned up orphaned enrollment requests for classes: ${orphanedClassNames}`);
+        }
+        
+        // Get the class IDs that have valid existing requests
+        const existingClassIds = validExistingRequests.map(doc => doc.data().classId);
+        
+        // Filter out classes that already have valid enrollment requests
         const newClassesToEnroll = selectedClasses.filter(cls => !existingClassIds.includes(cls.id));
         const duplicateClasses = selectedClasses.filter(cls => existingClassIds.includes(cls.id));
         
-        // Warn about duplicate requests
+        // Warn about duplicate requests (only for valid existing requests)
         if (duplicateClasses.length > 0) {
           const duplicateNames = duplicateClasses.map(cls => cls.name).join(', ');
           alert(`Note: You already have pending/approved enrollment requests for: ${duplicateNames}. Only new class requests will be submitted.`);
+        }
+        
+        // Show info about cleaned up orphaned requests
+        if (orphanedApprovedRequests.length > 0) {
+          const orphanedClassNames = orphanedApprovedRequests.map(doc => doc.data().className).join(', ');
+          alert(`Info: Found and cleaned up previous enrollment data for: ${orphanedClassNames}. You can now apply for these classes again.`);
         }
         
         // If no new classes to enroll, stop here
