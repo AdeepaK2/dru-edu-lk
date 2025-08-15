@@ -262,7 +262,20 @@ export default function EnrollmentPage() {
     setSubmitting(true);
     
     try {
-        // Check for existing enrollment requests for this email and classes
+        // 1. Check if student already exists in the system
+        const existingStudentQuery = query(
+          collection(firestore, 'students'),
+          where('email', '==', formData.studentEmail)
+        );
+        const existingStudentSnapshot = await getDocs(existingStudentQuery);
+        
+        if (!existingStudentSnapshot.empty) {
+          const existingStudent = existingStudentSnapshot.docs[0].data();
+          alert(`A student with email ${formData.studentEmail} is already enrolled in the system. If you are an existing student, please contact the administration to enroll in additional classes.`);
+          return;
+        }
+
+        // 2. Check for existing enrollment requests for this email and classes
         const existingRequestsQuery = query(
           collection(firestore, 'enrollmentRequests'),
           where('student.email', '==', formData.studentEmail),
