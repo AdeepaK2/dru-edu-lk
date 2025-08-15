@@ -111,6 +111,11 @@ export default function TeacherVideoUploadModal({
     const loadLessons = async () => {
       if (!formData.subjectId) {
         setAvailableLessons([]);
+        // Clear lesson selection when no subject is selected
+        setFormData(prev => ({
+          ...prev,
+          lessonId: ''
+        }));
         return;
       }
 
@@ -118,6 +123,17 @@ export default function TeacherVideoUploadModal({
       try {
         const lessons = await LessonFirestoreService.getLessonsBySubject(formData.subjectId);
         setAvailableLessons(lessons);
+        
+        // Clear lesson selection if current lesson doesn't belong to the new subject
+        if (formData.lessonId) {
+          const lessonExists = lessons.some(lesson => lesson.id === formData.lessonId);
+          if (!lessonExists) {
+            setFormData(prev => ({
+              ...prev,
+              lessonId: ''
+            }));
+          }
+        }
       } catch (error) {
         console.error('Error loading lessons:', error);
         setAvailableLessons([]);
@@ -339,8 +355,6 @@ export default function TeacherVideoUploadModal({
         videoUrl,
         subjectId: formData.subjectId,
         subjectName: selectedSubject?.name || '',
-        lessonId: formData.lessonId || undefined,
-        lessonName: selectedLesson?.name || undefined,
         assignedClassIds: formData.assignedClassIds,
         assignedStudentIds: formData.assignedStudentIds,
         tags: formData.tags,
@@ -348,6 +362,12 @@ export default function TeacherVideoUploadModal({
         visibility: formData.visibility,
         price: formData.price
       };
+      
+      // Only add lesson fields if they have values (avoid undefined)
+      if (formData.lessonId && formData.lessonId.trim()) {
+        videoData.lessonId = formData.lessonId;
+        videoData.lessonName = selectedLesson?.name || '';
+      }
       
       // Only add thumbnailUrl if it's not empty
       if (thumbnailUrl && thumbnailUrl.trim()) {
