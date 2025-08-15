@@ -325,8 +325,11 @@ export default function StudentsManagement() {
       const enrollmentMessage = result.deletedEnrollments > 0 
         ? ` and ${result.deletedEnrollments} related enrollments`
         : '';
+      const requestMessage = result.cancelledRequests > 0 
+        ? ` and ${result.cancelledRequests} enrollment requests`
+        : '';
       
-      showSuccess(`Student deleted successfully${enrollmentMessage}!`);
+      showSuccess(`Student deleted successfully${enrollmentMessage}${requestMessage}!`);
       setShowDeleteConfirm(false);
       setStudentToDelete(null);
       // Real-time listener will automatically update the list
