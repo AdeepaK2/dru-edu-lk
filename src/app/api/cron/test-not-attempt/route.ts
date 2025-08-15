@@ -88,33 +88,41 @@ async function getRecentlyEndedTests(startTime: Timestamp, endTime: Timestamp): 
   const tests: any[] = [];
   
   try {
-    // Query for live tests
-    const liveTestsQuery = firebaseAdmin.db
-      .collection('tests')
-      .where('type', '==', 'live')
-      .where('actualEndTime', '>=', startTime)
-      .where('actualEndTime', '<=', endTime);
+    console.log('🔍 Fetching all tests to check end times...');
     
-    const liveTestsSnapshot = await liveTestsQuery.get();
+    // Get all tests and filter them in memory to avoid complex index requirements
+    const allTestsQuery = firebaseAdmin.db.collection('tests');
+    const allTestsSnapshot = await allTestsQuery.get();
     
-    liveTestsSnapshot.forEach((doc: any) => {
-      tests.push({ id: doc.id, ...doc.data() });
+    console.log(`📋 Retrieved ${allTestsSnapshot.size} total tests for filtering`);
+    
+    allTestsSnapshot.forEach((doc: any) => {
+      const testData = doc.data();
+      let testEndTime: Timestamp | null = null;
+      
+      // Determine the end time based on test type
+      if (testData.type === 'live') {
+        testEndTime = testData.actualEndTime;
+      } else if (testData.type === 'flexible') {
+        testEndTime = testData.availableTo;
+      }
+      
+      // Check if the test ended in our time range
+      if (testEndTime && 
+          testEndTime.toMillis() >= startTime.toMillis() && 
+          testEndTime.toMillis() <= endTime.toMillis()) {
+        
+        tests.push({ 
+          id: doc.id, 
+          ...testData,
+          endTime: testEndTime // Store the actual end time for reference
+        });
+        
+        console.log(`✅ Found test: ${testData.title} (${testData.type}) ended at ${testEndTime.toDate()}`);
+      }
     });
 
-    // Query for flexible tests (check availableTo)
-    const flexTestsQuery = firebaseAdmin.db
-      .collection('tests')
-      .where('type', '==', 'flexible')
-      .where('availableTo', '>=', startTime)
-      .where('availableTo', '<=', endTime);
-    
-    const flexTestsSnapshot = await flexTestsQuery.get();
-    
-    flexTestsSnapshot.forEach((doc: any) => {
-      tests.push({ id: doc.id, ...doc.data() });
-    });
-
-    console.log(`📋 Found ${tests.length} tests that ended in time range`);
+    console.log(`� Filtered to ${tests.length} tests that ended in time range`);
     return tests;
 
   } catch (error) {
@@ -179,50 +187,57 @@ async function getEnrolledStudents(classIds: string[]): Promise<any[]> {
 
     const students: any[] = [];
 
-    // Get enrollments for these classes
-    const enrollmentsQuery = firebaseAdmin.db
-      .collection('studentEnrollments')
-      .where('classId', 'in', classIds)
-      .where('status', '==', 'approved');
+    // Get enrollments for these classes (batch the classIds if needed)
+    const enrollmentBatches = [];
+    for (let i = 0; i < classIds.length; i += 10) {
+      const batch = classIds.slice(i, i + 10);
+      enrollmentBatches.push(batch);
+    }
 
-    const enrollmentsSnapshot = await enrollmentsQuery.get();
     const studentIds = new Set<string>();
 
-    enrollmentsSnapshot.forEach((doc: any) => {
-      const enrollment = doc.data();
-      studentIds.add(enrollment.studentId);
-    });
+    for (const classBatch of enrollmentBatches) {
+      const enrollmentsQuery = firebaseAdmin.db
+        .collection('studentEnrollments')
+        .where('classId', 'in', classBatch)
+        .where('status', '==', 'Active'); // Fixed: should be 'Active' not 'approved'
+
+      const enrollmentsSnapshot = await enrollmentsQuery.get();
+
+      enrollmentsSnapshot.forEach((doc: any) => {
+        const enrollment = doc.data();
+        studentIds.add(enrollment.studentId);
+      });
+    }
 
     console.log(`👥 Found ${studentIds.size} unique enrolled students`);
 
-    // Get student details
+    // Get student details by document ID (more efficient than where clause)
     if (studentIds.size > 0) {
-      // Firestore 'in' queries are limited to 10 items, so batch if needed
       const studentIdArray = Array.from(studentIds);
-      const batches = [];
       
-      for (let i = 0; i < studentIdArray.length; i += 10) {
-        const batch = studentIdArray.slice(i, i + 10);
-        batches.push(batch);
-      }
-
-      for (const batch of batches) {
-        const studentsQuery = firebaseAdmin.db
-          .collection('students')
-          .where('id', 'in', batch);
-        
-        const studentsSnapshot = await studentsQuery.get();
-        
-        studentsSnapshot.forEach((doc: any) => {
-          const studentData = doc.data();
-          students.push({
-            id: doc.id,
-            ...studentData
-          });
-        });
+      // Get students by document ID to avoid complex queries
+      for (const studentId of studentIdArray) {
+        try {
+          const studentDoc = await firebaseAdmin.db
+            .collection('students')
+            .doc(studentId)
+            .get();
+          
+          if (studentDoc.exists) {
+            const studentData = studentDoc.data();
+            students.push({
+              id: studentDoc.id,
+              ...studentData
+            });
+          }
+        } catch (error) {
+          console.warn(`⚠️ Could not fetch student ${studentId}:`, error);
+        }
       }
     }
 
+    console.log(`✅ Successfully retrieved ${students.length} student records`);
     return students;
 
   } catch (error) {
