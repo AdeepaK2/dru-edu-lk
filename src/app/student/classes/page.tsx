@@ -227,8 +227,8 @@ export default function StudentClassesPage() {
                     variant="outline"
                     size="sm"
                     onClick={() => {
-                      // Navigate to tests page for this class
-                      window.location.href = `/student/tests?classId=${enrollment.id}`;
+                      // Navigate to tests page
+                      window.location.href = `/student/test`;
                     }}
                   >
                     Tests
@@ -238,7 +238,7 @@ export default function StudentClassesPage() {
                     size="sm"
                     onClick={() => {
                       // Navigate to study materials page for this class
-                      window.location.href = `/student/study?classId=${enrollment.id}`;
+                      window.location.href = `/student/study?classId=${enrollment.classId}`;
                     }}
                   >
                     Study
@@ -248,7 +248,7 @@ export default function StudentClassesPage() {
                     size="sm"
                     onClick={() => {
                       // Navigate to videos page for this class
-                      window.location.href = `/student/videos?classId=${enrollment.id}`;
+                      window.location.href = `/student/classes/${enrollment.classId}/videos`;
                     }}
                   >
                     Videos
