@@ -87,31 +87,50 @@ export default function ClassVideos({ params }: ClassVideoProps) {
         const purchases = await VideoPurchaseService.getStudentCompletedPurchases(student.id);
         setStudentPurchases(purchases);
         
-        // Load videos for this class (assigned to this specific class or public videos of the same subject)
-        const [allVideos] = await Promise.all([
+        // Load videos for this class in two parts:
+        // 1. Videos specifically assigned to this class (regardless of subject)
+        // 2. Videos of the same subject (public or assigned)
+        const [assignedVideos, subjectVideos] = await Promise.all([
+          VideoFirestoreService.getVideosByClass(classId),
           VideoFirestoreService.getVideosBySubject(classData.subjectId)
         ]);
         
-        console.log('🔍 Class videos loaded:', allVideos.length);
+        // Combine and deduplicate videos
+        const allVideosMap = new Map();
         
-        // Filter videos that are either:
-        // 1. Assigned to this specific class
-        // 2. Public videos of the same subject
-        // 3. Already purchased by student
+        // Add all assigned videos first (priority)
+        assignedVideos.forEach(video => {
+          allVideosMap.set(video.id, video);
+        });
+        
+        // Add subject videos if not already present
+        subjectVideos.forEach(video => {
+          if (!allVideosMap.has(video.id)) {
+            allVideosMap.set(video.id, video);
+          }
+        });
+        
+        const allVideos = Array.from(allVideosMap.values());
+        
+        console.log('🔍 Class videos loaded:', allVideos.length);
+        console.log('🔍 Assigned to class:', assignedVideos.length);
+        console.log('🔍 Subject videos:', subjectVideos.length);
+        
+        // Filter videos that are relevant to this student and class:
         const purchasedVideoIds = purchases.map((p: VideoPurchaseDocument) => p.videoId);
         
         const relevantVideos = allVideos.filter(video => {
-          // Always show purchased videos
+          // Always show purchased videos (student owns them)
           if (purchasedVideoIds.includes(video.id)) {
             return true;
           }
           
-          // Show videos assigned to this class
+          // Show videos assigned to this specific class (highest priority)
           if (video.assignedClassIds?.includes(classId)) {
             return true;
           }
           
-          // Show public videos of the same subject
+          // Show public videos of the same subject (additional content)
           if (video.visibility === 'public' && video.subjectId === classData.subjectId) {
             return true;
           }
