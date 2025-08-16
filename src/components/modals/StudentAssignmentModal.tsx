@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { Button, Input } from '@/components/ui';
 import { VideoFirestoreService } from '@/apiservices/videoFirestoreService';
-import { StudentFirestoreService, StudentListItem } from '@/apiservices/studentFirestoreService';
+import { StudentFirestoreService, EnhancedStudentListItem } from '@/apiservices/studentFirestoreService';
 import { VideoDisplayData } from '@/models/videoSchema';
 
 interface StudentAssignmentModalProps {
@@ -33,9 +33,12 @@ export default function StudentAssignmentModal({
 }: StudentAssignmentModalProps) {
   const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
-  const [allStudents, setAllStudents] = useState<StudentListItem[]>([]);
-  const [filteredStudents, setFilteredStudents] = useState<StudentListItem[]>([]);
+  const [allStudents, setAllStudents] = useState<EnhancedStudentListItem[]>([]);
+  const [filteredStudents, setFilteredStudents] = useState<EnhancedStudentListItem[]>([]);
   const [studentSearchTerm, setStudentSearchTerm] = useState('');
+  const [classFilter, setClassFilter] = useState<string[]>([]);
+  const [enrollmentStatusFilter, setEnrollmentStatusFilter] = useState<string>('Active');
+  const [viewMode, setViewMode] = useState<'list' | 'grouped'>('list');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,12 +52,12 @@ export default function StudentAssignmentModal({
     }
   }, [video]);
 
-  // Load all students
+  // Load all students with enrollments
   useEffect(() => {
     const loadStudents = async () => {
       setLoading(true);
       try {
-        const students = await StudentFirestoreService.getAllStudents();
+        const students = await StudentFirestoreService.getAllStudentsWithEnrollments();
         setAllStudents(students);
         setFilteredStudents(students);
       } catch (err: any) {
@@ -70,9 +73,23 @@ export default function StudentAssignmentModal({
     }
   }, [isOpen]);
 
-  // Filter students based on search term and selected classes
+  // Filter students based on search term, class filter, and enrollment status
   useEffect(() => {
     let filtered = allStudents;
+
+    // Filter by enrollment status
+    if (enrollmentStatusFilter !== 'All') {
+      filtered = filtered.filter(student => 
+        student.enrolledClasses.some(enrollment => enrollment.status === enrollmentStatusFilter)
+      );
+    }
+
+    // Filter by selected classes
+    if (classFilter.length > 0) {
+      filtered = filtered.filter(student => 
+        student.enrolledClasses.some(enrollment => classFilter.includes(enrollment.classId))
+      );
+    }
 
     // Filter by search term
     if (studentSearchTerm) {
@@ -80,17 +97,16 @@ export default function StudentAssignmentModal({
       filtered = filtered.filter(student => 
         student.name.toLowerCase().includes(searchLower) ||
         student.email.toLowerCase().includes(searchLower) ||
-        student.id.toLowerCase().includes(searchLower)
+        student.id.toLowerCase().includes(searchLower) ||
+        student.enrolledClasses.some(enrollment => 
+          enrollment.className.toLowerCase().includes(searchLower) ||
+          enrollment.subject.toLowerCase().includes(searchLower)
+        )
       );
     }
 
-    // Note: Since StudentListItem doesn't have enrolledClasses, 
-    // we can't filter by selected classes here. 
-    // This would need to be implemented by extending the StudentListItem interface
-    // or calling a different service method that returns more complete data.
-
     setFilteredStudents(filtered);
-  }, [allStudents, studentSearchTerm, selectedClassIds]);
+  }, [allStudents, studentSearchTerm, classFilter, enrollmentStatusFilter]);
 
   const handleClassSelection = (classId: string) => {
     setSelectedClassIds(prev => 
@@ -98,6 +114,57 @@ export default function StudentAssignmentModal({
         ? prev.filter(id => id !== classId)
         : [...prev, classId]
     );
+  };
+
+  const handleClassFilterToggle = (classId: string) => {
+    setClassFilter(prev => 
+      prev.includes(classId)
+        ? prev.filter(id => id !== classId)
+        : [...prev, classId]
+    );
+  };
+
+  const handleSelectStudentsFromClass = (classId: string) => {
+    const studentsInClass = filteredStudents.filter(student =>
+      student.enrolledClasses.some(enrollment => 
+        enrollment.classId === classId && enrollment.status === 'Active'
+      )
+    ).map(student => student.id);
+
+    setSelectedStudentIds(prev => {
+      const newIds = [...prev];
+      studentsInClass.forEach(id => {
+        if (!newIds.includes(id)) {
+          newIds.push(id);
+        }
+      });
+      return newIds;
+    });
+  };
+
+  const getStudentsByClass = () => {
+    const groupedStudents: Record<string, EnhancedStudentListItem[]> = {};
+    
+    filteredStudents.forEach(student => {
+      student.enrolledClasses.forEach(enrollment => {
+        if (enrollment.status === 'Active') {
+          if (!groupedStudents[enrollment.classId]) {
+            groupedStudents[enrollment.classId] = [];
+          }
+          if (!groupedStudents[enrollment.classId].some(s => s.id === student.id)) {
+            groupedStudents[enrollment.classId].push(student);
+          }
+        }
+      });
+    });
+    
+    return groupedStudents;
+  };
+
+  const clearAllFilters = () => {
+    setClassFilter([]);
+    setEnrollmentStatusFilter('Active');
+    setStudentSearchTerm('');
   };
 
   const handleStudentSelection = (studentId: string) => {
@@ -157,6 +224,9 @@ export default function StudentAssignmentModal({
     if (!saving) {
       setError(null);
       setStudentSearchTerm('');
+      setClassFilter([]);
+      setEnrollmentStatusFilter('Active');
+      setViewMode('list');
       onClose();
     }
   };
@@ -235,6 +305,113 @@ export default function StudentAssignmentModal({
             </button>
           </div>
 
+          {/* Individual Student Filters */}
+          {assignmentType === 'students' && (
+            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100">Student Filters</h4>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={clearAllFilters}
+                  className="text-xs"
+                >
+                  Clear Filters
+                </Button>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Class Filter */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Filter by Class
+                  </label>
+                  <select
+                    multiple
+                    value={classFilter}
+                    onChange={(e) => {
+                      const selectedOptions = Array.from(e.target.selectedOptions, option => option.value);
+                      setClassFilter(selectedOptions);
+                    }}
+                    className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm h-20"
+                  >
+                    {availableClasses.map(cls => (
+                      <option key={cls.id} value={cls.id}>
+                        {cls.name}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Hold Ctrl/Cmd to select multiple
+                  </p>
+                </div>
+
+                {/* Enrollment Status Filter */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Enrollment Status
+                  </label>
+                  <select
+                    value={enrollmentStatusFilter}
+                    onChange={(e) => setEnrollmentStatusFilter(e.target.value)}
+                    className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                  >
+                    <option value="All">All Status</option>
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Dropped">Dropped</option>
+                  </select>
+                </div>
+
+                {/* View Mode */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    View Mode
+                  </label>
+                  <select
+                    value={viewMode}
+                    onChange={(e) => setViewMode(e.target.value as 'list' | 'grouped')}
+                    className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                  >
+                    <option value="list">List View</option>
+                    <option value="grouped">Grouped by Class</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Active Filters Display */}
+              {(classFilter.length > 0 || enrollmentStatusFilter !== 'Active') && (
+                <div className="flex flex-wrap gap-2">
+                  {classFilter.map(classId => {
+                    const className = availableClasses.find(cls => cls.id === classId)?.name;
+                    return (
+                      <span
+                        key={classId}
+                        className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200"
+                      >
+                        Class: {className}
+                        <button
+                          type="button"
+                          onClick={() => handleClassFilterToggle(classId)}
+                          className="ml-1 hover:text-blue-900 dark:hover:text-blue-100"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    );
+                  })}
+                  {enrollmentStatusFilter !== 'Active' && (
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-100 dark:bg-purple-800 text-purple-800 dark:text-purple-200">
+                      Status: {enrollmentStatusFilter}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Class Assignment */}
             <div className={assignmentType === 'classes' ? '' : 'opacity-50'}>
@@ -278,9 +455,23 @@ export default function StudentAssignmentModal({
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                   Individual Students
                 </h3>
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                  {selectedStudentIds.length} selected
-                </span>
+                <div className="flex items-center space-x-4">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                    {filteredStudents.length} shown, {selectedStudentIds.length} selected
+                  </span>
+                  {classFilter.length === 1 && assignmentType === 'students' && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleSelectStudentsFromClass(classFilter[0])}
+                      disabled={saving}
+                      className="text-xs"
+                    >
+                      Select All from This Class
+                    </Button>
+                  )}
+                </div>
               </div>
 
               {/* Student Search */}
@@ -288,7 +479,7 @@ export default function StudentAssignmentModal({
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
                   type="text"
-                  placeholder="Search students..."
+                  placeholder="Search students by name, email, or class..."
                   value={studentSearchTerm}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setStudentSearchTerm(e.target.value)}
                   className="pl-10"
@@ -309,50 +500,140 @@ export default function StudentAssignmentModal({
                   >
                     <CheckCircle className="w-4 h-4 mr-2" />
                     {filteredStudents.every(student => selectedStudentIds.includes(student.id))
-                      ? 'Deselect All'
-                      : 'Select All'
+                      ? 'Deselect All Filtered'
+                      : 'Select All Filtered'
                     } ({filteredStudents.length})
                   </Button>
                 </div>
               )}
 
-              {/* Students List */}
-              <div className="border border-gray-300 dark:border-gray-600 rounded-md p-3 max-h-60 overflow-y-auto">
+              {/* Students List/Grouped View */}
+              <div className="border border-gray-300 dark:border-gray-600 rounded-md max-h-80 overflow-y-auto">
                 {loading ? (
-                  <div className="text-center py-4">
+                  <div className="text-center py-8">
                     <div className="w-6 h-6 border-t-2 border-blue-600 border-solid rounded-full animate-spin mx-auto"></div>
                     <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Loading students...</p>
                   </div>
                 ) : filteredStudents.length === 0 ? (
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {studentSearchTerm ? 'No students found matching your search' : 'No students available'}
-                  </p>
-                ) : (
-                  <div className="space-y-2">
+                  <div className="text-center py-8">
+                    <User className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {studentSearchTerm || classFilter.length > 0 || enrollmentStatusFilter !== 'Active' 
+                        ? 'No students found matching your filters' 
+                        : 'No students available'}
+                    </p>
+                  </div>
+                ) : viewMode === 'list' ? (
+                  // List View
+                  <div className="p-3 space-y-2">
                     {filteredStudents.map(student => (
-                      <label key={student.id} className="flex items-center p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700">
+                      <label key={student.id} className="flex items-start p-3 rounded hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={selectedStudentIds.includes(student.id)}
                           onChange={() => handleStudentSelection(student.id)}
                           disabled={saving || assignmentType !== 'students'}
-                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mt-1 flex-shrink-0"
                         />
-                        <div className="ml-3 flex items-center space-x-3 flex-1">
-                          <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center">
-                            <User className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                        <div className="ml-3 flex-1 min-w-0">
+                          <div className="flex items-center space-x-3 mb-2">
+                            <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center flex-shrink-0">
+                              <User className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                {student.name}
+                              </p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                {student.email}
+                              </p>
+                            </div>
+                            <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full flex-shrink-0 ${
+                              student.status === 'Active' 
+                                ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300'
+                                : student.status === 'Suspended'
+                                ? 'bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-300'
+                                : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
+                            }`}>
+                              {student.status}
+                            </span>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                              {student.name}
-                            </p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                              {student.id} • {student.email}
-                            </p>
-                          </div>
+                          {/* Enrolled Classes */}
+                          {student.enrolledClasses.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {student.enrolledClasses
+                                .filter(enrollment => enrollment.status === 'Active')
+                                .slice(0, 3)
+                                .map(enrollment => (
+                                <span
+                                  key={enrollment.classId}
+                                  className="inline-flex px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded"
+                                >
+                                  {enrollment.className}
+                                </span>
+                              ))}
+                              {student.enrolledClasses.filter(e => e.status === 'Active').length > 3 && (
+                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                  +{student.enrolledClasses.filter(e => e.status === 'Active').length - 3} more
+                                </span>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </label>
                     ))}
+                  </div>
+                ) : (
+                  // Grouped View
+                  <div className="p-3 space-y-4">
+                    {Object.entries(getStudentsByClass()).map(([classId, classStudents]) => {
+                      const className = availableClasses.find(cls => cls.id === classId)?.name || 'Unknown Class';
+                      return (
+                        <div key={classId} className="border border-gray-200 dark:border-gray-600 rounded-md">
+                          <div className="bg-gray-50 dark:bg-gray-700 px-3 py-2 flex items-center justify-between">
+                            <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+                              {className} ({classStudents.length} students)
+                            </h4>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleSelectStudentsFromClass(classId)}
+                              disabled={saving}
+                              className="text-xs"
+                            >
+                              Select All
+                            </Button>
+                          </div>
+                          <div className="p-2 space-y-1">
+                            {classStudents.map(student => (
+                              <label key={student.id} className="flex items-center p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedStudentIds.includes(student.id)}
+                                  onChange={() => handleStudentSelection(student.id)}
+                                  disabled={saving || assignmentType !== 'students'}
+                                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                />
+                                <div className="ml-3 flex items-center space-x-2 flex-1 min-w-0">
+                                  <div className="w-6 h-6 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center">
+                                    <User className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                      {student.name}
+                                    </p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                      {student.email}
+                                    </p>
+                                  </div>
+                                </div>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -361,28 +642,55 @@ export default function StudentAssignmentModal({
 
           {/* Summary */}
           <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-            <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
+            <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
               Assignment Summary
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="text-gray-600 dark:text-gray-400">Classes assigned:</span>
-                <span className="ml-2 font-medium text-gray-900 dark:text-white">
-                  {selectedClassIds.length}
-                </span>
+              <div className="space-y-2">
+                <div>
+                  <span className="text-gray-600 dark:text-gray-400">Classes assigned:</span>
+                  <span className="ml-2 font-medium text-gray-900 dark:text-white">
+                    {selectedClassIds.length}
+                  </span>
+                </div>
                 {selectedClassIds.length > 0 && (
-                  <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  <div className="text-xs text-gray-500 dark:text-gray-400 pl-2 border-l-2 border-gray-200 dark:border-gray-600">
                     {selectedClassIds.map(id => getClassNameById(id)).join(', ')}
                   </div>
                 )}
               </div>
-              <div>
-                <span className="text-gray-600 dark:text-gray-400">Individual students:</span>
-                <span className="ml-2 font-medium text-gray-900 dark:text-white">
-                  {selectedStudentIds.length}
-                </span>
+              <div className="space-y-2">
+                <div>
+                  <span className="text-gray-600 dark:text-gray-400">Individual students:</span>
+                  <span className="ml-2 font-medium text-gray-900 dark:text-white">
+                    {selectedStudentIds.length}
+                  </span>
+                </div>
+                {assignmentType === 'students' && filteredStudents.length !== allStudents.length && (
+                  <div className="text-xs text-blue-600 dark:text-blue-400">
+                    Filtered: {filteredStudents.length} of {allStudents.length} total students
+                  </div>
+                )}
               </div>
             </div>
+            
+            {/* Active Filters Summary */}
+            {assignmentType === 'students' && (classFilter.length > 0 || enrollmentStatusFilter !== 'Active' || studentSearchTerm) && (
+              <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Active filters:</p>
+                <div className="space-y-1 text-xs text-gray-500 dark:text-gray-400">
+                  {classFilter.length > 0 && (
+                    <div>• Classes: {classFilter.map(id => getClassNameById(id)).join(', ')}</div>
+                  )}
+                  {enrollmentStatusFilter !== 'Active' && (
+                    <div>• Status: {enrollmentStatusFilter}</div>
+                  )}
+                  {studentSearchTerm && (
+                    <div>• Search: "{studentSearchTerm}"</div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Footer */}
