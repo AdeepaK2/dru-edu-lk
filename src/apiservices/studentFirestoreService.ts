@@ -24,8 +24,67 @@ export interface StudentListItem {
   status: 'Active' | 'Suspended' | 'Inactive';
 }
 
+export interface EnhancedStudentListItem extends StudentListItem {
+  enrolledClasses: Array<{
+    classId: string;
+    className: string;
+    subject: string;
+    status: 'Active' | 'Inactive' | 'Completed' | 'Dropped';
+  }>;
+}
+
 export class StudentFirestoreService {
   private static collectionRef = collection(firestore, COLLECTION_NAME);
+
+  /**
+   * Get all students with their enrollment information
+   */
+  static async getAllStudentsWithEnrollments(): Promise<EnhancedStudentListItem[]> {
+    try {
+      const q = query(this.collectionRef, orderBy('name', 'asc'));
+      const querySnapshot = await getDocs(q);
+      
+      const students = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        name: doc.data().name,
+        email: doc.data().email,
+        status: doc.data().status,
+      }));
+
+      // Get enrollments for all students
+      const { getEnrollmentsByStudent } = await import('@/services/studentEnrollmentService');
+      
+      const studentsWithEnrollments = await Promise.all(
+        students.map(async (student) => {
+          try {
+            const enrollments = await getEnrollmentsByStudent(student.id);
+            const enrolledClasses = enrollments.map(enrollment => ({
+              classId: enrollment.classId,
+              className: enrollment.className,
+              subject: enrollment.subject,
+              status: enrollment.status
+            }));
+            
+            return {
+              ...student,
+              enrolledClasses
+            } as EnhancedStudentListItem;
+          } catch (error) {
+            console.error(`Error fetching enrollments for student ${student.id}:`, error);
+            return {
+              ...student,
+              enrolledClasses: []
+            } as EnhancedStudentListItem;
+          }
+        })
+      );
+      
+      return studentsWithEnrollments;
+    } catch (error) {
+      console.error('Error fetching students with enrollments:', error);
+      throw new Error(`Failed to fetch students with enrollments: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
 
   /**
    * Get all students
