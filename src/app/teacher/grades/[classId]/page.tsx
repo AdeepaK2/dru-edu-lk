@@ -27,17 +27,21 @@ import { Button, Input } from '@/components/ui';
 import { useTeacherAuth } from '@/hooks/useTeacherAuth';
 import TeacherLayout from '@/components/teacher/TeacherLayout';
 import { StudentDetailModal } from '@/components/teacher/StudentDetailModal';
+import { GradeAnalyticsLoading, StudentListSkeleton } from '@/components/teacher/GradeAnalyticsSkeletons';
 import Link from 'next/link';
 
 // Import services and types
 import { ClassFirestoreService } from '@/apiservices/classFirestoreService';
+import { ClassDocument } from '@/models/classSchema';
 import { 
   GradeAnalyticsService, 
   ClassAnalytics, 
   StudentPerformanceData, 
   PerformanceTrend 
 } from '@/apiservices/gradeAnalyticsService';
-import { ClassDocument } from '@/models/classSchema';
+
+// Import optimized hook
+import { useOptimizedGradeAnalytics } from '@/hooks/useOptimizedGradeAnalytics';
 
 export default function ClassGradeAnalytics() {
   const params = useParams();
@@ -45,13 +49,21 @@ export default function ClassGradeAnalytics() {
   const { teacher } = useTeacherAuth();
   const classId = params.classId as string;
 
+  // Use optimized hook for analytics
+  const {
+    analytics,
+    studentPerformances,
+    loading,
+    error,
+    loadingStudents,
+    loadStudentPerformances,
+    refresh
+  } = useOptimizedGradeAnalytics(classId, teacher?.id);
+
+  // Separate state for class data and other UI state
   const [classData, setClassData] = useState<ClassDocument | null>(null);
-  const [analytics, setAnalytics] = useState<ClassAnalytics | null>(null);
-  const [studentPerformances, setStudentPerformances] = useState<StudentPerformanceData[]>([]);
   const [performanceTrends, setPerformanceTrends] = useState<PerformanceTrend[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadingStudents, setLoadingStudents] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [classLoading, setClassLoading] = useState(true);
   
   // UI state
   const [activeTab, setActiveTab] = useState<'overview' | 'students' | 'trends'>('overview');
@@ -62,16 +74,14 @@ export default function ClassGradeAnalytics() {
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
   const [selectedStudentData, setSelectedStudentData] = useState<StudentPerformanceData | null>(null);
 
-  // Load class data and analytics
+  // Load class data separately (lightweight operation)
   useEffect(() => {
-    const loadClassAnalytics = async () => {
+    const loadClassData = async () => {
       if (!classId || !teacher?.id) return;
 
-      setLoading(true);
-      setError(null);
+      setClassLoading(true);
 
       try {
-        // Load class data
         const classDoc = await ClassFirestoreService.getClassById(classId);
         if (!classDoc) {
           throw new Error('Class not found');
@@ -83,54 +93,25 @@ export default function ClassGradeAnalytics() {
         }
 
         setClassData(classDoc);
-
-        // Load analytics
-        const analyticsData = await GradeAnalyticsService.getClassAnalytics(classId);
-        setAnalytics(analyticsData);
-
-        console.log('✅ Class analytics loaded:', analyticsData);
-
       } catch (err: any) {
-        console.error('Error loading class analytics:', err);
-        setError(err.message || 'Failed to load class analytics');
+        console.error('Error loading class data:', err);
+        // Class loading error will be handled by the main error state
       } finally {
-        setLoading(false);
+        setClassLoading(false);
       }
     };
 
-    loadClassAnalytics();
+    loadClassData();
   }, [classId, teacher?.id]);
 
   // Load additional data based on active tab
   useEffect(() => {
-    if (!analytics || !classId) return;
-
     const loadTabData = async () => {
       try {
         switch (activeTab) {
           case 'students':
-            if (studentPerformances.length === 0) {
-              setLoadingStudents(true);
-              
-              // Get ALL enrolled students, not just top performers and struggling students
-              const studentsInClass = await import('@/apiservices/studentFirestoreService').then(module => 
-                module.StudentFirestoreService.getStudentsByClass(classId)
-              );
-              
-              console.log('📚 Loading students tab - all students in class:', studentsInClass.length);
-              
-              // Load performance data for all enrolled students
-              const performances = await Promise.all(
-                studentsInClass.map((student: any) => 
-                  GradeAnalyticsService.getStudentPerformanceData(student.id, classId)
-                )
-              );
-              
-              console.log('📊 Student performances loaded:', performances.length);
-              console.log('📊 Performance data sample:', performances.slice(0, 2));
-              
-              setStudentPerformances(performances);
-              setLoadingStudents(false);
+            if (studentPerformances.length === 0 && !loadingStudents) {
+              await loadStudentPerformances();
             }
             break;
 
@@ -146,8 +127,10 @@ export default function ClassGradeAnalytics() {
       }
     };
 
-    loadTabData();
-  }, [activeTab, analytics, classId]);
+    if (analytics && classId) {
+      loadTabData();
+    }
+  }, [activeTab, analytics, classId, studentPerformances.length, loadingStudents, loadStudentPerformances]);
 
   // Filter students based on search
   const filteredStudents = studentPerformances.filter(student =>
@@ -231,20 +214,11 @@ export default function ClassGradeAnalytics() {
     document.body.removeChild(link);
   };
 
-  if (loading) {
+  // Loading state - show if class data or analytics are loading
+  if (classLoading || loading) {
     return (
       <TeacherLayout>
-        <div className="space-y-6">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-300 dark:bg-gray-600 rounded w-1/3 mb-4"></div>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="h-24 bg-gray-300 dark:bg-gray-600 rounded"></div>
-              ))}
-            </div>
-            <div className="h-96 bg-gray-300 dark:bg-gray-600 rounded"></div>
-          </div>
-        </div>
+        <GradeAnalyticsLoading />
       </TeacherLayout>
     );
   }
@@ -314,6 +288,9 @@ export default function ClassGradeAnalytics() {
               <Button variant="outline" size="sm" onClick={exportReport}>
                 <Download className="w-4 h-4 mr-2" />
                 Export Report
+              </Button>
+              <Button variant="outline" size="sm" onClick={refresh}>
+                Refresh
               </Button>
             </div>
           </div>
@@ -483,14 +460,7 @@ export default function ClassGradeAnalytics() {
 
                 {/* Students List */}
                 {loadingStudents ? (
-                  <div className="space-y-3">
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="animate-pulse p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
-                        <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-1/3 mb-2"></div>
-                        <div className="h-3 bg-gray-200 dark:bg-gray-600 rounded w-1/2"></div>
-                      </div>
-                    ))}
-                  </div>
+                  <StudentListSkeleton />
                 ) : (
                   <div className="space-y-3">
                     {filteredStudents.map((student) => (

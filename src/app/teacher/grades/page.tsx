@@ -21,13 +21,13 @@ import {
 import { Button, Input } from '@/components/ui';
 import { useTeacherAuth } from '@/hooks/useTeacherAuth';
 import TeacherLayout from '@/components/teacher/TeacherLayout';
+import { ClassCardSkeleton } from '@/components/teacher/GradeAnalyticsSkeletons';
 import Link from 'next/link';
 
-// Import services and types
-import { ClassFirestoreService } from '@/apiservices/classFirestoreService';
-import { GradeAnalyticsService, ClassAnalytics } from '@/apiservices/gradeAnalyticsService';
+// Import optimized hooks
+import { useOptimizedClassList } from '@/hooks/useOptimizedGradeAnalytics';
 import { ClassDocument } from '@/models/classSchema';
-import { FirestoreOptimizer } from '@/utils/teacher-performance';
+import { ClassAnalytics } from '@/apiservices/gradeAnalyticsService';
 
 interface ClassWithAnalytics extends ClassDocument {
   analytics?: ClassAnalytics;
@@ -39,84 +39,9 @@ export default function TeacherGrades() {
   const { teacher } = useTeacherAuth();
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
-  const [classes, setClasses] = useState<ClassWithAnalytics[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadingAnalytics, setLoadingAnalytics] = useState<Record<string, boolean>>({});
-  const [error, setError] = useState<string | null>(null);
-
-  // Load teacher's classes
-  useEffect(() => {
-    const loadClasses = async () => {
-      if (!teacher?.id) return;
-      
-      setLoading(true);
-      setError(null);
-      
-      try {
-        // Get classes assigned to this teacher
-        const teacherClasses = await ClassFirestoreService.getClassesByTeacher(teacher.id);
-        console.log('📚 Loaded teacher classes:', teacherClasses.length);
-
-        // Add student count for each class
-        const classesWithStats = await Promise.all(
-          teacherClasses.map(async (classDoc) => {
-            try {
-              // Use optimized student query
-              const students = await FirestoreOptimizer.getStudentsByClassOptimized(classDoc.id);
-              const studentCount = students.length;
-              
-              return {
-                ...classDoc,
-                studentCount,
-                recentActivity: `${studentCount} students enrolled`
-              } as ClassWithAnalytics;
-            } catch (err) {
-              console.error(`Error loading stats for class ${classDoc.id}:`, err);
-              return {
-                ...classDoc,
-                studentCount: classDoc.enrolledStudents || 0,
-                recentActivity: 'No recent activity'
-              } as ClassWithAnalytics;
-            }
-          })
-        );
-
-        setClasses(classesWithStats);
-        
-        // Load analytics for each class in background
-        loadAnalyticsForClasses(classesWithStats);
-        
-      } catch (err: any) {
-        console.error('Error loading classes:', err);
-        setError(err.message || 'Failed to load classes');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadClasses();
-  }, [teacher?.id]);
-
-  // Load analytics for classes
-  const loadAnalyticsForClasses = async (classesToLoad: ClassWithAnalytics[]) => {
-    for (const classDoc of classesToLoad) {
-      setLoadingAnalytics(prev => ({ ...prev, [classDoc.id]: true }));
-      
-      try {
-        const analytics = await GradeAnalyticsService.getClassAnalytics(classDoc.id);
-        
-        setClasses(prev => prev.map(c => 
-          c.id === classDoc.id 
-            ? { ...c, analytics }
-            : c
-        ));
-      } catch (error) {
-        console.error(`Error loading analytics for class ${classDoc.id}:`, error);
-      } finally {
-        setLoadingAnalytics(prev => ({ ...prev, [classDoc.id]: false }));
-      }
-    }
-  };
+  
+  // Use optimized hook
+  const { classes, loading, error, refresh } = useOptimizedClassList(teacher?.id);
 
   // Filter classes based on search term
   const filteredClasses = classes.filter(classDoc =>
@@ -208,6 +133,9 @@ export default function TeacherGrades() {
               <Button variant="outline" size="sm">
                 <Filter className="w-4 h-4 mr-2" />
                 Filter
+              </Button>
+              <Button variant="outline" size="sm" onClick={refresh}>
+                Refresh
               </Button>
             </div>
           </div>
@@ -312,7 +240,13 @@ export default function TeacherGrades() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredClasses.map((classDoc) => (
+            {loading ? (
+              // Show skeleton cards while loading
+              Array.from({ length: 6 }).map((_, i) => (
+                <ClassCardSkeleton key={i} />
+              ))
+            ) : (
+              filteredClasses.map((classDoc) => (
               <div
                 key={classDoc.id}
                 className="bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer"
@@ -338,14 +272,14 @@ export default function TeacherGrades() {
                     </div>
                   </div>
 
-                  {/* Analytics Data */}
-                  {loadingAnalytics[classDoc.id] ? (
+                  {/* Analytics Data - Show loading state for individual classes */}
+                  {!classDoc.analytics ? (
                     <div className="space-y-3 animate-pulse">
                       <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
                       <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
                       <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
                     </div>
-                  ) : classDoc.analytics ? (
+                  ) : (
                     <div className="space-y-4">
                       {/* Key Metrics */}
                       <div className="grid grid-cols-3 gap-3">
@@ -403,7 +337,10 @@ export default function TeacherGrades() {
                         )}
                       </div>
                     </div>
-                  ) : (
+                  )}
+
+                  {/* No data state */}
+                  {!classDoc.analytics && !loading && (
                     <div className="text-center py-4">
                       <BarChart3 className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
                       <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -430,7 +367,8 @@ export default function TeacherGrades() {
                   </div>
                 </div>
               </div>
-            ))}
+            ))
+            )}
           </div>
         )}
 
