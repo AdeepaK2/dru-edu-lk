@@ -754,6 +754,17 @@ export default function TeacherQuestionBankDetail() {
                       </div>
                     </div>
                   ))}
+                  
+                  {/* Add Question Button at the end of list */}
+                  <div className="flex justify-center pt-4">
+                    <Button
+                      onClick={() => handleTabChange('add')}
+                      className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3"
+                    >
+                      <Plus className="w-5 h-5" />
+                      <span>Add Question</span>
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>

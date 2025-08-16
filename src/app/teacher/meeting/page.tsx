@@ -15,7 +15,9 @@ import {
   Video,
   Save,
   X,
-  AlertCircle
+  AlertCircle,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 
 interface TimeSlot {
@@ -60,7 +62,9 @@ export default function TeacherMeetingPage() {
     date: '',
     startTime: '',
     endTime: '',
-    slotDuration: 30
+    slotDuration: 30,
+    isRecurring: false,
+    endDate: ''
   });
 
   // Load teacher's availability on component mount
@@ -135,10 +139,15 @@ export default function TeacherMeetingPage() {
   };
 
   const validateForm = (): string | null => {
-    const { date, startTime, endTime, slotDuration } = formData;
+    const { date, startTime, endTime, slotDuration, isRecurring, endDate } = formData;
 
     if (!date || !startTime || !endTime) {
       return 'Please fill all fields';
+    }
+
+    // Validate recurring end date if recurring is selected
+    if (isRecurring && !endDate) {
+      return 'Please select an end date for recurring availability';
     }
 
     // Validate date is not in the past
@@ -148,6 +157,14 @@ export default function TeacherMeetingPage() {
     
     if (selectedDate < today) {
       return 'Please select a future date';
+    }
+
+    // Validate end date is after start date for recurring
+    if (isRecurring && endDate) {
+      const endDateTime = new Date(endDate);
+      if (endDateTime <= selectedDate) {
+        return 'End date must be after the start date';
+      }
     }
 
     // Validate start time is before end time
@@ -193,36 +210,77 @@ export default function TeacherMeetingPage() {
           isActive: true
         });
       } else {
-        // Create new availability
+        // Create new availability (single or recurring)
         const getDayOfWeek = (dateString: string): "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" | "Saturday" | "Sunday" => {
           const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] as const;
           const date = new Date(dateString);
           return days[date.getDay()];
         };
 
-        const availabilityData = {
-          teacherId: teacher.id,
-          teacherName: teacher.name,
-          teacherSubjects: teacher.subjects || [],
-          date: formData.date,
-          day: getDayOfWeek(formData.date),
-          startTime: formData.startTime,
-          endTime: formData.endTime,
-          slotDuration: formData.slotDuration,
-          isActive: true,
-          meetingLink: 'https://zoom.us/j/92969040081?pwd=WZL2d5mUF6oLqAandkcOlCvpZ2b3N5.1'
-        };
+        if (formData.isRecurring && formData.endDate) {
+          // Create recurring weekly slots
+          const startDate = new Date(formData.date);
+          const endDate = new Date(formData.endDate);
+          const currentDate = new Date(startDate);
+          
+          while (currentDate <= endDate) {
+            const dateString = currentDate.toISOString().split('T')[0];
+            
+            const availabilityData = {
+              teacherId: teacher.id,
+              teacherName: teacher.name,
+              teacherSubjects: teacher.subjects || [],
+              date: dateString,
+              day: getDayOfWeek(dateString),
+              startTime: formData.startTime,
+              endTime: formData.endTime,
+              slotDuration: formData.slotDuration,
+              isActive: true,
+              meetingLink: 'https://zoom.us/j/92969040081?pwd=WZL2d5mUF6oLqAandkcOlCvpZ2b3N5.1',
+              isRecurring: true
+            };
 
-        const availabilityId = await TeacherAvailabilityService.createAvailability(availabilityData);
-        
-        // Generate and create time slots
-        const availabilityWithId = { 
-          ...availabilityData, 
-          id: availabilityId,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        };
-        await TimeSlotService.createTimeSlotsFromAvailability(availabilityWithId);
+            const availabilityId = await TeacherAvailabilityService.createAvailability(availabilityData);
+            
+            // Generate and create time slots for this date
+            const availabilityWithId = { 
+              ...availabilityData, 
+              id: availabilityId,
+              createdAt: new Date(),
+              updatedAt: new Date()
+            };
+            await TimeSlotService.createTimeSlotsFromAvailability(availabilityWithId);
+            
+            // Move to next week (add 7 days)
+            currentDate.setDate(currentDate.getDate() + 7);
+          }
+        } else {
+          // Create single availability slot
+          const availabilityData = {
+            teacherId: teacher.id,
+            teacherName: teacher.name,
+            teacherSubjects: teacher.subjects || [],
+            date: formData.date,
+            day: getDayOfWeek(formData.date),
+            startTime: formData.startTime,
+            endTime: formData.endTime,
+            slotDuration: formData.slotDuration,
+            isActive: true,
+            meetingLink: 'https://zoom.us/j/92969040081?pwd=WZL2d5mUF6oLqAandkcOlCvpZ2b3N5.1',
+            isRecurring: false
+          };
+
+          const availabilityId = await TeacherAvailabilityService.createAvailability(availabilityData);
+          
+          // Generate and create time slots
+          const availabilityWithId = { 
+            ...availabilityData, 
+            id: availabilityId,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          };
+          await TimeSlotService.createTimeSlotsFromAvailability(availabilityWithId);
+        }
       }
 
       // Reload availability
@@ -233,7 +291,9 @@ export default function TeacherMeetingPage() {
         date: '',
         startTime: '',
         endTime: '',
-        slotDuration: 30
+        slotDuration: 30,
+        isRecurring: false,
+        endDate: ''
       });
       setShowAddForm(false);
       setEditingSlot(null);
@@ -250,7 +310,9 @@ export default function TeacherMeetingPage() {
       date: slot.date,
       startTime: slot.startTime,
       endTime: slot.endTime,
-      slotDuration: slot.slotDuration
+      slotDuration: slot.slotDuration,
+      isRecurring: false,
+      endDate: ''
     });
     setEditingSlot(slot);
     setShowAddForm(true);
@@ -337,6 +399,72 @@ export default function TeacherMeetingPage() {
       day: 'numeric',
       year: 'numeric'
     });
+  };
+
+  // Helper functions for week organization
+  const getWeekStartDate = (date: Date) => {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() - day;
+    return new Date(d.setDate(diff));
+  };
+
+  const getWeekEndDate = (date: Date) => {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() - day + 6;
+    return new Date(d.setDate(diff));
+  };
+
+  const isCurrentWeek = (date: string) => {
+    const now = new Date();
+    const weekStart = getWeekStartDate(now);
+    const weekEnd = getWeekEndDate(now);
+    const slotDate = new Date(date);
+    
+    return slotDate >= weekStart && slotDate <= weekEnd;
+  };
+
+  const formatWeekRange = (startDate: Date, endDate: Date) => {
+    return `${startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+  };
+
+  const groupSlotsByWeek = (slots: AvailabilitySlot[]) => {
+    const now = new Date();
+    const futureSlots = slots.filter(slot => {
+      const slotDate = new Date(slot.date);
+      return slotDate >= new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    });
+
+    const currentWeekSlots: AvailabilitySlot[] = [];
+    const upcomingWeeks: { [key: string]: AvailabilitySlot[] } = {};
+
+    futureSlots.forEach(slot => {
+      if (isCurrentWeek(slot.date)) {
+        currentWeekSlots.push(slot);
+      } else {
+        const slotDate = new Date(slot.date);
+        const weekStart = getWeekStartDate(slotDate);
+        const weekEnd = getWeekEndDate(slotDate);
+        const weekKey = formatWeekRange(weekStart, weekEnd);
+        
+        if (!upcomingWeeks[weekKey]) {
+          upcomingWeeks[weekKey] = [];
+        }
+        upcomingWeeks[weekKey].push(slot);
+      }
+    });
+
+    return { currentWeekSlots, upcomingWeeks };
+  };
+
+  const [expandedWeeks, setExpandedWeeks] = useState<{[key: string]: boolean}>({});
+
+  const toggleWeek = (weekKey: string) => {
+    setExpandedWeeks(prev => ({
+      ...prev,
+      [weekKey]: !prev[weekKey]
+    }));
   };
 
   // Show loading spinner while authenticating or loading data
@@ -442,7 +570,9 @@ export default function TeacherMeetingPage() {
                           date: '',
                           startTime: '',
                           endTime: '',
-                          slotDuration: 30
+                          slotDuration: 30,
+                          isRecurring: false,
+                          endDate: ''
                         });
                       }}
                     >
@@ -513,6 +643,62 @@ export default function TeacherMeetingPage() {
                         ))}
                       </select>
                     </div>
+
+                    {/* Recurring Option */}
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                        Schedule Type
+                      </label>
+                      <div className="space-y-3">
+                        <div className="flex items-center">
+                          <input
+                            type="radio"
+                            id="one-time"
+                            name="scheduleType"
+                            checked={!formData.isRecurring}
+                            onChange={() => setFormData({ ...formData, isRecurring: false, endDate: '' })}
+                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                          />
+                          <label htmlFor="one-time" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                            One-time availability
+                          </label>
+                        </div>
+                        
+                        <div className="flex items-center">
+                          <input
+                            type="radio"
+                            id="recurring"
+                            name="scheduleType"
+                            checked={formData.isRecurring}
+                            onChange={() => setFormData({ ...formData, isRecurring: true })}
+                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                          />
+                          <label htmlFor="recurring" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                            Recurring weekly
+                          </label>
+                        </div>
+                        
+                        {/* End Date field - only show when recurring is selected */}
+                        {formData.isRecurring && (
+                          <div className="ml-6 mt-3">
+                            <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
+                              Recurring until
+                            </label>
+                            <input
+                              type="date"
+                              value={formData.endDate}
+                              min={formData.date || new Date().toISOString().split('T')[0]}
+                              onChange={(e) => {
+                                setFormData({ ...formData, endDate: e.target.value });
+                                setError('');
+                              }}
+                              className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                              placeholder="Select end date"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
                   <div className="mt-4 flex justify-end space-x-2">
@@ -526,7 +712,9 @@ export default function TeacherMeetingPage() {
                           date: '',
                           startTime: '',
                           endTime: '',
-                          slotDuration: 30
+                          slotDuration: 30,
+                          isRecurring: false,
+                          endDate: ''
                         });
                       }}
                       disabled={saving}
@@ -546,62 +734,150 @@ export default function TeacherMeetingPage() {
 
               {/* Availability List */}
               <div className="space-y-4">
-                {availabilitySlots.filter(slot => {
-                  // Only show current and future availability slots
-                  const now = new Date();
-                  const slotDate = new Date(slot.date);
-                  return slotDate >= new Date(now.getFullYear(), now.getMonth(), now.getDate());
-                }).length === 0 ? (
-                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                    <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p>No upcoming availability slots</p>
-                  </div>
-                ) : (
-                  availabilitySlots
-                    .filter(slot => {
-                      // Only show current and future availability slots
-                      const now = new Date();
-                      const slotDate = new Date(slot.date);
-                      return slotDate >= new Date(now.getFullYear(), now.getMonth(), now.getDate());
-                    })
-                    .map((slot) => (
-                    <div
-                      key={slot.id}
-                      className="p-4 border border-gray-200 dark:border-gray-600 rounded-lg"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium text-gray-900 dark:text-white">
-                            {formatDate(slot.date)}
-                          </h4>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                            {slot.startTime} - {slot.endTime} ({slot.slotDuration} min slots)
-                          </p>
-                          <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                            {generateTimeSlots(slot).length} slots available
-                          </p>
-                        </div>
-                        <div className="flex space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditSlot(slot)}
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDeleteSlot(slot.id)}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
+                {(() => {
+                  const { currentWeekSlots, upcomingWeeks } = groupSlotsByWeek(availabilitySlots);
+                  const hasAnySlots = currentWeekSlots.length > 0 || Object.keys(upcomingWeeks).length > 0;
+
+                  if (!hasAnySlots) {
+                    return (
+                      <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                        <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <p>No upcoming availability slots</p>
                       </div>
-                    </div>
-                  ))
-                )}
+                    );
+                  }
+
+                  return (
+                    <>
+                      {/* Current Week Section */}
+                      {currentWeekSlots.length > 0 && (
+                        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-700">
+                          <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-4 flex items-center">
+                            <Calendar className="w-5 h-5 mr-2" />
+                            Current Week
+                          </h3>
+                          <div className="space-y-3">
+                            {currentWeekSlots.map((slot) => (
+                              <div
+                                key={slot.id}
+                                className="p-3 bg-white dark:bg-gray-800 border border-blue-200 dark:border-blue-600 rounded-lg"
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <h4 className="font-medium text-gray-900 dark:text-white">
+                                      {formatDate(slot.date)}
+                                    </h4>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                                      {slot.startTime} - {slot.endTime} ({slot.slotDuration} min slots)
+                                    </p>
+                                    <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                                      {generateTimeSlots(slot).length} slots available
+                                    </p>
+                                  </div>
+                                  <div className="flex space-x-2">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleEditSlot(slot)}
+                                    >
+                                      <Edit className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleDeleteSlot(slot.id)}
+                                      className="text-red-600 hover:text-red-700"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Upcoming Weeks Sections */}
+                      {Object.keys(upcomingWeeks).length > 0 && (
+                        <div className="space-y-3">
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                            Upcoming Weeks
+                          </h3>
+                          {Object.entries(upcomingWeeks).map(([weekRange, slots]) => (
+                            <div
+                              key={weekRange}
+                              className="border border-gray-200 dark:border-gray-600 rounded-lg"
+                            >
+                              <button
+                                onClick={() => toggleWeek(weekRange)}
+                                className="w-full p-4 flex items-center justify-between bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-t-lg transition-colors"
+                              >
+                                <div className="flex items-center">
+                                  {expandedWeeks[weekRange] ? (
+                                    <ChevronDown className="w-5 h-5 mr-2 text-gray-500" />
+                                  ) : (
+                                    <ChevronRight className="w-5 h-5 mr-2 text-gray-500" />
+                                  )}
+                                  <span className="font-medium text-gray-900 dark:text-white">
+                                    {weekRange}
+                                  </span>
+                                </div>
+                                <span className="text-sm text-gray-500 dark:text-gray-400">
+                                  {slots.length} slot{slots.length !== 1 ? 's' : ''}
+                                </span>
+                              </button>
+                              
+                              {expandedWeeks[weekRange] && (
+                                <div className="p-4 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 rounded-b-lg">
+                                  <div className="space-y-3">
+                                    {slots.map((slot) => (
+                                      <div
+                                        key={slot.id}
+                                        className="p-3 border border-gray-200 dark:border-gray-600 rounded-lg"
+                                      >
+                                        <div className="flex items-center justify-between">
+                                          <div>
+                                            <h4 className="font-medium text-gray-900 dark:text-white">
+                                              {formatDate(slot.date)}
+                                            </h4>
+                                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                                              {slot.startTime} - {slot.endTime} ({slot.slotDuration} min slots)
+                                            </p>
+                                            <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                                              {generateTimeSlots(slot).length} slots available
+                                            </p>
+                                          </div>
+                                          <div className="flex space-x-2">
+                                            <Button
+                                              variant="outline"
+                                              size="sm"
+                                              onClick={() => handleEditSlot(slot)}
+                                            >
+                                              <Edit className="w-4 h-4" />
+                                            </Button>
+                                            <Button
+                                              variant="outline"
+                                              size="sm"
+                                              onClick={() => handleDeleteSlot(slot.id)}
+                                              className="text-red-600 hover:text-red-700"
+                                            >
+                                              <Trash2 className="w-4 h-4" />
+                                            </Button>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             </div>
           </div>
