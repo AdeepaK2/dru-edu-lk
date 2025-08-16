@@ -451,6 +451,82 @@ export default function StudentAssignmentModal({
 
             {/* Individual Student Assignment */}
             <div className={assignmentType === 'students' ? '' : 'opacity-50'}>
+              {/* Selected Students Summary */}
+              {assignmentType === 'students' && selectedStudentIds.length > 0 && (
+                <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-lg border border-indigo-200 dark:border-indigo-700 mb-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-medium text-indigo-900 dark:text-indigo-100">
+                      Selected Students ({selectedStudentIds.length})
+                    </h4>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedStudentIds([])}
+                      className="text-sm text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-200"
+                    >
+                      Clear All
+                    </button>
+                  </div>
+                  
+                  {/* Group selected students by class */}
+                  <div className="space-y-3">
+                    {Object.entries(
+                      selectedStudentIds.reduce((acc, studentId) => {
+                        const student = allStudents.find(s => s.id === studentId);
+                        if (student) {
+                          student.enrolledClasses
+                            .filter(enrollment => enrollment.status === 'Active')
+                            .forEach(enrollment => {
+                              if (!acc[enrollment.className]) {
+                                acc[enrollment.className] = [];
+                              }
+                              if (!acc[enrollment.className].some(s => s.id === student.id)) {
+                                acc[enrollment.className].push(student);
+                              }
+                            });
+                        }
+                        return acc;
+                      }, {} as Record<string, EnhancedStudentListItem[]>)
+                    ).map(([className, students]) => (
+                      <div key={className} className="bg-white dark:bg-gray-800 rounded-md p-3 border border-indigo-200 dark:border-indigo-600">
+                        <div className="flex items-center justify-between mb-2">
+                          <h5 className="font-medium text-gray-900 dark:text-gray-100 text-sm">
+                            {className} ({students.length} student{students.length !== 1 ? 's' : ''})
+                          </h5>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const studentIdsToRemove = students.map(s => s.id);
+                              setSelectedStudentIds(prev => prev.filter(id => !studentIdsToRemove.includes(id)));
+                            }}
+                            className="text-xs text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-200"
+                          >
+                            Remove All
+                          </button>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {students.map(student => (
+                            <span
+                              key={student.id}
+                              className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-100 dark:bg-indigo-700 text-indigo-800 dark:text-indigo-200 text-xs rounded-md"
+                            >
+                              {student.name}
+                              <button
+                                type="button"
+                                onClick={() => handleStudentSelection(student.id)}
+                                className="text-indigo-600 hover:text-indigo-800 dark:text-indigo-300 dark:hover:text-indigo-100 ml-1 font-bold"
+                                title="Remove student"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                   Individual Students
@@ -487,16 +563,95 @@ export default function StudentAssignmentModal({
                 />
               </div>
 
-              {/* Select All Button */}
+              {/* Class Filters & Quick Actions */}
+              {assignmentType === 'students' && (
+                <div className="mb-4 space-y-3">
+                  {/* Class Filter Pills */}
+                  <div className="flex flex-wrap gap-2">
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filter by class:</span>
+                    {availableClasses.map(cls => (
+                      <button
+                        key={cls.id}
+                        type="button"
+                        onClick={() => handleClassFilterToggle(cls.id)}
+                        className={`px-2 py-1 text-xs rounded-full transition-colors ${
+                          classFilter.includes(cls.id)
+                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                            : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                        }`}
+                      >
+                        {cls.name}
+                        {classFilter.includes(cls.id) && <span className="ml-1">×</span>}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Enrollment Status Filter */}
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Status:</span>
+                    <select
+                      value={enrollmentStatusFilter}
+                      onChange={(e) => setEnrollmentStatusFilter(e.target.value)}
+                      className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-800 dark:text-white"
+                      disabled={saving}
+                    >
+                      <option value="All">All Status</option>
+                      <option value="Active">Active</option>
+                      <option value="Inactive">Inactive</option>
+                      <option value="Completed">Completed</option>
+                      <option value="Dropped">Dropped</option>
+                    </select>
+
+                    {/* Clear Filters */}
+                    {(classFilter.length > 0 || studentSearchTerm || enrollmentStatusFilter !== 'Active') && (
+                      <button
+                        type="button"
+                        onClick={clearAllFilters}
+                        className="px-2 py-1 text-xs bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                      >
+                        Clear Filters
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Quick Select Actions */}
+                  {classFilter.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Quick select:</span>
+                      {classFilter.map(classId => {
+                        const className = getClassNameById(classId);
+                        const studentsInClass = filteredStudents.filter(student =>
+                          student.enrolledClasses.some(enrollment => 
+                            enrollment.classId === classId && enrollment.status === 'Active'
+                          )
+                        );
+                        
+                        return (
+                          <button
+                            key={classId}
+                            type="button"
+                            onClick={() => handleSelectStudentsFromClass(classId)}
+                            className="px-2 py-1 text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 rounded-md hover:bg-green-200 dark:hover:bg-green-800 transition-colors"
+                          >
+                            All from {className} ({studentsInClass.length})
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Select All Button & View Mode Toggle */}
               {filteredStudents.length > 0 && assignmentType === 'students' && (
-                <div className="mb-3">
+                <div className="mb-3 flex items-center justify-between gap-3">
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
                     onClick={handleSelectAllStudents}
                     disabled={saving}
-                    className="w-full"
+                    className="flex-1"
                   >
                     <CheckCircle className="w-4 h-4 mr-2" />
                     {filteredStudents.every(student => selectedStudentIds.includes(student.id))
@@ -504,6 +659,34 @@ export default function StudentAssignmentModal({
                       : 'Select All Filtered'
                     } ({filteredStudents.length})
                   </Button>
+                  
+                  {/* View Mode Toggle */}
+                  <div className="flex border border-gray-300 dark:border-gray-600 rounded-md">
+                    <button
+                      type="button"
+                      onClick={() => setViewMode('list')}
+                      className={`px-3 py-2 text-xs transition-colors ${
+                        viewMode === 'list'
+                          ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200'
+                          : 'bg-white text-gray-700 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      }`}
+                      disabled={saving}
+                    >
+                      List
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setViewMode('grouped')}
+                      className={`px-3 py-2 text-xs border-l border-gray-300 dark:border-gray-600 transition-colors ${
+                        viewMode === 'grouped'
+                          ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200'
+                          : 'bg-white text-gray-700 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      }`}
+                      disabled={saving}
+                    >
+                      By Class
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -527,26 +710,40 @@ export default function StudentAssignmentModal({
                   // List View
                   <div className="p-3 space-y-2">
                     {filteredStudents.map(student => (
-                      <label key={student.id} className="flex items-start p-3 rounded hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                      <label key={student.id} className={`flex items-start p-3 rounded-lg cursor-pointer transition-colors border ${
+                        selectedStudentIds.includes(student.id)
+                          ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-700'
+                          : 'hover:bg-gray-50 dark:hover:bg-gray-700 border-gray-200 dark:border-gray-700'
+                      }`}>
                         <input
                           type="checkbox"
                           checked={selectedStudentIds.includes(student.id)}
                           onChange={() => handleStudentSelection(student.id)}
                           disabled={saving || assignmentType !== 'students'}
-                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mt-1 flex-shrink-0"
+                          className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded mt-1 flex-shrink-0"
                         />
                         <div className="ml-3 flex-1 min-w-0">
-                          <div className="flex items-center space-x-3 mb-2">
-                            <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center flex-shrink-0">
-                              <User className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                                {student.name}
-                              </p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                                {student.email}
-                              </p>
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center space-x-3">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                                selectedStudentIds.includes(student.id)
+                                  ? 'bg-indigo-100 dark:bg-indigo-900/40'
+                                  : 'bg-blue-100 dark:bg-blue-900/20'
+                              }`}>
+                                <User className={`w-4 h-4 ${
+                                  selectedStudentIds.includes(student.id)
+                                    ? 'text-indigo-600 dark:text-indigo-400'
+                                    : 'text-blue-600 dark:text-blue-400'
+                                }`} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                  {student.name}
+                                </p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                  {student.email}
+                                </p>
+                              </div>
                             </div>
                             <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full flex-shrink-0 ${
                               student.status === 'Active' 
@@ -558,25 +755,36 @@ export default function StudentAssignmentModal({
                               {student.status}
                             </span>
                           </div>
-                          {/* Enrolled Classes */}
+                          
+                          {/* Enrolled Classes - Enhanced */}
                           {student.enrolledClasses.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mt-2">
-                              {student.enrolledClasses
-                                .filter(enrollment => enrollment.status === 'Active')
-                                .slice(0, 3)
-                                .map(enrollment => (
-                                <span
-                                  key={enrollment.classId}
-                                  className="inline-flex px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded"
-                                >
-                                  {enrollment.className}
-                                </span>
-                              ))}
-                              {student.enrolledClasses.filter(e => e.status === 'Active').length > 3 && (
-                                <span className="text-xs text-gray-500 dark:text-gray-400">
-                                  +{student.enrolledClasses.filter(e => e.status === 'Active').length - 3} more
-                                </span>
-                              )}
+                            <div className="space-y-1">
+                              <p className="text-xs text-gray-600 dark:text-gray-400">
+                                Enrolled in {student.enrolledClasses.filter(e => e.status === 'Active').length} class{student.enrolledClasses.filter(e => e.status === 'Active').length !== 1 ? 'es' : ''}:
+                              </p>
+                              <div className="flex flex-wrap gap-1">
+                                {student.enrolledClasses
+                                  .filter(enrollment => enrollment.status === 'Active')
+                                  .slice(0, 4)
+                                  .map(enrollment => (
+                                  <span
+                                    key={enrollment.classId}
+                                    className={`inline-flex px-2 py-1 text-xs rounded-md ${
+                                      classFilter.includes(enrollment.classId)
+                                        ? 'bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 border border-blue-300 dark:border-blue-600'
+                                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                                    }`}
+                                    title={`${enrollment.className} - ${enrollment.subject}`}
+                                  >
+                                    {enrollment.className}
+                                  </span>
+                                ))}
+                                {student.enrolledClasses.filter(e => e.status === 'Active').length > 4 && (
+                                  <span className="text-xs text-gray-500 dark:text-gray-400 px-2 py-1">
+                                    +{student.enrolledClasses.filter(e => e.status === 'Active').length - 4} more
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           )}
                         </div>
@@ -588,36 +796,62 @@ export default function StudentAssignmentModal({
                   <div className="p-3 space-y-4">
                     {Object.entries(getStudentsByClass()).map(([classId, classStudents]) => {
                       const className = availableClasses.find(cls => cls.id === classId)?.name || 'Unknown Class';
+                      const selectedInClass = classStudents.filter(s => selectedStudentIds.includes(s.id)).length;
+                      
                       return (
-                        <div key={classId} className="border border-gray-200 dark:border-gray-600 rounded-md">
-                          <div className="bg-gray-50 dark:bg-gray-700 px-3 py-2 flex items-center justify-between">
-                            <h4 className="text-sm font-medium text-gray-900 dark:text-white">
-                              {className} ({classStudents.length} students)
-                            </h4>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleSelectStudentsFromClass(classId)}
-                              disabled={saving}
-                              className="text-xs"
-                            >
-                              Select All
-                            </Button>
+                        <div key={classId} className="border border-gray-200 dark:border-gray-600 rounded-lg">
+                          <div className="bg-gray-50 dark:bg-gray-700 px-4 py-3 flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+                              <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+                                {className}
+                              </h4>
+                              <span className="text-xs text-gray-500 dark:text-gray-400">
+                                ({classStudents.length} student{classStudents.length !== 1 ? 's' : ''})
+                              </span>
+                              {selectedInClass > 0 && (
+                                <span className="px-2 py-1 text-xs bg-indigo-100 dark:bg-indigo-800 text-indigo-800 dark:text-indigo-200 rounded-full">
+                                  {selectedInClass} selected
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleSelectStudentsFromClass(classId)}
+                                disabled={saving}
+                                className="text-xs"
+                              >
+                                {selectedInClass === classStudents.length ? 'Deselect All' : 'Select All'}
+                              </Button>
+                            </div>
                           </div>
-                          <div className="p-2 space-y-1">
+                          <div className="p-3 space-y-2">
                             {classStudents.map(student => (
-                              <label key={student.id} className="flex items-center p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer">
+                              <label key={student.id} className={`flex items-center p-2 rounded cursor-pointer transition-colors ${
+                                selectedStudentIds.includes(student.id)
+                                  ? 'bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700'
+                                  : 'hover:bg-gray-50 dark:hover:bg-gray-600'
+                              }`}>
                                 <input
                                   type="checkbox"
                                   checked={selectedStudentIds.includes(student.id)}
                                   onChange={() => handleStudentSelection(student.id)}
                                   disabled={saving || assignmentType !== 'students'}
-                                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                                 />
-                                <div className="ml-3 flex items-center space-x-2 flex-1 min-w-0">
-                                  <div className="w-6 h-6 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center">
-                                    <User className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                                <div className="ml-3 flex items-center space-x-3 flex-1 min-w-0">
+                                  <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                                    selectedStudentIds.includes(student.id)
+                                      ? 'bg-indigo-100 dark:bg-indigo-900/40'
+                                      : 'bg-blue-100 dark:bg-blue-900/20'
+                                  }`}>
+                                    <User className={`w-3 h-3 ${
+                                      selectedStudentIds.includes(student.id)
+                                        ? 'text-indigo-600 dark:text-indigo-400'
+                                        : 'text-blue-600 dark:text-blue-400'
+                                    }`} />
                                   </div>
                                   <div className="flex-1 min-w-0">
                                     <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
@@ -627,6 +861,15 @@ export default function StudentAssignmentModal({
                                       {student.email}
                                     </p>
                                   </div>
+                                  <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                                    student.status === 'Active' 
+                                      ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300'
+                                      : student.status === 'Suspended'
+                                      ? 'bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-300'
+                                      : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
+                                  }`}>
+                                    {student.status}
+                                  </span>
                                 </div>
                               </label>
                             ))}
