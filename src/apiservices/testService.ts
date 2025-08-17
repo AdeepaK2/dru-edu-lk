@@ -33,6 +33,9 @@ import {
   AttemptStatus
 } from '@/models/testSchema';
 import { Question, MCQQuestion, EssayQuestion } from '@/models/questionBankSchema';
+import { MailService } from './mailService';
+import { StudentFirestoreService } from './studentFirestoreService';
+import { getEnrollmentsByClass } from '../services/studentEnrollmentService';
 
 export class TestService {
   private static readonly COLLECTIONS = {
@@ -94,11 +97,13 @@ export class TestService {
       console.log('✅ Test created successfully with ID:', docRef.id);
       
       // Send email notifications to students and parents
+      console.log('🔄 Starting email notification process...');
       try {
         await this.sendTestCreationNotifications(docRef.id, cleanedTestData);
+        console.log('✅ Email notifications completed successfully');
       } catch (notificationError) {
         // Don't fail test creation if notifications fail
-        console.warn('⚠️ Failed to send test notifications (test still created successfully):', notificationError);
+        console.error('⚠️ Failed to send test notifications (test still created successfully):', notificationError);
       }
       
       return docRef.id;
@@ -996,11 +1001,6 @@ export class TestService {
     try {
       console.log('📧 Sending test creation notifications for test:', testId);
       
-      // Import MailService and StudentFirestoreService
-      const { MailService } = await import('./mailService');
-      const { StudentFirestoreService } = await import('./studentFirestoreService');
-      const { getEnrollmentsByClass } = await import('../services/studentEnrollmentService');
-      
       // Get all students who need to be notified
       const studentsToNotify = new Set<{
         studentId: string;
@@ -1013,14 +1013,20 @@ export class TestService {
       
       // Handle class-based assignments
       if (testData.classIds && testData.classIds.length > 0) {
+        console.log('📚 Processing class-based assignments for classes:', testData.classIds);
         for (const classId of testData.classIds) {
           try {
+            console.log(`🔍 Loading enrollments for class: ${classId}`);
             const enrollments = await getEnrollmentsByClass(classId);
+            console.log(`📊 Found ${enrollments.length} total enrollments for class ${classId}`);
+            
             const activeEnrollments = enrollments.filter(enrollment => enrollment.status === 'Active');
+            console.log(`✅ Found ${activeEnrollments.length} active enrollments for class ${classId}`);
             
             for (const enrollment of activeEnrollments) {
               // Get student details to access parent information
               try {
+                console.log(`👤 Loading student details for: ${enrollment.studentId} (${enrollment.studentName})`);
                 const studentDoc = await StudentFirestoreService.getStudentById(enrollment.studentId);
                 if (studentDoc && studentDoc.parent) {
                   studentsToNotify.add({
@@ -1031,17 +1037,20 @@ export class TestService {
                     parentEmail: studentDoc.parent.email,
                     className: enrollment.className
                   });
+                  console.log(`✅ Added student ${enrollment.studentName} to notification list`);
                 } else {
-                  console.warn(`⚠️ Missing parent info for student ${enrollment.studentId}`);
+                  console.warn(`⚠️ Missing parent info for student ${enrollment.studentId} (${enrollment.studentName})`);
                 }
               } catch (studentError) {
-                console.warn(`⚠️ Could not load student details for ${enrollment.studentId}:`, studentError);
+                console.error(`❌ Could not load student details for ${enrollment.studentId}:`, studentError);
               }
             }
           } catch (classError) {
-            console.warn(`⚠️ Could not load enrollments for class ${classId}:`, classError);
+            console.error(`❌ Could not load enrollments for class ${classId}:`, classError);
           }
         }
+      } else {
+        console.log('ℹ️ No class-based assignments found in test data');
       }
       
       // Handle individual student assignments
@@ -1107,8 +1116,17 @@ export class TestService {
       }
       
       // Send notifications to all students and parents
+      console.log(`📧 Preparing to send emails to ${studentsToNotify.size} students and their parents`);
+      
+      if (studentsToNotify.size === 0) {
+        console.log('ℹ️ No students to notify, skipping email notifications');
+        return;
+      }
+      
       const emailPromises = Array.from(studentsToNotify).map(async (student) => {
         try {
+          console.log(`📤 Sending notifications for student: ${student.studentName} (${student.studentEmail}) and parent: ${student.parentName} (${student.parentEmail})`);
+          
           await MailService.sendTestNotificationEmails(
             student.studentName,
             student.studentEmail,
@@ -1129,25 +1147,42 @@ export class TestService {
             testData.instructions || undefined
           );
           
-          console.log(`✅ Sent notifications to ${student.studentName} and parent`);
+          console.log(`✅ Successfully sent notifications to ${student.studentName} and parent ${student.parentName}`);
+          return { success: true, student: student.studentName };
         } catch (emailError) {
           console.error(`❌ Failed to send notifications for ${student.studentName}:`, emailError);
+          return { success: false, student: student.studentName, error: emailError };
         }
       });
       
       // Wait for all emails to be sent (with timeout)
+      console.log(`⏳ Waiting for all ${emailPromises.length} email promises to complete...`);
       const results = await Promise.allSettled(emailPromises);
       const successful = results.filter(r => r.status === 'fulfilled').length;
       const failed = results.filter(r => r.status === 'rejected').length;
       
-      console.log(`📊 Email notification results:`, {
+      console.log(`📊 Final email notification results:`, {
         successful,
         failed,
-        total: studentsToNotify.size
+        total: studentsToNotify.size,
+        results: results.map(r => r.status === 'fulfilled' ? r.value : { error: r.reason })
       });
       
+      if (successful > 0) {
+        console.log(`🎉 Successfully sent ${successful} email notifications!`);
+      }
+      
+      if (failed > 0) {
+        console.warn(`⚠️ Failed to send ${failed} email notifications`);
+      }
+      
     } catch (error) {
-      console.error('❌ Error in sendTestCreationNotifications:', error);
+      console.error('❌ Critical error in sendTestCreationNotifications:', error);
+      // Log the full error details for debugging
+      if (error instanceof Error) {
+        console.error('❌ Error message:', error.message);
+        console.error('❌ Error stack:', error.stack);
+      }
       throw error;
     }
   }
