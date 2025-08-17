@@ -180,10 +180,36 @@ export default function CreateTestModal({
     
     try {
       setLoadingLessons(true);
-      const lessonsData = await LessonFirestoreService.getLessonsBySubject(subjectId);
+      
+      // Get the selected question bank to determine which subject's lessons to load
+      const selectedBank = questionBanks.find(bank => bank.id === formData.selectedQuestionBankId);
+      
+      if (!selectedBank) {
+        console.warn('Selected question bank not found');
+        setLessons([]);
+        return;
+      }
+      
+      // Use the question bank's subject ID instead of the current class subject
+      // This allows creating tests from different grade/subject question banks
+      const targetSubjectId = selectedBank.subjectId;
+      
+      console.log('📚 Loading lessons for question bank:', {
+        bankName: selectedBank.name,
+        bankSubject: selectedBank.subjectName,
+        targetSubjectId,
+        currentSubjectId: subjectId,
+        isDifferentSubject: targetSubjectId !== subjectId
+      });
+      
+      const lessonsData = await LessonFirestoreService.getLessonsBySubject(targetSubjectId);
+      
+      console.log(`✅ Loaded ${lessonsData.length} lessons from ${selectedBank.subjectName} (${targetSubjectId})`);
       setLessons(lessonsData);
+      
     } catch (error) {
       console.error('Error loading lessons:', error);
+      setLessons([]);
     } finally {
       setLoadingLessons(false);
     }
@@ -1420,6 +1446,36 @@ export default function CreateTestModal({
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                       Select Lessons <span className="text-red-500">*</span>
                     </label>
+                    
+                    {/* Subject Cross-Reference Info */}
+                    {formData.selectedQuestionBankId && (() => {
+                      const selectedBank = questionBanks.find(bank => bank.id === formData.selectedQuestionBankId);
+                      const isDifferentSubject = selectedBank && selectedBank.subjectId !== subjectId;
+                      
+                      if (isDifferentSubject) {
+                        return (
+                          <div className="mb-4 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                            <div className="flex items-start space-x-3">
+                              <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                              <div>
+                                <h4 className="text-sm font-medium text-amber-800 dark:text-amber-300">
+                                  Cross-Subject Question Bank Selected
+                                </h4>
+                                <p className="mt-1 text-sm text-amber-700 dark:text-amber-400">
+                                  You've selected <strong>{selectedBank.name}</strong> from <strong>{selectedBank.subjectName}</strong>. 
+                                  The lessons below are from this question bank's subject, not your current class subject ({subjectName}).
+                                </p>
+                                <p className="mt-2 text-xs text-amber-600 dark:text-amber-500">
+                                  💡 This is useful for placement tests, skill assessments, or cross-grade evaluations.
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
+                    
                     {loadingLessons ? (
                       <div className="text-center py-4">
                         <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
