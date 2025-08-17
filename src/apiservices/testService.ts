@@ -904,6 +904,70 @@ export class TestService {
     }
   }
 
+  // Get count of upcoming unattempted tests for a student (optimized for performance)
+  static async getUpcomingUnattemptedTestCount(studentId: string, classIds: string[]): Promise<number> {
+    try {
+      const now = Timestamp.now();
+      const testsRef = collection(firestore, 'tests');
+      
+      // Query for tests assigned to student's classes and currently available
+      const q = query(
+        testsRef,
+        where('classIds', 'array-contains-any', classIds),
+        where('isActive', '==', true)
+      );
+      
+      const snapshot = await getDocs(q);
+      let upcomingCount = 0;
+      
+      // Get student's attempts to check which tests are unattempted
+      const attemptsRef = collection(firestore, 'studentSubmissions');
+      const attemptsQuery = query(
+        attemptsRef,
+        where('studentId', '==', studentId)
+      );
+      const attemptsSnapshot = await getDocs(attemptsQuery);
+      
+      // Create a set of attempted test IDs for quick lookup
+      const attemptedTestIds = new Set<string>();
+      attemptsSnapshot.forEach((doc) => {
+        const attempt = doc.data();
+        attemptedTestIds.add(attempt.testId);
+      });
+      
+      snapshot.forEach((doc) => {
+        const testData = { id: doc.id, ...doc.data() } as Test;
+        
+        // Skip if test has already been attempted
+        if (attemptedTestIds.has(testData.id)) {
+          return;
+        }
+        
+        // Check if test is upcoming/available based on type
+        let isUpcoming = false;
+        
+        if (testData.type === 'live') {
+          const liveTest = testData as LiveTest;
+          // Live test is upcoming if it hasn't started yet or is currently active
+          isUpcoming = now.seconds <= liveTest.actualEndTime.seconds;
+        } else {
+          const flexTest = testData as FlexibleTest;
+          // Flexible test is upcoming if it's available now or will be available soon
+          isUpcoming = now.seconds <= flexTest.availableTo.seconds;
+        }
+        
+        if (isUpcoming) {
+          upcomingCount++;
+        }
+      });
+      
+      return upcomingCount;
+    } catch (error) {
+      console.error('Error getting upcoming unattempted test count:', error);
+      return 0;
+    }
+  }
+
   // Real-time test monitoring for teachers
   static subscribeToTestUpdates(testId: string, callback: (test: Test | null) => void): () => void {
     const testRef = doc(firestore, 'tests', testId);
