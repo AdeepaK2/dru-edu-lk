@@ -19,7 +19,9 @@ import {
   AlertCircle,
   Clock,
   User,
-  BookOpen
+  BookOpen,
+  ChevronUp,
+  ChevronDown
 } from 'lucide-react';
 import { QuestionBank, Question } from '@/models/questionBankSchema';
 import { questionBankService, questionService } from '@/apiservices/questionBankFirestoreService';
@@ -59,6 +61,10 @@ export default function TeacherQuestionBankDetail() {
 
   // Add this state for showing search help
   const [showSearchHelp, setShowSearchHelp] = useState(false);
+
+  // Scroll enhancement state
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const [isScrolling, setIsScrolling] = useState(false);
 
   // Load question bank and its questions
   useEffect(() => {
@@ -132,6 +138,48 @@ export default function TeacherQuestionBankDetail() {
     
     loadData();
   }, [bankId, teacher?.id, authLoading, authError]);
+
+  // Scroll enhancement functionality
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      setShowScrollTop(scrollTop > 300);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Smooth scroll functions
+  const scrollToTop = () => {
+    setIsScrolling(true);
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+    setTimeout(() => setIsScrolling(false), 1000);
+  };
+
+  const scrollToBottom = () => {
+    setIsScrolling(true);
+    window.scrollTo({
+      top: document.documentElement.scrollHeight,
+      behavior: 'smooth'
+    });
+    setTimeout(() => setIsScrolling(false), 1000);
+  };
+
+  const scrollToQuestions = () => {
+    const questionsSection = document.getElementById('questions-section');
+    if (questionsSection) {
+      setIsScrolling(true);
+      questionsSection.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+      setTimeout(() => setIsScrolling(false), 1000);
+    }
+  };
 
   // Enhanced filter function
   const filteredQuestions = questions.filter(question => {
@@ -500,7 +548,7 @@ export default function TeacherQuestionBankDetail() {
 
           {/* View Questions Tab */}
           {selectedTab === 'view' && (
-            <div className="p-6">
+            <div className="p-6" id="questions-section">
               {/* Filters */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <div className="relative">
@@ -826,24 +874,80 @@ export default function TeacherQuestionBankDetail() {
           )}
         </div>
 
-        {/* Delete Confirmation Dialog */}
-        {showDeleteConfirm && questionToDelete && (
-          <ConfirmDialog
-            isOpen={showDeleteConfirm}
-            onClose={() => {
-              setShowDeleteConfirm(false);
-              setQuestionToDelete(null);
-            }}
-            onConfirm={handleDeleteQuestion}
-            isLoading={actionLoading === 'delete'}
-            title="Delete Question"
-            description={`Are you sure you want to delete "${questionToDelete.title}"? This action cannot be undone.`}
-            confirmText="Delete"
-            cancelText="Cancel"
-            variant="danger"
-          />
+        {/* Enhanced Scroll Navigation */}
+        <div className="fixed right-4 bottom-4 z-50 flex flex-col space-y-2">
+          {/* Quick Jump to Questions Button */}
+          {selectedTab === 'view' && questions.length > 0 && (
+            <button
+              onClick={scrollToQuestions}
+              disabled={isScrolling}
+              className={`p-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-full shadow-lg transition-all duration-300 transform hover:scale-105 ${
+                isScrolling ? 'animate-pulse' : ''
+              }`}
+              title="Jump to Questions"
+            >
+              <FileQuestion className="w-5 h-5" />
+            </button>
+          )}
+
+          {/* Scroll to Bottom Button */}
+          {!showScrollTop && questions.length > 5 && (
+            <button
+              onClick={scrollToBottom}
+              disabled={isScrolling}
+              className={`p-3 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400 text-white rounded-full shadow-lg transition-all duration-300 transform hover:scale-105 ${
+                isScrolling ? 'animate-pulse' : ''
+              }`}
+              title="Scroll to Bottom"
+            >
+              <ChevronDown className="w-5 h-5" />
+            </button>
+          )}
+
+          {/* Scroll to Top Button */}
+          {showScrollTop && (
+            <button
+              onClick={scrollToTop}
+              disabled={isScrolling}
+              className={`p-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white rounded-full shadow-lg transition-all duration-300 transform hover:scale-105 ${
+                isScrolling ? 'animate-pulse' : ''
+              }`}
+              title="Scroll to Top"
+            >
+              <ChevronUp className="w-5 h-5" />
+            </button>
+          )}
+        </div>
+
+        {/* Smooth Scroll Progress Indicator */}
+        {questions.length > 10 && (
+          <div className="fixed top-0 left-0 w-full h-1 bg-gray-200 dark:bg-gray-700 z-40">
+            <div 
+              className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-150 ease-out"
+              style={{
+                width: `${Math.min(100, Math.max(0, (window.pageYOffset / (document.documentElement.scrollHeight - window.innerHeight)) * 100))}%`
+              }}
+            />
+          </div>
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      {showDeleteConfirm && questionToDelete && (
+        <ConfirmDialog
+          isOpen={showDeleteConfirm}
+          onClose={() => {
+            setShowDeleteConfirm(false);
+            setQuestionToDelete(null);
+          }}
+          onConfirm={handleDeleteQuestion}
+          title="Delete Question"
+          description={`Are you sure you want to delete "${questionToDelete.title}"? This action cannot be undone.`}
+          confirmText="Delete"
+          variant="danger"
+          isLoading={actionLoading === 'delete'}
+        />
+      )}
     </TeacherLayout>
   );
 }
