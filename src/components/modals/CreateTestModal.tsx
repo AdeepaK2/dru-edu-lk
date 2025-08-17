@@ -1886,42 +1886,40 @@ export default function CreateTestModal({
               ) : (
                 <div className="space-y-6">
                   {/* Preview Summary */}
-                  <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-                    <div className="flex items-center space-x-3 mb-3">
-                      <Check className="w-5 h-5 text-green-600" />
-                      <h4 className="font-medium text-green-900 dark:text-green-300">
-                        Auto-Selection Complete
-                      </h4>
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                      <div>
-                        <span className="text-gray-600 dark:text-gray-400">Total Questions:</span>
-                        <div className="font-semibold text-green-800 dark:text-green-300">
-                          {previewQuestions.length}
+                    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                      <div className="flex items-center space-x-3 mb-3">
+                        <Check className="w-5 h-5 text-green-600" />
+                        <h4 className="font-medium text-green-900 dark:text-green-300">
+                          Auto-Selection Complete
+                        </h4>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400">Total Questions:</span>
+                          <div className="font-semibold text-green-800 dark:text-green-300">
+                            {previewQuestions.length}
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400">Total Marks:</span>
+                          <div className="font-semibold text-green-800 dark:text-green-300">
+                            {previewQuestions.reduce((sum, q) => sum + (q.points || 1), 0)}
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400">Question Type:</span>
+                          <div className="font-semibold text-green-800 dark:text-green-300">
+                            {formData.questionType === 'mcq' ? 'Multiple Choice' : 'Essay'}
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400">With Images:</span>
+                          <div className="font-semibold text-green-800 dark:text-green-300">
+                            {previewQuestions.filter(q => q.imageUrl || q.explanationImageUrl || q.suggestedAnswerImageUrl).length}
+                          </div>
                         </div>
                       </div>
-                      <div>
-                        <span className="text-gray-600 dark:text-gray-400">Total Marks:</span>
-                        <div className="font-semibold text-green-800 dark:text-green-300">
-                          {previewQuestions.reduce((sum, q) => sum + (q.points || 1), 0)}
-                        </div>
-                      </div>
-                      <div>
-                        <span className="text-gray-600 dark:text-gray-400">Question Type:</span>
-                        <div className="font-semibold text-green-800 dark:text-green-300">
-                          {formData.questionType === 'mcq' ? 'Multiple Choice' : 'Essay'}
-                        </div>
-                      </div>
-                      <div>
-                        <span className="text-gray-600 dark:text-gray-400">From Bank:</span>
-                        <div className="font-semibold text-green-800 dark:text-green-300">
-                          {questionBanks.find(b => b.id === formData.selectedQuestionBankId)?.name}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Questions List */}
+                    </div>                  {/* Questions List */}
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <h4 className="font-medium text-gray-900 dark:text-white">
@@ -1942,38 +1940,118 @@ export default function CreateTestModal({
                           key={question.id || index}
                           className="p-4 border-b border-gray-200 dark:border-gray-600 last:border-b-0"
                         >
-                          <div className="flex items-start justify-between mb-2">
-                            <div className="flex items-center space-x-2">
-                              <span className="inline-flex items-center justify-center w-6 h-6 bg-purple-100 text-purple-800 rounded-full text-xs font-medium">
-                                {index + 1}
-                              </span>
-                              <span className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded">
-                                {question.difficultyLevel || 'medium'}
-                              </span>
-                              <span className="text-xs text-gray-500">
-                                {question.points || 1} point{(question.points || 1) !== 1 ? 's' : ''}
-                              </span>
-                            </div>
-                          </div>
-                          
-                          <div className="text-sm text-gray-900 dark:text-white">
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex items-center space-x-2">
+                                <span className="inline-flex items-center justify-center w-6 h-6 bg-purple-100 text-purple-800 rounded-full text-xs font-medium">
+                                  {index + 1}
+                                </span>
+                                <span className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded">
+                                  {question.difficultyLevel || 'medium'}
+                                </span>
+                                <span className="text-xs text-gray-500">
+                                  {question.points || 1} point{(question.points || 1) !== 1 ? 's' : ''}
+                                </span>
+                                {/* Image indicator */}
+                                {(question.imageUrl || question.explanationImageUrl || question.suggestedAnswerImageUrl) && (
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
+                                    📷
+                                  </span>
+                                )}
+                              </div>
+                            </div>                          <div className="text-sm text-gray-900 dark:text-white">
                             <div className="font-medium mb-1">
                               {question.questionText || question.title || 'Question content'}
                             </div>
                             {question.content && (
-                              <div className="text-gray-600 dark:text-gray-400 text-xs">
+                              <div className="text-gray-600 dark:text-gray-400 text-xs mb-2">
                                 {question.content.length > 100 
                                   ? question.content.substring(0, 100) + '...' 
                                   : question.content
                                 }
                               </div>
                             )}
+                            
+                            {/* Question Image */}
+                            {question.imageUrl && (
+                              <div className="mt-2 mb-2">
+                                <div className="relative inline-block">
+                                  <img
+                                    src={question.imageUrl}
+                                    alt="Question"
+                                    className="max-w-xs max-h-32 object-contain border border-gray-200 dark:border-gray-600 rounded-lg shadow-sm bg-white dark:bg-gray-800"
+                                    onError={(e) => {
+                                      // Replace with placeholder text if image fails
+                                      const target = e.target as HTMLImageElement;
+                                      const parent = target.parentElement;
+                                      if (parent) {
+                                        parent.innerHTML = '<div class="px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded text-xs text-gray-500 dark:text-gray-400">📷 Question Image (failed to load)</div>';
+                                      }
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            )}
                           </div>
 
                           {/* Show options for MCQ */}
                           {formData.questionType === 'mcq' && question.options && (
-                            <div className="mt-2 text-xs text-gray-500">
-                              <span className="font-medium">Options:</span> {question.options.length} choices
+                            <div className="mt-2">
+                              <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                                Options: {question.options.length} choices
+                              </div>
+                              {question.options.slice(0, 2).map((option: any, optIndex: number) => (
+                                <div key={optIndex} className="text-xs text-gray-500 dark:text-gray-400 ml-2">
+                                  • {option.text || option.content || `Option ${optIndex + 1}`}
+                                  {option.imageUrl && <span className="ml-1">[📷 Image]</span>}
+                                </div>
+                              ))}
+                              {question.options.length > 2 && (
+                                <div className="text-xs text-gray-400 ml-2">
+                                  ... and {question.options.length - 2} more
+                                </div>
+                              )}
+                              
+                              {/* Show explanation image if available for MCQ */}
+                              {question.explanationImageUrl && (
+                                <div className="mt-2">
+                                  <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                                    Explanation Image:
+                                  </div>
+                                  <img
+                                    src={question.explanationImageUrl}
+                                    alt="Explanation"
+                                    className="max-w-xs max-h-24 object-contain border border-gray-200 dark:border-gray-600 rounded shadow-sm bg-white dark:bg-gray-800"
+                                    onError={(e) => {
+                                      const target = e.target as HTMLImageElement;
+                                      const parent = target.parentElement;
+                                      if (parent) {
+                                        parent.innerHTML = '<div class="px-2 py-1 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded text-xs text-gray-500 dark:text-gray-400">📷 Explanation Image (failed to load)</div>';
+                                      }
+                                    }}
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          
+                          {/* Show suggested answer image for Essay questions */}
+                          {formData.questionType === 'essay' && question.suggestedAnswerImageUrl && (
+                            <div className="mt-2">
+                              <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                                Suggested Answer Image:
+                              </div>
+                              <img
+                                src={question.suggestedAnswerImageUrl}
+                                alt="Suggested Answer"
+                                className="max-w-xs max-h-24 object-contain border border-gray-200 dark:border-gray-600 rounded shadow-sm bg-white dark:bg-gray-800"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  const parent = target.parentElement;
+                                  if (parent) {
+                                    parent.innerHTML = '<div class="px-2 py-1 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded text-xs text-gray-500 dark:text-gray-400">📷 Suggested Answer Image (failed to load)</div>';
+                                  }
+                                }}
+                              />
                             </div>
                           )}
                           

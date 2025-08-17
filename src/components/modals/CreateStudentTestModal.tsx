@@ -1556,9 +1556,9 @@ export default function CreateStudentTestModal({
                           </div>
                         </div>
                         <div>
-                          <span className="text-gray-600 dark:text-gray-400">From Bank:</span>
+                          <span className="text-gray-600 dark:text-gray-400">With Images:</span>
                           <div className="font-semibold text-green-800 dark:text-green-300">
-                            {questionBanks.find(b => b.id === formData.selectedQuestionBankId)?.name}
+                            {previewQuestions.filter(q => q.imageUrl || q.explanationImageUrl || q.suggestedAnswerImageUrl).length}
                           </div>
                         </div>
                       </div>
@@ -1596,6 +1596,12 @@ export default function CreateStudentTestModal({
                                 <span className="text-xs text-gray-500">
                                   {question.points || 1} point{(question.points || 1) !== 1 ? 's' : ''}
                                 </span>
+                                {/* Image indicator */}
+                                {(question.imageUrl || question.explanationImageUrl || question.suggestedAnswerImageUrl) && (
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
+                                    📷
+                                  </span>
+                                )}
                               </div>
                             </div>
                             
@@ -1604,19 +1610,95 @@ export default function CreateStudentTestModal({
                                 {question.questionText || question.title || 'Question content'}
                               </div>
                               {question.content && (
-                                <div className="text-gray-600 dark:text-gray-400 text-xs">
+                                <div className="text-gray-600 dark:text-gray-400 text-xs mb-2">
                                   {question.content.length > 100 
                                     ? question.content.substring(0, 100) + '...' 
                                     : question.content
                                   }
                                 </div>
                               )}
+                              
+                              {/* Question Image */}
+                              {question.imageUrl && (
+                                <div className="mt-2 mb-2">
+                                  <div className="relative inline-block">
+                                    <img
+                                      src={question.imageUrl}
+                                      alt="Question"
+                                      className="max-w-xs max-h-32 object-contain border border-gray-200 dark:border-gray-600 rounded-lg shadow-sm bg-white dark:bg-gray-800"
+                                      onError={(e) => {
+                                        // Replace with placeholder text if image fails
+                                        const target = e.target as HTMLImageElement;
+                                        const parent = target.parentElement;
+                                        if (parent) {
+                                          parent.innerHTML = '<div class="px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded text-xs text-gray-500 dark:text-gray-400">📷 Question Image (failed to load)</div>';
+                                        }
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+                              )}
                             </div>
 
                             {/* Show options for MCQ */}
                             {formData.questionType === 'mcq' && question.options && (
-                              <div className="mt-2 text-xs text-gray-500">
-                                <span className="font-medium">Options:</span> {question.options.length} choices
+                              <div className="mt-2">
+                                <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                                  Options: {question.options.length} choices
+                                </div>
+                                {question.options.slice(0, 2).map((option: any, optIndex: number) => (
+                                  <div key={optIndex} className="text-xs text-gray-500 dark:text-gray-400 ml-2">
+                                    • {option.text || option.content || `Option ${optIndex + 1}`}
+                                    {option.imageUrl && <span className="ml-1">[📷 Image]</span>}
+                                  </div>
+                                ))}
+                                {question.options.length > 2 && (
+                                  <div className="text-xs text-gray-400 ml-2">
+                                    ... and {question.options.length - 2} more
+                                  </div>
+                                )}
+                                
+                                {/* Show explanation image if available for MCQ */}
+                                {question.explanationImageUrl && (
+                                  <div className="mt-2">
+                                    <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                                      Explanation Image:
+                                    </div>
+                                    <img
+                                      src={question.explanationImageUrl}
+                                      alt="Explanation"
+                                      className="max-w-xs max-h-24 object-contain border border-gray-200 dark:border-gray-600 rounded shadow-sm bg-white dark:bg-gray-800"
+                                      onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        const parent = target.parentElement;
+                                        if (parent) {
+                                          parent.innerHTML = '<div class="px-2 py-1 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded text-xs text-gray-500 dark:text-gray-400">📷 Explanation Image (failed to load)</div>';
+                                        }
+                                      }}
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            
+                            {/* Show suggested answer image for Essay questions */}
+                            {formData.questionType === 'essay' && question.suggestedAnswerImageUrl && (
+                              <div className="mt-2">
+                                <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                                  Suggested Answer Image:
+                                </div>
+                                <img
+                                  src={question.suggestedAnswerImageUrl}
+                                  alt="Suggested Answer"
+                                  className="max-w-xs max-h-24 object-contain border border-gray-200 dark:border-gray-600 rounded shadow-sm bg-white dark:bg-gray-800"
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    const parent = target.parentElement;
+                                    if (parent) {
+                                      parent.innerHTML = '<div class="px-2 py-1 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded text-xs text-gray-500 dark:text-gray-400">📷 Suggested Answer Image (failed to load)</div>';
+                                    }
+                                  }}
+                                />
                               </div>
                             )}
                             
