@@ -1,6 +1,7 @@
 // Test system models and types
 
 import { Timestamp } from 'firebase/firestore';
+import { TestAssignmentConfig, TestAssignmentType, StudentTestAssignment } from './testAssignmentSchema';
 
 // Test types
 export type TestType = 'live' | 'flexible';
@@ -92,8 +93,13 @@ export interface BaseTest {
   teacherName: string;
   subjectId: string;
   subjectName: string;
-  classIds: string[];
-  classNames: string[];
+  
+  // Assignment configuration (extended for student selection)
+  assignmentType?: TestAssignmentType; // New field: 'class-based' | 'student-based' | 'mixed'
+  classIds: string[]; // Preserved for backward compatibility
+  classNames: string[]; // Preserved for backward compatibility
+  individualAssignments?: StudentTestAssignment[]; // New field for individual student assignments
+  totalAssignedStudents?: number; // New field for quick access
   
   // Test configuration
   type: TestType;

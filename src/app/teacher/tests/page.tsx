@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import TeacherLayout from '@/components/teacher/TeacherLayout';
 import CreateTestModal from '@/components/modals/CreateTestModal';
+import CreateStudentTestModal from '@/components/modals/CreateStudentTestModal';
 import { useTeacherAuth } from '@/hooks/useTeacherAuth';
 import { TestService } from '@/apiservices/testService';
 import { SubmissionService } from '@/apiservices/submissionService';
@@ -38,6 +39,7 @@ export default function TeacherTests() {
   const [tests, setTests] = useState<Test[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showCreateStudentTestModal, setShowCreateStudentTestModal] = useState(false);
   const [teacherClasses, setTeacherClasses] = useState<ClassDocument[]>([]);
   const [loadingClasses, setLoadingClasses] = useState(true);
   const [questionBanks, setQuestionBanks] = useState<QuestionBank[]>([]);
@@ -45,7 +47,7 @@ export default function TeacherTests() {
   
   // New state for class-based view
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'overview' | 'class-detail'>('overview');
+  const [viewMode, setViewMode] = useState<'overview' | 'class-detail' | 'custom-tests'>('overview');
   
   // State for tracking student enrollment counts per class
   const [classEnrollmentCounts, setClassEnrollmentCounts] = useState<Record<string, number>>({});
@@ -251,6 +253,12 @@ export default function TeacherTests() {
     setShowCreateModal(false);
     // If we were creating for a specific class, stay in class detail view
     // Otherwise go back to overview
+  };
+
+  // Handle test created for selected students
+  const handleStudentTestCreated = (newTest: Test) => {
+    setTests(prev => [newTest, ...prev]);
+    setShowCreateStudentTestModal(false);
   };
 
   // Handle modal close
@@ -472,7 +480,7 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
               </div>
             </div>
 
-            {/* Your Classes */}
+            {/* Your Classes and Custom Tests */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
               <div className="p-6 border-b border-gray-200 dark:border-gray-700">
                 <h2 className="text-lg font-medium text-gray-900 dark:text-white">
@@ -552,6 +560,39 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
                         </div>
                       );
                     })}
+                    
+                    {/* Custom Tests Box */}
+                    <div
+                      onClick={() => setViewMode('custom-tests')}
+                      className="bg-gradient-to-br from-green-50 to-emerald-100 dark:from-gray-700 dark:to-gray-600 rounded-lg p-6 cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 border-2 border-dashed border-green-300 dark:border-green-600"
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="bg-white dark:bg-gray-800 rounded-full p-3">
+                          <Users className="h-6 w-6 text-green-600 dark:text-green-400" />
+                        </div>
+                        <span className="text-xs bg-green-200 dark:bg-green-900/50 text-green-800 dark:text-green-300 px-2 py-1 rounded-full">
+                          Custom
+                        </span>
+                      </div>
+                      
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                        Custom Tests
+                      </h3>
+                      
+                      <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                        Individual student assignments
+                      </p>
+                      
+                      <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
+                        <span className="flex items-center">
+                          <FileText className="h-4 w-4 mr-1" />
+                          {tests.filter(test => (test as any).assignmentConfig?.assignmentType === 'student-based').length} tests
+                        </span>
+                        <span className="text-green-600 dark:text-green-400 font-medium">
+                          View & Create →
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
@@ -633,6 +674,180 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
                     </p>
                   </div>
                 </div>
+              </div>
+            </div>
+          </>
+        ) : viewMode === 'custom-tests' ? (
+          // Custom Tests Mode - Show all individual/custom tests
+          <>
+            {/* Custom Tests Header */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <button
+                    onClick={() => setViewMode('overview')}
+                    className="mr-4 p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    <ArrowLeft className="h-5 w-5" />
+                  </button>
+                  <div>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                      Custom Tests
+                    </h1>
+                    <p className="text-gray-600 dark:text-gray-300">
+                      Tests assigned to individual students across different classes
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowCreateStudentTestModal(true)}
+                  className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Custom Test
+                </button>
+              </div>
+            </div>
+
+            {/* Custom Tests List */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+              <div className="p-6">
+                {tests.filter(test => (test as any).assignmentConfig?.assignmentType === 'student-based').length === 0 ? (
+                  <div className="text-center py-12">
+                    <Users className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                      No custom tests created yet
+                    </h3>
+                    <p className="text-gray-500 dark:text-gray-400 mb-6">
+                      Create tests for specific students across different classes
+                    </p>
+                    <button
+                      onClick={() => setShowCreateStudentTestModal(true)}
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                    >
+                      Create Your First Custom Test
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {tests
+                      .filter(test => (test as any).assignmentConfig?.assignmentType === 'student-based')
+                      .map((test) => {
+                        const status = getTestStatus(test);
+                        const assignmentConfig = (test as any).assignmentConfig;
+
+                        return (
+                          <div
+                            key={test.id}
+                            className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 hover:shadow-md transition-shadow"
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-3 mb-2">
+                                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                                    {test.title}
+                                  </h3>
+                                  <span
+                                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                      status.color === 'green'
+                                        ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                                        : status.color === 'blue'
+                                        ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+                                        : status.color === 'orange'
+                                        ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400'
+                                        : 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
+                                    }`}
+                                  >
+                                    {status.text}
+                                  </span>
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400">
+                                    {test.type === 'live' ? 'Live Test' : 'Flexible'}
+                                  </span>
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
+                                    Custom
+                                  </span>
+                                </div>
+
+                                {test.description && (
+                                  <p className="text-gray-600 dark:text-gray-300 mb-3">
+                                    {test.description}
+                                  </p>
+                                )}
+
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-500 dark:text-gray-400 mb-3">
+                                  <div className="flex items-center space-x-1">
+                                    <FileText className="h-4 w-4" />
+                                    <span>{test.questions.length} questions</span>
+                                  </div>
+                                  <div className="flex items-center space-x-1">
+                                    <Clock className="h-4 w-4" />
+                                    <span>
+                                      {test.type === 'live' 
+                                        ? `${(test as LiveTest).duration} min`
+                                        : `${(test as FlexibleTest).duration} min`
+                                      }
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center space-x-1">
+                                    <Calendar className="h-4 w-4" />
+                                    <span>
+                                      {test.type === 'live' 
+                                        ? formatDateTime((test as LiveTest).scheduledStartTime)
+                                        : `${formatDateTime((test as FlexibleTest).availableFrom)}`
+                                      }
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center space-x-1">
+                                    <Users className="h-4 w-4" />
+                                    <span>{assignmentConfig?.totalAssignedStudents || 0} students</span>
+                                  </div>
+                                </div>
+
+                                {assignmentConfig && (
+                                  <div className="mb-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                                    <div className="text-sm text-green-800 dark:text-green-400">
+                                      <span className="font-medium">Assigned to:</span> {assignmentConfig.totalAssignedStudents} students across {Object.keys(assignmentConfig.individualAssignments?.reduce((acc: any, assignment: any) => {
+                                        acc[assignment.className] = true;
+                                        return acc;
+                                      }, {}) || {}).length} classes
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="flex items-center space-x-3 ml-4">
+                                {hasEssayQuestions(test) && (
+                                  <button
+                                    onClick={() => handleMarkSubmissions(test.id)}
+                                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+                                  >
+                                    <CheckSquare className="h-4 w-4 mr-2" />
+                                    Mark
+                                  </button>
+                                )}
+                                
+                                <button
+                                  onClick={() => handleViewResults(test.id)}
+                                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                                >
+                                  <BarChart3 className="h-4 w-4 mr-2" />
+                                  Results
+                                </button>
+                                
+                                <button
+                                  onClick={() => deleteTest(test.id)}
+                                  className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                  title="Delete Test"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                )}
               </div>
             </div>
           </>
@@ -880,6 +1095,19 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
                     year: cls.year
                   }))
             }
+            questionBanks={questionBanks}
+          />
+        )}
+
+        {/* Create Student Test Modal */}
+        {showCreateStudentTestModal && (
+          <CreateStudentTestModal
+            isOpen={showCreateStudentTestModal}
+            onClose={() => setShowCreateStudentTestModal(false)}
+            onTestCreated={handleStudentTestCreated}
+            subjectId={getTeacherSubjects()[0]?.id || ''}
+            subjectName={getTeacherSubjects()[0]?.name || ''}
+            teacherClasses={teacherClasses}
             questionBanks={questionBanks}
           />
         )}
