@@ -77,27 +77,37 @@ export default function StudentsManagement() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [studentEnrollmentCounts, setStudentEnrollmentCounts] = useState<Record<string, number>>({});
+  const [studentEnrollmentDetails, setStudentEnrollmentDetails] = useState<Record<string, Array<{className: string, subject: string}>>>({});
 
-  // Function to load real enrollment counts for all students
+  // Function to load real enrollment counts and details for all students
   const loadEnrollmentCounts = async (studentIds: string[]) => {
     try {
       const counts: Record<string, number> = {};
+      const details: Record<string, Array<{className: string, subject: string}>> = {};
       
-      // Load enrollment counts for each student
+      // Load enrollment counts and details for each student
       await Promise.all(
         studentIds.map(async (studentId) => {
           try {
             const enrollments = await getEnrollmentsByStudent(studentId);
             const activeEnrollments = enrollments.filter(e => e.status === 'Active');
             counts[studentId] = activeEnrollments.length;
+            
+            // Store detailed class information
+            details[studentId] = activeEnrollments.map(enrollment => ({
+              className: enrollment.className,
+              subject: enrollment.subject
+            }));
           } catch (error) {
             console.error(`Error loading enrollments for student ${studentId}:`, error);
             counts[studentId] = 0;
+            details[studentId] = [];
           }
         })
       );
       
       setStudentEnrollmentCounts(counts);
+      setStudentEnrollmentDetails(details);
     } catch (error) {
       console.error('Error loading enrollment counts:', error);
     }
@@ -1059,6 +1069,35 @@ export default function StudentsManagement() {
                         Courses: {studentEnrollmentCounts[student.id] ?? student.coursesEnrolled ?? 0}
                       </div>
                       <div className="text-sm text-gray-500 dark:text-gray-400">Since: {student.enrollmentDate}</div>
+                      
+                      {/* Enrolled Classes List with fixed width and scrollable content */}
+                      {studentEnrollmentDetails[student.id] && studentEnrollmentDetails[student.id].length > 0 && (
+                        <div className="mt-2">
+                          <div className="w-48 max-h-20 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700 p-2">
+                            <div className="space-y-1">
+                              {studentEnrollmentDetails[student.id].map((enrollment, index) => (
+                                <div key={index} className="text-xs bg-white dark:bg-gray-600 rounded px-2 py-1 border border-gray-100 dark:border-gray-500">
+                                  <div className="font-medium text-gray-900 dark:text-white truncate" title={enrollment.className}>
+                                    {enrollment.className}
+                                  </div>
+                                  <div className="text-gray-500 dark:text-gray-400 truncate" title={enrollment.subject}>
+                                    {enrollment.subject}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Show message if no enrollments */}
+                      {(!studentEnrollmentDetails[student.id] || studentEnrollmentDetails[student.id].length === 0) && (
+                        <div className="mt-2">
+                          <div className="w-48 text-xs text-gray-500 dark:text-gray-400 italic">
+                            No active enrollments
+                          </div>
+                        </div>
+                      )}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-center">
                       <div className="flex justify-center space-x-2">
