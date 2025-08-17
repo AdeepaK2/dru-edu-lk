@@ -363,4 +363,368 @@ export class MailService {
       html: html.trim()
     };
   }
+
+  // Generate test notification email for student
+  static generateStudentTestNotificationEmail(
+    studentName: string,
+    studentEmail: string,
+    testTitle: string,
+    testDescription: string,
+    teacherName: string,
+    subjectName: string,
+    className: string,
+    testType: 'live' | 'flexible',
+    testDate: string,
+    testTime?: string,
+    duration?: number,
+    availableFrom?: string,
+    availableTo?: string,
+    totalMarks?: number,
+    instructions?: string
+  ): Omit<MailDocument, 'createdAt' | 'processed'> {
+    const formatDateTime = (dateStr: string, timeStr?: string) => {
+      const date = new Date(dateStr);
+      if (timeStr) {
+        const [hours, minutes] = timeStr.split(':');
+        date.setHours(parseInt(hours), parseInt(minutes));
+      }
+      return date.toLocaleString('en-AU', {
+        timeZone: 'Australia/Melbourne',
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: timeStr ? '2-digit' : undefined,
+        minute: timeStr ? '2-digit' : undefined
+      });
+    };
+
+    const testTypeLabel = testType === 'live' ? 'Live Test' : 'Flexible Test';
+    const testIcon = testType === 'live' ? '📺' : '📝';
+    
+    let scheduleInfo = '';
+    if (testType === 'live') {
+      scheduleInfo = `
+        <div style="background-color: #FEF3C7; border-left: 4px solid #F59E0B; padding: 20px; margin: 20px 0;">
+          <h3 style="color: #92400E; margin-top: 0;">⏰ Live Test Schedule</h3>
+          <p><strong>Date & Time:</strong> ${formatDateTime(testDate, testTime)}</p>
+          <p><strong>Duration:</strong> ${duration || 60} minutes</p>
+          <p style="color: #92400E; font-weight: 500; margin: 10px 0 0 0;">
+            ⚠️ <strong>Important:</strong> This is a live test. Make sure to join on time as you won't be able to start after the scheduled time.
+          </p>
+        </div>
+      `;
+    } else {
+      scheduleInfo = `
+        <div style="background-color: #EBF8FF; border-left: 4px solid #3B82F6; padding: 20px; margin: 20px 0;">
+          <h3 style="color: #1E40AF; margin-top: 0;">📅 Test Availability</h3>
+          <p><strong>Available From:</strong> ${availableFrom ? formatDateTime(availableFrom) : 'To be announced'}</p>
+          <p><strong>Available Until:</strong> ${availableTo ? formatDateTime(availableTo) : 'To be announced'}</p>
+          <p><strong>Duration:</strong> ${duration || 60} minutes (once started)</p>
+          <p style="color: #1E40AF; font-weight: 500; margin: 10px 0 0 0;">
+            ℹ️ <strong>Flexible Schedule:</strong> You can take this test anytime within the available period.
+          </p>
+        </div>
+      `;
+    }
+
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #4F46E5; text-align: center;">${testIcon} New Test Assignment - Dr U Education</h2>
+        
+        <p>Dear ${studentName},</p>
+        
+        <p>Your teacher <strong>${teacherName}</strong> has assigned you a new ${testTypeLabel.toLowerCase()} for your <strong>${subjectName}</strong> class.</p>
+        
+        <div style="background-color: #F3F4F6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="color: #374151; margin-top: 0;">📋 Test Details</h3>
+          <p><strong>Test Title:</strong> ${testTitle}</p>
+          <p><strong>Subject:</strong> ${subjectName}</p>
+          <p><strong>Class:</strong> ${className}</p>
+          <p><strong>Teacher:</strong> ${teacherName}</p>
+          <p><strong>Type:</strong> ${testTypeLabel}</p>
+          ${totalMarks ? `<p><strong>Total Marks:</strong> ${totalMarks}</p>` : ''}
+        </div>
+
+        ${testDescription ? `
+        <div style="background-color: #F0FDF4; border-left: 4px solid #22C55E; padding: 15px; margin: 20px 0;">
+          <p style="margin: 0;"><strong>Test Description:</strong></p>
+          <p style="margin: 10px 0 0 0; color: #16A34A;">${testDescription}</p>
+        </div>
+        ` : ''}
+
+        ${scheduleInfo}
+
+        ${instructions ? `
+        <div style="background-color: #FEF2F2; border-left: 4px solid #EF4444; padding: 15px; margin: 20px 0;">
+          <p style="margin: 0; color: #DC2626;"><strong>📖 Special Instructions:</strong></p>
+          <p style="margin: 10px 0 0 0; color: #7F1D1D;">${instructions}</p>
+        </div>
+        ` : ''}
+
+        <div style="background-color: #F0F9FF; border-left: 4px solid #0EA5E9; padding: 15px; margin: 20px 0;">
+          <p style="margin: 0; color: #0C4A6E;"><strong>💡 Preparation Tips:</strong></p>
+          <ul style="margin: 10px 0 0 0; color: #0F172A; padding-left: 20px;">
+            <li>Review your class materials and notes</li>
+            <li>Ensure you have a stable internet connection</li>
+            <li>Find a quiet environment for the test</li>
+            <li>Have scratch paper and a calculator ready if needed</li>
+            ${testType === 'live' ? '<li>Join the test a few minutes early</li>' : '<li>Plan your time wisely within the available period</li>'}
+          </ul>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="https://www.drueducation.com.au/student/tests" 
+             style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+            📚 View Test in Student Portal
+          </a>
+        </div>
+
+        <p>Good luck with your test! If you have any questions, please contact your teacher or our support team.</p>
+
+        <p>Best regards,<br>
+        The Dr U Education Team</p>
+        
+        <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 30px 0;">
+        <p style="font-size: 12px; color: #6B7280; text-align: center;">
+          This is an automated message. For support, please contact your teacher or administration team.
+        </p>
+      </div>
+    `;
+
+    return {
+      to: studentEmail,
+      subject: `📝 New ${testTypeLabel}: ${testTitle} - ${subjectName}`,
+      html: html.trim()
+    };
+  }
+
+  // Generate test notification email for parent
+  static generateParentTestNotificationEmail(
+    parentName: string,
+    parentEmail: string,
+    studentName: string,
+    testTitle: string,
+    testDescription: string,
+    teacherName: string,
+    subjectName: string,
+    className: string,
+    testType: 'live' | 'flexible',
+    testDate: string,
+    testTime?: string,
+    duration?: number,
+    availableFrom?: string,
+    availableTo?: string,
+    totalMarks?: number,
+    instructions?: string
+  ): Omit<MailDocument, 'createdAt' | 'processed'> {
+    const formatDateTime = (dateStr: string, timeStr?: string) => {
+      const date = new Date(dateStr);
+      if (timeStr) {
+        const [hours, minutes] = timeStr.split(':');
+        date.setHours(parseInt(hours), parseInt(minutes));
+      }
+      return date.toLocaleString('en-AU', {
+        timeZone: 'Australia/Melbourne',
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: timeStr ? '2-digit' : undefined,
+        minute: timeStr ? '2-digit' : undefined
+      });
+    };
+
+    const testTypeLabel = testType === 'live' ? 'Live Test' : 'Flexible Test';
+    const testIcon = testType === 'live' ? '📺' : '📝';
+    
+    let scheduleInfo = '';
+    if (testType === 'live') {
+      scheduleInfo = `
+        <div style="background-color: #FEF3C7; border-left: 4px solid #F59E0B; padding: 20px; margin: 20px 0;">
+          <h3 style="color: #92400E; margin-top: 0;">⏰ Live Test Schedule</h3>
+          <p><strong>Date & Time:</strong> ${formatDateTime(testDate, testTime)}</p>
+          <p><strong>Duration:</strong> ${duration || 60} minutes</p>
+          <p style="color: #92400E; font-weight: 500; margin: 10px 0 0 0;">
+            ⚠️ <strong>Please remind ${studentName}</strong> to join on time as live tests cannot be started after the scheduled time.
+          </p>
+        </div>
+      `;
+    } else {
+      scheduleInfo = `
+        <div style="background-color: #EBF8FF; border-left: 4px solid #3B82F6; padding: 20px; margin: 20px 0;">
+          <h3 style="color: #1E40AF; margin-top: 0;">📅 Test Availability</h3>
+          <p><strong>Available From:</strong> ${availableFrom ? formatDateTime(availableFrom) : 'To be announced'}</p>
+          <p><strong>Available Until:</strong> ${availableTo ? formatDateTime(availableTo) : 'To be announced'}</p>
+          <p><strong>Duration:</strong> ${duration || 60} minutes (once started)</p>
+          <p style="color: #1E40AF; font-weight: 500; margin: 10px 0 0 0;">
+            ℹ️ <strong>Flexible Schedule:</strong> ${studentName} can take this test anytime within the available period.
+          </p>
+        </div>
+      `;
+    }
+
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #4F46E5; text-align: center;">${testIcon} Test Assignment Notification - Dr U Education</h2>
+        
+        <p>Dear ${parentName},</p>
+        
+        <p>We would like to inform you that <strong>${studentName}</strong> has been assigned a new ${testTypeLabel.toLowerCase()} by their teacher <strong>${teacherName}</strong> for the <strong>${subjectName}</strong> class.</p>
+        
+        <div style="background-color: #F3F4F6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="color: #374151; margin-top: 0;">📋 Test Information</h3>
+          <p><strong>Student:</strong> ${studentName}</p>
+          <p><strong>Test Title:</strong> ${testTitle}</p>
+          <p><strong>Subject:</strong> ${subjectName}</p>
+          <p><strong>Class:</strong> ${className}</p>
+          <p><strong>Teacher:</strong> ${teacherName}</p>
+          <p><strong>Type:</strong> ${testTypeLabel}</p>
+          ${totalMarks ? `<p><strong>Total Marks:</strong> ${totalMarks}</p>` : ''}
+        </div>
+
+        ${testDescription ? `
+        <div style="background-color: #F0FDF4; border-left: 4px solid #22C55E; padding: 15px; margin: 20px 0;">
+          <p style="margin: 0;"><strong>Test Description:</strong></p>
+          <p style="margin: 10px 0 0 0; color: #16A34A;">${testDescription}</p>
+        </div>
+        ` : ''}
+
+        ${scheduleInfo}
+
+        ${instructions ? `
+        <div style="background-color: #FEF2F2; border-left: 4px solid #EF4444; padding: 15px; margin: 20px 0;">
+          <p style="margin: 0; color: #DC2626;"><strong>📖 Special Instructions:</strong></p>
+          <p style="margin: 10px 0 0 0; color: #7F1D1D;">${instructions}</p>
+        </div>
+        ` : ''}
+
+        <div style="background-color: #F0F9FF; border-left: 4px solid #0EA5E9; padding: 15px; margin: 20px 0;">
+          <p style="margin: 0; color: #0C4A6E;"><strong>💡 How You Can Help:</strong></p>
+          <ul style="margin: 10px 0 0 0; color: #0F172A; padding-left: 20px;">
+            <li>Remind ${studentName} about the test schedule</li>
+            <li>Ensure they have a quiet study environment</li>
+            <li>Help them review their study materials</li>
+            <li>Make sure they have a stable internet connection</li>
+            <li>Encourage them to ask their teacher if they have questions</li>
+          </ul>
+        </div>
+
+        <div style="background-color: #EBF4FF; border-left: 4px solid #2563EB; padding: 15px; margin: 20px 0;">
+          <p style="margin: 0; color: #1E40AF;"><strong>📞 Support Available:</strong></p>
+          <p style="margin: 10px 0 0 0; color: #1E3A8A;">
+            If ${studentName} needs any help or has questions about the test, please encourage them to contact their teacher ${teacherName} or our support team. We're here to help ensure their success!
+          </p>
+        </div>
+
+        <p>We appreciate your continued support in ${studentName}'s educational journey. Your involvement makes a significant difference in their academic success.</p>
+
+        <p>Best regards,<br>
+        The Dr U Education Team</p>
+        
+        <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 30px 0;">
+        <p style="font-size: 12px; color: #6B7280; text-align: center;">
+          This is an automated notification to keep you informed about your child's academic activities.
+        </p>
+      </div>
+    `;
+
+    return {
+      to: parentEmail,
+      subject: `📚 Test Assignment for ${studentName} - ${subjectName} (${testTitle})`,
+      html: html.trim()
+    };
+  }
+
+  // Send test notification emails to both student and parent
+  static async sendTestNotificationEmails(
+    studentName: string,
+    studentEmail: string,
+    parentName: string,
+    parentEmail: string,
+    testTitle: string,
+    testDescription: string,
+    teacherName: string,
+    subjectName: string,
+    className: string,
+    testType: 'live' | 'flexible',
+    testDate: string,
+    testTime?: string,
+    duration?: number,
+    availableFrom?: string,
+    availableTo?: string,
+    totalMarks?: number,
+    instructions?: string
+  ): Promise<{ studentMailId: string; parentMailId: string }> {
+    try {
+      console.log('📧 Sending test notification emails for:', {
+        testTitle,
+        studentName,
+        parentName,
+        testType,
+        studentEmail,
+        parentEmail
+      });
+
+      // Create student email
+      const studentMail = this.generateStudentTestNotificationEmail(
+        studentName,
+        studentEmail,
+        testTitle,
+        testDescription,
+        teacherName,
+        subjectName,
+        className,
+        testType,
+        testDate,
+        testTime,
+        duration,
+        availableFrom,
+        availableTo,
+        totalMarks,
+        instructions
+      );
+
+      // Create parent email
+      const parentMail = this.generateParentTestNotificationEmail(
+        parentName,
+        parentEmail,
+        studentName,
+        testTitle,
+        testDescription,
+        teacherName,
+        subjectName,
+        className,
+        testType,
+        testDate,
+        testTime,
+        duration,
+        availableFrom,
+        availableTo,
+        totalMarks,
+        instructions
+      );
+
+      // Create both mail documents
+      const [studentMailId, parentMailId] = await Promise.all([
+        this.createMailDocument(studentMail),
+        this.createMailDocument(parentMail)
+      ]);
+
+      console.log('✅ Test notification emails created successfully:', {
+        studentMailId,
+        parentMailId,
+        testTitle,
+        testType
+      });
+
+      return {
+        studentMailId,
+        parentMailId
+      };
+    } catch (error) {
+      console.error('❌ Error sending test notification emails:', error);
+      throw error;
+    }
+  }
 }

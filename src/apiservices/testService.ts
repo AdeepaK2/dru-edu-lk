@@ -92,6 +92,15 @@ export class TestService {
       });
       
       console.log('✅ Test created successfully with ID:', docRef.id);
+      
+      // Send email notifications to students and parents
+      try {
+        await this.sendTestCreationNotifications(docRef.id, cleanedTestData);
+      } catch (notificationError) {
+        // Don't fail test creation if notifications fail
+        console.warn('⚠️ Failed to send test notifications (test still created successfully):', notificationError);
+      }
+      
       return docRef.id;
     } catch (error) {
       console.error('❌ Error creating test:', error);
@@ -980,5 +989,166 @@ export class TestService {
         callback(null);
       }
     });
+  }
+
+  // Send email notifications to students and parents when a test is created
+  private static async sendTestCreationNotifications(testId: string, testData: any): Promise<void> {
+    try {
+      console.log('📧 Sending test creation notifications for test:', testId);
+      
+      // Import MailService and StudentFirestoreService
+      const { MailService } = await import('./mailService');
+      const { StudentFirestoreService } = await import('./studentFirestoreService');
+      const { getEnrollmentsByClass } = await import('../services/studentEnrollmentService');
+      
+      // Get all students who need to be notified
+      const studentsToNotify = new Set<{
+        studentId: string;
+        studentName: string;
+        studentEmail: string;
+        parentName: string;
+        parentEmail: string;
+        className: string;
+      }>();
+      
+      // Handle class-based assignments
+      if (testData.classIds && testData.classIds.length > 0) {
+        for (const classId of testData.classIds) {
+          try {
+            const enrollments = await getEnrollmentsByClass(classId);
+            const activeEnrollments = enrollments.filter(enrollment => enrollment.status === 'Active');
+            
+            for (const enrollment of activeEnrollments) {
+              // Get student details to access parent information
+              try {
+                const studentDoc = await StudentFirestoreService.getStudentById(enrollment.studentId);
+                if (studentDoc && studentDoc.parent) {
+                  studentsToNotify.add({
+                    studentId: enrollment.studentId,
+                    studentName: enrollment.studentName,
+                    studentEmail: enrollment.studentEmail,
+                    parentName: studentDoc.parent.name,
+                    parentEmail: studentDoc.parent.email,
+                    className: enrollment.className
+                  });
+                } else {
+                  console.warn(`⚠️ Missing parent info for student ${enrollment.studentId}`);
+                }
+              } catch (studentError) {
+                console.warn(`⚠️ Could not load student details for ${enrollment.studentId}:`, studentError);
+              }
+            }
+          } catch (classError) {
+            console.warn(`⚠️ Could not load enrollments for class ${classId}:`, classError);
+          }
+        }
+      }
+      
+      // Handle individual student assignments
+      if (testData.individualAssignments && testData.individualAssignments.length > 0) {
+        for (const assignment of testData.individualAssignments) {
+          try {
+            const studentDoc = await StudentFirestoreService.getStudentById(assignment.studentId);
+            if (studentDoc && studentDoc.parent) {
+              studentsToNotify.add({
+                studentId: assignment.studentId,
+                studentName: assignment.studentName,
+                studentEmail: assignment.studentEmail,
+                parentName: studentDoc.parent.name,
+                parentEmail: studentDoc.parent.email,
+                className: assignment.className
+              });
+            } else {
+              console.warn(`⚠️ Missing parent info for individually assigned student ${assignment.studentId}`);
+            }
+          } catch (studentError) {
+            console.warn(`⚠️ Could not load student details for ${assignment.studentId}:`, studentError);
+          }
+        }
+      }
+      
+      console.log(`📊 Found ${studentsToNotify.size} students to notify`);
+      
+      if (studentsToNotify.size === 0) {
+        console.log('ℹ️ No students to notify, skipping email notifications');
+        return;
+      }
+      
+      // Prepare test details for email
+      const testType = testData.type as 'live' | 'flexible';
+      let testDate = '';
+      let testTime = '';
+      let availableFrom = '';
+      let availableTo = '';
+      
+      if (testType === 'live') {
+        const liveTestData = testData as any; // LiveTest data
+        if (liveTestData.scheduledStartTime) {
+          const startTime = liveTestData.scheduledStartTime.toDate ? 
+            liveTestData.scheduledStartTime.toDate() : 
+            new Date(liveTestData.scheduledStartTime);
+          testDate = startTime.toISOString().split('T')[0];
+          testTime = startTime.toTimeString().split(' ')[0].substring(0, 5); // HH:MM format
+        }
+      } else {
+        const flexTestData = testData as any; // FlexibleTest data
+        if (flexTestData.availableFrom) {
+          const fromDate = flexTestData.availableFrom.toDate ? 
+            flexTestData.availableFrom.toDate() : 
+            new Date(flexTestData.availableFrom);
+          availableFrom = fromDate.toISOString();
+        }
+        if (flexTestData.availableTo) {
+          const toDate = flexTestData.availableTo.toDate ? 
+            flexTestData.availableTo.toDate() : 
+            new Date(flexTestData.availableTo);
+          availableTo = toDate.toISOString();
+        }
+      }
+      
+      // Send notifications to all students and parents
+      const emailPromises = Array.from(studentsToNotify).map(async (student) => {
+        try {
+          await MailService.sendTestNotificationEmails(
+            student.studentName,
+            student.studentEmail,
+            student.parentName,
+            student.parentEmail,
+            testData.title,
+            testData.description || '',
+            testData.teacherName,
+            testData.subjectName,
+            student.className,
+            testType,
+            testDate,
+            testTime || undefined,
+            testData.duration || (testType === 'live' ? testData.duration : testData.duration),
+            availableFrom || undefined,
+            availableTo || undefined,
+            testData.totalMarks,
+            testData.instructions || undefined
+          );
+          
+          console.log(`✅ Sent notifications to ${student.studentName} and parent`);
+        } catch (emailError) {
+          console.error(`❌ Failed to send notifications for ${student.studentName}:`, emailError);
+        }
+      });
+      
+      // Wait for all emails to be sent (with timeout)
+      const results = await Promise.allSettled(emailPromises);
+      const successful = results.filter(r => r.status === 'fulfilled').length;
+      const failed = results.filter(r => r.status === 'rejected').length;
+      
+      console.log(`📊 Email notification results:`, {
+        successful,
+        failed,
+        total: studentsToNotify.size
+      });
+      
+    } catch (error) {
+      console.error('❌ Error in sendTestCreationNotifications:', error);
+      throw error;
+    }
   }
 }
