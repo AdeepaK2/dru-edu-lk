@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, ArrowRight, ArrowLeft, Clock, Calendar, Users, BookOpen, AlertCircle, Settings, Target, FileText, Edit } from 'lucide-react';
+import { X, ArrowRight, ArrowLeft, Clock, Calendar, Users, BookOpen, AlertCircle, Settings, Target, FileText, Edit, Eye, Check, RefreshCw } from 'lucide-react';
 import { TestType, TestConfig, QuestionSelectionMethod } from '@/models/testSchema';
 import { QuestionBank, Question } from '@/models/questionBankSchema';
 import { LessonDocument } from '@/models/lessonSchema';
@@ -137,8 +137,13 @@ export default function CreateTestModal({
   // State for manual question selection
   const [availableQuestions, setAvailableQuestions] = useState<Question[]>([]);
   const [loadingQuestions, setLoadingQuestions] = useState(false);
+  
+  // State for auto-selected questions preview
+  const [previewQuestions, setPreviewQuestions] = useState<any[]>([]);
+  const [loadingPreview, setLoadingPreview] = useState(false);
+  const [previewError, setPreviewError] = useState<string>('');
 
-  const totalSteps = 4; // Updated to 4 steps
+  const totalSteps = 5; // Updated to 5 steps (added preview step)
 
   // Load lessons when question bank is selected
   useEffect(() => {
@@ -304,6 +309,66 @@ export default function CreateTestModal({
     });
   };
 
+  // Generate preview questions for auto-selection
+  const generatePreviewQuestions = async () => {
+    if (formData.questionSelectionMethod !== 'auto' || !formData.selectedQuestionBankId || formData.selectedLessonIds.length === 0) {
+      return;
+    }
+
+    try {
+      setLoadingPreview(true);
+      setPreviewError('');
+
+      const selectedBank = questionBanks.find(bank => bank.id === formData.selectedQuestionBankId);
+      if (!selectedBank) {
+        throw new Error('Selected question bank not found');
+      }
+
+      // Build test config for preview
+      const testConfig: TestConfig = {
+        questionSelectionMethod: formData.questionSelectionMethod as QuestionSelectionMethod,
+        questionType: formData.questionType as 'mcq' | 'essay',
+        totalQuestions: formData.totalQuestions,
+        shuffleQuestions: formData.shuffleQuestions,
+        allowReviewBeforeSubmit: formData.allowReviewBeforeSubmit,
+        passingScore: formData.passingScore,
+        showResultsImmediately: formData.showResultsImmediately,
+      };
+
+      const questionBankSelection = {
+        bankId: formData.selectedQuestionBankId,
+        bankName: selectedBank.name,
+        lessonIds: formData.selectedLessonIds,
+        questionCount: formData.totalQuestions,
+        difficultyDistribution: undefined // Use default distribution
+      };
+
+      console.log('🎯 Generating preview questions with config:', {
+        testConfig,
+        questionBankSelection
+      });
+
+      const autoSelectedQuestions = await TestService.autoSelectQuestions(
+        [questionBankSelection],
+        testConfig
+      );
+
+      if (autoSelectedQuestions.length === 0) {
+        throw new Error(`No questions found for the selected lessons. Please check if questions exist for the selected lessons in ${selectedBank.subjectName}.`);
+      }
+
+      console.log('✅ Preview questions generated:', autoSelectedQuestions.length);
+      setPreviewQuestions(autoSelectedQuestions);
+
+    } catch (error) {
+      console.error('Error generating preview questions:', error);
+      setPreviewError(error instanceof Error ? error.message : 'Failed to generate preview questions');
+      setPreviewQuestions([]);
+    } finally {
+      setLoadingPreview(false);
+    }
+  };
+
   const validateStep = (step: number): boolean => {
     const newErrors: Record<string, string> = {};
 
@@ -378,7 +443,11 @@ export default function CreateTestModal({
         }
         break;
         
-      case 4: // Final Configuration
+      case 4: // Auto-Selection Preview (only for auto selection)
+        // No validation needed for preview step - it's just display
+        break;
+        
+      case 5: // Final Configuration
         if (formData.passingScore < 0 || formData.passingScore > 100) {
           newErrors.passingScore = 'Passing score must be between 0 and 100';
         }
@@ -391,12 +460,27 @@ export default function CreateTestModal({
 
   const handleNext = () => {
     if (validateStep(currentStep)) {
-      setCurrentStep(prev => Math.min(prev + 1, totalSteps));
+      // If moving from step 3 to step 4 and using auto-selection, generate preview
+      if (currentStep === 3 && formData.questionSelectionMethod === 'auto') {
+        generatePreviewQuestions();
+      }
+      
+      // For manual selection, skip the preview step (step 4)
+      if (currentStep === 3 && formData.questionSelectionMethod === 'manual') {
+        setCurrentStep(5); // Jump directly to final configuration
+      } else {
+        setCurrentStep(prev => Math.min(prev + 1, totalSteps));
+      }
     }
   };
 
   const handlePrevious = () => {
-    setCurrentStep(prev => Math.max(prev - 1, 1));
+    // If on step 5 and came from manual selection, go back to step 3
+    if (currentStep === 5 && formData.questionSelectionMethod === 'manual') {
+      setCurrentStep(3);
+    } else {
+      setCurrentStep(prev => Math.max(prev - 1, 1));
+    }
   };
 
   const handleCreateTest = async () => {
@@ -1756,8 +1840,176 @@ export default function CreateTestModal({
             </div>
           )}
 
-          {/* Step 4: Final Configuration */}
-          {currentStep === 4 && (
+          {/* Step 4: Auto-Selection Preview */}
+          {currentStep === 4 && formData.questionSelectionMethod === 'auto' && (
+            <div className="space-y-6">
+              <div className="text-center mb-8">
+                <div className="mx-auto w-16 h-16 bg-purple-100 dark:bg-purple-900/20 rounded-full flex items-center justify-center mb-4">
+                  <Eye className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                  Question Preview
+                </h3>
+                <p className="text-gray-500 dark:text-gray-400">
+                  Review the auto-selected questions for your test
+                </p>
+              </div>
+
+              {loadingPreview ? (
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-4"></div>
+                  <p className="text-gray-600 dark:text-gray-300">Generating question preview...</p>
+                </div>
+              ) : previewError ? (
+                <div className="text-center py-12">
+                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
+                    <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-red-900 dark:text-red-300 mb-2">
+                      Preview Generation Failed
+                    </h3>
+                    <p className="text-red-700 dark:text-red-400 mb-4">
+                      {previewError}
+                    </p>
+                    <button
+                      onClick={generatePreviewQuestions}
+                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                    >
+                      Try Again
+                    </button>
+                  </div>
+                </div>
+              ) : previewQuestions.length === 0 ? (
+                <div className="text-center py-12">
+                  <BookOpen className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600 dark:text-gray-300">No questions available for preview.</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {/* Preview Summary */}
+                  <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                    <div className="flex items-center space-x-3 mb-3">
+                      <Check className="w-5 h-5 text-green-600" />
+                      <h4 className="font-medium text-green-900 dark:text-green-300">
+                        Auto-Selection Complete
+                      </h4>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                      <div>
+                        <span className="text-gray-600 dark:text-gray-400">Total Questions:</span>
+                        <div className="font-semibold text-green-800 dark:text-green-300">
+                          {previewQuestions.length}
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-gray-600 dark:text-gray-400">Total Marks:</span>
+                        <div className="font-semibold text-green-800 dark:text-green-300">
+                          {previewQuestions.reduce((sum, q) => sum + (q.points || 1), 0)}
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-gray-600 dark:text-gray-400">Question Type:</span>
+                        <div className="font-semibold text-green-800 dark:text-green-300">
+                          {formData.questionType === 'mcq' ? 'Multiple Choice' : 'Essay'}
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-gray-600 dark:text-gray-400">From Bank:</span>
+                        <div className="font-semibold text-green-800 dark:text-green-300">
+                          {questionBanks.find(b => b.id === formData.selectedQuestionBankId)?.name}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Questions List */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium text-gray-900 dark:text-white">
+                        Selected Questions ({previewQuestions.length})
+                      </h4>
+                      <button
+                        onClick={generatePreviewQuestions}
+                        className="flex items-center space-x-2 px-3 py-1 text-sm text-purple-600 hover:text-purple-800 dark:text-purple-400"
+                      >
+                        <RefreshCw className="w-4 h-4" />
+                        <span>Regenerate</span>
+                      </button>
+                    </div>
+                    
+                    <div className="max-h-96 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-lg">
+                      {previewQuestions.map((question, index) => (
+                        <div
+                          key={question.id || index}
+                          className="p-4 border-b border-gray-200 dark:border-gray-600 last:border-b-0"
+                        >
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex items-center space-x-2">
+                              <span className="inline-flex items-center justify-center w-6 h-6 bg-purple-100 text-purple-800 rounded-full text-xs font-medium">
+                                {index + 1}
+                              </span>
+                              <span className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded">
+                                {question.difficultyLevel || 'medium'}
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                {question.points || 1} point{(question.points || 1) !== 1 ? 's' : ''}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <div className="text-sm text-gray-900 dark:text-white">
+                            <div className="font-medium mb-1">
+                              {question.questionText || question.title || 'Question content'}
+                            </div>
+                            {question.content && (
+                              <div className="text-gray-600 dark:text-gray-400 text-xs">
+                                {question.content.length > 100 
+                                  ? question.content.substring(0, 100) + '...' 
+                                  : question.content
+                                }
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Show options for MCQ */}
+                          {formData.questionType === 'mcq' && question.options && (
+                            <div className="mt-2 text-xs text-gray-500">
+                              <span className="font-medium">Options:</span> {question.options.length} choices
+                            </div>
+                          )}
+                          
+                          {question.topic && (
+                            <div className="mt-2">
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
+                                {question.topic}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+                    <div className="flex items-start space-x-2">
+                      <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5" />
+                      <div>
+                        <h4 className="font-medium text-amber-800 dark:text-amber-300">
+                          Preview Note
+                        </h4>
+                        <p className="text-sm text-amber-700 dark:text-amber-400 mt-1">
+                          This is a preview of the questions that will be included in your test. 
+                          Click "Regenerate" to get a different random selection, or proceed to finalize your test.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Step 5: Final Configuration */}
+          {currentStep === 5 && (
             <div className="space-y-6">
               <div className="text-center mb-8">
                 <div className="mx-auto w-16 h-16 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center mb-4">
