@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
@@ -23,6 +23,8 @@ import { signOut } from 'firebase/auth';
 import { auth } from '@/utils/firebase-client';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui';
+import { TestService } from '@/apiservices/testService';
+import { getEnrollmentsByStudent } from '@/services/studentEnrollmentService';
 
 interface SidebarItem {
   id: string;
@@ -32,56 +34,79 @@ interface SidebarItem {
   badge?: string;
 }
 
-const sidebarItems: SidebarItem[] = [
-  {
-    id: 'dashboard',
-    label: 'Dashboard',
-    href: '/student',
-    icon: Home,
-  },
-  {
-    id: 'classes',
-    label: 'My Classes',
-    href: '/student/classes',
-    icon: Users,
-  },
-  {
-    id: 'tests',
-    label: 'Tests & Quizzes',
-    href: '/student/test',
-    icon: FileText,
-  },
-  {
-    id: 'study',
-    label: 'Study Materials',
-    href: '/student/study',
-    icon: BookOpenCheck,
-  },
-  {
-    id: 'videos',
-    label: 'Video Library',
-    href: '/student/video',
-    icon: Video,
-  },
-  {
-    id: 'results',
-    label: 'Results & Grades',
-    href: '/student/results',
-    icon: Trophy,
-  },
-  {
-    id: 'meeting',
-    label: 'Meetings',
-    href: '/student/meeting',
-    icon: Video,
-  },
-  {
-    id: 'settings',
-    label: 'Settings',
-    href: '/student/settings',
-    icon: Settings,
-  },
-];
+const getUpcomingUnattemptedQuizCount = async (studentId: string): Promise<number> => {
+  try {
+    // Get student's class enrollments
+    const enrollments = await getEnrollmentsByStudent(studentId);
+    const classIds = enrollments
+      .filter(enrollment => enrollment.status === 'Active')
+      .map(enrollment => enrollment.classId);
+    
+    if (classIds.length === 0) {
+      return 0;
+    }
+
+    // Get upcoming unattempted test count using the efficient service
+    return await TestService.getUpcomingUnattemptedTestCount(studentId, classIds);
+  } catch (error) {
+    console.error('Error getting upcoming quiz count:', error);
+    return 0;
+  }
+};
+
+function buildSidebarItems(upcomingQuizCount: number): SidebarItem[] {
+  return [
+    {
+      id: 'dashboard',
+      label: 'Dashboard',
+      href: '/student',
+      icon: Home,
+    },
+    {
+      id: 'classes',
+      label: 'My Classes',
+      href: '/student/classes',
+      icon: Users,
+    },
+    {
+      id: 'tests',
+      label: 'Tests & Quizzes',
+      href: '/student/test',
+      icon: FileText,
+      badge: upcomingQuizCount > 0 ? String(upcomingQuizCount) : undefined,
+    },
+    {
+      id: 'study',
+      label: 'Study Materials',
+      href: '/student/study',
+      icon: BookOpenCheck,
+    },
+    {
+      id: 'videos',
+      label: 'Video Library',
+      href: '/student/video',
+      icon: Video,
+    },
+    {
+      id: 'results',
+      label: 'Results & Grades',
+      href: '/student/results',
+      icon: Trophy,
+    },
+    {
+      id: 'meeting',
+      label: 'Meetings',
+      href: '/student/meeting',
+      icon: Video,
+    },
+    {
+      id: 'settings',
+      label: 'Settings',
+      href: '/student/settings',
+      icon: Settings,
+    },
+  ];
+}
 
 interface StudentSidebarProps {
   student?: {
@@ -94,9 +119,23 @@ interface StudentSidebarProps {
   onToggle: () => void;
 }
 
+
 export default function StudentSidebar({ student, isOpen, onToggle }: StudentSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const [upcomingQuizCount, setUpcomingQuizCount] = useState(0);
+
+  useEffect(() => {
+    if (student?.email || student?.name) {
+      // Use student.id if available, fallback to email for student ID
+      const studentId = (student as any)?.id || student?.email || student?.name;
+      if (studentId) {
+        getUpcomingUnattemptedQuizCount(studentId).then(setUpcomingQuizCount).catch(console.error);
+      }
+    }
+  }, [student]);
+
+  const sidebarItems = buildSidebarItems(upcomingQuizCount);
 
   const handleLogout = async () => {
     try {
@@ -170,7 +209,6 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
           {sidebarItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
-            
             return (
               <Link
                 key={item.id}
