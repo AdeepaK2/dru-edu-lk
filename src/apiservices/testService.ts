@@ -1090,28 +1090,77 @@ export class TestService {
       let availableFrom = '';
       let availableTo = '';
       
+      // Helper function to safely convert timestamps to dates
+      const safelyConvertToDate = (timestamp: any): Date | null => {
+        try {
+          if (!timestamp) return null;
+          
+          // Handle Firestore Timestamp
+          if (timestamp && typeof timestamp.toDate === 'function') {
+            return timestamp.toDate();
+          }
+          
+          // Handle plain Date object
+          if (timestamp instanceof Date) {
+            return isNaN(timestamp.getTime()) ? null : timestamp;
+          }
+          
+          // Handle Firestore Timestamp object structure
+          if (timestamp && timestamp.seconds) {
+            return new Date(timestamp.seconds * 1000 + (timestamp.nanoseconds || 0) / 1000000);
+          }
+          
+          // Handle string or number
+          const date = new Date(timestamp);
+          return isNaN(date.getTime()) ? null : date;
+        } catch (error) {
+          console.warn('Error converting timestamp to date:', timestamp, error);
+          return null;
+        }
+      };
+      
       if (testType === 'live') {
         const liveTestData = testData as any; // LiveTest data
+        console.log('🔍 Processing live test data:', liveTestData.scheduledStartTime);
+        
         if (liveTestData.scheduledStartTime) {
-          const startTime = liveTestData.scheduledStartTime.toDate ? 
-            liveTestData.scheduledStartTime.toDate() : 
-            new Date(liveTestData.scheduledStartTime);
-          testDate = startTime.toISOString().split('T')[0];
-          testTime = startTime.toTimeString().split(' ')[0].substring(0, 5); // HH:MM format
+          const startTime = safelyConvertToDate(liveTestData.scheduledStartTime);
+          if (startTime) {
+            testDate = startTime.toISOString().split('T')[0];
+            testTime = startTime.toTimeString().split(' ')[0].substring(0, 5); // HH:MM format
+            console.log('✅ Live test date/time processed:', { testDate, testTime });
+          } else {
+            console.warn('⚠️ Invalid scheduledStartTime for live test, using current date');
+            const now = new Date();
+            testDate = now.toISOString().split('T')[0];
+            testTime = now.toTimeString().split(' ')[0].substring(0, 5);
+          }
         }
       } else {
         const flexTestData = testData as any; // FlexibleTest data
+        console.log('🔍 Processing flexible test data:', { 
+          availableFrom: flexTestData.availableFrom,
+          availableTo: flexTestData.availableTo
+        });
+        
         if (flexTestData.availableFrom) {
-          const fromDate = flexTestData.availableFrom.toDate ? 
-            flexTestData.availableFrom.toDate() : 
-            new Date(flexTestData.availableFrom);
-          availableFrom = fromDate.toISOString();
+          const fromDate = safelyConvertToDate(flexTestData.availableFrom);
+          if (fromDate) {
+            availableFrom = fromDate.toISOString();
+            console.log('✅ Available from processed:', availableFrom);
+          } else {
+            console.warn('⚠️ Invalid availableFrom date for flexible test');
+          }
         }
+        
         if (flexTestData.availableTo) {
-          const toDate = flexTestData.availableTo.toDate ? 
-            flexTestData.availableTo.toDate() : 
-            new Date(flexTestData.availableTo);
-          availableTo = toDate.toISOString();
+          const toDate = safelyConvertToDate(flexTestData.availableTo);
+          if (toDate) {
+            availableTo = toDate.toISOString();
+            console.log('✅ Available to processed:', availableTo);
+          } else {
+            console.warn('⚠️ Invalid availableTo date for flexible test');
+          }
         }
       }
       
