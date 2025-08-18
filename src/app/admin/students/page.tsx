@@ -19,7 +19,9 @@ import {
   School,
   BookOpen,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Download,
+  FileSpreadsheet
 } from 'lucide-react';
 import { Student, StudentDocument } from '@/models/studentSchema';
 import { EnrollmentRequestDocument, convertEnrollmentRequestDocument } from '@/models/enrollmentRequestSchema';
@@ -37,6 +39,7 @@ import {
   addDoc,
   where,
   getDocs,
+  getDoc,
   Timestamp 
 } from 'firebase/firestore';
 import Button from '@/components/ui/Button';
@@ -49,6 +52,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import StudentModal from '@/components/modals/StudentModal';
 import AssignStudentToClassModal from '@/components/modals/AssignStudentToClassModal';
 import { useCachedData } from '@/hooks/useAdminCache';
+import * as XLSX from 'xlsx';
+import { ClassDocument } from '@/models/classSchema';
+import { StudentEnrollmentDocument } from '@/models/studentEnrollmentSchema';
 
 export default function StudentsManagement() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -65,12 +71,20 @@ export default function StudentsManagement() {
   
   // Enrollment request states
   const [showEnrollmentTab, setShowEnrollmentTab] = useState(false);
+  const [showDataExportTab, setShowDataExportTab] = useState(false);
   const [enrollmentRequests, setEnrollmentRequests] = useState<EnrollmentRequestDocument[]>([]);
   const [selectedStudentRequests, setSelectedStudentRequests] = useState<EnrollmentRequestDocument[]>([]);
   const [showEnrollmentDetailModal, setShowEnrollmentDetailModal] = useState(false);
   const [processingEnrollment, setProcessingEnrollment] = useState<string | null>(null);
   const [showApprovedRequests, setShowApprovedRequests] = useState(false);
   const [showRejectedRequests, setShowRejectedRequests] = useState(false);
+
+  // Data export states
+  const [availableClasses, setAvailableClasses] = useState<ClassDocument[]>([]);
+  const [selectedClasses, setSelectedClasses] = useState<string[]>([]);
+  const [loadingClasses, setLoadingClasses] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
+  const [classStudentData, setClassStudentData] = useState<Record<string, StudentEnrollmentDocument[]>>({});
   
   // Use real-time data for immediate updates
   const [students, setStudents] = useState<StudentDocument[]>([]);
@@ -110,6 +124,177 @@ export default function StudentsManagement() {
       setStudentEnrollmentDetails(details);
     } catch (error) {
       console.error('Error loading enrollment counts:', error);
+    }
+  };
+
+  // Function to load student enrollment data for selected classes
+  const loadStudentDataForClasses = async (classIds: string[]) => {
+    try {
+      const classStudentMap: Record<string, StudentEnrollmentDocument[]> = {};
+      
+      await Promise.all(
+        classIds.map(async (classId) => {
+          try {
+            const enrollmentQuery = query(
+              collection(firestore, 'studentEnrollments'),
+              where('classId', '==', classId),
+              where('status', '==', 'Active')
+            );
+            const snapshot = await getDocs(enrollmentQuery);
+            const enrollments = snapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data()
+            })) as StudentEnrollmentDocument[];
+            
+            classStudentMap[classId] = enrollments;
+          } catch (error) {
+            console.error(`Error loading students for class ${classId}:`, error);
+            classStudentMap[classId] = [];
+          }
+        })
+      );
+      
+      setClassStudentData(classStudentMap);
+    } catch (error) {
+      console.error('Error loading student data for classes:', error);
+    }
+  };
+
+  // Function to export student data to Excel
+  const exportStudentData = async () => {
+    if (selectedClasses.length === 0) {
+      alert('Please select at least one class to export');
+      return;
+    }
+
+    setExportLoading(true);
+    try {
+      // Load student data for selected classes
+      const classStudentMap: Record<string, StudentEnrollmentDocument[]> = {};
+      const studentDetailsMap: Record<string, StudentDocument> = {};
+      
+      await Promise.all(
+        selectedClasses.map(async (classId) => {
+          try {
+            const enrollmentQuery = query(
+              collection(firestore, 'studentEnrollments'),
+              where('classId', '==', classId),
+              where('status', '==', 'Active')
+            );
+            const snapshot = await getDocs(enrollmentQuery);
+            const enrollments = snapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data()
+            })) as StudentEnrollmentDocument[];
+            
+            classStudentMap[classId] = enrollments;
+            
+            // Load detailed student information including parent details
+            const studentIds = enrollments.map(e => e.studentId);
+            await Promise.all(
+              studentIds.map(async (studentId) => {
+                if (!studentDetailsMap[studentId]) {
+                  try {
+                    const studentDocRef = doc(firestore, 'students', studentId);
+                    const studentSnapshot = await getDoc(studentDocRef);
+                    
+                    if (studentSnapshot.exists()) {
+                      studentDetailsMap[studentId] = {
+                        id: studentSnapshot.id,
+                        ...studentSnapshot.data()
+                      } as StudentDocument;
+                    }
+                  } catch (error) {
+                    console.error(`Error loading student ${studentId}:`, error);
+                  }
+                }
+              })
+            );
+            
+            console.log(`Loaded ${enrollments.length} students for class ${classId}`);
+          } catch (error) {
+            console.error(`Error loading students for class ${classId}:`, error);
+            classStudentMap[classId] = [];
+          }
+        })
+      );
+      
+      console.log('Class student map:', classStudentMap);
+      console.log('Student details map:', studentDetailsMap);
+      
+      // Create workbook
+      const workbook = XLSX.utils.book_new();
+      let totalStudents = 0;
+      
+      // Create data for each selected class
+      for (const classId of selectedClasses) {
+        const classData = availableClasses.find(c => c.id === classId);
+        const enrollments = classStudentMap[classId] || [];
+        totalStudents += enrollments.length;
+        
+        if (!classData) {
+          console.warn(`Class data not found for classId: ${classId}`);
+          continue;
+        }
+        
+        console.log(`Processing class ${classData.name} with ${enrollments.length} students`);
+        
+        // Prepare data for this class
+        const classSheetData = enrollments.length > 0 
+          ? enrollments.map((enrollment, index) => {
+              const studentDetails = studentDetailsMap[enrollment.studentId];
+              return {
+                'No.': index + 1,
+                'Student Name': enrollment.studentName || 'N/A',
+                'Student Email': enrollment.studentEmail || 'N/A',
+                'Student Phone': studentDetails?.phone || 'N/A',
+                'Parent Name': studentDetails?.parent?.name || 'N/A',
+                'Parent Email': studentDetails?.parent?.email || 'N/A',
+                'Parent Phone': studentDetails?.parent?.phone || 'N/A',
+                'Class Name': enrollment.className || classData.name,
+                'Subject': enrollment.subject || classData.subject,
+                'Enrollment Date': enrollment.enrolledAt 
+                  ? new Date(enrollment.enrolledAt.seconds * 1000).toLocaleDateString() 
+                  : 'N/A',
+                'Status': enrollment.status || 'Active'
+              };
+            })
+          : [{ 
+              'No.': 1,
+              'Student Name': 'No students enrolled',
+              'Student Email': '-',
+              'Student Phone': '-',
+              'Parent Name': '-',
+              'Parent Email': '-',
+              'Parent Phone': '-',
+              'Class Name': classData.name,
+              'Subject': classData.subject,
+              'Enrollment Date': '-',
+              'Status': '-'
+            }];
+        
+        // Create worksheet
+        const worksheet = XLSX.utils.json_to_sheet(classSheetData);
+        
+        // Add worksheet to workbook
+        const sheetName = `${classData.name} - ${classData.subject}`.substring(0, 31); // Excel sheet name limit
+        XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+      }
+      
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().split('T')[0];
+      const filename = `student_data_export_${timestamp}.xlsx`;
+      
+      // Save file
+      XLSX.writeFile(workbook, filename);
+      
+      alert(`Student data exported successfully to ${filename}. Total students: ${totalStudents}`);
+      
+    } catch (error) {
+      console.error('Error exporting student data:', error);
+      alert('Failed to export student data. Check console for details.');
+    } finally {
+      setExportLoading(false);
     }
   };
 
@@ -187,6 +372,52 @@ export default function StudentsManagement() {
 
     return () => unsubscribe();
   }, [showEnrollmentDetailModal, selectedStudentRequests]);
+
+  // Load available classes for data export
+  useEffect(() => {
+    const loadClasses = async () => {
+      if (!showDataExportTab) return;
+      
+      setLoadingClasses(true);
+      try {
+        const classesQuery = query(
+          collection(firestore, 'classes'),
+          orderBy('name', 'asc')
+        );
+        const classesSnapshot = await getDocs(classesQuery);
+        const classesData = classesSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as ClassDocument[];
+        setAvailableClasses(classesData);
+      } catch (error) {
+        console.error('Error loading classes:', error);
+        showError('Failed to load classes');
+      } finally {
+        setLoadingClasses(false);
+      }
+    };
+
+    loadClasses();
+  }, [showDataExportTab]);
+
+  // Load student counts when classes are selected
+  useEffect(() => {
+    const loadStudentCounts = async () => {
+      if (!showDataExportTab || selectedClasses.length === 0) {
+        setClassStudentData({});
+        return;
+      }
+
+      try {
+        await loadStudentDataForClasses(selectedClasses);
+      } catch (error) {
+        console.error('Error loading student counts:', error);
+      }
+    };
+
+    loadStudentCounts();
+  }, [showDataExportTab, selectedClasses]);
   
   // Use alert for now - can be replaced with a proper toast system later
   const showSuccess = (message: string) => {
@@ -775,6 +1006,141 @@ export default function StudentsManagement() {
     });
   };
 
+  // Handle class selection for export
+  const handleClassSelection = (classId: string) => {
+    setSelectedClasses(prev => 
+      prev.includes(classId) 
+        ? prev.filter(id => id !== classId)
+        : [...prev, classId]
+    );
+  };
+
+  // Handle select all classes
+  const handleSelectAllClasses = () => {
+    if (selectedClasses.length === availableClasses.length) {
+      setSelectedClasses([]);
+    } else {
+      setSelectedClasses(availableClasses.map(cls => cls.id));
+    }
+  };
+
+  // Export students data to Excel
+  const handleExportData = async () => {
+    if (selectedClasses.length === 0) {
+      showError('Please select at least one class');
+      return;
+    }
+
+    setExportLoading(true);
+    
+    try {
+      // Get students for selected classes
+      const studentsData: any[] = [];
+      
+      for (const classId of selectedClasses) {
+        const classInfo = availableClasses.find(cls => cls.id === classId);
+        
+        // Get enrollments for this class
+        const enrollmentsQuery = query(
+          collection(firestore, 'studentEnrollments'),
+          where('classId', '==', classId)
+        );
+        const enrollmentsSnapshot = await getDocs(enrollmentsQuery);
+        
+        for (const enrollmentDoc of enrollmentsSnapshot.docs) {
+          const enrollment = enrollmentDoc.data();
+          
+          // Get student details
+          try {
+            const studentDoc = await getDocs(query(
+              collection(firestore, 'students'),
+              where('email', '==', enrollment.studentEmail)
+            ));
+            
+            if (!studentDoc.empty) {
+              const studentData = studentDoc.docs[0].data();
+              
+              studentsData.push({
+                'Class Name': classInfo?.name || 'Unknown',
+                'Subject': classInfo?.subject || 'Unknown',
+                'Year Level': classInfo?.year || 'Unknown',
+                'Student Name': studentData.name || enrollment.studentName,
+                'Student Email': studentData.email || enrollment.studentEmail,
+                'Student Phone': studentData.phone || 'N/A',
+                'Status': studentData.status || 'Active',
+                'Enrollment Date': formatDate(studentData.createdAt) || 'N/A',
+                'Parent Name': studentData.parent?.name || 'N/A',
+                'Parent Email': studentData.parent?.email || 'N/A',
+                'Parent Phone': studentData.parent?.phone || 'N/A',
+                'Payment Status': studentData.payment?.status || 'N/A',
+                'Attendance': `${enrollment.attendance || 0}%`,
+                'Grade': enrollment.grade || 'N/A',
+                'Enrollment Status': enrollment.status || 'Active',
+                'Notes': enrollment.notes || 'N/A'
+              });
+            }
+          } catch (error) {
+            console.error('Error getting student data:', error);
+            // Add enrollment data even if student details fail
+            studentsData.push({
+              'Class Name': classInfo?.name || 'Unknown',
+              'Subject': classInfo?.subject || 'Unknown',
+              'Year Level': classInfo?.year || 'Unknown',
+              'Student Name': enrollment.studentName,
+              'Student Email': enrollment.studentEmail,
+              'Student Phone': 'N/A',
+              'Status': 'Unknown',
+              'Enrollment Date': 'N/A',
+              'Parent Name': 'N/A',
+              'Parent Email': 'N/A',
+              'Parent Phone': 'N/A',
+              'Payment Status': 'N/A',
+              'Attendance': `${enrollment.attendance || 0}%`,
+              'Grade': enrollment.grade || 'N/A',
+              'Enrollment Status': enrollment.status || 'Active',
+              'Notes': enrollment.notes || 'N/A'
+            });
+          }
+        }
+      }
+
+      if (studentsData.length === 0) {
+        showError('No student data found for selected classes');
+        return;
+      }
+
+      // Create Excel workbook
+      const worksheet = XLSX.utils.json_to_sheet(studentsData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Students Data');
+
+      // Auto-size columns
+      const colWidths = Object.keys(studentsData[0]).map(key => ({
+        wch: Math.max(key.length, ...studentsData.map(row => String(row[key]).length))
+      }));
+      worksheet['!cols'] = colWidths;
+
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().split('T')[0];
+      const classNames = selectedClasses.map(id => {
+        const cls = availableClasses.find(c => c.id === id);
+        return cls?.name || 'Unknown';
+      }).join('-');
+      const filename = `students-data-${classNames.substring(0, 20)}-${timestamp}.xlsx`;
+
+      // Download file
+      XLSX.writeFile(workbook, filename);
+      
+      showSuccess(`Exported ${studentsData.length} student records to ${filename}`);
+      
+    } catch (error) {
+      console.error('Error exporting data:', error);
+      showError('Failed to export data');
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'Pending':
@@ -830,9 +1196,12 @@ export default function StudentsManagement() {
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
         <div className="flex border-b border-gray-200 dark:border-gray-700">
           <button
-            onClick={() => setShowEnrollmentTab(false)}
+            onClick={() => {
+              setShowEnrollmentTab(false);
+              setShowDataExportTab(false);
+            }}
             className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
-              !showEnrollmentTab
+              !showEnrollmentTab && !showDataExportTab
                 ? 'border-[#0088e0] text-[#0088e0] bg-blue-50 dark:bg-blue-900/20'
                 : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
             }`}
@@ -841,9 +1210,12 @@ export default function StudentsManagement() {
             Students ({students?.length || 0})
           </button>
           <button
-            onClick={() => setShowEnrollmentTab(true)}
+            onClick={() => {
+              setShowEnrollmentTab(true);
+              setShowDataExportTab(false);
+            }}
             className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
-              showEnrollmentTab
+              showEnrollmentTab && !showDataExportTab
                 ? 'border-[#0088e0] text-[#0088e0] bg-blue-50 dark:bg-blue-900/20'
                 : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
             }`}
@@ -851,11 +1223,25 @@ export default function StudentsManagement() {
             <Clock className="w-4 h-4 mr-2 inline" />
             Enrollment Requests ({enrollmentRequests.filter(r => r.status === 'Pending').length})
           </button>
+          <button
+            onClick={() => {
+              setShowEnrollmentTab(false);
+              setShowDataExportTab(true);
+            }}
+            className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+              showDataExportTab
+                ? 'border-[#0088e0] text-[#0088e0] bg-blue-50 dark:bg-blue-900/20'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+            }`}
+          >
+            <Download className="w-4 h-4 mr-2 inline" />
+            Data Export
+          </button>
         </div>
       </div>
 
       {/* Content based on active tab */}
-      {!showEnrollmentTab ? (
+      {!showEnrollmentTab && !showDataExportTab ? (
         <>
           {/* Quick Stats */}
           {students && students.length > 0 && (
@@ -1142,7 +1528,7 @@ export default function StudentsManagement() {
         </div>
       </div>
         </>
-      ) : (
+      ) : showEnrollmentTab && !showDataExportTab ? (
         /* Enrollment Requests Tab */
         <div className="space-y-6">
           {/* Enrollment Stats */}
@@ -1442,7 +1828,155 @@ export default function StudentsManagement() {
             </div>
           )}
         </div>
-      )}
+      ) : showDataExportTab ? (
+        /* Data Export Tab */
+        <div className="space-y-6">
+          {/* Export Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-blue-600">
+                  {availableClasses.length}
+                </div>
+                <div className="text-sm text-gray-600">Available Classes</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-green-600">
+                  {selectedClasses.length}
+                </div>
+                <div className="text-sm text-gray-600">Selected Classes</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-purple-600">
+                  {Object.values(classStudentData).reduce((acc, students) => acc + students.length, 0)}
+                </div>
+                <div className="text-sm text-gray-600">Total Students to Export</div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Class Selection */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <BookOpen className="w-5 h-5 mr-2" />
+                Select Classes to Export
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loadingClasses ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="mt-2 text-gray-600">Loading classes...</p>
+                </div>
+              ) : availableClasses.length === 0 ? (
+                <div className="text-center py-8">
+                  <BookOpen className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600">No classes available</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center space-x-4">
+                      <button
+                        onClick={() => setSelectedClasses(selectedClasses.length === availableClasses.length ? [] : availableClasses.map(c => c.id))}
+                        className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                      >
+                        {selectedClasses.length === availableClasses.length ? 'Deselect All' : 'Select All'}
+                      </button>
+                    </div>
+                    <Button
+                      onClick={exportStudentData}
+                      disabled={selectedClasses.length === 0 || exportLoading}
+                      className="flex items-center"
+                    >
+                      {exportLoading ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      ) : (
+                        <FileSpreadsheet className="w-4 h-4 mr-2" />
+                      )}
+                      Export to Excel
+                    </Button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {availableClasses.map((classItem) => (
+                      <Card key={classItem.id} className={`cursor-pointer border-2 transition-all ${
+                        selectedClasses.includes(classItem.id) 
+                          ? 'border-blue-500 bg-blue-50' 
+                          : 'border-gray-200 hover:border-blue-300'
+                      }`}>
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center mb-2">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedClasses.includes(classItem.id)}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setSelectedClasses([...selectedClasses, classItem.id]);
+                                    } else {
+                                      setSelectedClasses(selectedClasses.filter(id => id !== classItem.id));
+                                    }
+                                  }}
+                                  className="mr-2"
+                                />
+                                <h3 className="font-semibold text-gray-900">{classItem.name}</h3>
+                              </div>
+                              <div className="space-y-1 text-sm text-gray-600">
+                                <div className="flex items-center">
+                                  <BookOpen className="w-4 h-4 mr-1" />
+                                  {classItem.subject} - {classItem.year}
+                                </div>
+                                <div className="flex items-center">
+                                  <Users className="w-4 h-4 mr-1" />
+                                  {classStudentData[classItem.id]?.length ?? classItem.enrolledStudents ?? 0} students
+                                  {selectedClasses.includes(classItem.id) && classStudentData[classItem.id] && (
+                                    <span className="ml-1 text-xs text-blue-600">
+                                      ({classStudentData[classItem.id].length} active)
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center">
+                                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                    classItem.status === 'Active' 
+                                      ? 'bg-green-100 text-green-800' 
+                                      : 'bg-red-100 text-red-800'
+                                  }`}>
+                                    {classItem.status}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+
+                  {selectedClasses.length > 0 && (
+                    <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                      <h4 className="font-medium text-blue-900 mb-2">Export Preview</h4>
+                      <p className="text-sm text-blue-700">
+                        {selectedClasses.length} class{selectedClasses.length !== 1 ? 'es' : ''} selected. 
+                        The Excel file will contain separate sheets for each selected class with student enrollment details.
+                      </p>
+                      <div className="mt-2 text-xs text-blue-600">
+                        <strong>Data included:</strong> Student Name, Email, Phone, Parent Name, Email, Phone, Class Name, Subject, Enrollment Date, Status
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      ) : null}
 
       {/* Student Enrollment Requests Detail Modal */}
       {showEnrollmentDetailModal && selectedStudentRequests.length > 0 && (
