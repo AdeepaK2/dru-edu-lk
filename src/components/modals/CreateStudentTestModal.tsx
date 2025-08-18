@@ -1120,7 +1120,7 @@ export default function CreateStudentTestModal({
                     <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                       <h4 className="font-medium text-blue-900 dark:text-blue-200 mb-2">Automatic Selection</h4>
                       <p className="text-sm text-blue-700 dark:text-blue-300">
-                        Questions will be randomly selected from the chosen question bank and lessons based on difficulty balance.
+                        Questions will be randomly selected from the chosen question bank and lessons with a balanced mix of difficulty levels.
                       </p>
                     </div>
 
@@ -1231,49 +1231,6 @@ export default function CreateStudentTestModal({
                       {errors.selectedLessonIds && (
                         <p className="text-red-500 text-sm mt-1">{errors.selectedLessonIds}</p>
                       )}
-                    </div>
-
-                    {/* Difficulty Balance */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                        Difficulty Balance (Optional)
-                      </label>
-                      <div className="grid grid-cols-3 gap-4">
-                        <div>
-                          <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Easy (%)</label>
-                          <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            value={30}
-                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                            disabled
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Medium (%)</label>
-                          <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            value={50}
-                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                            disabled
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Hard (%)</label>
-                          <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            value={20}
-                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                            disabled
-                          />
-                        </div>
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">Default balance will be used (30% Easy, 50% Medium, 20% Hard)</p>
                     </div>
                   </div>
                 )}
