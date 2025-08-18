@@ -21,11 +21,16 @@ import {
   User,
   BookOpen,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  Tag,
+  Check,
+  X
 } from 'lucide-react';
 import { QuestionBank, Question } from '@/models/questionBankSchema';
+import { LessonDocument } from '@/models/lessonSchema';
 import { questionBankService, questionService } from '@/apiservices/questionBankFirestoreService';
 import { teacherAccessBankService } from '@/apiservices/teacherAccessBankService';
+import { LessonFirestoreService } from '@/apiservices/lessonFirestoreService';
 import { useTeacherAuth } from '@/hooks/useTeacherAuth';
 import TeacherLayout from '@/components/teacher/TeacherLayout';
 import { Button, Input, ConfirmDialog } from '@/components/ui';
@@ -42,8 +47,10 @@ export default function TeacherQuestionBankDetail() {
   // State management
   const [questionBank, setQuestionBank] = useState<QuestionBank | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [lessons, setLessons] = useState<LessonDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [questionsLoading, setQuestionsLoading] = useState(false);
+  const [lessonsLoading, setLessonsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
@@ -58,6 +65,10 @@ export default function TeacherQuestionBankDetail() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [questionToDelete, setQuestionToDelete] = useState<Question | null>(null);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
+
+  // Lesson editing state
+  const [editingLessonForQuestion, setEditingLessonForQuestion] = useState<string | null>(null);
+  const [tempLessonId, setTempLessonId] = useState<string>('');
 
   // Add this state for showing search help
   const [showSearchHelp, setShowSearchHelp] = useState(false);
@@ -115,6 +126,9 @@ export default function TeacherQuestionBankDetail() {
         
         setQuestionBank(bank);
         
+        // Fetch lessons for this subject
+        loadLessons(bank.subjectId);
+        
         // Fetch questions in this bank
         if (bank.questionIds && bank.questionIds.length > 0) {
           setQuestionsLoading(true);
@@ -162,6 +176,77 @@ export default function TeacherQuestionBankDetail() {
       top: document.documentElement.scrollHeight,
       behavior: 'smooth'
     });
+  };
+
+  // Load lessons for the subject
+  const loadLessons = async (subjectId: string) => {
+    try {
+      setLessonsLoading(true);
+      const lessonsData = await LessonFirestoreService.getLessonsBySubject(subjectId);
+      setLessons(lessonsData);
+    } catch (error) {
+      console.error('Error loading lessons:', error);
+      setLessons([]);
+    } finally {
+      setLessonsLoading(false);
+    }
+  };
+
+  // Get lesson name by ID
+  const getLessonName = (lessonId: string | undefined) => {
+    if (!lessonId || lessonId === 'no-lesson') return null;
+    const lesson = lessons.find(l => l.id === lessonId);
+    return lesson?.name || null;
+  };
+
+  // Handle lesson assignment change
+  const handleLessonChange = async (questionId: string, newLessonId: string) => {
+    try {
+      // Update the question's topic based on lesson
+      const lessonName = newLessonId === 'no-lesson' ? undefined : getLessonName(newLessonId);
+      
+      // Update the question in the database
+      await questionService.updateQuestion(questionId, {
+        topic: lessonName || undefined
+      });
+
+      // Update local state
+      setQuestions(prev => prev.map(q => 
+        q.id === questionId 
+          ? { ...q, topic: lessonName || undefined }
+          : q
+      ));
+
+      showToast('Question lesson updated successfully!', 'success');
+    } catch (error) {
+      console.error('Error updating question lesson:', error);
+      showToast('Failed to update question lesson', 'error');
+    }
+  };
+
+  // Start editing lesson for a question
+  const startEditingLesson = (questionId: string) => {
+    const question = questions.find(q => q.id === questionId);
+    if (question) {
+      // Find lesson ID from topic
+      const lesson = lessons.find(l => l.name === question.topic);
+      const lessonId = lesson?.id || 'no-lesson';
+      setTempLessonId(lessonId);
+      setEditingLessonForQuestion(questionId);
+    }
+  };
+
+  // Save lesson changes
+  const saveLessonChange = async (questionId: string) => {
+    await handleLessonChange(questionId, tempLessonId);
+    setEditingLessonForQuestion(null);
+    setTempLessonId('');
+  };
+
+  // Cancel lesson editing
+  const cancelLessonEdit = () => {
+    setEditingLessonForQuestion(null);
+    setTempLessonId('');
   };
 
   // Enhanced filter function
@@ -656,6 +741,48 @@ export default function TeacherQuestionBankDetail() {
                             }`}>
                               {question.difficultyLevel}
                             </span>
+                            
+                            {/* Lesson Badge - Editable */}
+                            {editingLessonForQuestion === question.id ? (
+                              <div className="flex items-center space-x-2">
+                                <select
+                                  value={tempLessonId}
+                                  onChange={(e) => setTempLessonId(e.target.value)}
+                                  className="text-xs px-2 py-0.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                  disabled={lessonsLoading}
+                                >
+                                  <option value="no-lesson">No Lesson</option>
+                                  {lessons.map((lesson) => (
+                                    <option key={lesson.id} value={lesson.id}>
+                                      {lesson.name}
+                                    </option>
+                                  ))}
+                                </select>
+                                <button
+                                  onClick={() => saveLessonChange(question.id)}
+                                  className="text-green-600 hover:text-green-800"
+                                  disabled={lessonsLoading}
+                                >
+                                  <Check className="w-3 h-3" />
+                                </button>
+                                <button
+                                  onClick={cancelLessonEdit}
+                                  className="text-red-600 hover:text-red-800"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => startEditingLesson(question.id)}
+                                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/30 transition-colors"
+                                title="Click to edit lesson"
+                              >
+                                {question.topic || 'No Lesson'}
+                                <Tag className="w-3 h-3 ml-1" />
+                              </button>
+                            )}
+                            
                             <span className="text-xs text-gray-500 dark:text-gray-400">
                               {question.points} points
                             </span>
