@@ -10,6 +10,7 @@ import { CalendarDays, Clock, MapPin, DollarSign, Users, BookOpen, CheckCircle, 
 import { ClassDocument } from '@/models/classSchema';
 import { EnrollmentRequestData, enrollmentRequestSchema } from '@/models/enrollmentRequestSchema';
 import { ClassFirestoreService } from '@/apiservices/classFirestoreService';
+import { TeacherFirestoreService } from '@/apiservices/teacherFirestoreService';
 import { firestore, auth } from '@/utils/firebase-client';
 import { collection, addDoc, getDocs, query, Timestamp, where, updateDoc, doc } from 'firebase/firestore';
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
@@ -78,6 +79,9 @@ export default function EnrollmentPage() {
     agreedToTerms: false,
   });
 
+  // Map of teacherId -> teacherName
+  const [teacherNames, setTeacherNames] = useState<Record<string, string>>({});
+
   // Fetch available classes (after authentication)
   useEffect(() => {
     const fetchClasses = async () => {
@@ -109,6 +113,37 @@ export default function EnrollmentPage() {
 
     fetchClasses();
   }, [authLoading]); // Depend on authLoading to run after authentication
+
+  // Load teacher names whenever classes change
+  useEffect(() => {
+    const loadTeacherNames = async () => {
+      try {
+        const uniqueTeacherIds = Array.from(new Set(classes.map(c => (c as any).teacherId).filter(Boolean)));
+        if (uniqueTeacherIds.length === 0) {
+          setTeacherNames({});
+          return;
+        }
+
+        const nameMap: Record<string, string> = {};
+        await Promise.all(uniqueTeacherIds.map(async (tid) => {
+          try {
+            const teacher = await TeacherFirestoreService.getTeacherById(tid);
+            nameMap[tid] = teacher?.name ?? 'Unknown Teacher';
+          } catch (err) {
+            console.warn(`Failed to load teacher ${tid}`, err);
+            nameMap[tid] = 'Unknown Teacher';
+          }
+        }));
+
+        setTeacherNames(nameMap);
+      } catch (err) {
+        console.error('Error loading teacher names', err);
+        setTeacherNames({});
+      }
+    };
+
+    loadTeacherNames();
+  }, [classes]);
 
   // Helper function to format Australian phone number
   const formatAustralianPhone = (phone: string): string => {
@@ -657,8 +692,9 @@ export default function EnrollmentPage() {
                                 {formatSchedule(cls.schedule)}
                               </div>
                               <div className="flex items-center">
-                                <DollarSign className="w-4 h-4 mr-2" />
-                                ${cls.sessionFee}/session
+                                <Users className="w-4 h-4 mr-2" />
+                                {teacherNames[(cls as any).teacherId] ?? (cls as any).teacherId ?? 'Teacher'}
+                                <span className="ml-3 text-gray-700 font-medium">${cls.sessionFee}/session</span>
                               </div>
                             </div>
                             {cls.description && (
