@@ -169,12 +169,13 @@ export default function CreateStudentTestModal({
     }
   }, [formData.questionType, formData.showResultsImmediately]);
 
-  // Load lessons when auto selection method is chosen (backup trigger)
+
+  // Load lessons when question bank or selection method changes (for auto selection)
   useEffect(() => {
-    if (formData.questionSelectionMethod === 'auto' && lessons.length === 0) {
+    if (formData.selectedQuestionBankId && formData.questionSelectionMethod === 'auto') {
       loadLessons();
     }
-  }, [formData.questionSelectionMethod]);
+  }, [formData.selectedQuestionBankId, formData.questionSelectionMethod]);
 
   // Load questions when question bank is selected for manual selection
   useEffect(() => {
