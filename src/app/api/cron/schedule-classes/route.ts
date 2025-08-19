@@ -47,6 +47,16 @@ export async function POST(request: NextRequest) {
     })) as ClassDocument[];
 
     console.log(`📚 Found ${classes.length} active classes`);
+    
+    // Debug: Log all class IDs
+    classes.forEach(cls => {
+      console.log(`🎯 Class Debug:`, {
+        firestoreId: cls.id,
+        classId: cls.classId,
+        name: cls.name,
+        usingForSchedule: cls.id // This is what gets used as classId in schedules
+      });
+    });
 
     // Generate schedule jobs for the next 7 days
     const scheduleJobs = await generateScheduleJobs(classes);
@@ -237,7 +247,7 @@ async function createClassSchedule(job: ScheduleJob): Promise<void> {
     },
     
     // Optional fields
-    topic: undefined,
+    topic: `Regular ${job.subjectName} class`,
     description: `Regular ${job.subjectName} class`,
     materials: [],
     
@@ -250,7 +260,7 @@ async function createClassSchedule(job: ScheduleJob): Promise<void> {
     createdAt: now,
     updatedAt: now,
     createdBy: 'system-cron',
-    updatedBy: undefined,
+    updatedBy: 'system-cron',
   };
 
   // Validate the data
@@ -263,21 +273,25 @@ async function createClassSchedule(job: ScheduleJob): Promise<void> {
     createdAt: Timestamp.fromDate(validatedData.createdAt),
     updatedAt: Timestamp.fromDate(validatedData.updatedAt),
     attendance: {
-      ...validatedData.attendance,
-      lastUpdatedAt: validatedData.attendance.lastUpdatedAt 
-        ? Timestamp.fromDate(validatedData.attendance.lastUpdatedAt)
-        : undefined,
+      totalStudents: validatedData.attendance.totalStudents,
+      presentCount: validatedData.attendance.presentCount,
+      absentCount: validatedData.attendance.absentCount,
+      lateCount: validatedData.attendance.lateCount,
+      attendanceRate: validatedData.attendance.attendanceRate,
       students: validatedData.attendance.students.map(student => ({
         ...student,
-        markedAt: student.markedAt ? Timestamp.fromDate(student.markedAt) : undefined,
+        markedAt: student.markedAt ? Timestamp.fromDate(student.markedAt) : null,
       }))
     }
   };
 
+  // Remove undefined values recursively
+  const cleanData = removeUndefinedValues(firestoreData);
+
   // Save to Firestore
   await firebaseAdmin.db
     .collection('classSchedules')
-    .add(firestoreData);
+    .add(cleanData);
 }
 
 /**
@@ -291,6 +305,31 @@ function calculateDuration(startTime: string, endTime: string): number {
   const endTotalMinutes = endHours * 60 + endMinutes;
   
   return endTotalMinutes - startTotalMinutes;
+}
+
+/**
+ * Remove undefined values from an object recursively
+ */
+function removeUndefinedValues(obj: any): any {
+  if (obj === null || obj === undefined) {
+    return null;
+  }
+  
+  if (Array.isArray(obj)) {
+    return obj.map(removeUndefinedValues).filter(item => item !== undefined);
+  }
+  
+  if (typeof obj === 'object') {
+    const cleaned: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (value !== undefined) {
+        cleaned[key] = removeUndefinedValues(value);
+      }
+    }
+    return cleaned;
+  }
+  
+  return obj;
 }
 
 // Export for Vercel cron jobs
