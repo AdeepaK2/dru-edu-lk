@@ -46,6 +46,7 @@ import {
 } from '@/apiservices/studyMaterialFirestoreService';
 import { StudyMaterialDisplayData } from '@/models/studyMaterialSchema';
 import StudyMaterialUploadModal from '@/components/modals/StudyMaterialUploadModal';
+import AttendanceTab from '@/components/teacher/AttendanceTab';
 
 interface TabData {
   id: string;
@@ -145,6 +146,12 @@ export default function ClassDetails() {
       label: 'Students',
       icon: Users,
       count: enrollmentsLoading ? undefined : enrollments.length
+    },
+    {
+      id: 'attendance',
+      label: 'Attendance',
+      icon: Calendar,
+      count: undefined
     }
   ];
 
@@ -257,6 +264,7 @@ export default function ClassDetails() {
                 loading={enrollmentsLoading} 
               />
             )}
+            {activeTab === 'attendance' && <AttendanceTab classId={classId} />}
           </div>
         </div>
       </div>
