@@ -264,7 +264,7 @@ export default function ClassDetails() {
                 loading={enrollmentsLoading} 
               />
             )}
-            {activeTab === 'attendance' && <AttendanceTab classId={classId} />}
+            {activeTab === 'attendance' && <AttendanceTab classData={classData} classId={classId} />}
           </div>
         </div>
       </div>

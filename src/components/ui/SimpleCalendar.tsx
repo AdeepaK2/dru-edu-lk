@@ -156,7 +156,9 @@ export default function SimpleCalendar({
                 }
                 ${isSelected 
                   ? 'bg-blue-600 text-white font-semibold' 
-                  : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                  : hasEvent 
+                    ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 font-medium border-2 border-green-500 hover:bg-green-200' 
+                    : 'hover:bg-gray-100 dark:hover:bg-gray-700'
                 }
                 ${disabled 
                   ? 'opacity-50 cursor-not-allowed' 
@@ -166,9 +168,9 @@ export default function SimpleCalendar({
             >
               <span className="relative z-10">{date.getDate()}</span>
               
-              {/* Event indicator */}
-              {hasEvent && (
-                <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+              {/* Event indicator - small green dot for scheduled dates */}
+              {hasEvent && !isSelected && (
+                <div className="absolute top-1 right-1 w-2 h-2 bg-green-600 rounded-full"></div>
               )}
             </button>
           );

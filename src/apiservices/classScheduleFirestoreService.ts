@@ -35,9 +35,9 @@ export class ClassScheduleFirestoreService {
    */
   static async createSchedule(scheduleData: Partial<ClassScheduleData>): Promise<string> {
     try {
-      // Prepare the document data with defaults
+      // Prepare the document data with defaults - only include defined fields
       const now = new Date();
-      const documentData = {
+      const documentData: any = {
         classId: scheduleData.classId || '',
         className: scheduleData.className || '',
         subjectId: scheduleData.subjectId || '',
@@ -50,10 +50,6 @@ export class ClassScheduleFirestoreService {
         duration: scheduleData.duration || 60,
         scheduleType: scheduleData.scheduleType || 'regular',
         mode: scheduleData.mode || 'physical',
-        location: scheduleData.location,
-        zoomUrl: scheduleData.zoomUrl,
-        zoomMeetingId: scheduleData.zoomMeetingId,
-        zoomPassword: scheduleData.zoomPassword,
         attendance: {
           totalStudents: 0,
           presentCount: 0,
@@ -63,17 +59,37 @@ export class ClassScheduleFirestoreService {
           students: [],
           ...scheduleData.attendance
         },
-        topic: scheduleData.topic,
-        description: scheduleData.description,
         materials: scheduleData.materials || [],
         status: scheduleData.status || 'scheduled',
         isRecurring: scheduleData.isRecurring || false,
-        recurringPattern: scheduleData.recurringPattern,
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
         createdBy: scheduleData.createdBy || 'system',
         updatedBy: scheduleData.updatedBy || 'system'
       };
+
+      // Only add optional fields if they have values
+      if (scheduleData.location && scheduleData.location.trim()) {
+        documentData.location = scheduleData.location;
+      }
+      if (scheduleData.zoomUrl && scheduleData.zoomUrl.trim()) {
+        documentData.zoomUrl = scheduleData.zoomUrl;
+      }
+      if (scheduleData.zoomMeetingId && scheduleData.zoomMeetingId.trim()) {
+        documentData.zoomMeetingId = scheduleData.zoomMeetingId;
+      }
+      if (scheduleData.zoomPassword && scheduleData.zoomPassword.trim()) {
+        documentData.zoomPassword = scheduleData.zoomPassword;
+      }
+      if (scheduleData.topic && scheduleData.topic.trim()) {
+        documentData.topic = scheduleData.topic;
+      }
+      if (scheduleData.description && scheduleData.description.trim()) {
+        documentData.description = scheduleData.description;
+      }
+      if (scheduleData.recurringPattern && scheduleData.recurringPattern.trim()) {
+        documentData.recurringPattern = scheduleData.recurringPattern;
+      }
 
       const docRef = await addDoc(this.collectionRef, documentData);
       console.log('✅ Schedule created with ID:', docRef.id);
@@ -129,7 +145,7 @@ export class ClassScheduleFirestoreService {
           const [endHours, endMinutes] = daySchedule.endTime.split(':').map(Number);
           const duration = (endHours * 60 + endMinutes) - (startHours * 60 + startMinutes);
 
-          // Create schedule
+          // Create schedule (only include defined fields for physical classes)
           await this.createSchedule({
             classId: classData.id,
             className: classData.name,
@@ -151,6 +167,7 @@ export class ClassScheduleFirestoreService {
             recurringPattern: 'weekly',
             createdBy: 'system-auto-schedule',
             updatedBy: 'system-auto-schedule'
+            // Note: No Zoom fields for physical classes
           });
 
           scheduledCount++;
@@ -173,7 +190,12 @@ export class ClassScheduleFirestoreService {
     date: Date,
     startTime: string,
     endTime: string,
-    notes?: string
+    notes?: string,
+    mode: 'physical' | 'online' = 'physical',
+    location?: string,
+    zoomUrl?: string,
+    zoomMeetingId?: string,
+    zoomPassword?: string
   ): Promise<string> {
     try {
       // Validate time format
@@ -192,7 +214,8 @@ export class ClassScheduleFirestoreService {
 
       const duration = (endHours * 60 + endMinutes) - (startHours * 60 + startMinutes);
 
-      const scheduleId = await this.createSchedule({
+      // Prepare schedule data
+      const scheduleData: any = {
         classId: classData.id,
         className: classData.name,
         subjectId: classData.subjectId,
@@ -204,15 +227,25 @@ export class ClassScheduleFirestoreService {
         endTime: endTime,
         duration: duration,
         scheduleType: 'extra',
-        mode: 'physical',
+        mode: mode,
         status: 'scheduled',
         topic: notes || `Extra ${classData.subject} class`,
         description: notes || `Extra ${classData.subject} class`,
-        location: 'Center Location',
         isRecurring: false,
         createdBy: 'manual-schedule',
         updatedBy: 'manual-schedule'
-      });
+      };
+
+      // Add location or zoom details based on mode
+      if (mode === 'physical') {
+        scheduleData.location = location || 'Center Location';
+      } else if (mode === 'online') {
+        if (zoomUrl) scheduleData.zoomUrl = zoomUrl;
+        if (zoomMeetingId) scheduleData.zoomMeetingId = zoomMeetingId;
+        if (zoomPassword) scheduleData.zoomPassword = zoomPassword;
+      }
+
+      const scheduleId = await this.createSchedule(scheduleData);
 
       console.log(`✅ Extra schedule created for ${date.toDateString()}`);
       return scheduleId;
@@ -233,11 +266,14 @@ export class ClassScheduleFirestoreService {
     try {
       console.log('🔍 Loading scheduled classes for classId:', classId);
       
+      // Load schedules from 30 days ago to future to show all in calendar
       const currentDate = startDate || new Date();
-      const endDate = new Date(currentDate);
-      endDate.setDate(currentDate.getDate() + daysRange);
+      const pastDate = new Date(currentDate);
+      pastDate.setDate(currentDate.getDate() - 30); // Go back 30 days
+      const futureDate = new Date(currentDate);
+      futureDate.setDate(currentDate.getDate() + daysRange);
       
-      console.log('📅 Date range:', { from: currentDate, to: endDate });
+      console.log('📅 Date range:', { from: pastDate, to: futureDate });
       
       // Try compound query first
       let querySnapshot;
@@ -245,8 +281,8 @@ export class ClassScheduleFirestoreService {
         const q = query(
           this.collectionRef,
           where('classId', '==', classId),
-          where('scheduledDate', '>=', Timestamp.fromDate(currentDate)),
-          where('scheduledDate', '<=', Timestamp.fromDate(endDate)),
+          where('scheduledDate', '>=', Timestamp.fromDate(pastDate)),
+          where('scheduledDate', '<=', Timestamp.fromDate(futureDate)),
           orderBy('scheduledDate', 'asc')
         );
         querySnapshot = await getDocs(q);
@@ -295,7 +331,7 @@ export class ClassScheduleFirestoreService {
               return;
             }
             
-            if (scheduleDate >= currentDate && scheduleDate <= endDate) {
+            if (scheduleDate >= pastDate && scheduleDate <= futureDate) {
               matchingSchedules.push({
                 id: doc.id,
                 ...data,
@@ -467,8 +503,13 @@ export class ClassScheduleFirestoreService {
           lateCount,
           attendanceRate,
           students: studentAttendance.map(student => ({
-            ...student,
-            markedAt: new Date()
+            studentId: student.studentId,
+            studentName: student.studentName,
+            studentEmail: student.studentEmail,
+            status: student.status,
+            markedAt: new Date(),
+            ...(student.markedBy && { markedBy: student.markedBy }),
+            ...(student.notes && { notes: student.notes })
           })),
           lastUpdatedAt: new Date(),
           lastUpdatedBy: 'teacher' // TODO: Use actual teacher ID

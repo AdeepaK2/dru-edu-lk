@@ -9,14 +9,20 @@ import {
   Plus,
   RefreshCw,
   AlertCircle,
-  Play
+  Play,
+  Users,
+  UserCheck,
+  UserX
 } from 'lucide-react';
 import { Button } from '@/components/ui';
 import SimpleCalendar from '@/components/ui/SimpleCalendar';
 import { ClassScheduleDocument } from '@/models/classScheduleSchema';
 import { ClassDocument } from '@/models/classSchema';
 import { ClassScheduleFirestoreService } from '@/apiservices/classScheduleFirestoreService';
+import { StudentEnrollmentFirestoreService, EnrollmentWithParent } from '@/apiservices/studentEnrollmentFirestoreService';
+import { MailService } from '@/apiservices/mailService';
 import { Timestamp } from 'firebase/firestore';
+import { StudentEnrollmentDocument } from '@/models/studentEnrollmentSchema';
 
 interface AttendanceTabProps {
   classData: ClassDocument | null;
@@ -37,11 +43,23 @@ type ScheduledClass = {
   teacherName?: string;
   subjectId?: string;
   subjectName?: string;
-  attendance: {
+  attendance?: {
     totalStudents: number;
     presentCount: number;
     absentCount: number;
     lateCount: number;
+    attendanceRate?: number;
+    students?: Array<{
+      studentId: string;
+      studentName: string;
+      studentEmail: string;
+      status: 'present' | 'absent' | 'late';
+      markedAt?: Date;
+      notes?: string;
+      markedBy?: string;
+    }>;
+    lastUpdatedAt?: Date;
+    lastUpdatedBy?: string;
   };
 };
 
@@ -53,10 +71,28 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
   const [manualStartTime, setManualStartTime] = useState('09:00');
   const [manualEndTime, setManualEndTime] = useState('10:00');
   const [manualNotes, setManualNotes] = useState('');
+  const [manualMode, setManualMode] = useState<'physical' | 'online'>('physical');
+  const [manualLocation, setManualLocation] = useState('');
+  const [manualZoomUrl, setManualZoomUrl] = useState('');
+  const [manualZoomMeetingId, setManualZoomMeetingId] = useState('');
+  const [manualZoomPassword, setManualZoomPassword] = useState('');
   const [scheduledDates, setScheduledDates] = useState<Date[]>([]);
   const [autoScheduleStatus, setAutoScheduleStatus] = useState<'idle' | 'running' | 'checking'>('idle');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [modalSelectedDate, setModalSelectedDate] = useState<Date | null>(null);
+  const [showAttendanceModal, setShowAttendanceModal] = useState(false);
+  const [showViewAttendanceModal, setShowViewAttendanceModal] = useState(false);
+  const [selectedSchedule, setSelectedSchedule] = useState<ScheduledClass | null>(null);
+  const [attendanceTimeValid, setAttendanceTimeValid] = useState(false);
+  const [attendanceTimeMessage, setAttendanceTimeMessage] = useState('');
+  const [isEditingAttendance, setIsEditingAttendance] = useState(false); // Track if we're editing existing attendance
+  const [enrolledStudents, setEnrolledStudents] = useState<EnrollmentWithParent[]>([]);
+  const [studentAttendance, setStudentAttendance] = useState<{[key: string]: 'present' | 'absent' | 'late'}>({});
+  const [selectedAbsentStudents, setSelectedAbsentStudents] = useState<Set<string>>(new Set());
+  const [attendanceHistory, setAttendanceHistory] = useState<any[]>([]);
+  const [loadingStudents, setLoadingStudents] = useState(false);
 
   useEffect(() => {
     if (classData && classId) {
@@ -70,9 +106,20 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
       const date = schedule.scheduledDate instanceof Timestamp 
         ? schedule.scheduledDate.toDate() 
         : schedule.scheduledDate;
+      
+      // Debug logging
+      console.log('📅 Schedule date processing:', {
+        original: schedule.scheduledDate,
+        converted: date,
+        dateString: date.toDateString(),
+        isoString: date.toISOString(),
+        localDateString: date.toLocaleDateString()
+      });
+      
       return date;
     });
     
+    console.log('📅 Setting scheduled dates for calendar:', dates.map(d => d.toDateString()));
     setScheduledDates(dates);
   }, [scheduledClasses]);
 
@@ -110,12 +157,24 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
         teacherName: schedule.teacherName,
         subjectId: schedule.subjectId,
         subjectName: schedule.subjectName,
-        attendance: {
-          totalStudents: schedule.attendance?.totalStudents || 0,
-          presentCount: schedule.attendance?.presentCount || 0,
-          absentCount: schedule.attendance?.absentCount || 0,
-          lateCount: schedule.attendance?.lateCount || 0,
-        }
+        attendance: schedule.attendance ? {
+          totalStudents: schedule.attendance.totalStudents || 0,
+          presentCount: schedule.attendance.presentCount || 0,
+          absentCount: schedule.attendance.absentCount || 0,
+          lateCount: schedule.attendance.lateCount || 0,
+          attendanceRate: schedule.attendance.attendanceRate,
+          students: schedule.attendance.students?.map(student => ({
+            studentId: student.studentId,
+            studentName: student.studentName,
+            studentEmail: student.studentEmail,
+            status: student.status,
+            markedAt: student.markedAt instanceof Timestamp ? student.markedAt.toDate() : student.markedAt,
+            notes: student.notes,
+            markedBy: student.markedBy
+          })) || [],
+          lastUpdatedAt: schedule.attendance.lastUpdatedAt instanceof Timestamp ? schedule.attendance.lastUpdatedAt.toDate() : schedule.attendance.lastUpdatedAt,
+          lastUpdatedBy: schedule.attendance.lastUpdatedBy
+        } : undefined
       }));
       
       setScheduledClasses(scheduledClassesData);
@@ -165,15 +224,41 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
         return;
       }
 
-      const date = new Date(manualDate);
+      // Validate mode-specific requirements
+      if (manualMode === 'physical' && !manualLocation.trim()) {
+        setError('Location is required for physical classes');
+        return;
+      }
       
-      // Use the service to create extra schedule
+      if (manualMode === 'online' && !manualZoomUrl.trim()) {
+        setError('Zoom URL is required for online classes');
+        return;
+      }
+
+      // Create date in local timezone to avoid timezone issues
+      const dateParts = manualDate.split('-');
+      const date = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
+      
+      console.log('📅 Manual schedule date creation:', {
+        manualDate,
+        dateParts,
+        createdDate: date,
+        dateString: date.toDateString(),
+        isoString: date.toISOString()
+      });
+      
+      // Use the service to create extra schedule with all parameters
       const scheduleId = await ClassScheduleFirestoreService.createExtraSchedule(
         classData,
         date,
         manualStartTime,
         manualEndTime,
-        manualNotes || 'Extra class'
+        manualNotes || 'Extra class',
+        manualMode,
+        manualLocation || undefined,
+        manualZoomUrl || undefined,
+        manualZoomMeetingId || undefined,
+        manualZoomPassword || undefined
       );
       
       // Reset form
@@ -181,6 +266,11 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
       setManualStartTime('09:00');
       setManualEndTime('10:00');
       setManualNotes('');
+      setManualMode('physical');
+      setManualLocation('');
+      setManualZoomUrl('');
+      setManualZoomMeetingId('');
+      setManualZoomPassword('');
       setShowManualSchedule(false);
       setError('');
       
@@ -196,30 +286,347 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
   };
 
   // Handle date selection in calendar
-  const handleDateSelect = (date: Date) => {
+  const handleDateSelect = async (date: Date) => {
     setSelectedDate(date);
+    
+    // Prevent scheduling classes for past dates
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time to start of day
+    const selectedDateOnly = new Date(date);
+    selectedDateOnly.setHours(0, 0, 0, 0); // Reset time to start of day
+    
+    if (selectedDateOnly < today) {
+      alert('Cannot schedule classes for past dates. Please select today or a future date.');
+      return;
+    }
     
     // Check if this date has any scheduled classes
     const scheduledOnDate = scheduledClasses.filter(schedule => {
       const scheduleDate = schedule.scheduledDate instanceof Timestamp 
         ? schedule.scheduledDate.toDate() 
         : schedule.scheduledDate;
-      return scheduleDate.toDateString() === date.toDateString();
+      
+      // Compare dates without time components
+      const scheduleDateOnly = new Date(scheduleDate);
+      scheduleDateOnly.setHours(0, 0, 0, 0);
+      
+      return scheduleDateOnly.getTime() === selectedDateOnly.getTime();
     });
     
     if (scheduledOnDate.length > 0) {
-      const eventDetails = scheduledOnDate.map(schedule => 
-        `${formatTime(schedule.startTime)} - ${schedule.scheduleType} class (${schedule.status})`
-      ).join('\n');
-      
-      alert(`Scheduled classes on ${date.toDateString()}:\n${eventDetails}`);
+      // There are scheduled classes - show attendance modal
+      const firstSchedule = scheduledOnDate[0]; // Use first schedule if multiple
+      await handleScheduleClick(firstSchedule);
     } else {
-      // No classes scheduled - offer to schedule manually
-      const confirmed = confirm(`No classes scheduled for ${date.toDateString()}. Would you like to schedule an extra class?`);
-      if (confirmed) {
-        setManualDate(date.toISOString().split('T')[0]);
-        setShowManualSchedule(true);
+      // No classes scheduled - show modal to schedule extra class
+      setModalSelectedDate(date);
+      // Create proper local date string to avoid timezone issues
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const localDateString = `${year}-${month}-${day}`;
+      setManualDate(localDateString);
+      setShowScheduleModal(true);
+    }
+  };
+
+  // Handle clicking on a scheduled class to mark attendance or view saved attendance
+  const handleScheduleClick = async (schedule: ScheduledClass) => {
+    setSelectedSchedule(schedule);
+    
+    // Check if attendance has already been marked with detailed logging
+    console.log('🔍 Checking attendance data for schedule:', schedule.id);
+    console.log('📊 Full schedule object:', schedule);
+    console.log('📊 Schedule attendance object:', schedule.attendance);
+    
+    const hasAttendance = !!schedule.attendance;
+    const hasTotalStudents = (schedule.attendance?.totalStudents || 0) > 0;
+    const hasStudentsArray = schedule.attendance?.students && Array.isArray(schedule.attendance.students);
+    const hasStudentsData = (schedule.attendance?.students?.length || 0) > 0;
+    
+    const hasAttendanceData = hasAttendance && hasTotalStudents && hasStudentsArray && hasStudentsData;
+    
+    console.log('✅ Attendance check result:', {
+      hasAttendance,
+      hasTotalStudents,
+      hasStudentsArray,
+      hasStudentsData,
+      studentsArrayLength: schedule.attendance?.students?.length,
+      totalStudents: schedule.attendance?.totalStudents,
+      hasAttendanceData: hasAttendanceData
+    });
+    
+    if (hasAttendanceData) {
+      console.log('📋 Attendance already marked for this schedule, showing view modal');
+      console.log('👥 Found attendance data:', {
+        totalStudents: schedule.attendance?.totalStudents,
+        studentsMarked: schedule.attendance?.students?.length,
+        presentCount: schedule.attendance?.presentCount,
+        absentCount: schedule.attendance?.absentCount
+      });
+      setAttendanceHistory(schedule.attendance?.students || []);
+      setShowViewAttendanceModal(true);
+      return;
+    }
+
+    console.log('📝 No attendance marked yet, showing marking interface');
+    setIsEditingAttendance(false); // This is first-time marking
+    
+    // Open modal immediately for better UX
+    setShowAttendanceModal(true);
+    
+    // Set loading state
+    setLoadingStudents(true);
+    setEnrolledStudents([]);
+    setStudentAttendance({});
+    
+    // Calculate time validation in background
+    const now = new Date();
+    const scheduleDate = schedule.scheduledDate instanceof Timestamp 
+      ? schedule.scheduledDate.toDate() 
+      : schedule.scheduledDate;
+    
+    // Parse start and end times
+    const [startHours, startMinutes] = schedule.startTime.split(':').map(Number);
+    const [endHours, endMinutes] = schedule.endTime.split(':').map(Number);
+    
+    // Create start and end datetime objects
+    const startDateTime = new Date(scheduleDate);
+    startDateTime.setHours(startHours, startMinutes, 0, 0);
+    
+    const endDateTime = new Date(scheduleDate);
+    endDateTime.setHours(endHours, endMinutes, 0, 0);
+    
+    // Calculate time windows
+    const oneHourBefore = new Date(startDateTime.getTime() - 60 * 60 * 1000); // 1 hour before start
+    const oneHourAfter = new Date(endDateTime.getTime() + 60 * 60 * 1000); // 1 hour after end
+    
+    console.log('📅 Attendance time validation:', {
+      now: now.toLocaleString(),
+      classStart: startDateTime.toLocaleString(),
+      classEnd: endDateTime.toLocaleString(),
+      allowedFrom: oneHourBefore.toLocaleString(),
+      allowedUntil: oneHourAfter.toLocaleString(),
+      isWithinWindow: now >= oneHourBefore && now <= oneHourAfter
+    });
+    
+    // Check if current time is within the attendance marking window
+    if (now >= oneHourBefore && now <= oneHourAfter) {
+      setAttendanceTimeValid(true);
+      
+      if (now < startDateTime) {
+        const minutesUntilStart = Math.ceil((startDateTime.getTime() - now.getTime()) / (1000 * 60));
+        setAttendanceTimeMessage(`Class starts in ${minutesUntilStart} minutes. You can mark attendance now.`);
+      } else if (now >= startDateTime && now <= endDateTime) {
+        setAttendanceTimeMessage(`Class is currently ongoing. Perfect time to mark attendance!`);
+      } else {
+        const minutesSinceEnd = Math.ceil((now.getTime() - endDateTime.getTime()) / (1000 * 60));
+        setAttendanceTimeMessage(`Class ended ${minutesSinceEnd} minutes ago. You can still mark attendance.`);
       }
+    } else {
+      setAttendanceTimeValid(false);
+      
+      if (now < oneHourBefore) {
+        const hoursUntilWindow = Math.ceil((oneHourBefore.getTime() - now.getTime()) / (1000 * 60 * 60));
+        setAttendanceTimeMessage(`Too early to mark attendance. Please wait ${hoursUntilWindow} hour(s) until attendance window opens.`);
+      } else {
+        setAttendanceTimeMessage(`Attendance marking window has closed. Contact admin if you need to mark late attendance.`);
+      }
+    }
+
+    // Load enrolled students asynchronously after modal is open
+    try {
+      console.log('🔍 Loading enrolled students for class:', schedule.classId);
+      const students = await StudentEnrollmentFirestoreService.getEnrolledStudentsByClassId(schedule.classId);
+      setEnrolledStudents(students);
+      
+      // Initialize attendance state - everyone starts as present
+      const initialAttendance: {[key: string]: 'present' | 'absent' | 'late'} = {};
+      students.forEach(student => {
+        initialAttendance[student.studentId] = 'present';
+      });
+      setStudentAttendance(initialAttendance);
+      setSelectedAbsentStudents(new Set());
+      
+      console.log('✅ Loaded students for attendance:', students.length);
+    } catch (error) {
+      console.error('❌ Failed to load enrolled students:', error);
+      // Use empty array if loading fails
+      setEnrolledStudents([]);
+      setStudentAttendance({});
+      setSelectedAbsentStudents(new Set());
+    } finally {
+      setLoadingStudents(false);
+    }
+  };  // Handle individual student attendance change
+  const handleStudentAttendanceChange = (studentId: string, status: 'present' | 'absent' | 'late') => {
+    setStudentAttendance(prev => ({
+      ...prev,
+      [studentId]: status
+    }));
+    
+    // Remove from absent selection if changing from absent
+    if (status !== 'absent') {
+      setSelectedAbsentStudents(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(studentId);
+        return newSet;
+      });
+    }
+  };
+
+  // Handle bulk absent selection
+  const handleAbsentSelection = (studentId: string, isSelected: boolean) => {
+    setSelectedAbsentStudents(prev => {
+      const newSet = new Set(prev);
+      if (isSelected) {
+        newSet.add(studentId);
+        // Also update attendance status
+        setStudentAttendance(prevAttendance => ({
+          ...prevAttendance,
+          [studentId]: 'absent'
+        }));
+      } else {
+        newSet.delete(studentId);
+        // Reset to present
+        setStudentAttendance(prevAttendance => ({
+          ...prevAttendance,
+          [studentId]: 'present'
+        }));
+      }
+      return newSet;
+    });
+  };
+
+  // Mark all selected students as absent
+  const handleMarkSelectedAbsent = () => {
+    const updatedAttendance = { ...studentAttendance };
+    selectedAbsentStudents.forEach(studentId => {
+      updatedAttendance[studentId] = 'absent';
+    });
+    setStudentAttendance(updatedAttendance);
+    setSelectedAbsentStudents(new Set()); // Clear selection
+  };
+
+  // Save attendance data
+  const handleSaveAttendance = async () => {
+    if (!selectedSchedule) return;
+    
+    try {
+      console.log('💾 Saving attendance:', studentAttendance);
+      
+      // Calculate attendance summary
+      const totalStudents = enrolledStudents.length;
+      const presentCount = Object.values(studentAttendance).filter(status => status === 'present').length;
+      const absentCount = Object.values(studentAttendance).filter(status => status === 'absent').length;
+      const lateCount = Object.values(studentAttendance).filter(status => status === 'late').length;
+      const attendanceRate = totalStudents > 0 ? Math.round((presentCount + lateCount) / totalStudents * 100) : 0;
+      
+      console.log('📊 Attendance Summary:', {
+        total: totalStudents,
+        present: presentCount,
+        absent: absentCount,
+        late: lateCount,
+        rate: attendanceRate
+      });
+
+      // Convert attendance data to the format expected by the service
+      const studentAttendanceData = enrolledStudents.map(student => ({
+        studentId: student.studentId,
+        studentName: student.studentName,
+        studentEmail: student.studentEmail,
+        status: (studentAttendance[student.studentId] || 'absent') as 'present' | 'absent' | 'late',
+        markedAt: new Date(),
+        markedBy: 'teacher' // TODO: Use actual teacher ID from auth
+        // Removed notes field to avoid undefined values in Firestore
+      }));
+
+      // Save attendance data to Firebase
+      console.log('💾 Saving attendance data to Firebase...', {
+        scheduleId: selectedSchedule.id,
+        studentsCount: studentAttendanceData.length,
+        sampleStudent: studentAttendanceData[0]
+      });
+      await ClassScheduleFirestoreService.markAttendance(selectedSchedule.id, studentAttendanceData);
+
+      // Get absent students for email notifications
+      const absentStudents = enrolledStudents.filter(student => 
+        studentAttendance[student.studentId] === 'absent'
+      );
+
+      console.log('📧 Found', absentStudents.length, 'absent students to notify');
+
+      // Send absence notification emails to parents
+      const emailPromises = absentStudents
+        .filter(student => student.parent?.email) // Only send emails if parent email exists
+        .map(async (student) => {
+        try {
+          console.log('📤 Sending absence notification for student:', student.studentName);
+          
+          const scheduleDate = selectedSchedule.scheduledDate instanceof Timestamp 
+            ? selectedSchedule.scheduledDate.toDate() 
+            : selectedSchedule.scheduledDate;
+          
+          const classDate = scheduleDate.toISOString().split('T')[0];
+          const classTime = `${formatTime(selectedSchedule.startTime)} - ${formatTime(selectedSchedule.endTime)}`;
+          
+          const mailId = await MailService.sendAbsenceNotificationEmail(
+            student.parent!.name, // Using actual parent name from student data
+            student.parent!.email, // Using actual parent email from student data
+            student.studentName,
+            selectedSchedule.className,
+            selectedSchedule.subjectName || 'Subject',
+            classDate,
+            classTime,
+            selectedSchedule.teacherName || 'Teacher'
+          );
+          
+          console.log('✅ Absence notification sent for', student.studentName, 'Mail ID:', mailId);
+          return { success: true, student: student.studentName, mailId };
+        } catch (emailError) {
+          console.error('❌ Failed to send absence notification for', student.studentName, ':', emailError);
+          return { success: false, student: student.studentName, error: emailError };
+        }
+      });
+
+      // Wait for all emails to be sent (but don't fail attendance saving if emails fail)
+      let emailResults: PromiseSettledResult<{ success: boolean; student: string; mailId?: string; error?: any }>[] = [];
+      if (emailPromises.length > 0) {
+        try {
+          console.log('⏳ Waiting for', emailPromises.length, 'absence notification emails...');
+          emailResults = await Promise.allSettled(emailPromises);
+          const successful = emailResults.filter(r => r.status === 'fulfilled').length;
+          const failed = emailResults.filter(r => r.status === 'rejected').length;
+          console.log('📊 Email notification results:', { successful, failed, total: emailPromises.length });
+        } catch (emailError) {
+          console.warn('⚠️ Some absence notification emails failed:', emailError);
+        }
+      }
+      
+      console.log('✅ Attendance data saved to Firebase successfully!');
+      
+      const successfulEmails = emailResults.filter(r => r.status === 'fulfilled').length;
+      
+      alert(`✅ Attendance saved successfully!\n\nSummary:\nPresent: ${presentCount}\nAbsent: ${absentCount}\nLate: ${lateCount}\nAttendance Rate: ${attendanceRate}%\n\n📧 Sent ${successfulEmails} absence notification emails to parents\n\n💾 Attendance data saved to database for future reference`);
+      
+      // Close modal and refresh data
+      setShowAttendanceModal(false);
+      setSelectedSchedule(null);
+      setStudentAttendance({});  // Clear attendance state
+      setIsEditingAttendance(false); // Reset editing flag
+      setLoadingStudents(false); // Reset loading state
+      setEnrolledStudents([]); // Clear students list
+      
+      // Add a small delay to ensure Firebase write is complete before reloading
+      console.log('🔄 Reloading scheduled classes to reflect attendance changes...');
+      setTimeout(async () => {
+        await loadScheduledClasses(); // Reload to show updated attendance status
+        console.log('✅ Schedule data reloaded after attendance save');
+      }, 1500); // 1.5 second delay to ensure Firebase write is complete
+      
+    } catch (error) {
+      console.error('❌ Failed to save attendance:', error);
+      alert('Failed to save attendance. Please try again.');
     }
   };
 
@@ -290,7 +697,20 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
 
       {/* Auto Schedule Section */}
       <div className="bg-white rounded-lg shadow-sm border p-6">
-        <h3 className="text-lg font-semibold mb-4">Auto Schedule Classes</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold">Auto Schedule Classes</h3>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={loadScheduledClasses}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Refresh Data
+            </Button>
+          </div>
+        </div>
         <p className="text-gray-600 mb-4">
           Automatically schedule regular classes for the next 7 days based on your class timetable.
         </p>
@@ -377,6 +797,82 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
               />
             </div>
 
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Class Mode
+              </label>
+              <select
+                value={manualMode}
+                onChange={(e) => setManualMode(e.target.value as 'physical' | 'online')}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="physical">Physical Class</option>
+                <option value="online">Online Class</option>
+              </select>
+            </div>
+
+            {manualMode === 'physical' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Location *
+                </label>
+                <input
+                  type="text"
+                  value={manualLocation}
+                  onChange={(e) => setManualLocation(e.target.value)}
+                  placeholder="e.g., Room 101, Main Building"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+            )}
+
+            {manualMode === 'online' && (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Zoom Meeting URL *
+                  </label>
+                  <input
+                    type="url"
+                    value={manualZoomUrl}
+                    onChange={(e) => setManualZoomUrl(e.target.value)}
+                    placeholder="https://zoom.us/j/..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Meeting ID (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={manualZoomMeetingId}
+                      onChange={(e) => setManualZoomMeetingId(e.target.value)}
+                      placeholder="123-456-7890"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Meeting Password (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={manualZoomPassword}
+                      onChange={(e) => setManualZoomPassword(e.target.value)}
+                      placeholder="Meeting password"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="flex gap-2">
               <Button onClick={handleManualSchedule} className="flex-1">
                 Schedule Class
@@ -401,6 +897,27 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
             <Calendar className="h-5 w-5" />
             Schedule Calendar
           </h3>
+          
+          {/* Calendar Legend */}
+          <div className="mb-4 flex items-center gap-4 text-sm">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-green-500 rounded"></div>
+              <span className="text-gray-600">Scheduled classes</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-gray-200 rounded"></div>
+              <span className="text-gray-600">Available dates</span>
+            </div>
+          </div>
+          
+          {/* Calendar Instructions */}
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-blue-800">
+              💡 <strong>Tip:</strong> Click on any date with a green box to view scheduled classes, 
+              or click on any available date to schedule an extra class.
+            </p>
+          </div>
+          
           <SimpleCalendar
             onDateSelect={handleDateSelect}
             scheduledDates={scheduledDates}
@@ -479,7 +996,12 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
               </thead>
               <tbody>
                 {scheduledClasses.map((schedule) => (
-                  <tr key={schedule.id} className="border-b border-gray-100 hover:bg-gray-50">
+                  <tr 
+                    key={schedule.id} 
+                    className="border-b border-gray-100 hover:bg-blue-50 cursor-pointer transition-all duration-200 hover:shadow-sm"
+                    onClick={() => handleScheduleClick(schedule)}
+                    title="Click to mark attendance"
+                  >
                     <td className="py-3 px-4">{formatDate(schedule.scheduledDate)}</td>
                     <td className="py-3 px-4">
                       {formatTime(schedule.startTime)} - {formatTime(schedule.endTime)}
@@ -505,17 +1027,21 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
                       </div>
                     </td>
                     <td className="py-3 px-4">
-                      {schedule.status === 'completed' ? (
-                        <span className="text-sm text-gray-600">
-                          {schedule.attendance.presentCount}/{schedule.attendance.totalStudents}
-                          {schedule.attendance.totalStudents > 0 && (
+                      {schedule.attendance && schedule.attendance.students && schedule.attendance.students.length > 0 ? (
+                        <div className="text-sm">
+                          <div className="text-gray-600 font-medium">
+                            {schedule.attendance.presentCount || 0}/{schedule.attendance.totalStudents || 0}
                             <span className="text-xs text-gray-500 ml-1">
-                              ({Math.round((schedule.attendance.presentCount / schedule.attendance.totalStudents) * 100)}%)
+                              ({schedule.attendance.attendanceRate || 0}%)
                             </span>
-                          )}
-                        </span>
+                          </div>
+                          <div className="text-xs text-green-600 mt-1">✓ Marked</div>
+                        </div>
                       ) : (
-                        <span className="text-sm text-gray-400">Not taken</span>
+                        <span className="text-sm text-gray-400 flex items-center">
+                          <span className="w-2 h-2 bg-yellow-400 rounded-full mr-2"></span>
+                          Not taken
+                        </span>
                       )}
                     </td>
                   </tr>
@@ -531,6 +1057,598 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
           </div>
         )}
       </div>
+      
+      {/* Schedule Extra Class Modal */}
+      {showScheduleModal && modalSelectedDate && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-semibold mb-4">
+              Schedule Extra Class
+            </h3>
+            
+            <p className="text-gray-600 mb-6">
+              No classes scheduled for <strong>{modalSelectedDate.toDateString()}</strong>. 
+              Schedule an extra class for this date?
+            </p>
+            
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleManualSchedule();
+                setShowScheduleModal(false);
+              }}
+            >
+              {/* Two-column grid layout */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Left Column */}
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Date</label>
+                    <input
+                      type="date"
+                      value={manualDate}
+                      onChange={(e) => setManualDate(e.target.value)}
+                      min={new Date().toISOString().split('T')[0]}
+                      className="w-full p-2 border rounded"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Start Time</label>
+                    <input
+                      type="time"
+                      value={manualStartTime}
+                      onChange={(e) => setManualStartTime(e.target.value)}
+                      className="w-full p-2 border rounded"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-2">End Time</label>
+                    <input
+                      type="time"
+                      value={manualEndTime}
+                      onChange={(e) => setManualEndTime(e.target.value)}
+                      className="w-full p-2 border rounded"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Class Mode</label>
+                    <select
+                      value={manualMode}
+                      onChange={(e) => setManualMode(e.target.value as 'physical' | 'online')}
+                      className="w-full p-2 border rounded"
+                      required
+                    >
+                      <option value="physical">Physical Class</option>
+                      <option value="online">Online Class</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Right Column */}
+                <div className="space-y-4">
+                  {manualMode === 'physical' && (
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Location *</label>
+                      <input
+                        type="text"
+                        value={manualLocation}
+                        onChange={(e) => setManualLocation(e.target.value)}
+                        placeholder="e.g., Room 101, Main Building"
+                        className="w-full p-2 border rounded"
+                        required
+                      />
+                    </div>
+                  )}
+                  
+                  {manualMode === 'online' && (
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Zoom Meeting URL *</label>
+                        <input
+                          type="url"
+                          value={manualZoomUrl}
+                          onChange={(e) => setManualZoomUrl(e.target.value)}
+                          placeholder="https://zoom.us/j/..."
+                          className="w-full p-2 border rounded"
+                          required
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Meeting ID (Optional)</label>
+                        <input
+                          type="text"
+                          value={manualZoomMeetingId}
+                          onChange={(e) => setManualZoomMeetingId(e.target.value)}
+                          placeholder="123-456-7890"
+                          className="w-full p-2 border rounded"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Meeting Password (Optional)</label>
+                        <input
+                          type="text"
+                          value={manualZoomPassword}
+                          onChange={(e) => setManualZoomPassword(e.target.value)}
+                          placeholder="Meeting password"
+                          className="w-full p-2 border rounded"
+                        />
+                      </div>
+                    </>
+                  )}
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Notes (Optional)</label>
+                    <textarea
+                      value={manualNotes}
+                      onChange={(e) => setManualNotes(e.target.value)}
+                      placeholder="Any additional notes for this class..."
+                      className="w-full p-2 border rounded h-20"
+                      rows={3}
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex justify-end space-x-3 mt-6 pt-4 border-t">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowScheduleModal(false);
+                    setModalSelectedDate(null);
+                    // Reset form fields
+                    setManualMode('physical');
+                    setManualLocation('');
+                    setManualZoomUrl('');
+                    setManualZoomMeetingId('');
+                    setManualZoomPassword('');
+                    setManualNotes('');
+                  }}
+                  className="px-4 py-2 text-gray-600 border rounded hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+                >
+                  {isLoading ? 'Scheduling...' : 'Schedule Class'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      
+      {/* Attendance Marking Modal */}
+      {showAttendanceModal && selectedSchedule && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-semibold flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                {isEditingAttendance ? 'Edit Attendance' : 'Mark Attendance'}
+              </h3>
+              <button
+                onClick={() => {
+                  setShowAttendanceModal(false);
+                  setSelectedSchedule(null);
+                  setIsEditingAttendance(false);
+                  setLoadingStudents(false);
+                  setEnrolledStudents([]);
+                  setStudentAttendance({});
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <XCircle className="h-6 w-6" />
+              </button>
+            </div>
+            
+            {/* Class Details */}
+            <div className="bg-gray-50 rounded-lg p-4 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-medium text-gray-700 mb-2">Class Details</h4>
+                  <p><strong>Subject:</strong> {selectedSchedule.subjectName}</p>
+                  <p><strong>Date:</strong> {formatDate(selectedSchedule.scheduledDate)}</p>
+                  <p><strong>Time:</strong> {formatTime(selectedSchedule.startTime)} - {formatTime(selectedSchedule.endTime)}</p>
+                  <p><strong>Type:</strong> {selectedSchedule.scheduleType === 'extra' ? 'Extra Class' : 'Regular Class'}</p>
+                </div>
+                <div>
+                  <h4 className="font-medium text-gray-700 mb-2">Current Status</h4>
+                  <p><strong>Class Status:</strong> {selectedSchedule.status.charAt(0).toUpperCase() + selectedSchedule.status.slice(1)}</p>
+                  <p><strong>Current Time:</strong> {new Date().toLocaleString()}</p>
+                </div>
+              </div>
+            </div>
+            
+            {/* Time Validation Message */}
+            <div className={`rounded-lg p-4 mb-6 flex items-start gap-3 ${
+              (attendanceTimeValid || isEditingAttendance)
+                ? 'bg-green-50 border border-green-200' 
+                : 'bg-yellow-50 border border-yellow-200'
+            }`}>
+              {(attendanceTimeValid || isEditingAttendance) ? (
+                <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+              ) : (
+                <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
+              )}
+              <div>
+                <h4 className={`font-medium ${
+                  (attendanceTimeValid || isEditingAttendance) ? 'text-green-800' : 'text-yellow-800'
+                }`}>
+                  {isEditingAttendance 
+                    ? 'Editing Attendance Record' 
+                    : (attendanceTimeValid ? 'Attendance Available' : 'Attendance Not Available')
+                  }
+                </h4>
+                <p className={`text-sm ${
+                  (attendanceTimeValid || isEditingAttendance) ? 'text-green-700' : 'text-yellow-700'
+                }`}>
+                  {attendanceTimeMessage}
+                </p>
+              </div>
+            </div>
+            
+            {(attendanceTimeValid || isEditingAttendance) ? (
+              <>
+                {/* Attendance Instructions */}
+                <div className="mb-6">
+                  <h4 className="font-medium text-gray-700 mb-3">Mark Student Attendance</h4>
+                  <p className="text-sm text-gray-600 mb-4">
+                    All students start as <strong>Present</strong>. Use individual buttons or select multiple students for bulk marking as absent.
+                  </p>
+                  
+                  {/* Easy Mode - Bulk Selection */}
+                  {enrolledStudents.length > 0 && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                      <h5 className="font-medium text-blue-800 mb-2 flex items-center gap-2">
+                        <UserX className="h-4 w-4" />
+                        Easy Mode: Mark Multiple Absent
+                      </h5>
+                      <p className="text-sm text-blue-700 mb-3">
+                        Select students who didn't attend and click "Mark Selected as Absent"
+                      </p>
+                      {selectedAbsentStudents.size > 0 && (
+                        <button
+                          onClick={handleMarkSelectedAbsent}
+                          className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors text-sm"
+                        >
+                          Mark {selectedAbsentStudents.size} Student(s) as Absent
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+                
+                {/* Student List */}
+                {enrolledStudents.length > 0 ? (
+                  <div className="space-y-3 mb-6 max-h-60 overflow-y-auto">
+                    <div className="text-sm font-medium text-gray-700 mb-2">
+                      Students ({enrolledStudents.length})
+                    </div>
+                    {enrolledStudents.map((student) => {
+                      const currentStatus = studentAttendance[student.studentId] || 'present';
+                      const isSelectedForAbsent = selectedAbsentStudents.has(student.studentId);
+                      
+                      return (
+                        <div key={student.studentId} className={`border rounded-lg p-3 transition-colors ${
+                          isSelectedForAbsent ? 'bg-red-50 border-red-200' : 'bg-white'
+                        }`}>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              {/* Checkbox for bulk selection */}
+                              <input
+                                type="checkbox"
+                                checked={isSelectedForAbsent}
+                                onChange={(e) => handleAbsentSelection(student.studentId, e.target.checked)}
+                                className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
+                              />
+                              <div>
+                                <p className="font-medium">{student.studentName}</p>
+                                <p className="text-sm text-gray-500">{student.studentEmail}</p>
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <button 
+                                onClick={() => handleStudentAttendanceChange(student.studentId, 'present')}
+                                className={`flex items-center gap-1 px-3 py-1 rounded-md transition-colors text-sm ${
+                                  currentStatus === 'present' 
+                                    ? 'bg-green-500 text-white' 
+                                    : 'bg-green-100 text-green-700 hover:bg-green-200'
+                                }`}
+                              >
+                                <UserCheck className="h-4 w-4" />
+                                Present
+                              </button>
+                              <button 
+                                onClick={() => handleStudentAttendanceChange(student.studentId, 'late')}
+                                className={`flex items-center gap-1 px-3 py-1 rounded-md transition-colors text-sm ${
+                                  currentStatus === 'late' 
+                                    ? 'bg-yellow-500 text-white' 
+                                    : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+                                }`}
+                              >
+                                <Clock className="h-4 w-4" />
+                                Late
+                              </button>
+                              <button 
+                                onClick={() => handleStudentAttendanceChange(student.studentId, 'absent')}
+                                className={`flex items-center gap-1 px-3 py-1 rounded-md transition-colors text-sm ${
+                                  currentStatus === 'absent' 
+                                    ? 'bg-red-500 text-white' 
+                                    : 'bg-red-100 text-red-700 hover:bg-red-200'
+                                }`}
+                              >
+                                <UserX className="h-4 w-4" />
+                                Absent
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : loadingStudents ? (
+                  <div className="text-center py-8">
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                      <div className="text-gray-600">
+                        <p className="font-medium">Loading enrolled students...</p>
+                        <p className="text-sm text-gray-500">Please wait while we fetch the student list</p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <Users className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                    <p>No enrolled students found for this class</p>
+                    <p className="text-sm">Please check if students are enrolled in this class</p>
+                  </div>
+                )}
+                
+                {/* Attendance Summary */}
+                {enrolledStudents.length > 0 && (
+                  <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                    <h5 className="font-medium text-gray-700 mb-2">Attendance Summary</h5>
+                    <div className="grid grid-cols-4 gap-4 text-sm">
+                      <div className="text-center">
+                        <div className="text-lg font-semibold text-green-600">
+                          {Object.values(studentAttendance).filter(s => s === 'present').length}
+                        </div>
+                        <div className="text-gray-600">Present</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-lg font-semibold text-yellow-600">
+                          {Object.values(studentAttendance).filter(s => s === 'late').length}
+                        </div>
+                        <div className="text-gray-600">Late</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-lg font-semibold text-red-600">
+                          {Object.values(studentAttendance).filter(s => s === 'absent').length}
+                        </div>
+                        <div className="text-gray-600">Absent</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-lg font-semibold text-blue-600">
+                          {enrolledStudents.length > 0 ? Math.round(
+                            (Object.values(studentAttendance).filter(s => s === 'present' || s === 'late').length / enrolledStudents.length) * 100
+                          ) : 0}%
+                        </div>
+                        <div className="text-gray-600">Rate</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Action Buttons */}
+                <div className="flex justify-end space-x-3 pt-4 border-t">
+                  <button
+                    onClick={() => {
+                      setShowAttendanceModal(false);
+                      setSelectedSchedule(null);
+                      setEnrolledStudents([]);
+                      setStudentAttendance({});
+                      setSelectedAbsentStudents(new Set());
+                    }}
+                    className="px-4 py-2 text-gray-600 border rounded hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSaveAttendance}
+                    disabled={enrolledStudents.length === 0}
+                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isEditingAttendance ? 'Update Attendance' : 'Save Attendance'}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="flex justify-center pt-4">
+                <button
+                  onClick={() => {
+                    setShowAttendanceModal(false);
+                    setSelectedSchedule(null);
+                    setLoadingStudents(false);
+                    setEnrolledStudents([]);
+                    setStudentAttendance({});
+                  }}
+                  className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                >
+                  Close
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* View Saved Attendance Modal */}
+      {showViewAttendanceModal && selectedSchedule && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xl font-semibold text-gray-900">
+                  View Attendance - {selectedSchedule.className}
+                </h3>
+                <button
+                  onClick={() => {
+                    setShowViewAttendanceModal(false);
+                    setSelectedSchedule(null);
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <span className="text-2xl">&times;</span>
+                </button>
+              </div>
+              <div className="mt-2 text-sm text-gray-600">
+                <p><strong>Date:</strong> {selectedSchedule.scheduledDate instanceof Date 
+                  ? selectedSchedule.scheduledDate.toDateString() 
+                  : selectedSchedule.scheduledDate.toDate().toDateString()}</p>
+                <p><strong>Time:</strong> {formatTime(selectedSchedule.startTime)} - {formatTime(selectedSchedule.endTime)}</p>
+                {selectedSchedule.attendance && (
+                  <p><strong>Attendance Rate:</strong> {selectedSchedule.attendance.attendanceRate}% 
+                    ({selectedSchedule.attendance.presentCount + selectedSchedule.attendance.lateCount} out of {selectedSchedule.attendance.totalStudents} students)</p>
+                )}
+              </div>
+            </div>
+
+            <div className="p-6">
+              {attendanceHistory && attendanceHistory.length > 0 ? (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* Present Students */}
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <h4 className="text-lg font-medium text-green-800 mb-3 flex items-center">
+                      <span className="inline-block w-3 h-3 bg-green-500 rounded-full mr-2"></span>
+                      Present ({attendanceHistory.filter(s => s.status === 'present').length})
+                    </h4>
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {attendanceHistory.filter(s => s.status === 'present').map(student => (
+                        <div key={student.studentId} className="bg-white rounded p-3 border border-green-100">
+                          <p className="font-medium text-gray-900">{student.studentName}</p>
+                          <p className="text-sm text-gray-600">{student.studentEmail}</p>
+                          {student.markedAt && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              Marked: {new Date(student.markedAt).toLocaleTimeString()}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Absent Students */}
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <h4 className="text-lg font-medium text-red-800 mb-3 flex items-center">
+                      <span className="inline-block w-3 h-3 bg-red-500 rounded-full mr-2"></span>
+                      Absent ({attendanceHistory.filter(s => s.status === 'absent').length})
+                    </h4>
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {attendanceHistory.filter(s => s.status === 'absent').map(student => (
+                        <div key={student.studentId} className="bg-white rounded p-3 border border-red-100">
+                          <p className="font-medium text-gray-900">{student.studentName}</p>
+                          <p className="text-sm text-gray-600">{student.studentEmail}</p>
+                          {student.markedAt && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              Marked: {new Date(student.markedAt).toLocaleTimeString()}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Late Students */}
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <h4 className="text-lg font-medium text-yellow-800 mb-3 flex items-center">
+                      <span className="inline-block w-3 h-3 bg-yellow-500 rounded-full mr-2"></span>
+                      Late ({attendanceHistory.filter(s => s.status === 'late').length})
+                    </h4>
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {attendanceHistory.filter(s => s.status === 'late').map(student => (
+                        <div key={student.studentId} className="bg-white rounded p-3 border border-yellow-100">
+                          <p className="font-medium text-gray-900">{student.studentName}</p>
+                          <p className="text-sm text-gray-600">{student.studentEmail}</p>
+                          {student.markedAt && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              Marked: {new Date(student.markedAt).toLocaleTimeString()}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">No attendance data available for this class.</p>
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 border-t border-gray-200 bg-gray-50">
+              <div className="flex justify-between">
+                <button
+                  onClick={async () => {
+                    setShowViewAttendanceModal(false);
+                    
+                    // Load enrolled students and populate current attendance
+                    try {
+                      console.log('🔍 Loading enrolled students for editing attendance');
+                      const students = await StudentEnrollmentFirestoreService.getEnrolledStudentsByClassId(selectedSchedule!.classId);
+                      setEnrolledStudents(students);
+                      
+                      // Populate current attendance data for editing
+                      if (selectedSchedule?.attendance?.students) {
+                        const currentAttendance: { [key: string]: 'present' | 'absent' | 'late' } = {};
+                        selectedSchedule.attendance.students.forEach(student => {
+                          currentAttendance[student.studentId] = student.status;
+                        });
+                        setStudentAttendance(currentAttendance);
+                      }
+                      
+                      // Validate attendance time (for editing, we're more lenient)
+                      setAttendanceTimeValid(true);
+                      setAttendanceTimeMessage('Editing existing attendance record. You can modify student attendance status.');
+                      setIsEditingAttendance(true); // Set editing mode
+                      
+                      // Switch to edit mode - show the attendance marking modal
+                      setShowAttendanceModal(true);
+                    } catch (error) {
+                      console.error('Error loading students for editing:', error);
+                      alert('Failed to load student data for editing. Please try again.');
+                    }
+                  }}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  Edit Attendance
+                </button>
+                <button
+                  onClick={() => {
+                    setShowViewAttendanceModal(false);
+                    setSelectedSchedule(null);
+                    setIsEditingAttendance(false); // Reset editing flag
+                  }}
+                  className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

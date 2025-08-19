@@ -17,10 +17,10 @@ interface ScheduleRequest {
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { classId: string } }
+  { params }: { params: Promise<{ classId: string }> }
 ) {
   try {
-    const { classId } = params;
+    const { classId } = await params;
     const { searchParams } = new URL(request.url);
     const from = searchParams.get('from');
     const to = searchParams.get('to');
@@ -79,10 +79,10 @@ export async function GET(
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { classId: string } }
+  { params }: { params: Promise<{ classId: string }> }
 ) {
   try {
-    const { classId } = params;
+    const { classId } = await params;
     const body: ScheduleRequest = await request.json();
 
     if (!classId) {
