@@ -112,7 +112,7 @@ export default function Home() {
     {
       name: "Puneet",
       school: "John Monash",
-      current: "Monash Engineering",
+      current: "Medicine at Bond University",
       results: [
         "Specialist Math: 51",
         "Math Methods: 46",
