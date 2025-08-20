@@ -145,9 +145,26 @@ export interface FlexibleTest extends BaseTest {
   availableFrom: Timestamp;
   availableTo: Timestamp;
   
+  // Extension tracking
+  originalAvailableTo?: Timestamp; // Store original deadline for audit trail
+  extensionHistory?: TestExtension[]; // Track all extensions made
+  isExtended?: boolean; // Flag to quickly identify extended tests
+  
   // Test duration
   duration: number; // in minutes
   attemptsAllowed: number; // usually 1
+}
+
+// Test extension record
+export interface TestExtension {
+  id: string;
+  extendedBy: string; // Teacher ID who made the extension
+  extendedByName: string; // Teacher name for display
+  previousDeadline: Timestamp; // What the deadline was before
+  newDeadline: Timestamp; // What it was extended to
+  reason?: string; // Optional reason for extension
+  createdAt: Timestamp; // When the extension was made
+  notificationsSent?: boolean; // Track if students were notified
 }
 
 // Union type for all test types
