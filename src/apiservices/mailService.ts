@@ -727,4 +727,133 @@ export class MailService {
       throw error;
     }
   }
+
+  // Generate absence notification email for parents
+  static generateAbsenceNotificationEmail(
+    parentName: string,
+    parentEmail: string,
+    studentName: string,
+    className: string,
+    subjectName: string,
+    classDate: string,
+    classTime: string,
+    teacherName: string
+  ): Omit<MailDocument, 'createdAt' | 'processed'> {
+    const formattedDate = new Date(classDate).toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #EF4444; text-align: center;">📅 Class Absence Notification - Dr U Education</h2>
+        
+        <p>Dear ${parentName},</p>
+        
+        <p>We hope this message finds you well. We wanted to inform you that <strong>${studentName}</strong> was marked absent from their scheduled class today.</p>
+        
+        <div style="background-color: #FEF2F2; border-left: 4px solid #EF4444; padding: 20px; margin: 20px 0;">
+          <h3 style="color: #DC2626; margin-top: 0;">📚 Class Details</h3>
+          <p><strong>Student:</strong> ${studentName}</p>
+          <p><strong>Class:</strong> ${className}</p>
+          <p><strong>Subject:</strong> ${subjectName}</p>
+          <p><strong>Teacher:</strong> ${teacherName}</p>
+          <p><strong>Date:</strong> ${formattedDate}</p>
+          <p><strong>Time:</strong> ${classTime}</p>
+        </div>
+        
+        <div style="background-color: #F3F4F6; border-left: 4px solid #6B7280; padding: 15px; margin: 20px 0;">
+          <p style="margin: 0; color: #374151;"><strong>💡 What's Next?</strong></p>
+          <ul style="margin: 10px 0 0 0; color: #4B5563; padding-left: 20px;">
+            <li>If this absence was planned, no further action is needed</li>
+            <li>If this was unexpected, please check with ${studentName}</li>
+            <li>Contact ${teacherName} if you need to discuss make-up work</li>
+            <li>Review any materials or homework that may have been assigned</li>
+          </ul>
+        </div>
+        
+        <div style="background-color: #EBF8FF; border-left: 4px solid #3B82F6; padding: 15px; margin: 20px 0;">
+          <p style="margin: 0; color: #1E40AF;"><strong>📞 Need Help?</strong></p>
+          <p style="margin: 10px 0 0 0; color: #1E3A8A;">
+            If you have any questions about this absence or need to discuss ${studentName}'s attendance, please don't hesitate to contact ${teacherName} or our administration team. We're here to support ${studentName}'s educational journey.
+          </p>
+        </div>
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="https://www.drueducation.com.au/contact" 
+             style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+            📞 Contact Us
+          </a>
+        </div>
+        
+        <p>We appreciate your attention to ${studentName}'s attendance and look forward to seeing them in the next class.</p>
+        
+        <p>Best regards,<br>
+        ${teacherName}<br>
+        Dr U Education Team</p>
+        
+        <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 30px 0;">
+        <p style="font-size: 12px; color: #6B7280; text-align: center;">
+          This is an automated attendance notification. For urgent matters, please contact our administration team directly.
+        </p>
+      </div>
+    `;
+
+    return {
+      to: parentEmail,
+      subject: `📅 Absence Notification - ${studentName} (${formattedDate})`,
+      html: html.trim()
+    };
+  }
+
+  // Send absence notification email to parent
+  static async sendAbsenceNotificationEmail(
+    parentName: string,
+    parentEmail: string,
+    studentName: string,
+    className: string,
+    subjectName: string,
+    classDate: string,
+    classTime: string,
+    teacherName: string
+  ): Promise<string> {
+    try {
+      console.log('📧 Creating absence notification email for:', {
+        parentName,
+        studentName,
+        className,
+        classDate,
+        classTime
+      });
+
+      // Generate the absence notification email
+      const absenceEmail = this.generateAbsenceNotificationEmail(
+        parentName,
+        parentEmail,
+        studentName,
+        className,
+        subjectName,
+        classDate,
+        classTime,
+        teacherName
+      );
+
+      // Create the mail document
+      const mailId = await this.createMailDocument(absenceEmail);
+
+      console.log('✅ Absence notification email created successfully:', {
+        mailId,
+        parentEmail,
+        studentName,
+        classDate
+      });
+
+      return mailId;
+    } catch (error) {
+      console.error('❌ Error sending absence notification email:', error);
+      throw error;
+    }
+  }
 }
