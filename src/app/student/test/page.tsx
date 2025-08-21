@@ -2,13 +2,14 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Clock, Calendar, AlertCircle, FileText, CheckCircle, Play, ArrowRight, BookOpen, Filter, Info, ChevronDown, ChevronRight, ChevronUp, Users, Plus } from 'lucide-react';
+import { Clock, Calendar, AlertCircle, FileText, CheckCircle, Play, ArrowRight, BookOpen, Filter, Info, ChevronDown, ChevronRight, ChevronUp, Users, Plus, CalendarDays } from 'lucide-react';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { Button, Input, Select } from '@/components/ui';
 import { TestService } from '@/apiservices/testService';
 import { Timestamp } from 'firebase/firestore';
 import { Test, LiveTest, FlexibleTest } from '@/models/testSchema';
 import { StudentEnrollment } from '@/models/studentEnrollmentSchema';
+import { TestExtensionService } from '@/apiservices/testExtensionService';
 
 // Import student layout from other components or use a local version for now
 const StudentLayout = ({ children }: { children: React.ReactNode }) => children;
@@ -522,6 +523,57 @@ export default function StudentTests() {
       icon: Clock,
       disabled: true
     };
+  };
+
+  // Check if test has been extended and format extension info
+  const getExtensionInfo = (test: Test) => {
+    if (test.type !== 'flexible') return null;
+    
+    const flexTest = test as FlexibleTest;
+    if (!flexTest.isExtended) return null;
+    
+    return TestExtensionService.formatExtensionInfo(flexTest);
+  };
+
+  // Calculate time remaining until deadline for flexible tests
+  const calculateTimeUntilDeadline = (test: FlexibleTest): string => {
+    try {
+      const now = new Date();
+      let deadline: Date;
+      
+      // Handle different timestamp formats
+      if (test.availableTo && typeof test.availableTo.toDate === 'function') {
+        deadline = test.availableTo.toDate();
+      } else if (test.availableTo && typeof test.availableTo.seconds === 'number') {
+        deadline = new Date(test.availableTo.seconds * 1000);
+      } else if (test.availableTo instanceof Date) {
+        deadline = test.availableTo;
+      } else if (typeof test.availableTo === 'string') {
+        deadline = new Date(test.availableTo);
+      } else {
+        console.warn('Invalid deadline format for flexible test:', test.availableTo);
+        return "Unknown time";
+      }
+      
+      const diffMs = deadline.getTime() - now.getTime();
+      
+      if (diffMs <= 0) return "Deadline passed";
+      
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      const diffHrs = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+      
+      if (diffDays > 0) {
+        return `${diffDays}d ${diffHrs}h remaining`;
+      } else if (diffHrs > 0) {
+        return `${diffHrs}h ${diffMins}m remaining`;
+      } else {
+        return `${diffMins}m remaining`;
+      }
+    } catch (error) {
+      console.error('Error calculating time until deadline:', error);
+      return "Unknown time";
+    }
   };
 
   // Filter tests based on subject and search term
@@ -1098,8 +1150,39 @@ export default function StudentTests() {
                                 </span>
                               </div>
                               <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                                Scheduled for {formatDateTime(startTime)}
+                                {test.type === 'live' ? 'Scheduled for' : 'Opens on'} {formatDateTime(startTime)}
                               </p>
+                              {/* Show deadline for flexible tests */}
+                              {test.type === 'flexible' && (
+                                <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center space-x-2">
+                                      <Calendar className="w-4 h-4 text-blue-600" />
+                                      <span className="text-sm font-medium text-blue-800 dark:text-blue-400">
+                                        Deadline
+                                      </span>
+                                      {(test as FlexibleTest).isExtended && (
+                                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400">
+                                          Extended
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="text-right">
+                                      <div className="text-sm text-blue-900 dark:text-blue-100 font-medium">
+                                        {formatDateTime((test as FlexibleTest).availableTo)}
+                                      </div>
+                                      <div className="text-xs text-blue-600 dark:text-blue-400">
+                                        {calculateTimeUntilDeadline(test as FlexibleTest)}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  {(test as FlexibleTest).isExtended && (test as FlexibleTest).originalAvailableTo && (
+                                    <div className="mt-1 text-xs text-blue-600 dark:text-blue-400">
+                                      Originally: {formatDateTime((test as FlexibleTest).originalAvailableTo)}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
                               {assignmentConfig && (
                                 <p className="text-xs text-green-600 dark:text-green-400 mt-1">
                                   Assigned to {assignmentConfig.totalAssignedStudents} selected students
@@ -1150,8 +1233,44 @@ export default function StudentTests() {
                                 </span>
                               </div>
                               <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                                Duration: {flexTest.duration || 'No time limit'} minutes • Available until {formatDateTime(flexTest.availableTo)}
+                                Duration: {flexTest.duration || 'No time limit'} minutes
                               </p>
+                              {/* Current Deadline */}
+                              <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center space-x-2">
+                                    <Calendar className="w-4 h-4 text-blue-600" />
+                                    <span className="text-sm font-medium text-blue-800 dark:text-blue-400">
+                                      Deadline
+                                    </span>
+                                    {flexTest.isExtended && (
+                                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400">
+                                        Extended
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="text-right">
+                                    <div className="text-sm text-blue-900 dark:text-blue-100 font-medium">
+                                      {formatDateTime(flexTest.availableTo)}
+                                    </div>
+                                    <div className="text-xs text-blue-600 dark:text-blue-400">
+                                      {calculateTimeUntilDeadline(flexTest)}
+                                    </div>
+                                  </div>
+                                </div>
+                                {flexTest.isExtended && flexTest.originalAvailableTo && (
+                                  <div className="mt-1 text-xs text-blue-600 dark:text-blue-400">
+                                    Originally: {formatDateTime(flexTest.originalAvailableTo)}
+                                  </div>
+                                )}
+                              </div>
+                              {/* Extension indicator */}
+                              {getExtensionInfo(test) && (
+                                <p className="text-xs text-orange-600 dark:text-orange-400 mt-1 flex items-center">
+                                  <CalendarDays className="w-3 h-3 mr-1" />
+                                  {getExtensionInfo(test)}
+                                </p>
+                              )}
                               {assignmentConfig && (
                                 <p className="text-xs text-green-600 dark:text-green-400 mt-1">
                                   Assigned to {assignmentConfig.totalAssignedStudents} selected students
@@ -1435,8 +1554,39 @@ export default function StudentTests() {
                                       </span>
                                     </div>
                                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                                      Scheduled for {formatDateTime(startTime)}
+                                      {test.type === 'live' ? 'Scheduled for' : 'Opens on'} {formatDateTime(startTime)}
                                     </p>
+                                    {/* Show deadline for flexible tests */}
+                                    {test.type === 'flexible' && (
+                                      <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                                        <div className="flex items-center justify-between">
+                                          <div className="flex items-center space-x-2">
+                                            <Calendar className="w-4 h-4 text-blue-600" />
+                                            <span className="text-sm font-medium text-blue-800 dark:text-blue-400">
+                                              Deadline
+                                            </span>
+                                            {(test as FlexibleTest).isExtended && (
+                                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400">
+                                                Extended
+                                              </span>
+                                            )}
+                                          </div>
+                                          <div className="text-right">
+                                            <div className="text-sm text-blue-900 dark:text-blue-100 font-medium">
+                                              {formatDateTime((test as FlexibleTest).availableTo)}
+                                            </div>
+                                            <div className="text-xs text-blue-600 dark:text-blue-400">
+                                              {calculateTimeUntilDeadline(test as FlexibleTest)}
+                                            </div>
+                                          </div>
+                                        </div>
+                                        {(test as FlexibleTest).isExtended && (test as FlexibleTest).originalAvailableTo && (
+                                          <div className="mt-1 text-xs text-blue-600 dark:text-blue-400">
+                                            Originally: {formatDateTime((test as FlexibleTest).originalAvailableTo)}
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
                                   </div>
                                   <div className="mt-4 md:mt-0 flex items-center text-gray-500 dark:text-gray-400">
                                     <Clock className="w-4 h-4 mr-2" />
@@ -1491,8 +1641,44 @@ export default function StudentTests() {
                                       </span>
                                     </div>
                                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                                      Duration: {flexTest.duration || 'No time limit'} minutes • Available until {formatDateTime(flexTest.availableTo)}
+                                      Duration: {flexTest.duration || 'No time limit'} minutes
                                     </p>
+                                    {/* Current Deadline */}
+                                    <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                                      <div className="flex items-center justify-between">
+                                        <div className="flex items-center space-x-2">
+                                          <Calendar className="w-4 h-4 text-blue-600" />
+                                          <span className="text-sm font-medium text-blue-800 dark:text-blue-400">
+                                            Deadline
+                                          </span>
+                                          {flexTest.isExtended && (
+                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400">
+                                              Extended
+                                            </span>
+                                          )}
+                                        </div>
+                                        <div className="text-right">
+                                          <div className="text-sm text-blue-900 dark:text-blue-100 font-medium">
+                                            {formatDateTime(flexTest.availableTo)}
+                                          </div>
+                                          <div className="text-xs text-blue-600 dark:text-blue-400">
+                                            {calculateTimeUntilDeadline(flexTest)}
+                                          </div>
+                                        </div>
+                                      </div>
+                                      {flexTest.isExtended && flexTest.originalAvailableTo && (
+                                        <div className="mt-1 text-xs text-blue-600 dark:text-blue-400">
+                                          Originally: {formatDateTime(flexTest.originalAvailableTo)}
+                                        </div>
+                                      )}
+                                    </div>
+                                    {/* Extension indicator */}
+                                    {getExtensionInfo(test) && (
+                                      <p className="text-xs text-orange-600 dark:text-orange-400 mt-1 flex items-center">
+                                        <CalendarDays className="w-3 h-3 mr-1" />
+                                        {getExtensionInfo(test)}
+                                      </p>
+                                    )}
                                     {testAttempts[test.id] && (
                                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                         {canAttemptTest(test).reason}

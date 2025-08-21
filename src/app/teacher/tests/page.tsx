@@ -17,7 +17,8 @@ import {
   ArrowLeft,
   BookOpen,
   GraduationCap,
-  CheckSquare
+  CheckSquare,
+  CalendarDays
 } from 'lucide-react';
 import TeacherLayout from '@/components/teacher/TeacherLayout';
 import CreateTestModal from '@/components/modals/CreateTestModal';
@@ -29,10 +30,12 @@ import { ClassFirestoreService } from '@/apiservices/classFirestoreService';
 import { questionBankService } from '@/apiservices/questionBankFirestoreService';
 import { teacherAccessBankService } from '@/apiservices/teacherAccessBankService';
 import { getEnrollmentsByClass } from '@/services/studentEnrollmentService';
-import { Test, LiveTest, FlexibleTest } from '@/models/testSchema';
+import { Test, LiveTest, FlexibleTest, TestExtension } from '@/models/testSchema';
 import { ClassDocument } from '@/models/classSchema';
 import { QuestionBank } from '@/models/questionBankSchema';
 import { Timestamp } from 'firebase/firestore';
+import { TestExtensionService } from '@/apiservices/testExtensionService';
+import ExtendTestModal from '@/components/teacher/ExtendTestModal';
 
 export default function TeacherTests() {
   const { teacher, loading: authLoading, error: authError } = useTeacherAuth();
@@ -44,6 +47,10 @@ export default function TeacherTests() {
   const [loadingClasses, setLoadingClasses] = useState(true);
   const [questionBanks, setQuestionBanks] = useState<QuestionBank[]>([]);
   const [loadingQuestionBanks, setLoadingQuestionBanks] = useState(true);
+  
+  // Extension modal state
+  const [showExtendModal, setShowExtendModal] = useState(false);
+  const [testToExtend, setTestToExtend] = useState<FlexibleTest | null>(null);
   
   // New state for class-based view
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
@@ -293,9 +300,18 @@ export default function TeacherTests() {
     return teacherClasses.find(cls => cls.id === selectedClassId);
   };
 
-  // Get tests for selected class
+  // Get tests for selected class (excluding custom/student-based tests)
   const getTestsForClass = (classId: string) => {
-    return tests.filter(test => test.classIds.includes(classId));
+    return tests.filter(test => {
+      // Exclude custom tests (student-based assignments)
+      const isCustomTest = (test as any).assignmentConfig?.assignmentType === 'student-based';
+      if (isCustomTest) {
+        return false;
+      }
+      
+      // Only include tests assigned to this specific class
+      return test.classIds.includes(classId);
+    });
   };
 
   // Get unique subjects from teacher's classes
@@ -330,6 +346,32 @@ export default function TeacherTests() {
   const handleViewResults = (testId: string) => {
     // Navigate to the results page
     window.location.href = `/teacher/tests/${testId}/results`;
+  };
+
+  // Handle extend test deadline
+  const handleExtendDeadline = (test: Test) => {
+    if (test.type === 'flexible') {
+      setTestToExtend(test as FlexibleTest);
+      setShowExtendModal(true);
+    }
+  };
+
+  // Handle extension created
+  const handleExtensionCreated = (extension: TestExtension) => {
+    // Refresh the test data to show updated deadline
+    loadTeacherData();
+    alert(`✅ Test deadline extended successfully until ${extension.newDeadline.toDate().toLocaleDateString()}`);
+  };
+
+  // Check if a flexible test can be extended
+  const canExtendTest = (test: Test): boolean => {
+    if (test.type !== 'flexible') return false;
+    
+    const flexTest = test as FlexibleTest;
+    const now = Timestamp.now();
+    
+    // Can extend if test hasn't ended yet
+    return now.seconds < flexTest.availableTo.seconds;
   };
 
   const formatDateTime = (timestamp: any) => {
@@ -514,7 +556,8 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
                       const classTests = getTestsForClass(classItem.id);
                       const activeTests = classTests.filter(test => {
                         const status = getTestStatus(test);
-                        return status.status === 'live' || status.status === 'active';
+                        return (status.status === 'live' || status.status === 'active') && 
+                               test.assignmentType !== 'student-based';
                       });
 
                       return (
@@ -803,6 +846,33 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
                                   </div>
                                 </div>
 
+                                {/* Show deadline for flexible tests */}
+                                {test.type === 'flexible' && (
+                                  <div className="mb-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center space-x-2">
+                                        <CalendarDays className="h-4 w-4 text-blue-600" />
+                                        <span className="text-sm font-medium text-blue-800 dark:text-blue-400">
+                                          Current Deadline
+                                        </span>
+                                        {(test as FlexibleTest).isExtended && (
+                                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400">
+                                            Extended
+                                          </span>
+                                        )}
+                                      </div>
+                                      <span className="text-sm text-blue-900 dark:text-blue-100 font-medium">
+                                        {formatDateTime((test as FlexibleTest).availableTo)}
+                                      </span>
+                                    </div>
+                                    {(test as FlexibleTest).isExtended && (test as FlexibleTest).originalAvailableTo && (
+                                      <div className="mt-1 text-xs text-blue-600 dark:text-blue-400">
+                                        Originally: {formatDateTime((test as FlexibleTest).originalAvailableTo)}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+
                                 {assignmentConfig && (
                                   <div className="mb-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
                                     <div className="text-sm text-green-800 dark:text-green-400">
@@ -823,6 +893,18 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
                                   >
                                     <CheckSquare className="h-4 w-4 mr-2" />
                                     Mark
+                                  </button>
+                                )}
+                                
+                                {/* Extend Deadline button for flexible tests */}
+                                {test.type === 'flexible' && canExtendTest(test) && (
+                                  <button
+                                    onClick={() => handleExtendDeadline(test)}
+                                    className="inline-flex items-center px-4 py-2 border border-orange-600 text-sm font-medium rounded-md text-orange-600 bg-white dark:bg-gray-800 hover:bg-orange-50 dark:hover:bg-orange-900/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors"
+                                    title="Extend Deadline"
+                                  >
+                                    <CalendarDays className="h-4 w-4 mr-2" />
+                                    Extend
                                   </button>
                                 )}
                                 
@@ -992,6 +1074,33 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
                                       </div>
                                     </div>
 
+                                    {/* Show deadline for flexible tests */}
+                                    {test.type === 'flexible' && (
+                                      <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                                        <div className="flex items-center justify-between">
+                                          <div className="flex items-center space-x-2">
+                                            <CalendarDays className="h-4 w-4 text-blue-600" />
+                                            <span className="text-sm font-medium text-blue-800 dark:text-blue-400">
+                                              Current Deadline
+                                            </span>
+                                            {(test as FlexibleTest).isExtended && (
+                                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400">
+                                                Extended
+                                              </span>
+                                            )}
+                                          </div>
+                                          <span className="text-sm text-blue-900 dark:text-blue-100 font-medium">
+                                            {formatDateTime((test as FlexibleTest).availableTo)}
+                                          </span>
+                                        </div>
+                                        {(test as FlexibleTest).isExtended && (test as FlexibleTest).originalAvailableTo && (
+                                          <div className="mt-1 text-xs text-blue-600 dark:text-blue-400">
+                                            Originally: {formatDateTime((test as FlexibleTest).originalAvailableTo)}
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+
                                     {isLive && status.status === 'live' && (
                                       <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
                                         <div className="flex items-center space-x-2">
@@ -1030,6 +1139,18 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
                                       >
                                         <CheckSquare className="h-4 w-4 mr-2" />
                                         Mark Answers
+                                      </button>
+                                    )}
+                                    
+                                    {/* Extend Deadline button for flexible tests */}
+                                    {test.type === 'flexible' && canExtendTest(test) && (
+                                      <button
+                                        onClick={() => handleExtendDeadline(test)}
+                                        className="inline-flex items-center px-4 py-2 border border-orange-600 text-sm font-medium rounded-md text-orange-600 bg-white dark:bg-gray-800 hover:bg-orange-50 dark:hover:bg-orange-900/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors"
+                                        title="Extend Deadline"
+                                      >
+                                        <CalendarDays className="h-4 w-4 mr-2" />
+                                        Extend
                                       </button>
                                     )}
                                     
@@ -1134,6 +1255,21 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
               </div>
             </div>
           </div>
+        )}
+
+        {/* Extend Test Modal */}
+        {showExtendModal && testToExtend && teacher && (
+          <ExtendTestModal
+            isOpen={showExtendModal}
+            onClose={() => {
+              setShowExtendModal(false);
+              setTestToExtend(null);
+            }}
+            test={testToExtend}
+            teacherId={teacher.id}
+            teacherName={teacher.name}
+            onExtensionCreated={handleExtensionCreated}
+          />
         )}
       </div>
     </TeacherLayout>
