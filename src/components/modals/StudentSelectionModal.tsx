@@ -119,8 +119,26 @@ export default function StudentSelectionModal({
         )
       );
       
-      setAllStudents(filteredStudents);
-      console.log('✅ Loaded students for teacher classes:', filteredStudents.length);
+      // Remove duplicate students (students can be enrolled in multiple classes but should appear only once)
+      const uniqueStudents = filteredStudents.reduce((unique: EnhancedStudentListItem[], student) => {
+        const existingStudent = unique.find(s => s.id === student.id);
+        if (!existingStudent) {
+          // Filter enrollments to only include those from teacher's classes
+          const relevantEnrollments = student.enrolledClasses.filter(enrollment =>
+            teacherClassIds.includes(enrollment.classId) && 
+            enrollment.status === 'Active'
+          );
+          
+          unique.push({
+            ...student,
+            enrolledClasses: relevantEnrollments
+          });
+        }
+        return unique;
+      }, []);
+      
+      setAllStudents(uniqueStudents);
+      console.log('✅ Loaded unique students for teacher classes:', uniqueStudents.length);
     } catch (err) {
       console.error('Error loading students:', err);
       setError('Failed to load students. Please try again.');

@@ -74,6 +74,43 @@ const testimonials: Testimonial[] = [
     text: "Our older son Josh started off with Dr U mid-last year; have to admit we weren't 100% sure of what to expect and how the couple of months leading to the actual selective school exam would look like. Dr U immediately got to work with Josh and started encouraging Josh to consider various strategies and also started working even on a one-on-one basis to rectify areas of weakness. Within 2 months of attending classes, we were dealing with a kid that was ultra motivated and driven to fix the areas he identified together with Dr U. While Dr U prepared and coached Josh, he also took the time to work out strategies with us as parents on how we together along with him could make this work. It felt like we, as parents, got together with him to create a personalised strategy for our son to ensure we facilitate a common objective. Dr U always made himself available to answer doubts or questions we had; we felt that there was a genuine interest towards ensuring Josh got over the line. As we celebrated an excellent outcome, we look back and give full credit to Dr U and his commitment towards making a better Josh! We as a family, highly recommend the institute and Dr U.",
     stars: 5
   }
+  ,
+  // Facebook-sourced reviews
+  {
+    name: "Puneet Ram Badireddi",
+    text: "Highly recommend Dr U. I’ve been with him since 2023 and the experience helped immensely across multiple subjects. His teaching style is clear, patient and tailored to how I learn best, which has made difficult concepts much easier to grasp. Thanks to his guidance, I’ve gained confidence and improved my understanding significantly.",
+    stars: 5
+  },
+  {
+    name: "Ruwanthi Nawarathna",
+    text: "Highly recommended Dr. U and Dr. Maheshika — my daughter showed significant improvement within 6 months of enrolment.",
+    stars: 5
+  },
+  {
+    name: "Rivith Senaratne",
+    text: "As a former student at Dr. U Education, I observed that classes operate with a level of academic rigor and structured methodology that is rare to find. Under his guidance, I achieved significant improvement in both subjects.",
+    stars: 5
+  },
+  {
+    name: "Karthik Kalaiselvan",
+    text: "I had the privilege of being tutored by Dr U from Year 9 through to Year 12. Dr U is far more than a tutor — he is a mentor, coach, and role model whose commitment to his students is truly extraordinary.",
+    stars: 5
+  },
+  {
+    name: "Akshay Raju",
+    text: "Doctor U wasn’t just a teacher to me but a father figure. He taught me Methods, Specialist and Chemistry with passion and had an innate way of explaining concepts from different viewpoints.",
+    stars: 5
+  },
+  {
+    name: "Chenumi Gunawardana",
+    text: "Dr U was not only a great Math Methods and Specialist Math tutor, but an amazing mentor in the long and tiring journey of VCE. His teaching methods allowed me to stay on top of the workload and push myself to the fullest.",
+    stars: 5
+  },
+  {
+    name: "Shanon Angelo",
+    text: "I cannot recommend Dr. U highly enough. He was my Specialist Math, Methods and Physics tutor. His expertise and comprehensive teaching approach has been transformative for my studies.",
+    stars: 5
+  }
 ];
 
 // Star Rating Component
