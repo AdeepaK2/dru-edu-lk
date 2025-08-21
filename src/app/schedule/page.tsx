@@ -132,7 +132,7 @@ export default function SchedulePage() {
             Class <span className="bg-gradient-to-r from-[#0088e0] to-[#00b4d8] bg-clip-text text-transparent">Schedule</span>
           </h1>
           <p className="text-xl text-white/90 max-w-3xl mx-auto leading-relaxed mb-8">
-            At Dr. U Education Center, we're gearing up for an exciting year of learning in 2025. With our commitment to academic excellence, we're proud to offer classes at not one, not two, but three campuses! Whether you're in Cranbourne or Glen Waverley, we're here to guide your educational journey.
+            At Dr. U Education Center, we're gearing up for an exciting year of learning in 2025. With our commitment to academic excellence, we're proud to offer classes at two campuses! Whether you're in Cranbourne or Glen Waverley, we're here to guide your educational journey.
           </p>
         </div>
       </header>
