@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Clock, Calendar, AlertCircle, FileText, CheckCircle, Play, ArrowRight, BookOpen, Filter, Info, ChevronDown, ChevronRight, ChevronUp, Users, Plus, CalendarDays } from 'lucide-react';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { Button, Input, Select } from '@/components/ui';
+import { StudentTestAssignmentService } from '@/apiservices/studentTestAssignmentService';
 import { TestService } from '@/apiservices/testService';
 import { Timestamp } from 'firebase/firestore';
 import { Test, LiveTest, FlexibleTest } from '@/models/testSchema';
@@ -174,7 +175,7 @@ export default function StudentTests() {
     }
   };
   
-  // Function to set up test listener
+  // Function to set up test listener using new hybrid query system
   const setupTestListener = async (classIds: string[]) => {
     try {
       // Import Firestore functions properly with await import
@@ -183,42 +184,41 @@ export default function StudentTests() {
       
       console.log('🔄 Firestore initialized:', !!firestore);
       
-      // Create tests query
-      const testsCollection = collection(firestore, 'tests');
-      console.log('🔄 Tests collection reference created:', !!testsCollection);
+      // Use the updated TestService method to get all student tests
+      const loadAllTests = async () => {
+        try {
+          console.log('🔄 Loading tests using hybrid query system...');
+          console.log('📝 Student ID:', student?.id);
+          console.log('📝 Class IDs:', classIds);
+          const allTests = await TestService.getStudentTests(student?.id || '', classIds);
+          console.log('✅ Loaded tests via hybrid system:', allTests.length);
+          console.log('📊 Test details:', allTests.map(test => ({
+            id: test.id,
+            title: test.title,
+            assignmentType: test.assignmentType,
+            classIds: test.classIds,
+            subjectName: test.subjectName
+          })));
+          setTests(allTests);
+          setLoading(false);
+        } catch (error) {
+          console.error('❌ Error loading tests via hybrid system:', error);
+          setError('Failed to load tests. Please refresh the page.');
+          setLoading(false);
+        }
+      };
       
-      // For now, we'll query by class IDs and filter custom tests on the client side
-      // This ensures we get both class-based and custom tests that might be assigned to classes
-      const testsQuery = query(
-        testsCollection,
-        where('classIds', 'array-contains-any', classIds)
-      );
-      console.log('🔄 Tests query created with classes:', classIds);
+      // Load initial tests
+      await loadAllTests();
       
-      console.log('🔄 Setting up real-time test listener for classes:', classIds);
+      // Set up interval to refresh tests periodically (since individual assignments don't have real-time listeners yet)
+      const refreshInterval = setInterval(loadAllTests, 30000); // Refresh every 30 seconds
       
-      // Set up real-time listener
-      return onSnapshot(testsQuery, (snapshot: any) => {
-        console.log('📥 Received snapshot with', snapshot.size, 'documents');
-        const testsData: Test[] = [];
-        
-        snapshot.forEach((doc: any) => {
-          const testData = { id: doc.id, ...doc.data() } as Test;
-          console.log('📄 Test document:', doc.id, testData.title);
-          testsData.push(testData);
-        });
-        
-        // TODO: We might need to add a separate query for custom tests that are not class-based
-        // For now, custom tests are likely to have at least one classId to ensure they show up
-        
-        setTests(testsData);
-        setLoading(false);
-        console.log('✅ Loaded tests (real-time):', testsData.length);
-      }, (error: any) => {
-        console.error('Error in tests snapshot listener:', error);
-        setError('Failed to listen for test updates. Please refresh the page.');
-        setLoading(false);
-      });
+      // Return cleanup function
+      return () => {
+        clearInterval(refreshInterval);
+      };
+      
     } catch (error) {
       console.error('Error setting up test listener:', error);
       
@@ -581,51 +581,36 @@ export default function StudentTests() {
     if (!tests) return [];
     
     return tests.filter(test => {
-      // Check if test is a custom test assigned to this student
-      const isCustomTest = test.assignmentType === 'student-based';
+      // TestService.getStudentTests() already filters for correct test assignments
+      // We only need to filter by subject and search term here
       
-      if (isCustomTest) {
-        const individualAssignments = test.individualAssignments || [];
-        
-        // Check if this student is in the individual assignments
-        // Handle both old format (studentIds array) and new format (single studentId)
-        const isAssignedToStudent = individualAssignments.some((assignment: any) => {
-          // New format: single studentId per assignment
-          if (assignment?.studentId) {
-            return assignment.studentId === student?.id;
+      let matchesSubject = selectedSubjectId === 'all';
+      
+      if (!matchesSubject) {
+        // For class-based tests, check classIds
+        if (test.classIds && test.classIds.length > 0) {
+          matchesSubject = test.classIds.some(classId => {
+            const enrollment = enrollments.find(e => e.classId === classId);
+            if (!enrollment) return false;
+            
+            // Find subject ID from the enrollment
+            const subjectName = enrollment.subject;
+            const subject = subjects.find(s => s.name === subjectName);
+            
+            return subject?.id === selectedSubjectId;
+          });
+        } else {
+          // For student-based tests (empty classIds), check by subject in test data
+          // If test has subjectName, match it directly
+          if (test.subjectName) {
+            const subject = subjects.find(s => s.name === test.subjectName);
+            matchesSubject = subject?.id === selectedSubjectId;
+          } else {
+            // If no subject info, show in 'all' but not in specific subjects
+            matchesSubject = false;
           }
-          // Old format: studentIds array per assignment (fallback)
-          if (assignment?.studentIds && Array.isArray(assignment.studentIds)) {
-            return assignment.studentIds.includes(student?.id);
-          }
-          return false;
-        });
-        
-        if (!isAssignedToStudent) {
-          return false; // Don't show custom tests not assigned to this student
-        }
-      } else {
-        // For regular class-based tests, check if student is in the class
-        const hasClassEnrollment = test.classIds.some(classId => {
-          return enrollments.find(e => e.classId === classId);
-        });
-        
-        if (!hasClassEnrollment) {
-          return false; // Don't show class tests if student isn't enrolled
         }
       }
-      
-      const matchesSubject = selectedSubjectId === 'all' || 
-        test.classIds.some(classId => {
-          const enrollment = enrollments.find(e => e.classId === classId);
-          if (!enrollment) return false;
-          
-          // Find subject ID from the enrollment
-          const subjectName = enrollment.subject;
-          const subject = subjects.find(s => s.name === subjectName);
-          
-          return subject?.id === selectedSubjectId;
-        });
       
       const matchesSearch = 
         test.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -634,7 +619,7 @@ export default function StudentTests() {
       
       return matchesSubject && (searchTerm ? matchesSearch : true);
     });
-  }, [tests, enrollments, selectedSubjectId, searchTerm, subjects, student?.id]);
+  }, [tests, enrollments, selectedSubjectId, searchTerm, subjects]);
 
   // Separate custom tests from class tests
   const { customTests, classBasedTests } = useMemo(() => {

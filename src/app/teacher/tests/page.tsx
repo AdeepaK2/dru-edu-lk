@@ -872,13 +872,10 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
                                   </div>
                                 )}
 
-                                {test.totalAssignedStudents && test.individualAssignments && (
+                                {test.totalAssignedStudents && test.assignmentSummary && (
                                   <div className="mb-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
                                     <div className="text-sm text-green-800 dark:text-green-400">
-                                      <span className="font-medium">Assigned to:</span> {test.totalAssignedStudents} students across {Object.keys(test.individualAssignments?.reduce((acc: any, assignment: any) => {
-                                        acc[assignment.className] = true;
-                                        return acc;
-                                      }, {}) || {}).length} classes
+                                      <span className="font-medium">Assigned to:</span> {test.totalAssignedStudents} students across {test.assignmentSummary.classesInvolved?.length || 0} class{(test.assignmentSummary.classesInvolved?.length || 0) !== 1 ? 'es' : ''}
                                     </div>
                                   </div>
                                 )}

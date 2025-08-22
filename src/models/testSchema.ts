@@ -96,10 +96,15 @@ export interface BaseTest {
   
   // Assignment configuration (extended for student selection)
   assignmentType?: TestAssignmentType; // New field: 'class-based' | 'student-based' | 'mixed'
-  classIds: string[]; // Preserved for backward compatibility
-  classNames: string[]; // Preserved for backward compatibility
-  individualAssignments?: StudentTestAssignment[]; // New field for individual student assignments
+  classIds: string[]; // For class-based tests only
+  classNames: string[]; // For class-based tests only
+  
+  // For student-based tests - metadata only (not used for queries)
   totalAssignedStudents?: number; // New field for quick access
+  assignmentSummary?: {
+    studentCount: number;
+    classesInvolved: string[]; // For display only
+  };
   
   // Test configuration
   type: TestType;
