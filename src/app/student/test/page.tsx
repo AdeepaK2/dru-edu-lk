@@ -582,11 +582,10 @@ export default function StudentTests() {
     
     return tests.filter(test => {
       // Check if test is a custom test assigned to this student
-      const isCustomTest = (test as any).assignmentConfig?.assignmentType === 'student-based';
+      const isCustomTest = test.assignmentType === 'student-based';
       
       if (isCustomTest) {
-        const assignmentConfig = (test as any).assignmentConfig;
-        const individualAssignments = assignmentConfig?.individualAssignments || [];
+        const individualAssignments = test.individualAssignments || [];
         
         // Check if this student is in the individual assignments
         // Handle both old format (studentIds array) and new format (single studentId)
@@ -643,7 +642,7 @@ export default function StudentTests() {
     const classBased: Test[] = [];
     
     filteredTests.forEach(test => {
-      const isCustomTest = (test as any).assignmentConfig?.assignmentType === 'student-based';
+      const isCustomTest = test.assignmentType === 'student-based';
       if (isCustomTest) {
         custom.push(test);
       } else {
@@ -1064,7 +1063,6 @@ export default function StudentTests() {
                       const liveTest = test as LiveTest;
                       const buttonConfig = getTestButton(test);
                       const ButtonIcon = buttonConfig.icon;
-                      const assignmentConfig = (test as any).assignmentConfig;
 
                       return (
                         <div key={test.id} className="p-6 hover:bg-green-50 dark:hover:bg-green-900/10 border-l-4 border-green-500">
@@ -1084,9 +1082,9 @@ export default function StudentTests() {
                               <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
                                 Duration: {liveTest.duration} minutes • Ends at {formatDateTime(liveTest.actualEndTime)}
                               </p>
-                              {assignmentConfig && (
+                              {test.totalAssignedStudents && (
                                 <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                                  Assigned to {assignmentConfig.totalAssignedStudents} selected students
+                                  Assigned to {test.totalAssignedStudents} selected students
                                 </p>
                               )}
                               {testAttempts[test.id] && (
@@ -1132,7 +1130,6 @@ export default function StudentTests() {
                       const startTime = test.type === 'live' 
                         ? (test as LiveTest).studentJoinTime 
                         : (test as FlexibleTest).availableFrom;
-                      const assignmentConfig = (test as any).assignmentConfig;
 
                       return (
                         <div key={test.id} className="p-6 hover:bg-purple-50 dark:hover:bg-purple-900/10 border-l-4 border-purple-500">
@@ -1183,9 +1180,9 @@ export default function StudentTests() {
                                   )}
                                 </div>
                               )}
-                              {assignmentConfig && (
+                              {test.totalAssignedStudents && (
                                 <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                                  Assigned to {assignmentConfig.totalAssignedStudents} selected students
+                                  Assigned to {test.totalAssignedStudents} selected students
                                 </p>
                               )}
                             </div>
@@ -1215,7 +1212,6 @@ export default function StudentTests() {
                       const flexTest = test as FlexibleTest;
                       const buttonConfig = getTestButton(test);
                       const ButtonIcon = buttonConfig.icon;
-                      const assignmentConfig = (test as any).assignmentConfig;
 
                       return (
                         <div key={test.id} className="p-6 hover:bg-blue-50 dark:hover:bg-blue-900/10 border-l-4 border-blue-500">
@@ -1271,9 +1267,9 @@ export default function StudentTests() {
                                   {getExtensionInfo(test)}
                                 </p>
                               )}
-                              {assignmentConfig && (
+                              {test.totalAssignedStudents && (
                                 <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                                  Assigned to {assignmentConfig.totalAssignedStudents} selected students
+                                  Assigned to {test.totalAssignedStudents} selected students
                                 </p>
                               )}
                               {testAttempts[test.id] && (
@@ -1314,7 +1310,6 @@ export default function StudentTests() {
                     {groupedCustomTests.completed.map((test) => {
                       const buttonConfig = getTestButton(test);
                       const ButtonIcon = buttonConfig.icon;
-                      const assignmentConfig = (test as any).assignmentConfig;
 
                       return (
                         <div key={test.id} className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700">
@@ -1331,9 +1326,9 @@ export default function StudentTests() {
                                   Completed
                                 </span>
                               </div>
-                              {assignmentConfig && (
+                              {test.totalAssignedStudents && (
                                 <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                                  Assigned to {assignmentConfig.totalAssignedStudents} selected students
+                                  Assigned to {test.totalAssignedStudents} selected students
                                 </p>
                               )}
                               {testAttempts[test.id] && (

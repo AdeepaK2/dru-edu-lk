@@ -304,7 +304,7 @@ export default function TeacherTests() {
   const getTestsForClass = (classId: string) => {
     return tests.filter(test => {
       // Exclude custom tests (student-based assignments)
-      const isCustomTest = (test as any).assignmentConfig?.assignmentType === 'student-based';
+      const isCustomTest = test.assignmentType === 'student-based';
       if (isCustomTest) {
         return false;
       }
@@ -629,7 +629,7 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
                       <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
                         <span className="flex items-center">
                           <FileText className="h-4 w-4 mr-1" />
-                          {tests.filter(test => (test as any).assignmentConfig?.assignmentType === 'student-based').length} tests
+                          {tests.filter(test => test.assignmentType === 'student-based').length} tests
                         </span>
                         <span className="text-green-600 dark:text-green-400 font-medium">
                           View & Create →
@@ -755,7 +755,7 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
             {/* Custom Tests List */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
               <div className="p-6">
-                {tests.filter(test => (test as any).assignmentConfig?.assignmentType === 'student-based').length === 0 ? (
+                {tests.filter(test => test.assignmentType === 'student-based').length === 0 ? (
                   <div className="text-center py-12">
                     <Users className="mx-auto h-12 w-12 text-gray-400 mb-4" />
                     <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
@@ -774,10 +774,9 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
                 ) : (
                   <div className="space-y-4">
                     {tests
-                      .filter(test => (test as any).assignmentConfig?.assignmentType === 'student-based')
+                      .filter(test => test.assignmentType === 'student-based')
                       .map((test) => {
                         const status = getTestStatus(test);
-                        const assignmentConfig = (test as any).assignmentConfig;
 
                         return (
                           <div
@@ -842,7 +841,7 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
                                   </div>
                                   <div className="flex items-center space-x-1">
                                     <Users className="h-4 w-4" />
-                                    <span>{assignmentConfig?.totalAssignedStudents || 0} students</span>
+                                    <span>{test.totalAssignedStudents || 0} students</span>
                                   </div>
                                 </div>
 
@@ -873,10 +872,10 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
                                   </div>
                                 )}
 
-                                {assignmentConfig && (
+                                {test.totalAssignedStudents && test.individualAssignments && (
                                   <div className="mb-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
                                     <div className="text-sm text-green-800 dark:text-green-400">
-                                      <span className="font-medium">Assigned to:</span> {assignmentConfig.totalAssignedStudents} students across {Object.keys(assignmentConfig.individualAssignments?.reduce((acc: any, assignment: any) => {
+                                      <span className="font-medium">Assigned to:</span> {test.totalAssignedStudents} students across {Object.keys(test.individualAssignments?.reduce((acc: any, assignment: any) => {
                                         acc[assignment.className] = true;
                                         return acc;
                                       }, {}) || {}).length} classes
