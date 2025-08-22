@@ -432,16 +432,16 @@ export class MailService {
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <h2 style="color: #4F46E5; text-align: center;">${testIcon} New Test Assignment - Dr U Education</h2>
         
-        <p>Dear ${studentName},</p>
+        <p>Hello,</p>
         
-        <p>Your teacher <strong>${teacherName}</strong> has assigned you a new ${testTypeLabel.toLowerCase()} for your <strong>${subjectName}</strong> class.</p>
+        <p>A new ${testTypeLabel.toLowerCase()} has been assigned by <strong>${teacherName}</strong> for the <strong>${subjectName}</strong> class.</p>
         
         <div style="background-color: #F3F4F6; padding: 20px; border-radius: 8px; margin: 20px 0;">
           <h3 style="color: #374151; margin-top: 0;">📋 Test Details</h3>
           <p><strong>Test Title:</strong> ${testTitle}</p>
           <p><strong>Subject:</strong> ${subjectName}</p>
           <p><strong>Class:</strong> ${className}</p>
-          <p><strong>Teacher:</strong> ${teacherName}</p>
+          <p><strong>Assigned by:</strong> ${teacherName}</p>
           <p><strong>Type:</strong> ${testTypeLabel}</p>
           ${totalMarks ? `<p><strong>Total Marks:</strong> ${totalMarks}</p>` : ''}
         </div>
@@ -465,7 +465,7 @@ export class MailService {
         <div style="background-color: #F0F9FF; border-left: 4px solid #0EA5E9; padding: 15px; margin: 20px 0;">
           <p style="margin: 0; color: #0C4A6E;"><strong>💡 Preparation Tips:</strong></p>
           <ul style="margin: 10px 0 0 0; color: #0F172A; padding-left: 20px;">
-            <li>Review your class materials and notes</li>
+            <li>Review class materials and notes</li>
             <li>Ensure you have a stable internet connection</li>
             <li>Find a quiet environment for the test</li>
             <li>Have scratch paper and a calculator ready if needed</li>
@@ -480,7 +480,7 @@ export class MailService {
           </a>
         </div>
 
-        <p>Good luck with your test! If you have any questions, please contact your teacher or our support team.</p>
+        <p>Good luck with the test! If you have any questions, please contact your teacher or our support team.</p>
 
         <p>Best regards,<br>
         The Dr U Education Team</p>
@@ -546,7 +546,7 @@ export class MailService {
           <p><strong>Date & Time:</strong> ${formatDateTime(testDate, testTime)}</p>
           <p><strong>Duration:</strong> ${duration || 60} minutes</p>
           <p style="color: #92400E; font-weight: 500; margin: 10px 0 0 0;">
-            ⚠️ <strong>Please remind ${studentName}</strong> to join on time as live tests cannot be started after the scheduled time.
+            ⚠️ <strong>Important:</strong> Please remind your child to join on time as live tests cannot be started after the scheduled time.
           </p>
         </div>
       `;
@@ -558,7 +558,7 @@ export class MailService {
           <p><strong>Available Until:</strong> ${availableTo ? formatDateTime(availableTo) : 'To be announced'}</p>
           <p><strong>Duration:</strong> ${duration || 60} minutes (once started)</p>
           <p style="color: #1E40AF; font-weight: 500; margin: 10px 0 0 0;">
-            ℹ️ <strong>Flexible Schedule:</strong> ${studentName} can take this test anytime within the available period.
+            ℹ️ <strong>Flexible Schedule:</strong> The test can be taken anytime within the available period.
           </p>
         </div>
       `;
@@ -568,17 +568,16 @@ export class MailService {
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <h2 style="color: #4F46E5; text-align: center;">${testIcon} Test Assignment Notification - Dr U Education</h2>
         
-        <p>Dear ${parentName},</p>
+        <p>Dear Parent/Guardian,</p>
         
-        <p>We would like to inform you that <strong>${studentName}</strong> has been assigned a new ${testTypeLabel.toLowerCase()} by their teacher <strong>${teacherName}</strong> for the <strong>${subjectName}</strong> class.</p>
+        <p>A new ${testTypeLabel.toLowerCase()} has been assigned by <strong>${teacherName}</strong> for the <strong>${subjectName}</strong> class.</p>
         
         <div style="background-color: #F3F4F6; padding: 20px; border-radius: 8px; margin: 20px 0;">
           <h3 style="color: #374151; margin-top: 0;">📋 Test Information</h3>
-          <p><strong>Student:</strong> ${studentName}</p>
           <p><strong>Test Title:</strong> ${testTitle}</p>
           <p><strong>Subject:</strong> ${subjectName}</p>
           <p><strong>Class:</strong> ${className}</p>
-          <p><strong>Teacher:</strong> ${teacherName}</p>
+          <p><strong>Assigned by:</strong> ${teacherName}</p>
           <p><strong>Type:</strong> ${testTypeLabel}</p>
           ${totalMarks ? `<p><strong>Total Marks:</strong> ${totalMarks}</p>` : ''}
         </div>
@@ -602,7 +601,7 @@ export class MailService {
         <div style="background-color: #F0F9FF; border-left: 4px solid #0EA5E9; padding: 15px; margin: 20px 0;">
           <p style="margin: 0; color: #0C4A6E;"><strong>💡 How You Can Help:</strong></p>
           <ul style="margin: 10px 0 0 0; color: #0F172A; padding-left: 20px;">
-            <li>Remind ${studentName} about the test schedule</li>
+            <li>Remind your child about the test schedule</li>
             <li>Ensure they have a quiet study environment</li>
             <li>Help them review their study materials</li>
             <li>Make sure they have a stable internet connection</li>
@@ -613,25 +612,25 @@ export class MailService {
         <div style="background-color: #EBF4FF; border-left: 4px solid #2563EB; padding: 15px; margin: 20px 0;">
           <p style="margin: 0; color: #1E40AF;"><strong>📞 Support Available:</strong></p>
           <p style="margin: 10px 0 0 0; color: #1E3A8A;">
-            If ${studentName} needs any help or has questions about the test, please encourage them to contact their teacher ${teacherName} or our support team. We're here to help ensure their success!
+            If your child needs any help or has questions about the test, please encourage them to contact their teacher <strong>${teacherName}</strong> or our support team. We're here to help ensure their success!
           </p>
         </div>
 
-        <p>We appreciate your continued support in ${studentName}'s educational journey. Your involvement makes a significant difference in their academic success.</p>
+        <p>We appreciate your continued support in your child's educational journey. Your involvement makes a significant difference in their academic success.</p>
 
         <p>Best regards,<br>
         The Dr U Education Team</p>
         
         <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 30px 0;">
         <p style="font-size: 12px; color: #6B7280; text-align: center;">
-          This is an automated notification to keep you informed about your child's academic activities.
+          This is an automated notification to keep you informed about academic activities.
         </p>
       </div>
     `;
 
     return {
       to: parentEmail,
-      subject: `📚 Test Assignment for ${studentName} - ${subjectName} (${testTitle})`,
+      subject: `📚 Test Assignment - ${subjectName} (${testTitle})`,
       html: html.trim()
     };
   }
