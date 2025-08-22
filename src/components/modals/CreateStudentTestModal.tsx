@@ -30,6 +30,7 @@ import { TestService } from '@/apiservices/testService';
 import { LessonFirestoreService } from '@/apiservices/lessonFirestoreService';
 import { questionService } from '@/apiservices/questionBankFirestoreService';
 import { TestNumberingService } from '@/apiservices/testNumberingService';
+import { StudentTestAssignmentService } from '@/apiservices/studentTestAssignmentService';
 import { useTeacherAuth } from '@/hooks/useTeacherAuth';
 import StudentSelectionModal from './StudentSelectionModal';
 import { Timestamp } from 'firebase/firestore';
@@ -467,31 +468,16 @@ export default function CreateStudentTestModal({
         ? formData.selectedQuestions.reduce((sum, q) => sum + (q.points || 1), 0)
         : formData.totalQuestions * 1;
 
-      // Create student assignments
-      const studentAssignments: StudentTestAssignment[] = formData.selectedStudents.map(student => ({
-        studentId: student.id,
-        studentName: student.name,
-        studentEmail: student.email,
+      // Create student assignments - REMOVED from test data
+      const studentAssignments = formData.selectedStudents.map((student: any) => ({
+        id: student.id,
+        name: student.name,
+        email: student.email,
         classId: student.classId,
-        className: student.className,
-        assignedAt: Timestamp.now(),
-        assignedBy: teacher?.id || '',
-        status: 'assigned',
-        notificationSent: false
+        className: student.className
       }));
 
-      // Build assignment configuration
-      const assignmentConfig: TestAssignmentConfig = {
-        classIds: [], // Empty for student-selected tests
-        classNames: [],
-        assignmentType: 'student-based',
-        individualAssignments: studentAssignments,
-        totalAssignedStudents: formData.selectedStudents.length,
-        assignmentDate: Timestamp.now(),
-        assignmentNotes: formData.assignmentNotes || undefined
-      };
-
-      // Build base test data
+      // Build base test data - CLEANED UP
       const baseTestData = {
         title: formData.title,
         description: formData.description || '',
@@ -501,17 +487,22 @@ export default function CreateStudentTestModal({
         subjectId: subjectId || '',
         subjectName: subjectName || '',
         
-        // For student-selected tests, we include all involved class IDs for reference
-        classIds: Array.from(new Set(formData.selectedStudents.map(s => s.classId))),
-        classNames: Array.from(new Set(formData.selectedStudents.map(s => s.className))),
+        // For student-based tests: EMPTY classIds (no class visibility)
+        assignmentType: 'student-based',
+        classIds: [], // EMPTY - prevents all students in class from seeing test
+        classNames: [],
+        
+        // Metadata only (for display purposes)
+        totalAssignedStudents: formData.selectedStudents.length,
+        assignmentSummary: {
+          studentCount: formData.selectedStudents.length,
+          classesInvolved: Array.from(new Set(formData.selectedStudents.map((s: any) => s.className)))
+        },
         
         config: testConfig,
         questions: formData.selectedQuestions || [],
         totalMarks: totalMarks,
-        status: 'draft' as const,
-        
-        // Add assignment configuration
-        assignmentConfig
+        status: 'draft' as const
       };
 
       // Create type-specific test data
@@ -598,8 +589,18 @@ export default function CreateStudentTestModal({
 
       const finalTestData = removeUndefined(testData);
 
-      // Create the test
+      // Create the test first
       const testId = await TestService.createTest(finalTestData as any);
+      console.log('✅ Test created with ID:', testId);
+
+      // Create individual student assignments using the new service
+      await StudentTestAssignmentService.createAssignments(
+        testId,
+        studentAssignments,
+        teacher?.id || '',
+        teacher?.name || ''
+      );
+      console.log('✅ Student assignments created successfully');
 
       console.log('Student-selected test created successfully:', testId);
       onTestCreated({ ...testData, id: testId });

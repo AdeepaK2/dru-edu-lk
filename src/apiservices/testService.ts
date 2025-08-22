@@ -15,7 +15,8 @@ import {
   writeBatch,
   onSnapshot,
   Timestamp,
-  increment
+  increment,
+  documentId
 } from 'firebase/firestore';
 import { firestore, auth } from '@/utils/firebase-client';
 import { 
@@ -35,7 +36,8 @@ import {
 import { Question, MCQQuestion, EssayQuestion } from '@/models/questionBankSchema';
 import { MailService } from './mailService';
 import { StudentFirestoreService } from './studentFirestoreService';
-import { getEnrollmentsByClass } from '../services/studentEnrollmentService';
+import { StudentTestAssignmentService } from './studentTestAssignmentService';
+import { getEnrollmentsByClass } from '@/services/studentEnrollmentService';
 
 export class TestService {
   private static readonly COLLECTIONS = {
@@ -504,6 +506,15 @@ export class TestService {
       const test = await this.getTest(testId);
       if (!test) throw new Error('Test not found');
 
+      // Update assignment status to 'started' if this is a student-based test
+      if (test.assignmentType === 'student-based') {
+        try {
+          await StudentTestAssignmentService.updateAssignmentStatus(testId, studentId, 'started');
+        } catch (assignmentError) {
+          console.warn('Could not update assignment status:', assignmentError);
+        }
+      }
+
       // Create new attempt
       const attemptData: Omit<TestAttempt, 'id'> = {
         testId,
@@ -585,6 +596,15 @@ export class TestService {
 
       // Calculate results
       const results = await this.calculateResults(attempt, test);
+
+      // Update assignment status to 'completed' if this is a student-based test
+      if (test.assignmentType === 'student-based') {
+        try {
+          await StudentTestAssignmentService.updateAssignmentStatus(test.id, attempt.studentId, 'completed');
+        } catch (assignmentError) {
+          console.warn('Could not update assignment status:', assignmentError);
+        }
+      }
 
       await updateDoc(attemptRef, {
         status: autoSubmitted ? 'auto_submitted' : 'submitted',
@@ -774,7 +794,22 @@ export class TestService {
   // Delete test
   static async deleteTest(testId: string): Promise<void> {
     try {
+      console.log(`🗑️ Deleting test: ${testId}`);
+      
+      // Get test data to check assignment type
+      const testDoc = await getDoc(doc(firestore, this.COLLECTIONS.TESTS, testId));
+      if (!testDoc.exists()) {
+        throw new Error('Test not found');
+      }
+      
+      const testData = testDoc.data() as Test;
       const batch = writeBatch(firestore);
+      
+      // If it's a student-based test, delete individual assignments first
+      if (testData.assignmentType === 'student-based') {
+        console.log('🗑️ Deleting individual test assignments...');
+        await StudentTestAssignmentService.deleteTestAssignments(testId);
+      }
       
       // Delete test
       batch.delete(doc(firestore, this.COLLECTIONS.TESTS, testId));
@@ -785,7 +820,7 @@ export class TestService {
         where('testId', '==', testId)
       );
       const attemptsSnapshot = await getDocs(attemptsQuery);
-      attemptsSnapshot.docs.forEach(doc => {
+      attemptsSnapshot.docs.forEach((doc: any) => {
         batch.delete(doc.ref);
       });
       
@@ -795,7 +830,7 @@ export class TestService {
         where('testId', '==', testId)
       );
       const submissionsSnapshot = await getDocs(submissionsQuery);
-      submissionsSnapshot.docs.forEach(doc => {
+      submissionsSnapshot.docs.forEach((doc: any) => {
         batch.delete(doc.ref);
       });
       
@@ -806,7 +841,8 @@ export class TestService {
       
       console.log(`✅ Successfully deleted test ${testId} and all related data:`, {
         attempts: attemptsSnapshot.size,
-        submissions: submissionsSnapshot.size
+        submissions: submissionsSnapshot.size,
+        assignmentType: testData.assignmentType
       });
     } catch (error) {
       console.error('Error deleting test:', error);
@@ -852,112 +888,147 @@ export class TestService {
     }
   }
 
-  // Get available tests for a student
+  // Get available tests for a student using hybrid query system
   static async getStudentTests(studentId: string, classIds: string[]): Promise<Test[]> {
     try {
-      const now = Timestamp.now();
+      console.log('🔍 getStudentTests called with:', { studentId, classIds });
       const testsRef = collection(firestore, 'tests');
       
-      // First, get class-based tests
+      // Query 1: Get class-based tests (backward compatible with legacy tests)
       let classBasedTests: Test[] = [];
       if (classIds.length > 0) {
+        console.log('📚 Querying class-based tests for classes:', classIds);
+        
+        // For backward compatibility, query all tests with matching classIds
         const classQuery = query(
           testsRef,
-          where('classIds', 'array-contains-any', classIds),
-          where('isDeleted', '!=', true)
+          where('classIds', 'array-contains-any', classIds)
         );
         
+        console.log('🔍 Executing class-based test query...');
         const classSnapshot = await getDocs(classQuery);
-        classBasedTests = classSnapshot.docs.map(doc => ({
+        
+        console.log('📊 Raw query results:', classSnapshot.docs.length);
+        
+        // Process and filter results
+        const allClassTests = classSnapshot.docs.map((doc: any) => ({
           id: doc.id,
           ...doc.data()
         })) as Test[];
+        
+        // Filter out student-based tests and soft-deleted tests
+        classBasedTests = allClassTests.filter(test => {
+          const isStudentBased = test.assignmentType === 'student-based';
+          const isDeleted = test.isDeleted === true;
+          const shouldInclude = !isStudentBased && !isDeleted;
+          
+          console.log(`🔍 Test ${test.title}:`, {
+            assignmentType: test.assignmentType,
+            isDeleted: test.isDeleted,
+            shouldInclude,
+            classIds: test.classIds
+          });
+          
+          return shouldInclude;
+        });
+        
+        console.log(`✅ Found ${classBasedTests.length} class-based tests for student`);
+        console.log('📝 Class-based test details:', classBasedTests.map(test => ({
+          id: test.id,
+          title: test.title,
+          assignmentType: test.assignmentType || 'legacy',
+          classIds: test.classIds
+        })));
       }
       
-      // Second, get student-specific tests (custom assignments)
-      const studentQuery = query(
-        testsRef,
-        where('assignmentType', '==', 'student-based'),
-        where('isDeleted', '!=', true)
-      );
-      
-      const studentSnapshot = await getDocs(studentQuery);
-      const studentSpecificTests: Test[] = [];
-      
-      studentSnapshot.docs.forEach(doc => {
-        const testData = { id: doc.id, ...doc.data() } as Test;
+      // Query 2: Get individual assignments for this student
+      let studentSpecificTests: Test[] = [];
+      try {
+        console.log('👤 Querying individual assignments for student:', studentId);
+        const assignments = await StudentTestAssignmentService.getStudentAssignments(studentId);
+        console.log('📋 Found assignments:', assignments.length);
         
-        // Check if this student is individually assigned to this test
-        const individualAssignments = testData.individualAssignments || [];
-        const isAssignedToStudent = individualAssignments.some(
-          (assignment: any) => assignment.studentId === studentId
-        );
-        
-        if (isAssignedToStudent) {
-          studentSpecificTests.push(testData);
+        if (assignments.length > 0) {
+          // Get the test details for assigned tests
+          const assignedTestIds = assignments.map(assignment => assignment.testId);
+          console.log('🎯 Test IDs to fetch:', assignedTestIds);
+          
+          // Fetch tests in batches (Firestore 'in' query limit is 10)
+          const testBatches = [];
+          for (let i = 0; i < assignedTestIds.length; i += 10) {
+            const batch = assignedTestIds.slice(i, i + 10);
+            const testQuery = query(
+              testsRef,
+              where(documentId(), 'in', batch)
+            );
+            testBatches.push(getDocs(testQuery));
+          }
+          
+          console.log('📦 Executing batch queries for student-specific tests...');
+          const batchResults = await Promise.all(testBatches);
+          batchResults.forEach(snapshot => {
+            console.log('📄 Batch result:', snapshot.docs.length, 'documents');
+            const batchTests = snapshot.docs.map((doc: any) => ({
+              id: doc.id,
+              ...doc.data()
+            })) as Test[];
+            // Only add non-deleted tests that match assignment
+            batchTests.forEach(test => {
+              if (assignedTestIds.includes(test.id) && test.isDeleted !== true) {
+                studentSpecificTests.push(test);
+              }
+            });
+          });
+          
+          console.log(`✅ Found ${studentSpecificTests.length} student-specific tests for student`);
+          console.log('📝 Student-specific test details:', studentSpecificTests.map(test => ({
+            id: test.id,
+            title: test.title,
+            assignmentType: test.assignmentType || 'legacy'
+          })));
         }
-      });
+      } catch (assignmentError) {
+        console.warn('⚠️ Error loading student assignments:', assignmentError);
+        // Continue without student-specific tests
+      }
       
       // Combine and deduplicate tests
       const allTests = [...classBasedTests, ...studentSpecificTests];
-      const uniqueTests = allTests.reduce((acc, test) => {
-        if (!acc.find(t => t.id === test.id)) {
+      const uniqueTests = allTests.reduce((acc: Test[], test: any) => {
+        if (!acc.find((t: Test) => t.id === test.id)) {
           acc.push(test);
         }
         return acc;
       }, [] as Test[]);
       
-      // Filter tests based on availability and timing
-      const availableTests: Test[] = [];
+      console.log('🔧 Combined tests before filtering:', uniqueTests.length);
+      console.log('📊 Final test summary:', {
+        classBased: classBasedTests.length,
+        studentSpecific: studentSpecificTests.length,
+        totalUnique: uniqueTests.length
+      });
       
-      uniqueTests.forEach((testData) => {
-        // Skip soft-deleted tests
-        if (testData.isDeleted === true) return;
-        
-        // Check if test is currently available based on type
-        let isAvailable = false;
-        
-        if (testData.type === 'live') {
-          const liveTest = testData as LiveTest;
-          // Live test is available during the test window
-          isAvailable = now.seconds >= liveTest.studentJoinTime.seconds && 
-                       now.seconds <= liveTest.actualEndTime.seconds;
-        } else {
-          const flexTest = testData as FlexibleTest;
-          // Flexible test is available during the entire period
-          isAvailable = now.seconds >= flexTest.availableFrom.seconds && 
-                       now.seconds <= flexTest.availableTo.seconds;
-        }
-        
-        // Include test if it's available or starting soon (for live tests)
-        if (isAvailable || testData.type === 'live') {
-          availableTests.push(testData);
-        } else if (testData.type === 'flexible') {
-          const flexTest = testData as FlexibleTest;
-          // Include flexible tests that are coming up within 24 hours
-          const timeDiff = flexTest.availableFrom.seconds - now.seconds;
-          if (timeDiff > 0 && timeDiff <= 86400) { // 24 hours
-            availableTests.push(testData);
+      // Sort by start time  
+      uniqueTests.sort((a: Test, b: Test) => {
+        const getStartTime = (test: Test): number => {
+          if (test.type === 'live') {
+            const liveTest = test as LiveTest;
+            return liveTest.studentJoinTime?.seconds || liveTest.scheduledStartTime?.seconds || 0;
+          } else {
+            const flexTest = test as FlexibleTest;
+            return flexTest.availableFrom?.seconds || 0;
           }
-        }
-      });
-      
-      // Sort by availability and start time
-      availableTests.sort((a: Test, b: Test) => {
-        const aTime = a.type === 'live' 
-          ? (a as LiveTest).scheduledStartTime.seconds 
-          : (a as FlexibleTest).availableFrom.seconds;
-        const bTime = b.type === 'live' 
-          ? (b as LiveTest).scheduledStartTime.seconds 
-          : (b as FlexibleTest).availableFrom.seconds;
+        };
         
-        return aTime - bTime;
+        return getStartTime(a) - getStartTime(b);
       });
       
-      return availableTests;
+      console.log(`✅ Final available tests for student: ${uniqueTests.length}`);
+      console.log('📝 Final test titles:', uniqueTests.map(test => test.title));
+      return uniqueTests;
     } catch (error) {
-      console.error('Error getting student tests:', error);
-      throw error;
+      console.error('❌ Error getting student tests:', error);
+      throw new Error('Failed to get student tests');
     }
   }
 
