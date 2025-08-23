@@ -1724,41 +1724,58 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
 
             <div className="p-6 border-t border-gray-200 bg-gray-50">
               <div className="flex justify-between">
-                <button
-                  onClick={async () => {
-                    setShowViewAttendanceModal(false);
-                    
-                    // Load enrolled students and populate current attendance
-                    try {
-                      console.log('🔍 Loading enrolled students for editing attendance');
-                      const students = await StudentEnrollmentFirestoreService.getEnrolledStudentsByClassId(selectedSchedule!.classId);
-                      setEnrolledStudents(students);
+                <div className="flex space-x-3">
+                  <button
+                    onClick={async () => {
+                      setShowViewAttendanceModal(false);
                       
-                      // Populate current attendance data for editing
-                      if (selectedSchedule?.attendance?.students) {
-                        const currentAttendance: { [key: string]: 'present' | 'absent' | 'late' } = {};
-                        selectedSchedule.attendance.students.forEach(student => {
-                          currentAttendance[student.studentId] = student.status;
-                        });
-                        setStudentAttendance(currentAttendance);
+                      // Load enrolled students and populate current attendance
+                      try {
+                        console.log('🔍 Loading enrolled students for editing attendance');
+                        const students = await StudentEnrollmentFirestoreService.getEnrolledStudentsByClassId(selectedSchedule!.classId);
+                        setEnrolledStudents(students);
+                        
+                        // Populate current attendance data for editing
+                        if (selectedSchedule?.attendance?.students) {
+                          const currentAttendance: { [key: string]: 'present' | 'absent' | 'late' } = {};
+                          selectedSchedule.attendance.students.forEach(student => {
+                            currentAttendance[student.studentId] = student.status;
+                          });
+                          setStudentAttendance(currentAttendance);
+                        }
+                        
+                        // Validate attendance time (for editing, we're more lenient)
+                        setAttendanceTimeValid(true);
+                        setAttendanceTimeMessage('Editing existing attendance record. You can modify student attendance status.');
+                        setIsEditingAttendance(true); // Set editing mode
+                        
+                        // Switch to edit mode - show the attendance marking modal
+                        setShowAttendanceModal(true);
+                      } catch (error) {
+                        console.error('Error loading students for editing:', error);
+                        alert('Failed to load student data for editing. Please try again.');
                       }
-                      
-                      // Validate attendance time (for editing, we're more lenient)
-                      setAttendanceTimeValid(true);
-                      setAttendanceTimeMessage('Editing existing attendance record. You can modify student attendance status.');
-                      setIsEditingAttendance(true); // Set editing mode
-                      
-                      // Switch to edit mode - show the attendance marking modal
-                      setShowAttendanceModal(true);
-                    } catch (error) {
-                      console.error('Error loading students for editing:', error);
-                      alert('Failed to load student data for editing. Please try again.');
-                    }
-                  }}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  Edit Attendance
-                </button>
+                    }}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    Edit Attendance
+                  </button>
+                  
+                  {/* Cancel Class Button - only show if class is not already cancelled */}
+                  {selectedSchedule?.status !== 'cancelled' && (
+                    <button
+                      onClick={() => {
+                        setShowViewAttendanceModal(false);
+                        handleCancelClass(selectedSchedule!);
+                      }}
+                      className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 flex items-center gap-2"
+                    >
+                      <XCircle className="h-4 w-4" />
+                      Cancel Class
+                    </button>
+                  )}
+                </div>
+                
                 <button
                   onClick={() => {
                     setShowViewAttendanceModal(false);
@@ -1778,9 +1795,9 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
       {/* Class Cancellation Modal */}
       {showCancelModal && scheduleToCancel && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 sticky top-0 bg-white">
               <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                 <XCircle className="w-5 h-5 text-red-600" />
                 Cancel Class
@@ -1795,51 +1812,51 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
             </div>
 
             {/* Content */}
-            <div className="p-6">
-              <div className="mb-4">
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-                  <div className="flex items-start space-x-2">
-                    <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-                    <div className="text-sm">
-                      <p className="text-red-800 font-medium mb-1">
-                        Are you sure you want to cancel this class?
-                      </p>
-                      <p className="text-red-700">
-                        This will notify all students and parents via email about the cancellation.
-                      </p>
-                    </div>
+            <div className="p-4 space-y-4">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <div className="flex items-start space-x-2">
+                  <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  <div className="text-sm">
+                    <p className="text-red-800 font-medium mb-1">
+                      Are you sure you want to cancel this class?
+                    </p>
+                    <p className="text-red-700">
+                      This will notify all students and parents via email.
+                    </p>
                   </div>
                 </div>
+              </div>
 
-                <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                  <h4 className="font-medium text-gray-900 mb-2">Class Details:</h4>
-                  <div className="text-sm text-gray-600 space-y-1">
-                    <p><span className="font-medium">Date:</span> {formatDate(scheduleToCancel.scheduledDate)}</p>
-                    <p><span className="font-medium">Time:</span> {formatTime(scheduleToCancel.startTime)} - {formatTime(scheduleToCancel.endTime)}</p>
-                    <p><span className="font-medium">Type:</span> {scheduleToCancel.scheduleType === 'extra' ? 'Extra Class' : 'Regular Class'}</p>
-                    <p><span className="font-medium">Topic:</span> {scheduleToCancel.topic || 'Regular Class'}</p>
-                  </div>
+              <div className="bg-gray-50 rounded-lg p-3">
+                <h4 className="font-medium text-gray-900 mb-2 text-sm">Class Details:</h4>
+                <div className="text-sm text-gray-600 space-y-1">
+                  <p><span className="font-medium">Date:</span> {formatDate(scheduleToCancel.scheduledDate)}</p>
+                  <p><span className="font-medium">Time:</span> {formatTime(scheduleToCancel.startTime)} - {formatTime(scheduleToCancel.endTime)}</p>
+                  <p><span className="font-medium">Type:</span> {scheduleToCancel.scheduleType === 'extra' ? 'Extra Class' : 'Regular Class'}</p>
+                  {scheduleToCancel.topic && scheduleToCancel.topic !== 'Regular Class' && (
+                    <p><span className="font-medium">Topic:</span> {scheduleToCancel.topic}</p>
+                  )}
                 </div>
+              </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Reason for Cancellation *
-                  </label>
-                  <textarea
-                    value={cancellationReason}
-                    onChange={(e) => setCancellationReason(e.target.value)}
-                    placeholder="Please provide a reason for cancelling this class (required for email notification to students and parents)"
-                    rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                    disabled={cancelLoading}
-                    required
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Reason for Cancellation *
+                </label>
+                <textarea
+                  value={cancellationReason}
+                  onChange={(e) => setCancellationReason(e.target.value)}
+                  placeholder="Please provide a reason for cancelling this class (required for email notification to students and parents)"
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm"
+                  disabled={cancelLoading}
+                  required
+                />
               </div>
             </div>
 
             {/* Footer */}
-            <div className="flex justify-end space-x-3 p-6 border-t border-gray-200">
+            <div className="flex justify-end space-x-3 p-4 border-t border-gray-200 sticky bottom-0 bg-white">
               <Button 
                 variant="outline"
                 onClick={() => {
@@ -1848,6 +1865,7 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
                   setScheduleToCancel(null);
                 }}
                 disabled={cancelLoading}
+                size="sm"
               >
                 Keep Class
               </Button>
@@ -1855,6 +1873,7 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
                 onClick={handleConfirmCancellation}
                 disabled={cancelLoading || !cancellationReason.trim()}
                 className="bg-red-600 hover:bg-red-700 text-white"
+                size="sm"
               >
                 {cancelLoading ? (
                   <>
@@ -1864,7 +1883,7 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
                 ) : (
                   <>
                     <XCircle className="w-4 h-4 mr-2" />
-                    Cancel Class & Notify
+                    Cancel Class
                   </>
                 )}
               </Button>
