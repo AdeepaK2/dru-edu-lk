@@ -43,6 +43,9 @@ type ScheduledClass = {
   teacherName?: string;
   subjectId?: string;
   subjectName?: string;
+  cancellationReason?: string;
+  cancelledAt?: Timestamp | Date;
+  cancelledBy?: string;
   attendance?: {
     totalStudents: number;
     presentCount: number;
@@ -93,6 +96,10 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
   const [selectedAbsentStudents, setSelectedAbsentStudents] = useState<Set<string>>(new Set());
   const [attendanceHistory, setAttendanceHistory] = useState<any[]>([]);
   const [loadingStudents, setLoadingStudents] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [scheduleToCancel, setScheduleToCancel] = useState<ScheduledClass | null>(null);
+  const [cancellationReason, setCancellationReason] = useState('');
+  const [cancelLoading, setCancelLoading] = useState(false);
 
   useEffect(() => {
     if (classData && classId) {
@@ -630,6 +637,81 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
     }
   };
 
+  // Handle cancellation modal opening
+  const handleCancelClass = (schedule: ScheduledClass) => {
+    setScheduleToCancel(schedule);
+    setCancellationReason('');
+    setShowCancelModal(true);
+  };
+
+  // Handle class cancellation
+  const handleConfirmCancellation = async () => {
+    if (!scheduleToCancel || !cancellationReason.trim()) {
+      alert('Please provide a reason for cancellation');
+      return;
+    }
+
+    setCancelLoading(true);
+    try {
+      console.log('🚫 Cancelling class:', scheduleToCancel.id);
+      
+      // Cancel the schedule in Firebase
+      await ClassScheduleFirestoreService.cancelSchedule(
+        scheduleToCancel.id,
+        cancellationReason,
+        'teacher' // TODO: Use actual teacher ID from auth
+      );
+
+      // Get enrolled students for notifications
+      const enrolledStudents = await StudentEnrollmentFirestoreService.getEnrolledStudentsByClassId(scheduleToCancel.classId);
+      
+      // Send cancellation notifications if there are enrolled students
+      if (enrolledStudents.length > 0) {
+        const scheduleDate = scheduleToCancel.scheduledDate instanceof Timestamp 
+          ? scheduleToCancel.scheduledDate.toDate() 
+          : scheduleToCancel.scheduledDate;
+        
+        const classDate = scheduleDate.toISOString().split('T')[0];
+        const classTime = `${formatTime(scheduleToCancel.startTime)} - ${formatTime(scheduleToCancel.endTime)}`;
+        
+        console.log('📧 Sending cancellation notifications to', enrolledStudents.length, 'students/parents');
+        
+        const emailResults = await MailService.sendClassCancellationNotifications(
+          enrolledStudents,
+          scheduleToCancel.className,
+          scheduleToCancel.subjectName || 'Subject',
+          classDate,
+          classTime,
+          scheduleToCancel.teacherName || 'Teacher',
+          cancellationReason
+        );
+
+        console.log('✅ Cancellation notifications sent:', emailResults);
+        
+        alert(`✅ Class cancelled successfully!\n\n📧 Sent ${emailResults.success} cancellation notifications to students and parents\n${emailResults.failed > 0 ? `⚠️ ${emailResults.failed} notifications failed to send` : ''}\n\n🚫 Class status updated to cancelled`);
+      } else {
+        alert('✅ Class cancelled successfully!\n\n🚫 Class status updated to cancelled');
+      }
+
+      // Close modal and refresh data
+      setShowCancelModal(false);
+      setScheduleToCancel(null);
+      setCancellationReason('');
+      
+      // Refresh the schedule list
+      setTimeout(async () => {
+        await loadScheduledClasses();
+        console.log('✅ Schedule data reloaded after cancellation');
+      }, 1000);
+
+    } catch (error) {
+      console.error('❌ Failed to cancel class:', error);
+      alert(`Failed to cancel class: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setCancelLoading(false);
+    }
+  };
+
   const formatDate = (date: Date | Timestamp): string => {
     const actualDate = date instanceof Timestamp ? date.toDate() : date;
     return actualDate.toLocaleDateString();
@@ -940,6 +1022,11 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
                     <div className="text-xs text-gray-500">
                       {schedule.scheduleType === 'extra' ? 'Extra Class' : 'Regular Class'}
                       {schedule.topic && ` • ${schedule.topic}`}
+                      {schedule.status === 'cancelled' && schedule.cancellationReason && (
+                        <div className="mt-1 text-red-600 font-medium">
+                          Cancelled: {schedule.cancellationReason}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -992,16 +1079,12 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
                   <th className="text-left py-2 px-4 font-medium text-gray-700">Topic</th>
                   <th className="text-left py-2 px-4 font-medium text-gray-700">Status</th>
                   <th className="text-left py-2 px-4 font-medium text-gray-700">Attendance</th>
+                  <th className="text-left py-2 px-4 font-medium text-gray-700">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {scheduledClasses.map((schedule) => (
-                  <tr 
-                    key={schedule.id} 
-                    className="border-b border-gray-100 hover:bg-blue-50 cursor-pointer transition-all duration-200 hover:shadow-sm"
-                    onClick={() => handleScheduleClick(schedule)}
-                    title="Click to mark attendance"
-                  >
+                  <tr key={schedule.id} className="border-b border-gray-100 hover:bg-blue-50 transition-all duration-200 hover:shadow-sm">
                     <td className="py-3 px-4">{formatDate(schedule.scheduledDate)}</td>
                     <td className="py-3 px-4">
                       {formatTime(schedule.startTime)} - {formatTime(schedule.endTime)}
@@ -1016,7 +1099,14 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
                       </span>
                     </td>
                     <td className="py-3 px-4 text-gray-600">
-                      {schedule.topic || 'Regular Class'}
+                      <div>
+                        {schedule.topic || 'Regular Class'}
+                        {schedule.status === 'cancelled' && schedule.cancellationReason && (
+                          <div className="mt-1 text-xs text-red-600 italic">
+                            Reason: {schedule.cancellationReason}
+                          </div>
+                        )}
+                      </div>
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
@@ -1043,6 +1133,41 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
                           Not taken
                         </span>
                       )}
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-2">
+                        {schedule.status !== 'cancelled' && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleScheduleClick(schedule);
+                              }}
+                              className="text-xs"
+                            >
+                              {(schedule.attendance?.students?.length || 0) > 0 ? 'View' : 'Attendance'}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCancelClass(schedule);
+                              }}
+                              className="text-xs text-red-600 hover:text-red-700 hover:border-red-300"
+                            >
+                              Cancel
+                            </Button>
+                          </>
+                        )}
+                        {schedule.status === 'cancelled' && (
+                          <span className="text-xs text-gray-500 px-2 py-1 bg-gray-100 rounded">
+                            Cancelled
+                          </span>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -1645,6 +1770,104 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
                   Close
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Class Cancellation Modal */}
+      {showCancelModal && scheduleToCancel && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <XCircle className="w-5 h-5 text-red-600" />
+                Cancel Class
+              </h3>
+              <button
+                onClick={() => setShowCancelModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+                disabled={cancelLoading}
+              >
+                <XCircle className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6">
+              <div className="mb-4">
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                  <div className="flex items-start space-x-2">
+                    <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                    <div className="text-sm">
+                      <p className="text-red-800 font-medium mb-1">
+                        Are you sure you want to cancel this class?
+                      </p>
+                      <p className="text-red-700">
+                        This will notify all students and parents via email about the cancellation.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                  <h4 className="font-medium text-gray-900 mb-2">Class Details:</h4>
+                  <div className="text-sm text-gray-600 space-y-1">
+                    <p><span className="font-medium">Date:</span> {formatDate(scheduleToCancel.scheduledDate)}</p>
+                    <p><span className="font-medium">Time:</span> {formatTime(scheduleToCancel.startTime)} - {formatTime(scheduleToCancel.endTime)}</p>
+                    <p><span className="font-medium">Type:</span> {scheduleToCancel.scheduleType === 'extra' ? 'Extra Class' : 'Regular Class'}</p>
+                    <p><span className="font-medium">Topic:</span> {scheduleToCancel.topic || 'Regular Class'}</p>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Reason for Cancellation *
+                  </label>
+                  <textarea
+                    value={cancellationReason}
+                    onChange={(e) => setCancellationReason(e.target.value)}
+                    placeholder="Please provide a reason for cancelling this class (required for email notification to students and parents)"
+                    rows={4}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                    disabled={cancelLoading}
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex justify-end space-x-3 p-6 border-t border-gray-200">
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  setShowCancelModal(false);
+                  setCancellationReason('');
+                  setScheduleToCancel(null);
+                }}
+                disabled={cancelLoading}
+              >
+                Keep Class
+              </Button>
+              <Button 
+                onClick={handleConfirmCancellation}
+                disabled={cancelLoading || !cancellationReason.trim()}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                {cancelLoading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                    Cancelling...
+                  </>
+                ) : (
+                  <>
+                    <XCircle className="w-4 h-4 mr-2" />
+                    Cancel Class & Notify
+                  </>
+                )}
+              </Button>
             </div>
           </div>
         </div>

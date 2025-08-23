@@ -855,4 +855,199 @@ export class MailService {
       throw error;
     }
   }
+
+  // Generate class cancellation email for students and parents
+  static generateClassCancellationEmail(
+    recipientName: string,
+    recipientEmail: string,
+    studentName: string,
+    className: string,
+    subjectName: string,
+    classDate: string,
+    classTime: string,
+    teacherName: string,
+    cancellationReason: string,
+    isParent: boolean = true
+  ): Omit<MailDocument, 'createdAt' | 'processed'> {
+    const formattedDate = new Date(classDate).toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+
+    const greeting = isParent ? `Dear ${recipientName},` : `Dear ${studentName},`;
+    const studentReference = isParent ? studentName : 'you';
+    const possessive = isParent ? `${studentName}'s` : 'your';
+
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background-color: #FEF2F2; border-left: 4px solid #EF4444; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+          <h2 style="color: #DC2626; margin: 0 0 10px 0;">Class Cancellation Notice</h2>
+        </div>
+        
+        ${greeting}
+        
+        <p>We regret to inform you that ${possessive} scheduled class has been cancelled for the following date and time:</p>
+        
+        <div style="background-color: #F9FAFB; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #E5E7EB;">
+          <h3 style="color: #374151; margin-top: 0;">Cancelled Class Details:</h3>
+          <p><strong>Student:</strong> ${studentName}</p>
+          <p><strong>Class:</strong> ${className}</p>
+          <p><strong>Subject:</strong> ${subjectName}</p>
+          <p><strong>Teacher:</strong> ${teacherName}</p>
+          <p><strong>Scheduled Date:</strong> ${formattedDate}</p>
+          <p><strong>Scheduled Time:</strong> ${classTime}</p>
+        </div>
+        
+        <div style="background-color: #FEF3C7; border-left: 4px solid #F59E0B; padding: 15px; margin: 20px 0;">
+          <p style="margin: 0;"><strong>Reason for Cancellation:</strong></p>
+          <p style="margin: 5px 0 0 0; font-style: italic;">${cancellationReason}</p>
+        </div>
+        
+        <div style="background-color: #F0FDF4; border-left: 4px solid #22C55E; padding: 15px; margin: 20px 0;">
+          <p style="margin: 0;"><strong>What happens next:</strong></p>
+          <ul style="margin: 10px 0 0 0; padding-left: 20px;">
+            <li>We will work to reschedule this class at the earliest convenient time</li>
+            <li>You will receive a notification once a new date is confirmed</li>
+            <li>No charges will be applied for this cancelled session</li>
+            <li>Any materials or assignments for this class remain accessible</li>
+          </ul>
+        </div>
+        
+        <p>We sincerely apologize for any inconvenience this may cause. Our commitment to providing quality education remains unchanged, and we appreciate your understanding.</p>
+        
+        <p>If you have any questions or concerns about this cancellation, please don't hesitate to contact us.</p>
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <p style="font-size: 16px; color: #4F46E5; font-weight: bold;">
+            Thank you for your patience and continued trust in Dr U Education
+          </p>
+        </div>
+        
+        <p>Best regards,<br>
+        ${teacherName}<br>
+        Dr U Education Team</p>
+        
+        <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 30px 0;">
+        <p style="font-size: 12px; color: #6B7280; text-align: center;">
+          This is an automated notification. For support or questions, please contact our administration team.<br>
+          Dr U Education - Committed to Excellence in Learning
+        </p>
+      </div>
+    `;
+
+    const subjectLine = `🚫 Class Cancelled - ${className} on ${formattedDate}`;
+
+    return {
+      to: recipientEmail,
+      subject: subjectLine,
+      html: html.trim()
+    };
+  }
+
+  // Send class cancellation notifications to all students and parents
+  static async sendClassCancellationNotifications(
+    enrolledStudents: any[],
+    className: string,
+    subjectName: string,
+    classDate: string,
+    classTime: string,
+    teacherName: string,
+    cancellationReason: string
+  ): Promise<{ success: number; failed: number; results: any[] }> {
+    try {
+      console.log('📧 Sending class cancellation notifications to', enrolledStudents.length, 'students/parents');
+      
+      const emailPromises = [];
+      
+      // Send email to each student and their parent
+      for (const student of enrolledStudents) {
+        // Email to student (if they have an email)
+        if (student.studentEmail) {
+          const studentEmail = this.generateClassCancellationEmail(
+            student.studentName,
+            student.studentEmail,
+            student.studentName,
+            className,
+            subjectName,
+            classDate,
+            classTime,
+            teacherName,
+            cancellationReason,
+            false // isParent = false
+          );
+          
+          emailPromises.push(
+            this.createMailDocument(studentEmail)
+              .then(mailId => ({ 
+                success: true, 
+                recipient: student.studentEmail, 
+                type: 'student',
+                mailId 
+              }))
+              .catch(error => ({ 
+                success: false, 
+                recipient: student.studentEmail, 
+                type: 'student',
+                error: error.message 
+              }))
+          );
+        }
+        
+        // Email to parent (if they have an email)
+        if (student.parent?.email) {
+          const parentEmail = this.generateClassCancellationEmail(
+            student.parent.name || 'Parent',
+            student.parent.email,
+            student.studentName,
+            className,
+            subjectName,
+            classDate,
+            classTime,
+            teacherName,
+            cancellationReason,
+            true // isParent = true
+          );
+          
+          emailPromises.push(
+            this.createMailDocument(parentEmail)
+              .then(mailId => ({ 
+                success: true, 
+                recipient: student.parent.email, 
+                type: 'parent',
+                mailId 
+              }))
+              .catch(error => ({ 
+                success: false, 
+                recipient: student.parent.email, 
+                type: 'parent',
+                error: error.message 
+              }))
+          );
+        }
+      }
+
+      // Execute all email sends
+      const results = await Promise.all(emailPromises);
+      
+      const successful = results.filter(r => r.success).length;
+      const failed = results.filter(r => !r.success).length;
+
+      console.log('✅ Class cancellation notifications completed:', {
+        successful,
+        failed,
+        total: results.length
+      });
+
+      return {
+        success: successful,
+        failed: failed,
+        results: results
+      };
+    } catch (error) {
+      console.error('❌ Error sending class cancellation notifications:', error);
+      throw error;
+    }
+  }
 }
