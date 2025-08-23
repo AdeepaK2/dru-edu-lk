@@ -36,6 +36,7 @@ import { QuestionBank } from '@/models/questionBankSchema';
 import { Timestamp } from 'firebase/firestore';
 import { TestExtensionService } from '@/apiservices/testExtensionService';
 import ExtendTestModal from '@/components/teacher/ExtendTestModal';
+import ViewAssignedStudentsModal from '@/components/modals/ViewAssignedStudentsModal';
 
 export default function TeacherTests() {
   const { teacher, loading: authLoading, error: authError } = useTeacherAuth();
@@ -51,6 +52,10 @@ export default function TeacherTests() {
   // Extension modal state
   const [showExtendModal, setShowExtendModal] = useState(false);
   const [testToExtend, setTestToExtend] = useState<FlexibleTest | null>(null);
+  
+  // View assigned students modal state
+  const [showViewStudentsModal, setShowViewStudentsModal] = useState(false);
+  const [testToViewStudents, setTestToViewStudents] = useState<Test | null>(null);
   
   // New state for class-based view
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
@@ -361,6 +366,12 @@ export default function TeacherTests() {
     // Refresh the test data to show updated deadline
     loadTeacherData();
     alert(`✅ Test deadline extended successfully until ${extension.newDeadline.toDate().toLocaleDateString()}`);
+  };
+
+  // Handle view assigned students
+  const handleViewAssignedStudents = (test: Test) => {
+    setTestToViewStudents(test);
+    setShowViewStudentsModal(true);
   };
 
   // Check if a flexible test can be extended
@@ -841,7 +852,13 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
                                   </div>
                                   <div className="flex items-center space-x-1">
                                     <Users className="h-4 w-4" />
-                                    <span>{test.totalAssignedStudents || 0} students</span>
+                                    <button
+                                      onClick={() => handleViewAssignedStudents(test)}
+                                      className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200 hover:underline transition-colors"
+                                      title="View assigned students"
+                                    >
+                                      {test.totalAssignedStudents || 0} students
+                                    </button>
                                   </div>
                                 </div>
 
@@ -875,7 +892,15 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
                                 {test.totalAssignedStudents && test.assignmentSummary && (
                                   <div className="mb-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
                                     <div className="text-sm text-green-800 dark:text-green-400">
-                                      <span className="font-medium">Assigned to:</span> {test.totalAssignedStudents} students across {test.assignmentSummary.classesInvolved?.length || 0} class{(test.assignmentSummary.classesInvolved?.length || 0) !== 1 ? 'es' : ''}
+                                      <span className="font-medium">Assigned to:</span>{' '}
+                                      <button
+                                        onClick={() => handleViewAssignedStudents(test)}
+                                        className="font-semibold text-green-900 dark:text-green-300 hover:underline cursor-pointer"
+                                        title="View assigned students"
+                                      >
+                                        {test.totalAssignedStudents} students
+                                      </button>{' '}
+                                      across {test.assignmentSummary.classesInvolved?.length || 0} class{(test.assignmentSummary.classesInvolved?.length || 0) !== 1 ? 'es' : ''}
                                     </div>
                                   </div>
                                 )}
@@ -1251,6 +1276,33 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
               </div>
             </div>
           </div>
+        )}
+
+        {/* Extend Test Modal */}
+        {showExtendModal && testToExtend && teacher && (
+          <ExtendTestModal
+            isOpen={showExtendModal}
+            onClose={() => {
+              setShowExtendModal(false);
+              setTestToExtend(null);
+            }}
+            test={testToExtend}
+            teacherId={teacher.id}
+            teacherName={teacher.name}
+            onExtensionCreated={handleExtensionCreated}
+          />
+        )}
+
+        {/* View Assigned Students Modal */}
+        {showViewStudentsModal && testToViewStudents && (
+          <ViewAssignedStudentsModal
+            isOpen={showViewStudentsModal}
+            onClose={() => {
+              setShowViewStudentsModal(false);
+              setTestToViewStudents(null);
+            }}
+            test={testToViewStudents}
+          />
         )}
 
         {/* Extend Test Modal */}
