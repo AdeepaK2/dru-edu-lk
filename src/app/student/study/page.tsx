@@ -6,7 +6,24 @@ import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Button from '@/components/ui/Button';
 import { Badge } from '@/components/ui/badge';
-import { BookOpen, Clock, Award, TrendingUp, ExternalLink, FileText, Play, Image, Download, Eye, CheckCircle, Circle } from 'lucide-react';
+import { 
+  BookOpen, 
+  Users, 
+  Calendar, 
+  Clock, 
+  Award, 
+  TrendingUp, 
+  FileText, 
+  Play, 
+  Image, 
+  ExternalLink, 
+  CheckCircle, 
+  Circle, 
+  Eye, 
+  Download, 
+  ChevronDown, 
+  ChevronUp
+} from 'lucide-react';
 import { getEnrollmentsByStudent } from '@/services/studentEnrollmentService';
 import { getStudyMaterialsByClass, getStudyMaterialsByClassGrouped, markMaterialCompleted, unmarkMaterialCompleted } from '@/apiservices/studyMaterialFirestoreService';
 
@@ -46,6 +63,7 @@ export default function StudentStudyPage() {
   const [selectedClass, setSelectedClass] = useState<string | null>(null);
   const [materials, setMaterials] = useState<StudyMaterial[]>([]);
   const [groupedMaterials, setGroupedMaterials] = useState<any[]>([]);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [materialLoading, setMaterialLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
@@ -172,6 +190,16 @@ export default function StudentStudyPage() {
 
   const openLink = (url: string) => {
     window.open(url, '_blank');
+  };
+
+  const toggleGroupExpansion = (groupId: string) => {
+    const newExpanded = new Set(expandedGroups);
+    if (newExpanded.has(groupId)) {
+      newExpanded.delete(groupId);
+    } else {
+      newExpanded.add(groupId);
+    }
+    setExpandedGroups(newExpanded);
   };
 
   const viewMaterial = (material: StudyMaterial) => {
@@ -352,162 +380,245 @@ export default function StudentStudyPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {groupedMaterials.map((group: any) => (
-              <Card key={group.id}>
-                <CardHeader className="pb-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start space-x-4">
-                      <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                        {group.isGroup ? (
-                          <div className="text-blue-600 font-bold text-xs">
-                            {group.totalFiles}
-                          </div>
-                        ) : (
-                          getFileIcon(group.materials[0]?.fileType || 'other')
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <CardTitle className="flex items-center space-x-2 mb-2">
-                          <span>{group.groupTitle}</span>
-                          {group.isGroup && (
-                            <Badge variant="secondary" className="text-xs">
-                              {group.totalFiles} files
-                            </Badge>
-                          )}
-                          {group.isRequired && (
-                            <Badge variant="destructive" className="text-xs">Required</Badge>
-                          )}
-                          {group.lessonName && (
-                            <Badge variant="secondary" className="text-xs">
-                              {group.lessonName}
-                            </Badge>
-                          )}
-                        </CardTitle>
-                        <div className="flex items-center space-x-2 mb-2">
-                          {group.fileTypes.map((fileType: string) => (
-                            <Badge key={fileType} variant="secondary" className="text-xs">
-                              {fileType.toUpperCase()}
-                            </Badge>
-                          ))}
-                        </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">
-                          {new Date(group.uploadedAt?.toDate ? group.uploadedAt.toDate() : group.uploadedAt).toLocaleDateString()}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      {/* Group completion status */}
-                      <div className="text-right">
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">
-                          {group.materials.filter((m: any) => m.completedBy?.includes(student?.id || '')).length}/{group.materials.length}
-                        </div>
-                        <div className="text-xs text-gray-500">completed</div>
-                      </div>
-                    </div>
-                  </div>
-                </CardHeader>
-                
-                <CardContent className="pt-0">
-                  <div className="space-y-3">
-                    {group.materials.map((material: any) => {
-                      const isCompleted = material.completedBy?.includes(student?.id || '') || false;
-                      
-                      return (
-                        <div key={material.id} className={`flex items-center justify-between p-3 border rounded-lg dark:border-gray-700 transition-colors ${
-                          isCompleted 
-                            ? 'border-green-200 bg-green-50 dark:bg-green-900/20 dark:border-green-800' 
-                            : 'border-gray-200 hover:border-gray-300 dark:hover:border-gray-600'
-                        }`}>
-                          <div className="flex items-center space-x-3 flex-1">
-                            <div className="w-8 h-8 bg-white dark:bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0 border">
-                              {getFileIcon(material.fileType)}
+            {groupedMaterials.map((group: any) => {
+              const isExpanded = expandedGroups.has(group.id);
+              const completedCount = group.materials.filter((m: any) => m.completedBy?.includes(student?.id || '')).length;
+              const totalCount = group.materials.length;
+              const isGroupCompleted = completedCount === totalCount;
+              
+              return (
+                <Card key={group.id} className={`transition-all ${isGroupCompleted ? 'border-green-200 bg-green-50 dark:bg-green-900/10' : ''}`}>
+                  <CardHeader 
+                    className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 pb-4"
+                    onClick={() => toggleGroupExpansion(group.id)}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start space-x-4 flex-1">
+                        <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                          {group.isGroup ? (
+                            <div className="text-blue-600 font-bold text-sm">
+                              {group.totalFiles}
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center space-x-2 mb-1">
-                                {isCompleted && (
-                                  <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
-                                )}
-                                <h4 className={`font-medium truncate ${
-                                  isCompleted 
-                                    ? 'text-green-700 dark:text-green-400' 
-                                    : 'text-gray-900 dark:text-white'
-                                }`}>
-                                  {material.title}
-                                </h4>
-                              </div>
-                              {material.description && (
-                                <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
-                                  {material.description}
-                                </p>
-                              )}
-                              <div className="text-xs text-gray-500 dark:text-gray-400">
-                                {material.formattedFileSize || '2.3 MB'}
-                              </div>
-                            </div>
+                          ) : (
+                            getFileIcon(group.materials[0]?.fileType || 'other')
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <CardTitle className="flex items-center space-x-2 mb-2">
+                            <span className="truncate">{group.groupTitle}</span>
+                            {isGroupCompleted && (
+                              <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                            )}
+                            {isExpanded ? (
+                              <ChevronUp className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                            ) : (
+                              <ChevronDown className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                            )}
+                          </CardTitle>
+                          
+                          {/* Display description from the first material (they all have the same description) */}
+                          {group.materials[0]?.description && (
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                              {group.materials[0].description}
+                            </p>
+                          )}
+                          
+                          <div className="flex items-center space-x-2 mb-2">
+                            {group.isGroup && (
+                              <Badge variant="secondary" className="text-xs">
+                                {group.totalFiles} files
+                              </Badge>
+                            )}
+                            {group.fileTypes.map((fileType: string) => (
+                              <Badge key={fileType} variant="secondary" className="text-xs">
+                                {fileType.toUpperCase()}
+                              </Badge>
+                            ))}
+                            {group.isRequired && (
+                              <Badge variant="destructive" className="text-xs">Required</Badge>
+                            )}
+                            {group.lessonName && (
+                              <Badge variant="secondary" className="text-xs">
+                                {group.lessonName}
+                              </Badge>
+                            )}
                           </div>
                           
-                          <div className="flex items-center space-x-2 flex-shrink-0">
-                            {/* Completion Toggle Button */}
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                            {new Date(group.uploadedAt?.toDate ? group.uploadedAt.toDate() : group.uploadedAt).toLocaleDateString()}
+                          </div>
+                          
+                          {/* Progress bar for groups */}
+                          {group.isGroup && (
+                            <div className="mt-2">
+                              <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400 mb-1">
+                                <span>Progress</span>
+                                <span>{completedCount}/{totalCount}</span>
+                              </div>
+                              <div className="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
+                                <div 
+                                  className={`h-2 rounded-full transition-all duration-300 ${
+                                    isGroupCompleted ? 'bg-green-600' : 'bg-blue-600'
+                                  }`}
+                                  style={{ width: `${(completedCount / totalCount) * 100}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="text-right">
+                        {!group.isGroup ? (
+                          /* Single file actions */
+                          <div className="flex space-x-2">
                             <Button
-                              onClick={() => toggleMaterialCompletion(material)}
-                              variant={isCompleted ? "success" : "outline"}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleMaterialCompletion(group.materials[0]);
+                              }}
+                              variant={group.materials[0].completedBy?.includes(student?.id || '') ? "success" : "outline"}
                               size="sm"
-                              className={isCompleted
+                              className={group.materials[0].completedBy?.includes(student?.id || '')
                                 ? "bg-green-600 hover:bg-green-700 text-white" 
                                 : "border-green-600 text-green-600 hover:bg-green-50"
                               }
                             >
-                              {isCompleted ? (
-                                <>
-                                  <CheckCircle className="w-4 h-4 mr-1" />
-                                  <span className="hidden sm:inline">Done</span>
-                                </>
+                              {group.materials[0].completedBy?.includes(student?.id || '') ? (
+                                <CheckCircle className="w-4 h-4" />
                               ) : (
-                                <>
-                                  <Circle className="w-4 h-4 mr-1" />
-                                  <span className="hidden sm:inline">Mark Done</span>
-                                </>
+                                <Circle className="w-4 h-4" />
                               )}
                             </Button>
-
-                            {/* Action Button */}
-                            {material.fileType === 'link' ? (
+                            
+                            {group.materials[0].fileType === 'link' ? (
                               <Button
-                                onClick={() => openLink(material.externalUrl || '')}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openLink(group.materials[0].externalUrl || '');
+                                }}
                                 size="sm"
                                 className="bg-blue-600 hover:bg-blue-700"
                               >
-                                <ExternalLink className="w-4 h-4 mr-1" />
-                                <span className="hidden sm:inline">Open</span>
+                                <ExternalLink className="w-4 h-4" />
                               </Button>
                             ) : (
-                              <>
-                                <Button
-                                  onClick={() => viewMaterial(material)}
-                                  variant="outline"
-                                  size="sm"
-                                >
-                                  <Eye className="w-4 h-4 mr-1" />
-                                  <span className="hidden sm:inline">View</span>
-                                </Button>
-                                <Button
-                                  onClick={() => downloadMaterial(material)}
-                                  variant="outline"
-                                  size="sm"
-                                >
-                                  <Download className="w-4 h-4 mr-1" />
-                                  <span className="hidden sm:inline">Download</span>
-                                </Button>
-                              </>
+                              <Button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  viewMaterial(group.materials[0]);
+                                }}
+                                variant="outline"
+                                size="sm"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Button>
                             )}
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                        ) : (
+                          /* Group indicator */
+                          <div className="text-center">
+                            <div className="text-lg font-bold text-gray-900 dark:text-white">
+                              {completedCount}/{totalCount}
+                            </div>
+                            <div className="text-xs text-gray-500">completed</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </CardHeader>
+                  
+                  {/* Collapsible content */}
+                  {isExpanded && (
+                    <CardContent className="pt-0">
+                      <div className="space-y-3 border-t border-gray-100 dark:border-gray-700 pt-4">
+                        {group.materials.map((material: any) => {
+                          const isCompleted = material.completedBy?.includes(student?.id || '') || false;
+                          
+                          return (
+                            <div key={material.id} className={`flex items-center justify-between p-3 border rounded-lg dark:border-gray-700 transition-colors ${
+                              isCompleted 
+                                ? 'border-green-200 bg-green-50 dark:bg-green-900/20 dark:border-green-800' 
+                                : 'border-gray-200 hover:border-gray-300 dark:hover:border-gray-600'
+                            }`}>
+                              <div className="flex items-center space-x-3 flex-1">
+                                <div className="w-8 h-8 bg-white dark:bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0 border">
+                                  {getFileIcon(material.fileType)}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center space-x-2 mb-1">
+                                    {isCompleted && (
+                                      <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+                                    )}
+                                    <h4 className={`font-medium truncate ${
+                                      isCompleted 
+                                        ? 'text-green-700 dark:text-green-400' 
+                                        : 'text-gray-900 dark:text-white'
+                                    }`}>
+                                      {material.title}
+                                    </h4>
+                                  </div>
+                                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                                    {material.formattedFileSize || '2.3 MB'} • {material.fileType.toUpperCase()}
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <div className="flex items-center space-x-2 flex-shrink-0">
+                                {/* Completion Toggle Button */}
+                                <Button
+                                  onClick={() => toggleMaterialCompletion(material)}
+                                  variant={isCompleted ? "success" : "outline"}
+                                  size="sm"
+                                  className={isCompleted
+                                    ? "bg-green-600 hover:bg-green-700 text-white" 
+                                    : "border-green-600 text-green-600 hover:bg-green-50"
+                                  }
+                                >
+                                  {isCompleted ? (
+                                    <CheckCircle className="w-4 h-4" />
+                                  ) : (
+                                    <Circle className="w-4 h-4" />
+                                  )}
+                                </Button>
+
+                                {/* Action Button */}
+                                {material.fileType === 'link' ? (
+                                  <Button
+                                    onClick={() => openLink(material.externalUrl || '')}
+                                    size="sm"
+                                    className="bg-blue-600 hover:bg-blue-700"
+                                  >
+                                    <ExternalLink className="w-4 h-4" />
+                                  </Button>
+                                ) : (
+                                  <>
+                                    <Button
+                                      onClick={() => viewMaterial(material)}
+                                      variant="outline"
+                                      size="sm"
+                                    >
+                                      <Eye className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                      onClick={() => downloadMaterial(material)}
+                                      variant="outline"
+                                      size="sm"
+                                    >
+                                      <Download className="w-4 h-4" />
+                                    </Button>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </CardContent>
+                  )}
+                </Card>
+              );
+            })}
           </div>
         )}
       </div>
