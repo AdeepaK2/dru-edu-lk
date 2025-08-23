@@ -46,6 +46,7 @@ interface FileUploadItem {
 }
 
 interface GlobalSettings {
+  title: string;
   lessonId: string;
   year: number;
   isVisible: boolean;
@@ -73,6 +74,7 @@ export default function StudyMaterialUploadModal({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [globalSettings, setGlobalSettings] = useState<GlobalSettings>({
+    title: '',
     lessonId: preSelectedLessonId || '',
     year: new Date().getFullYear(),
     isVisible: true,
@@ -85,6 +87,7 @@ export default function StudyMaterialUploadModal({
   useEffect(() => {
     if (isOpen) {
       setGlobalSettings({
+        title: '',
         lessonId: preSelectedLessonId || '',
         year: new Date().getFullYear(),
         isVisible: true,
@@ -283,6 +286,10 @@ export default function StudyMaterialUploadModal({
     setUploadProgress(0);
 
     try {
+      // Generate a unique group ID for this upload batch
+      const groupId = `group_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const groupTitle = globalSettings.title.trim() || `Study Materials - ${new Date().toLocaleDateString()}`;
+      
       for (let i = 0; i < files.length; i++) {
         const item = files[i];
         setCurrentUpload(i + 1);
@@ -308,7 +315,7 @@ export default function StudyMaterialUploadModal({
         const selectedLesson = lessons.find(lesson => lesson.id === globalSettings.lessonId);
         const lessonName = selectedLesson ? selectedLesson.name : (globalSettings.lessonId ? 'Unknown Lesson' : '');
 
-        // Create study material data
+        // Create study material data with grouping
         const materialData: StudyMaterialData = {
           title: item.title.trim(),
           description: item.description.trim(),
@@ -324,6 +331,9 @@ export default function StudyMaterialUploadModal({
           fileType: item.fileType,
           mimeType,
           lessonId: globalSettings.lessonId || undefined,
+          lessonName: lessonName || undefined,
+          groupId: files.length > 1 ? groupId : undefined, // Only group if multiple files
+          groupTitle: files.length > 1 ? groupTitle : undefined,
           isRequired: item.isRequired,
           isVisible: globalSettings.isVisible,
           order: globalSettings.order + i,
@@ -397,6 +407,22 @@ export default function StudyMaterialUploadModal({
           {/* Global Settings */}
           <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
             <h4 className="font-medium text-gray-900 dark:text-white mb-4">Global Settings</h4>
+            
+            {/* Title field - full width */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Group Title {files.length > 1 && <span className="text-xs text-blue-600">(For grouping multiple files)</span>}
+              </label>
+              <input
+                type="text"
+                value={globalSettings.title}
+                onChange={(e) => setGlobalSettings(prev => ({ ...prev, title: e.target.value }))}
+                disabled={uploading}
+                placeholder="e.g., Math Chapter 5 Materials, Week 3 Resources..."
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">

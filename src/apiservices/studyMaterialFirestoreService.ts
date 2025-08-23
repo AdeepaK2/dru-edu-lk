@@ -495,3 +495,78 @@ export const getStudyMaterialsByClassGroupedByLesson = async (
     throw error;
   }
 };
+
+// Get study materials grouped by upload batch (for Google Classroom-like display)
+export const getStudyMaterialsByClassGrouped = async (classId: string): Promise<any[]> => {
+  try {
+    const q = query(
+      getStudyMaterialsCollection(),
+      where('classId', '==', classId),
+      where('isVisible', '==', true),
+      orderBy('uploadedAt', 'desc')
+    );
+
+    const querySnapshot = await getDocs(q);
+    const materials = querySnapshot.docs.map(convertDocumentToStudyMaterial);
+
+    // Group materials by groupId or treat singles as their own groups
+    const groupedMaterials: { [key: string]: any } = {};
+
+    materials.forEach(material => {
+      const groupKey = material.groupId || `single_${material.id}`;
+      
+      if (!groupedMaterials[groupKey]) {
+        groupedMaterials[groupKey] = {
+          id: groupKey,
+          groupId: material.groupId,
+          groupTitle: material.groupTitle || material.title,
+          isGroup: !!material.groupId,
+          uploadedAt: material.uploadedAt,
+          lessonId: material.lessonId,
+          lessonName: material.lessonName,
+          isRequired: material.isRequired,
+          materials: [],
+          totalFiles: 0,
+          fileTypes: new Set(),
+          completedBy: new Set(),
+          totalDownloads: 0,
+          totalViews: 0
+        };
+      }
+
+      groupedMaterials[groupKey].materials.push(material);
+      groupedMaterials[groupKey].totalFiles++;
+      groupedMaterials[groupKey].fileTypes.add(material.fileType);
+      groupedMaterials[groupKey].totalDownloads += material.downloadCount || 0;
+      groupedMaterials[groupKey].totalViews += material.viewCount || 0;
+
+      // Merge completion data
+      if (material.completedBy) {
+        material.completedBy.forEach(studentId => {
+          groupedMaterials[groupKey].completedBy.add(studentId);
+        });
+      }
+
+      // Keep the most restrictive requirement setting
+      if (material.isRequired) {
+        groupedMaterials[groupKey].isRequired = true;
+      }
+    });
+
+    // Convert sets to arrays and sort by upload date
+    return Object.values(groupedMaterials).map((group: any) => ({
+      ...group,
+      fileTypes: Array.from(group.fileTypes),
+      completedBy: Array.from(group.completedBy),
+      materials: group.materials.sort((a: any, b: any) => a.order - b.order)
+    })).sort((a: any, b: any) => {
+      const dateA = a.uploadedAt instanceof Date ? a.uploadedAt : a.uploadedAt.toDate();
+      const dateB = b.uploadedAt instanceof Date ? b.uploadedAt : b.uploadedAt.toDate();
+      return dateB.getTime() - dateA.getTime();
+    });
+
+  } catch (error) {
+    console.error('Error getting grouped study materials by class:', error);
+    throw error;
+  }
+};
