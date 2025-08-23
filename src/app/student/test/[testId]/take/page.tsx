@@ -4,7 +4,8 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { 
   AlertCircle, Clock, Flag, CheckCircle, ChevronLeft, ChevronRight,
-  Save, Send, List, EyeOff, Eye, AlertTriangle, ArrowLeft, Maximize
+  Save, Send, List, EyeOff, Eye, AlertTriangle, ArrowLeft, Maximize,
+  X, Plus, Minus, ZoomIn
 } from 'lucide-react';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { Button, Input, TextArea } from '@/components/ui';
@@ -52,6 +53,14 @@ export default function TestTakePage() {
   // PDF upload state
   const [pdfFiles, setPdfFiles] = useState<Record<string, PdfAttachment[]>>({});
   
+  // Image viewer state
+  const [showImageViewer, setShowImageViewer] = useState(false);
+  const [viewerImageUrl, setViewerImageUrl] = useState<string>('');
+  const [imageScale, setImageScale] = useState(1);
+  const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  
   // References for tracking time spent on questions
   const questionStartTimeRef = useRef<number>(Date.now());
   const timeSpentRef = useRef<Record<string, number>>({});
@@ -61,6 +70,56 @@ export default function TestTakePage() {
   
   // Get current question
   const currentQuestion = test?.questions[currentIndex] || null;
+  
+  // Image viewer functions
+  const openImageViewer = (imageUrl: string) => {
+    setViewerImageUrl(imageUrl);
+    setShowImageViewer(true);
+    setImageScale(1);
+    setImagePosition({ x: 0, y: 0 });
+  };
+  
+  const closeImageViewer = () => {
+    setShowImageViewer(false);
+    setViewerImageUrl('');
+    setImageScale(1);
+    setImagePosition({ x: 0, y: 0 });
+  };
+  
+  const handleImageZoom = (delta: number) => {
+    setImageScale(prev => {
+      const newScale = Math.max(0.5, Math.min(3, prev + delta));
+      return newScale;
+    });
+  };
+  
+  const handleImageMouseDown = (e: React.MouseEvent) => {
+    if (imageScale > 1) {
+      setIsDragging(true);
+      setDragStart({
+        x: e.clientX - imagePosition.x,
+        y: e.clientY - imagePosition.y
+      });
+    }
+  };
+  
+  const handleImageMouseMove = (e: React.MouseEvent) => {
+    if (isDragging && imageScale > 1) {
+      setImagePosition({
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y
+      });
+    }
+  };
+  
+  const handleImageMouseUp = () => {
+    setIsDragging(false);
+  };
+  
+  const resetImageView = () => {
+    setImageScale(1);
+    setImagePosition({ x: 0, y: 0 });
+  };
   
   // Fullscreen request handler
   const requestFullscreen = () => {
@@ -98,6 +157,52 @@ export default function TestTakePage() {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [attemptId]);
+
+  // Image viewer keyboard and mouse events
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!showImageViewer) return;
+      
+      switch (e.key) {
+        case 'Escape':
+          closeImageViewer();
+          break;
+        case '+':
+        case '=':
+          e.preventDefault();
+          handleImageZoom(0.2);
+          break;
+        case '-':
+          e.preventDefault();
+          handleImageZoom(-0.2);
+          break;
+        case '0':
+          e.preventDefault();
+          resetImageView();
+          break;
+      }
+    };
+    
+    const handleWheel = (e: WheelEvent) => {
+      if (!showImageViewer) return;
+      e.preventDefault();
+      
+      const delta = e.deltaY > 0 ? -0.1 : 0.1;
+      handleImageZoom(delta);
+    };
+    
+    if (showImageViewer) {
+      document.addEventListener('keydown', handleKeyDown);
+      document.addEventListener('wheel', handleWheel, { passive: false });
+      document.body.style.overflow = 'hidden'; // Prevent background scrolling
+    }
+    
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('wheel', handleWheel);
+      document.body.style.overflow = ''; // Restore scrolling
+    };
+  }, [showImageViewer, imageScale]);
 
   // Track online/offline status for time management and answer sync
   useEffect(() => {
@@ -1570,11 +1675,20 @@ export default function TestTakePage() {
       <div className="space-y-6">
         {question.imageUrl && (
           <div className="mb-4">
-            <img 
-              src={question.imageUrl} 
-              alt="Question" 
-              className="max-w-full h-auto rounded-md border border-gray-300 dark:border-gray-600" 
-            />
+            <div className="relative group">
+              <img 
+                src={question.imageUrl} 
+                alt="Question" 
+                className="max-w-full h-auto rounded-md border border-gray-300 dark:border-gray-600 cursor-pointer hover:border-blue-400 transition-all duration-200" 
+                onClick={() => openImageViewer(question.imageUrl!)}
+              />
+              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200">
+                <div className="bg-white bg-opacity-90 text-gray-800 px-3 py-1 rounded-full text-sm font-medium flex items-center gap-2">
+                  <ZoomIn className="h-4 w-4" />
+                  Click to enlarge
+                </div>
+              </div>
+            </div>
           </div>
         )}
         
@@ -1690,11 +1804,20 @@ export default function TestTakePage() {
       <div className="space-y-6">
         {question.imageUrl && (
           <div className="mb-4">
-            <img 
-              src={question.imageUrl} 
-              alt="Question" 
-              className="max-w-full h-auto rounded-md border border-gray-300 dark:border-gray-600" 
-            />
+            <div className="relative group">
+              <img 
+                src={question.imageUrl} 
+                alt="Question" 
+                className="max-w-full h-auto rounded-md border border-gray-300 dark:border-gray-600 cursor-pointer hover:border-blue-400 transition-all duration-200" 
+                onClick={() => openImageViewer(question.imageUrl!)}
+              />
+              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200">
+                <div className="bg-white bg-opacity-90 text-gray-800 px-3 py-1 rounded-full text-sm font-medium flex items-center gap-2">
+                  <ZoomIn className="h-4 w-4" />
+                  Click to enlarge
+                </div>
+              </div>
+            </div>
           </div>
         )}
         
@@ -1785,6 +1908,101 @@ export default function TestTakePage() {
     <StudentLayout>
       {/* Navigation panel overlay */}
       {renderNavigationPanel()}
+      
+      {/* Image Viewer Modal */}
+      {showImageViewer && (
+        <div className="fixed inset-0 z-[100] bg-black bg-opacity-90 flex items-center justify-center">
+          {/* Header with controls */}
+          <div className="absolute top-4 left-4 right-4 flex items-center justify-between text-white z-10">
+            <div className="flex items-center gap-4">
+              <h3 className="text-lg font-medium">Question Image</h3>
+              <div className="text-sm opacity-75">
+                Zoom: {Math.round(imageScale * 100)}%
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              {/* Zoom controls */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleImageZoom(-0.2)}
+                disabled={imageScale <= 0.5}
+                className="text-white border-white/30 hover:bg-white/10"
+              >
+                <Minus className="h-4 w-4" />
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={resetImageView}
+                className="text-white border-white/30 hover:bg-white/10 px-3"
+              >
+                Reset
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleImageZoom(0.2)}
+                disabled={imageScale >= 3}
+                className="text-white border-white/30 hover:bg-white/10"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+              
+              {/* Close button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={closeImageViewer}
+                className="text-white border-white/30 hover:bg-white/10"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+          
+          {/* Instructions */}
+          <div className="absolute bottom-4 left-4 right-4 text-center text-white/75 text-sm">
+            <div className="flex flex-wrap items-center justify-center gap-4">
+              <span>Mouse wheel or +/- keys to zoom</span>
+              <span>•</span>
+              <span>Click and drag to pan when zoomed</span>
+              <span>•</span>
+              <span>Press 0 to reset view</span>
+              <span>•</span>
+              <span>ESC to close</span>
+            </div>
+          </div>
+          
+          {/* Image container */}
+          <div 
+            className="relative w-full h-full flex items-center justify-center overflow-hidden cursor-grab active:cursor-grabbing"
+            onMouseDown={handleImageMouseDown}
+            onMouseMove={handleImageMouseMove}
+            onMouseUp={handleImageMouseUp}
+            onMouseLeave={handleImageMouseUp}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                closeImageViewer();
+              }
+            }}
+          >
+            <img
+              src={viewerImageUrl}
+              alt="Question Image - Enlarged View"
+              className="max-w-none pointer-events-none select-none"
+              style={{
+                transform: `scale(${imageScale}) translate(${imagePosition.x / imageScale}px, ${imagePosition.y / imageScale}px)`,
+                transition: isDragging ? 'none' : 'transform 0.1s ease-out'
+              }}
+              draggable={false}
+            />
+          </div>
+        </div>
+      )}
       
       <div className="space-y-6">
         {/* Header with timer */}
