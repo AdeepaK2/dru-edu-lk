@@ -37,7 +37,6 @@ interface FileUploadItem {
   id: string;
   file?: File;
   title: string;
-  description: string;
   fileType: 'pdf' | 'video' | 'image' | 'link' | 'other';
   externalUrl?: string;
   isRequired: boolean;
@@ -47,6 +46,7 @@ interface FileUploadItem {
 
 interface GlobalSettings {
   title: string;
+  description: string;
   lessonId: string;
   year: number;
   isVisible: boolean;
@@ -75,6 +75,7 @@ export default function StudyMaterialUploadModal({
 
   const [globalSettings, setGlobalSettings] = useState<GlobalSettings>({
     title: '',
+    description: '',
     lessonId: preSelectedLessonId || '',
     year: new Date().getFullYear(),
     isVisible: true,
@@ -88,6 +89,7 @@ export default function StudyMaterialUploadModal({
     if (isOpen) {
       setGlobalSettings({
         title: '',
+        description: '',
         lessonId: preSelectedLessonId || '',
         year: new Date().getFullYear(),
         isVisible: true,
@@ -144,7 +146,6 @@ export default function StudyMaterialUploadModal({
           id: generateId(),
           file,
           title: file.name.split('.')[0],
-          description: '',
           fileType,
           isRequired: false,
           tags: []
@@ -157,7 +158,6 @@ export default function StudyMaterialUploadModal({
       setFiles(prev => [...prev, {
         id: generateId(),
         title: '',
-        description: '',
         fileType: 'link',
         externalUrl: '',
         isRequired: false,
@@ -195,9 +195,6 @@ export default function StudyMaterialUploadModal({
   const validateFileItem = (item: FileUploadItem): string | null => {
     if (!item.title.trim()) {
       return 'Title is required';
-    }
-    if (!item.description.trim()) {
-      return 'Description is required';
     }
     if (item.fileType === 'link' && !item.externalUrl?.trim()) {
       return 'URL is required for links';
@@ -318,7 +315,7 @@ export default function StudyMaterialUploadModal({
         // Create study material data with grouping
         const materialData: StudyMaterialData = {
           title: item.title.trim(),
-          description: item.description.trim(),
+          description: globalSettings.description.trim(), // Use global description
           classId: classData!.id,
           subjectId: classData!.subjectId,
           teacherId: teacher!.id,
@@ -420,6 +417,21 @@ export default function StudyMaterialUploadModal({
                 disabled={uploading}
                 placeholder="e.g., Math Chapter 5 Materials, Week 3 Resources..."
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+
+            {/* Global Description field */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Description {files.length > 1 && <span className="text-xs text-blue-600">(Applied to all files in the group)</span>}
+              </label>
+              <textarea
+                value={globalSettings.description}
+                onChange={(e) => setGlobalSettings(prev => ({ ...prev, description: e.target.value }))}
+                disabled={uploading}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none"
+                placeholder="Describe what this assignment/material is about..."
               />
             </div>
 
@@ -600,20 +612,6 @@ export default function StudyMaterialUploadModal({
                   </div>
 
                   {/* Description */}
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Description *
-                    </label>
-                    <textarea
-                      value={item.description}
-                      onChange={(e) => updateFileUploadItem(item.id, { description: e.target.value })}
-                      disabled={uploading}
-                      rows={2}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none"
-                      placeholder="Describe this material"
-                    />
-                  </div>
-
                   {/* URL for links */}
                   {item.fileType === 'link' && (
                     <div className="md:col-span-2">
