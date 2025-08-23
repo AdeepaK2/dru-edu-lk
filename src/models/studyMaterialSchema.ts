@@ -11,6 +11,8 @@ export const studyMaterialSchema = z.object({
   subjectId: z.string().min(1, 'Subject ID is required'), // Added subject linking
   lessonId: z.string().optional(), // Optional - can be linked to a specific lesson or be general
   lessonName: z.string().optional(), // Lesson name for display purposes
+  groupId: z.string().optional(), // For grouping multiple files uploaded together
+  groupTitle: z.string().optional(), // Title for the group (from global settings)
   teacherId: z.string().min(1, 'Teacher ID is required'),
   week: z.number().min(1, 'Week must be at least 1'),
   weekTitle: z.string().optional(), // Optional title for the week
@@ -53,6 +55,9 @@ export interface StudyMaterial {
   classId: string;
   subjectId: string;
   lessonId?: string; // Optional lesson link
+  lessonName?: string; // Lesson name for display
+  groupId?: string; // For grouping multiple files uploaded together
+  groupTitle?: string; // Title for the group (from global settings)
   teacherId: string;
   week: number;
   weekTitle?: string;
@@ -86,6 +91,9 @@ export interface StudyMaterialDocument {
   classId: string;
   subjectId: string;
   lessonId?: string;
+  lessonName?: string;
+  groupId?: string;
+  groupTitle?: string;
   teacherId: string;
   week: number;
   weekTitle?: string;

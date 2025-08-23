@@ -36,6 +36,7 @@ import { StudentEnrollment } from '@/models/studentEnrollmentSchema';
 import { 
   getStudyMaterialsByClassGroupedByWeek,
   getStudyMaterialsByClassGroupedByLesson,
+  getStudyMaterialsByClassGrouped,
   convertToDisplayData,
   markMaterialCompleted,
   unmarkMaterialCompleted,
@@ -117,9 +118,9 @@ export default function ClassDetails() {
     const loadMaterialsCount = async () => {
       try {
         setMaterialsLoading(true);
-        const currentYear = new Date().getFullYear();
-        const materialsData = await getStudyMaterialsByClassGroupedByWeek(classId, currentYear);
-        const totalCount = materialsData.reduce((sum, week) => sum + week.materials.length, 0);
+        const groupedMaterials = await getStudyMaterialsByClassGrouped(classId);
+        // Count individual files, not groups
+        const totalCount = groupedMaterials.reduce((sum, group) => sum + group.totalFiles, 0);
         setMaterialsCount(totalCount);
       } catch (err) {
         console.error('Error loading materials count:', err);
@@ -325,17 +326,9 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
     const loadStudyMaterials = async () => {
       try {
         setLoading(true);
-        const currentYear = new Date().getFullYear();
-        // Get materials in chronological order instead of grouped by lesson
-        const materialsData = await getStudyMaterialsByClassGroupedByWeek(classId, currentYear);
-        // Flatten and sort by upload date
-        const allMaterials = materialsData.flatMap(week => week.materials)
-          .sort((a, b) => {
-            const dateA = a.uploadedAt instanceof Date ? a.uploadedAt : a.uploadedAt.toDate();
-            const dateB = b.uploadedAt instanceof Date ? b.uploadedAt : b.uploadedAt.toDate();
-            return dateB.getTime() - dateA.getTime();
-          });
-        setStudyMaterials(allMaterials);
+        // Use the new grouped function for Google Classroom-like display
+        const groupedMaterials = await getStudyMaterialsByClassGrouped(classId);
+        setStudyMaterials(groupedMaterials);
       } catch (err) {
         console.error('Error loading study materials:', err);
         setError('Failed to load study materials');
@@ -352,16 +345,8 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
   // Refresh materials after upload
   const refreshMaterials = async () => {
     try {
-      const currentYear = new Date().getFullYear();
-      const materialsData = await getStudyMaterialsByClassGroupedByWeek(classId, currentYear);
-      // Flatten and sort by upload date
-      const allMaterials = materialsData.flatMap(week => week.materials)
-        .sort((a, b) => {
-          const dateA = a.uploadedAt instanceof Date ? a.uploadedAt : a.uploadedAt.toDate();
-          const dateB = b.uploadedAt instanceof Date ? b.uploadedAt : b.uploadedAt.toDate();
-          return dateB.getTime() - dateA.getTime();
-        });
-      setStudyMaterials(allMaterials);
+      const groupedMaterials = await getStudyMaterialsByClassGrouped(classId);
+      setStudyMaterials(groupedMaterials);
     } catch (err) {
       console.error('Error refreshing study materials:', err);
     }
@@ -550,112 +535,146 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
         </div>
       ) : (
         <div className="space-y-4">
-          {studyMaterials.map((material: any, index: number) => (
-            <div key={material.id || index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-start space-x-4 flex-1">
-                  <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                    {getFileIcon(material.fileType || 'other')}
+          {studyMaterials.map((group: any, index: number) => (
+            <div key={group.id || index} className="border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow">
+              {/* Group Header */}
+              <div className="p-6 border-b border-gray-100 dark:border-gray-700">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-start space-x-4 flex-1">
+                    <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                      {group.isGroup ? (
+                        <div className="text-blue-600 font-bold text-xs">
+                          {group.totalFiles}
+                        </div>
+                      ) : (
+                        getFileIcon(group.materials[0]?.fileType || 'other')
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <h5 className="text-lg font-medium text-gray-900 dark:text-white truncate">
+                          {group.groupTitle || group.materials[0]?.title}
+                        </h5>
+                        {group.isGroup && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
+                            📁 {group.totalFiles} files
+                          </span>
+                        )}
+                        {group.lessonId && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
+                            📚 {group.lessonName || getLessonBadge(group.lessonId)}
+                          </span>
+                        )}
+                        {!group.lessonId && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+                            📂 General
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center space-x-3 mb-2">
+                        {group.fileTypes.map((fileType: string) => (
+                          <span key={fileType} className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getFileTypeColor(fileType)}`}>
+                            {fileType.toUpperCase()}
+                          </span>
+                        ))}
+                        {group.isRequired && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-300">
+                            Required
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center space-x-6 text-xs text-gray-500 dark:text-gray-400">
+                        <span>{new Date(group.uploadedAt?.toDate ? group.uploadedAt.toDate() : group.uploadedAt).toLocaleDateString()}</span>
+                        <span>{group.totalDownloads} downloads</span>
+                        <span>{group.completedBy.length} students completed</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <h5 className="text-lg font-medium text-gray-900 dark:text-white truncate">
-                        {material.title || `Material ${index + 1}`}
-                      </h5>
-                      {material.lessonId && (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
-                          📚 {getLessonBadge(material.lessonId)}
-                        </span>
-                      )}
-                      {!material.lessonId && (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
-                          📂 General
-                        </span>
-                      )}
+                  <div className="flex space-x-2 flex-shrink-0">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => openCompletionModal(group)}
+                      className="flex items-center space-x-1"
+                    >
+                      <CheckCircle className="w-4 h-4" />
+                      <span className="hidden sm:inline">View Completion</span>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Files in Group */}
+              <div className="p-6 space-y-3">
+                {group.materials.map((material: any) => (
+                  <div key={material.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                    <div className="flex items-center space-x-3 flex-1">
+                      <div className="w-8 h-8 bg-white dark:bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0 border">
+                        {getFileIcon(material.fileType)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-gray-900 dark:text-white truncate">
+                          {material.title}
+                        </div>
+                        {material.description && (
+                          <div className="text-sm text-gray-600 dark:text-gray-300 truncate">
+                            {material.description}
+                          </div>
+                        )}
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          {material.formattedFileSize || '2.3 MB'}
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex items-center space-x-3 mb-2">
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getFileTypeColor(material.fileType || 'other')}`}>
-                        {(material.fileType || 'FILE').toUpperCase()}
-                      </span>
-                      {material.isRequired && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-300">
-                          Required
-                        </span>
+                    <div className="flex space-x-2 flex-shrink-0">
+                      {material.fileType === 'link' ? (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => window.open(material.externalUrl || material.fileUrl, '_blank')}
+                          className="flex items-center space-x-1"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </Button>
+                      ) : (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            if (material.fileUrl) {
+                              const link = document.createElement('a');
+                              link.href = material.fileUrl;
+                              link.download = material.title || 'download';
+                              link.target = '_blank';
+                              document.body.appendChild(link);
+                              link.click();
+                              document.body.removeChild(link);
+                              incrementDownloadCount(material.id);
+                            }
+                          }}
+                          className="flex items-center space-x-1"
+                        >
+                          <Download className="w-4 h-4" />
+                        </Button>
                       )}
-                      <span className="text-sm text-gray-500 dark:text-gray-400">
-                        {material.formattedFileSize || '2.3 MB'} • {material.formattedDuration || 'No duration'}
-                      </span>
-                    </div>
-                    {material.description && (
-                      <p className="text-sm text-gray-600 dark:text-gray-300 mb-3 line-clamp-2">
-                        {material.description}
-                      </p>
-                    )}
-                    <div className="flex items-center space-x-6 text-xs text-gray-500 dark:text-gray-400">
-                      <span>{material.relativeUploadTime || '2 days ago'}</span>
-                      <span>{material.downloadCount || 0} downloads</span>
-                      <button
-                        onClick={() => openCompletionModal(material)}
-                        className="flex items-center space-x-1 hover:text-green-600 dark:hover:text-green-400 transition-colors"
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleEditMaterial(material)}
                       >
-                        <CheckCircle className="w-3 h-3 text-green-500" />
-                        <span>{material.completedBy?.length || 0} completed</span>
-                      </button>
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleDeleteMaterial(material)}
+                        className="text-red-600 hover:text-red-700 hover:border-red-300"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
                   </div>
-                </div>
-                <div className="flex space-x-2 flex-shrink-0">
-                  {material.fileType === 'link' ? (
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => window.open(material.externalUrl || material.fileUrl, '_blank')}
-                      className="flex items-center space-x-1"
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                      <span className="hidden sm:inline">Open Link</span>
-                    </Button>
-                  ) : (
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => {
-                        if (material.fileUrl) {
-                          // Create a temporary link to download the file
-                          const link = document.createElement('a');
-                          link.href = material.fileUrl;
-                          link.download = material.title || 'download';
-                          link.target = '_blank';
-                          document.body.appendChild(link);
-                          link.click();
-                          document.body.removeChild(link);
-                          
-                          // Increment download count (optional)
-                          incrementDownloadCount(material.id);
-                        }
-                      }}
-                      className="flex items-center space-x-1"
-                    >
-                      <Download className="w-4 h-4" />
-                      <span className="hidden sm:inline">Download</span>
-                    </Button>
-                  )}
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleEditMaterial(material)}
-                  >
-                    <Edit className="w-4 h-4" />
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleDeleteMaterial(material)}
-                    className="text-red-600 hover:text-red-700 hover:border-red-300"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
+                ))}
               </div>
             </div>
           ))}

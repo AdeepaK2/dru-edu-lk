@@ -8,7 +8,7 @@ import Button from '@/components/ui/Button';
 import { Badge } from '@/components/ui/badge';
 import { BookOpen, Clock, Award, TrendingUp, ExternalLink, FileText, Play, Image, Download, Eye, CheckCircle, Circle } from 'lucide-react';
 import { getEnrollmentsByStudent } from '@/services/studentEnrollmentService';
-import { getStudyMaterialsByClass, markMaterialCompleted, unmarkMaterialCompleted } from '@/apiservices/studyMaterialFirestoreService';
+import { getStudyMaterialsByClass, getStudyMaterialsByClassGrouped, markMaterialCompleted, unmarkMaterialCompleted } from '@/apiservices/studyMaterialFirestoreService';
 
 interface ClassWithProgress {
   id: string;
@@ -45,10 +45,10 @@ export default function StudentStudyPage() {
   const [classes, setClasses] = useState<ClassWithProgress[]>([]);
   const [selectedClass, setSelectedClass] = useState<string | null>(null);
   const [materials, setMaterials] = useState<StudyMaterial[]>([]);
+  const [groupedMaterials, setGroupedMaterials] = useState<any[]>([]);
   const [materialLoading, setMaterialLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
-  const [expandedWeeks, setExpandedWeeks] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!loading && !student) {
@@ -113,8 +113,12 @@ export default function StudentStudyPage() {
   const loadClassMaterials = async (classId: string) => {
     setMaterialLoading(true);
     try {
-      const classMaterials = await getStudyMaterialsByClass(classId);
-      setMaterials(classMaterials);
+      // Use grouped materials like teacher side
+      const groupedMats = await getStudyMaterialsByClassGrouped(classId);
+      setGroupedMaterials(groupedMats);
+      // Also keep flat materials for existing functionality
+      const flatMaterials = groupedMats.flatMap(group => group.materials);
+      setMaterials(flatMaterials);
       setSelectedClass(classId);
     } catch (error) {
       console.error('Error loading class materials:', error);
@@ -165,34 +169,6 @@ export default function StudentStudyPage() {
       default: return true;
     }
   });
-
-  const groupMaterialsByWeek = (materials: StudyMaterial[]) => {
-    const weeks: { [key: string]: StudyMaterial[] } = {};
-    
-    materials.forEach(material => {
-      const uploadDate = material.uploadedAt?.toDate ? material.uploadedAt.toDate() : (material.uploadedAt || new Date());
-      const weekStart = new Date(uploadDate);
-      weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-      const weekKey = weekStart.toISOString().split('T')[0];
-      
-      if (!weeks[weekKey]) {
-        weeks[weekKey] = [];
-      }
-      weeks[weekKey].push(material);
-    });
-
-    return Object.entries(weeks).sort(([a], [b]) => new Date(b).getTime() - new Date(a).getTime());
-  };
-
-  const toggleWeekExpansion = (weekKey: string) => {
-    const newExpanded = new Set(expandedWeeks);
-    if (newExpanded.has(weekKey)) {
-      newExpanded.delete(weekKey);
-    } else {
-      newExpanded.add(weekKey);
-    }
-    setExpandedWeeks(newExpanded);
-  };
 
   const openLink = (url: string) => {
     window.open(url, '_blank');
@@ -263,7 +239,6 @@ export default function StudentStudyPage() {
 
   if (selectedClass) {
     const currentClass = classes.find(c => c.id === selectedClass);
-    const weeklyMaterials = groupMaterialsByWeek(filteredMaterials);
 
     return (
       <div className="container mx-auto px-4 py-8">
@@ -377,147 +352,162 @@ export default function StudentStudyPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {weeklyMaterials.map(([weekKey, weekMaterials]) => {
-              const weekStart = new Date(weekKey);
-              const weekEnd = new Date(weekStart);
-              weekEnd.setDate(weekEnd.getDate() + 6);
-              const isExpanded = expandedWeeks.has(weekKey);
-
-              return (
-                <Card key={weekKey}>
-                  <CardHeader 
-                    className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
-                    onClick={() => toggleWeekExpansion(weekKey)}
-                  >
-                    <CardTitle className="flex items-center justify-between">
-                      <span>
-                        Week of {weekStart.toLocaleDateString()} - {weekEnd.toLocaleDateString()}
-                      </span>
-                      <Badge variant="secondary">{weekMaterials.length} materials</Badge>
-                    </CardTitle>
-                  </CardHeader>
-                  
-                  {isExpanded && (
-                    <CardContent>
-                      <div className="space-y-4">
-                        {weekMaterials.map((material) => {
-                          const isCompleted = material.completedBy?.includes(student?.id || '') || false;
-                          
-                          return (
-                          <div key={material.id} className={`flex items-center justify-between p-4 border rounded-lg dark:border-gray-700 ${
-                            isCompleted 
-                              ? 'border-green-200 bg-green-50 dark:bg-green-900/20 dark:border-green-800' 
-                              : 'border-gray-200'
-                          }`}>
-                            <div className="flex items-center space-x-4 flex-1">
+            {groupedMaterials.map((group: any) => (
+              <Card key={group.id}>
+                <CardHeader className="pb-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start space-x-4">
+                      <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                        {group.isGroup ? (
+                          <div className="text-blue-600 font-bold text-xs">
+                            {group.totalFiles}
+                          </div>
+                        ) : (
+                          getFileIcon(group.materials[0]?.fileType || 'other')
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <CardTitle className="flex items-center space-x-2 mb-2">
+                          <span>{group.groupTitle}</span>
+                          {group.isGroup && (
+                            <Badge variant="secondary" className="text-xs">
+                              {group.totalFiles} files
+                            </Badge>
+                          )}
+                          {group.isRequired && (
+                            <Badge variant="destructive" className="text-xs">Required</Badge>
+                          )}
+                          {group.lessonName && (
+                            <Badge variant="secondary" className="text-xs">
+                              {group.lessonName}
+                            </Badge>
+                          )}
+                        </CardTitle>
+                        <div className="flex items-center space-x-2 mb-2">
+                          {group.fileTypes.map((fileType: string) => (
+                            <Badge key={fileType} variant="secondary" className="text-xs">
+                              {fileType.toUpperCase()}
+                            </Badge>
+                          ))}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          {new Date(group.uploadedAt?.toDate ? group.uploadedAt.toDate() : group.uploadedAt).toLocaleDateString()}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      {/* Group completion status */}
+                      <div className="text-right">
+                        <div className="text-sm font-medium text-gray-900 dark:text-white">
+                          {group.materials.filter((m: any) => m.completedBy?.includes(student?.id || '')).length}/{group.materials.length}
+                        </div>
+                        <div className="text-xs text-gray-500">completed</div>
+                      </div>
+                    </div>
+                  </div>
+                </CardHeader>
+                
+                <CardContent className="pt-0">
+                  <div className="space-y-3">
+                    {group.materials.map((material: any) => {
+                      const isCompleted = material.completedBy?.includes(student?.id || '') || false;
+                      
+                      return (
+                        <div key={material.id} className={`flex items-center justify-between p-3 border rounded-lg dark:border-gray-700 transition-colors ${
+                          isCompleted 
+                            ? 'border-green-200 bg-green-50 dark:bg-green-900/20 dark:border-green-800' 
+                            : 'border-gray-200 hover:border-gray-300 dark:hover:border-gray-600'
+                        }`}>
+                          <div className="flex items-center space-x-3 flex-1">
+                            <div className="w-8 h-8 bg-white dark:bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0 border">
                               {getFileIcon(material.fileType)}
-                              <div className="flex-1">
-                                <div className="flex items-center space-x-2">
-                                  {isCompleted && (
-                                    <CheckCircle className="w-5 h-5 text-green-600" />
-                                  )}
-                                  <h3 className={`font-medium ${
-                                    isCompleted 
-                                      ? 'text-green-700 dark:text-green-400' 
-                                      : 'text-gray-900 dark:text-white'
-                                  }`}>
-                                    {material.title}
-                                  </h3>
-                                  {material.isRequired && (
-                                    <Badge variant="destructive" className="text-xs">Required</Badge>
-                                  )}
-                                  {material.lessonName && (
-                                    <Badge variant="secondary" className="text-xs">
-                                      {material.lessonName}
-                                    </Badge>
-                                  )}
-                                </div>
-                                {material.description && (
-                                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                    {material.description}
-                                  </p>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center space-x-2 mb-1">
+                                {isCompleted && (
+                                  <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
                                 )}
-                                <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
-                                  {(material.viewCount || 0) > 0 && (
-                                    <span className="flex items-center space-x-1">
-                                      <Eye className="w-3 h-3" />
-                                      <span>{material.viewCount} views</span>
-                                    </span>
-                                  )}
-                                  {(material.downloadCount || 0) > 0 && (
-                                    <span className="flex items-center space-x-1">
-                                      <Download className="w-3 h-3" />
-                                      <span>{material.downloadCount} downloads</span>
-                                    </span>
-                                  )}
-                                </div>
+                                <h4 className={`font-medium truncate ${
+                                  isCompleted 
+                                    ? 'text-green-700 dark:text-green-400' 
+                                    : 'text-gray-900 dark:text-white'
+                                }`}>
+                                  {material.title}
+                                </h4>
+                              </div>
+                              {material.description && (
+                                <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                                  {material.description}
+                                </p>
+                              )}
+                              <div className="text-xs text-gray-500 dark:text-gray-400">
+                                {material.formattedFileSize || '2.3 MB'}
                               </div>
                             </div>
-                            
-                            <div className="flex items-center space-x-2">
-                              {/* Completion Toggle Button */}
-                              <Button
-                                onClick={() => toggleMaterialCompletion(material)}
-                                variant={material.completedBy?.includes(student?.id || '') ? "success" : "outline"}
-                                size="sm"
-                                className={material.completedBy?.includes(student?.id || '') 
-                                  ? "bg-green-600 hover:bg-green-700 text-white" 
-                                  : "border-green-600 text-green-600 hover:bg-green-50"
-                                }
-                              >
-                                {material.completedBy?.includes(student?.id || '') ? (
-                                  <>
-                                    <CheckCircle className="w-4 h-4 mr-1" />
-                                    Completed
-                                  </>
-                                ) : (
-                                  <>
-                                    <Circle className="w-4 h-4 mr-1" />
-                                    Mark Complete
-                                  </>
-                                )}
-                              </Button>
-
-                              {/* Action Buttons */}
-                              {material.fileType === 'link' ? (
-                                <Button
-                                  onClick={() => openLink(material.externalUrl || '')}
-                                  size="sm"
-                                  className="bg-blue-600 hover:bg-blue-700"
-                                >
-                                  <ExternalLink className="w-4 h-4 mr-1" />
-                                  Open Link
-                                </Button>
+                          </div>
+                          
+                          <div className="flex items-center space-x-2 flex-shrink-0">
+                            {/* Completion Toggle Button */}
+                            <Button
+                              onClick={() => toggleMaterialCompletion(material)}
+                              variant={isCompleted ? "success" : "outline"}
+                              size="sm"
+                              className={isCompleted
+                                ? "bg-green-600 hover:bg-green-700 text-white" 
+                                : "border-green-600 text-green-600 hover:bg-green-50"
+                              }
+                            >
+                              {isCompleted ? (
+                                <>
+                                  <CheckCircle className="w-4 h-4 mr-1" />
+                                  <span className="hidden sm:inline">Done</span>
+                                </>
                               ) : (
                                 <>
-                                  <Button
-                                    onClick={() => viewMaterial(material)}
-                                    variant="outline"
-                                    size="sm"
-                                  >
-                                    <Eye className="w-4 h-4 mr-1" />
-                                    View
-                                  </Button>
-                                  <Button
-                                    onClick={() => downloadMaterial(material)}
-                                    variant="outline"
-                                    size="sm"
-                                  >
-                                    <Download className="w-4 h-4 mr-1" />
-                                    Download
-                                  </Button>
+                                  <Circle className="w-4 h-4 mr-1" />
+                                  <span className="hidden sm:inline">Mark Done</span>
                                 </>
                               )}
-                            </div>
+                            </Button>
+
+                            {/* Action Button */}
+                            {material.fileType === 'link' ? (
+                              <Button
+                                onClick={() => openLink(material.externalUrl || '')}
+                                size="sm"
+                                className="bg-blue-600 hover:bg-blue-700"
+                              >
+                                <ExternalLink className="w-4 h-4 mr-1" />
+                                <span className="hidden sm:inline">Open</span>
+                              </Button>
+                            ) : (
+                              <>
+                                <Button
+                                  onClick={() => viewMaterial(material)}
+                                  variant="outline"
+                                  size="sm"
+                                >
+                                  <Eye className="w-4 h-4 mr-1" />
+                                  <span className="hidden sm:inline">View</span>
+                                </Button>
+                                <Button
+                                  onClick={() => downloadMaterial(material)}
+                                  variant="outline"
+                                  size="sm"
+                                >
+                                  <Download className="w-4 h-4 mr-1" />
+                                  <span className="hidden sm:inline">Download</span>
+                                </Button>
+                              </>
+                            )}
                           </div>
-                          );
-                        })}
-                      </div>
-                    </CardContent>
-                  )}
-                </Card>
-              );
-            })}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         )}
       </div>
