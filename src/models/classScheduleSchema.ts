@@ -153,6 +153,10 @@ export function classScheduleDocumentToDisplay(doc: ClassScheduleDocument): Clas
     ? doc.updatedAt.toDate() 
     : doc.updatedAt;
 
+  const cancelledAt = doc.cancelledAt instanceof Timestamp 
+    ? doc.cancelledAt.toDate() 
+    : doc.cancelledAt;
+
   const attendance: ClassAttendanceDisplayData = {
     ...doc.attendance,
     students: doc.attendance.students.map(student => ({
@@ -198,6 +202,7 @@ export function classScheduleDocumentToDisplay(doc: ClassScheduleDocument): Clas
     scheduledDate,
     createdAt,
     updatedAt,
+    cancelledAt,
     attendance,
     formattedDate: scheduledDate.toLocaleDateString('en-US', { 
       weekday: 'long', 
