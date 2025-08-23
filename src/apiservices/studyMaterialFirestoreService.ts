@@ -45,10 +45,19 @@ const convertDocumentToStudyMaterial = (doc: any): StudyMaterialDocument => {
 
 // Convert StudyMaterialData to Firestore document
 const convertStudyMaterialToDocument = (material: StudyMaterialData) => {
+  // Filter out undefined values to avoid Firestore errors
+  const filteredData: any = {};
+  
+  Object.entries(material).forEach(([key, value]) => {
+    if (value !== undefined) {
+      filteredData[key] = value;
+    }
+  });
+
   return {
-    ...material,
-    uploadedAt: material.uploadedAt ? Timestamp.fromDate(material.uploadedAt) : Timestamp.now(),
-    dueDate: material.dueDate ? Timestamp.fromDate(material.dueDate) : null,
+    ...filteredData,
+    uploadedAt: filteredData.uploadedAt ? Timestamp.fromDate(filteredData.uploadedAt) : Timestamp.now(),
+    dueDate: filteredData.dueDate ? Timestamp.fromDate(filteredData.dueDate) : null,
     createdAt: Timestamp.now(),
     updatedAt: Timestamp.now(),
   };
