@@ -89,6 +89,7 @@ export default function TestResultsPage() {
 
       console.log('✅ Test results loaded:', {
         test: testData.title,
+        passingScore: testData.config?.passingScore,
         submissions: submissionsData.length,
         stats: testStats
       });
@@ -120,7 +121,17 @@ export default function TestResultsPage() {
 
     const scores = submittedSubmissions.map(s => s.percentage || 0);
     const times = submittedSubmissions.map(s => s.totalTimeSpent || 0);
-    const passedCount = submittedSubmissions.filter(s => s.passStatus === 'passed').length;
+    
+    // Calculate pass rate based on teacher's passing score configuration
+    const passedCount = submittedSubmissions.filter(s => {
+      // If there's a passing score configured, use it
+      if (test.config?.passingScore) {
+        const percentage = s.percentage || 0;
+        return percentage >= test.config.passingScore;
+      }
+      // Fallback to passStatus if no passing score is configured
+      return s.passStatus === 'passed';
+    }).length;
 
     // Calculate question statistics
     const questionStats: QuestionStat[] = [];
@@ -166,14 +177,36 @@ export default function TestResultsPage() {
     const matchesSearch = submission.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          submission.studentEmail?.toLowerCase().includes(searchTerm.toLowerCase());
     
+    // Helper function to determine if submission passes based on teacher's config
+    const getSubmissionPassStatus = (submission: StudentSubmission): 'passed' | 'failed' | 'pending' => {
+      if (test?.config?.passingScore) {
+        const percentage = submission.percentage || 0;
+        return percentage >= test.config.passingScore ? 'passed' : 'failed';
+      }
+      // Fallback to stored passStatus if no passing score is configured
+      return submission.passStatus as 'passed' | 'failed' | 'pending';
+    };
+    
+    const submissionPassStatus = getSubmissionPassStatus(submission);
+    
     const matchesStatus = statusFilter === 'all' || 
                          (statusFilter === 'submitted' && (submission.status === 'submitted' || submission.status === 'auto_submitted')) ||
                          (statusFilter === 'pending' && submission.manualGradingPending) ||
-                         (statusFilter === 'passed' && submission.passStatus === 'passed') ||
-                         (statusFilter === 'failed' && submission.passStatus === 'failed');
+                         (statusFilter === 'passed' && submissionPassStatus === 'passed') ||
+                         (statusFilter === 'failed' && submissionPassStatus === 'failed');
 
     return matchesSearch && matchesStatus;
   });
+
+  // Helper function to determine submission pass status based on teacher's configuration
+  const getSubmissionPassStatus = (submission: StudentSubmission): 'passed' | 'failed' | 'pending' => {
+    if (test?.config?.passingScore) {
+      const percentage = submission.percentage || 0;
+      return percentage >= test.config.passingScore ? 'passed' : 'failed';
+    }
+    // Fallback to stored passStatus if no passing score is configured
+    return submission.passStatus as 'passed' | 'failed' | 'pending';
+  };
 
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
@@ -316,6 +349,12 @@ export default function TestResultsPage() {
                     <FileText className="h-4 w-4 mr-1" />
                     {test.questions?.length || 0} questions
                   </span>
+                  {test.config?.passingScore && (
+                    <span className="flex items-center">
+                      <Trophy className="h-4 w-4 mr-1" />
+                      {test.config.passingScore}% to pass
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -581,19 +620,24 @@ export default function TestResultsPage() {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            submission.passStatus === 'passed' 
-                              ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                              : submission.passStatus === 'failed'
-                              ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-                              : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
-                          }`}>
-                            {submission.passStatus === 'passed' && <CheckCircle className="h-3 w-3 mr-1" />}
-                            {submission.passStatus === 'failed' && <XCircle className="h-3 w-3 mr-1" />}
-                            {submission.passStatus === 'pending_review' && <AlertTriangle className="h-3 w-3 mr-1" />}
-                            {submission.passStatus === 'passed' ? 'Passed' : 
-                             submission.passStatus === 'failed' ? 'Failed' : 'Pending'}
-                          </span>
+                          {(() => {
+                            const passStatus = getSubmissionPassStatus(submission);
+                            return (
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                passStatus === 'passed' 
+                                  ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                                  : passStatus === 'failed'
+                                  ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+                                  : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
+                              }`}>
+                                {passStatus === 'passed' && <CheckCircle className="h-3 w-3 mr-1" />}
+                                {passStatus === 'failed' && <XCircle className="h-3 w-3 mr-1" />}
+                                {passStatus === 'pending' && <AlertTriangle className="h-3 w-3 mr-1" />}
+                                {passStatus === 'passed' ? 'Passed' : 
+                                 passStatus === 'failed' ? 'Failed' : 'Pending'}
+                              </span>
+                            );
+                          })()}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                           {formatTime(submission.totalTimeSpent || 0)}
