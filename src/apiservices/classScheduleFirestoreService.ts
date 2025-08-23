@@ -567,6 +567,33 @@ export class ClassScheduleFirestoreService {
   }
 
   /**
+   * Cancel a scheduled class
+   */
+  static async cancelSchedule(
+    scheduleId: string, 
+    cancellationReason: string, 
+    cancelledBy: string = 'teacher'
+  ): Promise<void> {
+    try {
+      const scheduleDoc = doc(firestore, COLLECTION_NAME, scheduleId);
+      
+      await updateDoc(scheduleDoc, {
+        status: 'cancelled',
+        cancellationReason: cancellationReason,
+        cancelledAt: Timestamp.now(),
+        cancelledBy: cancelledBy,
+        updatedAt: Timestamp.now(),
+        updatedBy: cancelledBy
+      });
+      
+      console.log('✅ Schedule cancelled successfully:', scheduleId);
+    } catch (error) {
+      console.error('❌ Error cancelling schedule:', error);
+      throw new Error(`Failed to cancel schedule: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
    * Subscribe to real-time updates for class schedules
    */
   static subscribeToSchedules(

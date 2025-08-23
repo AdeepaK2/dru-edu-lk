@@ -67,6 +67,11 @@ export const classScheduleSchema = z.object({
   isRecurring: z.boolean().default(false),
   recurringPattern: z.string().optional(), // e.g., "weekly", "daily"
   
+  // Cancellation details
+  cancellationReason: z.string().optional(),
+  cancelledAt: z.date().optional(),
+  cancelledBy: z.string().optional(),
+  
   // Timestamps
   createdAt: z.date(),
   updatedAt: z.date(),
@@ -97,11 +102,12 @@ export interface ClassAttendanceDocument extends Omit<ClassAttendanceData, 'stud
   lastUpdatedAt?: Timestamp;
 }
 
-export interface ClassScheduleDocument extends Omit<ClassScheduleData, 'scheduledDate' | 'createdAt' | 'updatedAt' | 'attendance'> {
+export interface ClassScheduleDocument extends Omit<ClassScheduleData, 'scheduledDate' | 'createdAt' | 'updatedAt' | 'attendance' | 'cancelledAt'> {
   id: string;
   scheduledDate: Timestamp;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  cancelledAt?: Timestamp;
   attendance: ClassAttendanceDocument;
 }
 
