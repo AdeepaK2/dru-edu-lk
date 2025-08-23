@@ -330,7 +330,7 @@ export default function StudyMaterialUploadModal({
           tags: item.tags,
           difficulty: globalSettings.difficulty,
           dueDate: globalSettings.dueDate ? new Date(globalSettings.dueDate) : undefined,
-          externalUrl: item.fileType === 'link' && item.externalUrl ? item.externalUrl : undefined,
+          externalUrl: item.fileType === 'link' ? item.externalUrl : undefined,
           uploadedAt: new Date(),
           viewCount: 0
         };
@@ -492,7 +492,7 @@ export default function StudyMaterialUploadModal({
             ref={fileInputRef}
             type="file"
             multiple
-            accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.mp4,.avi,.mov,.wmv,.flv,.webm,.mkv,.jpg,.jpeg,.png,.gif,.bmp,.svg,.webp,.zip,.rar,.7z"
+            accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.mp4,.avi,.mov,.jpg,.jpeg,.png,.gif"
             onChange={(e) => addFileUploadItem(e.target.files || undefined)}
             className="hidden"
           />
