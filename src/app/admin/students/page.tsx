@@ -401,23 +401,27 @@ export default function StudentsManagement() {
     loadClasses();
   }, [showDataExportTab]);
 
-  // Load student counts when classes are selected
+  // Load student counts when data export tab is opened or classes are selected
   useEffect(() => {
     const loadStudentCounts = async () => {
-      if (!showDataExportTab || selectedClasses.length === 0) {
+      if (!showDataExportTab) {
         setClassStudentData({});
         return;
       }
 
       try {
-        await loadStudentDataForClasses(selectedClasses);
+        // Load student data for all available classes to show counts
+        const allClassIds = availableClasses.map(cls => cls.id);
+        if (allClassIds.length > 0) {
+          await loadStudentDataForClasses(allClassIds);
+        }
       } catch (error) {
         console.error('Error loading student counts:', error);
       }
     };
 
     loadStudentCounts();
-  }, [showDataExportTab, selectedClasses]);
+  }, [showDataExportTab, availableClasses]);
   
   // Use alert for now - can be replaced with a proper toast system later
   const showSuccess = (message: string) => {
@@ -1852,7 +1856,7 @@ export default function StudentsManagement() {
             <Card>
               <CardContent className="p-4 text-center">
                 <div className="text-2xl font-bold text-purple-600">
-                  {Object.values(classStudentData).reduce((acc, students) => acc + students.length, 0)}
+                  {selectedClasses.reduce((acc, classId) => acc + (classStudentData[classId]?.length || 0), 0)}
                 </div>
                 <div className="text-sm text-gray-600">Total Students to Export</div>
               </CardContent>
