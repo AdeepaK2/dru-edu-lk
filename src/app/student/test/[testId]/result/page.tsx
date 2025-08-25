@@ -661,6 +661,23 @@ export default function TestResultPage() {
     }
   };
 
+  // Recalculate pass status based on teacher's configured passing score
+  const getActualPassStatus = (submission: StudentSubmission, test: Test): string => {
+    // If teacher has configured a passing score, use it
+    if (test.config?.passingScore && submission.percentage !== undefined) {
+      return submission.percentage >= test.config.passingScore ? 'passed' : 'failed';
+    }
+    
+    // For essay tests that haven't been manually graded, show pending
+    const isEssayTest = test.questions?.some(q => q.type === 'essay' || q.questionType === 'essay');
+    if (isEssayTest && submission.manualGradingPending) {
+      return 'pending_review';
+    }
+    
+    // Fallback to stored passStatus
+    return submission.passStatus || 'pending_review';
+  };
+
   return (
     <StudentLayout>
       <div className="space-y-6">
@@ -702,16 +719,26 @@ export default function TestResultPage() {
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                 Submitted on {formatDateTime(submission.submittedAt)}
               </p>
+              {test.config?.passingScore && (
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  Passing Score: {test.config.passingScore}% • Your Score: {submission.percentage || 0}%
+                </p>
+              )}
             </div>
             
             <div className="mt-4 md:mt-0">
-              <div className={`inline-flex items-center px-3 py-2 rounded-full text-sm font-medium ${getStatusColor(submission.passStatus)}`}>
-                {getStatusIcon(submission.passStatus)}
-                <span className="ml-2">
-                  {getStatusText(submission.passStatus, test.questions?.some(q => q.type === 'essay' || q.questionType === 'essay'))}
-                  {submission.passStatus === 'passed' && ' 🎉'}
-                </span>
-              </div>
+              {(() => {
+                const actualPassStatus = getActualPassStatus(submission, test);
+                return (
+                  <div className={`inline-flex items-center px-3 py-2 rounded-full text-sm font-medium ${getStatusColor(actualPassStatus)}`}>
+                    {getStatusIcon(actualPassStatus)}
+                    <span className="ml-2">
+                      {getStatusText(actualPassStatus, test.questions?.some(q => q.type === 'essay' || q.questionType === 'essay'))}
+                      {actualPassStatus === 'passed' && ' 🎉'}
+                    </span>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>
@@ -917,7 +944,18 @@ export default function TestResultPage() {
               </div>
               
               {/* Questions */}
-              
+              <div className="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg text-center">
+                <BarChart className="h-8 w-8 mx-auto text-orange-500 mb-2" />
+                <div className="text-3xl font-bold text-gray-900 dark:text-white">
+                  {submission.questionsAttempted}
+                </div>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  Questions attempted
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                  {submission.questionsSkipped || 0} skipped
+                </p>
+              </div>
               
               {/* Time */}
               <div className="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg text-center">

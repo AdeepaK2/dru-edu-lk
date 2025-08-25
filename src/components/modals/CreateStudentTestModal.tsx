@@ -468,21 +468,53 @@ export default function CreateStudentTestModal({
         ? formData.selectedQuestions.reduce((sum, q) => sum + (q.points || 1), 0)
         : formData.totalQuestions * 1;
 
-      // Create student assignments - REMOVED from test data
-      const studentAssignments = formData.selectedStudents.map((student: any) => ({
+      // Deduplicate students based on student ID - a student can only be assigned once regardless of how many classes they're in
+      const uniqueStudentMap = new Map<string, any>();
+      
+      // Build a map of unique students with all their class information
+      formData.selectedStudents.forEach((student: any) => {
+        if (!uniqueStudentMap.has(student.id)) {
+          uniqueStudentMap.set(student.id, {
+            id: student.id,
+            name: student.name,
+            email: student.email,
+            classes: [{
+              classId: student.classId,
+              className: student.className,
+              enrollmentId: student.enrollmentId
+            }]
+          });
+        } else {
+          // Add additional class information for this student
+          const existingStudent = uniqueStudentMap.get(student.id);
+          const hasClass = existingStudent.classes.some((cls: any) => cls.classId === student.classId);
+          if (!hasClass) {
+            existingStudent.classes.push({
+              classId: student.classId,
+              className: student.className,
+              enrollmentId: student.enrollmentId
+            });
+          }
+        }
+      });
+
+      const uniqueStudents = Array.from(uniqueStudentMap.values());
+
+      // Create student assignments - use primary class (first class) for assignment record
+      const studentAssignments = uniqueStudents.map((student: any) => ({
         id: student.id,
         name: student.name,
         email: student.email,
-        classId: student.classId,
-        className: student.className
+        classId: student.classes[0].classId, // Use primary class
+        className: student.classes[0].className
       }));
 
       // Create individual assignments for email notifications
-      const individualAssignments = formData.selectedStudents.map((student: any) => ({
+      const individualAssignments = uniqueStudents.map((student: any) => ({
         studentId: student.id,
         studentName: student.name,
         studentEmail: student.email,
-        className: student.className
+        className: student.classes[0].className // Use primary class name
       }));
 
       // Build base test data - CLEANED UP
@@ -504,9 +536,9 @@ export default function CreateStudentTestModal({
         individualAssignments: individualAssignments,
         
         // Metadata only (for display purposes)
-        totalAssignedStudents: formData.selectedStudents.length,
+        totalAssignedStudents: uniqueStudents.length,
         assignmentSummary: {
-          studentCount: formData.selectedStudents.length,
+          studentCount: uniqueStudents.length,
           classesInvolved: Array.from(new Set(formData.selectedStudents.map((s: any) => s.className)))
         },
         
