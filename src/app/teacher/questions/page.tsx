@@ -26,6 +26,7 @@ import TeacherLayout from '@/components/teacher/TeacherLayout';
 import { Button, Input, ConfirmDialog } from '@/components/ui';
 import { useToast } from '@/components/ui';
 import QuestionBankModal from '@/components/modals/QuestionBankModal';
+import { AccessLevel, getAccessLevelLabel } from '@/utils/accessLevels';
 
 export default function TeacherQuestionBanks() {
   const router = useRouter();
@@ -34,6 +35,7 @@ export default function TeacherQuestionBanks() {
 
   // State management
   const [questionBanks, setQuestionBanks] = useState<QuestionBank[]>([]);
+  const [questionBankAccess, setQuestionBankAccess] = useState<Map<string, AccessLevel>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -86,8 +88,13 @@ export default function TeacherQuestionBanks() {
         // Get question banks the teacher has access to through the access control system
         const accessList = await teacherAccessBankService.getAccessibleQuestionBanks(teacher.id);
         
-        // Convert access list to question banks
+        // Convert access list to question banks and store access levels
         const questionBankIds = accessList.map(access => access.questionBankId);
+        const accessMap = new Map<string, AccessLevel>();
+        accessList.forEach(access => {
+          accessMap.set(access.questionBankId, access.accessType);
+        });
+        
         const questionBanksPromises = questionBankIds.map(id => 
           questionBankService.getQuestionBank(id)
         );
@@ -96,6 +103,7 @@ export default function TeacherQuestionBanks() {
         const validQuestionBanks = questionBanksResults.filter(bank => bank !== null) as QuestionBank[];
         
         setQuestionBanks(validQuestionBanks);
+        setQuestionBankAccess(accessMap);
       } catch (err) {
         console.error('Error fetching question banks:', err);
         setError('Failed to load question banks');
@@ -367,23 +375,28 @@ export default function TeacherQuestionBanks() {
                       >
                         <Eye className="w-4 h-4" />
                       </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEditBank(bank)}
-                        disabled={actionLoading === 'update'}
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDeleteClick(bank)}
-                        disabled={actionLoading === 'delete'}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      {/* Only show edit/delete buttons for banks with write/admin access */}
+                      {questionBankAccess.get(bank.id) === 'write' && (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditBank(bank)}
+                            disabled={actionLoading === 'update'}
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteClick(bank)}
+                            disabled={actionLoading === 'delete'}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </div>
                   
@@ -394,6 +407,18 @@ export default function TeacherQuestionBanks() {
                     {bank.grade && (
                       <span className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300 text-xs font-medium px-2.5 py-0.5 rounded-full">
                         {bank.grade}
+                      </span>
+                    )}
+                    {/* Access Level Indicator */}
+                    {questionBankAccess.has(bank.id) && (
+                      <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${
+                        questionBankAccess.get(bank.id) === 'read' 
+                          ? 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
+                          : questionBankAccess.get(bank.id) === 'read_add'
+                          ? 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300'
+                          : 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300'
+                      }`}>
+                        {getAccessLevelLabel(questionBankAccess.get(bank.id)!)}
                       </span>
                     )}
                   </div>

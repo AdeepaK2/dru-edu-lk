@@ -97,7 +97,7 @@ export const teacherAccessBankService = {
     questionBankName: string,
     subjectId: string,
     subjectName: string,
-    accessType: 'read' | 'write' | 'admin',
+    accessType: 'read' | 'read_add' | 'write' | 'admin',
     grantedBy: string,
     grantedByName: string,
     expiresAt?: Timestamp,

@@ -16,7 +16,7 @@ export interface TeacherAccessBank {
   subjectId: string;
   subjectName: string;
   // Access permissions
-  accessType: 'read' | 'write' | 'admin'; // read: can use in tests, write: can edit questions, admin: full control
+  accessType: 'read' | 'read_add' | 'write' | 'admin'; // read: can use in tests, read_add: can view and add questions, write: can edit questions, admin: full control
   // Who granted access
   grantedBy: string; // admin or other teacher ID
   grantedByName: string;
@@ -46,7 +46,7 @@ export interface TeacherAccessBankRequest {
   subjectId: string;
   subjectName: string;
   // Request details
-  requestedAccessType: 'read' | 'write';
+  requestedAccessType: 'read' | 'read_add' | 'write';
   reason?: string;
   // Request status
   status: 'pending' | 'approved' | 'rejected';
@@ -71,7 +71,7 @@ export interface BulkTeacherAccessAssignment {
   // Teachers being assigned
   teacherIds: string[];
   // Access details
-  accessType: 'read' | 'write';
+  accessType: 'read' | 'read_add' | 'write';
   // Assignment metadata
   assignedBy: string;
   assignedByName: string;

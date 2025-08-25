@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { QuestionBank, Question } from '@/models/questionBankSchema';
 import { LessonDocument } from '@/models/lessonSchema';
+import { AccessLevel, canPerformAction, getAccessLevelLabel } from '@/utils/accessLevels';
 import { questionBankService, questionService } from '@/apiservices/questionBankFirestoreService';
 import { teacherAccessBankService } from '@/apiservices/teacherAccessBankService';
 import { LessonFirestoreService } from '@/apiservices/lessonFirestoreService';
@@ -76,7 +77,22 @@ export default function TeacherQuestionBankDetail() {
   // Simple scroll state
   const [showScrollButtons, setShowScrollButtons] = useState(false);
 
-  // Load question bank and its questions
+  // Teacher access level for this question bank
+  const [teacherAccessLevel, setTeacherAccessLevel] = useState<AccessLevel | null>(null);
+
+  // Permission helper functions
+  const canAddQuestions = () => teacherAccessLevel && canPerformAction(teacherAccessLevel, 'canAdd');
+  const canEditQuestions = () => teacherAccessLevel && canPerformAction(teacherAccessLevel, 'canEdit');
+  const canDeleteQuestions = () => teacherAccessLevel && canPerformAction(teacherAccessLevel, 'canDelete');
+
+  // Effect to handle tab switching when permissions change
+  useEffect(() => {
+    // If user is on add tab but doesn't have add permission, switch to view tab
+    if (selectedTab === 'add' && !canAddQuestions()) {
+      setSelectedTab('view');
+      setEditingQuestion(null);
+    }
+  }, [teacherAccessLevel, selectedTab]);
   useEffect(() => {
     const loadData = async () => {
       // Don't proceed if auth is still loading
@@ -116,13 +132,14 @@ export default function TeacherQuestionBankDetail() {
         
         console.log('🔍 Question bank loaded:', bank);
         
-        // Check if teacher has access to this question bank using proper access control
-        const hasAccess = await teacherAccessBankService.hasAccess(teacher.id, bankId);
-        if (!hasAccess) {
+        // Check if teacher has access to this question bank and get access level
+        const teacherAccess = await teacherAccessBankService.getTeacherAccessToBank(teacher.id, bankId);
+        if (!teacherAccess) {
           throw new Error('You do not have access to this question bank');
         }
         
-        console.log('✅ Teacher has access to question bank');
+        console.log('✅ Teacher has access to question bank with level:', teacherAccess.accessType);
+        setTeacherAccessLevel(teacherAccess.accessType);
         
         setQuestionBank(bank);
         
@@ -360,6 +377,12 @@ export default function TeacherQuestionBankDetail() {
   const handleCreateQuestion = async (questionData: Omit<Question, 'id' | 'createdAt' | 'updatedAt'>) => {
     if (!questionBank) return;
     
+    // Check permission to add questions
+    if (!canAddQuestions()) {
+      showToast('You do not have permission to add questions to this question bank', 'error');
+      return;
+    }
+    
     setActionLoading('create');
     
     try {
@@ -424,6 +447,12 @@ export default function TeacherQuestionBankDetail() {
 
   // Handle editing a question
   const handleEditQuestion = (question: Question) => {
+    // Check permission to edit questions
+    if (!canEditQuestions()) {
+      showToast('You do not have permission to edit questions in this question bank', 'error');
+      return;
+    }
+    
     setEditingQuestion(question);
     setQuestionType(question.type);
     setSelectedTab('add');
@@ -432,6 +461,12 @@ export default function TeacherQuestionBankDetail() {
   // Handle updating a question
   const handleUpdateQuestion = async (questionData: Omit<Question, 'id' | 'createdAt' | 'updatedAt'>) => {
     if (!editingQuestion) return;
+    
+    // Check permission to edit questions
+    if (!canEditQuestions()) {
+      showToast('You do not have permission to edit questions in this question bank', 'error');
+      return;
+    }
     
     setActionLoading('update');
     
@@ -458,6 +493,12 @@ export default function TeacherQuestionBankDetail() {
 
   // Handle delete confirmation
   const handleDeleteClick = (question: Question) => {
+    // Check permission to delete questions
+    if (!canDeleteQuestions()) {
+      showToast('You do not have permission to delete questions from this question bank', 'error');
+      return;
+    }
+    
     setQuestionToDelete(question);
     setShowDeleteConfirm(true);
   };
@@ -465,6 +506,12 @@ export default function TeacherQuestionBankDetail() {
   // Handle delete question
   const handleDeleteQuestion = async () => {
     if (!questionToDelete || !questionBank) return;
+    
+    // Check permission to delete questions
+    if (!canDeleteQuestions()) {
+      showToast('You do not have permission to delete questions from this question bank', 'error');
+      return;
+    }
     
     setActionLoading('delete');
     
@@ -579,6 +626,18 @@ export default function TeacherQuestionBankDetail() {
                 <span className="text-gray-500 dark:text-gray-400">
                   {questionBank.totalQuestions || 0} Questions ({questionBank.mcqCount || 0} MCQ, {questionBank.essayCount || 0} Essay)
                 </span>
+                {/* Access Level Indicator */}
+                {teacherAccessLevel && (
+                  <span className={`text-sm font-medium px-3 py-1 rounded-full ${
+                    teacherAccessLevel === 'read' 
+                      ? 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
+                      : teacherAccessLevel === 'read_add'
+                      ? 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300'
+                      : 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300'
+                  }`}>
+                    {getAccessLevelLabel(teacherAccessLevel)} Access
+                  </span>
+                )}
               </div>
               {questionBank.description && (
                 <p className="text-gray-600 dark:text-gray-300 mt-2">{questionBank.description}</p>
@@ -601,16 +660,19 @@ export default function TeacherQuestionBankDetail() {
               >
                 View Questions ({questions.length})
               </button>
-              <button
-                onClick={() => handleTabChange('add')}
-                className={`${
-                  selectedTab === 'add'
-                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
-                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-              >
-                {editingQuestion ? 'Edit Question' : 'Add Question'}
-              </button>
+              {/* Only show Add Question tab if user has add permission */}
+              {canAddQuestions() && (
+                <button
+                  onClick={() => handleTabChange('add')}
+                  className={`${
+                    selectedTab === 'add'
+                      ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                      : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
+                  } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                >
+                  {editingQuestion ? 'Edit Question' : 'Add Question'}
+                </button>
+              )}
             </nav>
           </div>
 
@@ -708,12 +770,17 @@ export default function TeacherQuestionBankDetail() {
                   <p className="text-gray-500 dark:text-gray-400 mb-6">
                     {searchTerm || filterType !== 'all' || filterDifficulty !== 'all'
                       ? 'Try adjusting your search criteria'
-                      : 'Add your first question to get started'
+                      : canAddQuestions() 
+                      ? 'Add your first question to get started'
+                      : 'This question bank is empty. You have read-only access.'
                     }
                   </p>
-                  <Button onClick={() => handleTabChange('add')}>
-                    Add Question
-                  </Button>
+                  {/* Only show Add Question button if user has add permission and not filtering */}
+                  {canAddQuestions() && !searchTerm && filterType === 'all' && filterDifficulty === 'all' && (
+                    <Button onClick={() => handleTabChange('add')}>
+                      Add Question
+                    </Button>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -891,38 +958,46 @@ export default function TeacherQuestionBankDetail() {
                         </div>
                         
                         <div className="flex space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditQuestion(question)}
-                            disabled={actionLoading === 'update'}
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDeleteClick(question)}
-                            disabled={actionLoading === 'delete'}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                          {/* Edit button - only show if user has edit permission */}
+                          {canEditQuestions() && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditQuestion(question)}
+                              disabled={actionLoading === 'update'}
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                          {/* Delete button - only show if user has delete permission */}
+                          {canDeleteQuestions() && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeleteClick(question)}
+                              disabled={actionLoading === 'delete'}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </div>
                   ))}
                   
-                  {/* Add Question Button at the end of list */}
-                  <div className="flex justify-center pt-4">
-                    <Button
-                      onClick={() => handleTabChange('add')}
-                      className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3"
-                    >
-                      <Plus className="w-5 h-5" />
-                      <span>Add Question</span>
-                    </Button>
-                  </div>
+                  {/* Add Question Button at the end of list - only show if user has add permission */}
+                  {canAddQuestions() && (
+                    <div className="flex justify-center pt-4">
+                      <Button
+                        onClick={() => handleTabChange('add')}
+                        className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3"
+                      >
+                        <Plus className="w-5 h-5" />
+                        <span>Add Question</span>
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
