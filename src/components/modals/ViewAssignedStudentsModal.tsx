@@ -114,24 +114,61 @@ export default function ViewAssignedStudentsModal({
     });
   };
 
-  // Group assignments by class
-  const assignmentsByClass = assignments.reduce((acc, assignment) => {
-    if (!acc[assignment.classId]) {
-      acc[assignment.classId] = {
-        className: assignment.className,
-        assignments: []
+  // Group assignments by student to get unique students with their classes
+  const studentAssignments = assignments.reduce((acc, assignment) => {
+    if (!acc[assignment.studentId]) {
+      acc[assignment.studentId] = {
+        studentId: assignment.studentId,
+        studentName: assignment.studentName,
+        studentEmail: assignment.studentEmail,
+        classes: [],
+        statuses: [],
+        assignedAt: assignment.assignedAt,
+        assignedByName: assignment.assignedByName
       };
     }
-    acc[assignment.classId].assignments.push(assignment);
+    
+    acc[assignment.studentId].classes.push({
+      classId: assignment.classId,
+      className: assignment.className,
+      status: assignment.status
+    });
+    
+    acc[assignment.studentId].statuses.push(assignment.status);
+    
     return acc;
-  }, {} as Record<string, { className: string; assignments: StudentTestAssignmentDocument[] }>);
+  }, {} as Record<string, { 
+    studentId: string;
+    studentName: string;
+    studentEmail: string;
+    classes: Array<{classId: string; className: string; status: string}>;
+    statuses: string[];
+    assignedAt: any;
+    assignedByName: string;
+  }>);
+
+  const uniqueStudents = Object.values(studentAssignments);
 
   const getStatusCounts = () => {
+    // Count unique students, not assignments
+    const uniqueStudentStatuses = uniqueStudents.map(student => {
+      // Determine overall status based on all assignments for this student
+      if (student.statuses.some(status => status === 'completed')) {
+        return 'completed';
+      } else if (student.statuses.some(status => status === 'started')) {
+        return 'started';
+      } else if (student.statuses.some(status => status === 'expired')) {
+        return 'expired';
+      } else {
+        return 'assigned';
+      }
+    });
+
     const counts = {
-      assigned: assignments.filter(a => a.status === 'assigned').length,
-      started: assignments.filter(a => a.status === 'started').length,
-      completed: assignments.filter(a => a.status === 'completed').length,
-      expired: assignments.filter(a => a.status === 'expired').length
+      assigned: uniqueStudentStatuses.filter(status => status === 'assigned').length,
+      started: uniqueStudentStatuses.filter(status => status === 'started').length,
+      completed: uniqueStudentStatuses.filter(status => status === 'completed').length,
+      expired: uniqueStudentStatuses.filter(status => status === 'expired').length
     };
     return counts;
   };
@@ -184,7 +221,7 @@ export default function ViewAssignedStudentsModal({
                 Try Again
               </button>
             </div>
-          ) : assignments.length === 0 ? (
+          ) : uniqueStudents.length === 0 ? (
             <div className="text-center py-12">
               <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
@@ -208,7 +245,7 @@ export default function ViewAssignedStudentsModal({
                       <>
                         <div className="text-center">
                           <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                            {assignments.length}
+                            {uniqueStudents.length}
                           </div>
                           <div className="text-sm text-gray-500 dark:text-gray-400">
                             Total Assigned
@@ -244,59 +281,74 @@ export default function ViewAssignedStudentsModal({
                 </div>
               </div>
 
-              {/* Students by Class */}
+              {/* Students List */}
               <div className="space-y-4">
-                {Object.entries(assignmentsByClass).map(([classId, classData]) => (
-                  <div key={classId} className="border border-gray-200 dark:border-gray-700 rounded-lg">
-                    <div className="bg-gray-50 dark:bg-gray-900/50 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <School className="h-5 w-5 text-blue-600" />
-                          <h4 className="text-lg font-medium text-gray-900 dark:text-white">
-                            {classData.className}
-                          </h4>
-                        </div>
-                        <span className="text-sm text-gray-500 dark:text-gray-400">
-                          {classData.assignments.length} student{classData.assignments.length !== 1 ? 's' : ''}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <div className="p-4">
-                      <div className="space-y-3">
-                        {classData.assignments.map((assignment) => (
-                          <div
-                            key={assignment.id}
-                            className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-sm transition-shadow"
-                          >
-                            <div className="flex items-center space-x-3">
-                              <div className="bg-gray-100 dark:bg-gray-700 rounded-full p-2">
-                                <User className="h-4 w-4 text-gray-600 dark:text-gray-300" />
-                              </div>
-                              <div>
-                                <div className="font-medium text-gray-900 dark:text-white">
-                                  {assignment.studentName}
-                                </div>
-                                <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
-                                  <Mail className="h-3 w-3" />
-                                  <span>{assignment.studentEmail}</span>
-                                </div>
-                              </div>
+                <h4 className="text-lg font-medium text-gray-900 dark:text-white">
+                  Assigned Students
+                </h4>
+                
+                <div className="space-y-3">
+                  {uniqueStudents.map((student) => {
+                    // Determine overall status for this student
+                    const overallStatus = student.statuses.some(status => status === 'completed') 
+                      ? 'completed' 
+                      : student.statuses.some(status => status === 'started')
+                      ? 'started'
+                      : student.statuses.some(status => status === 'expired')
+                      ? 'expired'
+                      : 'assigned';
+
+                    return (
+                      <div
+                        key={student.studentId}
+                        className="p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-sm transition-shadow"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start space-x-3">
+                            <div className="bg-gray-100 dark:bg-gray-700 rounded-full p-2">
+                              <User className="h-5 w-5 text-gray-600 dark:text-gray-300" />
                             </div>
-                            
-                            <div className="flex items-center space-x-3">
-                              <div className="text-right text-sm text-gray-500 dark:text-gray-400">
-                                <div>Assigned: {formatDateTime(assignment.assignedAt)}</div>
-                                <div>By: {assignment.assignedByName}</div>
+                            <div className="flex-1">
+                              <div className="font-medium text-gray-900 dark:text-white mb-1">
+                                {student.studentName}
                               </div>
-                              {getStatusBadge(assignment.status)}
+                              <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400 mb-2">
+                                <Mail className="h-3 w-3" />
+                                <span>{student.studentEmail}</span>
+                              </div>
+                              
+                              {/* Student's Classes */}
+                              <div className="mt-2">
+                                <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                                  Registered Classes:
+                                </div>
+                                <div className="flex flex-wrap gap-1">
+                                  {student.classes.map((classInfo) => (
+                                    <span
+                                      key={classInfo.classId}
+                                      className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
+                                    >
+                                      <School className="h-3 w-3 mr-1" />
+                                      {classInfo.className}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
                             </div>
                           </div>
-                        ))}
+                          
+                          <div className="flex flex-col items-end space-y-2">
+                            <div className="text-right text-sm text-gray-500 dark:text-gray-400">
+                              <div>Assigned: {formatDateTime(student.assignedAt)}</div>
+                              <div>By: {student.assignedByName}</div>
+                            </div>
+                            {getStatusBadge(overallStatus)}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                ))}
+                    );
+                  })}
+                </div>
               </div>
             </div>
           )}
