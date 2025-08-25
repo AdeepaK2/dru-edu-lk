@@ -585,7 +585,9 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                       </div>
                       <div className="flex items-center space-x-6 text-xs text-gray-500 dark:text-gray-400">
                         <span>{new Date(group.uploadedAt?.toDate ? group.uploadedAt.toDate() : group.uploadedAt).toLocaleDateString()}</span>
-                        <span>{group.totalDownloads} downloads</span>
+                        {group.totalDownloads > 0 && (
+                          <span>{group.totalDownloads} downloads</span>
+                        )}
                         <span>{group.completedBy.length} students completed</span>
                       </div>
                     </div>
@@ -600,6 +602,17 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                       <CheckCircle className="w-4 h-4" />
                       <span className="hidden sm:inline">View Completion</span>
                     </Button>
+                    {!group.isGroup && group.materials.length === 1 && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleEditMaterial(group.materials[0])}
+                        className="flex items-center space-x-1"
+                      >
+                        <Edit className="w-4 h-4" />
+                        <span className="hidden sm:inline">Edit</span>
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1090,6 +1103,67 @@ function StudentsTab({
   loading: boolean; 
 }) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [studentsWithDetails, setStudentsWithDetails] = useState<any[]>([]);
+  const [studentsLoading, setStudentsLoading] = useState(true);
+
+  // Load full student data with parent information
+  useEffect(() => {
+    const loadStudentsWithDetails = async () => {
+      if (enrollments.length === 0) {
+        setStudentsLoading(false);
+        return;
+      }
+
+      try {
+        setStudentsLoading(true);
+        const { StudentFirestoreService } = await import('@/apiservices/studentFirestoreService');
+        
+        // Get full student documents for each enrollment
+        const studentsPromises = enrollments.map(async (enrollment) => {
+          try {
+            const studentDoc = await StudentFirestoreService.getStudentById(enrollment.studentId);
+            return {
+              ...enrollment,
+              parent: studentDoc?.parent || null,
+              // Add mock stats (TODO: Replace with real data)
+              testResults: Math.floor(Math.random() * 15) + 5,
+              videosWatched: Math.floor(Math.random() * 30) + 10,
+              lastActivity: getRandomLastActivity(),
+              averageGrade: Math.floor(Math.random() * 30) + 70,
+            };
+          } catch (error) {
+            console.error(`Failed to load student details for ${enrollment.studentId}:`, error);
+            return {
+              ...enrollment,
+              parent: null,
+              testResults: Math.floor(Math.random() * 15) + 5,
+              videosWatched: Math.floor(Math.random() * 30) + 10,
+              lastActivity: getRandomLastActivity(),
+              averageGrade: Math.floor(Math.random() * 30) + 70,
+            };
+          }
+        });
+
+        const students = await Promise.all(studentsPromises);
+        setStudentsWithDetails(students);
+      } catch (error) {
+        console.error('Error loading students with details:', error);
+        // Fallback to enrollment data without parent info
+        setStudentsWithDetails(enrollments.map(enrollment => ({
+          ...enrollment,
+          parent: null,
+          testResults: Math.floor(Math.random() * 15) + 5,
+          videosWatched: Math.floor(Math.random() * 30) + 10,
+          lastActivity: getRandomLastActivity(),
+          averageGrade: Math.floor(Math.random() * 30) + 70,
+        })));
+      } finally {
+        setStudentsLoading(false);
+      }
+    };
+
+    loadStudentsWithDetails();
+  }, [enrollments]);
 
   // Helper function to generate random last activity
   const getRandomLastActivity = () => {
@@ -1103,22 +1177,15 @@ function StudentsTab({
     return activities[Math.floor(Math.random() * activities.length)];
   };
 
-  // Add mock stats for each student (TODO: Replace with real data)
-  const studentsWithStats = enrollments.map(enrollment => ({
-    ...enrollment,
-    testResults: Math.floor(Math.random() * 15) + 5, // 5-20 tests
-    videosWatched: Math.floor(Math.random() * 30) + 10, // 10-40 videos
-    lastActivity: getRandomLastActivity(),
-    averageGrade: Math.floor(Math.random() * 30) + 70, // 70-100%
-  }));
-
   // Filter students based on search term
-  const filteredStudents = studentsWithStats.filter(student =>
+  const filteredStudents = studentsWithDetails.filter(student =>
     student.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    student.studentEmail.toLowerCase().includes(searchTerm.toLowerCase())
+    student.studentEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (student.parent?.name && student.parent.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (student.parent?.email && student.parent.email.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  if (loading) {
+  if (loading || studentsLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
@@ -1164,7 +1231,7 @@ function StudentsTab({
           </div>
           <input
             type="text"
-            placeholder="Search students..."
+            placeholder="Search students or parents..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-700 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm"
@@ -1206,7 +1273,7 @@ function StudentsTab({
                       {/* Avatar */}
                       <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
                         <span className="text-white font-medium text-lg">
-                          {student.studentName.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                          {student.studentName.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
                         </span>
                       </div>
                       
@@ -1237,6 +1304,50 @@ function StudentsTab({
                             <Calendar className="w-4 h-4 mr-2" />
                             Enrolled: {student.enrolledAt.toLocaleDateString()}
                           </div>
+                          
+                          {/* Parent Information */}
+                          {student.parent && (
+                            <div className="mt-3 pt-2 border-t border-gray-200 dark:border-gray-600">
+                              <div className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Parent/Guardian Information:
+                              </div>
+                              <div className="space-y-1">
+                                {student.parent.name && (
+                                  <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
+                                    <UserCheck className="w-4 h-4 mr-2" />
+                                    {student.parent.name}
+                                  </div>
+                                )}
+                                {student.parent.email && (
+                                  <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
+                                    <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                      <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                                      <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                                    </svg>
+                                    <a 
+                                      href={`mailto:${student.parent.email}`}
+                                      className="hover:text-blue-600 dark:hover:text-blue-400 hover:underline"
+                                    >
+                                      {student.parent.email}
+                                    </a>
+                                  </div>
+                                )}
+                                {student.parent.phone && (
+                                  <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
+                                    <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                      <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+                                    </svg>
+                                    <a 
+                                      href={`tel:${student.parent.phone}`}
+                                      className="hover:text-blue-600 dark:hover:text-blue-400 hover:underline"
+                                    >
+                                      {student.parent.phone}
+                                    </a>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
