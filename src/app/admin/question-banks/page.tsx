@@ -16,6 +16,7 @@ import ClassAssignmentModal from '@/components/modals/ClassAssignmentModal';
 import { Button, ConfirmDialog } from '@/components/ui';
 import { auth } from '@/utils/firebase-client';
 import { serverTimestamp, Timestamp } from 'firebase/firestore';
+import { AccessLevel, getAccessLevelLabel, getAvailableAccessLevels } from '@/utils/accessLevels';
 
 // Interface for teachers to display in assignment dropdown
 interface Teacher {
@@ -41,7 +42,7 @@ export default function QuestionBanksPage() {
   const [assigningTeachers, setAssigningTeachers] = useState<{
     bankId: string, 
     showing: boolean, 
-    selectedTeachers: string[]
+    selectedTeachers: { teacherId: string; accessLevel: AccessLevel }[]
   }>({
     bankId: '',
     showing: false,
@@ -195,27 +196,42 @@ export default function QuestionBanksPage() {
   // Handle assign teachers toggle
   const toggleAssignTeachers = (bank: QuestionBank) => {
     const currentAccess = teacherAccessMap.get(bank.id) || [];
-    const currentTeacherIds = currentAccess.map(access => access.teacherId);
+    const currentTeacherSelections = currentAccess.map(access => ({
+      teacherId: access.teacherId,
+      accessLevel: access.accessType
+    }));
     
     setAssigningTeachers({
       bankId: bank.id,
       showing: bank.id !== assigningTeachers.bankId || !assigningTeachers.showing,
-      selectedTeachers: currentTeacherIds
+      selectedTeachers: currentTeacherSelections
     });
   };
 
   // Handle teacher selection changes
-  const handleTeacherSelectionChange = (teacherId: string, isChecked: boolean) => {
+  const handleTeacherSelectionChange = (teacherId: string, isChecked: boolean, accessLevel: AccessLevel = 'read_add') => {
     setAssigningTeachers(prev => {
       const newSelectedTeachers = isChecked 
-        ? [...prev.selectedTeachers, teacherId]
-        : prev.selectedTeachers.filter(id => id !== teacherId);
+        ? [...prev.selectedTeachers, { teacherId, accessLevel }]
+        : prev.selectedTeachers.filter(selection => selection.teacherId !== teacherId);
         
       return {
         ...prev,
         selectedTeachers: newSelectedTeachers
       };
     });
+  };
+
+  // Handle access level change for a teacher
+  const handleAccessLevelChange = (teacherId: string, newAccessLevel: AccessLevel) => {
+    setAssigningTeachers(prev => ({
+      ...prev,
+      selectedTeachers: prev.selectedTeachers.map(selection =>
+        selection.teacherId === teacherId 
+          ? { ...selection, accessLevel: newAccessLevel }
+          : selection
+      )
+    }));
   };
 
   // Check current teacher access for a question bank
@@ -251,25 +267,33 @@ export default function QuestionBanksPage() {
       // Get current teacher access to know who to add/remove
       const currentAccess = await teacherAccessBankService.getTeachersWithAccess(assigningTeachers.bankId);
       const currentTeacherIds = currentAccess.map(access => access.teacherId);
+      const selectedTeacherIds = assigningTeachers.selectedTeachers.map(selection => selection.teacherId);
       
       // Determine teachers to add and remove
       const teachersToAdd = assigningTeachers.selectedTeachers.filter(
-        teacherId => !currentTeacherIds.includes(teacherId)
+        selection => !currentTeacherIds.includes(selection.teacherId)
       );
       const teachersToRemove = currentTeacherIds.filter(
-        teacherId => !assigningTeachers.selectedTeachers.includes(teacherId)
+        teacherId => !selectedTeacherIds.includes(teacherId)
+      );
+      const teachersToUpdate = assigningTeachers.selectedTeachers.filter(
+        selection => {
+          const existingAccess = currentAccess.find(access => access.teacherId === selection.teacherId);
+          return existingAccess && existingAccess.accessType !== selection.accessLevel;
+        }
       );
       
       console.log('🔍 Teacher access changes:', {
         toAdd: teachersToAdd.length,
         toRemove: teachersToRemove.length,
+        toUpdate: teachersToUpdate.length,
         currentAccess: currentTeacherIds.length,
         newSelection: assigningTeachers.selectedTeachers.length
       });
       
       // Grant access to newly selected teachers
-      for (const teacherId of teachersToAdd) {
-        const teacher = teachers.find(t => t.id === teacherId);
+      for (const selection of teachersToAdd) {
+        const teacher = teachers.find(t => t.id === selection.teacherId);
         if (teacher) {
           try {
             await teacherAccessBankService.grantAccess(
@@ -280,15 +304,43 @@ export default function QuestionBanksPage() {
               bank.name,
               bank.subjectId,
               bank.subjectName,
-              'write', // Default to write access (read and write)
+              selection.accessLevel,
               'admin_system', // Admin system ID
               'Admin System', // Admin system name
               undefined, // No expiry
-              `Access granted via admin question bank assignment`
+              `Access granted via admin question bank assignment with ${selection.accessLevel} permissions`,
             );
-            console.log('✅ Granted access:', teacher.name);
+            console.log('✅ Granted access:', teacher.name, 'with', selection.accessLevel, 'permissions');
           } catch (error) {
             console.warn('❌ Failed to grant access to', teacher.name, ':', error);
+          }
+        }
+      }
+      
+      // Update access for existing teachers with changed permissions
+      for (const selection of teachersToUpdate) {
+        const teacher = teachers.find(t => t.id === selection.teacherId);
+        if (teacher) {
+          try {
+            // Revoke old access and grant new access
+            await teacherAccessBankService.revokeAccess(selection.teacherId, bank.id);
+            await teacherAccessBankService.grantAccess(
+              teacher.id,
+              teacher.name,
+              teacher.email,
+              bank.id,
+              bank.name,
+              bank.subjectId,
+              bank.subjectName,
+              selection.accessLevel as 'read' | 'read_add' | 'write' | 'admin',
+              'admin_system',
+              'Admin System',
+              undefined,
+              `Access updated via admin question bank assignment with ${selection.accessLevel} permissions`,
+            );
+            console.log('✅ Updated access:', teacher.name, 'to', selection.accessLevel, 'permissions');
+          } catch (error) {
+            console.warn('❌ Failed to update access for', teacher.name, ':', error);
           }
         }
       }
@@ -365,14 +417,14 @@ export default function QuestionBanksPage() {
     }
     
     if (accessList.length === 1) {
-      return `${accessList[0].teacherName} (${accessList[0].accessType})`;
+      return `${accessList[0].teacherName} (${getAccessLevelLabel(accessList[0].accessType as AccessLevel)})`;
     }
     
     if (accessList.length === 2) {
-      return `${accessList[0].teacherName} (${accessList[0].accessType}) and ${accessList[1].teacherName} (${accessList[1].accessType})`;
+      return `${accessList[0].teacherName} (${getAccessLevelLabel(accessList[0].accessType as AccessLevel)}) and ${accessList[1].teacherName} (${getAccessLevelLabel(accessList[1].accessType as AccessLevel)})`;
     }
     
-    return `${accessList[0].teacherName} (${accessList[0].accessType}) and ${accessList.length - 1} others`;
+    return `${accessList[0].teacherName} (${getAccessLevelLabel(accessList[0].accessType as AccessLevel)}) and ${accessList.length - 1} others`;
   };
 
   // Modal handlers
@@ -550,13 +602,6 @@ export default function QuestionBanksPage() {
                       
                       <div className="flex space-x-2">
                         <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleCheckTeacherAccess(bank)}
-                        >
-                          Check Access
-                        </Button>
-                        <Button
                           variant="secondary"
                           size="sm"
                           onClick={() => toggleAssignTeachers(bank)}
@@ -571,27 +616,52 @@ export default function QuestionBanksPage() {
                     {/* Teacher assignment interface */}
                     {assigningTeachers.bankId === bank.id && assigningTeachers.showing && (
                       <div className="mt-4 border border-gray-200 rounded-md p-4 bg-gray-50">
-                        <h4 className="text-sm font-medium text-gray-700 mb-4">Select Teachers</h4>
-                        <p className="text-xs text-gray-600 mb-4">Teachers will be granted read & write access to this question bank.</p>
-                        
-                        <div className="space-y-2 max-h-60 overflow-y-auto">
-                          {teachers.map(teacher => (
-                            <div key={teacher.id} className="flex items-center">
-                              <input
-                                type="checkbox"
-                                id={`teacher-${bank.id}-${teacher.id}`}
-                                checked={assigningTeachers.selectedTeachers.includes(teacher.id)}
-                                onChange={(e) => handleTeacherSelectionChange(teacher.id, e.target.checked)}
-                                className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                              />
-                              <label 
-                                htmlFor={`teacher-${bank.id}-${teacher.id}`}
-                                className="ml-2 text-sm text-gray-700"
-                              >
-                                {teacher.name} ({teacher.email})
-                              </label>
-                            </div>
+                        <h4 className="text-sm font-medium text-gray-700 mb-4">Select Teachers and Access Levels</h4>
+                        <div className="mb-4 text-xs text-gray-600 space-y-1">
+                          {getAvailableAccessLevels().map(level => (
+                            <p key={level.value}>
+                              <strong>{level.label}:</strong> {level.description}
+                            </p>
                           ))}
+                        </div>
+                        
+                        <div className="space-y-3 max-h-60 overflow-y-auto">
+                          {teachers.map(teacher => {
+                            const currentSelection = assigningTeachers.selectedTeachers.find(s => s.teacherId === teacher.id);
+                            const currentAccessLevel = currentSelection?.accessLevel || 'none';
+                            
+                            return (
+                              <div key={teacher.id} className="flex items-center justify-between p-2 bg-white rounded border">
+                                <div className="flex-1">
+                                  <span className="text-sm text-gray-700">
+                                    {teacher.name} ({teacher.email})
+                                  </span>
+                                </div>
+                                <div className="ml-4">
+                                  <select
+                                    value={currentAccessLevel}
+                                    onChange={(e) => {
+                                      const newAccessLevel = e.target.value as AccessLevel | 'none';
+                                      if (newAccessLevel === 'none') {
+                                        handleTeacherSelectionChange(teacher.id, false);
+                                      } else {
+                                        handleTeacherSelectionChange(teacher.id, true, newAccessLevel);
+                                        handleAccessLevelChange(teacher.id, newAccessLevel);
+                                      }
+                                    }}
+                                    className="text-xs px-2 py-1 border border-gray-300 rounded"
+                                  >
+                                    <option value="none">No Access</option>
+                                    {getAvailableAccessLevels().map(level => (
+                                      <option key={level.value} value={level.value}>
+                                        {level.label}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                         
                         <div className="mt-4 flex justify-end">

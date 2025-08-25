@@ -6,6 +6,7 @@ import { teacherAccessBankService } from '@/apiservices/teacherAccessBankService
 import { questionBankService } from '@/apiservices/questionBankFirestoreService';
 import { QuestionBank } from '@/models/questionBankSchema';
 import { TeacherAccessBank } from '@/models/teacherAccessBankSchema';
+import { AccessLevel, getAvailableAccessLevels } from '@/utils/accessLevels';
 
 // Mock teacher data - replace with actual teacher service
 const mockTeachers = [
@@ -20,7 +21,7 @@ export default function TeacherAccessManagement() {
   const [loading, setLoading] = useState(true);
   const [selectedTeacher, setSelectedTeacher] = useState<string>('');
   const [selectedQuestionBank, setSelectedQuestionBank] = useState<string>('');
-  const [accessType, setAccessType] = useState<'read' | 'write' | 'admin'>('read');
+  const [accessType, setAccessType] = useState<AccessLevel>('read');
   const [granting, setGranting] = useState(false);
 
   useEffect(() => {
