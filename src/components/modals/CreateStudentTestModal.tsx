@@ -477,6 +477,14 @@ export default function CreateStudentTestModal({
         className: student.className
       }));
 
+      // Create individual assignments for email notifications
+      const individualAssignments = formData.selectedStudents.map((student: any) => ({
+        studentId: student.id,
+        studentName: student.name,
+        studentEmail: student.email,
+        className: student.className
+      }));
+
       // Build base test data - CLEANED UP
       const baseTestData = {
         title: formData.title,
@@ -491,6 +499,9 @@ export default function CreateStudentTestModal({
         assignmentType: 'student-based',
         classIds: [], // EMPTY - prevents all students in class from seeing test
         classNames: [],
+        
+        // Individual assignments for email notifications
+        individualAssignments: individualAssignments,
         
         // Metadata only (for display purposes)
         totalAssignedStudents: formData.selectedStudents.length,

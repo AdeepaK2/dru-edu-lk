@@ -474,9 +474,9 @@ export class MailService {
         </div>
 
         <div style="text-align: center; margin: 30px 0;">
-          <a href="https://www.drueducation.com.au/student/tests" 
+          <a href="https://www.drueducation.com.au/student" 
              style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
-            📚 View Test in Student Portal
+            📚 Access Student Portal
           </a>
         </div>
 
