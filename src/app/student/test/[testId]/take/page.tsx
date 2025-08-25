@@ -667,46 +667,45 @@ export default function TestTakePage() {
         console.log('✅ Test data loaded:', testData.title);
         
         // Check if student is enrolled in any of the test's classes
-        console.log('🔍 Starting enrollment check...');
-        const { getEnrollmentsByStudent } = await import('@/services/studentEnrollmentService');
-        
-        let enrollments = [];
-        try {
-          enrollments = await getEnrollmentsByStudent(student.id);
-          console.log('📋 Student enrollments loaded successfully:', enrollments.length, 'classes');
-        } catch (enrollmentError) {
-          console.error('❌ Error fetching enrollments:', enrollmentError);
-          throw new Error(`Failed to fetch enrollments: ${enrollmentError}`);
+
+        // Only check enrollment for class-based or mixed tests
+  let enrollments: any[] = [];
+        let isEnrolled = true;
+        if (testData.assignmentType !== 'student-based') {
+          console.log('🔍 Starting enrollment check...');
+          const { getEnrollmentsByStudent } = await import('@/services/studentEnrollmentService');
+          try {
+            enrollments = await getEnrollmentsByStudent(student.id);
+            console.log('📋 Student enrollments loaded successfully:', enrollments.length, 'classes');
+          } catch (enrollmentError) {
+            console.error('❌ Error fetching enrollments:', enrollmentError);
+            throw new Error(`Failed to fetch enrollments: ${enrollmentError}`);
+          }
+          console.log('📋 Student enrollment details:', enrollments.map(e => ({ 
+            id: e.id,
+            classId: e.classId, 
+            className: e.className,
+            status: e.status 
+          })));
+          console.log('🎯 Test class IDs:', testData.classIds);
+          isEnrolled = enrollments.some(enrollment => 
+            testData.classIds.includes(enrollment.classId) && 
+            enrollment.status === 'Active'
+          );
+          console.log('✅ Enrollment check result:', isEnrolled);
+          if (!isEnrolled) {
+            console.error('❌ Student not enrolled in test classes');
+            console.error('❌ Available enrollments:', enrollments.map(e => ({ classId: e.classId, status: e.status })));
+            console.error('❌ Required class IDs:', testData.classIds);
+            setError('You are not enrolled in the class for this test.');
+            setLoading(false);
+            return;
+          }
+          console.log('✅ Student is enrolled in test classes');
+        } else {
+          // For student-based (custom) tests, skip enrollment check
+          console.log('🟢 Skipping enrollment check for student-based (custom) test.');
         }
-        
-        console.log('📋 Student enrollment details:', enrollments.map(e => ({ 
-          id: e.id,
-          classId: e.classId, 
-          className: e.className,
-          status: e.status 
-        })));
-        console.log('🎯 Test class IDs:', testData.classIds);
-        
-        const isEnrolled = enrollments.some(enrollment => 
-          testData.classIds.includes(enrollment.classId) && 
-          enrollment.status === 'Active'
-        );
-        
-        console.log('✅ Enrollment check result:', isEnrolled);
-        
-        if (!isEnrolled) {
-          console.error('❌ Student not enrolled in test classes');
-          console.error('❌ Available enrollments:', enrollments.map(e => ({ classId: e.classId, status: e.status })));
-          console.error('❌ Required class IDs:', testData.classIds);
-          
-          // For debugging, let's temporarily allow access anyway and just log the issue
-          console.warn('⚠️ WARNING: Proceeding despite enrollment check failure for debugging');
-          // setError('You are not enrolled in the class for this test.');
-          // setLoading(false);
-          // return;
-        }
-        
-        console.log('✅ Student is enrolled in test classes');
         
         // Check test availability
         const now = new Date().getTime();
