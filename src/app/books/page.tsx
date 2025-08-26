@@ -8,6 +8,7 @@ import { PublicationDisplayData, PUBLICATION_CATEGORIES } from '../../models/pub
 import { usePublicationCart } from '../../hooks/usePublicationCart';
 import Navbar from '@/components/Navbar';
 import Footer from "@/components/ui/Footer"
+import { log } from 'console';
 
 const BooksPage = () => {
   const [publications, setPublications] = useState<PublicationDisplayData[]>([]);
@@ -45,7 +46,9 @@ const BooksPage = () => {
 
   // Memoize cart item getter
   const getCartItemMemo = useCallback((publicationId: string) => {
-    return getCartItem(publicationId);
+    const item = getCartItem(publicationId);
+    console.log('Getting cart item for publicationId:', publicationId, item);
+    return item;
   }, [cartItems, getCartItem]);
 
   useEffect(() => {
