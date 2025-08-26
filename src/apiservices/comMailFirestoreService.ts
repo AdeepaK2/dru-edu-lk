@@ -63,7 +63,7 @@ export class ComMailFirestoreService {
         status: validatedData.status,
         emailType: validatedData.emailType,
         isScheduled: validatedData.isScheduled,
-        scheduledFor: validatedData.scheduledFor ? convertDateToComMailTimestamp(validatedData.scheduledFor) : undefined,
+        ...(validatedData.scheduledFor && { scheduledFor: convertDateToComMailTimestamp(validatedData.scheduledFor) }),
         createdAt: now,
         updatedAt: now
       };
