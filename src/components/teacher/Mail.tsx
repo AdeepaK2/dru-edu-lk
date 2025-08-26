@@ -24,9 +24,16 @@ interface MailProps {
   enrollments: any[];
   teacherId?: string;
   teacherName?: string;
+  classData?: any;
 }
 
-export default function Mail({ classId, enrollments, teacherId = 'teacher-123', teacherName = 'Teacher Name' }: MailProps) {
+export default function Mail({ 
+  classId, 
+  enrollments, 
+  teacherId, 
+  teacherName, 
+  classData 
+}: MailProps) {
   const [subject, setSubject] = useState('');
   const [emailBody, setEmailBody] = useState('');
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
@@ -37,6 +44,30 @@ export default function Mail({ classId, enrollments, teacherId = 'teacher-123', 
   const [isSending, setIsSending] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [priority, setPriority] = useState<'low' | 'normal' | 'high'>('normal');
+  const [teacherData, setTeacherData] = useState<any>(null);
+
+  // Get dynamic teacher and class names
+  const actualTeacherName = teacherData?.name || teacherName || classData?.teacherName || 'Teacher';
+  const actualClassName = classData?.name || 'Class';
+
+  // Load teacher data if teacherId is provided
+  useEffect(() => {
+    const fetchTeacherData = async () => {
+      if (!teacherId || !classData?.teacherId) return;
+      
+      try {
+        const response = await fetch(`/api/teachers/${classData.teacherId}`);
+        if (response.ok) {
+          const teacher = await response.json();
+          setTeacherData(teacher);
+        }
+      } catch (error) {
+        console.error('Failed to fetch teacher data:', error);
+      }
+    };
+
+    fetchTeacherData();
+  }, [teacherId, classData?.teacherId]);
 
   // Load email history on component mount
   useEffect(() => {
@@ -76,8 +107,8 @@ export default function Mail({ classId, enrollments, teacherId = 'teacher-123', 
 
       const emailData: ComMailData = {
         classId,
-        teacherId,
-        teacherName,
+        teacherId: classData?.teacherId || teacherId || 'unknown',
+        teacherName: actualTeacherName,
         subject: subject.trim(),
         body: emailBody.trim(),
         recipientType,
