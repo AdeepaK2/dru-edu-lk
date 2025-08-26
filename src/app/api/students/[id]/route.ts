@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminFirestore } from '@/utils/firebase-admin';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+
+export async function GET(request: NextRequest) {
   try {
-    const studentId = params.id;
+    // Extract studentId from the URL
+    const url = new URL(request.url);
+    const paths = url.pathname.split('/');
+    const studentId = paths[paths.length - 1];
 
     if (!studentId) {
       return NextResponse.json(
