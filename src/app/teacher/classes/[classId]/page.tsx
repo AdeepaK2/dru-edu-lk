@@ -81,6 +81,9 @@ export default function ClassDetails() {
         const classDoc = await ClassFirestoreService.getClassById(classId);
         if (classDoc) {
           setClassData(classDoc);
+          console.log('🔍 Page Debug: Class data loaded:', classDoc);
+          console.log('🔍 Page Debug: Teacher ID:', classDoc.teacherId);
+          console.log('🔍 Page Debug: Class Name:', classDoc.name);
         } else {
           setError('Class not found');
         }

@@ -48,12 +48,27 @@ export default function Mail({
   const [teacherData, setTeacherData] = useState<any>(null);
 
   // Get dynamic teacher and class names with fallback detection
-  const actualTeacherName = teacherData?.name || teacherName || classData?.teacherName || 'Teacher';
+  const actualTeacherName = teacherData?.name || teacherName || classData?.teacherName || 'DRU Education';
   const actualClassName = classData?.name || 'Class';
   
-  // Check if we have valid dynamic data or need to use fallback
-  const hasValidData = (teacherData?.name || teacherName) && (classData?.name || actualClassName !== 'Class');
-  const fallbackMode = !hasValidData;
+  // Check if we have valid dynamic data - only use fallback if we truly can't get teacher name
+  const hasValidTeacherData = !!(teacherData?.name || teacherName || classData?.teacherName);
+  const hasValidClassData = !!(classData?.name);
+  const fallbackMode = !hasValidTeacherData;
+
+  // Debug logging
+  useEffect(() => {
+    console.log('Mail Component Data Check:', {
+      teacherData: teacherData,
+      teacherName: teacherName,
+      classData: classData,
+      actualTeacherName: actualTeacherName,
+      actualClassName: actualClassName,
+      hasValidTeacherData: hasValidTeacherData,
+      hasValidClassData: hasValidClassData,
+      fallbackMode: fallbackMode
+    });
+  }, [teacherData, teacherName, classData]);
 
   // Load teacher data using client-side Firebase
   useEffect(() => {
