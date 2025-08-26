@@ -25,10 +25,14 @@ import {
   FileIcon,
   ExternalLink,
   UserCheck,
-  X
+  X,
+  MessageSquare,
+  Send
 } from 'lucide-react';
 import TeacherLayout from '@/components/teacher/TeacherLayout';
 import { Button } from '@/components/ui';
+import Message from '@/components/teacher/Message';
+import Mail from '@/components/teacher/Mail';
 import { ClassFirestoreService } from '@/apiservices/classFirestoreService';
 import { ClassDocument } from '@/models/classSchema';
 import { getEnrollmentsByClass } from '@/services/studentEnrollmentService';
@@ -153,6 +157,12 @@ export default function ClassDetails() {
       label: 'Attendance',
       icon: Calendar,
       count: undefined
+    },
+    {
+      id: 'messages',
+      label: 'Messages',
+      icon: MessageSquare,
+      count: undefined
     }
   ];
 
@@ -266,6 +276,12 @@ export default function ClassDetails() {
               />
             )}
             {activeTab === 'attendance' && <AttendanceTab classData={classData} classId={classId} />}
+            {activeTab === 'messages' && (
+              <MessagesTab 
+                classId={classId} 
+                enrollments={enrollments} 
+              />
+            )}
           </div>
         </div>
       </div>
@@ -1377,6 +1393,56 @@ function StudentsTab({
             ))}
           </div>
         </div>
+      )}
+    </div>
+  );
+}
+
+// Messages Tab Component
+function MessagesTab({ 
+  classId, 
+  enrollments 
+}: { 
+  classId: string; 
+  enrollments: any[]; 
+}) {
+  const [selectedMode, setSelectedMode] = useState<'message' | 'mail'>('message');
+
+  return (
+    <div className="space-y-6">
+      {/* Large Mode Selector */}
+      <div className="flex space-x-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+        <button
+          onClick={() => setSelectedMode('message')}
+          className={`flex-1 flex items-center justify-center space-x-3 px-6 py-4 rounded-md text-base font-medium transition-colors ${
+            selectedMode === 'message'
+              ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow'
+              : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+          }`}
+        >
+          <MessageSquare className="w-5 h-5" />
+          <span>Messages</span>
+        </button>
+        <button
+          onClick={() => setSelectedMode('mail')}
+          className={`flex-1 flex items-center justify-center space-x-3 px-6 py-4 rounded-md text-base font-medium transition-colors ${
+            selectedMode === 'mail'
+              ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow'
+              : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+          }`}
+        >
+          <Send className="w-5 h-5" />
+          <span>Email</span>
+        </button>
+      </div>
+
+      {/* Conditional Content */}
+      {selectedMode === 'message' && (
+        <Message classId={classId} enrollments={enrollments} />
+      )}
+      
+      {selectedMode === 'mail' && (
+        <Mail classId={classId} enrollments={enrollments} />
       )}
     </div>
   );
