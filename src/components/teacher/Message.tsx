@@ -54,6 +54,10 @@ export default function Message({
   const actualTeacherName = teacherData?.name || teacherName || 'Teacher';
   const actualClassName = classData?.name || className || 'Class';
 
+  // Check if we have valid dynamic data, otherwise use simple fallback
+  const hasValidData = (teacherData?.name || teacherName) && (classData?.name || className);
+  const fallbackMessage = !hasValidData;
+
   // Load teacher data if teacherId is provided
   useEffect(() => {
     const fetchTeacherData = async () => {
@@ -139,8 +143,8 @@ export default function Message({
             studentsToMessage, // This is enrollment data with studentId
             messageText.trim(),
             recipientType,
-            actualTeacherName,
-            actualClassName,
+            fallbackMessage ? 'DRU Education' : actualTeacherName,
+            fallbackMessage ? 'DRU Education' : actualClassName,
             whatsAppFile
           );
 

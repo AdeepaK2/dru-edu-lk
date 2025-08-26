@@ -46,9 +46,13 @@ export default function Mail({
   const [priority, setPriority] = useState<'low' | 'normal' | 'high'>('normal');
   const [teacherData, setTeacherData] = useState<any>(null);
 
-  // Get dynamic teacher and class names
+  // Get dynamic teacher and class names with fallback detection
   const actualTeacherName = teacherData?.name || teacherName || classData?.teacherName || 'Teacher';
   const actualClassName = classData?.name || 'Class';
+  
+  // Check if we have valid dynamic data or need to use fallback
+  const hasValidData = (teacherData?.name || teacherName) && (classData?.name || actualClassName !== 'Class');
+  const fallbackMode = !hasValidData;
 
   // Load teacher data if teacherId is provided
   useEffect(() => {
@@ -108,7 +112,7 @@ export default function Mail({
       const emailData: ComMailData = {
         classId,
         teacherId: classData?.teacherId || teacherId || 'unknown',
-        teacherName: actualTeacherName,
+        teacherName: fallbackMode ? 'DRU Education' : actualTeacherName,
         subject: subject.trim(),
         body: emailBody.trim(),
         recipientType,
@@ -187,7 +191,7 @@ export default function Mail({
           subject: subject.trim(),
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-              <h2 style="color: #4F46E5; text-align: center;">Message from ${teacherName}</h2>
+              <h2 style="color: #4F46E5; text-align: center;">${fallbackMode ? 'Message from DRU Education' : `Message from ${actualTeacherName}`}</h2>
               
               <p>Hello ${recipient.name},</p>
               
@@ -208,7 +212,7 @@ export default function Mail({
               ` : ''}
               
               <p>Best regards,<br>
-              ${teacherName}<br>
+              ${fallbackMode ? 'DRU Education' : actualTeacherName}<br>
               Dr U Education</p>
               
               <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 30px 0;">
