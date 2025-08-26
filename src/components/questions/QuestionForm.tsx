@@ -56,6 +56,7 @@ type QuestionFormData = {
   content: string; // The actual question text content
   imageUrl?: string; // Optional image URL for the question
   lessonId?: string; // Selected lesson ID or "no-lesson" - this is separate from title/qno
+  reference?: string; // Reference information (optional)
   difficultyLevel: 'easy' | 'medium' | 'hard';
   points: number;
   // MCQ specific
@@ -73,6 +74,7 @@ const initialFormData: QuestionFormData = {
   content: '',
   imageUrl: '',
   lessonId: 'no-lesson',
+  reference: '',
   difficultyLevel: 'medium',
   points: 1,
   // MCQ fields
@@ -204,6 +206,7 @@ export default function QuestionForm({
         content: editingQuestion.content || '',
         imageUrl: editingQuestion.imageUrl || '',
         lessonId,
+        reference: editingQuestion.reference || '',
         difficultyLevel: editingQuestion.difficultyLevel,
         points: editingQuestion.points,
         // Default MCQ fields
@@ -459,6 +462,10 @@ export default function QuestionForm({
         baseQuestionData.imageUrl = formData.imageUrl.trim();
       }
       
+      if (formData.reference?.trim()) {
+        baseQuestionData.reference = formData.reference.trim();
+      }
+      
       if (formData.lessonId !== 'no-lesson') {
         const lesson = lessons.find(l => l.id === formData.lessonId);
         if (lesson) {
@@ -634,6 +641,19 @@ export default function QuestionForm({
               {lessons.find(l => l.name === editingQuestion.topic) ? ' (found)' : ' (not found in current lessons)'}
             </p>
           )}
+        </div>
+
+        <div>
+          <Input
+            label="Reference (Optional)"
+            value={formData.reference || ''}
+            onChange={(e) => handleInputChange('reference', e.target.value)}
+            placeholder="Enter reference information (e.g., textbook, page number)"
+            disabled={loading}
+          />
+          <p className="text-sm text-gray-500 mt-1">
+            Optional reference information for this question
+          </p>
         </div>        <div className="lg:col-span-2">
           <TextArea
             label="Question Content"

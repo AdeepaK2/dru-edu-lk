@@ -487,7 +487,16 @@ export default function QuestionsPage() {
                                 </div>
                               </td>
                               <td className="px-6 py-4 text-sm text-gray-500">
-                                {question.topic || <span className="text-gray-400">Not specified</span>}
+                                <div>
+                                  {question.topic || <span className="text-gray-400">Not specified</span>}
+                                  {question.reference && (
+                                    <div className="mt-1">
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800">
+                                        Ref: {question.reference}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -583,7 +592,16 @@ export default function QuestionsPage() {
                                 </div>
                               </td>
                               <td className="px-6 py-4 text-sm text-gray-500">
-                                {question.topic || <span className="text-gray-400">Not specified</span>}
+                                <div>
+                                  {question.topic || <span className="text-gray-400">Not specified</span>}
+                                  {question.reference && (
+                                    <div className="mt-1">
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800">
+                                        Ref: {question.reference}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
                               </td>                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                                   question.difficultyLevel === 'easy' ? 'bg-green-100 text-green-800' :
