@@ -11,7 +11,6 @@ import {
   User,
   Search,
   Filter,
-  Paperclip,
   X
 } from 'lucide-react';
 import { Button } from '@/components/ui';
@@ -39,7 +38,6 @@ export default function Mail({
   const [emailBody, setEmailBody] = useState('');
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const [recipientType, setRecipientType] = useState<'students' | 'parents' | 'both'>('students');
-  const [attachments, setAttachments] = useState<File[]>([]);
   const [emailHistory, setEmailHistory] = useState<ComMail[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
@@ -141,8 +139,6 @@ export default function Mail({
         selectedStudentIds: selectedStudents.length === 0 ? [] : selectedStudents,
         recipientsList: getRecipientsList(),
         priority,
-        attachmentNames: attachments.map(file => file.name),
-        attachmentUrls: [], // Would be populated after file upload
         deliveredCount: 0,
         readCount: 0,
         sentAt: new Date(),
@@ -224,15 +220,6 @@ export default function Mail({
                 </div>
               </div>
               
-              ${attachments.length > 0 ? `
-              <div style="background-color: #EBF8FF; border-left: 4px solid #3B82F6; padding: 15px; margin: 20px 0;">
-                <p style="margin: 0; color: #1E40AF;"><strong>📎 Attachments:</strong></p>
-                <ul style="margin: 10px 0 0 0; color: #1E3A8A; padding-left: 20px;">
-                  ${attachments.map(file => `<li>${file.name}</li>`).join('')}
-                </ul>
-              </div>
-              ` : ''}
-              
               <p>Best regards,<br>
               ${fallbackMode ? 'DRU Education' : actualTeacherName}<br>
               Dr U Education</p>
@@ -262,7 +249,6 @@ export default function Mail({
       setSubject('');
       setEmailBody('');
       setSelectedStudents([]);
-      setAttachments([]);
       setPriority('normal');
       
       console.log('✅ Email saved successfully with ID:', emailId);
@@ -288,15 +274,6 @@ export default function Mail({
         ? prev.filter(id => id !== studentId)
         : [...prev, studentId]
     );
-  };
-
-  const handleFileAttachment = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files || []);
-    setAttachments(prev => [...prev, ...files]);
-  };
-
-  const removeAttachment = (index: number) => {
-    setAttachments(prev => prev.filter((_, i) => i !== index));
   };
 
   const filteredStudents = enrollments.filter(student =>
@@ -427,16 +404,21 @@ export default function Mail({
             {filteredStudents.map((student) => (
               <div
                 key={student.studentId || student.id}
-                className="flex items-center p-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer border-b border-gray-100 dark:border-gray-700 last:border-b-0"
-                onClick={() => toggleStudentSelection(student.studentId || student.id)}
+                className="flex items-center p-3 hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-b-0"
               >
                 <input
                   type="checkbox"
                   checked={selectedStudents.includes(student.studentId || student.id)}
-                  onChange={() => toggleStudentSelection(student.studentId || student.id)}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mr-3"
+                  onChange={(e) => {
+                    e.stopPropagation();
+                    toggleStudentSelection(student.studentId || student.id);
+                  }}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mr-3 cursor-pointer"
                 />
-                <div className="flex-1">
+                <div 
+                  className="flex-1 cursor-pointer"
+                  onClick={() => toggleStudentSelection(student.studentId || student.id)}
+                >
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-900 dark:text-white">
@@ -537,47 +519,8 @@ export default function Mail({
           </p>
         </div>
 
-        {/* Attachments */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Attachments
-          </label>
-          <div className="flex items-center space-x-3">
-            <input
-              type="file"
-              multiple
-              onChange={handleFileAttachment}
-              className="hidden"
-              id="file-attachment"
-            />
-            <label
-              htmlFor="file-attachment"
-              className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer"
-            >
-              <Paperclip className="w-4 h-4 mr-2" />
-              Attach Files
-            </label>
-          </div>
-          
-          {attachments.length > 0 && (
-            <div className="mt-3 space-y-2">
-              {attachments.map((file, index) => (
-                <div key={index} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded-md">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">{file.name}</span>
-                  <button
-                    onClick={() => removeAttachment(index)}
-                    className="text-red-500 hover:text-red-700"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
         {/* Send Summary */}
-        {(subject.trim() || emailBody.trim() || selectedStudents.length > 0 || attachments.length > 0) && (
+        {(subject.trim() || emailBody.trim() || selectedStudents.length > 0) && (
           <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg">
             <h5 className="text-sm font-medium text-gray-900 dark:text-white mb-2">Email Summary</h5>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-xs text-gray-600 dark:text-gray-400">
@@ -619,18 +562,6 @@ export default function Mail({
                       {emailBody.length}/2000 chars
                     </span>
                   </div>
-                </div>
-              </div>
-              <div>
-                <span className="font-medium">Attachments:</span>
-                <div className="mt-1">
-                  {attachments.length === 0 ? (
-                    <span className="text-gray-500">None</span>
-                  ) : (
-                    <span className="inline-flex items-center px-2 py-1 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300">
-                      {attachments.length} file{attachments.length !== 1 ? 's' : ''}
-                    </span>
-                  )}
                 </div>
               </div>
             </div>
@@ -697,14 +628,6 @@ export default function Mail({
                     <p className="text-sm text-gray-600 dark:text-gray-300 mb-2 line-clamp-2">
                       {email.body}
                     </p>
-                    {email.attachmentNames && email.attachmentNames.length > 0 && (
-                      <div className="mb-2">
-                        <div className="flex items-center space-x-1 text-xs text-gray-500 dark:text-gray-400">
-                          <Paperclip className="w-3 h-3" />
-                          <span>{email.attachmentNames.length} attachment{email.attachmentNames.length !== 1 ? 's' : ''}</span>
-                        </div>
-                      </div>
-                    )}
                     <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
                       <span className="flex items-center space-x-1">
                         <Users className="w-3 h-3" />
