@@ -52,12 +52,28 @@ export default function Message({
   const [teacherData, setTeacherData] = useState<any>(null);
 
   // Get dynamic teacher and class names
-  const actualTeacherName = teacherData?.name || teacherName || 'Teacher';
+  const actualTeacherName = teacherData?.name || teacherName || 'DRU Education';
   const actualClassName = classData?.name || className || 'Class';
 
-  // Check if we have valid dynamic data, otherwise use simple fallback
-  const hasValidData = (teacherData?.name || teacherName) && (classData?.name || className);
-  const fallbackMessage = !hasValidData;
+  // Check if we have valid dynamic data - only use fallback if we truly can't get teacher name
+  const hasValidTeacherData = !!(teacherData?.name || teacherName);
+  const hasValidClassData = !!(classData?.name || className);
+  const fallbackMessage = !hasValidTeacherData;
+
+  // Debug logging
+  useEffect(() => {
+    console.log('Message Component Data Check:', {
+      teacherData: teacherData,
+      teacherName: teacherName,
+      classData: classData,
+      className: className,
+      actualTeacherName: actualTeacherName,
+      actualClassName: actualClassName,
+      hasValidTeacherData: hasValidTeacherData,
+      hasValidClassData: hasValidClassData,
+      fallbackMessage: fallbackMessage
+    });
+  }, [teacherData, teacherName, classData, className]);
 
   // Load teacher data using client-side Firebase
   useEffect(() => {
