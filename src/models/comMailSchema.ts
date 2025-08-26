@@ -13,8 +13,8 @@ export const comMailSchema = z.object({
   selectedStudentIds: z.array(z.string()).default([]), // Empty array means all students
   recipientsList: z.array(z.string()).default([]), // Display names like "All Students", "5 Selected Students"
   priority: z.enum(['low', 'normal', 'high']).default('normal'),
-  attachmentNames: z.array(z.string()).default([]).optional(), // File names only for display
-  attachmentUrls: z.array(z.string()).default([]).optional(), // Firebase Storage URLs
+  attachmentNames: z.array(z.string()).default([]),
+  attachmentUrls: z.array(z.string()).default([]),
   deliveredCount: z.number().default(0),
   readCount: z.number().default(0),
   sentAt: z.date().default(() => new Date()),
@@ -41,8 +41,8 @@ export interface ComMail {
   selectedStudentIds: string[];
   recipientsList: string[];
   priority: 'low' | 'normal' | 'high';
-  attachmentNames?: string[];
-  attachmentUrls?: string[];
+  attachmentNames: string[];
+  attachmentUrls: string[];
   deliveredCount: number;
   readCount: number;
   sentAt: Date;
@@ -64,8 +64,8 @@ export interface ComMailDocument {
   selectedStudentIds: string[];
   recipientsList: string[];
   priority: 'low' | 'normal' | 'high';
-  attachmentNames?: string[];
-  attachmentUrls?: string[];
+  attachmentNames: string[];
+  attachmentUrls: string[];
   deliveredCount: number;
   readCount: number;
   sentAt: Timestamp;
