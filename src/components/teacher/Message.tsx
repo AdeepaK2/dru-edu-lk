@@ -83,6 +83,9 @@ export default function Message({ classId, enrollments, teacherId = 'teacher-123
         ? enrollments 
         : enrollments.filter((student: any) => selectedStudents.includes(student.studentId || student.id));
 
+      console.log('🔍 Debug: Students to message:', studentsToMessage.length);
+      console.log('🔍 Debug: Sample student data:', studentsToMessage[0]);
+
       let deliveredCount = 0;
 
       // Send via WhatsApp if enabled
@@ -101,7 +104,7 @@ export default function Message({ classId, enrollments, teacherId = 'teacher-123
           }
 
           const whatsAppResponse = await WhatsAppService.sendToStudentsAndParents(
-            studentsToMessage,
+            studentsToMessage, // This is enrollment data with studentId
             messageText.trim(),
             recipientType,
             teacherName,
