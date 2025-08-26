@@ -279,7 +279,8 @@ export default function ClassDetails() {
             {activeTab === 'messages' && (
               <MessagesTab 
                 classId={classId} 
-                enrollments={enrollments} 
+                enrollments={enrollments}
+                classData={classData}
               />
             )}
           </div>
@@ -1401,10 +1402,12 @@ function StudentsTab({
 // Messages Tab Component
 function MessagesTab({ 
   classId, 
-  enrollments 
+  enrollments,
+  classData
 }: { 
   classId: string; 
-  enrollments: any[]; 
+  enrollments: any[];
+  classData: any;
 }) {
   const [selectedMode, setSelectedMode] = useState<'message' | 'mail'>('message');
 
@@ -1438,11 +1441,19 @@ function MessagesTab({
 
       {/* Conditional Content */}
       {selectedMode === 'message' && (
-        <Message classId={classId} enrollments={enrollments} />
+        <Message 
+          classId={classId} 
+          enrollments={enrollments}
+          classData={classData}
+        />
       )}
       
       {selectedMode === 'mail' && (
-        <Mail classId={classId} enrollments={enrollments} />
+        <Mail 
+          classId={classId} 
+          enrollments={enrollments}
+          classData={classData}
+        />
       )}
     </div>
   );

@@ -26,9 +26,17 @@ interface MessageProps {
   teacherId?: string;
   teacherName?: string;
   className?: string;
+  classData?: any; // Add class data to get dynamic class name
 }
 
-export default function Message({ classId, enrollments, teacherId = 'teacher-123', teacherName = 'Teacher Name', className = 'Class Name' }: MessageProps) {
+export default function Message({ 
+  classId, 
+  enrollments, 
+  teacherId, 
+  teacherName, 
+  className,
+  classData
+}: MessageProps) {
   const [messageText, setMessageText] = useState('');
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const [recipientType, setRecipientType] = useState<'students' | 'parents' | 'both'>('students');
@@ -40,6 +48,34 @@ export default function Message({ classId, enrollments, teacherId = 'teacher-123
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [sendViaWhatsApp, setSendViaWhatsApp] = useState(true);
   const [whatsAppResults, setWhatsAppResults] = useState<any>(null);
+  const [teacherData, setTeacherData] = useState<any>(null);
+
+  // Get dynamic teacher and class names
+  const actualTeacherName = teacherData?.name || teacherName || 'Teacher';
+  const actualClassName = classData?.name || className || 'Class';
+
+  // Check if we have valid dynamic data, otherwise use simple fallback
+  const hasValidData = (teacherData?.name || teacherName) && (classData?.name || className);
+  const fallbackMessage = !hasValidData;
+
+  // Load teacher data if teacherId is provided
+  useEffect(() => {
+    const fetchTeacherData = async () => {
+      if (!teacherId || !classData?.teacherId) return;
+      
+      try {
+        const response = await fetch(`/api/teachers/${classData.teacherId}`);
+        if (response.ok) {
+          const teacher = await response.json();
+          setTeacherData(teacher);
+        }
+      } catch (error) {
+        console.error('Failed to fetch teacher data:', error);
+      }
+    };
+
+    fetchTeacherData();
+  }, [teacherId, classData?.teacherId]);
 
   // Load message history on component mount
   useEffect(() => {
@@ -107,8 +143,8 @@ export default function Message({ classId, enrollments, teacherId = 'teacher-123
             studentsToMessage, // This is enrollment data with studentId
             messageText.trim(),
             recipientType,
-            teacherName,
-            className,
+            fallbackMessage ? 'DRU Education' : actualTeacherName,
+            fallbackMessage ? 'DRU Education' : actualClassName,
             whatsAppFile
           );
 
@@ -124,8 +160,8 @@ export default function Message({ classId, enrollments, teacherId = 'teacher-123
 
       const messageData: MessageData = {
         classId,
-        teacherId,
-        teacherName,
+        teacherId: classData?.teacherId || teacherId || 'unknown',
+        teacherName: actualTeacherName,
         message: messageText.trim(),
         recipientType,
         selectedStudentIds: selectedStudents.length === 0 ? [] : selectedStudents,

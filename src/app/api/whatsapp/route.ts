@@ -41,6 +41,16 @@ function formatWhatsAppMessage(
   recipientType: 'student' | 'parent',
   studentName?: string
 ): string {
+  // Check if we're using fallback data
+  const isFallback = teacherName === 'DRU Education' && className === 'DRU Education';
+  
+  if (isFallback) {
+    // Simple fallback message
+    const header = `🎓 This is a message from *DRU Education*\n\n`;
+    return header + originalMessage;
+  }
+  
+  // Full detailed message
   const studentInfo = studentName ? ` regarding *${studentName}*` : '';
   const header = `🎓 You have received a message from *${teacherName}* from *DRU Education*${studentInfo} for class *${className}*\n\n`;
   
