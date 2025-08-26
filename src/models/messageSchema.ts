@@ -16,6 +16,8 @@ export const messageSchema = z.object({
   sentAt: z.date().default(() => new Date()),
   status: z.enum(['draft', 'sent', 'delivered', 'failed']).default('sent'),
   messageType: z.enum(['announcement', 'reminder', 'general']).default('general'),
+  sentViaWhatsApp: z.boolean().optional(),
+  attachmentName: z.string().optional(),
 });
 
 // Message update schema (all fields optional except id)
@@ -38,6 +40,8 @@ export interface Message {
   sentAt: Date;
   status: 'draft' | 'sent' | 'delivered' | 'failed';
   messageType: 'announcement' | 'reminder' | 'general';
+  sentViaWhatsApp?: boolean;
+  attachmentName?: string;
 }
 
 // Message document in Firestore

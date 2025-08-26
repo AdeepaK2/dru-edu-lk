@@ -10,10 +10,14 @@ import {
   AlertCircle,
   User,
   Search,
-  Filter
+  Filter,
+  MessageCircle,
+  Paperclip,
+  X
 } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { MessageFirestoreService } from '@/apiservices/messageFirestoreService';
+import { WhatsAppService, WhatsAppFile } from '@/apiservices/whatsappService';
 import { Message as MessageType, MessageData } from '@/models/messageSchema';
 
 interface MessageProps {
@@ -21,9 +25,10 @@ interface MessageProps {
   enrollments: any[];
   teacherId?: string;
   teacherName?: string;
+  className?: string;
 }
 
-export default function Message({ classId, enrollments, teacherId = 'teacher-123', teacherName = 'Teacher Name' }: MessageProps) {
+export default function Message({ classId, enrollments, teacherId = 'teacher-123', teacherName = 'Teacher Name', className = 'Class Name' }: MessageProps) {
   const [messageText, setMessageText] = useState('');
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const [recipientType, setRecipientType] = useState<'students' | 'parents' | 'both'>('students');
@@ -32,6 +37,9 @@ export default function Message({ classId, enrollments, teacherId = 'teacher-123
   const [isSending, setIsSending] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [sendViaWhatsApp, setSendViaWhatsApp] = useState(true);
+  const [whatsAppResults, setWhatsAppResults] = useState<any>(null);
 
   // Load message history on component mount
   useEffect(() => {
@@ -54,6 +62,7 @@ export default function Message({ classId, enrollments, teacherId = 'teacher-123
     if (!messageText.trim()) return;
     
     setIsSending(true);
+    setWhatsAppResults(null);
 
     try {
       const getRecipientsList = () => {
@@ -69,6 +78,47 @@ export default function Message({ classId, enrollments, teacherId = 'teacher-123
         return recipients;
       };
 
+      // Get selected students data
+      const studentsToMessage = selectedStudents.length === 0 
+        ? enrollments 
+        : enrollments.filter((student: any) => selectedStudents.includes(student.studentId || student.id));
+
+      let deliveredCount = 0;
+
+      // Send via WhatsApp if enabled
+      if (sendViaWhatsApp) {
+        try {
+          let whatsAppFile: WhatsAppFile | undefined;
+
+          // Handle file attachment
+          if (selectedFile) {
+            const fileData = await WhatsAppService.fileToBase64(selectedFile);
+            whatsAppFile = {
+              name: selectedFile.name,
+              data: fileData,
+              mimeType: selectedFile.type
+            };
+          }
+
+          const whatsAppResponse = await WhatsAppService.sendToStudentsAndParents(
+            studentsToMessage,
+            messageText.trim(),
+            recipientType,
+            teacherName,
+            className,
+            whatsAppFile
+          );
+
+          setWhatsAppResults(whatsAppResponse);
+          deliveredCount = whatsAppResponse.summary.successful;
+
+          console.log('✅ WhatsApp messages sent:', whatsAppResponse);
+        } catch (whatsAppError) {
+          console.error('❌ WhatsApp sending failed:', whatsAppError);
+          // Continue to save message even if WhatsApp fails
+        }
+      }
+
       const messageData: MessageData = {
         classId,
         teacherId,
@@ -77,17 +127,17 @@ export default function Message({ classId, enrollments, teacherId = 'teacher-123
         recipientType,
         selectedStudentIds: selectedStudents.length === 0 ? [] : selectedStudents,
         recipientsList: getRecipientsList(),
-        deliveredCount: 0,
+        deliveredCount,
         readCount: 0,
         sentAt: new Date(),
-        status: 'sent',
-        messageType: 'general'
+        status: deliveredCount > 0 ? 'sent' : 'failed',
+        messageType: 'general',
+        sentViaWhatsApp: sendViaWhatsApp,
+        attachmentName: selectedFile?.name
       };
 
       // Save message to Firestore
       const messageId = await MessageFirestoreService.createMessage(messageData);
-      
-      // TODO: Send actual messages via your SMS/messaging service
       
       // Refresh message history
       const updatedHistory = await MessageFirestoreService.getMessagesByClass(classId);
@@ -96,6 +146,7 @@ export default function Message({ classId, enrollments, teacherId = 'teacher-123
       // Clear form
       setMessageText('');
       setSelectedStudents([]);
+      setSelectedFile(null);
       
       console.log('✅ Message saved successfully with ID:', messageId);
     } catch (error) {
@@ -104,6 +155,23 @@ export default function Message({ classId, enrollments, teacherId = 'teacher-123
     } finally {
       setIsSending(false);
     }
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Check file size (max 100MB for WhatsApp)
+      const maxSize = 100 * 1024 * 1024; // 100MB in bytes
+      if (file.size > maxSize) {
+        alert('File size must be less than 100MB');
+        return;
+      }
+      setSelectedFile(file);
+    }
+  };
+
+  const removeSelectedFile = () => {
+    setSelectedFile(null);
   };
 
   const handleSelectAllStudents = () => {
@@ -141,8 +209,24 @@ export default function Message({ classId, enrollments, teacherId = 'teacher-123
         <div className="space-y-4">
           <div>
             <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
-              Send quick messages to students and parents
+              Send messages via WhatsApp to students and parents
             </p>
+          </div>
+
+          {/* WhatsApp Toggle */}
+          <div className="flex items-center space-x-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+            <MessageCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+            <label className="flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={sendViaWhatsApp}
+                onChange={(e) => setSendViaWhatsApp(e.target.checked)}
+                className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 dark:focus:ring-green-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+              />
+              <span className="ml-2 text-sm font-medium text-green-700 dark:text-green-300">
+                Send via WhatsApp
+              </span>
+            </label>
           </div>
 
           {/* Recipient Selection */}
@@ -263,6 +347,62 @@ export default function Message({ classId, enrollments, teacherId = 'teacher-123
             </div>
           </div>
 
+          {/* File Attachment */}
+          {sendViaWhatsApp && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Attachment (Optional)
+              </label>
+              <div className="space-y-3">
+                {selectedFile ? (
+                  <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <div className="flex items-center space-x-3">
+                      <Paperclip className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                      <div>
+                        <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                          {selectedFile.name}
+                        </p>
+                        <p className="text-xs text-blue-600 dark:text-blue-400">
+                          {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={removeSelectedFile}
+                      className="text-red-600 border-red-300 hover:bg-red-50"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
+                    <input
+                      type="file"
+                      id="file-upload"
+                      className="hidden"
+                      onChange={handleFileSelect}
+                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.mp4,.mp3,.zip"
+                    />
+                    <label
+                      htmlFor="file-upload"
+                      className="cursor-pointer flex flex-col items-center space-y-2"
+                    >
+                      <Paperclip className="w-8 h-8 text-gray-400" />
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                        Click to upload file
+                      </span>
+                      <span className="text-xs text-gray-500 dark:text-gray-500">
+                        Max 100MB • PDF, DOC, Images, Videos, Audio, ZIP
+                      </span>
+                    </label>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Send Button */}
           <div className="flex justify-end">
             <Button
@@ -274,6 +414,46 @@ export default function Message({ classId, enrollments, teacherId = 'teacher-123
               <span>{isSending ? 'Sending...' : 'Send Message'}</span>
             </Button>
           </div>
+
+          {/* WhatsApp Results */}
+          {whatsAppResults && (
+            <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
+                Delivery Results
+              </h4>
+              <div className="flex items-center space-x-6 mb-3">
+                <div className="flex items-center space-x-2">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span className="text-sm text-green-600 dark:text-green-400">
+                    Sent: {whatsAppResults.summary.successful}
+                  </span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <AlertCircle className="w-4 h-4 text-red-500" />
+                  <span className="text-sm text-red-600 dark:text-red-400">
+                    Failed: {whatsAppResults.summary.failed}
+                  </span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Users className="w-4 h-4 text-blue-500" />
+                  <span className="text-sm text-blue-600 dark:text-blue-400">
+                    Total: {whatsAppResults.summary.total}
+                  </span>
+                </div>
+              </div>
+              {whatsAppResults.summary.failed > 0 && (
+                <div className="text-xs text-gray-600 dark:text-gray-400">
+                  {whatsAppResults.results
+                    .filter((r: any) => !r.success)
+                    .map((r: any, idx: number) => (
+                      <div key={idx} className="text-red-600 dark:text-red-400">
+                        {r.recipient.name}: {r.error}
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -304,6 +484,18 @@ export default function Message({ classId, enrollments, teacherId = 'teacher-123
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
                         {message.status.charAt(0).toUpperCase() + message.status.slice(1)}
                       </span>
+                      {message.sentViaWhatsApp && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
+                          <MessageCircle className="w-3 h-3 mr-1" />
+                          WhatsApp
+                        </span>
+                      )}
+                      {message.attachmentName && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
+                          <Paperclip className="w-3 h-3 mr-1" />
+                          {message.attachmentName}
+                        </span>
+                      )}
                       <span className="text-xs text-gray-500 dark:text-gray-400">
                         {message.sentAt.toLocaleString('en-AU', {
                           year: 'numeric',
