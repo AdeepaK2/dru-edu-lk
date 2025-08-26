@@ -19,6 +19,7 @@ import { Button } from '@/components/ui';
 import { MessageFirestoreService } from '@/apiservices/messageFirestoreService';
 import { WhatsAppService, WhatsAppFile } from '@/apiservices/whatsappService';
 import { Message as MessageType, MessageData } from '@/models/messageSchema';
+import { TeacherFirestoreService } from '@/apiservices/teacherFirestoreService';
 
 interface MessageProps {
   classId: string;
@@ -58,24 +59,21 @@ export default function Message({
   const hasValidData = (teacherData?.name || teacherName) && (classData?.name || className);
   const fallbackMessage = !hasValidData;
 
-  // Load teacher data if teacherId is provided
+  // Load teacher data using client-side Firebase
   useEffect(() => {
     const fetchTeacherData = async () => {
-      if (!teacherId || !classData?.teacherId) return;
+      if (!classData?.teacherId) return;
       
       try {
-        const response = await fetch(`/api/teachers/${classData.teacherId}`);
-        if (response.ok) {
-          const teacher = await response.json();
-          setTeacherData(teacher);
-        }
+        const teacher = await TeacherFirestoreService.getTeacherById(classData.teacherId);
+        setTeacherData(teacher);
       } catch (error) {
         console.error('Failed to fetch teacher data:', error);
       }
     };
 
     fetchTeacherData();
-  }, [teacherId, classData?.teacherId]);
+  }, [classData?.teacherId]);
 
   // Load message history on component mount
   useEffect(() => {
