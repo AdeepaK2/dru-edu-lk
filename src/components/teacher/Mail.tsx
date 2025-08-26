@@ -106,6 +106,15 @@ export default function Mail({
   const handleSendEmail = async () => {
     if (!subject.trim() || !emailBody.trim()) return;
     
+    // If no students are selected, ask for confirmation
+    if (selectedStudents.length === 0) {
+      const confirmed = window.confirm(
+        `No students are selected. This will send the email to ALL ${recipientType === 'students' ? 'students' : 
+          recipientType === 'parents' ? 'parents' : 'students and parents'} in the class. Do you want to continue?`
+      );
+      if (!confirmed) return;
+    }
+    
     setIsSending(true);
 
     try {
@@ -388,10 +397,7 @@ export default function Mail({
         <div className="mb-4">
           <div className="flex items-center justify-between mb-3">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Select Recipients ({selectedStudents.length === 0 ? enrollments.length : selectedStudents.length} 
-              {recipientType === 'students' ? ' students' : 
-                recipientType === 'parents' ? ' parents' : 
-                ' families'})
+              Select Recipients ({selectedStudents.length} selected)
             </label>
             <div className="flex items-center space-x-3">
               <Button
@@ -426,7 +432,7 @@ export default function Mail({
               >
                 <input
                   type="checkbox"
-                  checked={selectedStudents.length === 0 || selectedStudents.includes(student.studentId || student.id)}
+                  checked={selectedStudents.includes(student.studentId || student.id)}
                   onChange={() => toggleStudentSelection(student.studentId || student.id)}
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mr-3"
                 />
@@ -467,6 +473,21 @@ export default function Mail({
               </div>
             ))}
           </div>
+          
+          {/* Selection Info */}
+          {selectedStudents.length === 0 && (
+            <div className="mt-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md">
+              <div className="flex">
+                <AlertCircle className="flex-shrink-0 w-4 h-4 text-amber-500 mt-0.5" />
+                <div className="ml-2">
+                  <p className="text-sm text-amber-700 dark:text-amber-300">
+                    No students selected. Email will be sent to <strong>ALL</strong> {recipientType === 'students' ? 'students' : 
+                      recipientType === 'parents' ? 'parents' : 'students and parents'} in this class.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Subject and Priority */}
