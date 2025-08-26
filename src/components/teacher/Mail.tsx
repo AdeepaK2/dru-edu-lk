@@ -139,6 +139,8 @@ export default function Mail({
         selectedStudentIds: selectedStudents.length === 0 ? [] : selectedStudents,
         recipientsList: getRecipientsList(),
         priority,
+        attachmentNames: [],
+        attachmentUrls: [],
         deliveredCount: 0,
         readCount: 0,
         sentAt: new Date(),
