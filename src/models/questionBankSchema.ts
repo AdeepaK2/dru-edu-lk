@@ -23,6 +23,8 @@ export interface BaseQuestion {
   // Question metadata
   topic?: string;
   subtopic?: string;
+  // Reference information (optional)
+  reference?: string;
   // Difficulty level
   difficultyLevel: 'easy' | 'medium' | 'hard';
   points: number;

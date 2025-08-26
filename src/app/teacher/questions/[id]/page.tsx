@@ -809,6 +809,13 @@ export default function TeacherQuestionBankDetail() {
                               {question.difficultyLevel}
                             </span>
                             
+                            {/* Reference Badge */}
+                            {question.reference && (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 dark:bg-orange-900/20 text-orange-800 dark:text-orange-300">
+                                Ref: {question.reference}
+                              </span>
+                            )}
+                            
                             {/* Lesson Badge - Editable */}
                             {editingLessonForQuestion === question.id ? (
                               <div className="flex items-center space-x-2">

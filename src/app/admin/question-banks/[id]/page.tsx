@@ -322,6 +322,12 @@ export default function QuestionBankDetailPage() {
                         </span>
                       )}
                       
+                      {question.reference && (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                          Ref: {question.reference}
+                        </span>
+                      )}
+                      
                       <span className="text-sm text-gray-500">
                         {question.points} points
                       </span>
