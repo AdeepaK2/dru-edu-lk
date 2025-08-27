@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { StudentFirestoreService } from '@/apiservices/studentFirestoreService';
-import { ClassFirestoreService } from '@/apiservices/classFirestoreService';
-import { getAllEnrollments } from '@/services/studentEnrollmentService';
+import { adminFirestore } from '@/utils/firebase-admin';
 
 export async function GET(req: NextRequest) {
   try {
@@ -19,21 +17,24 @@ export async function GET(req: NextRequest) {
     // Get data type from query params
     const type = req.nextUrl.searchParams.get('type') || 'all';
     
-    // Fetch data based on type
+    // Fetch data based on type using Firebase Admin directly
     let students: any[] = [];
     let classes: any[] = [];
     let enrollments: any[] = [];
     
     if (type === 'students' || type === 'all') {
-      students = await StudentFirestoreService.getAllStudents();
+      const studentsSnapshot = await adminFirestore.collection('students').get();
+      students = studentsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     }
     
     if (type === 'classes' || type === 'all') {
-      classes = await ClassFirestoreService.getAllClasses();
+      const classesSnapshot = await adminFirestore.collection('classes').get();
+      classes = classesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     }
     
     if (type === 'enrollments' || type === 'all') {
-      enrollments = await getAllEnrollments();
+      const enrollmentsSnapshot = await adminFirestore.collection('studentEnrollments').get();
+      enrollments = enrollmentsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     }
     
     // Return the data
