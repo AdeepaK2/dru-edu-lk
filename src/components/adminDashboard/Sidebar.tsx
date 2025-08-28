@@ -14,7 +14,8 @@ import {
   Settings, 
   LogOut,
   Library,
-  Calendar
+  Calendar,
+  FileCheck
 } from 'lucide-react';
 
 // Define sidebar menu items with Lucide icons
@@ -27,6 +28,7 @@ const menuItems = [
   { label: 'Books', icon: <BookOpen size={20} />, path: '/admin/books' },
   { label: 'Video Portal', icon: <Video size={20} />, path: '/admin/videos' },
   { label: 'Meetings', icon: <Video size={20} />, path: '/admin/meetings' },
+  { label: 'Documents', icon: <FileCheck size={20} />, path: '/admin/documents' },
   { label: 'Transactions', icon: <CreditCard size={20} />, path: '/admin/transactions' },
   { label: 'Question Banks', icon: <FileQuestion size={20} />, path: '/admin/question-banks' },
 ];
