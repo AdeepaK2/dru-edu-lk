@@ -1,9 +1,16 @@
-// Student data model with parent and payment information
+// Student data model with parent, payment information, and document verification
 import { z } from 'zod';
 import { Timestamp } from 'firebase/firestore';
 
 // Phone number validation regex for international formats - more lenient
 const phoneRegex = /^[\+]?[\d\s\-\(\)]{9,17}$/;
+
+// Document types that students need to submit
+export enum DocumentType {
+  CLASS_POLICY = 'Class Policy Agreement',
+  PARENT_NOTICE = 'Parent/Guardian Notice',
+  PHOTO_CONSENT = 'Photo Consent Form'
+}
 
 // Parent information validation schema
 export const parentInfoSchema = z.object({
@@ -22,6 +29,22 @@ export const paymentInfoSchema = z.object({
   lastPayment: z.string().default('N/A'),
 });
 
+// Document verification schema
+export const documentSchema = z.object({
+  type: z.enum([
+    DocumentType.CLASS_POLICY,
+    DocumentType.PARENT_NOTICE,
+    DocumentType.PHOTO_CONSENT
+  ]),
+  url: z.string().url('Invalid document URL'),
+  filename: z.string(),
+  submittedAt: z.string().optional(),
+  verifiedAt: z.string().optional(),
+  verifiedBy: z.string().optional(),
+  status: z.enum(['Pending', 'Verified', 'Rejected']).default('Pending'),
+  notes: z.string().optional(),
+});
+
 // Student validation schema for creation
 export const studentSchema = z.object({
   name: z.string().min(2, 'Student name must be at least 2 characters'),
@@ -35,6 +58,7 @@ export const studentSchema = z.object({
   enrollmentDate: z.string().optional(),
   parent: parentInfoSchema,
   payment: paymentInfoSchema.optional(),
+  documents: z.array(documentSchema).optional(),
 });
 
 // Student update schema (all fields optional except id)
@@ -57,6 +81,18 @@ export interface PaymentInfo {
   lastPayment: string;
 }
 
+// Document information type
+export interface DocumentInfo {
+  type: DocumentType;
+  url: string;
+  filename: string;
+  submittedAt?: string;
+  verifiedAt?: string;
+  verifiedBy?: string;
+  status: 'Pending' | 'Verified' | 'Rejected';
+  notes?: string;
+}
+
 // Student model
 export interface Student {
   id: string;
@@ -69,6 +105,7 @@ export interface Student {
   avatar: string;
   parent: ParentInfo;
   payment: PaymentInfo;
+  documents?: DocumentInfo[];
 }
 
 // Student document in Firestore
@@ -82,7 +119,9 @@ export interface StudentDocument {
   coursesEnrolled: number;
   avatar: string;
   parent: ParentInfo;
-  payment: PaymentInfo;  uid: string; // Firebase Auth UID
+  payment: PaymentInfo;
+  documents?: DocumentInfo[];
+  uid: string; // Firebase Auth UID
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
