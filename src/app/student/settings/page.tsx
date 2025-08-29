@@ -228,7 +228,7 @@ export default function StudentSettingsPage() {
     setLoading(prev => ({ ...prev, document: true }));
     
     try {
-      await StudentDocumentService.uploadDocument(
+      const uploadedDocument = await StudentDocumentService.uploadDocument(
         student.id,
         documentUpload[documentType]!,
         documentType
@@ -240,10 +240,22 @@ export default function StudentSettingsPage() {
         [documentType]: null
       }));
       
-      // Refresh student data to show updated document status
-      // Note: In a real implementation, you would update the student context here
-      alert(`${documentType} uploaded successfully! Awaiting verification.`);
-      window.location.reload();
+      // Update local student state to show the uploaded document immediately
+      if (student.documents) {
+        const existingDocIndex = student.documents.findIndex(doc => doc.type === documentType);
+        if (existingDocIndex >= 0) {
+          // Update existing document
+          student.documents[existingDocIndex] = uploadedDocument;
+        } else {
+          // Add new document
+          student.documents.push(uploadedDocument);
+        }
+      } else {
+        // Create documents array
+        student.documents = [uploadedDocument];
+      }
+      
+      alert(`${documentType} uploaded successfully! Status: Pending verification.`);
     } catch (error) {
       console.error(`Error uploading ${documentType}:`, error);
       alert(`Failed to upload ${documentType}. Please try again.`);

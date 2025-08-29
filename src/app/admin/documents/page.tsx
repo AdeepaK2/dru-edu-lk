@@ -130,6 +130,85 @@ export default function DocumentVerificationPage() {
     }
   };
 
+  // Handle approving all documents for a student
+  const handleApproveAllDocuments = async (studentId: string) => {
+    if (!admin) return;
+    
+    const student = students.find(s => s.id === studentId);
+    if (!student || !student.documents) return;
+    
+    // Check if all 3 document types are submitted
+    const requiredDocs = [DocumentType.CLASS_POLICY, DocumentType.PARENT_NOTICE, DocumentType.PHOTO_CONSENT];
+    const submittedDocs = student.documents.filter(doc => doc.status === 'Pending');
+    const submittedTypes = submittedDocs.map(doc => doc.type);
+    
+    if (!requiredDocs.every(type => submittedTypes.includes(type))) {
+      alert('Not all required documents are submitted yet.');
+      return;
+    }
+    
+    if (!confirm(`Approve all ${submittedDocs.length} documents for ${student.name}?`)) {
+      return;
+    }
+    
+    setVerifyingDocument(`${studentId}-all`);
+    
+    try {
+      // Approve all pending documents
+      const approvalPromises = submittedDocs.map(doc => 
+        StudentDocumentService.verifyDocument(studentId, doc.type, {
+          status: 'Verified',
+          verifiedBy: admin.email,
+          notes: 'Approved via bulk action'
+        })
+      );
+      
+      await Promise.all(approvalPromises);
+      
+      // Update local state
+      setStudents(prev => 
+        prev.map(s => {
+          if (s.id === studentId) {
+            return {
+              ...s,
+              documents: (s.documents || []).map(doc => {
+                if (submittedTypes.includes(doc.type)) {
+                  return {
+                    ...doc,
+                    status: 'Verified',
+                    verifiedAt: new Date().toISOString(),
+                    verifiedBy: admin.email,
+                    notes: 'Approved via bulk action'
+                  };
+                }
+                return doc;
+              })
+            };
+          }
+          return s;
+        })
+      );
+      
+      alert(`All ${submittedDocs.length} documents approved for ${student.name}!`);
+    } catch (error) {
+      console.error('Error approving all documents:', error);
+      alert('Failed to approve all documents. Please try again.');
+    } finally {
+      setVerifyingDocument(null);
+    }
+  };
+
+  // Check if student has all documents ready for bulk approval
+  const canApproveAll = (student: StudentWithDocuments) => {
+    if (!student.documents) return false;
+    
+    const requiredDocs = [DocumentType.CLASS_POLICY, DocumentType.PARENT_NOTICE, DocumentType.PHOTO_CONSENT];
+    const pendingDocs = student.documents.filter(doc => doc.status === 'Pending');
+    const pendingTypes = pendingDocs.map(doc => doc.type);
+    
+    return requiredDocs.every(type => pendingTypes.includes(type));
+  };
+
   // Filter students based on selected filters
   const filteredStudents = students.filter(student => {
     if (!student.documents || student.documents.length === 0) {
@@ -422,22 +501,39 @@ export default function DocumentVerificationPage() {
                             {getStatusBadge(consentDoc?.status)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <button
-                              onClick={() => toggleExpandStudent(student.id)}
-                              className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 flex items-center"
-                            >
-                              {expandedStudent === student.id ? (
-                                <div className="flex items-center">
-                                  <ChevronUp className="w-4 h-4 mr-1" />
-                                  Hide Details
-                                </div>
-                              ) : (
-                                <div className="flex items-center">
-                                  <ChevronDown className="w-4 h-4 mr-1" />
-                                  View Details
-                                </div>
+                            <div className="flex items-center justify-end space-x-2">
+                              {/* Approve All Button - only show when all documents are submitted */}
+                              {canApproveAll(student) && (
+                                <Button
+                                  type="button"
+                                  onClick={() => handleApproveAllDocuments(student.id)}
+                                  disabled={verifyingDocument === `${student.id}-all`}
+                                  className="bg-green-600 hover:bg-green-700 text-white text-xs px-2 py-1 rounded flex items-center"
+                                  title="Approve all 3 documents at once"
+                                >
+                                  <CheckCircle className="w-3 h-3 mr-1" />
+                                  {verifyingDocument === `${student.id}-all` ? 'Approving...' : 'Approve All'}
+                                </Button>
                               )}
-                            </button>
+                              
+                              {/* View Details Button */}
+                              <button
+                                onClick={() => toggleExpandStudent(student.id)}
+                                className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 flex items-center"
+                              >
+                                {expandedStudent === student.id ? (
+                                  <div className="flex items-center">
+                                    <ChevronUp className="w-4 h-4 mr-1" />
+                                    Hide Details
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center">
+                                    <ChevronDown className="w-4 h-4 mr-1" />
+                                    View Details
+                                  </div>
+                                )}
+                              </button>
+                            </div>
                           </td>
                         </tr>
                         
