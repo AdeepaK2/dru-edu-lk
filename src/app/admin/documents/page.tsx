@@ -766,10 +766,6 @@ export default function DocumentVerificationPage() {
                                       <div className="space-y-3">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                           <div>
-                                            <p className="text-xs text-gray-500 dark:text-gray-400">File:</p>
-                                            <p className="text-sm text-gray-900 dark:text-white">{doc.filename}</p>
-                                          </div>
-                                          <div>
                                             <p className="text-xs text-gray-500 dark:text-gray-400">Submitted:</p>
                                             <p className="text-sm text-gray-900 dark:text-white">
                                               {doc.submittedAt 
@@ -777,25 +773,29 @@ export default function DocumentVerificationPage() {
                                                 : 'Unknown date'}
                                             </p>
                                           </div>
+                                          <div>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400">Status:</p>
+                                            {getStatusBadge(doc.status)}
+                                          </div>
                                         </div>
                                         
-                                        <div className="flex space-x-2">
+                                        <div className="flex space-x-3">
                                           <a 
                                             href={doc.url} 
                                             target="_blank" 
                                             rel="noopener noreferrer"
-                                            className="bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-800/50 text-blue-700 dark:text-blue-400 text-xs px-3 py-1 rounded flex items-center"
+                                            className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition-colors duration-200"
                                           >
-                                            <Eye className="w-3 h-3 mr-1" />
-                                            View Document
+                                            <Eye className="w-4 h-4 mr-2" />
+                                            View
                                           </a>
                                           
                                           <a 
                                             href={doc.url} 
                                             download
-                                            className="bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-xs px-3 py-1 rounded flex items-center"
+                                            className="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-md transition-colors duration-200"
                                           >
-                                            <Download className="w-3 h-3 mr-1" />
+                                            <Download className="w-4 h-4 mr-2" />
                                             Download
                                           </a>
                                         </div>
