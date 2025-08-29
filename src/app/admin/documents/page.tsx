@@ -12,7 +12,9 @@ import {
   Eye, 
   Check, 
   X, 
-  Filter 
+  Filter,
+  Search,
+  ArrowUpDown
 } from 'lucide-react';
 import { DocumentInfo, DocumentType } from '@/models/studentSchema';
 import { StudentDocumentService } from '@/apiservices/studentDocumentService';
@@ -24,11 +26,22 @@ interface StudentWithDocuments {
   email: string;
   documents?: DocumentInfo[];
   status: 'Active' | 'Suspended' | 'Inactive';
+  enrolledClasses?: Array<{
+    classId: string;
+    className: string;
+    subject: string;
+    status: 'Active' | 'Inactive';
+  }>;
 }
 
 interface FilterOptions {
   status: 'All' | 'Verified' | 'Pending' | 'Rejected' | 'Not Submitted';
   documentType: 'All' | DocumentType;
+}
+
+interface SortOptions {
+  sortBy: 'name' | 'email' | 'class' | 'documentStatus';
+  sortOrder: 'asc' | 'desc';
 }
 
 export default function DocumentVerificationPage() {
@@ -41,6 +54,11 @@ export default function DocumentVerificationPage() {
   const [filters, setFilters] = useState<FilterOptions>({
     status: 'All',
     documentType: 'All'
+  });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortOptions, setSortOptions] = useState<SortOptions>({
+    sortBy: 'name',
+    sortOrder: 'asc'
   });
   const [verificationNote, setVerificationNote] = useState('');
 
@@ -209,27 +227,80 @@ export default function DocumentVerificationPage() {
     return requiredDocs.every(type => pendingTypes.includes(type));
   };
 
-  // Filter students based on selected filters
-  const filteredStudents = students.filter(student => {
-    if (!student.documents || student.documents.length === 0) {
-      return filters.status === 'All' || filters.status === 'Not Submitted';
+  // Filter and sort students based on search query, filters, and sort options
+  const filteredAndSortedStudents = React.useMemo(() => {
+    let filtered = students;
+    
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(student => 
+        student.name.toLowerCase().includes(query) ||
+        student.email.toLowerCase().includes(query) ||
+        (student.enrolledClasses || []).some(cls => 
+          cls.className.toLowerCase().includes(query) ||
+          cls.subject.toLowerCase().includes(query)
+        )
+      );
     }
     
-    return student.documents.some(doc => {
-      const matchesType = filters.documentType === 'All' || doc.type === filters.documentType;
-      
-      let matchesStatus = false;
-      if (filters.status === 'All') {
-        matchesStatus = true;
-      } else if (filters.status === 'Not Submitted') {
-        matchesStatus = !doc;
-      } else {
-        matchesStatus = doc.status === filters.status;
+    // Apply status and document type filters
+    filtered = filtered.filter(student => {
+      if (!student.documents || student.documents.length === 0) {
+        return filters.status === 'All' || filters.status === 'Not Submitted';
       }
       
-      return matchesType && matchesStatus;
+      return student.documents.some(doc => {
+        const matchesType = filters.documentType === 'All' || doc.type === filters.documentType;
+        
+        let matchesStatus = false;
+        if (filters.status === 'All') {
+          matchesStatus = true;
+        } else if (filters.status === 'Not Submitted') {
+          matchesStatus = !doc;
+        } else {
+          matchesStatus = doc.status === filters.status;
+        }
+        
+        return matchesType && matchesStatus;
+      });
     });
-  });
+    
+    // Apply sorting
+    return filtered.sort((a, b) => {
+      let compareValue = 0;
+      
+      switch (sortOptions.sortBy) {
+        case 'name':
+          compareValue = a.name.localeCompare(b.name);
+          break;
+        case 'email':
+          compareValue = a.email.localeCompare(b.email);
+          break;
+        case 'class':
+          const aClass = (a.enrolledClasses && a.enrolledClasses.length > 0) 
+            ? a.enrolledClasses[0].className 
+            : 'No Class';
+          const bClass = (b.enrolledClasses && b.enrolledClasses.length > 0) 
+            ? b.enrolledClasses[0].className 
+            : 'No Class';
+          compareValue = aClass.localeCompare(bClass);
+          break;
+        case 'documentStatus':
+          const aDocCount = (a.documents || []).filter(doc => doc.status === 'Verified').length;
+          const bDocCount = (b.documents || []).filter(doc => doc.status === 'Verified').length;
+          compareValue = aDocCount - bDocCount;
+          break;
+        default:
+          compareValue = 0;
+      }
+      
+      return sortOptions.sortOrder === 'desc' ? -compareValue : compareValue;
+    });
+  }, [students, searchQuery, filters, sortOptions]);
+
+  // Filter students based on selected filters (keeping old function for compatibility)
+  const filteredStudents = filteredAndSortedStudents;
 
   // Get document status badge
   const getStatusBadge = (status?: string) => {
@@ -386,6 +457,75 @@ export default function DocumentVerificationPage() {
         </div>
       </div>
 
+      {/* Search and Sort Controls */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+        <div className="flex items-center space-x-2 mb-4">
+          <Search className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+          <h3 className="text-sm font-medium text-gray-900 dark:text-white">Search & Sort</h3>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Search Input */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Search Students
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by name, email, or class..."
+                className="w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 pl-10 pr-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              />
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+            </div>
+          </div>
+          
+          {/* Sort By */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Sort By
+            </label>
+            <select
+              value={sortOptions.sortBy}
+              onChange={(e) => setSortOptions(prev => ({ ...prev, sortBy: e.target.value as SortOptions['sortBy'] }))}
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+            >
+              <option value="name">Student Name</option>
+              <option value="email">Email</option>
+              <option value="class">Primary Class</option>
+              <option value="documentStatus">Documents Verified</option>
+            </select>
+          </div>
+          
+          {/* Sort Order */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Sort Order
+            </label>
+            <button
+              type="button"
+              onClick={() => setSortOptions(prev => ({ 
+                ...prev, 
+                sortOrder: prev.sortOrder === 'asc' ? 'desc' : 'asc' 
+              }))}
+              className="w-full flex items-center justify-center space-x-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+            >
+              <ArrowUpDown className="w-4 h-4" />
+              <span>{sortOptions.sortOrder === 'asc' ? 'Ascending' : 'Descending'}</span>
+            </button>
+          </div>
+        </div>
+        
+        {/* Results Count */}
+        {searchQuery.trim() && (
+          <div className="mt-3 text-sm text-gray-600 dark:text-gray-400">
+            Found {filteredStudents.length} student{filteredStudents.length !== 1 ? 's' : ''} matching "{searchQuery}"
+          </div>
+        )}
+      </div>
+
       {/* Filters */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
         <div className="flex items-center space-x-2 mb-4">
@@ -456,6 +596,9 @@ export default function DocumentVerificationPage() {
                       Student
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Classes
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Class Policy
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -489,6 +632,36 @@ export default function DocumentVerificationPage() {
                                   {student.email}
                                 </div>
                               </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="space-y-1">
+                              {(student.enrolledClasses || []).length === 0 ? (
+                                <span className="text-sm text-gray-500 dark:text-gray-400 italic">
+                                  No classes
+                                </span>
+                              ) : (
+                                student.enrolledClasses?.slice(0, 2).map((cls, index) => (
+                                  <div key={cls.classId} className="text-sm">
+                                    <span className="font-medium text-gray-900 dark:text-white">
+                                      {cls.className}
+                                    </span>
+                                    <span className="text-gray-500 dark:text-gray-400 ml-2">
+                                      ({cls.subject})
+                                    </span>
+                                    {cls.status !== 'Active' && (
+                                      <span className="ml-1 px-1 py-0.5 text-xs rounded bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
+                                        {cls.status}
+                                      </span>
+                                    )}
+                                  </div>
+                                ))
+                              )}
+                              {(student.enrolledClasses || []).length > 2 && (
+                                <div className="text-xs text-gray-500 dark:text-gray-400">
+                                  +{(student.enrolledClasses || []).length - 2} more
+                                </div>
+                              )}
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -540,7 +713,42 @@ export default function DocumentVerificationPage() {
                         {/* Expanded Details */}
                         {expandedStudent === student.id && (
                           <tr>
-                            <td colSpan={5} className="px-6 py-4 bg-gray-50 dark:bg-gray-700">
+                            <td colSpan={6} className="px-6 py-4 bg-gray-50 dark:bg-gray-700">
+                              {/* Student Class Information */}
+                              <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                                <h4 className="text-sm font-medium text-blue-900 dark:text-blue-300 mb-2">
+                                  Class Enrollments
+                                </h4>
+                                {(student.enrolledClasses || []).length === 0 ? (
+                                  <p className="text-sm text-blue-700 dark:text-blue-400">
+                                    Student is not enrolled in any classes.
+                                  </p>
+                                ) : (
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    {student.enrolledClasses?.map((cls) => (
+                                      <div key={cls.classId} className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded border">
+                                        <div>
+                                          <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                            {cls.className}
+                                          </p>
+                                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                                            {cls.subject}
+                                          </p>
+                                        </div>
+                                        <span className={`px-2 py-1 text-xs rounded-full ${
+                                          cls.status === 'Active'
+                                            ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                                            : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+                                        }`}>
+                                          {cls.status}
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                              
+                              {/* Document Details */}
                               <div className="space-y-4">
                                 {[
                                   { type: DocumentType.CLASS_POLICY, doc: policyDoc },
