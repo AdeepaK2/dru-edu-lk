@@ -133,7 +133,7 @@ export class StudentDocumentService {
   }
 
   /**
-   * Get all students with document verification status
+   * Get all students with document verification status and enrollment info
    */
   static async getStudentsWithDocumentStatus() {
     try {
@@ -142,13 +142,36 @@ export class StudentDocumentService {
       
       const studentsWithDetails = await Promise.all(
         students.map(async (student) => {
+          // Get document info
           const studentRef = doc(firestore, COLLECTION_NAME, student.id);
           const studentDoc = await getDoc(studentRef);
           const studentData = studentDoc.data();
           
+          // Get enrollment info
+          let enrolledClasses: Array<{
+            classId: string;
+            className: string;
+            subject: string;
+            status: 'Active' | 'Inactive';
+          }> = [];
+          
+          try {
+            const { getEnrollmentsByStudent } = await import('@/services/studentEnrollmentService');
+            const enrollments = await getEnrollmentsByStudent(student.id);
+            enrolledClasses = enrollments.map((enrollment: any) => ({
+              classId: enrollment.classId,
+              className: enrollment.className,
+              subject: enrollment.subject,
+              status: enrollment.status as 'Active' | 'Inactive'
+            }));
+          } catch (enrollmentError) {
+            console.warn('Error fetching enrollments for student:', student.id, enrollmentError);
+          }
+          
           return {
             ...student,
-            documents: studentData?.documents || []
+            documents: studentData?.documents || [],
+            enrolledClasses
           };
         })
       );
