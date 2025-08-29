@@ -46,8 +46,6 @@ export default function DocumentVerificationPage() {
 
   // Check admin auth
   useEffect(() => {
-    // In a real implementation, this would check for admin authentication
-    // For this example, we'll simulate an admin user
     setTimeout(() => {
       setAdmin({ email: 'admin@example.com' });
       setAuthLoading(false);
@@ -135,15 +133,12 @@ export default function DocumentVerificationPage() {
   // Filter students based on selected filters
   const filteredStudents = students.filter(student => {
     if (!student.documents || student.documents.length === 0) {
-      // Only include if filter is "All" or "Not Submitted"
       return filters.status === 'All' || filters.status === 'Not Submitted';
     }
     
     return student.documents.some(doc => {
-      // Filter by document type
       const matchesType = filters.documentType === 'All' || doc.type === filters.documentType;
       
-      // Filter by status
       let matchesStatus = false;
       if (filters.status === 'All') {
         matchesStatus = true;
@@ -192,19 +187,17 @@ export default function DocumentVerificationPage() {
   // Get document status counts
   const getDocumentCounts = () => {
     let verified = 0, pending = 0, rejected = 0, notSubmitted = 0;
-    let total = students.length * 3; // 3 documents per student
+    let total = students.length * 3;
     
     students.forEach(student => {
       const docs = student.documents || [];
       
-      // Count existing documents
       docs.forEach(doc => {
         if (doc.status === 'Verified') verified++;
         else if (doc.status === 'Rejected') rejected++;
         else pending++;
       });
       
-      // Count missing documents
       const docTypes = [DocumentType.CLASS_POLICY, DocumentType.PARENT_NOTICE, DocumentType.PHOTO_CONSENT];
       const existingTypes = docs.map(doc => doc.type);
       const missingTypes = docTypes.filter(type => !existingTypes.includes(type));
@@ -275,14 +268,6 @@ export default function DocumentVerificationPage() {
               <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
             </div>
           </div>
-          <div className="mt-2">
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-              <div 
-                className="bg-green-500 h-2 rounded-full" 
-                style={{ width: `${(counts.verified / counts.total) * 100}%` }}
-              ></div>
-            </div>
-          </div>
         </div>
         
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
@@ -293,14 +278,6 @@ export default function DocumentVerificationPage() {
             </div>
             <div className="w-10 h-10 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center">
               <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
-            </div>
-          </div>
-          <div className="mt-2">
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-              <div 
-                className="bg-yellow-500 h-2 rounded-full" 
-                style={{ width: `${(counts.pending / counts.total) * 100}%` }}
-              ></div>
             </div>
           </div>
         </div>
@@ -315,14 +292,6 @@ export default function DocumentVerificationPage() {
               <XCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
             </div>
           </div>
-          <div className="mt-2">
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-              <div 
-                className="bg-red-500 h-2 rounded-full" 
-                style={{ width: `${(counts.rejected / counts.total) * 100}%` }}
-              ></div>
-            </div>
-          </div>
         </div>
         
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
@@ -333,14 +302,6 @@ export default function DocumentVerificationPage() {
             </div>
             <div className="w-10 h-10 bg-gray-100 dark:bg-gray-900/30 rounded-full flex items-center justify-center">
               <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-            </div>
-          </div>
-          <div className="mt-2">
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-              <div 
-                className="bg-gray-500 h-2 rounded-full" 
-                style={{ width: `${(counts.notSubmitted / counts.total) * 100}%` }}
-              ></div>
             </div>
           </div>
         </div>
@@ -416,13 +377,13 @@ export default function DocumentVerificationPage() {
                       Student
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {DocumentType.CLASS_POLICY}
+                      Class Policy
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {DocumentType.PARENT_NOTICE}
+                      Parent Notice
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {DocumentType.PHOTO_CONSENT}
+                      Photo Consent
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Actions
@@ -466,15 +427,15 @@ export default function DocumentVerificationPage() {
                               className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 flex items-center"
                             >
                               {expandedStudent === student.id ? (
-                                <>
+                                <div className="flex items-center">
                                   <ChevronUp className="w-4 h-4 mr-1" />
                                   Hide Details
-                                </>
+                                </div>
                               ) : (
-                                <>
+                                <div className="flex items-center">
                                   <ChevronDown className="w-4 h-4 mr-1" />
                                   View Details
-                                </>
+                                </div>
                               )}
                             </button>
                           </td>
@@ -485,7 +446,6 @@ export default function DocumentVerificationPage() {
                           <tr>
                             <td colSpan={5} className="px-6 py-4 bg-gray-50 dark:bg-gray-700">
                               <div className="space-y-4">
-                                {/* Document Details */}
                                 {[
                                   { type: DocumentType.CLASS_POLICY, doc: policyDoc },
                                   { type: DocumentType.PARENT_NOTICE, doc: noticeDoc },
@@ -514,30 +474,6 @@ export default function DocumentVerificationPage() {
                                             </p>
                                           </div>
                                         </div>
-                                        
-                                        {doc.status === 'Verified' || doc.status === 'Rejected' ? (
-                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div>
-                                              <p className="text-xs text-gray-500 dark:text-gray-400">Verified By:</p>
-                                              <p className="text-sm text-gray-900 dark:text-white">{doc.verifiedBy || 'Unknown'}</p>
-                                            </div>
-                                            <div>
-                                              <p className="text-xs text-gray-500 dark:text-gray-400">Verified At:</p>
-                                              <p className="text-sm text-gray-900 dark:text-white">
-                                                {doc.verifiedAt 
-                                                  ? new Date(doc.verifiedAt).toLocaleString() 
-                                                  : 'Unknown date'}
-                                              </p>
-                                            </div>
-                                          </div>
-                                        ) : null}
-                                        
-                                        {doc.notes && (
-                                          <div>
-                                            <p className="text-xs text-gray-500 dark:text-gray-400">Notes:</p>
-                                            <p className="text-sm text-gray-900 dark:text-white">{doc.notes}</p>
-                                          </div>
-                                        )}
                                         
                                         <div className="flex space-x-2">
                                           <a 

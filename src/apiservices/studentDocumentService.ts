@@ -4,7 +4,7 @@ import { firestore, storage } from '@/utils/firebase-client';
 import { DocumentInfo, DocumentType } from '@/models/studentSchema';
 
 const COLLECTION_NAME = 'students';
-const STORAGE_PATH = 'student-documents';
+const STORAGE_PATH = 'policy-docs';
 
 export class StudentDocumentService {
   /**
