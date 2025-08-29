@@ -131,7 +131,7 @@ async function createEmailDocument(to: string, studentName: string, password: st
                     📋 Required Documents for Physical Classes
                   </h3>
                   <p style="color: #4a5568; margin: 0 0 20px 0; font-size: 15px; line-height: 1.6;">
-                    Please review and sign these important documents before attending your first physical class:
+                    Please review and sign these important documents before attending your first physical class. <strong>After signing, upload the signed document(s) in your LMS Settings page.</strong>
                   </p>
                   <div style="space-y: 10px;">
                     <div style="margin-bottom: 15px; padding: 12px; background-color: #ffffff; border-radius: 8px; border-left: 4px solid #4299e1;">
@@ -152,6 +152,17 @@ async function createEmailDocument(to: string, studentName: string, password: st
                         📸 <span style="margin-left: 8px;">Photo Consent Form</span>
                       </a>
                     </div>
+                  </div>
+                  <div style="background-color: #e6fffa; border-left: 4px solid #06b6d4; padding: 16px; margin: 20px 0; border-radius: 0 8px 8px 0;">
+                    <p style="margin: 0; color: #0f766e; font-size: 14px;">
+                      Action required: After signing, please upload the signed document(s) via your LMS <a href="https://www.drueducation.com.au/student/settings" style="color: #0ea5e9; text-decoration: none; font-weight: 600;">Settings</a> page (Settings → Documents).
+                    </p>
+                  </div>
+                  <div style="text-align: center; margin: 20px 0 0 0;">
+                    <a href="https://www.drueducation.com.au/student/settings" 
+                       style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px;">
+                      Upload Signed Documents
+                    </a>
                   </div>
                 </div>
                 
@@ -260,6 +271,9 @@ export async function POST(req: NextRequest) {
       name: studentData.name,
       email: studentData.email,
       phone: studentData.phone,
+      dateOfBirth: studentData.dateOfBirth || '', // Safe fallback for optional field
+      year: studentData.year || '', // Safe fallback for optional field
+      school: studentData.school || '', // Safe fallback for optional field
       enrollmentDate: studentData.enrollmentDate || new Date().toISOString().split('T')[0],
       status: studentData.status,
       coursesEnrolled: studentData.coursesEnrolled,
@@ -272,7 +286,8 @@ export async function POST(req: NextRequest) {
       },
       uid: userRecord.uid,
       createdAt: admin.firestore.Timestamp.now() as any,
-      updatedAt: admin.firestore.Timestamp.now() as any    };
+      updatedAt: admin.firestore.Timestamp.now() as any
+    };
     
     // Perform operations in parallel for better performance
     await Promise.all([

@@ -53,6 +53,9 @@ export const studentSchema = z.object({
     .min(9, 'Phone number must be at least 9 characters')
     .max(17, 'Phone number must be no more than 17 characters')
     .regex(phoneRegex, 'Invalid phone number format. Example: +61412345678 or 0412345678'),
+  dateOfBirth: z.string().optional(), // Made optional for backward compatibility
+  year: z.string().optional(), // Made optional for backward compatibility  
+  school: z.string().optional(), // Made optional for backward compatibility
   status: z.enum(['Active', 'Suspended', 'Inactive']).default('Active'),
   coursesEnrolled: z.number().default(0),
   enrollmentDate: z.string().optional(),
@@ -99,6 +102,9 @@ export interface Student {
   name: string;
   email: string;
   phone: string;
+  dateOfBirth?: string; // Made optional for backward compatibility
+  year?: string; // Made optional for backward compatibility
+  school?: string; // Made optional for backward compatibility
   enrollmentDate: string;
   status: 'Active' | 'Suspended' | 'Inactive';
   coursesEnrolled: number;
@@ -114,6 +120,9 @@ export interface StudentDocument {
   name: string;
   email: string;
   phone: string;
+  dateOfBirth?: string; // Made optional for backward compatibility
+  year?: string; // Made optional for backward compatibility
+  school?: string; // Made optional for backward compatibility
   enrollmentDate: string;
   status: 'Active' | 'Suspended' | 'Inactive';
   coursesEnrolled: number;
