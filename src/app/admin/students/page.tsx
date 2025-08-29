@@ -700,6 +700,9 @@ export default function StudentsManagement() {
           name: firstRequest.student.name,
           email: firstRequest.student.email,
           phone: firstRequest.student.phone,
+          dateOfBirth: firstRequest.student.dateOfBirth,
+          year: firstRequest.student.year,
+          school: firstRequest.student.school,
           status: 'Active',
           enrollmentDate: new Date().toISOString().split('T')[0],
           coursesEnrolled: 0, // Will be calculated based on actual enrollments
@@ -875,6 +878,9 @@ export default function StudentsManagement() {
           name: enrollmentRequest.student.name,
           email: enrollmentRequest.student.email,
           phone: enrollmentRequest.student.phone,
+          dateOfBirth: enrollmentRequest.student.dateOfBirth,
+          year: enrollmentRequest.student.year,
+          school: enrollmentRequest.student.school,
           status: 'Active',
           enrollmentDate: new Date().toISOString().split('T')[0],
           coursesEnrolled: 0, // Will be calculated based on actual enrollments

@@ -28,6 +28,9 @@ export default function StudentModal({
     name: '',
     email: '',
     phone: '',
+    dateOfBirth: '',
+    year: '',
+    school: '',
     status: 'Active',
     coursesEnrolled: 0,
     enrollmentDate: new Date().toISOString().split('T')[0],
@@ -57,6 +60,9 @@ export default function StudentModal({
           name: initialData.name,
           email: initialData.email,
           phone: initialData.phone,
+          dateOfBirth: initialData.dateOfBirth || '',
+          year: initialData.year || '',
+          school: initialData.school || '',
           status: initialData.status,
           coursesEnrolled: initialData.coursesEnrolled,
           enrollmentDate: initialData.enrollmentDate,
@@ -69,6 +75,9 @@ export default function StudentModal({
           name: '',
           email: '',
           phone: '',
+          dateOfBirth: '',
+          year: '',
+          school: '',
           status: 'Active',
           coursesEnrolled: 0,
           enrollmentDate: new Date().toISOString().split('T')[0],
@@ -167,6 +176,9 @@ export default function StudentModal({
       name: '',
       email: '',
       phone: '',
+      dateOfBirth: '',
+      year: '',
+      school: '',
       status: 'Active',
       coursesEnrolled: 0,
       enrollmentDate: new Date().toISOString().split('T')[0],
@@ -251,6 +263,32 @@ export default function StudentModal({
                 placeholder="Enter student's phone number (e.g., +61412345678 or 0412345678)"
                 required
                 error={errors.studentPhone}
+              />
+
+              <Input
+                label="Date of Birth"
+                type="date"
+                value={formData.dateOfBirth || ''}
+                onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
+                error={errors.dateOfBirth}
+              />
+
+              <Input
+                label="Year Level"
+                type="text"
+                value={formData.year || ''}
+                onChange={(e) => handleInputChange('year', e.target.value)}
+                placeholder="Enter year level (e.g., Year 11, Year 12)"
+                error={errors.year}
+              />
+
+              <Input
+                label="School"
+                type="text"
+                value={formData.school || ''}
+                onChange={(e) => handleInputChange('school', e.target.value)}
+                placeholder="Enter school name"
+                error={errors.school}
               />
 
               <Input

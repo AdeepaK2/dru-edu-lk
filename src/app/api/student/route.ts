@@ -271,6 +271,9 @@ export async function POST(req: NextRequest) {
       name: studentData.name,
       email: studentData.email,
       phone: studentData.phone,
+      dateOfBirth: studentData.dateOfBirth || '', // Safe fallback for optional field
+      year: studentData.year || '', // Safe fallback for optional field
+      school: studentData.school || '', // Safe fallback for optional field
       enrollmentDate: studentData.enrollmentDate || new Date().toISOString().split('T')[0],
       status: studentData.status,
       coursesEnrolled: studentData.coursesEnrolled,
@@ -283,7 +286,8 @@ export async function POST(req: NextRequest) {
       },
       uid: userRecord.uid,
       createdAt: admin.firestore.Timestamp.now() as any,
-      updatedAt: admin.firestore.Timestamp.now() as any    };
+      updatedAt: admin.firestore.Timestamp.now() as any
+    };
     
     // Perform operations in parallel for better performance
     await Promise.all([
