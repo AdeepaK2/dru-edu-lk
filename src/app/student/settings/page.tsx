@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { User, Mail, Phone, KeyRound, Shield, FileCheck, Upload, Check, X, AlertCircle } from 'lucide-react';
+import { User, Mail, Phone, KeyRound, Shield, FileCheck, Upload, Check, X, AlertCircle, Download } from 'lucide-react';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 import Input from '@/components/ui/form/Input';
 import Button from '@/components/ui/Button';
@@ -45,8 +45,14 @@ interface DocumentUploadState {
   [DocumentType.PHOTO_CONSENT]?: File | null;
 }
 
+interface DocumentStates {
+  classPolicy: { status: string; document?: DocumentInfo };
+  parentNotice: { status: string; document?: DocumentInfo };
+  photoConsent: { status: string; document?: DocumentInfo };
+}
+
 export default function StudentSettingsPage() {
-  const { student, loading: authLoading } = useStudentAuth();
+  const { student, loading: authLoading, refreshStudent } = useStudentAuth();
 
   // Loading states
   const [loading, setLoading] = useState<LoadingState>({
@@ -71,14 +77,25 @@ export default function StudentSettingsPage() {
   });
 
   // Document upload state
-  const [documentUpload, setDocumentUpload] = useState<DocumentUploadState>({});
+  const [documentUpload, setDocumentUpload] = useState<DocumentUploadState>({
+    [DocumentType.CLASS_POLICY]: null,
+    [DocumentType.PARENT_NOTICE]: null,
+    [DocumentType.PHOTO_CONSENT]: null,
+  });
+
+  // Document states (from Firestore)
+  const [documentStates, setDocumentStates] = useState<DocumentStates>({
+    classPolicy: { status: 'Not Submitted' },
+    parentNotice: { status: 'Not Submitted' },
+    photoConsent: { status: 'Not Submitted' },
+  });
   
-  // File input refs
-  const fileInputRefs = {
-    [DocumentType.CLASS_POLICY]: useRef<HTMLInputElement>(null),
-    [DocumentType.PARENT_NOTICE]: useRef<HTMLInputElement>(null),
-    [DocumentType.PHOTO_CONSENT]: useRef<HTMLInputElement>(null),
-  };
+  // File input refs - not needed for unified upload
+  // const fileInputRefs = {
+  //   [DocumentType.CLASS_POLICY]: useRef<HTMLInputElement>(null),
+  //   [DocumentType.PARENT_NOTICE]: useRef<HTMLInputElement>(null),
+  //   [DocumentType.PHOTO_CONSENT]: useRef<HTMLInputElement>(null),
+  // };
 
   // Password validation state
   const [passwordValidation, setPasswordValidation] = useState<PasswordValidation>({
@@ -99,8 +116,42 @@ export default function StudentSettingsPage() {
         phone: student.phone || '',
         countryCode: '+61' // Default to Australia
       });
+
+      // Load document states
+      loadDocumentStates();
     }
   }, [student]);
+
+  // Load document states from student data
+  const loadDocumentStates = () => {
+    if (!student || !student.documents) {
+      setDocumentStates({
+        classPolicy: { status: 'Not Submitted' },
+        parentNotice: { status: 'Not Submitted' },
+        photoConsent: { status: 'Not Submitted' },
+      });
+      return;
+    }
+
+    const classPolicyDoc = student.documents.find(doc => doc.type === DocumentType.CLASS_POLICY);
+    const parentNoticeDoc = student.documents.find(doc => doc.type === DocumentType.PARENT_NOTICE);
+    const photoConsentDoc = student.documents.find(doc => doc.type === DocumentType.PHOTO_CONSENT);
+
+    setDocumentStates({
+      classPolicy: {
+        status: classPolicyDoc?.status || 'Not Submitted',
+        document: classPolicyDoc
+      },
+      parentNotice: {
+        status: parentNoticeDoc?.status || 'Not Submitted',
+        document: parentNoticeDoc
+      },
+      photoConsent: {
+        status: photoConsentDoc?.status || 'Not Submitted',
+        document: photoConsentDoc
+      }
+    });
+  };
 
   const handleProfileInputChange = (field: keyof StudentProfileData, value: string) => {
     setProfileData(prev => ({
@@ -216,89 +267,180 @@ export default function StudentSettingsPage() {
     }
   };
 
-  // Trigger file input click
-  const triggerFileInput = (documentType: DocumentType) => {
-    fileInputRefs[documentType]?.current?.click();
-  };
-
-  // Handle document upload
-  const handleDocumentUpload = async (documentType: DocumentType) => {
-    if (!student || !documentUpload[documentType]) return;
+  // Handle unified document upload (all 3 documents at once)
+  const handleUnifiedDocumentUpload = async () => {
+    if (!student) return;
     
+    // Check if all 3 documents are selected
+    const hasAllFiles = documentUpload[DocumentType.CLASS_POLICY] && 
+                       documentUpload[DocumentType.PARENT_NOTICE] && 
+                       documentUpload[DocumentType.PHOTO_CONSENT];
+    
+    if (!hasAllFiles) {
+      alert('Please select all 3 required documents before uploading.');
+      return;
+    }
+
     setLoading(prev => ({ ...prev, document: true }));
     
     try {
-      const uploadedDocument = await StudentDocumentService.uploadDocument(
-        student.id,
-        documentUpload[documentType]!,
-        documentType
-      );
+      // Upload all documents
+      const uploadPromises = [
+        StudentDocumentService.uploadDocument(student.id, documentUpload[DocumentType.CLASS_POLICY]!, DocumentType.CLASS_POLICY),
+        StudentDocumentService.uploadDocument(student.id, documentUpload[DocumentType.PARENT_NOTICE]!, DocumentType.PARENT_NOTICE),
+        StudentDocumentService.uploadDocument(student.id, documentUpload[DocumentType.PHOTO_CONSENT]!, DocumentType.PHOTO_CONSENT),
+      ];
       
-      // Clear the selected file
-      setDocumentUpload(prev => ({
-        ...prev,
-        [documentType]: null
-      }));
+      const uploadedDocuments = await Promise.all(uploadPromises);
       
-      // Update local student state to show the uploaded document immediately
+      // Clear the selected files
+      setDocumentUpload({
+        [DocumentType.CLASS_POLICY]: null,
+        [DocumentType.PARENT_NOTICE]: null,
+        [DocumentType.PHOTO_CONSENT]: null,
+      });
+      
+      // Update local document states
+      setDocumentStates({
+        classPolicy: { status: 'Pending', document: uploadedDocuments[0] },
+        parentNotice: { status: 'Pending', document: uploadedDocuments[1] },
+        photoConsent: { status: 'Pending', document: uploadedDocuments[2] }
+      });
+      
+      // Update student object if it exists
       if (student.documents) {
-        const existingDocIndex = student.documents.findIndex(doc => doc.type === documentType);
-        if (existingDocIndex >= 0) {
-          // Update existing document
-          student.documents[existingDocIndex] = uploadedDocument;
-        } else {
-          // Add new document
-          student.documents.push(uploadedDocument);
-        }
+        uploadedDocuments.forEach(uploadedDoc => {
+          const existingIndex = student.documents!.findIndex(doc => doc.type === uploadedDoc.type);
+          if (existingIndex >= 0) {
+            student.documents![existingIndex] = uploadedDoc;
+          } else {
+            student.documents!.push(uploadedDoc);
+          }
+        });
       } else {
-        // Create documents array
-        student.documents = [uploadedDocument];
+        student.documents = uploadedDocuments;
       }
+
+      // Refresh student data from database to ensure sync
+      await refreshStudent();
       
-      alert(`${documentType} uploaded successfully! Status: Pending verification.`);
+      // Reload document states to reflect the updated data
+      setTimeout(() => loadDocumentStates(), 500); // Small delay to ensure data is updated
+      
+      alert('All documents uploaded successfully! Status: Pending verification.');
     } catch (error) {
-      console.error(`Error uploading ${documentType}:`, error);
-      alert(`Failed to upload ${documentType}. Please try again.`);
+      console.error('Error uploading documents:', error);
+      alert('Failed to upload documents. Please try again.');
     } finally {
       setLoading(prev => ({ ...prev, document: false }));
     }
   };
 
-  // Get document status
-  const getDocumentStatus = (documentType: DocumentType): { status: string; icon: React.ReactNode } => {
-    if (!student || !student.documents) {
-      return { 
-        status: 'Not Submitted', 
-        icon: <X className="w-5 h-5 text-red-500" />
-      };
+  // Handle individual document re-upload (for rejected documents)
+  const handleIndividualDocumentUpload = async (documentType: DocumentType, file: File) => {
+    if (!student) return;
+    
+    setLoading(prev => ({ ...prev, document: true }));
+    
+    try {
+      const uploadedDocument = await StudentDocumentService.uploadDocument(student.id, file, documentType);
+      
+      // Update local document state
+      const stateKey = documentType === DocumentType.CLASS_POLICY ? 'classPolicy' :
+                      documentType === DocumentType.PARENT_NOTICE ? 'parentNotice' : 'photoConsent';
+      
+      setDocumentStates(prev => ({
+        ...prev,
+        [stateKey]: { status: 'Pending', document: uploadedDocument }
+      }));
+      
+      // Update student object
+      if (student.documents) {
+        const existingIndex = student.documents.findIndex(doc => doc.type === documentType);
+        if (existingIndex >= 0) {
+          student.documents[existingIndex] = uploadedDocument;
+        } else {
+          student.documents.push(uploadedDocument);
+        }
+      } else {
+        student.documents = [uploadedDocument];
+      }
+
+      // Refresh student data from database to ensure sync
+      await refreshStudent();
+      
+      // Reload document states to reflect the updated data
+      setTimeout(() => loadDocumentStates(), 500); // Small delay to ensure data is updated
+      
+      alert(`${documentType} re-uploaded successfully! Status: Pending verification.`);
+    } catch (error) {
+      console.error(`Error re-uploading ${documentType}:`, error);
+      alert(`Failed to re-upload ${documentType}. Please try again.`);
+    } finally {
+      setLoading(prev => ({ ...prev, document: false }));
     }
-    
-    const document = student.documents.find(doc => doc.type === documentType);
-    
-    if (!document) {
-      return { 
-        status: 'Not Submitted', 
-        icon: <X className="w-5 h-5 text-red-500" />
-      };
+  };
+
+  // Download document
+  const handleDownloadDocument = (documentInfo: DocumentInfo) => {
+    if (documentInfo.url) {
+      window.open(documentInfo.url, '_blank');
     }
-    
-    switch (document.status) {
+  };
+
+  // Get document status with proper color and icon
+  const getDocumentStatusDisplay = (docState: { status: string; document?: DocumentInfo }) => {
+    switch (docState.status) {
       case 'Verified':
         return { 
           status: 'Verified', 
-          icon: <Check className="w-5 h-5 text-green-500" />
+          icon: <Check className="w-5 h-5 text-green-500" />,
+          color: 'text-green-600 dark:text-green-400',
+          bgColor: 'bg-green-50 dark:bg-green-900/20'
         };
       case 'Rejected':
         return { 
           status: 'Rejected', 
-          icon: <AlertCircle className="w-5 h-5 text-red-500" />
+          icon: <X className="w-5 h-5 text-red-500" />,
+          color: 'text-red-600 dark:text-red-400',
+          bgColor: 'bg-red-50 dark:bg-red-900/20'
+        };
+      case 'Pending':
+        return { 
+          status: 'Pending Verification', 
+          icon: <AlertCircle className="w-5 h-5 text-yellow-500" />,
+          color: 'text-yellow-600 dark:text-yellow-400',
+          bgColor: 'bg-yellow-50 dark:bg-yellow-900/20'
         };
       default:
         return { 
-          status: 'Pending Verification', 
-          icon: <AlertCircle className="w-5 h-5 text-yellow-500" />
+          status: 'Not Submitted', 
+          icon: <X className="w-5 h-5 text-gray-500" />,
+          color: 'text-gray-600 dark:text-gray-400',
+          bgColor: 'bg-gray-50 dark:bg-gray-900/20'
         };
     }
+  };
+
+  // Check if all documents are verified
+  const allDocumentsVerified = () => {
+    return documentStates.classPolicy.status === 'Verified' &&
+           documentStates.parentNotice.status === 'Verified' &&
+           documentStates.photoConsent.status === 'Verified';
+  };
+
+  // Check if any documents can be re-uploaded (rejected status)
+  const hasRejectedDocuments = () => {
+    return documentStates.classPolicy.status === 'Rejected' ||
+           documentStates.parentNotice.status === 'Rejected' ||
+           documentStates.photoConsent.status === 'Rejected';
+  };
+
+  // Check if no documents have been submitted yet
+  const noDocumentsSubmitted = () => {
+    return documentStates.classPolicy.status === 'Not Submitted' &&
+           documentStates.parentNotice.status === 'Not Submitted' &&
+           documentStates.photoConsent.status === 'Not Submitted';
   };
 
   if (!student) {
@@ -553,161 +695,272 @@ export default function StudentSettingsPage() {
         
         <div className="space-y-6">
           <p className="text-gray-600 dark:text-gray-300">
-            Please upload the following required documents. Once submitted, they will be reviewed by our admin team.
+            All 3 documents are required for enrollment. Once verified by admin, you will be able to download them.
           </p>
           
-          <div className="grid md:grid-cols-1 gap-6">
-            {/* Documents Status Overview */}
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6 border border-gray-200 dark:border-gray-600">
-              <h3 className="text-base font-medium text-gray-900 dark:text-white mb-4">Document Status</h3>
-              
-              <div className="space-y-4">
-                {/* Class Policy Agreement Status */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <FileCheck className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                    <span className="text-sm text-gray-700 dark:text-gray-300">{DocumentType.CLASS_POLICY}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">
-                      {getDocumentStatus(DocumentType.CLASS_POLICY).status}
-                    </span>
-                    {getDocumentStatus(DocumentType.CLASS_POLICY).icon}
-                  </div>
+          {/* Document Status Cards */}
+          <div className="grid md:grid-cols-3 gap-4">
+            {/* Class Policy Agreement */}
+            <div className={`rounded-lg p-4 border ${getDocumentStatusDisplay(documentStates.classPolicy).bgColor} border-gray-200 dark:border-gray-600`}>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-2">
+                  <FileCheck className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                  <span className="text-sm font-medium text-gray-900 dark:text-white">Class Policy</span>
                 </div>
-                
-                {/* Parent/Guardian Notice Status */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <FileCheck className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                    <span className="text-sm text-gray-700 dark:text-gray-300">{DocumentType.PARENT_NOTICE}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">
-                      {getDocumentStatus(DocumentType.PARENT_NOTICE).status}
-                    </span>
-                    {getDocumentStatus(DocumentType.PARENT_NOTICE).icon}
-                  </div>
-                </div>
-                
-                {/* Photo Consent Form Status */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <FileCheck className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                    <span className="text-sm text-gray-700 dark:text-gray-300">{DocumentType.PHOTO_CONSENT}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">
-                      {getDocumentStatus(DocumentType.PHOTO_CONSENT).status}
-                    </span>
-                    {getDocumentStatus(DocumentType.PHOTO_CONSENT).icon}
-                  </div>
-                </div>
+                {getDocumentStatusDisplay(documentStates.classPolicy).icon}
+              </div>
+              <div className={`text-sm ${getDocumentStatusDisplay(documentStates.classPolicy).color} font-medium`}>
+                {getDocumentStatusDisplay(documentStates.classPolicy).status}
               </div>
               
-              {/* Unified Upload Section */}
-              {(getDocumentStatus(DocumentType.CLASS_POLICY).status !== 'Verified' ||
-                getDocumentStatus(DocumentType.PARENT_NOTICE).status !== 'Verified' ||
-                getDocumentStatus(DocumentType.PHOTO_CONSENT).status !== 'Verified') && (
-                <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-600">
-                  <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Upload Document</h4>
-                  
-                  <div className="space-y-4">
-                    {/* Document Type Selection */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Document Type *
-                      </label>
-                      <select
-                        value={Object.keys(documentUpload)[0] || ''}
-                        onChange={(e) => {
-                          const selectedType = e.target.value as DocumentType;
-                          if (selectedType) {
-                            setDocumentUpload({
-                              [selectedType]: null
-                            });
-                          } else {
-                            setDocumentUpload({});
-                          }
-                        }}
-                        className="w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                        disabled={loading.document}
-                      >
-                        <option value="">Select a document type</option>
-                        {getDocumentStatus(DocumentType.CLASS_POLICY).status !== 'Verified' && (
-                          <option value={DocumentType.CLASS_POLICY}>{DocumentType.CLASS_POLICY}</option>
-                        )}
-                        {getDocumentStatus(DocumentType.PARENT_NOTICE).status !== 'Verified' && (
-                          <option value={DocumentType.PARENT_NOTICE}>{DocumentType.PARENT_NOTICE}</option>
-                        )}
-                        {getDocumentStatus(DocumentType.PHOTO_CONSENT).status !== 'Verified' && (
-                          <option value={DocumentType.PHOTO_CONSENT}>{DocumentType.PHOTO_CONSENT}</option>
-                        )}
-                      </select>
-                    </div>
-                    
-                    {/* File Upload */}
-                    {Object.keys(documentUpload)[0] && (
-                      <>
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="file"
-                            id="document-file-input"
-                            onChange={(e) => {
-                              const docType = Object.keys(documentUpload)[0] as DocumentType;
-                              if (e.target.files && e.target.files[0]) {
-                                setDocumentUpload({
-                                  [docType]: e.target.files[0]
-                                });
-                              }
-                            }}
-                            className="hidden"
-                            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                            disabled={loading.document}
-                          />
-                          
-                          <div className="flex w-full">
-                            <label
-                              htmlFor="document-file-input"
-                              className="cursor-pointer bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-700 dark:text-white rounded-l-lg px-4 py-2 flex items-center justify-center flex-1"
-                            >
-                              <Upload className="w-4 h-4 mr-2" />
-                              {Object.values(documentUpload)[0] ? 'Change File' : 'Select File'}
-                            </label>
-                            
-                            <Button
-                              type="button"
-                              onClick={() => {
-                                const docType = Object.keys(documentUpload)[0] as DocumentType;
-                                const file = Object.values(documentUpload)[0];
-                                if (docType && file) {
-                                  handleDocumentUpload(docType);
-                                }
-                              }}
-                              disabled={!Object.values(documentUpload)[0] || loading.document}
-                              className="bg-green-600 hover:bg-green-700 text-white rounded-r-lg px-4 py-2 flex items-center justify-center"
-                            >
-                              {loading.document ? 'Uploading...' : 'Upload Document'}
-                            </Button>
-                          </div>
-                        </div>
-                        
-                        {Object.values(documentUpload)[0] && (
-                          <div className="bg-gray-100 dark:bg-gray-800 rounded p-3 flex items-center">
-                            <FileCheck className="w-4 h-4 text-gray-500 dark:text-gray-400 mr-2 flex-shrink-0" />
-                            <span className="text-sm text-gray-600 dark:text-gray-300 truncate">
-                              {Object.values(documentUpload)[0]?.name}
-                            </span>
-                          </div>
-                        )}
-                      </>
+              {/* Action buttons for this document */}
+              <div className="mt-3">
+                {documentStates.classPolicy.status === 'Verified' && documentStates.classPolicy.document && (
+                  <button
+                    onClick={() => handleDownloadDocument(documentStates.classPolicy.document!)}
+                    className="w-full bg-green-100 hover:bg-green-200 dark:bg-green-900/30 dark:hover:bg-green-900/50 text-green-700 dark:text-green-300 px-3 py-2 rounded text-xs font-medium transition-colors"
+                  >
+                    Download
+                  </button>
+                )}
+                {documentStates.classPolicy.status === 'Rejected' && (
+                  <div className="space-y-2">
+                    <input
+                      type="file"
+                      id="classPolicy-reupload"
+                      className="hidden"
+                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                      onChange={(e) => {
+                        if (e.target.files?.[0]) {
+                          handleIndividualDocumentUpload(DocumentType.CLASS_POLICY, e.target.files[0]);
+                        }
+                      }}
+                    />
+                    <button
+                      onClick={() => document.getElementById('classPolicy-reupload')?.click()}
+                      disabled={loading.document}
+                      className="w-full bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-700 dark:text-red-300 px-3 py-2 rounded text-xs font-medium transition-colors disabled:opacity-50"
+                    >
+                      {loading.document ? 'Uploading...' : 'Re-upload'}
+                    </button>
+                    {documentStates.classPolicy.document?.notes && (
+                      <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                        Reason: {documentStates.classPolicy.document.notes}
+                      </p>
                     )}
                   </div>
+                )}
+              </div>
+            </div>
+
+            {/* Parent/Guardian Notice */}
+            <div className={`rounded-lg p-4 border ${getDocumentStatusDisplay(documentStates.parentNotice).bgColor} border-gray-200 dark:border-gray-600`}>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-2">
+                  <FileCheck className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                  <span className="text-sm font-medium text-gray-900 dark:text-white">Parent Notice</span>
                 </div>
-              )}
+                {getDocumentStatusDisplay(documentStates.parentNotice).icon}
+              </div>
+              <div className={`text-sm ${getDocumentStatusDisplay(documentStates.parentNotice).color} font-medium`}>
+                {getDocumentStatusDisplay(documentStates.parentNotice).status}
+              </div>
+              
+              {/* Action buttons for this document */}
+              <div className="mt-3">
+                {documentStates.parentNotice.status === 'Verified' && documentStates.parentNotice.document && (
+                  <button
+                    onClick={() => handleDownloadDocument(documentStates.parentNotice.document!)}
+                    className="w-full bg-green-100 hover:bg-green-200 dark:bg-green-900/30 dark:hover:bg-green-900/50 text-green-700 dark:text-green-300 px-3 py-2 rounded text-xs font-medium transition-colors"
+                  >
+                    Download
+                  </button>
+                )}
+                {documentStates.parentNotice.status === 'Rejected' && (
+                  <div className="space-y-2">
+                    <input
+                      type="file"
+                      id="parentNotice-reupload"
+                      className="hidden"
+                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                      onChange={(e) => {
+                        if (e.target.files?.[0]) {
+                          handleIndividualDocumentUpload(DocumentType.PARENT_NOTICE, e.target.files[0]);
+                        }
+                      }}
+                    />
+                    <button
+                      onClick={() => document.getElementById('parentNotice-reupload')?.click()}
+                      disabled={loading.document}
+                      className="w-full bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-700 dark:text-red-300 px-3 py-2 rounded text-xs font-medium transition-colors disabled:opacity-50"
+                    >
+                      {loading.document ? 'Uploading...' : 'Re-upload'}
+                    </button>
+                    {documentStates.parentNotice.document?.notes && (
+                      <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                        Reason: {documentStates.parentNotice.document.notes}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Photo Consent Form */}
+            <div className={`rounded-lg p-4 border ${getDocumentStatusDisplay(documentStates.photoConsent).bgColor} border-gray-200 dark:border-gray-600`}>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-2">
+                  <FileCheck className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                  <span className="text-sm font-medium text-gray-900 dark:text-white">Photo Consent</span>
+                </div>
+                {getDocumentStatusDisplay(documentStates.photoConsent).icon}
+              </div>
+              <div className={`text-sm ${getDocumentStatusDisplay(documentStates.photoConsent).color} font-medium`}>
+                {getDocumentStatusDisplay(documentStates.photoConsent).status}
+              </div>
+              
+              {/* Action buttons for this document */}
+              <div className="mt-3">
+                {documentStates.photoConsent.status === 'Verified' && documentStates.photoConsent.document && (
+                  <button
+                    onClick={() => handleDownloadDocument(documentStates.photoConsent.document!)}
+                    className="w-full bg-green-100 hover:bg-green-200 dark:bg-green-900/30 dark:hover:bg-green-900/50 text-green-700 dark:text-green-300 px-3 py-2 rounded text-xs font-medium transition-colors"
+                  >
+                    Download
+                  </button>
+                )}
+                {documentStates.photoConsent.status === 'Rejected' && (
+                  <div className="space-y-2">
+                    <input
+                      type="file"
+                      id="photoConsent-reupload"
+                      className="hidden"
+                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                      onChange={(e) => {
+                        if (e.target.files?.[0]) {
+                          handleIndividualDocumentUpload(DocumentType.PHOTO_CONSENT, e.target.files[0]);
+                        }
+                      }}
+                    />
+                    <button
+                      onClick={() => document.getElementById('photoConsent-reupload')?.click()}
+                      disabled={loading.document}
+                      className="w-full bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-700 dark:text-red-300 px-3 py-2 rounded text-xs font-medium transition-colors disabled:opacity-50"
+                    >
+                      {loading.document ? 'Uploading...' : 'Re-upload'}
+                    </button>
+                    {documentStates.photoConsent.document?.notes && (
+                      <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                        Reason: {documentStates.photoConsent.document.notes}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
+
+          {/* Unified Upload Section - Only show if no documents submitted yet or if there are rejected ones */}
+          {(noDocumentsSubmitted() || hasRejectedDocuments()) && !allDocumentsVerified() && (
+            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6 border border-gray-200 dark:border-gray-600">
+              <h3 className="text-base font-medium text-gray-900 dark:text-white mb-4">
+                {noDocumentsSubmitted() ? 'Upload All Required Documents' : 'Upload Documents'}
+              </h3>
+              
+              <div className="space-y-4">
+                {noDocumentsSubmitted() && (
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                    Please select all 3 required documents and upload them together.
+                  </p>
+                )}
+
+                {/* File upload for Class Policy */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Class Policy Agreement *
+                  </label>
+                  <input
+                    type="file"
+                    onChange={(e) => handleFileChange(DocumentType.CLASS_POLICY, e)}
+                    className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                    disabled={loading.document}
+                  />
+                  {documentUpload[DocumentType.CLASS_POLICY] && (
+                    <p className="text-xs text-gray-500 mt-1">Selected: {documentUpload[DocumentType.CLASS_POLICY].name}</p>
+                  )}
+                </div>
+
+                {/* File upload for Parent Notice */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Parent/Guardian Notice *
+                  </label>
+                  <input
+                    type="file"
+                    onChange={(e) => handleFileChange(DocumentType.PARENT_NOTICE, e)}
+                    className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                    disabled={loading.document}
+                  />
+                  {documentUpload[DocumentType.PARENT_NOTICE] && (
+                    <p className="text-xs text-gray-500 mt-1">Selected: {documentUpload[DocumentType.PARENT_NOTICE].name}</p>
+                  )}
+                </div>
+
+                {/* File upload for Photo Consent */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Photo Consent Form *
+                  </label>
+                  <input
+                    type="file"
+                    onChange={(e) => handleFileChange(DocumentType.PHOTO_CONSENT, e)}
+                    className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                    disabled={loading.document}
+                  />
+                  {documentUpload[DocumentType.PHOTO_CONSENT] && (
+                    <p className="text-xs text-gray-500 mt-1">Selected: {documentUpload[DocumentType.PHOTO_CONSENT].name}</p>
+                  )}
+                </div>
+
+                {/* Upload All Button */}
+                {noDocumentsSubmitted() && (
+                  <Button
+                    type="button"
+                    onClick={handleUnifiedDocumentUpload}
+                    disabled={
+                      loading.document ||
+                      !documentUpload[DocumentType.CLASS_POLICY] ||
+                      !documentUpload[DocumentType.PARENT_NOTICE] ||
+                      !documentUpload[DocumentType.PHOTO_CONSENT]
+                    }
+                    className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium disabled:opacity-50"
+                  >
+                    {loading.document ? 'Uploading...' : 'Upload All Documents'}
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Success Message */}
+          {allDocumentsVerified() && (
+            <div className="bg-green-50 dark:bg-green-900/30 p-4 rounded-lg border border-green-100 dark:border-green-800">
+              <div className="flex items-start">
+                <Check className="w-5 h-5 text-green-500 dark:text-green-400 mr-3 mt-0.5" />
+                <div>
+                  <h4 className="text-sm font-medium text-green-800 dark:text-green-300 mb-1">Documents Verified</h4>
+                  <p className="text-xs text-green-600 dark:text-green-400">
+                    All your required documents have been verified and approved by our admin team. You can download them using the download buttons above.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
           
+          {/* Important Information */}
           <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg border border-blue-100 dark:border-blue-800">
             <div className="flex items-start">
               <Shield className="w-5 h-5 text-blue-500 dark:text-blue-400 mr-3 mt-0.5" />
