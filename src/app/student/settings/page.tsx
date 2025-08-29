@@ -544,160 +544,154 @@ export default function StudentSettingsPage() {
             Please upload the following required documents. Once submitted, they will be reviewed by our admin team.
           </p>
           
-          <div className="grid md:grid-cols-3 gap-6">
-            {/* Class Policy Agreement */}
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
-              <div className="flex justify-between items-start mb-3">
-                <h4 className="text-sm font-medium text-gray-900 dark:text-white">{DocumentType.CLASS_POLICY}</h4>
-                {getDocumentStatus(DocumentType.CLASS_POLICY).icon}
+          <div className="grid md:grid-cols-1 gap-6">
+            {/* Documents Status Overview */}
+            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6 border border-gray-200 dark:border-gray-600">
+              <h3 className="text-base font-medium text-gray-900 dark:text-white mb-4">Document Status</h3>
+              
+              <div className="space-y-4">
+                {/* Class Policy Agreement Status */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <FileCheck className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">{DocumentType.CLASS_POLICY}</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      {getDocumentStatus(DocumentType.CLASS_POLICY).status}
+                    </span>
+                    {getDocumentStatus(DocumentType.CLASS_POLICY).icon}
+                  </div>
+                </div>
+                
+                {/* Parent/Guardian Notice Status */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <FileCheck className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">{DocumentType.PARENT_NOTICE}</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      {getDocumentStatus(DocumentType.PARENT_NOTICE).status}
+                    </span>
+                    {getDocumentStatus(DocumentType.PARENT_NOTICE).icon}
+                  </div>
+                </div>
+                
+                {/* Photo Consent Form Status */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <FileCheck className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">{DocumentType.PHOTO_CONSENT}</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      {getDocumentStatus(DocumentType.PHOTO_CONSENT).status}
+                    </span>
+                    {getDocumentStatus(DocumentType.PHOTO_CONSENT).icon}
+                  </div>
+                </div>
               </div>
               
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-                Status: {getDocumentStatus(DocumentType.CLASS_POLICY).status}
-              </p>
-              
-              {getDocumentStatus(DocumentType.CLASS_POLICY).status !== 'Verified' && (
-                <>
-                  <input
-                    type="file"
-                    ref={fileInputRefs[DocumentType.CLASS_POLICY]}
-                    onChange={(e) => handleFileChange(DocumentType.CLASS_POLICY, e)}
-                    className="hidden"
-                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                  />
+              {/* Unified Upload Section */}
+              {(getDocumentStatus(DocumentType.CLASS_POLICY).status !== 'Verified' ||
+                getDocumentStatus(DocumentType.PARENT_NOTICE).status !== 'Verified' ||
+                getDocumentStatus(DocumentType.PHOTO_CONSENT).status !== 'Verified') && (
+                <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-600">
+                  <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Upload Document</h4>
                   
-                  <div className="flex space-x-2">
-                    <Button
-                      type="button"
-                      onClick={() => triggerFileInput(DocumentType.CLASS_POLICY)}
-                      className="bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-700 dark:text-white text-xs px-3 py-1 rounded flex-1"
-                    >
-                      <Upload className="w-3 h-3 mr-1 inline" />
-                      {documentUpload[DocumentType.CLASS_POLICY] ? 'Change File' : 'Select File'}
-                    </Button>
-                    
-                    {documentUpload[DocumentType.CLASS_POLICY] && (
-                      <Button
-                        type="button"
-                        onClick={() => handleDocumentUpload(DocumentType.CLASS_POLICY)}
+                  <div className="space-y-4">
+                    {/* Document Type Selection */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Document Type *
+                      </label>
+                      <select
+                        value={Object.keys(documentUpload)[0] || ''}
+                        onChange={(e) => {
+                          const selectedType = e.target.value as DocumentType;
+                          if (selectedType) {
+                            setDocumentUpload({
+                              [selectedType]: null
+                            });
+                          } else {
+                            setDocumentUpload({});
+                          }
+                        }}
+                        className="w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
                         disabled={loading.document}
-                        className="bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1 rounded flex-1"
                       >
-                        {loading.document ? 'Uploading...' : 'Upload'}
-                      </Button>
+                        <option value="">Select a document type</option>
+                        {getDocumentStatus(DocumentType.CLASS_POLICY).status !== 'Verified' && (
+                          <option value={DocumentType.CLASS_POLICY}>{DocumentType.CLASS_POLICY}</option>
+                        )}
+                        {getDocumentStatus(DocumentType.PARENT_NOTICE).status !== 'Verified' && (
+                          <option value={DocumentType.PARENT_NOTICE}>{DocumentType.PARENT_NOTICE}</option>
+                        )}
+                        {getDocumentStatus(DocumentType.PHOTO_CONSENT).status !== 'Verified' && (
+                          <option value={DocumentType.PHOTO_CONSENT}>{DocumentType.PHOTO_CONSENT}</option>
+                        )}
+                      </select>
+                    </div>
+                    
+                    {/* File Upload */}
+                    {Object.keys(documentUpload)[0] && (
+                      <>
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="file"
+                            id="document-file-input"
+                            onChange={(e) => {
+                              const docType = Object.keys(documentUpload)[0] as DocumentType;
+                              if (e.target.files && e.target.files[0]) {
+                                setDocumentUpload({
+                                  [docType]: e.target.files[0]
+                                });
+                              }
+                            }}
+                            className="hidden"
+                            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                            disabled={loading.document}
+                          />
+                          
+                          <div className="flex w-full">
+                            <label
+                              htmlFor="document-file-input"
+                              className="cursor-pointer bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-700 dark:text-white rounded-l-lg px-4 py-2 flex items-center justify-center flex-1"
+                            >
+                              <Upload className="w-4 h-4 mr-2" />
+                              {Object.values(documentUpload)[0] ? 'Change File' : 'Select File'}
+                            </label>
+                            
+                            <Button
+                              type="button"
+                              onClick={() => {
+                                const docType = Object.keys(documentUpload)[0] as DocumentType;
+                                const file = Object.values(documentUpload)[0];
+                                if (docType && file) {
+                                  handleDocumentUpload(docType);
+                                }
+                              }}
+                              disabled={!Object.values(documentUpload)[0] || loading.document}
+                              className="bg-green-600 hover:bg-green-700 text-white rounded-r-lg px-4 py-2 flex items-center justify-center"
+                            >
+                              {loading.document ? 'Uploading...' : 'Upload Document'}
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        {Object.values(documentUpload)[0] && (
+                          <div className="bg-gray-100 dark:bg-gray-800 rounded p-3 flex items-center">
+                            <FileCheck className="w-4 h-4 text-gray-500 dark:text-gray-400 mr-2 flex-shrink-0" />
+                            <span className="text-sm text-gray-600 dark:text-gray-300 truncate">
+                              {Object.values(documentUpload)[0]?.name}
+                            </span>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
-                  
-                  {documentUpload[DocumentType.CLASS_POLICY] && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 truncate">
-                      Selected: {documentUpload[DocumentType.CLASS_POLICY]?.name}
-                    </p>
-                  )}
-                </>
-              )}
-            </div>
-            
-            {/* Parent/Guardian Notice */}
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
-              <div className="flex justify-between items-start mb-3">
-                <h4 className="text-sm font-medium text-gray-900 dark:text-white">{DocumentType.PARENT_NOTICE}</h4>
-                {getDocumentStatus(DocumentType.PARENT_NOTICE).icon}
-              </div>
-              
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-                Status: {getDocumentStatus(DocumentType.PARENT_NOTICE).status}
-              </p>
-              
-              {getDocumentStatus(DocumentType.PARENT_NOTICE).status !== 'Verified' && (
-                <>
-                  <input
-                    type="file"
-                    ref={fileInputRefs[DocumentType.PARENT_NOTICE]}
-                    onChange={(e) => handleFileChange(DocumentType.PARENT_NOTICE, e)}
-                    className="hidden"
-                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                  />
-                  
-                  <div className="flex space-x-2">
-                    <Button
-                      type="button"
-                      onClick={() => triggerFileInput(DocumentType.PARENT_NOTICE)}
-                      className="bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-700 dark:text-white text-xs px-3 py-1 rounded flex-1"
-                    >
-                      <Upload className="w-3 h-3 mr-1 inline" />
-                      {documentUpload[DocumentType.PARENT_NOTICE] ? 'Change File' : 'Select File'}
-                    </Button>
-                    
-                    {documentUpload[DocumentType.PARENT_NOTICE] && (
-                      <Button
-                        type="button"
-                        onClick={() => handleDocumentUpload(DocumentType.PARENT_NOTICE)}
-                        disabled={loading.document}
-                        className="bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1 rounded flex-1"
-                      >
-                        {loading.document ? 'Uploading...' : 'Upload'}
-                      </Button>
-                    )}
-                  </div>
-                  
-                  {documentUpload[DocumentType.PARENT_NOTICE] && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 truncate">
-                      Selected: {documentUpload[DocumentType.PARENT_NOTICE]?.name}
-                    </p>
-                  )}
-                </>
-              )}
-            </div>
-            
-            {/* Photo Consent Form */}
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
-              <div className="flex justify-between items-start mb-3">
-                <h4 className="text-sm font-medium text-gray-900 dark:text-white">{DocumentType.PHOTO_CONSENT}</h4>
-                {getDocumentStatus(DocumentType.PHOTO_CONSENT).icon}
-              </div>
-              
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-                Status: {getDocumentStatus(DocumentType.PHOTO_CONSENT).status}
-              </p>
-              
-              {getDocumentStatus(DocumentType.PHOTO_CONSENT).status !== 'Verified' && (
-                <>
-                  <input
-                    type="file"
-                    ref={fileInputRefs[DocumentType.PHOTO_CONSENT]}
-                    onChange={(e) => handleFileChange(DocumentType.PHOTO_CONSENT, e)}
-                    className="hidden"
-                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                  />
-                  
-                  <div className="flex space-x-2">
-                    <Button
-                      type="button"
-                      onClick={() => triggerFileInput(DocumentType.PHOTO_CONSENT)}
-                      className="bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-700 dark:text-white text-xs px-3 py-1 rounded flex-1"
-                    >
-                      <Upload className="w-3 h-3 mr-1 inline" />
-                      {documentUpload[DocumentType.PHOTO_CONSENT] ? 'Change File' : 'Select File'}
-                    </Button>
-                    
-                    {documentUpload[DocumentType.PHOTO_CONSENT] && (
-                      <Button
-                        type="button"
-                        onClick={() => handleDocumentUpload(DocumentType.PHOTO_CONSENT)}
-                        disabled={loading.document}
-                        className="bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1 rounded flex-1"
-                      >
-                        {loading.document ? 'Uploading...' : 'Upload'}
-                      </Button>
-                    )}
-                  </div>
-                  
-                  {documentUpload[DocumentType.PHOTO_CONSENT] && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 truncate">
-                      Selected: {documentUpload[DocumentType.PHOTO_CONSENT]?.name}
-                    </p>
-                  )}
-                </>
+                </div>
               )}
             </div>
           </div>
