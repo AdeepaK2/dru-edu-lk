@@ -63,6 +63,13 @@ export default function DocumentVerificationPage() {
     sortOrder: 'asc'
   });
   const [verificationNote, setVerificationNote] = useState('');
+  
+  // Email reminder state
+  const [sendingReminders, setSendingReminders] = useState(false);
+  const [reminderResults, setReminderResults] = useState<any>(null);
+  const [showReminderModal, setShowReminderModal] = useState(false);
+  const [reminderPreview, setReminderPreview] = useState<any>(null);
+  const [loadingPreview, setLoadingPreview] = useState(false);
 
   // Check admin auth
   useEffect(() => {
@@ -227,6 +234,74 @@ export default function DocumentVerificationPage() {
     const pendingTypes = pendingDocs.map(doc => doc.type);
     
     return requiredDocs.every(type => pendingTypes.includes(type));
+  };
+
+  // Load reminder preview
+  const loadReminderPreview = async (type: 'all' | 'no_documents' = 'all') => {
+    setLoadingPreview(true);
+    try {
+      const response = await fetch(`/api/admin/send-document-reminders?type=${type}`);
+      if (!response.ok) throw new Error('Failed to load preview');
+      
+      const data = await response.json();
+      setReminderPreview(data);
+    } catch (error) {
+      console.error('Error loading reminder preview:', error);
+      alert('Failed to load preview. Please try again.');
+    } finally {
+      setLoadingPreview(false);
+    }
+  };
+
+  // Send document reminder emails
+  const sendDocumentReminders = async (type: 'all' | 'no_documents' = 'all', isUrgent: boolean = false) => {
+    if (!reminderPreview) {
+      await loadReminderPreview(type);
+      return;
+    }
+
+    if (reminderPreview.stats.withParentEmail === 0) {
+      alert('No students with parent email addresses found to send reminders to.');
+      return;
+    }
+
+    const confirmMessage = isUrgent 
+      ? `Send URGENT document reminder emails to ${reminderPreview.stats.withParentEmail} students and their parents?`
+      : `Send document reminder emails to ${reminderPreview.stats.withParentEmail} students and their parents?`;
+    
+    if (!confirm(confirmMessage)) return;
+
+    setSendingReminders(true);
+    try {
+      const response = await fetch('/api/admin/send-document-reminders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, isUrgent })
+      });
+
+      if (!response.ok) throw new Error('Failed to send reminders');
+      
+      const data = await response.json();
+      setReminderResults(data);
+      
+      const message = `Document reminders sent! ${data.summary.successful} successful, ${data.summary.failed} failed.`;
+      alert(message);
+      
+      // Refresh the preview to show updated numbers
+      await loadReminderPreview(type);
+      
+    } catch (error) {
+      console.error('Error sending reminders:', error);
+      alert('Failed to send document reminders. Please try again.');
+    } finally {
+      setSendingReminders(false);
+    }
+  };
+
+  // Handle opening reminder modal
+  const handleOpenReminderModal = async (type: 'all' | 'no_documents' = 'all') => {
+    setShowReminderModal(true);
+    await loadReminderPreview(type);
   };
 
   // Get unique classes from students data
@@ -462,25 +537,45 @@ export default function DocumentVerificationPage() {
     <div className="p-6 max-w-7xl mx-auto space-y-8">
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-        <div className="flex items-center space-x-4">
-          <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center">
-            <FileCheck className="w-6 h-6 text-white" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center">
+              <FileCheck className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                Document Verification
+                {filters.classId !== 'All' && (
+                  <span className="text-lg font-normal text-gray-600 dark:text-gray-400 ml-2">
+                    - {getUniqueClasses.find(cls => cls.classId === filters.classId)?.className}
+                  </span>
+                )}
+              </h1>
+              <p className="text-gray-600 dark:text-gray-300">
+                {filters.classId === 'All' 
+                  ? 'Review and verify student document submissions' 
+                  : `Viewing documents for ${getUniqueClasses.find(cls => cls.classId === filters.classId)?.subject || 'selected class'}`
+                }
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Document Verification
-              {filters.classId !== 'All' && (
-                <span className="text-lg font-normal text-gray-600 dark:text-gray-400 ml-2">
-                  - {getUniqueClasses.find(cls => cls.classId === filters.classId)?.className}
-                </span>
-              )}
-            </h1>
-            <p className="text-gray-600 dark:text-gray-300">
-              {filters.classId === 'All' 
-                ? 'Review and verify student document submissions' 
-                : `Viewing documents for ${getUniqueClasses.find(cls => cls.classId === filters.classId)?.subject || 'selected class'}`
-              }
-            </p>
+          
+          {/* Email Reminder Actions */}
+          <div className="flex items-center space-x-3">
+            <Button
+              onClick={() => handleOpenReminderModal('all')}
+              disabled={loading}
+              className="bg-yellow-600 hover:bg-yellow-700 text-white"
+            >
+              📧 Send Reminders
+            </Button>
+            <Button
+              onClick={() => handleOpenReminderModal('no_documents')}
+              disabled={loading}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              🚨 Urgent Reminders
+            </Button>
           </div>
         </div>
       </div>
@@ -1026,6 +1121,161 @@ export default function DocumentVerificationPage() {
               </table>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Email Reminder Modal */}
+      {showReminderModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  📧 Send Document Reminder Emails
+                </h3>
+                <Button
+                  onClick={() => {
+                    setShowReminderModal(false);
+                    setReminderPreview(null);
+                    setReminderResults(null);
+                  }}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  ✕
+                </Button>
+              </div>
+            </div>
+            
+            <div className="p-6">
+              {loadingPreview ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="w-8 h-8 border-t-4 border-blue-600 border-solid rounded-full animate-spin mr-3"></div>
+                  <p className="text-gray-600 dark:text-gray-300">Loading preview...</p>
+                </div>
+              ) : reminderPreview ? (
+                <div>
+                  {/* Preview Statistics */}
+                  <div className="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-4 mb-6">
+                    <h4 className="text-md font-semibold text-blue-900 dark:text-blue-100 mb-3">
+                      📊 Reminder Summary
+                    </h4>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-gray-600 dark:text-gray-300">Total Students:</span>
+                        <span className="font-semibold ml-2 text-gray-900 dark:text-white">
+                          {reminderPreview.stats.total}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600 dark:text-gray-300">With Parent Email:</span>
+                        <span className="font-semibold ml-2 text-green-600 dark:text-green-400">
+                          {reminderPreview.stats.withParentEmail}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600 dark:text-gray-300">Missing Parent Email:</span>
+                        <span className="font-semibold ml-2 text-red-600 dark:text-red-400">
+                          {reminderPreview.stats.withoutParentEmail}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600 dark:text-gray-300">Avg. Missing Docs:</span>
+                        <span className="font-semibold ml-2 text-gray-900 dark:text-white">
+                          {reminderPreview.stats.averageMissingDocs}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Preview List */}
+                  {reminderPreview.preview.length > 0 ? (
+                    <div className="mb-6">
+                      <h4 className="text-md font-semibold text-gray-900 dark:text-white mb-3">
+                        👥 Students Who Will Receive Reminders ({reminderPreview.stats.withParentEmail} students)
+                      </h4>
+                      <div className="max-h-64 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-lg">
+                        {reminderPreview.preview
+                          .filter((student: any) => student.hasParentEmail)
+                          .map((student: any) => (
+                            <div key={student.id} className="p-3 border-b border-gray-200 dark:border-gray-600 last:border-b-0">
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <p className="font-medium text-gray-900 dark:text-white">{student.name}</p>
+                                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                                    Parent: {student.parentName} ({student.parentEmail})
+                                  </p>
+                                </div>
+                                <div className="text-right">
+                                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">
+                                    {student.missingDocumentsCount} missing
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                Missing: {student.missingDocumentTypes.join(', ')}
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-gray-600 dark:text-gray-300">
+                        🎉 All students have submitted their required documents!
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  {reminderPreview.stats.withParentEmail > 0 && (
+                    <div className="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-700">
+                      <div className="text-sm text-gray-600 dark:text-gray-300">
+                        Emails will be sent to both students and parents
+                      </div>
+                      <div className="flex space-x-3">
+                        <Button
+                          onClick={() => sendDocumentReminders(reminderPreview.type, false)}
+                          disabled={sendingReminders}
+                          className="bg-yellow-600 hover:bg-yellow-700 text-white"
+                        >
+                          {sendingReminders ? 'Sending...' : '📧 Send Normal Reminders'}
+                        </Button>
+                        <Button
+                          onClick={() => sendDocumentReminders(reminderPreview.type, true)}
+                          disabled={sendingReminders}
+                          className="bg-red-600 hover:bg-red-700 text-white"
+                        >
+                          {sendingReminders ? 'Sending...' : '🚨 Send Urgent Reminders'}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Results Display */}
+                  {reminderResults && (
+                    <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/30 rounded-lg">
+                      <h4 className="text-md font-semibold text-green-900 dark:text-green-100 mb-2">
+                        ✅ Reminders Sent Successfully!
+                      </h4>
+                      <p className="text-sm text-green-800 dark:text-green-200">
+                        {reminderResults.message}
+                      </p>
+                      <div className="mt-2 text-xs text-green-700 dark:text-green-300">
+                        Type: {reminderResults.summary.type} | 
+                        Urgent: {reminderResults.summary.isUrgent ? 'Yes' : 'No'} | 
+                        Success: {reminderResults.summary.successful} | 
+                        Failed: {reminderResults.summary.failed}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-600 dark:text-gray-300">No preview data available.</p>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

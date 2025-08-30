@@ -1,7 +1,7 @@
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { doc, updateDoc, arrayUnion, getDoc } from 'firebase/firestore';
 import { firestore, storage } from '@/utils/firebase-client';
-import { DocumentInfo, DocumentType } from '@/models/studentSchema';
+import { DocumentInfo, DocumentType, StudentDocument } from '@/models/studentSchema';
 
 const COLLECTION_NAME = 'students';
 const STORAGE_PATH = 'policy-docs';
@@ -180,6 +180,97 @@ export class StudentDocumentService {
     } catch (error) {
       console.error('Error getting students with document status:', error);
       throw new Error(`Failed to get students with document status: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Get students who haven't submitted required documents
+   */
+  static async getStudentsWithMissingDocuments(): Promise<Array<{
+    id: string;
+    name: string;
+    email: string;
+    parent: { name: string; email: string } | null;
+    missingDocuments: Array<{ type: DocumentType; name: string; url: string }>;
+  }>> {
+    try {
+      const studentsWithDocs = await this.getStudentsWithDocumentStatus();
+      
+      // Define required documents with their display names and URLs
+      const requiredDocuments = [
+        {
+          type: DocumentType.CLASS_POLICY,
+          name: 'Class Policy Agreement',
+          url: 'https://drive.google.com/file/d/1YHJxvAfTVMqRJ5YQeD5fFZdXkt81vSr1/view?usp=sharing'
+        },
+        {
+          type: DocumentType.PARENT_NOTICE,
+          name: 'Parent/Guardian Notice',
+          url: 'https://drive.google.com/file/d/1j_LO0jWJ2-4WRYBZwMwp0eRnFMqOVM-F/view?usp=sharing'
+        },
+        {
+          type: DocumentType.PHOTO_CONSENT,
+          name: 'Photo Consent Form',
+          url: 'https://drive.google.com/file/d/1qD9nYtOnbHs_AImrAaEU5NTPalXwea6F/view?usp=sharing'
+        }
+      ];
+
+      const studentsWithMissingDocs = studentsWithDocs
+        .filter(student => {
+          // Only include active students
+          return student.status === 'Active';
+        })
+        .map(student => {
+          const submittedDocTypes = (student.documents || [])
+            .filter((doc: DocumentInfo) => doc.status === 'Verified' || doc.status === 'Pending')
+            .map((doc: DocumentInfo) => doc.type);
+
+          const missingDocuments = requiredDocuments.filter(
+            reqDoc => !submittedDocTypes.includes(reqDoc.type)
+          );
+
+          // Get the student document to access parent info
+          const studentData = student as unknown as StudentDocument;
+
+          return {
+            id: student.id,
+            name: student.name,
+            email: student.email,
+            parent: studentData.parent ? {
+              name: studentData.parent.name,
+              email: studentData.parent.email
+            } : null,
+            missingDocuments
+          };
+        })
+        .filter(student => student.missingDocuments.length > 0);
+
+      console.log(`Found ${studentsWithMissingDocs.length} students with missing documents`);
+      return studentsWithMissingDocs;
+    } catch (error) {
+      console.error('Error getting students with missing documents:', error);
+      throw new Error(`Failed to get students with missing documents: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Get students who haven't submitted ANY documents (completely new students)
+   */
+  static async getStudentsWithNoDocuments(): Promise<Array<{
+    id: string;
+    name: string;
+    email: string;
+    parent: { name: string; email: string } | null;
+    missingDocuments: Array<{ type: DocumentType; name: string; url: string }>;
+  }>> {
+    try {
+      const studentsWithMissing = await this.getStudentsWithMissingDocuments();
+      
+      // Filter for students who have all 3 documents missing (i.e., no documents submitted at all)
+      return studentsWithMissing.filter(student => student.missingDocuments.length === 3);
+    } catch (error) {
+      console.error('Error getting students with no documents:', error);
+      throw new Error(`Failed to get students with no documents: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 }

@@ -1050,4 +1050,377 @@ export class MailService {
       throw error;
     }
   }
+
+  // Generate document submission reminder email for student
+  static generateDocumentReminderEmail(
+    studentName: string,
+    studentEmail: string,
+    missingDocuments: Array<{ type: string; name: string; url: string }>,
+    isUrgent: boolean = true
+  ): Omit<MailDocument, 'createdAt' | 'processed'> {
+    const urgentBadge = isUrgent ? '🚨 URGENT: ' : '📄 Reminder: ';
+    
+    const documentsList = missingDocuments.map(doc => `
+      <div style="margin-bottom: 15px; padding: 12px; background-color: #ffffff; border-radius: 8px; border-left: 4px solid ${doc.type === 'Class Policy Agreement' ? '#4299e1' : doc.type === 'Parent/Guardian Notice' ? '#48bb78' : '#ed8936'};">
+        <a href="${doc.url}" 
+           style="color: ${doc.type === 'Class Policy Agreement' ? '#2b6cb0' : doc.type === 'Parent/Guardian Notice' ? '#2f855a' : '#c05621'}; text-decoration: none; font-weight: 500; display: flex; align-items: center;">
+          ${doc.type === 'Class Policy Agreement' ? '📜' : doc.type === 'Parent/Guardian Notice' ? '👨‍👩‍👧‍👦' : '📸'} <span style="margin-left: 8px;">${doc.name}</span>
+        </a>
+      </div>
+    `).join('');
+
+    const html = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Document Submission Reminder</title>
+        <style>
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        </style>
+      </head>
+      <body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+        <div style="max-width: 650px; margin: 0 auto; background-color: #ffffff; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+          
+          <!-- Header with gradient background -->
+          <div style="background: ${isUrgent ? 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)' : 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'}; padding: 40px 30px; text-align: center; border-radius: 8px 8px 0 0;">
+            <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.5px;">
+              ${isUrgent ? '🚨' : '📄'} Document Submission ${isUrgent ? 'URGENT' : 'Reminder'}
+            </h1>
+            <p style="color: #fed7d7; margin: 10px 0 0 0; font-size: 16px; font-weight: 400;">
+              ${isUrgent ? 'Immediate action required' : 'Please submit your documents'}
+            </p>
+          </div>
+          
+          <!-- Main content -->
+          <div style="padding: 40px 30px;">
+            <div style="margin-bottom: 30px;">
+              <p style="color: #1a202c; font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">
+                Dear <strong>${studentName}</strong>,
+              </p>
+              <p style="color: #4a5568; font-size: 16px; line-height: 1.6; margin: 0;">
+                ${isUrgent ? 
+                  'This is an urgent reminder that you have not yet submitted the required documents for your physical classes at Dr U Education. <strong>Please submit these documents ASAP</strong> to avoid any disruption to your classes.' : 
+                  'We noticed that you have not yet submitted all the required documents for your physical classes at Dr U Education. Please submit the missing documents at your earliest convenience.'
+                }
+              </p>
+            </div>
+
+            ${isUrgent ? `
+            <!-- Urgent Notice -->
+            <div style="background-color: #fef2f2; border: 2px solid #fca5a5; border-radius: 12px; padding: 20px; margin: 30px 0;">
+              <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                <span style="font-size: 24px; margin-right: 12px;">⚠️</span>
+                <h3 style="color: #dc2626; margin: 0; font-size: 18px; font-weight: 600;">URGENT ACTION REQUIRED</h3>
+              </div>
+              <p style="color: #7f1d1d; margin: 0; font-size: 15px; line-height: 1.6;">
+                <strong>Your class attendance may be affected if these documents are not submitted immediately.</strong> Please prioritize submitting these documents today to ensure uninterrupted access to your physical classes.
+              </p>
+            </div>
+            ` : ''}
+            
+            <!-- Missing Documents Section -->
+            <div style="background-color: #edf2f7; border-radius: 12px; padding: 25px; margin: 30px 0;">
+              <h3 style="color: #2d3748; font-size: 18px; font-weight: 600; margin: 0 0 20px 0; display: flex; align-items: center;">
+                📋 Missing Required Documents
+              </h3>
+              <p style="color: #4a5568; margin: 0 0 20px 0; font-size: 15px; line-height: 1.6;">
+                Please download, sign, and upload the following documents to continue attending physical classes:
+              </p>
+              <div style="space-y: 10px;">
+                ${documentsList}
+              </div>
+            </div>
+
+            <!-- Step-by-step Instructions -->
+            <div style="background-color: #f0f9ff; border-left: 4px solid #0ea5e9; padding: 20px; margin: 30px 0; border-radius: 0 8px 8px 0;">
+              <h3 style="color: #0c4a6e; font-size: 16px; font-weight: 600; margin: 0 0 15px 0;">
+                📝 How to Submit Your Documents:
+              </h3>
+              <ol style="color: #1e293b; margin: 0; padding-left: 20px; line-height: 1.8;">
+                <li style="margin-bottom: 8px;"><strong>Download</strong> each document using the links above</li>
+                <li style="margin-bottom: 8px;"><strong>Print and Sign</strong> each document as required</li>
+                <li style="margin-bottom: 8px;"><strong>Scan or Take Clear Photos</strong> of the signed documents</li>
+                <li style="margin-bottom: 8px;"><strong>Login</strong> to your student portal</li>
+                <li style="margin-bottom: 0px;"><strong>Upload</strong> the signed documents in Settings → Documents</li>
+              </ol>
+            </div>
+
+            <!-- Quick Access Buttons -->
+            <div style="text-align: center; margin: 35px 0;">
+              <div style="display: inline-block; margin-bottom: 15px;">
+                <a href="https://www.drueducation.com.au/student/login" 
+                   style="display: inline-block; background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: #ffffff; padding: 14px 30px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4); margin-right: 15px;">
+                  🚀 Access Student Portal
+                </a>
+                <a href="https://www.drueducation.com.au/student/settings" 
+                   style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; padding: 14px 30px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);">
+                  📤 Upload Documents
+                </a>
+              </div>
+            </div>
+
+            ${isUrgent ? `
+            <!-- Deadline Warning -->
+            <div style="background-color: #fffbeb; border: 2px solid #fcd34d; border-radius: 8px; padding: 20px; margin: 30px 0;">
+              <div style="display: flex; align-items: center;">
+                <span style="font-size: 20px; margin-right: 10px;">⏰</span>
+                <p style="margin: 0; color: #92400e; font-weight: 600; font-size: 15px;">
+                  <strong>Time-Sensitive:</strong> Please submit these documents within the next 24 hours to avoid any class access issues.
+                </p>
+              </div>
+            </div>
+            ` : ''}
+
+            <!-- Support Section -->
+            <div style="background-color: #f0fff4; border: 1px solid #9ae6b4; border-radius: 8px; padding: 20px; margin: 30px 0;">
+              <div style="text-align: center;">
+                <p style="color: #22543d; margin: 0 0 10px 0; font-size: 15px; font-weight: 600;">
+                  📞 Need Help With Document Submission?
+                </p>
+                <p style="color: #2f855a; margin: 0; font-size: 14px;">
+                  Contact our support team or reach out to your academic coordinator for assistance.
+                </p>
+              </div>
+            </div>
+            
+            <!-- Closing -->
+            <div style="margin-top: 40px;">
+              <p style="color: #4a5568; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+                ${isUrgent ? 
+                  'We appreciate your immediate attention to this matter and look forward to seeing you in your physical classes.' : 
+                  'Thank you for your attention to this matter. We look forward to receiving your documents soon.'
+                }
+              </p>
+              <p style="color: #2d3748; font-size: 16px; margin: 0;">
+                <strong>Best regards,</strong><br>
+                <span style="color: #4f46e5; font-weight: 600;">The Dr U Education Team</span> 🎓
+              </p>
+            </div>
+          </div>
+          
+          <!-- Footer -->
+          <div style="background-color: #f8fafc; padding: 25px 30px; border-top: 1px solid #e2e8f0; text-align: center;">
+            <p style="color: #718096; font-size: 13px; margin: 0; line-height: 1.5;">
+              This is an automated reminder from Dr U Education.<br>
+              For support with document submission, please contact our help desk.
+            </p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    return {
+      to: studentEmail,
+      subject: `${urgentBadge}Missing Required Documents - Dr U Education`,
+      html: html.trim()
+    };
+  }
+
+  // Generate document submission reminder email for parent
+  static generateParentDocumentReminderEmail(
+    parentName: string,
+    parentEmail: string,
+    studentName: string,
+    missingDocuments: Array<{ type: string; name: string; url: string }>,
+    isUrgent: boolean = true
+  ): Omit<MailDocument, 'createdAt' | 'processed'> {
+    const urgentBadge = isUrgent ? '🚨 URGENT: ' : '📄 Reminder: ';
+    
+    const documentsList = missingDocuments.map(doc => `
+      <div style="margin-bottom: 15px; padding: 12px; background-color: #ffffff; border-radius: 8px; border-left: 4px solid ${doc.type === 'Class Policy Agreement' ? '#4299e1' : doc.type === 'Parent/Guardian Notice' ? '#48bb78' : '#ed8936'};">
+        <a href="${doc.url}" 
+           style="color: ${doc.type === 'Class Policy Agreement' ? '#2b6cb0' : doc.type === 'Parent/Guardian Notice' ? '#2f855a' : '#c05621'}; text-decoration: none; font-weight: 500; display: flex; align-items: center;">
+          ${doc.type === 'Class Policy Agreement' ? '📜' : doc.type === 'Parent/Guardian Notice' ? '👨‍👩‍👧‍👦' : '📸'} <span style="margin-left: 8px;">${doc.name}</span>
+        </a>
+      </div>
+    `).join('');
+
+    const html = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Document Submission Reminder - ${studentName}</title>
+        <style>
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        </style>
+      </head>
+      <body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+        <div style="max-width: 650px; margin: 0 auto; background-color: #ffffff; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+          
+          <!-- Header with gradient background -->
+          <div style="background: ${isUrgent ? 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)' : 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'}; padding: 40px 30px; text-align: center; border-radius: 8px 8px 0 0;">
+            <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.5px;">
+              ${isUrgent ? '🚨' : '📄'} Document Submission ${isUrgent ? 'URGENT' : 'Reminder'}
+            </h1>
+            <p style="color: #fed7d7; margin: 10px 0 0 0; font-size: 16px; font-weight: 400;">
+              For ${studentName}'s Physical Classes
+            </p>
+          </div>
+          
+          <!-- Main content -->
+          <div style="padding: 40px 30px;">
+            <div style="margin-bottom: 30px;">
+              <p style="color: #1a202c; font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">
+                Dear <strong>${parentName}</strong>,
+              </p>
+              <p style="color: #4a5568; font-size: 16px; line-height: 1.6; margin: 0;">
+                ${isUrgent ? 
+                  `This is an urgent reminder regarding missing documents for <strong>${studentName}</strong>'s physical classes at Dr U Education. <strong>Please ensure these documents are submitted ASAP</strong> to avoid any disruption to your child's classes.` : 
+                  `We noticed that some required documents for <strong>${studentName}</strong>'s physical classes at Dr U Education have not yet been submitted. Please help us by ensuring these documents are completed and uploaded at your earliest convenience.`
+                }
+              </p>
+            </div>
+
+            ${isUrgent ? `
+            <!-- Urgent Notice -->
+            <div style="background-color: #fef2f2; border: 2px solid #fca5a5; border-radius: 12px; padding: 20px; margin: 30px 0;">
+              <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                <span style="font-size: 24px; margin-right: 12px;">⚠️</span>
+                <h3 style="color: #dc2626; margin: 0; font-size: 18px; font-weight: 600;">URGENT PARENT ACTION REQUIRED</h3>
+              </div>
+              <p style="color: #7f1d1d; margin: 0; font-size: 15px; line-height: 1.6;">
+                <strong>${studentName}'s attendance at physical classes may be affected if these documents are not submitted immediately.</strong> Please prioritize completing and submitting these documents today to ensure your child's uninterrupted access to classes.
+              </p>
+            </div>
+            ` : ''}
+            
+            <!-- Missing Documents Section -->
+            <div style="background-color: #edf2f7; border-radius: 12px; padding: 25px; margin: 30px 0;">
+              <h3 style="color: #2d3748; font-size: 18px; font-weight: 600; margin: 0 0 20px 0; display: flex; align-items: center;">
+                📋 Missing Required Documents for ${studentName}
+              </h3>
+              <p style="color: #4a5568; margin: 0 0 20px 0; font-size: 15px; line-height: 1.6;">
+                Please download, complete, and have your child upload the following documents:
+              </p>
+              <div style="space-y: 10px;">
+                ${documentsList}
+              </div>
+            </div>
+
+            <!-- Parent Instructions -->
+            <div style="background-color: #f0f9ff; border-left: 4px solid #0ea5e9; padding: 20px; margin: 30px 0; border-radius: 0 8px 8px 0;">
+              <h3 style="color: #0c4a6e; font-size: 16px; font-weight: 600; margin: 0 0 15px 0;">
+                👨‍👩‍👧‍👦 Parent Action Items:
+              </h3>
+              <ol style="color: #1e293b; margin: 0; padding-left: 20px; line-height: 1.8;">
+                <li style="margin-bottom: 8px;"><strong>Download</strong> the documents using the links above</li>
+                <li style="margin-bottom: 8px;"><strong>Complete and Sign</strong> each document as required</li>
+                <li style="margin-bottom: 8px;"><strong>Help ${studentName}</strong> scan or take clear photos of the signed documents</li>
+                <li style="margin-bottom: 8px;"><strong>Guide ${studentName}</strong> to log into their student portal</li>
+                <li style="margin-bottom: 0px;"><strong>Assist with uploading</strong> the documents in Settings → Documents</li>
+              </ol>
+            </div>
+
+            <!-- Quick Access for Parents -->
+            <div style="text-align: center; margin: 35px 0;">
+              <p style="color: #4a5568; margin: 0 0 15px 0; font-size: 14px;">Help ${studentName} access their portal:</p>
+              <div style="display: inline-block;">
+                <a href="https://www.drueducation.com.au/student/settings" 
+                   style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; padding: 14px 30px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);">
+                  📤 Student Document Upload Page
+                </a>
+              </div>
+            </div>
+
+            ${isUrgent ? `
+            <!-- Parent Deadline Warning -->
+            <div style="background-color: #fffbeb; border: 2px solid #fcd34d; border-radius: 8px; padding: 20px; margin: 30px 0;">
+              <div style="display: flex; align-items: center;">
+                <span style="font-size: 20px; margin-right: 10px;">⏰</span>
+                <p style="margin: 0; color: #92400e; font-weight: 600; font-size: 15px;">
+                  <strong>Time-Sensitive:</strong> Please help ${studentName} submit these documents within 24 hours to avoid any class access issues.
+                </p>
+              </div>
+            </div>
+            ` : ''}
+
+            <!-- Parent Support Section -->
+            <div style="background-color: #f0fff4; border: 1px solid #9ae6b4; border-radius: 8px; padding: 20px; margin: 30px 0;">
+              <div style="text-align: center;">
+                <p style="color: #22543d; margin: 0 0 10px 0; font-size: 15px; font-weight: 600;">
+                  📞 Need Help With Document Completion?
+                </p>
+                <p style="color: #2f855a; margin: 0; font-size: 14px;">
+                  As a parent, you can contact our support team for assistance with document requirements or technical help with uploading.
+                </p>
+              </div>
+            </div>
+            
+            <!-- Closing -->
+            <div style="margin-top: 40px;">
+              <p style="color: #4a5568; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+                ${isUrgent ? 
+                  `We appreciate your immediate attention to help ${studentName} complete these requirements and look forward to continuing their educational journey without interruption.` : 
+                  `Thank you for supporting ${studentName}'s education. We appreciate your cooperation in completing these necessary documents.`
+                }
+              </p>
+              <p style="color: #2d3748; font-size: 16px; margin: 0;">
+                <strong>Best regards,</strong><br>
+                <span style="color: #4f46e5; font-weight: 600;">The Dr U Education Team</span> 🎓
+              </p>
+            </div>
+          </div>
+          
+          <!-- Footer -->
+          <div style="background-color: #f8fafc; padding: 25px 30px; border-top: 1px solid #e2e8f0; text-align: center;">
+            <p style="color: #718096; font-size: 13px; margin: 0; line-height: 1.5;">
+              This is an automated reminder from Dr U Education.<br>
+              For support with document requirements, please contact our help desk.
+            </p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    return {
+      to: parentEmail,
+      subject: `${urgentBadge}Missing Documents for ${studentName} - Dr U Education`,
+      html: html.trim()
+    };
+  }
+
+  // Send document reminder emails to student and parent
+  static async sendDocumentReminderEmails(
+    studentName: string,
+    studentEmail: string,
+    parentName: string,
+    parentEmail: string,
+    missingDocuments: Array<{ type: string; name: string; url: string }>,
+    isUrgent: boolean = true
+  ): Promise<{ studentMailId: string; parentMailId: string }> {
+    try {
+      const studentEmail_mail = this.generateDocumentReminderEmail(
+        studentName,
+        studentEmail,
+        missingDocuments,
+        isUrgent
+      );
+
+      const parentEmail_mail = this.generateParentDocumentReminderEmail(
+        parentName,
+        parentEmail,
+        studentName,
+        missingDocuments,
+        isUrgent
+      );
+
+      const [studentMailId, parentMailId] = await Promise.all([
+        this.createMailDocument(studentEmail_mail),
+        this.createMailDocument(parentEmail_mail)
+      ]);
+
+      console.log(`Document reminder emails sent - Student: ${studentMailId}, Parent: ${parentMailId}`);
+
+      return { studentMailId, parentMailId };
+    } catch (error) {
+      console.error('Error sending document reminder emails:', error);
+      throw error;
+    }
+  }
 }
