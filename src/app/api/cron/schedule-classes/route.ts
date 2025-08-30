@@ -108,14 +108,14 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * Generate schedule jobs for all classes for the next 7 days
+ * Generate schedule jobs for all classes for today (if 3+ hours away) and the next 7 days
  */
 async function generateScheduleJobs(classes: ClassDocument[]): Promise<ScheduleJob[]> {
   const scheduleJobs: ScheduleJob[] = [];
   const today = new Date();
   
-  // Check next 7 days
-  for (let i = 1; i <= 7; i++) {
+  // Check today (i=0) and next 7 days
+  for (let i = 0; i <= 7; i++) {
     const targetDate = new Date(today);
     targetDate.setDate(today.getDate() + i);
     const dayName = targetDate.toLocaleDateString('en-US', { weekday: 'long' });
@@ -132,6 +132,22 @@ async function generateScheduleJobs(classes: ClassDocument[]): Promise<ScheduleJ
       );
 
       if (daySchedule) {
+        // If scheduling for today, check if class is at least 3 hours away
+        if (i === 0) {
+          const now = new Date();
+          const [startHours, startMinutes] = daySchedule.startTime.split(':').map(Number);
+          const classStartTime = new Date(targetDate);
+          classStartTime.setHours(startHours, startMinutes, 0, 0);
+          
+          const timeDifference = classStartTime.getTime() - now.getTime();
+          const hoursUntilClass = timeDifference / (1000 * 60 * 60); // Convert to hours
+          
+          if (hoursUntilClass < 3) {
+            console.log(`⏭️ Skipping today's class ${classDoc.name} - only ${hoursUntilClass.toFixed(1)} hours remaining (need at least 3 hours)`);
+            continue;
+          }
+        }
+
         // Get teacher name (optional, for better logging)
         let teacherName = 'Unknown Teacher';
         try {

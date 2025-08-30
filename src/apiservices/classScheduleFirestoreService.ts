@@ -115,8 +115,8 @@ export class ClassScheduleFirestoreService {
       // Get existing schedules for this class to avoid duplicates
       const existingSchedules = await this.getSchedulesByClassId(classData.id, today, daysAhead + 1);
       
-      // Check each day for the next 'daysAhead' days
-      for (let i = 1; i <= daysAhead; i++) {
+      // Check each day starting from today (i=0) for the next 'daysAhead' days
+      for (let i = 0; i <= daysAhead; i++) {
         const targetDate = new Date(today);
         targetDate.setDate(today.getDate() + i);
         const dayName = targetDate.toLocaleDateString('en-US', { weekday: 'long' });
@@ -127,6 +127,21 @@ export class ClassScheduleFirestoreService {
         );
 
         if (daySchedule) {
+          // If scheduling for today, check if class is at least 3 hours away
+          if (i === 0) {
+            const now = new Date();
+            const [startHours, startMinutes] = daySchedule.startTime.split(':').map(Number);
+            const classStartTime = new Date(targetDate);
+            classStartTime.setHours(startHours, startMinutes, 0, 0);
+            
+            const timeDifference = classStartTime.getTime() - now.getTime();
+            const hoursUntilClass = timeDifference / (1000 * 60 * 60); // Convert to hours
+            
+            if (hoursUntilClass < 3) {
+              console.log(`⏭️ Skipping today's class - only ${hoursUntilClass.toFixed(1)} hours remaining (need at least 3 hours)`);
+              continue;
+            }
+          }
           // Check if already scheduled for this date
           const alreadyScheduled = existingSchedules.some(schedule => {
             const scheduleDate = schedule.scheduledDate instanceof Timestamp 
