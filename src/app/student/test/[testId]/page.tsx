@@ -51,18 +51,41 @@ export default function TestPage() {
         
         const testData = { id: testDoc.id, ...testDoc.data() } as Test;
         
-        // Check if student is enrolled in any of the test's classes
-        const { getEnrollmentsByStudent } = await import('@/services/studentEnrollmentService');
-        const enrollments = await getEnrollmentsByStudent(student.id);
+        console.log('🎯 Parent page - Test data loaded:', {
+          id: testData.id,
+          title: testData.title,
+          assignmentType: testData.assignmentType,
+          classIds: testData.classIds
+        });
         
-        const isEnrolled = enrollments.some(enrollment => 
-          testData.classIds.includes(enrollment.classId)
-        );
+        // Check if this is a custom/student-based test
+        const isCustomTest = testData.assignmentType === 'student-based' || 
+                            (!testData.assignmentType && (!testData.classIds || testData.classIds.length === 0)) ||
+                            !testData.classIds || 
+                            testData.classIds.length === 0;
         
-        if (!isEnrolled) {
-          setError('You are not enrolled in the class for this test.');
-          setLoading(false);
-          return;
+        console.log('🎯 Parent page - Is custom test:', isCustomTest);
+        
+        // Only check enrollment for class-based tests
+        if (!isCustomTest) {
+          console.log('🎯 Parent page - Checking enrollment for class-based test...');
+          
+          // Check if student is enrolled in any of the test's classes
+          const { getEnrollmentsByStudent } = await import('@/services/studentEnrollmentService');
+          const enrollments = await getEnrollmentsByStudent(student.id);
+          
+          const isEnrolled = enrollments.some(enrollment => 
+            testData.classIds.includes(enrollment.classId)
+          );
+          
+          if (!isEnrolled) {
+            setError('You are not enrolled in the class for this test.');
+            setLoading(false);
+            return;
+          }
+          console.log('✅ Parent page - Student is enrolled in test classes');
+        } else {
+          console.log('🟢 Parent page - Skipping enrollment check for custom test');
         }
 
         // Get attempt information - Use direct query to get all attempts and categorize them properly
