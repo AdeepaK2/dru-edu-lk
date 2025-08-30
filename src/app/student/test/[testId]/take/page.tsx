@@ -685,14 +685,28 @@ export default function TestTakePage() {
         console.log('🔍 assignmentType !== "student-based":', testData.assignmentType !== 'student-based');
         
         // Check if this is a custom/student-based test
+        // Handle both new tests with explicit assignmentType and legacy tests
         const isCustomTest = testData.assignmentType === 'student-based' || 
+                            (!testData.assignmentType && (!testData.classIds || testData.classIds.length === 0)) ||
                             !testData.classIds || 
                             testData.classIds.length === 0;
         
         console.log('🔍 Is custom test check result:', isCustomTest);
+        console.log('🔍 Detailed check:', {
+          assignmentType: testData.assignmentType,
+          classIds: testData.classIds,
+          classIdsLength: testData.classIds?.length || 0,
+          isStudentBased: testData.assignmentType === 'student-based',
+          hasNoClassIds: !testData.classIds || testData.classIds.length === 0,
+          isLegacyWithNoClasses: !testData.assignmentType && (!testData.classIds || testData.classIds.length === 0)
+        });
+        
+        console.log('🎯 About to check enrollment logic with isCustomTest =', isCustomTest);
+        console.log('🎯 Test ID being processed:', testData.id);
+        console.log('🎯 Test title being processed:', testData.title);
         
         if (!isCustomTest) {
-          console.log('🔍 Starting enrollment check for class-based test...');
+          console.log('🔍 ✅ ENTERING enrollment check for class-based test...');
           const { getEnrollmentsByStudent } = await import('@/services/studentEnrollmentService');
           try {
             enrollments = await getEnrollmentsByStudent(student.id);
@@ -726,8 +740,9 @@ export default function TestTakePage() {
           console.log('✅ Student is enrolled in test classes');
         } else {
           // For student-based (custom) tests, skip enrollment check
-          console.log('🟢 Skipping enrollment check for custom test.');
-          console.log('🟢 Reason: assignmentType =', testData.assignmentType, ', classIds =', testData.classIds);
+          console.log('🟢 ✅ SKIPPING enrollment check for custom test.');
+          console.log('🟢 ✅ Custom test details: ID =', testData.id, ', title =', testData.title);
+          console.log('🟢 ✅ Reason: assignmentType =', testData.assignmentType, ', classIds =', testData.classIds);
         }
         
         // Check test availability
