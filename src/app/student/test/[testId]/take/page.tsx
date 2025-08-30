@@ -1705,23 +1705,32 @@ export default function TestTakePage() {
               <button
                 key={index}
                 onClick={() => handleOptionSelect(index)}
-                className={`w-full text-left p-4 rounded-lg border ${
+                className={`w-full text-left p-4 rounded-lg border transition-all duration-200 ${
                   selectedOption === index
-                    ? 'bg-blue-50 border-blue-500 dark:bg-blue-900/30 dark:border-blue-500'
-                    : 'bg-white border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:hover:bg-gray-700'
+                    ? 'bg-blue-50 border-blue-500 dark:bg-blue-900/30 dark:border-blue-500 shadow-sm'
+                    : 'bg-white border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500'
                 }`}
               >
-                <div className="flex items-center">
-                  <div className={`flex-shrink-0 h-5 w-5 rounded-full border ${
+                <div className="flex items-start space-x-3">
+                  <div className={`flex-shrink-0 h-5 w-5 rounded-full border-2 mt-0.5 ${
                     selectedOption === index 
-                      ? 'bg-blue-500 border-transparent' 
-                      : 'border-gray-400 dark:border-gray-500'
-                  } mr-3`}>
+                      ? 'bg-blue-500 border-blue-500 dark:bg-blue-400 dark:border-blue-400' 
+                      : 'border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-700'
+                  }`}>
                     {selectedOption === index && (
                       <CheckCircle className="text-white h-5 w-5" />
                     )}
                   </div>
-                  <span className="text-gray-900 dark:text-white">{optionText}</span>
+                  <span className={`text-base leading-relaxed ${
+                    selectedOption === index
+                      ? 'text-blue-900 dark:text-blue-100 font-medium'
+                      : 'text-gray-900 dark:text-gray-100'
+                  }`}>
+                    <span className="font-semibold text-gray-700 dark:text-gray-300 mr-2">
+                      {String.fromCharCode(65 + index)}.
+                    </span>
+                    {optionText}
+                  </span>
                 </div>
               </button>
             );

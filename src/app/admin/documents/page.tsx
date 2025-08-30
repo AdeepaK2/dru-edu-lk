@@ -37,6 +37,7 @@ interface StudentWithDocuments {
 interface FilterOptions {
   status: 'All' | 'Verified' | 'Pending' | 'Rejected' | 'Not Submitted';
   documentType: 'All' | DocumentType;
+  classId: 'All' | string;
 }
 
 interface SortOptions {
@@ -53,7 +54,8 @@ export default function DocumentVerificationPage() {
   const [verifyingDocument, setVerifyingDocument] = useState<string | null>(null);
   const [filters, setFilters] = useState<FilterOptions>({
     status: 'All',
-    documentType: 'All'
+    documentType: 'All',
+    classId: 'All'
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOptions, setSortOptions] = useState<SortOptions>({
@@ -227,6 +229,34 @@ export default function DocumentVerificationPage() {
     return requiredDocs.every(type => pendingTypes.includes(type));
   };
 
+  // Get unique classes from students data
+  const getUniqueClasses = React.useMemo(() => {
+    const classesMap = new Map<string, { classId: string; className: string; subject: string; studentCount: number }>();
+    
+    students.forEach(student => {
+      if (student.enrolledClasses) {
+        student.enrolledClasses.forEach(cls => {
+          if (cls.status === 'Active') {
+            const key = cls.classId;
+            if (classesMap.has(key)) {
+              const existing = classesMap.get(key)!;
+              classesMap.set(key, { ...existing, studentCount: existing.studentCount + 1 });
+            } else {
+              classesMap.set(key, {
+                classId: cls.classId,
+                className: cls.className,
+                subject: cls.subject,
+                studentCount: 1
+              });
+            }
+          }
+        });
+      }
+    });
+    
+    return Array.from(classesMap.values()).sort((a, b) => a.className.localeCompare(b.className));
+  }, [students]);
+
   // Filter and sort students based on search query, filters, and sort options
   const filteredAndSortedStudents = React.useMemo(() => {
     let filtered = students;
@@ -241,6 +271,13 @@ export default function DocumentVerificationPage() {
           cls.className.toLowerCase().includes(query) ||
           cls.subject.toLowerCase().includes(query)
         )
+      );
+    }
+    
+    // Apply class filter
+    if (filters.classId !== 'All') {
+      filtered = filtered.filter(student => 
+        student.enrolledClasses?.some(cls => cls.classId === filters.classId && cls.status === 'Active')
       );
     }
     
@@ -358,7 +395,37 @@ export default function DocumentVerificationPage() {
     return { verified, pending, rejected, notSubmitted, total };
   };
 
-  const counts = getDocumentCounts();
+  // Get class-specific document counts
+  const getClassDocumentCounts = (classId: string) => {
+    if (classId === 'All') return getDocumentCounts();
+    
+    const classStudents = students.filter(student => 
+      student.enrolledClasses?.some(cls => cls.classId === classId && cls.status === 'Active')
+    );
+    
+    let verified = 0, pending = 0, rejected = 0, notSubmitted = 0;
+    let total = classStudents.length * 3;
+    
+    classStudents.forEach(student => {
+      const docs = student.documents || [];
+      
+      docs.forEach(doc => {
+        if (doc.status === 'Verified') verified++;
+        else if (doc.status === 'Rejected') rejected++;
+        else pending++;
+      });
+      
+      const docTypes = [DocumentType.CLASS_POLICY, DocumentType.PARENT_NOTICE, DocumentType.PHOTO_CONSENT];
+      const existingTypes = docs.map(doc => doc.type);
+      const missingTypes = docTypes.filter(type => !existingTypes.includes(type));
+      
+      notSubmitted += missingTypes.length;
+    });
+    
+    return { verified, pending, rejected, notSubmitted, total };
+  };
+
+  const counts = getClassDocumentCounts(filters.classId);
 
   if (authLoading) {
     return (
@@ -400,8 +467,20 @@ export default function DocumentVerificationPage() {
             <FileCheck className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Document Verification</h1>
-            <p className="text-gray-600 dark:text-gray-300">Review and verify student document submissions</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              Document Verification
+              {filters.classId !== 'All' && (
+                <span className="text-lg font-normal text-gray-600 dark:text-gray-400 ml-2">
+                  - {getUniqueClasses.find(cls => cls.classId === filters.classId)?.className}
+                </span>
+              )}
+            </h1>
+            <p className="text-gray-600 dark:text-gray-300">
+              {filters.classId === 'All' 
+                ? 'Review and verify student document submissions' 
+                : `Viewing documents for ${getUniqueClasses.find(cls => cls.classId === filters.classId)?.subject || 'selected class'}`
+              }
+            </p>
           </div>
         </div>
       </div>
@@ -518,22 +597,116 @@ export default function DocumentVerificationPage() {
           </div>
         </div>
         
-        {/* Results Count */}
-        {searchQuery.trim() && (
-          <div className="mt-3 text-sm text-gray-600 dark:text-gray-400">
-            Found {filteredStudents.length} student{filteredStudents.length !== 1 ? 's' : ''} matching "{searchQuery}"
+        {/* Quick Class Filters */}
+        {getUniqueClasses.length > 0 && (
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Quick Class Access
+            </label>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setFilters(prev => ({ ...prev, classId: 'All' }))}
+                className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                  filters.classId === 'All'
+                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+                }`}
+              >
+                All Classes ({students.length})
+              </button>
+              {getUniqueClasses.slice(0, 6).map(cls => (
+                <button
+                  key={cls.classId}
+                  onClick={() => setFilters(prev => ({ ...prev, classId: cls.classId }))}
+                  className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                    filters.classId === cls.classId
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+                  }`}
+                  title={`${cls.className} - ${cls.subject}`}
+                >
+                  {cls.className} ({cls.studentCount})
+                </button>
+              ))}
+              {getUniqueClasses.length > 6 && (
+                <span className="text-xs text-gray-500 dark:text-gray-400 px-2 py-1">
+                  +{getUniqueClasses.length - 6} more in dropdown
+                </span>
+              )}
+            </div>
           </div>
         )}
+        
+        {/* Results Count */}
+        <div className="mt-4 space-y-2">
+          {searchQuery.trim() && (
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              Found {filteredStudents.length} student{filteredStudents.length !== 1 ? 's' : ''} matching "{searchQuery}"
+            </div>
+          )}
+          
+          {filters.classId !== 'All' && (
+            <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <span className="text-sm font-medium text-blue-900 dark:text-blue-300">
+                  Viewing class: {getUniqueClasses.find(cls => cls.classId === filters.classId)?.className} - {getUniqueClasses.find(cls => cls.classId === filters.classId)?.subject}
+                </span>
+              </div>
+              <div className="text-sm text-blue-700 dark:text-blue-400">
+                {filteredStudents.length} of {getUniqueClasses.find(cls => cls.classId === filters.classId)?.studentCount || 0} students
+              </div>
+            </div>
+          )}
+          
+          {filters.classId === 'All' && (searchQuery.trim() || filters.status !== 'All' || filters.documentType !== 'All') && (
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              Showing {filteredStudents.length} of {students.length} total students
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Filters */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
-        <div className="flex items-center space-x-2 mb-4">
-          <Filter className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-          <h3 className="text-sm font-medium text-gray-900 dark:text-white">Filters</h3>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-2">
+            <Filter className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+            <h3 className="text-sm font-medium text-gray-900 dark:text-white">Filters</h3>
+          </div>
+          
+          {(filters.classId !== 'All' || filters.status !== 'All' || filters.documentType !== 'All' || searchQuery.trim()) && (
+            <button
+              onClick={() => {
+                setFilters({ classId: 'All', status: 'All', documentType: 'All' });
+                setSearchQuery('');
+              }}
+              className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 underline"
+            >
+              Clear all filters
+            </button>
+          )}
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Filter by Class
+            </label>
+            <select
+              value={filters.classId}
+              onChange={(e) => setFilters(prev => ({ ...prev, classId: e.target.value }))}
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+            >
+              <option value="All">All Classes ({students.length} students)</option>
+              {getUniqueClasses.map(cls => (
+                <option key={cls.classId} value={cls.classId}>
+                  {cls.className} - {cls.subject} ({cls.studentCount} students)
+                </option>
+              ))}
+            </select>
+          </div>
+          
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Document Status
