@@ -665,14 +665,34 @@ export default function TestTakePage() {
         
         const testData = { id: testDoc.id, ...testDoc.data() } as Test;
         console.log('✅ Test data loaded:', testData.title);
+        console.log('🔍 Test assignment type:', testData.assignmentType);
+        console.log('🔍 Test class IDs:', testData.classIds);
+        console.log('🔍 Full test data for debugging:', {
+          id: testData.id,
+          title: testData.title,
+          assignmentType: testData.assignmentType,
+          classIds: testData.classIds,
+          type: testData.type
+        });
         
         // Check if student is enrolled in any of the test's classes
 
         // Only check enrollment for class-based or mixed tests
   let enrollments: any[] = [];
         let isEnrolled = true;
-        if (testData.assignmentType !== 'student-based') {
-          console.log('🔍 Starting enrollment check...');
+        
+        console.log('🔍 Checking if enrollment check is needed...');
+        console.log('🔍 assignmentType !== "student-based":', testData.assignmentType !== 'student-based');
+        
+        // Check if this is a custom/student-based test
+        const isCustomTest = testData.assignmentType === 'student-based' || 
+                            !testData.classIds || 
+                            testData.classIds.length === 0;
+        
+        console.log('🔍 Is custom test check result:', isCustomTest);
+        
+        if (!isCustomTest) {
+          console.log('🔍 Starting enrollment check for class-based test...');
           const { getEnrollmentsByStudent } = await import('@/services/studentEnrollmentService');
           try {
             enrollments = await getEnrollmentsByStudent(student.id);
@@ -688,10 +708,12 @@ export default function TestTakePage() {
             status: e.status 
           })));
           console.log('🎯 Test class IDs:', testData.classIds);
+          
           isEnrolled = enrollments.some(enrollment => 
             testData.classIds.includes(enrollment.classId) && 
             enrollment.status === 'Active'
           );
+          
           console.log('✅ Enrollment check result:', isEnrolled);
           if (!isEnrolled) {
             console.error('❌ Student not enrolled in test classes');
@@ -704,7 +726,8 @@ export default function TestTakePage() {
           console.log('✅ Student is enrolled in test classes');
         } else {
           // For student-based (custom) tests, skip enrollment check
-          console.log('🟢 Skipping enrollment check for student-based (custom) test.');
+          console.log('🟢 Skipping enrollment check for custom test.');
+          console.log('🟢 Reason: assignmentType =', testData.assignmentType, ', classIds =', testData.classIds);
         }
         
         // Check test availability
@@ -718,7 +741,7 @@ export default function TestTakePage() {
         // Handle classId and className based on test assignment type
         let className = 'Unknown Class';
         
-        if (testData.assignmentType === 'student-based') {
+        if (isCustomTest) {
           // For custom/student-based tests, use a default classId and className
           classId = 'custom-test';
           className = 'Custom Test';
