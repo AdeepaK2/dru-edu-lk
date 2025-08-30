@@ -715,30 +715,35 @@ export default function TestTakePage() {
         
         console.log('⏰ Checking test availability at:', new Date(now).toISOString());
         
-        // Find first matching class ID for this student
-        const enrollment = enrollments.find(e => testData.classIds.includes(e.classId) && e.status === 'Active');
-        if (enrollment) {
-          classId = enrollment.classId;
-        } else {
-          // Fallback: use the first class ID from the test if no enrollment found
-          classId = testData.classIds[0] || 'unknown-class';
-          console.warn('⚠️ No matching enrollment found, using fallback classId:', classId);
-        }
-        
-        // Get the class name as well
+        // Handle classId and className based on test assignment type
         let className = 'Unknown Class';
-        if (enrollment) {
-          className = enrollment.className || 'Unknown Class';
-        } else {
-          // Try to find class name from test data
-          const testClassIndex = testData.classIds.indexOf(classId);
-          if (testClassIndex >= 0 && testData.classNames && testData.classNames[testClassIndex]) {
-            className = testData.classNames[testClassIndex];
-          }
-        }
         
-        console.log('🎯 Selected classId for attempt:', classId);
-        console.log('🎯 Selected className for attempt:', className);
+        if (testData.assignmentType === 'student-based') {
+          // For custom/student-based tests, use a default classId and className
+          classId = 'custom-test';
+          className = 'Custom Test';
+          console.log('🎯 Using custom classId for student-based test:', classId);
+          console.log('🎯 Using custom className for student-based test:', className);
+        } else {
+          // For class-based tests, find first matching class ID for this student
+          const enrollment = enrollments.find(e => testData.classIds.includes(e.classId) && e.status === 'Active');
+          if (enrollment) {
+            classId = enrollment.classId;
+            className = enrollment.className || 'Unknown Class';
+          } else {
+            // Fallback: use the first class ID from the test if no enrollment found
+            classId = testData.classIds[0] || 'unknown-class';
+            console.warn('⚠️ No matching enrollment found, using fallback classId:', classId);
+            
+            // Try to find class name from test data
+            const testClassIndex = testData.classIds.indexOf(classId);
+            if (testClassIndex >= 0 && testData.classNames && testData.classNames[testClassIndex]) {
+              className = testData.classNames[testClassIndex];
+            }
+          }
+          console.log('🎯 Selected classId for class-based test:', classId);
+          console.log('🎯 Selected className for class-based test:', className);
+        }
         
         // Debug timestamp data
         console.log('🔍 Test data type:', testData.type);
