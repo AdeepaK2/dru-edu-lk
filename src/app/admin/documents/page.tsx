@@ -265,9 +265,7 @@ export default function DocumentVerificationPage() {
       return;
     }
 
-    const confirmMessage = isUrgent 
-      ? `Send URGENT document reminder emails to ${reminderPreview.stats.total} students and their parents? (${reminderPreview.stats.totalEmailsToSend} total emails)`
-      : `Send document reminder emails to ${reminderPreview.stats.total} students and their parents? (${reminderPreview.stats.totalEmailsToSend} total emails)`;
+    const confirmMessage = `Send document notifications to ${reminderPreview.stats.total} students and their parents? (${reminderPreview.stats.totalEmailsToSend} total emails)`;
     
     if (!confirm(confirmMessage)) return;
 
@@ -284,7 +282,7 @@ export default function DocumentVerificationPage() {
       const data = await response.json();
       setReminderResults(data);
       
-      const message = `Document reminders sent! ${data.summary.successful} successful, ${data.summary.failed} failed.`;
+      const message = `Document notifications sent! ${data.summary.successful} successful, ${data.summary.failed} failed.`;
       alert(message);
       
       // Refresh the preview to show updated numbers
@@ -292,7 +290,7 @@ export default function DocumentVerificationPage() {
       
     } catch (error) {
       console.error('Error sending reminders:', error);
-      alert('Failed to send document reminders. Please try again.');
+      alert('Failed to send document notifications. Please try again.');
     } finally {
       setSendingReminders(false);
     }
@@ -560,21 +558,13 @@ export default function DocumentVerificationPage() {
             </div>
           </div>
           
-          {/* Email Reminder Actions */}
-          <div className="flex items-center space-x-3">
+          {/* Email Notification Action */}
+          <div className="flex items-center">
             <Button
               onClick={() => handleOpenReminderModal('all')}
               disabled={loading}
-              className="bg-yellow-600 hover:bg-yellow-700 text-white"
             >
-              📧 Send Reminders
-            </Button>
-            <Button
-              onClick={() => handleOpenReminderModal('no_documents')}
-              disabled={loading}
-              className="bg-red-600 hover:bg-red-700 text-white"
-            >
-              🚨 Urgent Reminders
+              Notify Students
             </Button>
           </div>
         </div>
@@ -1131,7 +1121,7 @@ export default function DocumentVerificationPage() {
             <div className="p-6 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  📧 Send Document Reminder Emails
+                  Notify Students About Missing Documents
                 </h3>
                 <Button
                   onClick={() => {
@@ -1186,7 +1176,7 @@ export default function DocumentVerificationPage() {
                   {reminderPreview.preview.length > 0 ? (
                     <div className="mb-6">
                       <h4 className="text-md font-semibold text-gray-900 dark:text-white mb-3">
-                        👥 Students Who Will Receive Reminders ({reminderPreview.stats.total} students)
+                        👥 Students Who Will Receive Notifications ({reminderPreview.stats.total} students)
                       </h4>
                       <div className="max-h-64 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-lg">
                         {reminderPreview.preview.map((student: any) => (
@@ -1219,28 +1209,18 @@ export default function DocumentVerificationPage() {
                     </div>
                   )}
 
-                  {/* Action Buttons */}
+                  {/* Action Button */}
                   {reminderPreview.stats.total > 0 && (
                     <div className="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-700">
                       <div className="text-sm text-gray-600 dark:text-gray-300">
                         Emails will be sent to both students and parents ({reminderPreview.stats.totalEmailsToSend} total emails)
                       </div>
-                      <div className="flex space-x-3">
-                        <Button
-                          onClick={() => sendDocumentReminders(reminderPreview.type, false)}
-                          disabled={sendingReminders}
-                          className="bg-yellow-600 hover:bg-yellow-700 text-white"
-                        >
-                          {sendingReminders ? 'Sending...' : '📧 Send Normal Reminders'}
-                        </Button>
-                        <Button
-                          onClick={() => sendDocumentReminders(reminderPreview.type, true)}
-                          disabled={sendingReminders}
-                          className="bg-red-600 hover:bg-red-700 text-white"
-                        >
-                          {sendingReminders ? 'Sending...' : '🚨 Send Urgent Reminders'}
-                        </Button>
-                      </div>
+                      <Button
+                        onClick={() => sendDocumentReminders(reminderPreview.type, false)}
+                        disabled={sendingReminders}
+                      >
+                        {sendingReminders ? 'Sending...' : 'Notify'}
+                      </Button>
                     </div>
                   )}
 
@@ -1248,14 +1228,12 @@ export default function DocumentVerificationPage() {
                   {reminderResults && (
                     <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/30 rounded-lg">
                       <h4 className="text-md font-semibold text-green-900 dark:text-green-100 mb-2">
-                        ✅ Reminders Sent Successfully!
+                        ✅ Notifications Sent Successfully!
                       </h4>
                       <p className="text-sm text-green-800 dark:text-green-200">
                         {reminderResults.message}
                       </p>
                       <div className="mt-2 text-xs text-green-700 dark:text-green-300">
-                        Type: {reminderResults.summary.type} | 
-                        Urgent: {reminderResults.summary.isUrgent ? 'Yes' : 'No'} | 
                         Success: {reminderResults.summary.successful} | 
                         Failed: {reminderResults.summary.failed}
                       </div>
