@@ -247,6 +247,18 @@ export default function DocumentVerificationPage() {
     setLoadingPreview(true);
     try {
       console.log('Loading preview for type:', type);
+      console.log('Students data length:', students.length);
+      
+      // Check if students data is loaded
+      if (!students || students.length === 0) {
+        console.warn('No students data available for preview');
+        setReminderPreview({
+          preview: [],
+          stats: { total: 0, totalMessagesToSend: 0, averageMissingDocs: 0, studentsWithoutPhone: 0 },
+          type
+        });
+        return;
+      }
       
       // Get students with missing documents directly from the current students data
       const requiredDocTypes = [
@@ -502,7 +514,20 @@ Thank you for your cooperation.
   // Handle opening reminder modal
   const handleOpenReminderModal = async () => {
     setShowReminderModal(true);
-    await loadReminderPreview('all');
+    
+    // Ensure students are loaded before showing preview
+    if (!students || students.length === 0) {
+      console.log('Students not loaded yet, waiting...');
+      // Show loading state
+      setLoadingPreview(true);
+      
+      // Wait a bit for students to load, then try preview
+      setTimeout(async () => {
+        await loadReminderPreview('all');
+      }, 1000);
+    } else {
+      await loadReminderPreview('all');
+    }
   };
 
   // Get unique classes from students data
@@ -765,7 +790,7 @@ Thank you for your cooperation.
           <div className="flex items-center">
             <Button
               onClick={handleOpenReminderModal}
-              disabled={loading}
+              disabled={loading || !students || students.length === 0}
             >
               Notify Parents via WhatsApp
             </Button>
