@@ -262,7 +262,7 @@ export default function DocumentVerificationPage() {
     }
   };
 
-  // Send document reminder emails
+  // Send document reminder WhatsApp messages directly
   const sendDocumentReminders = async (type: 'all' | 'no_documents' = 'all', isUrgent: boolean = false) => {
     if (!reminderPreview) {
       await loadReminderPreview(type);
@@ -283,22 +283,153 @@ export default function DocumentVerificationPage() {
     setReminderResults(null);
 
     try {
-      const response = await fetch('/api/admin/send-document-reminders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type, isUrgent })
+      // Process students in batches
+      const studentsWithPhones = reminderPreview.preview.filter((student: any) => 
+        student.parentPhone && student.parentPhone !== 'Not provided'
+      );
+
+      console.log(`Processing ${studentsWithPhones.length} students with parent phone numbers`);
+
+      const batchSize = 3; // Small batches for WhatsApp
+      const batches = [];
+      
+      for (let i = 0; i < studentsWithPhones.length; i += batchSize) {
+        batches.push(studentsWithPhones.slice(i, i + batchSize));
+      }
+
+      let totalSuccessful = 0;
+      let totalFailed = 0;
+      const allResults: any[] = [];
+
+      for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+        const batch = batches[batchIndex];
+        console.log(`Processing batch ${batchIndex + 1}/${batches.length} with ${batch.length} students`);
+
+        // Prepare WhatsApp messages for this batch
+        const batchRecipients = batch.map((student: any) => {
+          // Generate WhatsApp message content
+          const urgentPrefix = isUrgent ? '🚨 *URGENT REMINDER* 🚨\n\n' : '📄 *DOCUMENT REMINDER*\n\n';
+          
+          const documentsList = student.missingDocumentTypes.map((docName: string, index: number) => {
+            const emoji = docName.includes('Policy') ? '📜' : 
+                         docName.includes('Parent') ? '👨‍👩‍👧‍👦' : '📸';
+            return `${index + 1}. ${emoji} *${docName}*`;
+          }).join('\n');
+
+          const urgentNote = isUrgent ? 
+            '\n⚠️ *IMMEDIATE ACTION REQUIRED*\nYour child\'s class attendance may be affected if these documents are not submitted today.' :
+            '\n📋 Please submit these documents at your earliest convenience.';
+
+          const message = `${urgentPrefix}Dear *${student.parentName}*,
+
+This is a reminder that your child *${student.name}* has not yet submitted the required documents for physical classes at *Dr U Education*.
+
+*Missing Documents:*
+${documentsList}
+
+${urgentNote}
+
+*How to Submit:*
+1. Contact your teacher or admin for document forms
+2. Fill out each form completely
+3. Submit the completed documents
+
+If you have questions, please contact us immediately.
+
+Thank you for your cooperation.
+
+*Dr U Education Team*
+📞 Contact us if you need help`;
+
+          return {
+            phone: student.parentPhone,
+            name: student.parentName,
+            type: 'parent' as const,
+            studentName: student.name,
+            message: message
+          };
+        });
+
+        // Send WhatsApp messages for this batch
+        try {
+          const response = await fetch('/api/whatsapp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              recipients: batchRecipients.map((r: any) => ({
+                phone: r.phone,
+                name: r.name,
+                type: r.type,
+                studentName: r.studentName
+              })),
+              message: batchRecipients[0].message, // Use first message as template
+              teacherName: 'DRU Education',
+              className: 'Document Management'
+            })
+          });
+
+          if (!response.ok) {
+            throw new Error(`WhatsApp API error: ${response.status}`);
+          }
+
+          const batchResult = await response.json();
+          console.log(`Batch ${batchIndex + 1} result:`, batchResult);
+
+          // Process batch results
+          batchResult.results.forEach((result: any) => {
+            if (result.success) {
+              totalSuccessful++;
+            } else {
+              totalFailed++;
+            }
+          });
+
+          allResults.push(...batchResult.results);
+
+          // Update progress
+          setSendingProgress({ 
+            current: totalSuccessful + totalFailed, 
+            total: studentsWithPhones.length 
+          });
+
+        } catch (error) {
+          console.error(`Batch ${batchIndex + 1} failed:`, error);
+          
+          // Mark all in this batch as failed
+          batch.forEach(() => {
+            totalFailed++;
+            allResults.push({
+              success: false,
+              error: error instanceof Error ? error.message : 'Unknown error'
+            });
+          });
+        }
+
+        // Add delay between batches
+        if (batchIndex < batches.length - 1) {
+          console.log('Waiting 2 seconds before next batch...');
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      }
+
+      // Set final results
+      setReminderResults({
+        message: `WhatsApp document reminders completed! ${totalSuccessful} successful, ${totalFailed} failed.`,
+        summary: {
+          successful: totalSuccessful,
+          failed: totalFailed,
+          total: studentsWithPhones.length
+        },
+        results: allResults
       });
 
-      if (!response.ok) throw new Error('Failed to send reminders');
+      console.log(`✅ All batches completed: ${totalSuccessful} successful, ${totalFailed} failed`);
       
-      const data = await response.json();
-      setReminderResults(data);
-      
-      // Refresh the preview to show updated numbers
+      // Refresh the preview
       await loadReminderPreview(type);
       
     } catch (error) {
-      console.error('Error sending reminders:', error);
+      console.error('Error sending WhatsApp reminders:', error);
       setReminderResults({
         message: 'Failed to send WhatsApp notifications. Please try again.',
         summary: { successful: 0, failed: reminderPreview.stats.total },
