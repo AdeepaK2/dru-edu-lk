@@ -1,6 +1,89 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { StudentDocumentService } from '@/apiservices/studentDocumentService';
+import { adminFirestore } from '@/utils/firebase-admin';
 import { MailService } from '@/apiservices/mailService';
+import { DocumentType } from '@/models/studentSchema';
+
+// Helper function to get students with missing documents using Firebase Admin
+async function getStudentsWithMissingDocuments() {
+  try {
+    console.log('Fetching students from Firestore using Admin SDK...');
+    
+    // Get all students from Firestore
+    const studentsSnapshot = await adminFirestore.collection('students').get();
+    console.log(`Found ${studentsSnapshot.docs.length} students in database`);
+    
+    const requiredDocuments = [
+      {
+        type: DocumentType.CLASS_POLICY,
+        name: 'Class Policy Agreement',
+        url: 'https://drive.google.com/file/d/1YHJxvAfTVMqRJ5YQeD5fFZdXkt81vSr1/view?usp=sharing'
+      },
+      {
+        type: DocumentType.PARENT_NOTICE,
+        name: 'Parent/Guardian Notice', 
+        url: 'https://drive.google.com/file/d/1j_LO0jWJ2-4WRYBZwMwp0eRnFMqOVM-F/view?usp=sharing'
+      },
+      {
+        type: DocumentType.PHOTO_CONSENT,
+        name: 'Photo Consent Form',
+        url: 'https://drive.google.com/file/d/1example-photo-consent/view?usp=sharing'
+      }
+    ];
+    
+    const studentsWithMissingDocs: Array<{
+      id: string;
+      name: string;
+      email: string;
+      parent: { name: string; email: string } | null;
+      missingDocuments: Array<{ type: string; name: string; url: string }>;
+    }> = [];
+    
+    studentsSnapshot.docs.forEach(doc => {
+      const studentData = doc.data();
+      const studentId = doc.id;
+      
+      // Only process active students
+      if (studentData.status !== 'Active') {
+        return;
+      }
+      
+      const submittedDocuments = studentData.documents || [];
+      const submittedTypes = submittedDocuments
+        .filter((doc: any) => doc.status === 'Verified' || doc.status === 'Pending')
+        .map((doc: any) => doc.type);
+      
+      // Find missing documents
+      const missingDocuments = requiredDocuments.filter(
+        reqDoc => !submittedTypes.includes(reqDoc.type)
+      );
+      
+      // Only include students with missing documents
+      if (missingDocuments.length > 0) {
+        studentsWithMissingDocs.push({
+          id: studentId,
+          name: studentData.name || 'Unknown Student',
+          email: studentData.email || '',
+          parent: studentData.parent ? {
+            name: studentData.parent.name || 'Parent/Guardian',
+            email: studentData.parent.email || studentData.email || ''
+          } : null,
+          missingDocuments: missingDocuments.map(doc => ({
+            type: doc.type,
+            name: doc.name,
+            url: doc.url
+          }))
+        });
+      }
+    });
+    
+    console.log(`Found ${studentsWithMissingDocs.length} students with missing documents`);
+    return studentsWithMissingDocs;
+    
+  } catch (error) {
+    console.error('Error fetching students with missing documents:', error);
+    throw error;
+  }
+}
 
 // POST - Send document reminder emails to students who haven't submitted documents
 export async function POST(req: NextRequest) {
@@ -10,15 +93,8 @@ export async function POST(req: NextRequest) {
     
     console.log(`Starting document reminder email batch - Type: ${type}, Urgent: ${isUrgent}`);
     
-    // Get students with missing documents
-    let studentsWithMissingDocs;
-    if (type === 'no_documents') {
-      // Only students who haven't submitted ANY documents
-      studentsWithMissingDocs = await StudentDocumentService.getStudentsWithNoDocuments();
-    } else {
-      // All students with any missing documents (default)
-      studentsWithMissingDocs = await StudentDocumentService.getStudentsWithMissingDocuments();
-    }
+    // Get students with missing documents using Firebase Admin
+    const studentsWithMissingDocs = await getStudentsWithMissingDocuments();
     
     if (studentsWithMissingDocs.length === 0) {
       return NextResponse.json({
@@ -59,7 +135,7 @@ export async function POST(req: NextRequest) {
           parentMailId: mailIds.parentMailId,
           success: true,
           missingDocsCount: student.missingDocuments.length,
-          missingDocTypes: student.missingDocuments.map(doc => doc.type)
+          missingDocTypes: student.missingDocuments.map((doc: any) => doc.type)
         });
         
         successful++;
@@ -116,34 +192,27 @@ export async function GET(req: NextRequest) {
     const type = searchParams.get('type') || 'all';
     console.log('Preview type:', type);
     
-    // Get students with missing documents
-    let studentsWithMissingDocs;
-    if (type === 'no_documents') {
-      console.log('Getting students with no documents...');
-      studentsWithMissingDocs = await StudentDocumentService.getStudentsWithNoDocuments();
-    } else {
-      console.log('Getting students with missing documents...');
-      studentsWithMissingDocs = await StudentDocumentService.getStudentsWithMissingDocuments();
-    }
+    // Get students with missing documents using Firebase Admin
+    const studentsWithMissingDocs = await getStudentsWithMissingDocuments();
     
     console.log(`Found ${studentsWithMissingDocs.length} students`);
     
     // Transform for preview
-    const preview = studentsWithMissingDocs.map(student => ({
+    const preview = studentsWithMissingDocs.map((student: any) => ({
       id: student.id,
       name: student.name,
       email: student.email,
       parentName: student.parent?.name || 'Parent/Guardian',
       parentEmail: student.parent?.email || student.email,
       missingDocumentsCount: student.missingDocuments.length,
-      missingDocumentTypes: student.missingDocuments.map(doc => doc.name)
+      missingDocumentTypes: student.missingDocuments.map((doc: any) => doc.name)
     }));
     
     const stats = {
       total: preview.length,
       totalEmailsToSend: preview.length * 2, // Both student and parent emails
       averageMissingDocs: preview.length > 0 
-        ? Math.round((preview.reduce((sum, s) => sum + s.missingDocumentsCount, 0) / preview.length) * 10) / 10 
+        ? Math.round((preview.reduce((sum: any, s: any) => sum + s.missingDocumentsCount, 0) / preview.length) * 10) / 10 
         : 0
     };
 
