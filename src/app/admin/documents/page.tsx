@@ -240,14 +240,22 @@ export default function DocumentVerificationPage() {
   const loadReminderPreview = async (type: 'all' | 'no_documents' = 'all') => {
     setLoadingPreview(true);
     try {
+      console.log('Loading preview for type:', type);
       const response = await fetch(`/api/admin/send-document-reminders?type=${type}`);
-      if (!response.ok) throw new Error('Failed to load preview');
+      console.log('Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error:', errorText);
+        throw new Error(`Failed to load preview: ${response.status} - ${errorText}`);
+      }
       
       const data = await response.json();
+      console.log('Preview data received:', data);
       setReminderPreview(data);
     } catch (error) {
       console.error('Error loading reminder preview:', error);
-      alert('Failed to load preview. Please try again.');
+      alert(`Failed to load preview: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setLoadingPreview(false);
     }

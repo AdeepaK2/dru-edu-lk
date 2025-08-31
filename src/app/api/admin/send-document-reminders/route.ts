@@ -111,16 +111,22 @@ export async function POST(req: NextRequest) {
 // GET - Get preview of students who would receive document reminders
 export async function GET(req: NextRequest) {
   try {
+    console.log('GET /api/admin/send-document-reminders - Starting...');
     const { searchParams } = new URL(req.url);
     const type = searchParams.get('type') || 'all';
+    console.log('Preview type:', type);
     
     // Get students with missing documents
     let studentsWithMissingDocs;
     if (type === 'no_documents') {
+      console.log('Getting students with no documents...');
       studentsWithMissingDocs = await StudentDocumentService.getStudentsWithNoDocuments();
     } else {
+      console.log('Getting students with missing documents...');
       studentsWithMissingDocs = await StudentDocumentService.getStudentsWithMissingDocuments();
     }
+    
+    console.log(`Found ${studentsWithMissingDocs.length} students`);
     
     // Transform for preview
     const preview = studentsWithMissingDocs.map(student => ({
@@ -140,6 +146,9 @@ export async function GET(req: NextRequest) {
         ? Math.round((preview.reduce((sum, s) => sum + s.missingDocumentsCount, 0) / preview.length) * 10) / 10 
         : 0
     };
+
+    console.log('Preview stats:', stats);
+    console.log('Returning preview data successfully');
     
     return NextResponse.json({
       preview,
@@ -152,7 +161,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(
       { 
         error: "Failed to get document reminder preview", 
-        message: error instanceof Error ? error.message : 'Unknown error' 
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
       },
       { status: 500 }
     );
