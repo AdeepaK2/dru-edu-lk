@@ -142,7 +142,7 @@ export class StudentDocumentService {
       
       const studentsWithDetails = await Promise.all(
         students.map(async (student) => {
-          // Get document info
+          // Get document info and parent data from student document
           const studentRef = doc(firestore, COLLECTION_NAME, student.id);
           const studentDoc = await getDoc(studentRef);
           const studentData = studentDoc.data();
@@ -168,10 +168,28 @@ export class StudentDocumentService {
             console.warn('Error fetching enrollments for student:', student.id, enrollmentError);
           }
           
+          // Extract parent information with proper validation
+          let parentInfo: { name: string; email: string; phone: string } | null = null;
+          
+          if (studentData && studentData.parent) {
+            const parentData = studentData.parent;
+            
+            // Validate that parent has required fields
+            if (parentData.name && parentData.email) {
+              parentInfo = {
+                name: parentData.name || '',
+                email: parentData.email || '',
+                phone: parentData.phone || '' // This might be empty, which is handled later
+              };
+            }
+          }
+
+          console.log(`👥 Student ${student.name}: Parent info =`, parentInfo);
+          
           return {
             ...student,
             documents: studentData?.documents || [],
-            parent: studentData?.parent || null,
+            parent: parentInfo,
             enrolledClasses
           };
         })

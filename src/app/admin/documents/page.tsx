@@ -93,7 +93,14 @@ export default function DocumentVerificationPage() {
       try {
         setLoading(true);
         const studentsWithDocs = await StudentDocumentService.getStudentsWithDocumentStatus();
-        setStudents(studentsWithDocs);
+        
+        // Convert the data to match the interface (null -> undefined for parent)
+        const convertedStudents = studentsWithDocs.map(student => ({
+          ...student,
+          parent: student.parent || undefined // Convert null to undefined
+        })) as StudentWithDocuments[];
+        
+        setStudents(convertedStudents);
       } catch (error) {
         console.error('Error loading students with document status:', error);
       } finally {
@@ -291,9 +298,21 @@ export default function DocumentVerificationPage() {
           reqType => !submittedTypes.includes(reqType)
         );
 
-        // Get parent info from student data
-        let parentName = student.parent?.name || `${student.name}'s Parent`;
-        let parentPhone = student.parent?.phone || 'Not provided';
+        // Get parent info from student data with proper validation
+        let parentName = 'No Parent Info';
+        let parentPhone = 'Not provided';
+
+        if (student.parent && student.parent.name && student.parent.name.trim() !== '') {
+          parentName = student.parent.name.trim();
+        } else {
+          parentName = `${student.name}'s Parent`;
+        }
+
+        if (student.parent && student.parent.phone && student.parent.phone.trim() !== '') {
+          parentPhone = student.parent.phone.trim();
+        }
+
+        console.log(`📋 Student: ${student.name}, Parent: ${parentName}, Phone: ${parentPhone}`);
 
         return {
           id: student.id,
@@ -355,10 +374,21 @@ export default function DocumentVerificationPage() {
     try {
       // Process students in batches
       const studentsWithPhones = reminderPreview.preview.filter((student: any) => 
-        student.parentPhone && student.parentPhone !== 'Not provided'
+        student.parentPhone && 
+        student.parentPhone !== 'Not provided' && 
+        student.parentPhone.trim() !== '' &&
+        student.parentName &&
+        student.parentName !== 'No Parent Info' &&
+        student.name &&
+        student.name.trim() !== ''
       );
 
-      console.log(`Processing ${studentsWithPhones.length} students with parent phone numbers`);
+      console.log(`Processing ${studentsWithPhones.length} students with valid parent contact info out of ${reminderPreview.preview.length} total students`);
+
+      if (studentsWithPhones.length === 0) {
+        alert('No students found with valid parent contact information (name and phone number).');
+        return;
+      }
 
       const batchSize = 3; // Small batches for WhatsApp
       const batches = [];
@@ -377,7 +407,16 @@ export default function DocumentVerificationPage() {
 
         // Prepare WhatsApp messages for this batch
         const batchRecipients = batch.map((student: any) => {
-          // Generate WhatsApp message content
+          // Validate student data before creating message
+          if (!student.name || !student.parentName || student.parentPhone === 'Not provided') {
+            console.warn(`⚠️ Missing required data for student ${student.name}:`, {
+              studentName: student.name,
+              parentName: student.parentName,
+              parentPhone: student.parentPhone
+            });
+          }
+
+          // Generate WhatsApp message content with proper names
           const urgentPrefix = isUrgent ? '🚨 *URGENT REMINDER* 🚨\n\n' : '📄 *DOCUMENT REMINDER*\n\n';
           
           const documentsList = student.missingDocumentTypes.map((docName: string, index: number) => {
@@ -410,6 +449,8 @@ Thank you for your cooperation.
 
 *Dr U Education Team*
 📞 Contact us if you need help`;
+
+          console.log(`📱 Preparing WhatsApp for: Student="${student.name}", Parent="${student.parentName}", Phone="${student.parentPhone}"`);
 
           return {
             phone: student.parentPhone,
@@ -509,6 +550,102 @@ Thank you for your cooperation.
       setSendingReminders(false);
       setSendingProgress(null);
     }
+  };
+
+  // Debug function to check student data
+  const debugStudentData = async () => {
+    if (!students || students.length === 0) {
+      alert('No students data loaded yet. Please wait for data to load.');
+      return;
+    }
+
+    console.log('🔍 DEBUG: Checking student data...');
+    console.log('Total students loaded:', students.length);
+    
+    const studentsWithParentInfo = students.filter(s => s.parent);
+    const studentsWithParentPhone = students.filter(s => s.parent?.phone);
+    const studentsWithValidParentPhone = students.filter(s => 
+      s.parent?.phone && s.parent.phone.trim() !== ''
+    );
+
+    console.log('Students with parent info:', studentsWithParentInfo.length);
+    console.log('Students with parent phone:', studentsWithParentPhone.length);
+    console.log('Students with valid parent phone:', studentsWithValidParentPhone.length);
+
+    // Log detailed info for first 5 students
+    console.log('\n📋 DETAILED STUDENT DATA (first 5):');
+    students.slice(0, 5).forEach((student, index) => {
+      console.log(`\nStudent ${index + 1}:`, {
+        id: student.id,
+        name: student.name,
+        email: student.email,
+        status: student.status,
+        parentName: student.parent?.name || '❌ NO PARENT NAME',
+        parentEmail: student.parent?.email || '❌ NO PARENT EMAIL', 
+        parentPhone: student.parent?.phone || '❌ NO PARENT PHONE',
+        documentsCount: student.documents?.length || 0,
+        enrolledClassesCount: student.enrolledClasses?.length || 0
+      });
+    });
+
+    // Check students with missing documents
+    const studentsWithMissingDocs = students.filter(student => {
+      if (student.status !== 'Active') return false;
+      
+      const submittedDocuments = student.documents || [];
+      const submittedTypes = submittedDocuments
+        .filter(doc => doc.status === 'Verified' || doc.status === 'Pending')
+        .map(doc => doc.type);
+      
+      const requiredDocTypes = [DocumentType.CLASS_POLICY, DocumentType.PARENT_NOTICE, DocumentType.PHOTO_CONSENT];
+      const missingDocTypes = requiredDocTypes.filter(reqType => !submittedTypes.includes(reqType));
+      
+      return missingDocTypes.length > 0;
+    });
+
+    console.log('\n📄 DOCUMENT STATUS:');
+    console.log('Students with missing documents:', studentsWithMissingDocs.length);
+    console.log('Students with missing docs AND valid parent phone:', 
+      studentsWithMissingDocs.filter(s => s.parent?.phone && s.parent.phone.trim() !== '').length
+    );
+
+    // Show specific issues
+    const studentsWithIssues = students.filter(s => {
+      if (!s.parent) return true;
+      if (!s.parent.name || s.parent.name.trim() === '') return true;
+      if (!s.parent.phone || s.parent.phone.trim() === '') return true;
+      return false;
+    });
+
+    console.log('\n⚠️ STUDENTS WITH PARENT DATA ISSUES:');
+    studentsWithIssues.slice(0, 10).forEach((student, index) => {
+      const issues = [];
+      if (!student.parent) issues.push('No parent object');
+      else {
+        if (!student.parent.name || student.parent.name.trim() === '') issues.push('No parent name');
+        if (!student.parent.email || student.parent.email.trim() === '') issues.push('No parent email');
+        if (!student.parent.phone || student.parent.phone.trim() === '') issues.push('No parent phone');
+      }
+      
+      console.log(`${index + 1}. ${student.name} - Issues: ${issues.join(', ')}`);
+    });
+
+    const readyForWhatsApp = studentsWithMissingDocs.filter(s => 
+      s.parent?.phone && 
+      s.parent.phone.trim() !== '' &&
+      s.parent?.name && 
+      s.parent.name.trim() !== ''
+    );
+
+    alert(`🔍 DEBUG COMPLETE - Check console for details
+    
+📊 SUMMARY:
+• Total students: ${students.length}
+• Students with missing documents: ${studentsWithMissingDocs.length}
+• Students ready for WhatsApp notifications: ${readyForWhatsApp.length}
+• Students with parent data issues: ${studentsWithIssues.length}
+
+Check the browser console for detailed information.`);
   };
 
   // Handle opening reminder modal
@@ -786,8 +923,17 @@ Thank you for your cooperation.
             </div>
           </div>
           
-          {/* WhatsApp Notification Action */}
-          <div className="flex items-center">
+          {/* Actions */}
+          <div className="flex items-center gap-3">
+            {/* Debug Button */}
+            <Button
+              onClick={debugStudentData}
+              disabled={loading || !students || students.length === 0}
+              className="bg-purple-600 hover:bg-purple-700"
+            >
+              🔍 Debug Data
+            </Button>
+            
             <Button
               onClick={handleOpenReminderModal}
               disabled={loading || !students || students.length === 0}
