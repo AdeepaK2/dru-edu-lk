@@ -1385,7 +1385,7 @@ export class MailService {
     };
   }
 
-  // Send document reminder emails to student and parent
+  // Send document reminder emails to both student and parent
   static async sendDocumentReminderEmails(
     studentName: string,
     studentEmail: string,

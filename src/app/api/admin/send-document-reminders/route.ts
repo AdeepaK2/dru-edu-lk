@@ -40,26 +40,12 @@ export async function POST(req: NextRequest) {
     
     for (const student of studentsWithMissingDocs) {
       try {
-        // Only send if we have parent information
-        if (!student.parent || !student.parent.email) {
-          console.warn(`Skipping ${student.name} - no parent email found`);
-          results.push({
-            studentId: student.id,
-            studentName: student.name,
-            studentEmail: student.email,
-            success: false,
-            error: 'No parent email available',
-            missingDocsCount: student.missingDocuments.length
-          });
-          failed++;
-          continue;
-        }
-        
+        // Send reminder emails to both student and parent
         const mailIds = await MailService.sendDocumentReminderEmails(
           student.name,
           student.email,
-          student.parent.name,
-          student.parent.email,
+          student.parent?.name || 'Parent/Guardian',
+          student.parent?.email || student.email,
           student.missingDocuments,
           isUrgent
         );
@@ -68,8 +54,7 @@ export async function POST(req: NextRequest) {
           studentId: student.id,
           studentName: student.name,
           studentEmail: student.email,
-          parentName: student.parent.name,
-          parentEmail: student.parent.email,
+          parentEmail: student.parent?.email || student.email,
           studentMailId: mailIds.studentMailId,
           parentMailId: mailIds.parentMailId,
           success: true,
@@ -78,14 +63,15 @@ export async function POST(req: NextRequest) {
         });
         
         successful++;
-        console.log(`✅ Sent reminder to ${student.name} and ${student.parent.name}`);
+        console.log(`✅ Sent reminder emails to ${student.name} - Student: ${mailIds.studentMailId}, Parent: ${mailIds.parentMailId}`);
         
       } catch (error) {
-        console.error(`❌ Failed to send reminder to ${student.name}:`, error);
+        console.error(`❌ Failed to send reminder emails to ${student.name}:`, error);
         results.push({
           studentId: student.id,
           studentName: student.name,
           studentEmail: student.email,
+          parentEmail: student.parent?.email || student.email,
           success: false,
           error: error instanceof Error ? error.message : 'Unknown error',
           missingDocsCount: student.missingDocuments.length
@@ -141,17 +127,15 @@ export async function GET(req: NextRequest) {
       id: student.id,
       name: student.name,
       email: student.email,
-      parentName: student.parent?.name || 'No parent info',
-      parentEmail: student.parent?.email || 'No parent email',
-      hasParentEmail: !!(student.parent?.email),
+      parentName: student.parent?.name || 'Parent/Guardian',
+      parentEmail: student.parent?.email || student.email,
       missingDocumentsCount: student.missingDocuments.length,
       missingDocumentTypes: student.missingDocuments.map(doc => doc.name)
     }));
     
     const stats = {
       total: preview.length,
-      withParentEmail: preview.filter(s => s.hasParentEmail).length,
-      withoutParentEmail: preview.filter(s => !s.hasParentEmail).length,
+      totalEmailsToSend: preview.length * 2, // Both student and parent emails
       averageMissingDocs: preview.length > 0 
         ? Math.round((preview.reduce((sum, s) => sum + s.missingDocumentsCount, 0) / preview.length) * 10) / 10 
         : 0

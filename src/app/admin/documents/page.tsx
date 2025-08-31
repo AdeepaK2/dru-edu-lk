@@ -260,14 +260,14 @@ export default function DocumentVerificationPage() {
       return;
     }
 
-    if (reminderPreview.stats.withParentEmail === 0) {
-      alert('No students with parent email addresses found to send reminders to.');
+    if (reminderPreview.stats.total === 0) {
+      alert('No students with missing documents found to send reminders to.');
       return;
     }
 
     const confirmMessage = isUrgent 
-      ? `Send URGENT document reminder emails to ${reminderPreview.stats.withParentEmail} students and their parents?`
-      : `Send document reminder emails to ${reminderPreview.stats.withParentEmail} students and their parents?`;
+      ? `Send URGENT document reminder emails to ${reminderPreview.stats.total} students and their parents? (${reminderPreview.stats.totalEmailsToSend} total emails)`
+      : `Send document reminder emails to ${reminderPreview.stats.total} students and their parents? (${reminderPreview.stats.totalEmailsToSend} total emails)`;
     
     if (!confirm(confirmMessage)) return;
 
@@ -1167,16 +1167,11 @@ export default function DocumentVerificationPage() {
                         </span>
                       </div>
                       <div>
-                        <span className="text-gray-600 dark:text-gray-300">With Parent Email:</span>
-                        <span className="font-semibold ml-2 text-green-600 dark:text-green-400">
-                          {reminderPreview.stats.withParentEmail}
+                        <span className="text-gray-600 dark:text-gray-300">Total Emails to Send:</span>
+                        <span className="font-semibold ml-2 text-blue-600 dark:text-blue-400">
+                          {reminderPreview.stats.totalEmailsToSend}
                         </span>
-                      </div>
-                      <div>
-                        <span className="text-gray-600 dark:text-gray-300">Missing Parent Email:</span>
-                        <span className="font-semibold ml-2 text-red-600 dark:text-red-400">
-                          {reminderPreview.stats.withoutParentEmail}
-                        </span>
+                        <span className="text-sm text-gray-500 ml-2">({reminderPreview.stats.total} students + {reminderPreview.stats.total} parents)</span>
                       </div>
                       <div>
                         <span className="text-gray-600 dark:text-gray-300">Avg. Missing Docs:</span>
@@ -1191,12 +1186,10 @@ export default function DocumentVerificationPage() {
                   {reminderPreview.preview.length > 0 ? (
                     <div className="mb-6">
                       <h4 className="text-md font-semibold text-gray-900 dark:text-white mb-3">
-                        👥 Students Who Will Receive Reminders ({reminderPreview.stats.withParentEmail} students)
+                        👥 Students Who Will Receive Reminders ({reminderPreview.stats.total} students)
                       </h4>
                       <div className="max-h-64 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-lg">
-                        {reminderPreview.preview
-                          .filter((student: any) => student.hasParentEmail)
-                          .map((student: any) => (
+                        {reminderPreview.preview.map((student: any) => (
                             <div key={student.id} className="p-3 border-b border-gray-200 dark:border-gray-600 last:border-b-0">
                               <div className="flex justify-between items-start">
                                 <div>
@@ -1227,10 +1220,10 @@ export default function DocumentVerificationPage() {
                   )}
 
                   {/* Action Buttons */}
-                  {reminderPreview.stats.withParentEmail > 0 && (
+                  {reminderPreview.stats.total > 0 && (
                     <div className="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-700">
                       <div className="text-sm text-gray-600 dark:text-gray-300">
-                        Emails will be sent to both students and parents
+                        Emails will be sent to both students and parents ({reminderPreview.stats.totalEmailsToSend} total emails)
                       </div>
                       <div className="flex space-x-3">
                         <Button
