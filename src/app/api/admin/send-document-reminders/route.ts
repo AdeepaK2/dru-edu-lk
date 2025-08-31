@@ -109,51 +109,77 @@ export async function POST(req: NextRequest) {
     
     console.log(`Found ${studentsWithMissingDocs.length} students with missing documents`);
     
-    // Send reminder emails
+    // Send reminder emails asynchronously with Promise.all for better performance
     const results = [];
     let successful = 0;
     let failed = 0;
     
-    for (const student of studentsWithMissingDocs) {
-      try {
-        // Send reminder emails to both student and parent
-        const mailIds = await MailService.sendDocumentReminderEmails(
-          student.name,
-          student.email,
-          student.parent?.name || 'Parent/Guardian',
-          student.parent?.email || student.email,
-          student.missingDocuments,
-          isUrgent
-        );
-        
-        results.push({
-          studentId: student.id,
-          studentName: student.name,
-          studentEmail: student.email,
-          parentEmail: student.parent?.email || student.email,
-          studentMailId: mailIds.studentMailId,
-          parentMailId: mailIds.parentMailId,
-          success: true,
-          missingDocsCount: student.missingDocuments.length,
-          missingDocTypes: student.missingDocuments.map((doc: any) => doc.type)
-        });
-        
-        successful++;
-        console.log(`✅ Sent reminder emails to ${student.name} - Student: ${mailIds.studentMailId}, Parent: ${mailIds.parentMailId}`);
-        
-      } catch (error) {
-        console.error(`❌ Failed to send reminder emails to ${student.name}:`, error);
-        results.push({
-          studentId: student.id,
-          studentName: student.name,
-          studentEmail: student.email,
-          parentEmail: student.parent?.email || student.email,
-          success: false,
-          error: error instanceof Error ? error.message : 'Unknown error',
-          missingDocsCount: student.missingDocuments.length
-        });
-        failed++;
-      }
+    // Process emails in batches to avoid overwhelming the system
+    const batchSize = 5; // Process 5 emails at a time
+    const batches = [];
+    
+    for (let i = 0; i < studentsWithMissingDocs.length; i += batchSize) {
+      batches.push(studentsWithMissingDocs.slice(i, i + batchSize));
+    }
+    
+    console.log(`Processing ${studentsWithMissingDocs.length} students in ${batches.length} batches of ${batchSize}`);
+    
+    for (const batch of batches) {
+      // Process batch concurrently
+      const batchPromises = batch.map(async (student) => {
+        try {
+          // Send reminder emails to both student and parent
+          const mailIds = await MailService.sendDocumentReminderEmails(
+            student.name,
+            student.email,
+            student.parent?.name || 'Parent/Guardian',
+            student.parent?.email || student.email,
+            student.missingDocuments,
+            isUrgent
+          );
+          
+          console.log(`✅ Sent reminder emails to ${student.name} - Student: ${mailIds.studentMailId}, Parent: ${mailIds.parentMailId}`);
+          
+          return {
+            studentId: student.id,
+            studentName: student.name,
+            studentEmail: student.email,
+            parentEmail: student.parent?.email || student.email,
+            studentMailId: mailIds.studentMailId,
+            parentMailId: mailIds.parentMailId,
+            success: true,
+            missingDocsCount: student.missingDocuments.length,
+            missingDocTypes: student.missingDocuments.map((doc: any) => doc.type)
+          };
+          
+        } catch (error) {
+          console.error(`❌ Failed to send reminder emails to ${student.name}:`, error);
+          return {
+            studentId: student.id,
+            studentName: student.name,
+            studentEmail: student.email,
+            parentEmail: student.parent?.email || student.email,
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error',
+            missingDocsCount: student.missingDocuments.length
+          };
+        }
+      });
+      
+      // Wait for current batch to complete
+      const batchResults = await Promise.all(batchPromises);
+      results.push(...batchResults);
+      
+      // Count successes and failures
+      batchResults.forEach(result => {
+        if (result.success) {
+          successful++;
+        } else {
+          failed++;
+        }
+      });
+      
+      console.log(`Batch completed. Progress: ${successful + failed}/${studentsWithMissingDocs.length}`);
     }
     
     const summary = {
