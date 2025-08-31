@@ -171,6 +171,7 @@ export class StudentDocumentService {
           return {
             ...student,
             documents: studentData?.documents || [],
+            parent: studentData?.parent || null,
             enrolledClasses
           };
         })

@@ -26,6 +26,11 @@ interface StudentWithDocuments {
   email: string;
   documents?: DocumentInfo[];
   status: 'Active' | 'Suspended' | 'Inactive';
+  parent?: {
+    name: string;
+    email: string;
+    phone: string;
+  };
   enrolledClasses?: Array<{
     classId: string;
     className: string;
@@ -237,23 +242,76 @@ export default function DocumentVerificationPage() {
     return requiredDocs.every(type => pendingTypes.includes(type));
   };
 
-  // Load reminder preview
+  // Load reminder preview directly from student data
   const loadReminderPreview = async (type: 'all' | 'no_documents' = 'all') => {
     setLoadingPreview(true);
     try {
       console.log('Loading preview for type:', type);
-      const response = await fetch(`/api/admin/send-document-reminders?type=${type}`);
-      console.log('Response status:', response.status);
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('API Error:', errorText);
-        throw new Error(`Failed to load preview: ${response.status} - ${errorText}`);
-      }
+      // Get students with missing documents directly from the current students data
+      const requiredDocTypes = [
+        DocumentType.CLASS_POLICY,
+        DocumentType.PARENT_NOTICE, 
+        DocumentType.PHOTO_CONSENT
+      ];
+
+      const studentsWithMissingDocs = students.filter(student => {
+        if (student.status !== 'Active') return false;
+        
+        const submittedDocuments = student.documents || [];
+        const submittedTypes = submittedDocuments
+          .filter(doc => doc.status === 'Verified' || doc.status === 'Pending')
+          .map(doc => doc.type);
+        
+        // Find missing documents
+        const missingDocTypes = requiredDocTypes.filter(
+          reqType => !submittedTypes.includes(reqType)
+        );
+        
+        return missingDocTypes.length > 0;
+      }).map(student => {
+        const submittedDocuments = student.documents || [];
+        const submittedTypes = submittedDocuments
+          .filter(doc => doc.status === 'Verified' || doc.status === 'Pending')
+          .map(doc => doc.type);
+        
+        const missingDocTypes = requiredDocTypes.filter(
+          reqType => !submittedTypes.includes(reqType)
+        );
+
+        // Get parent info from student data
+        let parentName = student.parent?.name || `${student.name}'s Parent`;
+        let parentPhone = student.parent?.phone || 'Not provided';
+
+        return {
+          id: student.id,
+          name: student.name,
+          email: student.email,
+          parentName: parentName,
+          parentPhone: parentPhone,
+          missingDocumentsCount: missingDocTypes.length,
+          missingDocumentTypes: missingDocTypes
+        };
+      });
       
-      const data = await response.json();
-      console.log('Preview data received:', data);
-      setReminderPreview(data);
+      const stats = {
+        total: studentsWithMissingDocs.length,
+        totalMessagesToSend: studentsWithMissingDocs.filter(s => s.parentPhone !== 'Not provided').length,
+        averageMissingDocs: studentsWithMissingDocs.length > 0 
+          ? Math.round((studentsWithMissingDocs.reduce((sum, s) => sum + s.missingDocumentsCount, 0) / studentsWithMissingDocs.length) * 10) / 10 
+          : 0,
+        studentsWithoutPhone: studentsWithMissingDocs.filter(s => s.parentPhone === 'Not provided').length
+      };
+
+      console.log('Preview stats:', stats);
+      console.log('Preview data:', studentsWithMissingDocs);
+      
+      setReminderPreview({
+        preview: studentsWithMissingDocs,
+        stats,
+        type
+      });
+      
     } catch (error) {
       console.error('Error loading reminder preview:', error);
       alert(`Failed to load preview: ${error instanceof Error ? error.message : 'Unknown error'}`);
