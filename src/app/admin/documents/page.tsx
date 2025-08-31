@@ -26,6 +26,11 @@ interface StudentWithDocuments {
   email: string;
   documents?: DocumentInfo[];
   status: 'Active' | 'Suspended' | 'Inactive';
+  parent?: {
+    name: string;
+    email: string;
+    phone: string;
+  };
   enrolledClasses?: Array<{
     classId: string;
     className: string;
@@ -274,19 +279,9 @@ export default function DocumentVerificationPage() {
           reqType => !submittedTypes.includes(reqType)
         );
 
-        // Try to get parent info from student data
-        let parentName = 'Parent/Guardian';
-        let parentPhone = 'Not provided';
-        
-        // Check if we have parent info in the student data
-        // Note: You'll need to ensure parent phone numbers are stored in the database
-        // For now using placeholder data - update this when parent phone numbers are available
-        if (student.name) {
-          parentName = `${student.name}'s Parent`;
-          // TODO: Get actual parent phone from database
-          // parentPhone = student.parent?.phone || 'Not provided';
-          parentPhone = 'Not provided'; // Placeholder until parent phones are added to database
-        }
+        // Get parent info from student data
+        let parentName = student.parent?.name || `${student.name}'s Parent`;
+        let parentPhone = student.parent?.phone || 'Not provided';
 
         return {
           id: student.id,
