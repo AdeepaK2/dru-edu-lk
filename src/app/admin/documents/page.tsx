@@ -305,9 +305,9 @@ export default function DocumentVerificationPage() {
   };
 
   // Handle opening reminder modal
-  const handleOpenReminderModal = async (type: 'all' | 'no_documents' = 'all') => {
+  const handleOpenReminderModal = async () => {
     setShowReminderModal(true);
-    await loadReminderPreview(type);
+    await loadReminderPreview('all');
   };
 
   // Get unique classes from students data
@@ -569,7 +569,7 @@ export default function DocumentVerificationPage() {
           {/* Email Notification Action */}
           <div className="flex items-center">
             <Button
-              onClick={() => handleOpenReminderModal('all')}
+              onClick={handleOpenReminderModal}
               disabled={loading}
             >
               Notify Students

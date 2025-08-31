@@ -100,12 +100,33 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
   const [scheduleToCancel, setScheduleToCancel] = useState<ScheduledClass | null>(null);
   const [cancellationReason, setCancellationReason] = useState('');
   const [cancelLoading, setCancelLoading] = useState(false);
+  const [teacherName, setTeacherName] = useState<string>('');
 
   useEffect(() => {
     if (classData && classId) {
       loadScheduledClasses();
     }
   }, [classData, classId]);
+
+  // Load teacher name when classData changes
+  useEffect(() => {
+    const loadTeacherName = async () => {
+      if (classData?.teacherId) {
+        try {
+          const { TeacherFirestoreService } = await import('@/apiservices/teacherFirestoreService');
+          const teacher = await TeacherFirestoreService.getTeacherById(classData.teacherId);
+          if (teacher) {
+            setTeacherName(teacher.name);
+          }
+        } catch (error) {
+          console.error('Error loading teacher name:', error);
+          setTeacherName('Teacher'); // Fallback
+        }
+      }
+    };
+
+    loadTeacherName();
+  }, [classData?.teacherId]);
 
   useEffect(() => {
     // Update scheduled dates when scheduled classes change
@@ -585,7 +606,7 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
             selectedSchedule.subjectName || 'Subject',
             classDate,
             classTime,
-            selectedSchedule.teacherName || 'Teacher'
+            teacherName || selectedSchedule.teacherName || 'Teacher'
           );
           
           console.log('✅ Absence notification sent for', student.studentName, 'Mail ID:', mailId);
@@ -682,7 +703,7 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
           scheduleToCancel.subjectName || 'Subject',
           classDate,
           classTime,
-          scheduleToCancel.teacherName || 'Teacher',
+          teacherName || scheduleToCancel.teacherName || 'Teacher',
           cancellationReason
         );
 
