@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminFirestore } from '@/utils/firebase-admin';
-import { MailService } from '@/apiservices/mailService';
+import { WhatsAppDocumentService } from '@/apiservices/whatsappDocumentService';
 import { DocumentType } from '@/models/studentSchema';
 
 // Helper function to get students with missing documents using Firebase Admin
@@ -34,7 +34,7 @@ async function getStudentsWithMissingDocuments() {
       id: string;
       name: string;
       email: string;
-      parent: { name: string; email: string } | null;
+      parent: { name: string; phone: string } | null;
       missingDocuments: Array<{ type: string; name: string; url: string }>;
     }> = [];
     
@@ -65,7 +65,7 @@ async function getStudentsWithMissingDocuments() {
           email: studentData.email || '',
           parent: studentData.parent ? {
             name: studentData.parent.name || 'Parent/Guardian',
-            email: studentData.parent.email || studentData.email || ''
+            phone: studentData.parent.phone || studentData.parent.phoneNumber || ''
           } : null,
           missingDocuments: missingDocuments.map(doc => ({
             type: doc.type,
@@ -109,93 +109,28 @@ export async function POST(req: NextRequest) {
     
     console.log(`Found ${studentsWithMissingDocs.length} students with missing documents`);
     
-    // Send reminder emails asynchronously with Promise.all for better performance
-    const results = [];
-    let successful = 0;
-    let failed = 0;
-    
-    // Process emails in batches to avoid overwhelming the system
-    const batchSize = 5; // Process 5 emails at a time
-    const batches = [];
-    
-    for (let i = 0; i < studentsWithMissingDocs.length; i += batchSize) {
-      batches.push(studentsWithMissingDocs.slice(i, i + batchSize));
-    }
-    
-    console.log(`Processing ${studentsWithMissingDocs.length} students in ${batches.length} batches of ${batchSize}`);
-    
-    for (const batch of batches) {
-      // Process batch concurrently
-      const batchPromises = batch.map(async (student) => {
-        try {
-          // Send reminder emails to both student and parent
-          const mailIds = await MailService.sendDocumentReminderEmails(
-            student.name,
-            student.email,
-            student.parent?.name || 'Parent/Guardian',
-            student.parent?.email || student.email,
-            student.missingDocuments,
-            isUrgent
-          );
-          
-          console.log(`✅ Sent reminder emails to ${student.name} - Student: ${mailIds.studentMailId}, Parent: ${mailIds.parentMailId}`);
-          
-          return {
-            studentId: student.id,
-            studentName: student.name,
-            studentEmail: student.email,
-            parentEmail: student.parent?.email || student.email,
-            studentMailId: mailIds.studentMailId,
-            parentMailId: mailIds.parentMailId,
-            success: true,
-            missingDocsCount: student.missingDocuments.length,
-            missingDocTypes: student.missingDocuments.map((doc: any) => doc.type)
-          };
-          
-        } catch (error) {
-          console.error(`❌ Failed to send reminder emails to ${student.name}:`, error);
-          return {
-            studentId: student.id,
-            studentName: student.name,
-            studentEmail: student.email,
-            parentEmail: student.parent?.email || student.email,
-            success: false,
-            error: error instanceof Error ? error.message : 'Unknown error',
-            missingDocsCount: student.missingDocuments.length
-          };
-        }
-      });
-      
-      // Wait for current batch to complete
-      const batchResults = await Promise.all(batchPromises);
-      results.push(...batchResults);
-      
-      // Count successes and failures
-      batchResults.forEach(result => {
-        if (result.success) {
-          successful++;
-        } else {
-          failed++;
-        }
-      });
-      
-      console.log(`Batch completed. Progress: ${successful + failed}/${studentsWithMissingDocs.length}`);
-    }
-    
-    const summary = {
-      total: studentsWithMissingDocs.length,
-      successful,
-      failed,
-      type,
+    // Send WhatsApp reminders to parents
+    const whatsappResult = await WhatsAppDocumentService.sendDocumentReminders(
+      studentsWithMissingDocs,
       isUrgent
-    };
+    );
     
-    console.log('✅ Document reminder email batch completed:', summary);
-    
+    console.log('✅ WhatsApp document reminder batch completed:', {
+      total: studentsWithMissingDocs.length,
+      successful: whatsappResult.successful,
+      failed: whatsappResult.failed
+    });
+
     return NextResponse.json({
-      message: `Document reminder emails sent successfully. ${successful} successful, ${failed} failed.`,
-      summary,
-      results
+      message: `WhatsApp document reminders sent to parents! ${whatsappResult.successful} successful, ${whatsappResult.failed} failed.`,
+      summary: {
+        total: studentsWithMissingDocs.length,
+        successful: whatsappResult.successful,
+        failed: whatsappResult.failed,
+        type,
+        isUrgent
+      },
+      results: whatsappResult.results
     });
     
   } catch (error) {
@@ -229,14 +164,14 @@ export async function GET(req: NextRequest) {
       name: student.name,
       email: student.email,
       parentName: student.parent?.name || 'Parent/Guardian',
-      parentEmail: student.parent?.email || student.email,
+      parentPhone: student.parent?.phone || 'Not provided',
       missingDocumentsCount: student.missingDocuments.length,
       missingDocumentTypes: student.missingDocuments.map((doc: any) => doc.name)
     }));
     
     const stats = {
       total: preview.length,
-      totalEmailsToSend: preview.length * 2, // Both student and parent emails
+      totalMessagesToSend: preview.filter(s => s.parentPhone !== 'Not provided').length, // Only parents with phone numbers
       averageMissingDocs: preview.length > 0 
         ? Math.round((preview.reduce((sum: any, s: any) => sum + s.missingDocumentsCount, 0) / preview.length) * 10) / 10 
         : 0

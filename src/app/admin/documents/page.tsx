@@ -269,17 +269,17 @@ export default function DocumentVerificationPage() {
       return;
     }
 
-    if (reminderPreview.stats.total === 0) {
+    if (!reminderPreview.stats.total) {
       alert('No students with missing documents found to send reminders to.');
       return;
     }
 
-    const confirmMessage = `Send document notifications to ${reminderPreview.stats.total} students and their parents? (${reminderPreview.stats.totalEmailsToSend} total emails)`;
+    const confirmMessage = `Send WhatsApp notifications to ${reminderPreview.stats.total} parents? (${reminderPreview.stats.totalMessagesToSend} WhatsApp messages)`;
     
     if (!confirm(confirmMessage)) return;
 
     setSendingReminders(true);
-    setSendingProgress({ current: 0, total: reminderPreview.stats.totalEmailsToSend });
+    setSendingProgress({ current: 0, total: reminderPreview.stats.totalMessagesToSend });
     setReminderResults(null);
 
     try {
@@ -300,7 +300,7 @@ export default function DocumentVerificationPage() {
     } catch (error) {
       console.error('Error sending reminders:', error);
       setReminderResults({
-        message: 'Failed to send document notifications. Please try again.',
+        message: 'Failed to send WhatsApp notifications. Please try again.',
         summary: { successful: 0, failed: reminderPreview.stats.total },
         details: []
       });
@@ -572,13 +572,13 @@ export default function DocumentVerificationPage() {
             </div>
           </div>
           
-          {/* Email Notification Action */}
+          {/* WhatsApp Notification Action */}
           <div className="flex items-center">
             <Button
               onClick={handleOpenReminderModal}
               disabled={loading}
             >
-              Notify Students
+              Notify Parents via WhatsApp
             </Button>
           </div>
         </div>
@@ -1128,14 +1128,14 @@ export default function DocumentVerificationPage() {
         </div>
       )}
 
-      {/* Email Reminder Modal */}
+      {/* WhatsApp Reminder Modal */}
       {showReminderModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Notify Students About Missing Documents
+                  📱 Notify Parents via WhatsApp About Missing Documents
                 </h3>
                 <Button
                   onClick={() => {
@@ -1159,9 +1159,9 @@ export default function DocumentVerificationPage() {
               ) : reminderPreview ? (
                 <div>
                   {/* Preview Statistics */}
-                  <div className="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-4 mb-6">
-                    <h4 className="text-md font-semibold text-blue-900 dark:text-blue-100 mb-3">
-                      📊 Reminder Summary
+                  <div className="bg-green-50 dark:bg-green-900/30 rounded-lg p-4 mb-6">
+                    <h4 className="text-md font-semibold text-green-900 dark:text-green-100 mb-3">
+                      � WhatsApp Notification Summary
                     </h4>
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
@@ -1171,11 +1171,11 @@ export default function DocumentVerificationPage() {
                         </span>
                       </div>
                       <div>
-                        <span className="text-gray-600 dark:text-gray-300">Total Emails to Send:</span>
-                        <span className="font-semibold ml-2 text-blue-600 dark:text-blue-400">
-                          {reminderPreview.stats.totalEmailsToSend}
+                        <span className="text-gray-600 dark:text-gray-300">WhatsApp Messages to Send:</span>
+                        <span className="font-semibold ml-2 text-green-600 dark:text-green-400">
+                          {reminderPreview.stats.totalMessagesToSend}
                         </span>
-                        <span className="text-sm text-gray-500 ml-2">({reminderPreview.stats.total} students + {reminderPreview.stats.total} parents)</span>
+                        <span className="text-sm text-gray-500 ml-2">(to parents only)</span>
                       </div>
                       <div>
                         <span className="text-gray-600 dark:text-gray-300">Avg. Missing Docs:</span>
@@ -1227,12 +1227,12 @@ export default function DocumentVerificationPage() {
                   {reminderPreview.stats.total > 0 && (
                     <div className="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-700">
                       <div className="text-sm text-gray-600 dark:text-gray-300">
-                        Emails will be sent to both students and parents ({reminderPreview.stats.totalEmailsToSend} total emails)
+                        WhatsApp messages will be sent to parents only ({reminderPreview.stats.totalMessagesToSend} messages)
                       </div>
                       <div className="flex flex-col items-end gap-2">
                         {sendingProgress && (
                           <div className="text-xs text-gray-500 dark:text-gray-400">
-                            Processing emails... Please wait.
+                            Processing WhatsApp messages... Please wait.
                           </div>
                         )}
                         <Button
@@ -1243,10 +1243,10 @@ export default function DocumentVerificationPage() {
                           {sendingReminders ? (
                             <div className="flex items-center gap-2">
                               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                              Sending...
+                              Sending WhatsApp...
                             </div>
                           ) : (
-                            'Notify'
+                            '📱 Send WhatsApp'
                           )}
                         </Button>
                       </div>
@@ -1257,7 +1257,7 @@ export default function DocumentVerificationPage() {
                   {reminderResults && (
                     <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/30 rounded-lg">
                       <h4 className="text-md font-semibold text-green-900 dark:text-green-100 mb-2">
-                        ✅ Notifications Sent Successfully!
+                        ✅ WhatsApp Messages Sent Successfully!
                       </h4>
                       <p className="text-sm text-green-800 dark:text-green-200">
                         {reminderResults.message}
