@@ -101,7 +101,8 @@ export class MailService {
         <p>Thank you for your dedication to our students' education!</p>
         
         <p>Best regards,<br>
-        The Dr U Education Team</p>
+        The Dr U Education Team,<br>
+Your  Trusted  Guide for VCE Success</p>
         
         <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 30px 0;">
         <p style="font-size: 12px; color: #6B7280; text-align: center;">
@@ -197,7 +198,8 @@ export class MailService {
         <p>We look forward to supporting ${studentName}'s educational journey!</p>
         
         <p>Best regards,<br>
-        The Dr U Education Team</p>
+        The Dr U Education Team,<br>
+Your  Trusted  Guide for VCE Success</p>
         
         <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 30px 0;">
         <p style="font-size: 12px; color: #6B7280; text-align: center;">
@@ -348,7 +350,8 @@ export class MailService {
         <p>We look forward to a productive session!</p>
         
         <p>Best regards,<br>
-        The Dr U Education Team</p>
+        The Dr U Education Team,<br>
+Your  Trusted  Guide for VCE Success</p>
         
         <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 30px 0;">
         <p style="font-size: 12px; color: #6B7280; text-align: center;">
@@ -483,7 +486,8 @@ export class MailService {
         <p>Good luck with the test! If you have any questions, please contact your teacher or our support team.</p>
 
         <p>Best regards,<br>
-        The Dr U Education Team</p>
+        The Dr U Education Team,<br>
+Your  Trusted  Guide for VCE Success</p>
         
         <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 30px 0;">
         <p style="font-size: 12px; color: #6B7280; text-align: center;">
@@ -619,7 +623,8 @@ export class MailService {
         <p>We appreciate your continued support in your child's educational journey. Your involvement makes a significant difference in their academic success.</p>
 
         <p>Best regards,<br>
-        The Dr U Education Team</p>
+        The Dr U Education Team,<br>
+Your  Trusted  Guide for VCE Success</p>
         
         <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 30px 0;">
         <p style="font-size: 12px; color: #6B7280; text-align: center;">
