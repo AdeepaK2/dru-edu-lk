@@ -66,6 +66,7 @@ export default function DocumentVerificationPage() {
   
   // Email reminder state
   const [sendingReminders, setSendingReminders] = useState(false);
+  const [sendingProgress, setSendingProgress] = useState<{current: number, total: number} | null>(null);
   const [reminderResults, setReminderResults] = useState<any>(null);
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [reminderPreview, setReminderPreview] = useState<any>(null);
@@ -278,6 +279,9 @@ export default function DocumentVerificationPage() {
     if (!confirm(confirmMessage)) return;
 
     setSendingReminders(true);
+    setSendingProgress({ current: 0, total: reminderPreview.stats.totalEmailsToSend });
+    setReminderResults(null);
+
     try {
       const response = await fetch('/api/admin/send-document-reminders', {
         method: 'POST',
@@ -290,17 +294,19 @@ export default function DocumentVerificationPage() {
       const data = await response.json();
       setReminderResults(data);
       
-      const message = `Document notifications sent! ${data.summary.successful} successful, ${data.summary.failed} failed.`;
-      alert(message);
-      
       // Refresh the preview to show updated numbers
       await loadReminderPreview(type);
       
     } catch (error) {
       console.error('Error sending reminders:', error);
-      alert('Failed to send document notifications. Please try again.');
+      setReminderResults({
+        message: 'Failed to send document notifications. Please try again.',
+        summary: { successful: 0, failed: reminderPreview.stats.total },
+        details: []
+      });
     } finally {
       setSendingReminders(false);
+      setSendingProgress(null);
     }
   };
 
@@ -1223,12 +1229,27 @@ export default function DocumentVerificationPage() {
                       <div className="text-sm text-gray-600 dark:text-gray-300">
                         Emails will be sent to both students and parents ({reminderPreview.stats.totalEmailsToSend} total emails)
                       </div>
-                      <Button
-                        onClick={() => sendDocumentReminders(reminderPreview.type, false)}
-                        disabled={sendingReminders}
-                      >
-                        {sendingReminders ? 'Sending...' : 'Notify'}
-                      </Button>
+                      <div className="flex flex-col items-end gap-2">
+                        {sendingProgress && (
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            Processing emails... Please wait.
+                          </div>
+                        )}
+                        <Button
+                          onClick={() => sendDocumentReminders(reminderPreview.type, false)}
+                          disabled={sendingReminders}
+                          className={sendingReminders ? 'cursor-not-allowed opacity-50' : ''}
+                        >
+                          {sendingReminders ? (
+                            <div className="flex items-center gap-2">
+                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                              Sending...
+                            </div>
+                          ) : (
+                            'Notify'
+                          )}
+                        </Button>
+                      </div>
                     </div>
                   )}
 
