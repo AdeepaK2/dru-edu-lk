@@ -8,8 +8,13 @@ export async function GET(request: NextRequest) {
   try {
     // Verify this is a valid cron job request (Vercel sets specific headers)
     const authHeader = request.headers.get('authorization');
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const cronSecret = process.env.CRON_SECRET;
+    
+    if (cronSecret) {
+      if (authHeader !== `Bearer ${cronSecret}`) {
+        console.error('❌ Unauthorized cron request:', { authHeader, expected: `Bearer ${cronSecret}` });
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
     }
 
     console.log('🔍 Starting missed test attempt check...');
@@ -98,7 +103,7 @@ async function getRecentlyEndedTests(startTime: Timestamp, endTime: Timestamp): 
     
     allTestsSnapshot.forEach((doc: any) => {
       const testData = doc.data();
-      let testEndTime: Timestamp | null = null;
+      let testEndTime: any = null;
       
       // Determine the end time based on test type
       if (testData.type === 'live') {
@@ -108,21 +113,49 @@ async function getRecentlyEndedTests(startTime: Timestamp, endTime: Timestamp): 
       }
       
       // Check if the test ended in our time range
-      if (testEndTime && 
-          testEndTime.toMillis() >= startTime.toMillis() && 
-          testEndTime.toMillis() <= endTime.toMillis()) {
-        
-        tests.push({ 
-          id: doc.id, 
-          ...testData,
-          endTime: testEndTime // Store the actual end time for reference
-        });
-        
-        console.log(`✅ Found test: ${testData.title} (${testData.type}) ended at ${testEndTime.toDate()}`);
+      if (testEndTime) {
+        try {
+          // Convert to milliseconds based on the timestamp format
+          let endTimeMillis: number;
+          
+          if (typeof testEndTime.toMillis === 'function') {
+            // It's a Firestore Timestamp
+            endTimeMillis = testEndTime.toMillis();
+          } else if ((testEndTime as any).seconds !== undefined) {
+            // It's a Firestore Timestamp object with seconds property
+            endTimeMillis = (testEndTime as any).seconds * 1000 + ((testEndTime as any).nanoseconds || 0) / 1000000;
+          } else if (testEndTime instanceof Date) {
+            // It's a Date object
+            endTimeMillis = testEndTime.getTime();
+          } else if (typeof testEndTime === 'string') {
+            // It's a date string
+            endTimeMillis = new Date(testEndTime).getTime();
+          } else if (typeof testEndTime === 'number') {
+            // It's already milliseconds
+            endTimeMillis = testEndTime;
+          } else {
+            console.warn(`⚠️ Unknown timestamp format for test ${testData.title}:`, testEndTime);
+            return; // Skip this test
+          }
+          
+          // Check if the test ended in our time range
+          if (endTimeMillis >= startTime.toMillis() && endTimeMillis <= endTime.toMillis()) {
+            tests.push({ 
+              id: doc.id, 
+              ...testData,
+              endTime: testEndTime // Store the actual end time for reference
+            });
+            
+            const endDate = new Date(endTimeMillis);
+            console.log(`✅ Found test: ${testData.title} (${testData.type}) ended at ${endDate.toISOString()}`);
+          }
+        } catch (error) {
+          console.error(`❌ Error processing timestamp for test ${testData.title}:`, error, 'Timestamp:', testEndTime);
+        }
       }
     });
 
-    console.log(`� Filtered to ${tests.length} tests that ended in time range`);
+    console.log(`🎯 Filtered to ${tests.length} tests that ended in time range`);
     return tests;
 
   } catch (error) {
@@ -200,7 +233,7 @@ async function getEnrolledStudents(classIds: string[]): Promise<any[]> {
       const enrollmentsQuery = firebaseAdmin.db
         .collection('studentEnrollments')
         .where('classId', 'in', classBatch)
-        .where('status', '==', 'Active'); // Fixed: should be 'Active' not 'approved'
+        .where('status', '==', 'Active');
 
       const enrollmentsSnapshot = await enrollmentsQuery.get();
 
@@ -212,11 +245,10 @@ async function getEnrolledStudents(classIds: string[]): Promise<any[]> {
 
     console.log(`👥 Found ${studentIds.size} unique enrolled students`);
 
-    // Get student details by document ID (more efficient than where clause)
+    // Get student details by document ID
     if (studentIds.size > 0) {
       const studentIdArray = Array.from(studentIds);
       
-      // Get students by document ID to avoid complex queries
       for (const studentId of studentIdArray) {
         try {
           const studentDoc = await firebaseAdmin.db
@@ -366,9 +398,33 @@ function formatTestEndTime(test: any): string {
     let endTime: Date;
 
     if (test.type === 'live') {
-      endTime = test.actualEndTime?.toDate?.() || new Date(test.actualEndTime);
+      const actualEndTime = test.actualEndTime;
+      if (typeof actualEndTime?.toDate === 'function') {
+        endTime = actualEndTime.toDate();
+      } else if (actualEndTime instanceof Date) {
+        endTime = actualEndTime;
+      } else if (typeof actualEndTime === 'string') {
+        endTime = new Date(actualEndTime);
+      } else if ((actualEndTime as any)?.seconds !== undefined) {
+        // Firestore Timestamp object
+        endTime = new Date((actualEndTime as any).seconds * 1000);
+      } else {
+        endTime = new Date(actualEndTime);
+      }
     } else {
-      endTime = test.availableTo?.toDate?.() || new Date(test.availableTo);
+      const availableTo = test.availableTo;
+      if (typeof availableTo?.toDate === 'function') {
+        endTime = availableTo.toDate();
+      } else if (availableTo instanceof Date) {
+        endTime = availableTo;
+      } else if (typeof availableTo === 'string') {
+        endTime = new Date(availableTo);
+      } else if ((availableTo as any)?.seconds !== undefined) {
+        // Firestore Timestamp object
+        endTime = new Date((availableTo as any).seconds * 1000);
+      } else {
+        endTime = new Date(availableTo);
+      }
     }
 
     return endTime.toLocaleString('en-AU', {
