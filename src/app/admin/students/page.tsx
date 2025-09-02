@@ -79,6 +79,29 @@ export default function StudentsManagement() {
   const [showApprovedRequests, setShowApprovedRequests] = useState(false);
   const [showRejectedRequests, setShowRejectedRequests] = useState(false);
 
+  // Utility function to safely parse JSON responses
+  const safeJsonParse = async (response: Response) => {
+    try {
+      return await response.json();
+    } catch (jsonError) {
+      console.warn('Response parsing warning (non-critical):', jsonError);
+      return null;
+    }
+  };
+
+  // Utility function to handle API error responses
+  const handleApiError = async (response: Response, defaultMessage: string) => {
+    let errorMessage = defaultMessage;
+    try {
+      const errorData = await response.json();
+      errorMessage = errorData.error || errorData.message || defaultMessage;
+    } catch (jsonError) {
+      console.error('Failed to parse error response:', jsonError);
+      errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+    }
+    return errorMessage;
+  };
+
   // Data export states
   const [availableClasses, setAvailableClasses] = useState<ClassDocument[]>([]);
   const [selectedClasses, setSelectedClasses] = useState<string[]>([]);
@@ -308,27 +331,40 @@ export default function StudentsManagement() {
     const unsubscribe = onSnapshot(
       studentsQuery,
       async (snapshot) => {
-        const studentsData: StudentDocument[] = [];
-        snapshot.forEach((doc) => {
-          const data = doc.data();
-          studentsData.push({
-            id: doc.id,
-            ...data,
-          } as StudentDocument);
-        });
-        setStudents(studentsData);
-        setLoading(false);
-        setError(null);
-        
-        // Load real enrollment counts
-        if (studentsData.length > 0) {
-          const studentIds = studentsData.map(s => s.id);
-          loadEnrollmentCounts(studentIds);
+        try {
+          const studentsData: StudentDocument[] = [];
+          snapshot.forEach((doc) => {
+            const data = doc.data();
+            studentsData.push({
+              id: doc.id,
+              ...data,
+            } as StudentDocument);
+          });
+          setStudents(studentsData);
+          setLoading(false);
+          setError(null);
+          
+          // Load real enrollment counts
+          if (studentsData.length > 0) {
+            const studentIds = studentsData.map(s => s.id);
+            loadEnrollmentCounts(studentIds);
+          }
+        } catch (processingError) {
+          console.error('Error processing students snapshot:', processingError);
+          setError(processingError as Error);
+          setLoading(false);
         }
       },
       (error) => {
         console.error('Error fetching students:', error);
-        setError(error);
+        
+        // Handle specific Firebase/network errors
+        if (error.code === 'unavailable' || error.message.includes('ERR_CERT_COMMON_NAME_INVALID')) {
+          console.warn('Firestore connection issue detected, trying to reconnect...');
+          setError(new Error('Connection issue detected. Please check your internet connection and try refreshing the page.'));
+        } else {
+          setError(error);
+        }
         setLoading(false);
       }
     );
@@ -346,27 +382,36 @@ export default function StudentsManagement() {
     const unsubscribe = onSnapshot(
       enrollmentQuery,
       (snapshot) => {
-        const enrollmentData: EnrollmentRequestDocument[] = [];
-        snapshot.forEach((doc) => {
-          const data = doc.data();
-          enrollmentData.push({
-            id: doc.id,
-            ...data,
-          } as EnrollmentRequestDocument);
-        });
-        setEnrollmentRequests(enrollmentData);
-        
-        // Update selected student requests if modal is open
-        if (showEnrollmentDetailModal && selectedStudentRequests.length > 0) {
-          const currentStudentEmail = selectedStudentRequests[0].student.email;
-          const updatedStudentRequests = enrollmentData.filter(
-            request => request.student.email === currentStudentEmail
-          );
-          setSelectedStudentRequests(updatedStudentRequests);
+        try {
+          const enrollmentData: EnrollmentRequestDocument[] = [];
+          snapshot.forEach((doc) => {
+            const data = doc.data();
+            enrollmentData.push({
+              id: doc.id,
+              ...data,
+            } as EnrollmentRequestDocument);
+          });
+          setEnrollmentRequests(enrollmentData);
+          
+          // Update selected student requests if modal is open
+          if (showEnrollmentDetailModal && selectedStudentRequests.length > 0) {
+            const currentStudentEmail = selectedStudentRequests[0].student.email;
+            const updatedStudentRequests = enrollmentData.filter(
+              request => request.student.email === currentStudentEmail
+            );
+            setSelectedStudentRequests(updatedStudentRequests);
+          }
+        } catch (processingError) {
+          console.error('Error processing enrollment requests snapshot:', processingError);
         }
       },
       (error) => {
         console.error('Error fetching enrollment requests:', error);
+        
+        // Handle specific Firebase/network errors gracefully
+        if (error.code === 'unavailable' || error.message.includes('ERR_CERT_COMMON_NAME_INVALID')) {
+          console.warn('Enrollment requests connection issue detected');
+        }
       }
     );
 
@@ -486,12 +531,24 @@ export default function StudentsManagement() {
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
-        const errorMessage = errorData.message || errorData.error || 'Failed to create student';
+        let errorMessage = 'Failed to create student';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } catch (jsonError) {
+          console.error('Failed to parse error response:', jsonError);
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        }
         throw new Error(errorMessage);
       }
 
-      const savedStudent = await response.json();
+      // Try to parse success response, but don't fail if it's empty
+      try {
+        await response.json();
+      } catch (jsonError) {
+        console.warn('Response parsing warning (non-critical):', jsonError);
+      }
+
       showSuccess('Student created successfully!');
       setShowAddModal(false);
       // Real-time listener will automatically update the list
@@ -510,20 +567,31 @@ export default function StudentsManagement() {
     setActionLoading('update');
     
     try {
-      const response = await fetch('/api/student', {
-        method: 'PUT',
+      const response = await fetch(`/api/student?id=${editingStudent.id}`, {
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          id: editingStudent.id,
-          ...studentData,
-        }),
+        body: JSON.stringify(studentData),
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to update student');
+        let errorMessage = 'Failed to update student';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch (jsonError) {
+          console.error('Failed to parse error response:', jsonError);
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
+      }
+
+      // Try to parse success response, but don't fail if it's empty
+      try {
+        await response.json();
+      } catch (jsonError) {
+        console.warn('Response parsing warning (non-critical):', jsonError);
       }
 
       showSuccess('Student updated successfully!');
@@ -553,20 +621,37 @@ export default function StudentsManagement() {
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
-        
-        // Handle specific error cases
-        if (errorData.criticalError) {
-          showError(`Critical Error: ${errorData.message}`);
-        } else if (errorData.message && errorData.message.includes('enrollments')) {
-          showError(`Failed to delete enrollments: ${errorData.details || errorData.error}`);
-        } else {
-          showError(errorData.error || 'Failed to delete student');
+        let errorMessage = 'Failed to delete student';
+        try {
+          const errorData = await response.json();
+          // Handle specific error cases
+          if (errorData.criticalError) {
+            errorMessage = `Critical Error: ${errorData.message}`;
+          } else if (errorData.message && errorData.message.includes('enrollments')) {
+            errorMessage = `Failed to delete enrollments: ${errorData.details || errorData.error}`;
+          } else {
+            errorMessage = errorData.error || errorMessage;
+          }
+        } catch (jsonError) {
+          console.error('Failed to parse error response:', jsonError);
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
         }
+        showError(errorMessage);
         return;
       }
 
-      const result = await response.json();
+      // Try to parse success response
+      let result;
+      try {
+        result = await response.json();
+      } catch (jsonError) {
+        console.warn('Response parsing warning (non-critical):', jsonError);
+        showSuccess('Student deleted successfully!');
+        setShowDeleteConfirm(false);
+        setStudentToDelete(null);
+        return;
+      }
+
       const enrollmentMessage = result.deletedEnrollments > 0 
         ? ` and ${result.deletedEnrollments} related enrollments`
         : '';
