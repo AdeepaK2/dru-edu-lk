@@ -253,6 +253,8 @@ export default function StudentModal({
                 placeholder="Enter student's email address"
                 required
                 error={errors.email}
+                disabled={!!initialData}
+                helperText={initialData ? "Email cannot be changed for existing students" : undefined}
               />
 
               <Input
