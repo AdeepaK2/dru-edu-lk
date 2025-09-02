@@ -49,7 +49,7 @@ import {
   deleteStudyMaterial,
   updateStudyMaterial
 } from '@/apiservices/studyMaterialFirestoreService';
-import { StudyMaterialDisplayData } from '@/models/studyMaterialSchema';
+import { StudyMaterialDisplayData, StudyMaterialData } from '@/models/studyMaterialSchema';
 import StudyMaterialUploadModal from '@/components/modals/StudyMaterialUploadModal';
 import AttendanceTab from '@/components/teacher/AttendanceTab';
 
@@ -313,6 +313,10 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
   const [showEditModal, setShowEditModal] = useState(false);
   const [materialToEdit, setMaterialToEdit] = useState<any>(null);
   const [editLoading, setEditLoading] = useState(false);
+  const [editingGroup, setEditingGroup] = useState<any>(null);
+  const [newFilesToAdd, setNewFilesToAdd] = useState<any[]>([]);
+  const [filesToRemove, setFilesToRemove] = useState<string[]>([]);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   // Load class data and lessons
   useEffect(() => {
@@ -422,13 +426,31 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
     }
   };
 
-  const handleEditMaterial = (material: any) => {
-    setMaterialToEdit({
-      ...material,
-      title: material.title || '',
-      description: material.description || '',
-      isRequired: material.isRequired || false
-    });
+  const handleEditMaterial = (material: any, group?: any) => {
+    if (group?.isGroup && group?.materials?.length > 1) {
+      // Editing a group
+      setEditingGroup(group);
+      setMaterialToEdit({
+        id: group.id,
+        title: group.groupTitle || group.title,
+        description: group.materials[0]?.description || '',
+        isRequired: group.isRequired || false,
+        lessonId: group.lessonId,
+        materials: group.materials
+      });
+    } else {
+      // Editing single material
+      setEditingGroup(null);
+      setMaterialToEdit({
+        ...material,
+        title: material.title || '',
+        description: material.description || '',
+        isRequired: material.isRequired || false
+      });
+    }
+    setNewFilesToAdd([]);
+    setFilesToRemove([]);
+    setUploadProgress(0);
     setShowEditModal(true);
   };
 
@@ -437,14 +459,131 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
     
     try {
       setEditLoading(true);
-      await updateStudyMaterial(materialToEdit.id, {
-        title: editedData.title,
-        description: editedData.description,
-        isRequired: editedData.isRequired
-      });
+      
+      // Step 1: Upload new files if any
+      if (newFilesToAdd.length > 0) {
+        console.log('📤 Uploading new files:', newFilesToAdd.length);
+        const { StudyMaterialStorageService } = await import('@/apiservices/studyMaterialStorageService');
+        const { createStudyMaterial } = await import('@/apiservices/studyMaterialFirestoreService');
+        
+        let uploadedCount = 0;
+        const totalFiles = newFilesToAdd.length;
+        
+        for (const fileItem of newFilesToAdd) {
+          try {
+            let fileUrl = '';
+            let fileName = '';
+            let fileSize = 0;
+            let mimeType = '';
+            
+            if (fileItem.fileType === 'link') {
+              fileUrl = fileItem.externalUrl;
+              fileName = fileItem.title;
+              fileSize = 0;
+              mimeType = 'text/html';
+            } else if (fileItem.file) {
+              console.log(`📤 Uploading file: ${fileItem.file.name}`);
+              
+              const uploadResult = await StudyMaterialStorageService.uploadStudyMaterial(
+                fileItem.file,
+                classData!.id,
+                materialToEdit.id
+              );
+              
+              fileUrl = uploadResult as string;
+              fileName = fileItem.file.name;
+              fileSize = fileItem.file.size;
+              mimeType = fileItem.file.type;
+            }
+            
+            // Use same groupId if editing a group, or create new group if adding to single
+            const groupId = editingGroup?.groupId || 
+              (materialToEdit.materials ? materialToEdit.groupId : undefined) ||
+              (newFilesToAdd.length > 0 && !editingGroup ? `group_${Date.now()}` : undefined);
+            
+            const groupTitle = editingGroup?.groupTitle || 
+              editedData.title ||
+              (newFilesToAdd.length > 0 && !editingGroup ? editedData.title : undefined);
+            
+            // Create new material in the same group
+            const materialData: StudyMaterialData = {
+              title: fileItem.title || fileName.split('.')[0],
+              description: editedData.description,
+              classId: classData!.id,
+              subjectId: classData!.subjectId,
+              teacherId: classData!.teacherId || '',
+              lessonId: materialToEdit.lessonId,
+              groupId,
+              groupTitle,
+              week: 1,
+              weekTitle: 'By Lesson',
+              year: new Date().getFullYear(),
+              fileUrl,
+              fileName,
+              fileSize,
+              fileType: fileItem.fileType,
+              mimeType,
+              externalUrl: fileItem.fileType === 'link' ? fileItem.externalUrl : undefined,
+              isRequired: fileItem.isRequired,
+              isVisible: true,
+              order: 0,
+              tags: fileItem.tags || [],
+              uploadedAt: new Date(),
+              viewCount: 0
+            };
+            
+            await createStudyMaterial(materialData);
+            uploadedCount++;
+            setUploadProgress((uploadedCount / totalFiles) * 100);
+            console.log(`✅ Uploaded ${uploadedCount}/${totalFiles} files`);
+            
+          } catch (error) {
+            console.error('Error uploading file:', fileItem.title, error);
+          }
+        }
+      }
+      
+      // Step 2: Remove selected files
+      if (filesToRemove.length > 0) {
+        console.log('🗑️ Removing files:', filesToRemove);
+        for (const materialId of filesToRemove) {
+          try {
+            await deleteStudyMaterial(materialId);
+            console.log('✅ Removed material:', materialId);
+          } catch (error) {
+            console.error('Error removing material:', materialId, error);
+          }
+        }
+      }
+      
+      // Step 3: Update main material properties
+      if (editingGroup) {
+        // For groups, update the group properties by updating the first material
+        const firstMaterial = materialToEdit.materials[0];
+        if (firstMaterial && !filesToRemove.includes(firstMaterial.id)) {
+          await updateStudyMaterial(firstMaterial.id, {
+            groupTitle: editedData.title,
+            description: editedData.description,
+            isRequired: editedData.isRequired
+          });
+        }
+      } else {
+        // For single materials, update normally
+        await updateStudyMaterial(materialToEdit.id, {
+          title: editedData.title,
+          description: editedData.description,
+          isRequired: editedData.isRequired
+        });
+      }
+      
       await refreshMaterials();
       setShowEditModal(false);
       setMaterialToEdit(null);
+      setEditingGroup(null);
+      setNewFilesToAdd([]);
+      setFilesToRemove([]);
+      setUploadProgress(0);
+      
     } catch (error) {
       console.error('Error updating study material:', error);
       alert('Failed to update study material. Please try again.');
@@ -622,17 +761,18 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                       <CheckCircle className="w-4 h-4" />
                       <span className="hidden sm:inline">View Completion</span>
                     </Button>
-                    {!group.isGroup && group.materials.length === 1 && (
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleEditMaterial(group.materials[0])}
-                        className="flex items-center space-x-1"
-                      >
-                        <Edit className="w-4 h-4" />
-                        <span className="hidden sm:inline">Edit</span>
-                      </Button>
-                    )}
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleEditMaterial(
+                        group.materials[0], 
+                        group.isGroup ? group : null
+                      )}
+                      className="flex items-center space-x-1"
+                    >
+                      <Edit className="w-4 h-4" />
+                      <span className="hidden sm:inline">Edit</span>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -962,14 +1102,20 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
       {/* Edit Material Modal */}
       {showEditModal && materialToEdit && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-hidden">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden">
             {/* Header - Fixed */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Edit Study Material
+                {editingGroup ? 'Edit Material Group' : 'Edit Study Material'}
               </h3>
               <button
-                onClick={() => setShowEditModal(false)}
+                onClick={() => {
+                  setShowEditModal(false);
+                  setMaterialToEdit(null);
+                  setEditingGroup(null);
+                  setNewFilesToAdd([]);
+                  setFilesToRemove([]);
+                }}
                 className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                 disabled={editLoading}
               >
@@ -989,78 +1135,385 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                     isRequired: formData.get('isRequired') === 'on'
                   });
                 }}
-                className="p-6 space-y-4"
+                className="p-6 space-y-6"
               >
-                {/* Material Info */}
-                <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
-                      {getFileIcon(materialToEdit.fileType || 'other')}
-                    </div>
-                    <div>
-                      <div className="flex items-center space-x-2">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getFileTypeColor(materialToEdit.fileType || 'other')}`}>
-                          {(materialToEdit.fileType || 'FILE').toUpperCase()}
-                        </span>
-                        {materialToEdit.lessonId && (
-                          <span className="text-sm text-gray-600 dark:text-gray-300">
-                            📚 {getLessonBadge(materialToEdit.lessonId)}
-                          </span>
+                {/* Basic Information */}
+                <div className="space-y-4">
+                  <h4 className="font-medium text-gray-900 dark:text-white">Basic Information</h4>
+                  
+                  {/* Material Info */}
+                  <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <div className="flex items-center space-x-3 mb-3">
+                      <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
+                        {editingGroup ? (
+                          <div className="text-blue-600 font-bold text-xs">
+                            {materialToEdit.materials?.length || 0}
+                          </div>
+                        ) : (
+                          getFileIcon(materialToEdit.fileType || 'other')
                         )}
                       </div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        {materialToEdit.formattedFileSize || '2.3 MB'} • Uploaded {materialToEdit.relativeUploadTime || '2 days ago'}
-                      </p>
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          {editingGroup ? (
+                            <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
+                              GROUP ({materialToEdit.materials?.length || 0} files)
+                            </span>
+                          ) : (
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getFileTypeColor(materialToEdit.fileType || 'other')}`}>
+                              {(materialToEdit.fileType || 'FILE').toUpperCase()}
+                            </span>
+                          )}
+                          {materialToEdit.lessonId && (
+                            <span className="text-sm text-gray-600 dark:text-gray-300">
+                              📚 {getLessonBadge(materialToEdit.lessonId)}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          {materialToEdit.formattedFileSize || 'Multiple files'} • Uploaded {materialToEdit.relativeUploadTime || 'recently'}
+                        </p>
+                      </div>
                     </div>
+                  </div>
+
+                  {/* Title Field */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      {editingGroup ? 'Group Title' : 'Title'} *
+                    </label>
+                    <input
+                      type="text"
+                      name="title"
+                      defaultValue={materialToEdit.title}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                      placeholder={editingGroup ? "Enter group title" : "Enter material title"}
+                    />
+                  </div>
+
+                  {/* Description Field */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Description
+                    </label>
+                    <textarea
+                      name="description"
+                      defaultValue={materialToEdit.description}
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none"
+                      placeholder="Optional description"
+                    />
+                  </div>
+
+                  {/* Required Checkbox */}
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      name="isRequired"
+                      id="isRequired"
+                      defaultChecked={materialToEdit.isRequired}
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                    <label htmlFor="isRequired" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Mark as required material
+                    </label>
                   </div>
                 </div>
 
-                {/* Title Field */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Title *
-                  </label>
-                  <input
-                    type="text"
-                    name="title"
-                    defaultValue={materialToEdit.title}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                    placeholder="Enter material title"
-                  />
+                {/* Current Files Section */}
+                {(editingGroup || materialToEdit.materials) && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium text-gray-900 dark:text-white">Current Files</h4>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        {(materialToEdit.materials?.length || 1) - filesToRemove.length} files
+                      </span>
+                    </div>
+                    
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                      {(materialToEdit.materials || [materialToEdit]).map((material: any) => (
+                        <div 
+                          key={material.id} 
+                          className={`flex items-center justify-between p-3 rounded-lg border transition-all ${
+                            filesToRemove.includes(material.id)
+                              ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 opacity-50'
+                              : 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-600'
+                          }`}
+                        >
+                          <div className="flex items-center space-x-3 flex-1">
+                            <div className="w-8 h-8 bg-white dark:bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0 border">
+                              {getFileIcon(material.fileType)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className={`font-medium truncate ${filesToRemove.includes(material.id) ? 'line-through text-gray-400' : 'text-gray-900 dark:text-white'}`}>
+                                {material.title}
+                              </div>
+                              {material.description && (
+                                <div className="text-sm text-gray-600 dark:text-gray-300 truncate">
+                                  {material.description}
+                                </div>
+                              )}
+                              <div className="text-xs text-gray-500 dark:text-gray-400">
+                                {material.formattedFileSize || '2.3 MB'} • {(material.fileType || 'FILE').toUpperCase()}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center space-x-2">
+                            {material.fileType === 'link' ? (
+                              <Button 
+                                type="button"
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => window.open(material.externalUrl || material.fileUrl, '_blank')}
+                                disabled={filesToRemove.includes(material.id)}
+                                className="flex items-center space-x-1"
+                              >
+                                <ExternalLink className="w-4 h-4" />
+                              </Button>
+                            ) : (
+                              <Button 
+                                type="button"
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => {
+                                  if (material.fileUrl) {
+                                    const link = document.createElement('a');
+                                    link.href = material.fileUrl;
+                                    link.download = material.fileName || material.title;
+                                    link.click();
+                                  }
+                                }}
+                                disabled={filesToRemove.includes(material.id)}
+                                className="flex items-center space-x-1"
+                              >
+                                <Download className="w-4 h-4" />
+                              </Button>
+                            )}
+                            
+                            <Button 
+                              type="button"
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => {
+                                if (filesToRemove.includes(material.id)) {
+                                  setFilesToRemove(prev => prev.filter(id => id !== material.id));
+                                } else {
+                                  setFilesToRemove(prev => [...prev, material.id]);
+                                }
+                              }}
+                              className={`flex items-center space-x-1 ${
+                                filesToRemove.includes(material.id)
+                                  ? 'bg-green-50 text-green-600 border-green-300 hover:bg-green-100'
+                                  : 'text-red-600 hover:text-red-700 hover:border-red-300'
+                              }`}
+                            >
+                              {filesToRemove.includes(material.id) ? (
+                                <>
+                                  <Plus className="w-4 h-4" />
+                                  <span className="hidden sm:inline">Keep</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Trash2 className="w-4 h-4" />
+                                  <span className="hidden sm:inline">Remove</span>
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Add New Files Section */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium text-gray-900 dark:text-white">Add New Files</h4>
+                    <div className="flex space-x-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const input = document.createElement('input');
+                          input.type = 'file';
+                          input.multiple = true;
+                          input.accept = '.pdf,.doc,.docx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.mp4,.mov,.avi';
+                          input.onchange = (e) => {
+                            const files = (e.target as HTMLInputElement).files;
+                            if (files) {
+                              Array.from(files).forEach(file => {
+                                let fileType: 'pdf' | 'video' | 'image' | 'link' | 'other' = 'other';
+                                if (file.type.includes('pdf')) fileType = 'pdf';
+                                else if (file.type.startsWith('video/')) fileType = 'video';
+                                else if (file.type.startsWith('image/')) fileType = 'image';
+
+                                setNewFilesToAdd(prev => [...prev, {
+                                  id: `new_${Date.now()}_${Math.random()}`,
+                                  file,
+                                  title: file.name.split('.')[0],
+                                  fileType,
+                                  isRequired: false,
+                                  tags: []
+                                }]);
+                              });
+                            }
+                          };
+                          input.click();
+                        }}
+                        className="flex items-center space-x-2"
+                      >
+                        <Upload className="w-4 h-4" />
+                        <span>Upload Files</span>
+                      </Button>
+                      
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setNewFilesToAdd(prev => [...prev, {
+                            id: `link_${Date.now()}_${Math.random()}`,
+                            title: '',
+                            fileType: 'link',
+                            externalUrl: '',
+                            isRequired: false,
+                            tags: []
+                          }]);
+                        }}
+                        className="flex items-center space-x-2"
+                      >
+                        <Link className="w-4 h-4" />
+                        <span>Add Link</span>
+                      </Button>
+                    </div>
+                  </div>
+
+                  {newFilesToAdd.length > 0 && (
+                    <div className="space-y-3 max-h-60 overflow-y-auto">
+                      {newFilesToAdd.map((fileItem, index) => (
+                        <div key={fileItem.id} className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                          <div className="flex items-start space-x-3">
+                            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                              {getFileIcon(fileItem.fileType)}
+                            </div>
+                            
+                            <div className="flex-1 space-y-3">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    Title *
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={fileItem.title}
+                                    onChange={(e) => {
+                                      setNewFilesToAdd(prev => prev.map(item => 
+                                        item.id === fileItem.id ? { ...item, title: e.target.value } : item
+                                      ));
+                                    }}
+                                    className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                                    placeholder="Enter title"
+                                  />
+                                </div>
+                                
+                                {fileItem.fileType === 'link' && (
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                      URL *
+                                    </label>
+                                    <input
+                                      type="url"
+                                      value={fileItem.externalUrl || ''}
+                                      onChange={(e) => {
+                                        setNewFilesToAdd(prev => prev.map(item => 
+                                          item.id === fileItem.id ? { ...item, externalUrl: e.target.value } : item
+                                        ));
+                                      }}
+                                      className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                                      placeholder="https://example.com"
+                                    />
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-2">
+                                  <input
+                                    type="checkbox"
+                                    id={`required_${fileItem.id}`}
+                                    checked={fileItem.isRequired}
+                                    onChange={(e) => {
+                                      setNewFilesToAdd(prev => prev.map(item => 
+                                        item.id === fileItem.id ? { ...item, isRequired: e.target.checked } : item
+                                      ));
+                                    }}
+                                    className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                  />
+                                  <label htmlFor={`required_${fileItem.id}`} className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                                    Required
+                                  </label>
+                                </div>
+
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-xs text-gray-500">
+                                    {fileItem.file ? `${(fileItem.file.size / 1024 / 1024).toFixed(1)} MB` : 'External Link'}
+                                  </span>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      setNewFilesToAdd(prev => prev.filter(item => item.id !== fileItem.id));
+                                    }}
+                                    className="text-red-600 hover:text-red-700"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {newFilesToAdd.length === 0 && (
+                    <div className="text-center py-8 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
+                      <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        No new files to add
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-500">
+                        Use the buttons above to add files or links
+                      </p>
+                    </div>
+                  )}
                 </div>
 
-                {/* Description Field */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Description
-                  </label>
-                  <textarea
-                    name="description"
-                    defaultValue={materialToEdit.description}
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none"
-                    placeholder="Optional description"
-                  />
-                </div>
-
-                {/* Required Checkbox */}
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    name="isRequired"
-                    id="isRequired"
-                    defaultChecked={materialToEdit.isRequired}
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                  />
-                  <label htmlFor="isRequired" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Mark as required material
-                  </label>
-                </div>
+                {/* Upload Progress */}
+                {editLoading && uploadProgress > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600 dark:text-gray-300">Uploading files...</span>
+                      <span className="text-gray-600 dark:text-gray-300">{Math.round(uploadProgress)}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                      <div 
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${uploadProgress}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
 
                 {/* Current Stats */}
-                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
-                  <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">Current Statistics</h4>
+                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+                  <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Current Statistics</h4>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <span className="text-gray-600 dark:text-gray-400">Downloads:</span>
@@ -1080,44 +1533,66 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
             </div>
 
             {/* Footer - Fixed */}
-            <div className="flex justify-end space-x-3 p-6 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
-              <Button 
-                type="button"
-                variant="outline"
-                onClick={() => setShowEditModal(false)}
-                disabled={editLoading}
-              >
-                Cancel
-              </Button>
-              <Button 
-                type="submit"
-                disabled={editLoading}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-                onClick={(e) => {
-                  e.preventDefault();
-                  const form = document.querySelector('form') as HTMLFormElement;
-                  if (form) {
-                    const formData = new FormData(form);
-                    handleEditSubmit({
-                      title: formData.get('title') as string,
-                      description: formData.get('description') as string,
-                      isRequired: formData.get('isRequired') === 'on'
-                    });
-                  }
-                }}
-              >
-                {editLoading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                    Updating...
-                  </>
-                ) : (
-                  <>
-                    <Edit className="w-4 h-4 mr-2" />
-                    Update Material
-                  </>
+            <div className="flex justify-between p-6 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                {filesToRemove.length > 0 && (
+                  <span className="text-red-600">
+                    {filesToRemove.length} file(s) will be removed
+                  </span>
                 )}
-              </Button>
+                {filesToRemove.length > 0 && newFilesToAdd.length > 0 && ' • '}
+                {newFilesToAdd.length > 0 && (
+                  <span className="text-green-600">
+                    {newFilesToAdd.length} file(s) will be added
+                  </span>
+                )}
+              </div>
+              
+              <div className="flex space-x-3">
+                <Button 
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setMaterialToEdit(null);
+                    setEditingGroup(null);
+                    setNewFilesToAdd([]);
+                    setFilesToRemove([]);
+                  }}
+                  disabled={editLoading}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit"
+                  disabled={editLoading}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    const form = document.querySelector('form') as HTMLFormElement;
+                    if (form) {
+                      const formData = new FormData(form);
+                      handleEditSubmit({
+                        title: formData.get('title') as string,
+                        description: formData.get('description') as string,
+                        isRequired: formData.get('isRequired') === 'on'
+                      });
+                    }
+                  }}
+                >
+                  {editLoading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                      {uploadProgress > 0 ? 'Uploading...' : 'Updating...'}
+                    </>
+                  ) : (
+                    <>
+                      <Edit className="w-4 h-4 mr-2" />
+                      Update Material
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
         </div>
