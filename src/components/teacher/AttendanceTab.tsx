@@ -289,6 +289,33 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
         manualZoomPassword || undefined
       );
       
+      // Send email notifications to parents and students
+      try {
+        const enrollmentsList = await StudentEnrollmentFirestoreService.getEnrollmentsForClass(classData.id);
+        const classTime = `${manualStartTime} - ${manualEndTime}`;
+        
+        console.log('📧 Sending new class schedule notifications to', enrollmentsList.length, 'students and parents');
+        
+        await MailService.sendNewClassScheduleNotifications(
+          enrollmentsList,
+          classData.name,
+          classData.subject.name,
+          date.toISOString().split('T')[0], // Convert date to YYYY-MM-DD format
+          classTime,
+          classData.teachers[0]?.name || 'Teacher',
+          'extra', // This is an extra/manual class
+          manualMode,
+          manualLocation || undefined,
+          manualZoomUrl || undefined,
+          manualNotes || undefined
+        );
+        
+        console.log('✅ Email notifications sent successfully');
+      } catch (emailError) {
+        console.warn('⚠️ Failed to send email notifications:', emailError);
+        // Don't fail the entire operation if email fails
+      }
+      
       // Reset form
       setManualDate('');
       setManualStartTime('09:00');

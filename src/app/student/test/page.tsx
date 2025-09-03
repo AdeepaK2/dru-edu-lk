@@ -1295,6 +1295,8 @@ export default function StudentTests() {
                     {groupedCustomTests.completed.map((test) => {
                       const buttonConfig = getTestButton(test);
                       const ButtonIcon = buttonConfig.icon;
+                      const attempts = testAttempts[test.id];
+                      const hasAttempted = attempts && attempts.attempts && attempts.attempts.length > 0;
 
                       return (
                         <div key={test.id} className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700">
@@ -1307,9 +1309,15 @@ export default function StudentTests() {
                                 <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
                                   Custom Assignment
                                 </span>
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300">
-                                  Completed
-                                </span>
+                                {hasAttempted ? (
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300">
+                                    Attempted
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300">
+                                    Not Attempted
+                                  </span>
+                                )}
                               </div>
                               {test.totalAssignedStudents && (
                                 <p className="text-xs text-green-600 dark:text-green-400 mt-1">
@@ -1722,6 +1730,8 @@ export default function StudentTests() {
                           ).map((test) => {
                             const buttonConfig = getTestButton(test);
                             const ButtonIcon = buttonConfig.icon;
+                            const attempts = testAttempts[test.id];
+                            const hasAttempted = attempts && attempts.attempts && attempts.attempts.length > 0;
 
                             return (
                               <div key={test.id} className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700">
@@ -1744,9 +1754,15 @@ export default function StudentTests() {
                                           : '📊 MCQ'
                                         }
                                       </span>
-                                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300">
-                                        Completed
-                                      </span>
+                                      {hasAttempted ? (
+                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300">
+                                          Attempted
+                                        </span>
+                                      ) : (
+                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300">
+                                          Not Attempted
+                                        </span>
+                                      )}
                                     </div>
                                     {testAttempts[test.id] && (
                                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
