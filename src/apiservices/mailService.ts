@@ -861,6 +861,125 @@ Your  Trusted  Guide for VCE Success</p>
     }
   }
 
+  // Generate new class schedule email for students and parents
+  static generateNewClassScheduleEmail(
+    recipientName: string,
+    recipientEmail: string,
+    studentName: string,
+    className: string,
+    subjectName: string,
+    classDate: string,
+    classTime: string,
+    teacherName: string,
+    scheduleType: 'extra' | 'makeup' | 'special',
+    classMode: 'physical' | 'online',
+    location?: string,
+    zoomUrl?: string,
+    notes?: string,
+    isParent: boolean = true
+  ): Omit<MailDocument, 'createdAt' | 'processed'> {
+    const formattedDate = new Date(classDate).toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+
+    const greeting = isParent ? `Dear ${recipientName},` : `Dear ${studentName},`;
+    const studentReference = isParent ? studentName : 'you';
+    const possessive = isParent ? `${studentName}'s` : 'your';
+
+    // Get appropriate title and icon based on schedule type
+    const typeInfo = {
+      extra: { title: 'Extra Class Scheduled', icon: '📚', color: '#3B82F6', bgColor: '#EBF8FF' },
+      makeup: { title: 'Makeup Class Scheduled', icon: '🔄', color: '#10B981', bgColor: '#F0FDF4' },
+      special: { title: 'Special Class Scheduled', icon: '⭐', color: '#8B5CF6', bgColor: '#FAF5FF' }
+    };
+
+    const currentType = typeInfo[scheduleType];
+
+    // Class location/access info
+    const locationInfo = classMode === 'online' 
+      ? `<div style="background-color: #EBF8FF; border-left: 4px solid #3B82F6; padding: 15px; margin: 20px 0; border-radius: 0 8px 8px 0;">
+          <p style="margin: 0;"><strong>🔗 Online Class Access:</strong></p>
+          ${zoomUrl ? `<a href="${zoomUrl}" style="color: #3B82F6; text-decoration: none; font-weight: bold; display: inline-block; margin-top: 8px; padding: 8px 16px; background-color: #3B82F6; color: white; border-radius: 4px;">Join Class Now</a>` : '<p style="margin: 5px 0 0 0;">Meeting link will be provided shortly</p>'}
+         </div>`
+      : `<div style="background-color: #F0FDF4; border-left: 4px solid #10B981; padding: 15px; margin: 20px 0; border-radius: 0 8px 8px 0;">
+          <p style="margin: 0;"><strong>📍 Class Location:</strong></p>
+          <p style="margin: 5px 0 0 0; font-weight: 500;">${location || 'Center Location'}</p>
+         </div>`;
+
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background-color: ${currentType.bgColor}; border-left: 4px solid ${currentType.color}; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+          <h2 style="color: ${currentType.color}; margin: 0 0 10px 0;">${currentType.icon} ${currentType.title}</h2>
+        </div>
+        
+        ${greeting}
+        
+        <p>We're pleased to inform you that an additional class has been scheduled for ${studentReference}:</p>
+        
+        <div style="background-color: #F9FAFB; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #E5E7EB;">
+          <h3 style="color: #374151; margin-top: 0;">📅 New Class Details:</h3>
+          <p><strong>Student:</strong> ${studentName}</p>
+          <p><strong>Class:</strong> ${className}</p>
+          <p><strong>Subject:</strong> ${subjectName}</p>
+          <p><strong>Teacher:</strong> ${teacherName}</p>
+          <p><strong>Date:</strong> ${formattedDate}</p>
+          <p><strong>Time:</strong> ${classTime}</p>
+          <p><strong>Type:</strong> ${scheduleType.charAt(0).toUpperCase() + scheduleType.slice(1)} Class</p>
+          <p><strong>Mode:</strong> ${classMode === 'online' ? '💻 Online' : '🏫 Physical'} Class</p>
+        </div>
+        
+        ${locationInfo}
+        
+        ${notes ? `<div style="background-color: #FEF3C7; border-left: 4px solid #F59E0B; padding: 15px; margin: 20px 0; border-radius: 0 8px 8px 0;">
+          <p style="margin: 0;"><strong>📝 Additional Notes:</strong></p>
+          <p style="margin: 5px 0 0 0; font-style: italic;">${notes}</p>
+        </div>` : ''}
+        
+        <div style="background-color: #F0FDF4; border-left: 4px solid #22C55E; padding: 15px; margin: 20px 0; border-radius: 0 8px 8px 0;">
+          <p style="margin: 0;"><strong>✅ What you need to know:</strong></p>
+          <ul style="margin: 10px 0 0 0; padding-left: 20px;">
+            <li>Please arrive 10 minutes early${classMode === 'online' ? ' and test your connection' : ''}</li>
+            <li>Bring all necessary materials and assignments</li>
+            <li>${scheduleType === 'makeup' ? 'This class is to make up for a previously missed session' : scheduleType === 'extra' ? 'This is an additional learning opportunity' : 'This is a special scheduled session'}</li>
+            <li>Regular class policies and procedures apply</li>
+            ${classMode === 'online' ? '<li>Ensure you have a stable internet connection and working audio/video</li>' : ''}
+          </ul>
+        </div>
+        
+        <p>We're excited to have this additional learning opportunity with ${studentReference}. This ${scheduleType} class will help ensure continued academic progress.</p>
+        
+        <p>If you have any questions or need to discuss this scheduling, please don't hesitate to contact us.</p>
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <p style="font-size: 16px; color: #4F46E5; font-weight: bold;">
+            Thank you for your continued trust in Dr U Education
+          </p>
+        </div>
+        
+        <p>Best regards,<br>
+        ${teacherName}<br>
+        Dr U Education Team</p>
+        
+        <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 30px 0;">
+        <p style="font-size: 12px; color: #6B7280; text-align: center;">
+          This is an automated notification. For support or questions, please contact our administration team.<br>
+          Dr U Education - Committed to Excellence in Learning
+        </p>
+      </div>
+    `;
+
+    const subjectLine = `${currentType.icon} New ${scheduleType.charAt(0).toUpperCase() + scheduleType.slice(1)} Class - ${className} on ${formattedDate}`;
+
+    return {
+      to: recipientEmail,
+      subject: subjectLine,
+      html: html.trim()
+    };
+  }
+
   // Generate class cancellation email for students and parents
   static generateClassCancellationEmail(
     recipientName: string,
@@ -1052,6 +1171,123 @@ Your  Trusted  Guide for VCE Success</p>
       };
     } catch (error) {
       console.error('❌ Error sending class cancellation notifications:', error);
+      throw error;
+    }
+  }
+
+  // Send new class schedule notifications to all students and parents
+  static async sendNewClassScheduleNotifications(
+    enrolledStudents: any[],
+    className: string,
+    subjectName: string,
+    classDate: string,
+    classTime: string,
+    teacherName: string,
+    scheduleType: 'extra' | 'makeup' | 'special',
+    classMode: 'physical' | 'online',
+    location?: string,
+    zoomUrl?: string,
+    notes?: string
+  ): Promise<{ success: number; failed: number; results: any[] }> {
+    try {
+      console.log('📧 Sending new class schedule notifications to', enrolledStudents.length, 'students/parents');
+      
+      const emailPromises = [];
+      
+      // Send email to each student and their parent
+      for (const student of enrolledStudents) {
+        // Email to student (if they have an email)
+        if (student.studentEmail) {
+          const studentEmail = this.generateNewClassScheduleEmail(
+            student.studentName,
+            student.studentEmail,
+            student.studentName,
+            className,
+            subjectName,
+            classDate,
+            classTime,
+            teacherName,
+            scheduleType,
+            classMode,
+            location,
+            zoomUrl,
+            notes,
+            false // isParent = false
+          );
+          
+          emailPromises.push(
+            this.createMailDocument(studentEmail)
+              .then(mailId => ({ 
+                success: true, 
+                recipient: student.studentEmail, 
+                type: 'student',
+                mailId 
+              }))
+              .catch(error => ({ 
+                success: false, 
+                recipient: student.studentEmail, 
+                type: 'student',
+                error: error.message 
+              }))
+          );
+        }
+        
+        // Email to parent (if they have an email)
+        if (student.parent?.email) {
+          const parentEmail = this.generateNewClassScheduleEmail(
+            student.parent.name || 'Parent',
+            student.parent.email,
+            student.studentName,
+            className,
+            subjectName,
+            classDate,
+            classTime,
+            teacherName,
+            scheduleType,
+            classMode,
+            location,
+            zoomUrl,
+            notes,
+            true // isParent = true
+          );
+          
+          emailPromises.push(
+            this.createMailDocument(parentEmail)
+              .then(mailId => ({ 
+                success: true, 
+                recipient: student.parent.email, 
+                type: 'parent',
+                mailId 
+              }))
+              .catch(error => ({ 
+                success: false, 
+                recipient: student.parent.email, 
+                type: 'parent',
+                error: error.message 
+              }))
+          );
+        }
+      }
+
+      // Execute all email sends
+      const results = await Promise.all(emailPromises);
+      
+      const successful = results.filter(r => r.success).length;
+      const failed = results.filter(r => !r.success).length;
+
+      console.log('✅ New class schedule notifications completed:', {
+        successful,
+        failed,
+        total: results.length
+      });
+
+      return {
+        success: successful,
+        failed: failed,
+        results: results
+      };
+    } catch (error) {
+      console.error('❌ Error sending new class schedule notifications:', error);
       throw error;
     }
   }
