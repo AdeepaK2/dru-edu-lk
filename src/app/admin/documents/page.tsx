@@ -14,7 +14,8 @@ import {
   X, 
   Filter,
   Search,
-  ArrowUpDown
+  ArrowUpDown,
+  MessageSquare
 } from 'lucide-react';
 import { DocumentInfo, DocumentType } from '@/models/studentSchema';
 import { StudentDocumentService } from '@/apiservices/studentDocumentService';
@@ -76,6 +77,10 @@ export default function DocumentVerificationPage() {
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [reminderPreview, setReminderPreview] = useState<any>(null);
   const [loadingPreview, setLoadingPreview] = useState(false);
+  
+  // Individual WhatsApp reminder state
+  const [sendingIndividualReminder, setSendingIndividualReminder] = useState<string | null>(null);
+  const [individualReminderSent, setIndividualReminderSent] = useState<string[]>([]);
 
   // Check admin auth
   useEffect(() => {
@@ -598,6 +603,96 @@ Thank you for your cooperation.
     
     return Array.from(classesMap.values()).sort((a, b) => a.className.localeCompare(b.className));
   }, [students]);
+  
+  // Send individual WhatsApp reminder to a specific student's parent
+  const sendIndividualWhatsAppReminder = async (student: StudentWithDocuments, isUrgent: boolean = false) => {
+    if (!admin) return;
+    
+    // Check if parent phone exists
+    if (!student.parent?.phone || student.parent.phone.trim() === '') {
+      alert(`Cannot send WhatsApp reminder. No parent phone number found for ${student.name}.`);
+      return;
+    }
+    
+    setSendingIndividualReminder(student.id);
+    
+    try {
+      // Get missing documents
+      const documents = student.documents || [];
+      const missingDocumentTypes = [
+        DocumentType.CLASS_POLICY,
+        DocumentType.PARENT_NOTICE, 
+        DocumentType.PHOTO_CONSENT
+      ].filter(type => {
+        const doc = documents.find(d => d.type === type);
+        return !doc || doc.status === 'Rejected';
+      });
+      
+      if (missingDocumentTypes.length === 0) {
+        alert(`${student.name} has no missing documents to remind about.`);
+        setSendingIndividualReminder(null);
+        return;
+      }
+      
+      // Create missing documents array with proper URLs
+      const documentUrls = {
+        [DocumentType.CLASS_POLICY]: "https://www.drueducation.com.au/documents/class-policy.pdf",
+        [DocumentType.PARENT_NOTICE]: "https://www.drueducation.com.au/documents/parent-notice.pdf",
+        [DocumentType.PHOTO_CONSENT]: "https://www.drueducation.com.au/documents/photo-consent.pdf",
+      };
+      
+      const missingDocuments = missingDocumentTypes.map(type => ({
+        type,
+        name: type === DocumentType.CLASS_POLICY ? "Class Policy Agreement" :
+              type === DocumentType.PARENT_NOTICE ? "Parent/Guardian Notice" : "Photo Consent Form",
+        url: documentUrls[type]
+      }));
+      
+      // Import WhatsAppDocumentService if not already imported
+      const { WhatsAppDocumentService } = await import('@/apiservices/whatsappDocumentService');
+      
+      // Send WhatsApp reminder
+      const parentName = student.parent.name || `${student.name}'s Parent/Guardian`;
+      const result = await WhatsAppDocumentService.sendDocumentReminderToParent(
+        student.name,
+        parentName,
+        student.parent.phone,
+        missingDocuments,
+        isUrgent
+      );
+      
+      if (result.success) {
+        // Mark as sent
+        setIndividualReminderSent(prev => [...prev, student.id]);
+        setTimeout(() => {
+          setIndividualReminderSent(prev => prev.filter(id => id !== student.id));
+        }, 5000); // Hide success message after 5 seconds
+        
+        console.log(`WhatsApp reminder sent to ${parentName} for ${student.name}`);
+      } else {
+        console.error('Error sending individual WhatsApp reminder:', result.error);
+        alert(`Failed to send WhatsApp reminder: ${result.error}`);
+      }
+      
+    } catch (error) {
+      console.error('Error sending individual WhatsApp reminder:', error);
+      alert('Failed to send WhatsApp reminder. Please try again.');
+    } finally {
+      setSendingIndividualReminder(null);
+    }
+  };
+  
+  // Check if a student has missing documents
+  const studentHasMissingDocuments = (student: StudentWithDocuments): boolean => {
+    const documents = student.documents || [];
+    const requiredDocTypes = [DocumentType.CLASS_POLICY, DocumentType.PARENT_NOTICE, DocumentType.PHOTO_CONSENT];
+    
+    // Check if any required documents are missing or rejected
+    return requiredDocTypes.some(type => {
+      const doc = documents.find(d => d.type === type);
+      return !doc || doc.status === 'Rejected';
+    });
+  };
 
   // Filter and sort students based on search query, filters, and sort options
   const filteredAndSortedStudents = React.useMemo(() => {
@@ -1233,6 +1328,33 @@ Thank you for your cooperation.
                                   </div>
                                 )}
                               </button>
+                              
+                              {/* WhatsApp Reminder Button */}
+                              {studentHasMissingDocuments(student) && student.parent?.phone && (
+                                <Button
+                                  onClick={() => sendIndividualWhatsAppReminder(student)}
+                                  disabled={sendingIndividualReminder === student.id}
+                                  className="ml-2 bg-blue-600 hover:bg-blue-700 text-white text-xs px-2 py-1 rounded flex items-center"
+                                  title="Send WhatsApp reminder for missing documents"
+                                >
+                                  {sendingIndividualReminder === student.id ? (
+                                    <>
+                                      <div className="w-3 h-3 border-t-2 border-white rounded-full animate-spin mr-1"></div>
+                                      <span>Sending...</span>
+                                    </>
+                                  ) : individualReminderSent.includes(student.id) ? (
+                                    <>
+                                      <Check className="w-3 h-3 mr-1" />
+                                      <span>Sent!</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <MessageSquare className="w-3 h-3 mr-1" />
+                                      <span>Remind</span>
+                                    </>
+                                  )}
+                                </Button>
+                              )}
                             </div>
                           </td>
                         </tr>
