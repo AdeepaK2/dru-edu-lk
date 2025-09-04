@@ -30,6 +30,7 @@ export default function StudentTests() {
   const [expandedClasses, setExpandedClasses] = useState<Set<string>>(new Set());
   const [expandedCompletedSections, setExpandedCompletedSections] = useState<Set<string>>(new Set());
   const [expandedCustomTests, setExpandedCustomTests] = useState(false);
+  const [lateSubmissionApprovals, setLateSubmissionApprovals] = useState<Record<string, any>>({});
   
   // Fetch student data
   useEffect(() => {
@@ -85,6 +86,32 @@ export default function StudentTests() {
       console.error('Error loading enrollments:', error);
       setError('Failed to load enrollment data. Please refresh the page.');
       return [];
+    }
+  };
+
+  // Function to load late submission approvals for the student
+  const loadLateSubmissionApprovals = async () => {
+    try {
+      console.log('🔍 Loading late submission approvals for student:', student?.id);
+      
+      // Import the service dynamically
+      const { LateSubmissionService } = await import('@/apiservices/lateSubmissionService');
+      
+      // Get all late submission approvals for this student
+      const approvals = await LateSubmissionService.getStudentLateSubmissions(student?.id || '');
+      
+      // Convert to a map for easy lookup by testId
+      const approvalsMap: Record<string, any> = {};
+      approvals.forEach((approval: any) => {
+        approvalsMap[approval.testId] = approval;
+      });
+      
+      setLateSubmissionApprovals(approvalsMap);
+      console.log('✅ Loaded late submission approvals:', approvals.length);
+      return approvalsMap;
+    } catch (error) {
+      console.error('Error loading late submission approvals:', error);
+      return {};
     }
   };
 
@@ -241,10 +268,11 @@ export default function StudentTests() {
       setLoading(true);
       setError(null);
       
-      // Load enrollments and test attempts in parallel
-      const [enrollmentsData, attemptsData] = await Promise.all([
+      // Load enrollments, test attempts, and late submission approvals in parallel
+      const [enrollmentsData, attemptsData, lateSubmissionsData] = await Promise.all([
         loadEnrollments(),
-        loadTestAttempts()
+        loadTestAttempts(),
+        loadLateSubmissionApprovals()
       ]);
       
       if (enrollmentsData.length === 0) {
@@ -377,10 +405,22 @@ export default function StudentTests() {
       const fromSeconds = getSeconds(flexTest.availableFrom);
       const toSeconds = getSeconds(flexTest.availableTo);
       
+      // Check for late submission approval
+      const lateSubmission = lateSubmissionApprovals[test.id];
+      const hasLateSubmission = lateSubmission && lateSubmission.status === 'approved';
+      
       if (now < fromSeconds) {
         return { status: 'upcoming', color: 'blue', text: 'Upcoming' };
       } else if (now >= fromSeconds && now <= toSeconds) {
         return { status: 'active', color: 'green', text: 'Available' };
+      } else if (hasLateSubmission) {
+        // Check if late submission deadline has passed
+        const lateDeadlineSeconds = getSeconds(lateSubmission.newDeadline);
+        if (now <= lateDeadlineSeconds) {
+          return { status: 'late-active', color: 'orange', text: 'Late Submission Available' };
+        } else {
+          return { status: 'late-expired', color: 'red', text: 'Late Submission Expired' };
+        }
       } else {
         return { status: 'completed', color: 'gray', text: 'Completed' };
       }
@@ -471,8 +511,8 @@ export default function StudentTests() {
       }
     }
 
-    // For live or available tests
-    if (status.status === 'live' || status.status === 'active') {
+    // For live or available tests (including late submissions)
+    if (status.status === 'live' || status.status === 'active' || status.status === 'late-active') {
       if (attemptInfo.canAttempt) {
         // If there's an active attempt, show resume
         if (hasActiveAttempt) {
@@ -488,19 +528,29 @@ export default function StudentTests() {
         // If can attempt but has completed attempts, show start new attempt
         if (hasCompletedAttempt) {
           return {
-            text: 'Start New Attempt',
+            text: status.status === 'late-active' ? 'Start Late Submission' : 'Start New Attempt',
             action: () => handleStartTest(test.id),
-            variant: 'primary' as const,
+            variant: status.status === 'late-active' ? 'warning' as const : 'primary' as const,
             icon: Play,
             disabled: false
           };
         }
         
         // First attempt
+        let buttonText = 'Start Test';
+        let variant: 'primary' | 'warning' = 'primary';
+        
+        if (status.status === 'live') {
+          buttonText = 'Join Now';
+        } else if (status.status === 'late-active') {
+          buttonText = 'Start Late Submission';
+          variant = 'warning';
+        }
+        
         return {
-          text: status.status === 'live' ? 'Join Now' : 'Start Test',
+          text: buttonText,
           action: () => handleStartTest(test.id),
-          variant: status.status === 'live' ? 'primary' : 'primary' as const,
+          variant,
           icon: Play,
           disabled: false
         };
@@ -511,6 +561,27 @@ export default function StudentTests() {
           variant: 'outline' as const,
           icon: ArrowRight,
           disabled: false
+        };
+      }
+    }
+
+    // For late submission expired
+    if (status.status === 'late-expired') {
+      if (hasCompletedAttempt) {
+        return {
+          text: 'View Results',
+          action: () => handleViewResults(test.id),
+          variant: 'outline' as const,
+          icon: ArrowRight,
+          disabled: false
+        };
+      } else {
+        return {
+          text: 'Late Submission Expired',
+          action: () => {},
+          variant: 'outline' as const,
+          icon: AlertCircle,
+          disabled: true
         };
       }
     }
@@ -533,6 +604,96 @@ export default function StudentTests() {
     if (!flexTest.isExtended) return null;
     
     return TestExtensionService.formatExtensionInfo(flexTest);
+  };
+
+  // Get late submission info for a test
+  const getLateSubmissionInfo = (test: Test) => {
+    const lateSubmission = lateSubmissionApprovals[test.id];
+    if (!lateSubmission || lateSubmission.status !== 'approved') return null;
+
+    const now = new Date();
+    let newDeadline: Date;
+    
+    // Handle different timestamp formats
+    if (lateSubmission.newDeadline && typeof lateSubmission.newDeadline.toDate === 'function') {
+      newDeadline = lateSubmission.newDeadline.toDate();
+    } else if (lateSubmission.newDeadline && typeof lateSubmission.newDeadline.seconds === 'number') {
+      newDeadline = new Date(lateSubmission.newDeadline.seconds * 1000);
+    } else if (lateSubmission.newDeadline instanceof Date) {
+      newDeadline = lateSubmission.newDeadline;
+    } else if (typeof lateSubmission.newDeadline === 'string') {
+      newDeadline = new Date(lateSubmission.newDeadline);
+    } else {
+      console.warn('Invalid late submission deadline format:', lateSubmission.newDeadline);
+      return null;
+    }
+
+    const isExpired = now > newDeadline;
+    const timeRemaining = calculateTimeRemaining(lateSubmission.newDeadline);
+
+    return {
+      ...lateSubmission,
+      newDeadline,
+      isExpired,
+      timeRemaining,
+      formattedDeadline: newDeadline.toLocaleString('en-AU', {
+        timeZone: 'Australia/Melbourne',
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    };
+  };
+
+  // Render late submission badge
+  const renderLateSubmissionBadge = (test: Test) => {
+    const lateSubmissionInfo = getLateSubmissionInfo(test);
+    if (!lateSubmissionInfo) return null;
+
+    const isExpired = lateSubmissionInfo.isExpired;
+    const bgColor = isExpired ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' : 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300';
+    const text = isExpired ? 'Late Submission Expired' : 'Late Submission Available';
+
+    return (
+      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${bgColor}`}>
+        <Clock className="h-3 w-3 mr-1" />
+        {text}
+      </span>
+    );
+  };
+
+  // Render late submission details
+  const renderLateSubmissionDetails = (test: Test) => {
+    const lateSubmissionInfo = getLateSubmissionInfo(test);
+    if (!lateSubmissionInfo) return null;
+
+    return (
+      <div className="mt-2 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-700">
+        <div className="flex items-start space-x-2">
+          <AlertCircle className="h-4 w-4 text-orange-600 dark:text-orange-400 mt-0.5" />
+          <div className="text-sm">
+            <p className="font-medium text-orange-800 dark:text-orange-300">
+              Late Submission Approved
+            </p>
+            <p className="text-orange-700 dark:text-orange-400 mt-1">
+              New deadline: {lateSubmissionInfo.formattedDeadline}
+            </p>
+            {!lateSubmissionInfo.isExpired && (
+              <p className="text-orange-600 dark:text-orange-500 mt-1">
+                Time remaining: {lateSubmissionInfo.timeRemaining}
+              </p>
+            )}
+            {lateSubmissionInfo.reason && (
+              <p className="text-orange-600 dark:text-orange-500 mt-1 text-xs">
+                Reason: {lateSubmissionInfo.reason}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+    );
   };
 
   // Calculate time remaining until deadline for flexible tests
@@ -1063,6 +1224,7 @@ export default function StudentTests() {
                                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500 text-white animate-pulse">
                                   Live Now
                                 </span>
+                                {renderLateSubmissionBadge(test)}
                               </div>
                               <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
                                 Duration: {liveTest.duration} minutes • Ends at {formatDateTime(liveTest.actualEndTime)}
@@ -1077,6 +1239,7 @@ export default function StudentTests() {
                                   {canAttemptTest(test).reason}
                                 </p>
                               )}
+                              {renderLateSubmissionDetails(test)}
                             </div>
                             <div>
                               <Button 
@@ -1130,6 +1293,7 @@ export default function StudentTests() {
                                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300">
                                   Upcoming
                                 </span>
+                                {renderLateSubmissionBadge(test)}
                               </div>
                               <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
                                 {test.type === 'live' ? 'Scheduled for' : 'Opens on'} {formatDateTime(startTime)}
@@ -1212,6 +1376,7 @@ export default function StudentTests() {
                                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
                                   Available
                                 </span>
+                                {renderLateSubmissionBadge(test)}
                               </div>
                               <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
                                 Duration: {flexTest.duration || 'No time limit'} minutes
@@ -1468,6 +1633,7 @@ export default function StudentTests() {
                                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300">
                                         Live Now
                                       </span>
+                                      {renderLateSubmissionBadge(test)}
                                     </div>
                                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
                                       Duration: {liveTest.duration} minutes • Ends at {formatDateTime(liveTest.actualEndTime)}
@@ -1477,6 +1643,7 @@ export default function StudentTests() {
                                         {canAttemptTest(test).reason}
                                       </p>
                                     )}
+                                    {renderLateSubmissionDetails(test)}
                                   </div>
                                   <div>
                                     <Button 

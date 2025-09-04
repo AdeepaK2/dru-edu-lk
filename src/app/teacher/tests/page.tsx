@@ -37,6 +37,7 @@ import { Timestamp } from 'firebase/firestore';
 import { TestExtensionService } from '@/apiservices/testExtensionService';
 import ExtendTestModal from '@/components/teacher/ExtendTestModal';
 import ViewAssignedStudentsModal from '@/components/modals/ViewAssignedStudentsModal';
+import LateSubmissionModal from '@/components/modals/LateSubmissionModal';
 
 export default function TeacherTests() {
   const { teacher, loading: authLoading, error: authError } = useTeacherAuth();
@@ -56,6 +57,10 @@ export default function TeacherTests() {
   // View assigned students modal state
   const [showViewStudentsModal, setShowViewStudentsModal] = useState(false);
   const [testToViewStudents, setTestToViewStudents] = useState<Test | null>(null);
+  
+  // Late submission modal state
+  const [showLateSubmissionModal, setShowLateSubmissionModal] = useState(false);
+  const [testForLateSubmission, setTestForLateSubmission] = useState<Test | null>(null);
   
   // New state for class-based view
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
@@ -372,6 +377,19 @@ export default function TeacherTests() {
   const handleViewAssignedStudents = (test: Test) => {
     setTestToViewStudents(test);
     setShowViewStudentsModal(true);
+  };
+
+  // Handle late submission approval
+  const handleLateSubmission = (test: Test) => {
+    setTestForLateSubmission(test);
+    setShowLateSubmissionModal(true);
+  };
+
+  // Handle late submission approved
+  const handleLateSubmissionApproved = () => {
+    // Refresh the test data
+    loadTeacherData();
+    alert('✅ Late submission opportunity has been approved for selected students.');
   };
 
   // Check if a flexible test can be extended
@@ -929,6 +947,18 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
                                   </button>
                                 )}
                                 
+                                {/* Late Submission button for class-based tests that have ended */}
+                                {test.assignmentType !== 'student-based' && status.status === 'completed' && (
+                                  <button
+                                    onClick={() => handleLateSubmission(test)}
+                                    className="inline-flex items-center px-4 py-2 border border-orange-600 text-sm font-medium rounded-md text-orange-600 bg-white dark:bg-gray-800 hover:bg-orange-50 dark:hover:bg-orange-900/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors"
+                                    title="Allow Late Submissions"
+                                  >
+                                    <Clock className="h-4 w-4 mr-2" />
+                                    Late Submissions
+                                  </button>
+                                )}
+                                
                                 <button
                                   onClick={() => handleViewResults(test.id)}
                                   className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
@@ -1175,6 +1205,18 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
                                       </button>
                                     )}
                                     
+                                    {/* Late Submission button for class-based tests that have ended */}
+                                    {test.assignmentType !== 'student-based' && status.status === 'completed' && (
+                                      <button
+                                        onClick={() => handleLateSubmission(test)}
+                                        className="inline-flex items-center px-4 py-2 border border-orange-600 text-sm font-medium rounded-md text-orange-600 bg-white dark:bg-gray-800 hover:bg-orange-50 dark:hover:bg-orange-900/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors"
+                                        title="Allow Late Submissions"
+                                      >
+                                        <Clock className="h-4 w-4 mr-2" />
+                                        Late Submissions
+                                      </button>
+                                    )}
+                                    
                                     <button
                                       onClick={() => handleViewResults(test.id)}
                                       className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
@@ -1317,6 +1359,21 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
             teacherId={teacher.id}
             teacherName={teacher.name}
             onExtensionCreated={handleExtensionCreated}
+          />
+        )}
+
+        {/* Late Submission Modal */}
+        {showLateSubmissionModal && testForLateSubmission && teacher && (
+          <LateSubmissionModal
+            isOpen={showLateSubmissionModal}
+            onClose={() => {
+              setShowLateSubmissionModal(false);
+              setTestForLateSubmission(null);
+            }}
+            test={testForLateSubmission}
+            teacherId={teacher.id}
+            teacherName={teacher.name}
+            onLateSubmissionApproved={handleLateSubmissionApproved}
           />
         )}
       </div>
