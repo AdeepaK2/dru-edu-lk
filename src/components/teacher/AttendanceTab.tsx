@@ -291,7 +291,7 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
       
       // Send email notifications to parents and students
       try {
-        const enrollmentsList = await StudentEnrollmentFirestoreService.getEnrollmentsForClass(classData.id);
+        const enrollmentsList = await StudentEnrollmentFirestoreService.getEnrolledStudentsByClassId(classData.id);
         const classTime = `${manualStartTime} - ${manualEndTime}`;
         
         console.log('📧 Sending new class schedule notifications to', enrollmentsList.length, 'students and parents');
@@ -299,10 +299,10 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
         await MailService.sendNewClassScheduleNotifications(
           enrollmentsList,
           classData.name,
-          classData.subject.name,
+          classData.subject,
           date.toISOString().split('T')[0], // Convert date to YYYY-MM-DD format
           classTime,
-          classData.teachers[0]?.name || 'Teacher',
+          teacherName || 'Teacher',
           'extra', // This is an extra/manual class
           manualMode,
           manualLocation || undefined,
