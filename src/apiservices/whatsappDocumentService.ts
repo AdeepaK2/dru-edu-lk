@@ -15,7 +15,7 @@ export class WhatsAppDocumentService {
     const documentsList = missingDocuments.map((doc, index) => {
       const emoji = doc.type === 'Class Policy Agreement' ? '📜' : 
                    doc.type === 'Parent/Guardian Notice' ? '👨‍👩‍👧‍👦' : '📸';
-      return `${index + 1}. ${emoji} *${doc.name}*\n   Link: ${doc.url}`;
+      return `${index + 1}. ${emoji} *${doc.name}*\n   📄 ${doc.url}`;
     }).join('\n\n');
 
     const urgentNote = isUrgent ? 
@@ -32,9 +32,9 @@ ${documentsList}
 ${urgentNote}
 
 *How to Submit:*
-1. Click on the document links above
-2. Download and fill out each form
-3. Submit the completed documents to your teacher or admin
+1. Click on the document links above to download forms
+2. Fill out each form completely and sign where required
+3. Submit completed documents via LMS → Documents tab
 
 If you have any questions or need assistance, please contact us immediately.
 

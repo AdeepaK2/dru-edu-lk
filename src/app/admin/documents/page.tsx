@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { DocumentInfo, DocumentType } from '@/models/studentSchema';
 import { StudentDocumentService } from '@/apiservices/studentDocumentService';
+import { getMissingDocumentsInfo } from '@/utils/documentUrls';
 import Button from '@/components/ui/Button';
 
 interface StudentWithDocuments {
@@ -421,14 +422,36 @@ export default function DocumentVerificationPage() {
             });
           }
 
-          // Generate WhatsApp message content with proper names
+          // Generate WhatsApp message content with proper names and document links
           const urgentPrefix = isUrgent ? '🚨 *URGENT REMINDER* 🚨\n\n' : '📄 *DOCUMENT REMINDER*\n\n';
           
-          const documentsList = student.missingDocumentTypes.map((docName: string, index: number) => {
-            const emoji = docName.includes('Policy') ? '📜' : 
-                         docName.includes('Parent') ? '👨‍👩‍👧‍👦' : '📸';
-            return `${index + 1}. ${emoji} *${docName}*`;
-          }).join('\n');
+          // Document URLs - using the updated Google Drive links
+          const documentUrls = {
+            'Class Policy Agreement': "https://drive.google.com/file/d/1YHJxvAfTVMqRJ5YQeD5fFZdXkt81vSr1/view",
+            'Parent/Guardian Notice': "https://drive.google.com/file/d/1j_LO0jWJ2-4WRYBZwMwp0eRnFMqOVM-F/view",
+            'Photo Consent Form': "https://drive.google.com/file/d/1qD9nYtOnbHs_AImrAaEU5NTPalXwea6F/view"
+          };
+          
+          const documentsList = student.missingDocumentTypes.map((docType: string, index: number) => {
+            const emoji = docType.includes('Policy') ? '📜' : 
+                         docType.includes('Parent') ? '👨‍👩‍👧‍👦' : '📸';
+            
+            // Map document type to proper URL and name
+            let url = '';
+            let name = docType;
+            if (docType.includes('Policy')) {
+              url = documentUrls['Class Policy Agreement'];
+              name = 'Class Policy Agreement';
+            } else if (docType.includes('Parent')) {
+              url = documentUrls['Parent/Guardian Notice'];  
+              name = 'Parent/Guardian Notice';
+            } else if (docType.includes('Photo')) {
+              url = documentUrls['Photo Consent Form'];
+              name = 'Photo Consent Form';
+            }
+            
+            return `${index + 1}. ${emoji} *${name}*\n   📄 ${url}`;
+          }).join('\n\n');
 
           const urgentNote = isUrgent ? 
             '\n⚠️ *IMMEDIATE ACTION REQUIRED*\nYour child\'s class attendance may be affected if these documents are not submitted today.' :
@@ -444,9 +467,9 @@ ${documentsList}
 ${urgentNote}
 
 *How to Submit:*
-1. Contact your teacher or admin for document forms
-2. Fill out each form completely
-3. Submit the completed documents
+1. Click on the document links above to download forms
+2. Fill out each form completely and sign where required
+3. Submit completed documents via LMS → Documents tab
 
 If you have questions, please contact us immediately.
 
@@ -635,18 +658,7 @@ Thank you for your cooperation.
       }
       
       // Create missing documents array with proper URLs
-      const documentUrls = {
-        [DocumentType.CLASS_POLICY]: "https://www.drueducation.com.au/documents/class-policy.pdf",
-        [DocumentType.PARENT_NOTICE]: "https://www.drueducation.com.au/documents/parent-notice.pdf",
-        [DocumentType.PHOTO_CONSENT]: "https://www.drueducation.com.au/documents/photo-consent.pdf",
-      };
-      
-      const missingDocuments = missingDocumentTypes.map(type => ({
-        type,
-        name: type === DocumentType.CLASS_POLICY ? "Class Policy Agreement" :
-              type === DocumentType.PARENT_NOTICE ? "Parent/Guardian Notice" : "Photo Consent Form",
-        url: documentUrls[type]
-      }));
+      const missingDocuments = getMissingDocumentsInfo(missingDocumentTypes);
       
       // Import WhatsAppDocumentService if not already imported
       const { WhatsAppDocumentService } = await import('@/apiservices/whatsappDocumentService');
