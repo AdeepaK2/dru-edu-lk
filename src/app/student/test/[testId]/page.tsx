@@ -368,6 +368,66 @@ export default function TestPage() {
       
       // Only create new attempt if no valid active attempts exist and under limit
       if (!attemptInfo.canCreateNewAttempt) {
+        // Check if this is a late submission scenario
+        if (lateSubmissionInfo && lateSubmissionInfo.status === 'approved') {
+          console.log('🕒 Using late submission attempt service...');
+          
+          // Import late submission service
+          const { LateSubmissionAttemptService } = await import('@/apiservices/lateSubmissionAttemptService');
+          
+          // Check if student can create a late submission attempt
+          const eligibility = await LateSubmissionAttemptService.canCreateLateSubmissionAttempt(
+            testId,
+            student.id,
+            lateSubmissionInfo.id
+          );
+          
+          if (!eligibility.canCreate) {
+            alert(`Cannot start late submission: ${eligibility.reason}`);
+            setStartingTest(false);
+            return;
+          }
+          
+          // Get student's enrollment to find their class ID
+          const { getEnrollmentsByStudent } = await import('@/services/studentEnrollmentService');
+          const enrollments = await getEnrollmentsByStudent(student.id);
+          
+          // Find the class ID for this test
+          const relevantEnrollment = enrollments.find(enrollment => 
+            test?.classIds.includes(enrollment.classId)
+          );
+          
+          const classId = relevantEnrollment?.classId || enrollments[0]?.classId || 'unknown';
+          const className = relevantEnrollment?.className || enrollments[0]?.className || 'Unknown Class';
+          
+          // Create a late submission attempt
+          const attemptId = await LateSubmissionAttemptService.createLateSubmissionAttempt(
+            testId,
+            student.id,
+            student.name,
+            classId,
+            lateSubmissionInfo.id,
+            className
+          );
+          
+          console.log('✅ Late submission attempt created:', attemptId);
+          
+          // Start the late submission attempt
+          await LateSubmissionAttemptService.startLateSubmissionAttempt(attemptId);
+          
+          // Check if this is an essay test and route accordingly
+          const essayQuestions = test?.questions.filter(q => q.type === 'essay' || q.questionType === 'essay') || [];
+          const isEssayOnlyTest = essayQuestions.length > 0 && essayQuestions.length === (test?.questions.length || 0);
+          
+          // Navigate to the appropriate test taking page with the attempt ID
+          if (isEssayOnlyTest) {
+            router.push(`/student/test/${testId}/take-essay?attemptId=${attemptId}`);
+          } else {
+            router.push(`/student/test/${testId}/take?attemptId=${attemptId}`);
+          }
+          return;
+        }
+        
         alert('Cannot start test - attempt limit reached or test not available');
         setStartingTest(false);
         return;
