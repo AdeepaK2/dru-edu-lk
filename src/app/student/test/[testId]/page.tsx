@@ -22,6 +22,7 @@ export default function TestPage() {
   // States
   const [test, setTest] = useState<Test | null>(null);
   const [attemptInfo, setAttemptInfo] = useState<AttemptSummary | null>(null);
+  const [lateSubmissionInfo, setLateSubmissionInfo] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [startingTest, setStartingTest] = useState(false);
@@ -37,7 +38,7 @@ export default function TestPage() {
         setLoading(true);
         
         // Import Firestore functions
-        const { doc, getDoc } = await import('firebase/firestore');
+        const { doc, getDoc, collection, query, where, getDocs } = await import('firebase/firestore');
         const { firestore } = await import('@/utils/firebase-client');
         
         // Get the test document
@@ -50,6 +51,27 @@ export default function TestPage() {
         }
         
         const testData = { id: testDoc.id, ...testDoc.data() } as Test;
+        
+        console.log('🎯 Parent page - Test data loaded:', {
+          id: testData.id,
+          title: testData.title,
+          assignmentType: testData.assignmentType,
+          classIds: testData.classIds
+        });
+        
+        // Load late submission info for this test and student
+        try {
+          const { LateSubmissionService } = await import('@/apiservices/lateSubmissionService');
+          const lateSubmission = await LateSubmissionService.checkLateSubmissionApproval(testId, student.id);
+          
+          if (lateSubmission && lateSubmission.status === 'approved') {
+            console.log('✅ Found late submission approval:', lateSubmission);
+            setLateSubmissionInfo(lateSubmission);
+          }
+        } catch (lateSubmissionError) {
+          console.log('ℹ️ No late submission approval found or error loading:', lateSubmissionError);
+          // Don't set error, just continue without late submission
+        }
         
         console.log('🎯 Parent page - Test data loaded:', {
           id: testData.id,
@@ -89,8 +111,6 @@ export default function TestPage() {
         }
 
         // Get attempt information - Use direct query to get all attempts and categorize them properly
-        const { collection, query, where, getDocs } = await import('firebase/firestore');
-        
         const attemptsQuery = query(
           collection(firestore, 'testAttempts'),
           where('testId', '==', testId),
@@ -504,6 +524,7 @@ export default function TestPage() {
   const now = Date.now() / 1000; // Current time in seconds
   let testStatus = '';
   let canStart = false;
+  let isLateSubmissionActive = false;
 
   // Helper function to get seconds from any timestamp format
   const getSeconds = (timestamp: any): number => {
@@ -522,35 +543,50 @@ export default function TestPage() {
     return 0;
   };
 
-  if (test.type === 'live') {
-    const liveTest = test as LiveTest;
-    const joinTimeSeconds = getSeconds(liveTest.studentJoinTime);
-    const endTimeSeconds = getSeconds(liveTest.actualEndTime);
+  // Check for late submission first
+  if (lateSubmissionInfo && lateSubmissionInfo.status === 'approved') {
+    const lateDeadlineSeconds = getSeconds(lateSubmissionInfo.newDeadline);
     
-    if (now < joinTimeSeconds) {
-      testStatus = 'This test has not started yet.';
-      canStart = false;
-    } else if (now >= joinTimeSeconds && now <= endTimeSeconds) {
-      testStatus = 'This test is live now.';
+    if (now <= lateDeadlineSeconds) {
+      testStatus = 'Late submission opportunity available.';
       canStart = true;
+      isLateSubmissionActive = true;
     } else {
-      testStatus = 'This test has ended.';
+      testStatus = 'Late submission deadline has passed.';
       canStart = false;
     }
   } else {
-    const flexTest = test as FlexibleTest;
-    const fromSeconds = getSeconds(flexTest.availableFrom);
-    const toSeconds = getSeconds(flexTest.availableTo);
-    
-    if (now < fromSeconds) {
-      testStatus = 'This test is not available yet.';
-      canStart = false;
-    } else if (now >= fromSeconds && now <= toSeconds) {
-      testStatus = 'This test is available now.';
-      canStart = true;
+    // Original test deadline logic
+    if (test.type === 'live') {
+      const liveTest = test as LiveTest;
+      const joinTimeSeconds = getSeconds(liveTest.studentJoinTime);
+      const endTimeSeconds = getSeconds(liveTest.actualEndTime);
+      
+      if (now < joinTimeSeconds) {
+        testStatus = 'This test has not started yet.';
+        canStart = false;
+      } else if (now >= joinTimeSeconds && now <= endTimeSeconds) {
+        testStatus = 'This test is live now.';
+        canStart = true;
+      } else {
+        testStatus = 'This test has ended.';
+        canStart = false;
+      }
     } else {
-      testStatus = 'This test is no longer available.';
-      canStart = false;
+      const flexTest = test as FlexibleTest;
+      const fromSeconds = getSeconds(flexTest.availableFrom);
+      const toSeconds = getSeconds(flexTest.availableTo);
+      
+      if (now < fromSeconds) {
+        testStatus = 'This test is not available yet.';
+        canStart = false;
+      } else if (now >= fromSeconds && now <= toSeconds) {
+        testStatus = 'This test is available now.';
+        canStart = true;
+      } else {
+        testStatus = 'This test is no longer available.';
+        canStart = false;
+      }
     }
   }
 
@@ -583,6 +619,17 @@ export default function TestPage() {
                 : '📊 MCQ Test'
               }
             </span>
+            {/* Late Submission Badge */}
+            {lateSubmissionInfo && lateSubmissionInfo.status === 'approved' && (
+              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                isLateSubmissionActive
+                  ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300'
+                  : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+              }`}>
+                <Clock className="h-3 w-3 mr-1" />
+                {isLateSubmissionActive ? 'Late Submission Available' : 'Late Submission Expired'}
+              </span>
+            )}
           </div>
           <p className="text-gray-600 dark:text-gray-300">
             {test.description || 'No description provided.'}
@@ -651,6 +698,61 @@ export default function TestPage() {
             )}
             
             <div className="border-t border-gray-200 dark:border-gray-700 pt-6 mt-6">
+              {/* Late Submission Information */}
+              {lateSubmissionInfo && lateSubmissionInfo.status === 'approved' && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                    <Clock className="h-5 w-5 mr-2 text-orange-600" />
+                    Late Submission Opportunity
+                  </h3>
+                  
+                  <div className={`rounded-lg p-4 border ${
+                    isLateSubmissionActive 
+                      ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-700'
+                      : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700'
+                  }`}>
+                    <div className="flex items-start space-x-3">
+                      <AlertCircle className={`h-5 w-5 mt-0.5 ${
+                        isLateSubmissionActive ? 'text-orange-600' : 'text-red-600'
+                      }`} />
+                      <div className="flex-1">
+                        <p className={`font-medium ${
+                          isLateSubmissionActive 
+                            ? 'text-orange-800 dark:text-orange-300' 
+                            : 'text-red-800 dark:text-red-300'
+                        }`}>
+                          {isLateSubmissionActive 
+                            ? 'Late Submission Available' 
+                            : 'Late Submission Expired'
+                          }
+                        </p>
+                        <p className={`text-sm mt-1 ${
+                          isLateSubmissionActive 
+                            ? 'text-orange-700 dark:text-orange-400' 
+                            : 'text-red-700 dark:text-red-400'
+                        }`}>
+                          New deadline: {formatDateTime(lateSubmissionInfo.newDeadline)}
+                        </p>
+                        {lateSubmissionInfo.reason && (
+                          <p className={`text-sm mt-1 ${
+                            isLateSubmissionActive 
+                              ? 'text-orange-600 dark:text-orange-500' 
+                              : 'text-red-600 dark:text-red-500'
+                          }`}>
+                            Reason: {lateSubmissionInfo.reason}
+                          </p>
+                        )}
+                        {isLateSubmissionActive && (
+                          <p className="text-xs mt-2 text-orange-600 dark:text-orange-500">
+                            This is a special opportunity to complete the test after the original deadline.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Attempt Information */}
               {attemptInfo && (
                 <div className="mb-6">
@@ -741,9 +843,19 @@ export default function TestPage() {
                 </div>
               )}
               
-              <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-md flex items-center mb-6">
-                <Clock className="h-5 w-5 text-blue-500 mr-3" />
-                <p className="text-blue-700 dark:text-blue-300">
+              <div className={`p-4 rounded-md flex items-center mb-6 ${
+                isLateSubmissionActive 
+                  ? 'bg-orange-50 dark:bg-orange-900/20' 
+                  : 'bg-blue-50 dark:bg-blue-900/20'
+              }`}>
+                <Clock className={`h-5 w-5 mr-3 ${
+                  isLateSubmissionActive ? 'text-orange-500' : 'text-blue-500'
+                }`} />
+                <p className={`${
+                  isLateSubmissionActive 
+                    ? 'text-orange-700 dark:text-orange-300' 
+                    : 'text-blue-700 dark:text-blue-300'
+                }`}>
                   {testStatus}
                 </p>
               </div>
@@ -758,7 +870,10 @@ export default function TestPage() {
                 
                 <Button
                   onClick={handleStartTest}
-                  className="inline-flex items-center"
+                  className={`inline-flex items-center ${
+                    isLateSubmissionActive ? 'bg-orange-600 hover:bg-orange-700' : ''
+                  }`}
+                  variant={isLateSubmissionActive ? 'warning' : 'primary'}
                   disabled={!canStart || (!(attemptInfo as any)?.hasActiveAttempt && !attemptInfo?.canCreateNewAttempt) || startingTest}
                 >
                   {startingTest ? (
@@ -769,7 +884,9 @@ export default function TestPage() {
                   ) : (attemptInfo as any)?.hasActiveAttempt ? (
                     'Resume Test'
                   ) : attemptInfo?.canCreateNewAttempt ? (
-                    attemptInfo.totalAttempts > 0 ? 'Start New Attempt' : 'Start Test'
+                    isLateSubmissionActive 
+                      ? (attemptInfo.totalAttempts > 0 ? 'Start Late Submission' : 'Start Late Submission')
+                      : (attemptInfo.totalAttempts > 0 ? 'Start New Attempt' : 'Start Test')
                   ) : attemptInfo ? (
                     'No Attempts Remaining'
                   ) : (
