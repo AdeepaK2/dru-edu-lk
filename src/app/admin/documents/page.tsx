@@ -475,7 +475,6 @@ If you have questions, please contact us immediately.
 
 Thank you for your cooperation.
 
-*Dr U Education Team*
 📞 Contact us if you need help`;
 
           console.log(`📱 Preparing WhatsApp for: Student="${student.name}", Parent="${student.parentName}", Phone="${student.parentPhone}"`);
