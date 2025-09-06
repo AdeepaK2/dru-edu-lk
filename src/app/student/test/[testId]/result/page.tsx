@@ -34,6 +34,10 @@ export default function TestResultPage() {
   const [attemptInfo, setAttemptInfo] = useState<AttemptSummary | null>(null);
   const [allAttempts, setAllAttempts] = useState<any[]>([]);
   const [bestAttempt, setBestAttempt] = useState<any | null>(null);
+  
+  // Question order states for handling shuffled results
+  const [originalOrderAnswers, setOriginalOrderAnswers] = useState<any[]>([]);
+  const [isShuffledAttempt, setIsShuffledAttempt] = useState(false);
 
   // UI states
   const [showAllAttempts, setShowAllAttempts] = useState(false);
@@ -244,6 +248,62 @@ export default function TestResultPage() {
         // Set data
         setSubmission(submissionData);
         setTest(testData);
+        
+        // Handle question order for shuffled attempts
+        if (submissionId) {
+          try {
+            console.log('🔍 Checking if this was a shuffled attempt...');
+            const { AttemptManagementService } = await import('@/apiservices/attemptManagementService');
+            
+            // Get original order questions for this attempt
+            const originalOrderQuestions = await AttemptManagementService.getOriginalOrderQuestionsForAttempt(submissionId);
+            
+            // Check if this attempt was shuffled
+            const attemptDoc = await (await import('firebase/firestore')).getDoc(
+              (await import('firebase/firestore')).doc(
+                (await import('@/utils/firebase-client')).firestore, 
+                'testAttempts', 
+                submissionId
+              )
+            );
+            
+            if (attemptDoc.exists()) {
+              const attemptData = attemptDoc.data() as any;
+              const wasShuffled = attemptData.isShuffled || false;
+              setIsShuffledAttempt(wasShuffled);
+              
+              if (wasShuffled && submissionData.finalAnswers) {
+                console.log('🔀 Reordering answers to match original question order...');
+                
+                // Create a map of original question order
+                const questionOrderMap = new Map();
+                originalOrderQuestions.forEach((question, index) => {
+                  questionOrderMap.set(question.id, index);
+                });
+                
+                // Sort answers by original question order
+                const reorderedAnswers = [...submissionData.finalAnswers]
+                  .filter(answer => answer.questionId !== 'submission_pdf')
+                  .sort((a, b) => {
+                    const orderA = questionOrderMap.get(a.questionId) ?? 999;
+                    const orderB = questionOrderMap.get(b.questionId) ?? 999;
+                    return orderA - orderB;
+                  });
+                
+                setOriginalOrderAnswers(reorderedAnswers);
+                console.log('✅ Answers reordered to original question sequence');
+              } else {
+                // Not shuffled, use answers as-is
+                setOriginalOrderAnswers(submissionData.finalAnswers?.filter(answer => answer.questionId !== 'submission_pdf') || []);
+              }
+            }
+          } catch (shuffleError) {
+            console.warn('⚠️ Could not check shuffle status, using original order:', shuffleError);
+            setOriginalOrderAnswers(submissionData.finalAnswers?.filter(answer => answer.questionId !== 'submission_pdf') || []);
+          }
+        } else {
+          setOriginalOrderAnswers(submissionData.finalAnswers?.filter(answer => answer.questionId !== 'submission_pdf') || []);
+        }
         
         // Debug logging to see what class information we have
         console.log('🔍 CLASS INFO DEBUG:', {
@@ -1100,9 +1160,23 @@ export default function TestResultPage() {
             return (
               <div className="max-h-[600px] overflow-y-auto">
                 <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {submission.finalAnswers
-                    .filter(answer => answer.questionId !== 'submission_pdf') // Exclude submission_pdf from individual display
-                    .map((answer, index) => {
+                  {isShuffledAttempt && (
+                    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-400 mb-4">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0">
+                          <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <div className="ml-3">
+                          <p className="text-sm text-blue-700 dark:text-blue-200">
+                            Questions were shuffled during your test but are shown below in their original order for easier review.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {originalOrderAnswers.map((answer, index) => {
                     // Find MCQ result if available
                     const mcqResult = submission.mcqResults?.find(r => r.questionId === answer.questionId);
                     
@@ -1397,7 +1471,7 @@ export default function TestResultPage() {
                                 <div className="text-xs text-gray-600 dark:text-gray-400 mb-2">
                                   PDF Attachments:
                                 </div>
-                                {answer.pdfFiles.map((pdf, pdfIndex) => (
+                                {answer.pdfFiles.map((pdf: any, pdfIndex: number) => (
                                   <div
                                     key={`${pdf.fileUrl}-${pdfIndex}`}
                                     className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-900/20 dark:border-blue-800"

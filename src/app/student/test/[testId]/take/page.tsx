@@ -30,6 +30,12 @@ export default function TestTakePage() {
   const [test, setTest] = useState<Test | null>(null);
   const [attemptId, setAttemptId] = useState<string>('');
   
+  // Question shuffling support
+  const [originalQuestions, setOriginalQuestions] = useState<any[]>([]);
+  const [displayQuestions, setDisplayQuestions] = useState<any[]>([]);
+  const [questionOrderMapping, setQuestionOrderMapping] = useState<any[] | null>(null);
+  const [isShuffled, setIsShuffled] = useState(false);
+  
   // Question navigation
   const [currentIndex, setCurrentIndex] = useState(0);
   const [reviewMode, setReviewMode] = useState(false);
@@ -68,8 +74,8 @@ export default function TestTakePage() {
   // Confirmation dialog state for submission
   const [showConfirmSubmit, setShowConfirmSubmit] = useState(false);
   
-  // Get current question
-  const currentQuestion = test?.questions[currentIndex] || null;
+  // Get current question - use displayQuestions instead of test.questions
+  const currentQuestion = displayQuestions[currentIndex] || null;
   
   // Image viewer functions
   const openImageViewer = (imageUrl: string) => {
@@ -894,6 +900,18 @@ export default function TestTakePage() {
           
           setAttemptId(newAttemptId);
           
+          // Load questions for this attempt (shuffled or original)
+          console.log('📋 Loading questions for resumed attempt...');
+          const questionsData = await AttemptManagementService.getQuestionsForAttempt(newAttemptId);
+          setDisplayQuestions(questionsData.questions);
+          setOriginalQuestions(testData.questions);
+          setIsShuffled(questionsData.isShuffled);
+          setQuestionOrderMapping(questionsData.questionOrderMapping || null);
+          console.log('✅ Questions loaded:', {
+            total: questionsData.questions.length,
+            isShuffled: questionsData.isShuffled
+          });
+          
           // Store student info in localStorage for fallback in submission service (even for resumed attempts)
           try {
             localStorage.setItem('studentId', student.id);
@@ -948,6 +966,18 @@ export default function TestTakePage() {
           console.log('✅ New attempt created:', newAttemptId);
           
           setAttemptId(newAttemptId);
+          
+          // Load questions for this attempt (shuffled or original)
+          console.log('📋 Loading questions for new attempt...');
+          const questionsData = await AttemptManagementService.getQuestionsForAttempt(newAttemptId);
+          setDisplayQuestions(questionsData.questions);
+          setOriginalQuestions(testData.questions);
+          setIsShuffled(questionsData.isShuffled);
+          setQuestionOrderMapping(questionsData.questionOrderMapping || null);
+          console.log('✅ Questions loaded:', {
+            total: questionsData.questions.length,
+            isShuffled: questionsData.isShuffled
+          });
           
           // 🔥 CRITICAL: For new attempts, set the correct initial remaining time
           setRemainingTime(testDuration); // This should be the full test duration for new attempts
@@ -1196,7 +1226,7 @@ export default function TestTakePage() {
 
   // Navigate to next question
   const goToNextQuestion = async () => {
-    if (!test || currentIndex >= test.questions.length - 1) return;
+    if (!displayQuestions || currentIndex >= displayQuestions.length - 1) return;
     
     try {
       // Import service
@@ -1204,7 +1234,7 @@ export default function TestTakePage() {
       
       // Update in Realtime DB
       const nextIndex = currentIndex + 1;
-      const nextQuestionId = test.questions[nextIndex].id;
+      const nextQuestionId = displayQuestions[nextIndex].id;
       
       await RealtimeTestService.navigateToQuestion(
         attemptId,
@@ -1228,7 +1258,7 @@ export default function TestTakePage() {
       
       // Update in Realtime DB
       const prevIndex = currentIndex - 1;
-      const prevQuestionId = test?.questions[prevIndex].id || '';
+      const prevQuestionId = displayQuestions[prevIndex]?.id || '';
       
       await RealtimeTestService.navigateToQuestion(
         attemptId,
@@ -1244,14 +1274,14 @@ export default function TestTakePage() {
 
   // Jump to specific question
   const jumpToQuestion = async (index: number) => {
-    if (!test || index < 0 || index >= test.questions.length) return;
+    if (!displayQuestions || index < 0 || index >= displayQuestions.length) return;
     
     try {
       // Import service
       const { RealtimeTestService } = await import('@/apiservices/realtimeTestService');
       
       // Update in Realtime DB
-      const questionId = test.questions[index].id;
+      const questionId = displayQuestions[index].id;
       
       await RealtimeTestService.navigateToQuestion(
         attemptId,
@@ -1601,7 +1631,7 @@ export default function TestTakePage() {
 
   // Navigation panel
   const renderNavigationPanel = () => {
-    if (!test) return null;
+    if (!displayQuestions || displayQuestions.length === 0) return null;
     
     return (
       <div className={`fixed inset-0 z-50 bg-black bg-opacity-50 transition-opacity duration-200 
@@ -1612,6 +1642,11 @@ export default function TestTakePage() {
           <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
             <h3 className="text-lg font-medium text-gray-900 dark:text-white">
               Questions Navigator
+              {isShuffled && (
+                <span className="ml-2 text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 px-2 py-1 rounded">
+                  Shuffled
+                </span>
+              )}
             </h3>
             <button 
               onClick={() => setShowNavPanel(false)}
@@ -1632,18 +1667,18 @@ export default function TestTakePage() {
                   className="bg-blue-600 h-2.5 rounded-full" 
                   style={{ 
                     width: `${Math.floor(
-                      (Object.keys(answers).length / test.questions.length) * 100
+                      (Object.keys(answers).length / displayQuestions.length) * 100
                     )}%` 
                   }}
                 ></div>
               </div>
               <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                {Object.keys(answers).length} of {test.questions.length} questions answered
+                {Object.keys(answers).length} of {displayQuestions.length} questions answered
               </div>
             </div>
             
             <div className="grid grid-cols-5 gap-2">
-              {test.questions.map((question, index) => {
+              {displayQuestions.map((question, index) => {
                 const isAnswered = !!answers[question.id];
                 const isReviewed = answers[question.id]?.isMarkedForReview || false;
                 const isCurrent = index === currentIndex;
@@ -2064,7 +2099,12 @@ export default function TestTakePage() {
                 {test.title}
               </h1>
               <p className="text-sm text-gray-600 dark:text-gray-300">
-                Question {currentIndex + 1} of {test.questions.length}
+                Question {currentIndex + 1} of {displayQuestions.length || test?.questions.length || 0}
+                {isShuffled && (
+                  <span className="ml-2 text-xs bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-200 px-2 py-1 rounded">
+                    Shuffled Order
+                  </span>
+                )}
               </p>
             </div>
             
@@ -2102,7 +2142,7 @@ export default function TestTakePage() {
           <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1 mt-4">
             <div 
               className="bg-blue-600 h-1 rounded-full transition-all duration-300" 
-              style={{ width: `${((currentIndex + 1) / test.questions.length) * 100}%` }}
+              style={{ width: `${((currentIndex + 1) / (displayQuestions.length || test?.questions.length || 1)) * 100}%` }}
             ></div>
           </div>
         </div>
@@ -2177,7 +2217,7 @@ export default function TestTakePage() {
               </Button>
               
               {/* Only show Next button if not on the last question */}
-              {currentIndex < test.questions.length - 1 && (
+              {currentIndex < (displayQuestions.length || test?.questions.length || 1) - 1 && (
                 <Button
                   variant="outline"
                   onClick={goToNextQuestion}
@@ -2189,7 +2229,7 @@ export default function TestTakePage() {
             </div>
             
             {/* Only show Submit button on the last question */}
-            {currentIndex === test.questions.length - 1 && (
+            {currentIndex === (displayQuestions.length || test?.questions.length || 1) - 1 && (
               <Button
                 onClick={() => setShowConfirmSubmit(true)}
               >

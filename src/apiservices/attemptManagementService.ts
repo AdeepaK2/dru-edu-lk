@@ -31,9 +31,12 @@ import {
   AttemptSummary, 
   RealtimeAttemptState,
   ConnectionEvent,
-  TimeCalculation
+  TimeCalculation,
+  TestAttemptWithShuffling,
+  QuestionOrderMapping
 } from '@/models/attemptSchema';
 import { Test, FlexibleTest, LiveTest } from '@/models/testSchema';
+import { QuestionShuffleService } from './questionShuffleService';
 
 export class AttemptManagementService {
   private static COLLECTIONS = {
@@ -119,8 +122,34 @@ export class AttemptManagementService {
       const startTime = Timestamp.now();
       const endTime = new Timestamp(startTime.seconds + timeAllowed, startTime.nanoseconds);
 
-      // Create attempt record with validated data
-      const attempt: TestAttempt = {
+      // Handle question shuffling if enabled
+      let questionOrderMapping: QuestionOrderMapping[] | undefined;
+      let isShuffled = false;
+      let shuffledQuestionIds: string[] | undefined;
+      
+      if (QuestionShuffleService.shouldShuffleQuestions(test)) {
+        console.log('🔀 Generating shuffled question order for attempt:', attemptId);
+        
+        const shuffleResult = QuestionShuffleService.generateShuffledOrder(
+          test.questions,
+          attemptId
+        );
+        
+        questionOrderMapping = shuffleResult.questionOrderMapping;
+        shuffledQuestionIds = shuffleResult.shuffledQuestionIds;
+        isShuffled = true;
+        
+        console.log('✅ Question shuffling completed:', {
+          totalQuestions: test.questions.length,
+          isShuffled,
+          mappingCount: questionOrderMapping.length
+        });
+      } else {
+        console.log('📝 No question shuffling for attempt:', attemptId);
+      }
+
+      // Create attempt record with validated data and shuffling support
+      const attempt: TestAttemptWithShuffling = {
         id: attemptId,
         testId: testId,
         testTitle: test.title || 'Untitled Test',
@@ -145,6 +174,11 @@ export class AttemptManagementService {
         sessionStartTime: 0, // Will be set when actually started
         lastHeartbeat: 0,
         offlineTime: 0,
+        
+        // Question shuffling (new fields)
+        questionOrderMapping,
+        isShuffled,
+        shuffledQuestionIds,
         
         // Progress
         questionsAttempted: 0,
@@ -509,6 +543,92 @@ export class AttemptManagementService {
       console.log('✅ Attempt submitted successfully');
     } catch (error) {
       console.error('Error submitting attempt:', error);
+      throw error;
+    }
+  }
+
+  // Get shuffled questions for an attempt
+  static async getQuestionsForAttempt(attemptId: string): Promise<{
+    questions: any[];
+    isShuffled: boolean;
+    questionOrderMapping?: QuestionOrderMapping[];
+  }> {
+    try {
+      console.log('📋 Getting questions for attempt:', attemptId);
+
+      // Get attempt record
+      const attemptDoc = await getDoc(doc(firestore, this.COLLECTIONS.ATTEMPTS, attemptId));
+      if (!attemptDoc.exists()) {
+        throw new Error('Attempt not found');
+      }
+
+      const attempt = attemptDoc.data() as TestAttemptWithShuffling;
+      
+      // Get test data
+      const test = await this.getTest(attempt.testId);
+      if (!test) {
+        throw new Error('Test not found');
+      }
+
+      // Check if this attempt has shuffled questions
+      if (attempt.isShuffled && attempt.questionOrderMapping) {
+        console.log('🔀 Returning shuffled questions for attempt');
+        
+        // Return questions in shuffled order
+        const shuffledQuestions = QuestionShuffleService.getShuffledQuestions(
+          test.questions,
+          attempt.questionOrderMapping
+        );
+        
+        return {
+          questions: shuffledQuestions,
+          isShuffled: true,
+          questionOrderMapping: attempt.questionOrderMapping
+        };
+      } else {
+        console.log('📝 Returning original question order');
+        
+        // Return original questions
+        return {
+          questions: test.questions,
+          isShuffled: false
+        };
+      }
+    } catch (error) {
+      console.error('Error getting questions for attempt:', error);
+      throw error;
+    }
+  }
+
+  // Get questions in original order for results display
+  static async getOriginalOrderQuestionsForAttempt(attemptId: string): Promise<any[]> {
+    try {
+      // Get attempt record
+      const attemptDoc = await getDoc(doc(firestore, this.COLLECTIONS.ATTEMPTS, attemptId));
+      if (!attemptDoc.exists()) {
+        throw new Error('Attempt not found');
+      }
+
+      const attempt = attemptDoc.data() as TestAttemptWithShuffling;
+      
+      // Get test data
+      const test = await this.getTest(attempt.testId);
+      if (!test) {
+        throw new Error('Test not found');
+      }
+
+      // If shuffled, return in original order
+      if (attempt.isShuffled && attempt.questionOrderMapping) {
+        return QuestionShuffleService.getOriginalOrderQuestions(
+          test.questions,
+          attempt.questionOrderMapping
+        );
+      }
+      
+      // Otherwise return as-is
+      return test.questions;
+    } catch (error) {
+      console.error('Error getting original order questions:', error);
       throw error;
     }
   }
