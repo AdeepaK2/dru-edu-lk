@@ -28,41 +28,27 @@ export default function SchedulePage() {
 
   // Cranbourne schedule organized by day and time
   const cranbourneClasses = [
-    { subject: "VCE Math Methods [Units 3&4]", day: "Sunday", time: "7:00 AM - 11:00 AM", startHour: 7, duration: 4 },
-    { subject: "VCE Specialist Math [Units 3&4]", day: "Saturday", time: "7:00 AM - 11:00 AM", startHour: 7, duration: 4 },
-    { subject: "VCE Chemistry [Units 3&4]", day: "Monday", time: "7:30 PM - 9:30 PM", startHour: 19.5, duration: 2 },
-    { subject: "VCE Physics [Units 3&4]", day: "Tuesday", time: "6:00 PM - 9:30 PM", startHour: 18, duration: 3.5 },
-    { subject: "VCE Math Methods [Units 1&2]", day: "Thursday", time: "6:00 PM - 8:00 PM", startHour: 18, duration: 2 },
-    { subject: "VCE Specialist Math [Units 1&2]", day: "Saturday", time: "4:30 PM - 6:30 PM", startHour: 16.5, duration: 2 },
-    { subject: "VCE Chemistry [Units 1&2]", day: "Saturday", time: "2:30 PM - 4:30 PM", startHour: 14.5, duration: 2 },
-    { subject: "VCE Physics [Units 1&2]", day: "Thursday", time: "8:00 PM - 9:30 PM", startHour: 20, duration: 1.5 },
-    { subject: "VCE Accounting [Units 1&2]", day: "Tuesday", time: "6:15 PM - 7:45 PM", startHour: 18.25, duration: 1.5 },
-    { subject: "VCE Accounting [Units 3&4]", day: "Wednesday", time: "6:00 PM - 8:30 PM", startHour: 18, duration: 2.5 },
-    { subject: "VCE General Maths [Units 3&4]", day: "Tuesday", time: "7:45 PM - 9:15 PM", startHour: 19.75, duration: 1.5 },
-    { subject: "Y 10 Mathematics", day: "Monday", time: "6:00 PM - 7:30 PM", startHour: 18, duration: 1.5 },
-    { subject: "Y 9 Mathematics", day: "Sunday", time: "1:30 PM - 3:30 PM", startHour: 13.5, duration: 2 },
-    { subject: "Y 8 Mathematics [Selective School]", day: "Sunday", time: "11:00 AM - 1:30 PM", startHour: 11, duration: 2.5 },
-    { subject: "Y 8 English [Selective School]", day: "Sunday", time: "9:30 AM - 11:00 AM", startHour: 9.5, duration: 1.5 },
-    { subject: "Y 7 Mathematics [Selective School]", day: "Tuesday", time: "6:00 PM - 7:30 PM", startHour: 18, duration: 1.5 },
-    { subject: "Y 6 Mathematics", day: "Saturday", time: "5:30 PM - 7:00 PM", startHour: 17.5, duration: 1.5 },
-    { subject: "John Monash Scholarship [Including Interview Prep]", day: "Saturday", time: "12:30 PM - 2:30 PM", startHour: 12.5, duration: 2 },
+    { subject: "2026 Math Methods [Units 3&4]", day: "Sunday", time: "7:00 AM - 11:00 AM", startHour: 7, duration: 4 },
+    { subject: "Y 8 Mathematics", day: "Sunday", time: "11:00 AM - 12:30 PM", startHour: 11, duration: 1.5 },
+    { subject: "Y 9 Mathematics", day: "Sunday", time: "1:00 PM - 3:00 PM", startHour: 13, duration: 2 },
+    { subject: "2027 Math Methods [Units 1&2]", day: "Monday", time: "6:30 PM - 7:30 PM", startHour: 18.5, duration: 1 },
+    { subject: "2027 Chemistry [Units 1&2]", day: "Monday", time: "7:30 PM - 9:00 PM", startHour: 19.5, duration: 1.5 },
+    { subject: "Grade 7 Mathematics", day: "Tuesday", time: "6:30 PM - 7:30 PM", startHour: 18.5, duration: 1 },
+    { subject: "2026 Specialist Discussion", day: "Wednesday", time: "7:30 PM - 8:30 PM", startHour: 19.5, duration: 1 },
+    { subject: "2026 Selective Discussion", day: "Thursday", time: "5:00 PM - 6:00 PM", startHour: 17, duration: 1 },
+    { subject: "2027 Physics [Units 1&2]", day: "Thursday", time: "6:00 PM - 7:30 PM", startHour: 18, duration: 1.5 },
+    { subject: "2026 Physics [Units 3&4]", day: "Thursday", time: "7:30 PM - 9:30 PM", startHour: 19.5, duration: 2 },
+    { subject: "2026 Chemistry [Units 3&4]", day: "Saturday", time: "11:30 AM - 3:00 PM", startHour: 11.5, duration: 3.5 },
+    { subject: "2027 Specialist Math [Units 1&2]", day: "Saturday", time: "4:00 PM - 5:00 PM", startHour: 16, duration: 1 },
   ];
 
   // Glen Waverley schedule organized by day and time
   const glenWaverleyClasses = [
-    { subject: "VCE Math Methods [Units 3&4]", day: "Sunday", time: "6:00 PM - 9:30 PM", startHour: 18, duration: 3.5 },
-    { subject: "VCE Specialist Math [Units 3&4]", day: "Friday", time: "7:00 PM - 10:30 PM", startHour: 19, duration: 3.5 },
-    { subject: "VCE Physics [Units 3&4]", day: "Saturday", time: "9:00 PM - 10:30 PM", startHour: 21, duration: 1.5 },
-    { subject: "VCE Math Methods [Units 1&2]", day: "Friday", time: "5:00 PM - 7:00 PM", startHour: 17, duration: 2 },
-    { subject: "VCE Specialist Math [Units 1&2]", day: "Saturday", time: "7:00 PM - 9:00 PM", startHour: 19, duration: 2 },
-    { subject: "VCE Accounting [Units 3&4]", day: "Monday", time: "6:45 PM - 8:45 PM", startHour: 18.75, duration: 2 },
-    { subject: "VCE Accounting [Units 1&2]", day: "Sunday", time: "12:00 PM - 1:30 PM", startHour: 12, duration: 1.5 },
-    { subject: "VCE Business Management [Units 3&4]", day: "Monday", time: "4:45 PM - 6:45 PM", startHour: 16.75, duration: 2 },
-    { subject: "VCE Economics [Units 3&4]", day: "Thursday", time: "7:00 PM - 9:00 PM", startHour: 19, duration: 2 },
-    { subject: "VCE General Maths [Units 1&2]", day: "Sunday", time: "11:00 AM - 12:30 PM", startHour: 11, duration: 1.5 },
-    { subject: "Y 10 Maths", day: "Wednesday", time: "4:30 PM - 6:00 PM", startHour: 16.5, duration: 1.5 },
-    { subject: "Y 8 Maths [Selective School]", day: "Wednesday", time: "5:30 PM - 7:30 PM", startHour: 17.5, duration: 2 },
-    { subject: "Y 6 Maths", day: "Wednesday", time: "7:00 PM - 8:30 PM", startHour: 19, duration: 1.5 },
+    { subject: "2027 Math Methods [Units 1&2]", day: "Wednesday", time: "4:30 PM - 6:30 PM", startHour: 16.5, duration: 2 },
+    { subject: "Y 7 Mathematics", day: "Wednesday", time: "6:30 PM - 8:30 PM", startHour: 18.5, duration: 2 },
+    { subject: "2026 Physics [Units 3&4]", day: "Wednesday", time: "8:30 PM - 10:00 PM", startHour: 20.5, duration: 1.5 },
+    { subject: "2026 Math Methods [Units 3&4]", day: "Thursday", time: "5:30 PM - 7:30 PM", startHour: 17.5, duration: 2 },
+    { subject: "2026 Specialist Math [Units 3&4]", day: "Saturday", time: "6:30 PM - 9:15 PM", startHour: 18.5, duration: 2.75 },
   ];
 
   // Function to get classes for a specific day and campus
@@ -125,14 +111,14 @@ export default function SchedulePage() {
         <div className="max-w-4xl mx-auto">
           <div className="mb-8">
             <span className="inline-block bg-white/20 backdrop-blur-sm text-white px-6 py-2 rounded-full text-sm font-medium border border-white/30">
-              📅 Schedule 2025/2026 Time Table
+              📅 Schedule 2026 Time Table
             </span>
           </div>
           <h1 className="text-5xl md:text-7xl font-extrabold text-white mb-6 leading-tight">
             Class <span className="bg-gradient-to-r from-[#0088e0] to-[#00b4d8] bg-clip-text text-transparent">Schedule</span>
           </h1>
           <p className="text-xl text-white/90 max-w-3xl mx-auto leading-relaxed mb-8">
-            At Dr. U Education Center, we're gearing up for an exciting year of learning in 2025. With our commitment to academic excellence, we're proud to offer classes at two campuses! Whether you're in Cranbourne or Glen Waverley, we're here to guide your educational journey.
+            At Dr. U Education Center, we're excited to present our updated 2026 class schedule! With our commitment to academic excellence, we're proud to offer classes at two campuses. Whether you're in Cranbourne or Glen Waverley, we're here to guide your educational journey.
           </p>
         </div>
       </header>
@@ -276,7 +262,7 @@ export default function SchedulePage() {
             <div className="relative z-10">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to Join Our Classes?</h2>
               <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
-                Secure your spot in our 2025/2026 academic year classes across our Melbourne campuses.
+                Secure your spot in our 2026 academic year classes across our Melbourne campuses.
               </p>
               <Link
                 href="/enroll"
