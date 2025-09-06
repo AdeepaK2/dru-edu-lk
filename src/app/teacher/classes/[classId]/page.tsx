@@ -730,6 +730,12 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                           </span>
                         )}
                       </div>
+                      {/* Show description if available (for both groups and single files) */}
+                      {(group.materials[0]?.description) && (
+                        <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                          {group.materials[0].description}
+                        </div>
+                      )}
                       <div className="flex items-center space-x-3 mb-2">
                         {group.fileTypes.map((fileType: string) => (
                           <span key={fileType} className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getFileTypeColor(fileType)}`}>
