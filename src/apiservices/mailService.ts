@@ -795,7 +795,6 @@ Your  Trusted  Guide for VCE Success</p>
         <p>We appreciate your attention to ${studentName}'s attendance and look forward to seeing them in the next class.</p>
         
         <p>Best regards,<br>
-        ${teacherName}<br>
         Dr U Education Team</p>
         
         <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 30px 0;">
@@ -960,7 +959,6 @@ Your  Trusted  Guide for VCE Success</p>
         </div>
         
         <p>Best regards,<br>
-        ${teacherName}<br>
         Dr U Education Team</p>
         
         <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 30px 0;">
@@ -1050,7 +1048,6 @@ Your  Trusted  Guide for VCE Success</p>
         </div>
         
         <p>Best regards,<br>
-        ${teacherName}<br>
         Dr U Education Team</p>
         
         <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 30px 0;">
