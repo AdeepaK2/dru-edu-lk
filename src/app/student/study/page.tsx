@@ -405,7 +405,7 @@ export default function StudentStudyPage() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <CardTitle className="flex items-center space-x-2 mb-2">
-                            <span className="truncate">{group.groupTitle}</span>
+                            <span className="truncate">{group.groupTitle || group.materials[0]?.title}</span>
                             {isGroupCompleted && (
                               <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
                             )}
