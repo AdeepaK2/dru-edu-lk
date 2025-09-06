@@ -10,7 +10,9 @@ import {
   BookOpen,
   TrendingUp,
   ChevronRight,
-  AlertCircle
+  AlertCircle,
+  Grid3X3,
+  List
 } from 'lucide-react';
 import { Button, Input } from '@/components/ui';
 import { useTeacherAuth } from '@/hooks/useTeacherAuth';
@@ -37,6 +39,7 @@ export default function TeacherClasses() {
   const [classes, setClasses] = useState<ClassWithStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   // Load teacher's classes
   useEffect(() => {
@@ -194,99 +197,190 @@ export default function TeacherClasses() {
 
         {/* Search */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <Input
-              type="text"
-              placeholder="Search classes..."
-              value={searchTerm}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+          <div className="flex items-center justify-between">
+            <div className="relative max-w-md">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                type="text"
+                placeholder="Search classes..."
+                value={searchTerm}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-2 rounded-md transition-colors ${
+                  viewMode === 'grid'
+                    ? 'bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+                    : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                }`}
+                title="Grid view"
+              >
+                <Grid3X3 className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-2 rounded-md transition-colors ${
+                  viewMode === 'list'
+                    ? 'bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+                    : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                }`}
+                title="List view"
+              >
+                <List className="w-5 h-5" />
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Classes Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {filteredClasses.map((cls) => (
-            <div
-              key={cls.id}
-              className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow"
-            >
-              {/* Class Header */}
-              <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-                      {cls.name}
-                    </h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
-                      Class ID: {cls.classId}
-                    </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">
-                      {cls.description || 'No description available'}
-                    </p>
-                  </div>
-                  <div className="flex flex-col space-y-1">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
-                      {cls.year}
-                    </span>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
-                      {cls.status}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Class Stats */}
-              <div className="p-6">
-                {/* Removed stats section: Students, Avg Grade, Monthly */}
-                {/* Schedule */}
-                <div className="mb-4">
-                  <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
-                    Class Schedule
-                  </h4>
-                  <div className="space-y-1">
-                    {cls.schedule.map((schedule, index) => (
-                      <div key={index} className="flex justify-between text-sm">
-                        <span className="text-gray-600 dark:text-gray-300">{schedule.day}</span>
-                        <span className="text-gray-500 dark:text-gray-400">
-                          {schedule.startTime} - {schedule.endTime}
-                        </span>
-                      </div>
-                    ))}
+        {/* Classes Grid/List */}
+        {viewMode === 'grid' ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {filteredClasses.map((cls) => (
+              <div
+                key={cls.id}
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow"
+              >
+                {/* Class Header */}
+                <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+                        {cls.name}
+                      </h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                        Class ID: {cls.classId}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                        {cls.description || 'No description available'}
+                      </p>
+                    </div>
+                    <div className="flex flex-col space-y-1">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
+                        {cls.year}
+                      </span>
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
+                        {cls.status}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Recent Activity */}
-                <div className="space-y-3 mb-6">
-                  <div className="flex items-center text-sm">
-                    <BookOpen className="w-4 h-4 text-green-500 mr-2" />
-                    <span className="text-gray-600 dark:text-gray-300">
-                      {cls.recentActivity}
-                    </span>
+                {/* Class Stats */}
+                <div className="p-6">
+                  {/* Schedule */}
+                  <div className="mb-4">
+                    <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
+                      Class Schedule
+                    </h4>
+                    <div className="space-y-1">
+                      {cls.schedule.map((schedule, index) => (
+                        <div key={index} className="flex justify-between text-sm">
+                          <span className="text-gray-600 dark:text-gray-300">{schedule.day}</span>
+                          <span className="text-gray-500 dark:text-gray-400">
+                            {schedule.startTime} - {schedule.endTime}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
 
-                {/* Actions */}
-                <div className="flex space-x-3">
-                  <Link
-                    href={`/teacher/classes/${cls.id}`}
-                    className="w-full"
-                  >
-                    <Button 
-                      className="w-full flex items-center justify-center space-x-2"
-                      size="sm"
+                  {/* Recent Activity */}
+                  <div className="space-y-3 mb-6">
+                    <div className="flex items-center text-sm">
+                      <BookOpen className="w-4 h-4 text-green-500 mr-2" />
+                      <span className="text-gray-600 dark:text-gray-300">
+                        {cls.recentActivity}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex space-x-3">
+                    <Link
+                      href={`/teacher/classes/${cls.id}`}
+                      className="w-full"
                     >
-                      <Eye className="w-4 h-4" />
-                      <span>View Details</span>
-                    </Button>
-                  </Link>
+                      <Button 
+                        className="w-full flex items-center justify-center space-x-2"
+                        size="sm"
+                      >
+                        <Eye className="w-4 h-4" />
+                        <span>View Details</span>
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
               </div>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="divide-y divide-gray-200 dark:divide-gray-700">
+              {filteredClasses.map((cls) => (
+                <div key={cls.id} className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-4">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                              {cls.name}
+                            </h3>
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
+                              {cls.year}
+                            </span>
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
+                              {cls.status}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                            Class ID: {cls.classId}
+                          </p>
+                          <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                            {cls.description || 'No description available'}
+                          </p>
+                          <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 mt-2">
+                            <BookOpen className="w-4 h-4 mr-2" />
+                            <span>{cls.recentActivity}</span>
+                          </div>
+                        </div>
+                        
+                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                          <div className="text-right">
+                            <div className="font-medium">Schedule</div>
+                            {cls.schedule.slice(0, 2).map((schedule, index) => (
+                              <div key={index} className="text-xs">
+                                {schedule.day}: {schedule.startTime} - {schedule.endTime}
+                              </div>
+                            ))}
+                            {cls.schedule.length > 2 && (
+                              <div className="text-xs text-gray-400">
+                                +{cls.schedule.length - 2} more
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2 ml-4">
+                      <Link href={`/teacher/classes/${cls.id}`}>
+                        <Button size="sm" className="flex items-center space-x-2">
+                          <Eye className="w-4 h-4" />
+                          <span>View Details</span>
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </div>
+        )}
 
         {/* Empty State */}
         {filteredClasses.length === 0 && !loading && (

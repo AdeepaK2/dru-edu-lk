@@ -16,7 +16,9 @@ import {
   Clock,
   ArrowRight,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  Grid3X3,
+  List
 } from 'lucide-react';
 import { QuestionBank } from '@/models/questionBankSchema';
 import { questionBankService } from '@/apiservices/questionBankFirestoreService';
@@ -44,6 +46,9 @@ export default function TeacherQuestionBanks() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGrade, setSelectedGrade] = useState<string>('all');
   const [selectedSubject, setSelectedSubject] = useState<string>('all');
+
+  // View toggle
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   // Modals
   const [showAddBankModal, setShowAddBankModal] = useState(false);
@@ -293,7 +298,7 @@ export default function TeacherQuestionBanks() {
 
         {/* Filters and Search */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <Input
@@ -331,6 +336,31 @@ export default function TeacherQuestionBanks() {
               </select>
             </div>
             
+            <div className="flex items-center justify-center space-x-2">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-2 rounded-md transition-colors ${
+                  viewMode === 'grid'
+                    ? 'bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+                    : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                }`}
+                title="Grid view"
+              >
+                <Grid3X3 className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-2 rounded-md transition-colors ${
+                  viewMode === 'list'
+                    ? 'bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+                    : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                }`}
+                title="List view"
+              >
+                <List className="w-5 h-5" />
+              </button>
+            </div>
+            
             <div className="flex items-center justify-end">
               <span className="text-sm text-gray-500 dark:text-gray-400">
                 {filteredBanks.length} of {questionBanks.length} banks
@@ -339,7 +369,7 @@ export default function TeacherQuestionBanks() {
           </div>
         </div>
 
-        {/* Question Banks Grid */}
+        {/* Question Banks Grid/List */}
         {filteredBanks.length === 0 ? (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-12 text-center border border-gray-200 dark:border-gray-700">
             <FileQuestion className="mx-auto h-12 w-12 text-gray-400 mb-4" />
@@ -358,7 +388,7 @@ export default function TeacherQuestionBanks() {
               </Button>
             )}
           </div>
-        ) : (
+        ) : viewMode === 'grid' ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredBanks.map((bank) => (
               <div key={bank.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow">
@@ -459,6 +489,99 @@ export default function TeacherQuestionBanks() {
                 </div>
               </div>
             ))}
+          </div>
+        ) : (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="divide-y divide-gray-200 dark:divide-gray-700">
+              {filteredBanks.map((bank) => (
+                <div key={bank.id} className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-3">
+                        <div className="flex-1">
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                            {bank.name}
+                          </h3>
+                          {bank.description && (
+                            <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
+                              {bank.description}
+                            </p>
+                          )}
+                          <div className="flex items-center space-x-2 mt-2">
+                            <span className="bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                              {bank.subjectName}
+                            </span>
+                            {bank.grade && (
+                              <span className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                                {bank.grade}
+                              </span>
+                            )}
+                            {questionBankAccess.has(bank.id) && (
+                              <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${
+                                questionBankAccess.get(bank.id) === 'read' 
+                                  ? 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
+                                  : questionBankAccess.get(bank.id) === 'read_add'
+                                  ? 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300'
+                                  : 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300'
+                              }`}>
+                                {getAccessLevelLabel(questionBankAccess.get(bank.id)!)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center space-x-6 text-sm text-gray-500 dark:text-gray-400">
+                          <div className="flex items-center">
+                            <FileQuestion className="w-4 h-4 mr-1" />
+                            <span>{bank.totalQuestions || 0} Questions</span>
+                          </div>
+                          <div className="flex items-center">
+                            <CheckCircle className="w-4 h-4 mr-1 text-green-500" />
+                            <span>{bank.mcqCount || 0} MCQ</span>
+                          </div>
+                          <div className="flex items-center">
+                            <Edit2 className="w-4 h-4 mr-1 text-purple-500" />
+                            <span>{bank.essayCount || 0} Essay</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2 ml-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => router.push(`/teacher/questions/${bank.id}`)}
+                      >
+                        <Eye className="w-4 h-4 mr-2" />
+                        View
+                      </Button>
+                      {questionBankAccess.get(bank.id) === 'write' && (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditBank(bank)}
+                            disabled={actionLoading === 'update'}
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteClick(bank)}
+                            disabled={actionLoading === 'delete'}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
