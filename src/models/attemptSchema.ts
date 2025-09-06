@@ -128,6 +128,21 @@ export interface RealtimeAttemptState {
   windowId: string;
 }
 
+// Question order mapping for shuffled tests
+export interface QuestionOrderMapping {
+  originalOrder: number; // Original position in test (0-based)
+  shuffledOrder: number; // Shuffled position for this student (0-based)
+  questionId: string; // Question ID for reference
+}
+
+// Test attempt with question shuffling support
+export interface TestAttemptWithShuffling extends TestAttempt {
+  // Question order mapping (only present if test has shuffleQuestions enabled)
+  questionOrderMapping?: QuestionOrderMapping[];
+  isShuffled: boolean; // Quick flag to check if questions were shuffled
+  shuffledQuestionIds?: string[]; // Ordered list of question IDs in shuffled order
+}
+
 // Time calculation utilities
 export interface TimeCalculation {
   totalTimeAllowed: number; // seconds
