@@ -185,14 +185,14 @@ export default function QuestionForm({
 
   // Populate form when editing a question
   useEffect(() => {
-    if (editingQuestion && lessons.length > 0) { // Only run when lessons are loaded
+    if (editingQuestion && !loadingLessons) { // Only run when lessons have finished loading (whether empty or not)
       console.log('🔍 Populating form for editing question:', editingQuestion.title);
       console.log('🔍 Available lessons:', lessons.map(l => ({ id: l.id, name: l.name })));
       console.log('🔍 Question topic:', editingQuestion.topic);
       
       // Find lesson ID if topic is specified
       let lessonId = 'no-lesson';
-      if (editingQuestion.topic) {
+      if (editingQuestion.topic && lessons.length > 0) {
         const lesson = lessons.find(l => l.name === editingQuestion.topic);
         console.log('🔍 Found lesson match:', lesson);
         if (lesson) {
@@ -236,6 +236,7 @@ export default function QuestionForm({
 
       // Populate Essay specific data
       if (editingQuestion.type === 'essay' && 'suggestedAnswerContent' in editingQuestion) {
+        console.log('🔍 Populating essay question with suggested answer:', editingQuestion.suggestedAnswerContent);
         editFormData.suggestedAnswerContent = editingQuestion.suggestedAnswerContent || '';
         editFormData.suggestedAnswerImageUrl = (editingQuestion as any).suggestedAnswerImageUrl || '';
       }
@@ -251,7 +252,7 @@ export default function QuestionForm({
       console.log('🔄 Resetting form data with qno:', resetFormData.qno);
       setFormData(resetFormData);
     }
-  }, [editingQuestion, lessons]); // Make sure lessons is in dependency array
+  }, [editingQuestion, loadingLessons, lessons]); // Include loadingLessons in dependency array
 
   // Handle the case where we're editing but lessons are still loading
   useEffect(() => {
