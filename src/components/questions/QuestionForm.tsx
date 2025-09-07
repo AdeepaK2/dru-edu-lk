@@ -410,13 +410,8 @@ export default function QuestionForm({
       }
     }
     
-    // Essay specific validation
-    if (questionType === 'essay') {
-      // Require either suggested answer content OR suggested answer image
-      if (!formData.suggestedAnswerContent.trim() && !formData.suggestedAnswerImageUrl?.trim()) {
-        newErrors.suggestedAnswerContent = 'Either suggested answer text or image is required';
-      }
-    }
+    // Essay specific validation - no required fields for suggested answer
+    // Teachers can edit essays without providing suggested answers
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -974,13 +969,7 @@ export default function QuestionForm({
               error={errors.suggestedAnswerContent}
               required={false}
               disabled={loading}
-              helperText={
-                !formData.suggestedAnswerContent.trim() && !formData.suggestedAnswerImageUrl?.trim()
-                  ? "Either suggested answer text or image must be provided"
-                  : formData.suggestedAnswerImageUrl?.trim()
-                  ? "You have provided an answer image. Text answer is optional."
-                  : "Provide a comprehensive suggested answer for grading reference"
-              }
+              helperText="Provide a comprehensive suggested answer for grading reference (optional)"
             />
           </div>
 
@@ -990,9 +979,6 @@ export default function QuestionForm({
               <label className="block text-sm font-medium text-gray-700">
                 Suggested Answer Image (Optional)
               </label>
-              {!formData.suggestedAnswerContent.trim() && !formData.suggestedAnswerImageUrl?.trim() && (
-                <span className="text-xs text-red-600">Either text or image required</span>
-              )}
             </div>
             
             <div className="flex items-center space-x-4">

@@ -34,6 +34,7 @@ import { Button } from '@/components/ui';
 import Message from '@/components/teacher/Message';
 import Mail from '@/components/teacher/Mail';
 import { ClassFirestoreService } from '@/apiservices/classFirestoreService';
+import { ClassScheduleFirestoreService } from '@/apiservices/classScheduleFirestoreService';
 import { ClassDocument } from '@/models/classSchema';
 import { getEnrollmentsByClass } from '@/services/studentEnrollmentService';
 import { StudentEnrollment } from '@/models/studentEnrollmentSchema';
@@ -72,6 +73,35 @@ export default function ClassDetails() {
   const [enrollmentsLoading, setEnrollmentsLoading] = useState(true);
   const [materialsCount, setMaterialsCount] = useState<number>(0);
   const [materialsLoading, setMaterialsLoading] = useState(true);
+  const [autoScheduleLoading, setAutoScheduleLoading] = useState(false);
+
+  // Auto-schedule classes for next week
+  const autoScheduleClasses = async (classDoc: ClassDocument) => {
+    try {
+      setAutoScheduleLoading(true);
+      console.log('🔄 Auto-scheduling classes for next week...', classDoc.name);
+      
+      // Check if class has a schedule configured
+      if (!classDoc.schedule || classDoc.schedule.length === 0) {
+        console.log('⚠️ No schedule configured for this class, skipping auto-scheduling');
+        return;
+      }
+      
+      // Auto-schedule for the next 7 days
+      const scheduledCount = await ClassScheduleFirestoreService.autoScheduleForClass(classDoc, 7);
+      
+      if (scheduledCount > 0) {
+        console.log(`✅ Auto-scheduled ${scheduledCount} classes for next week`);
+      } else {
+        console.log('ℹ️ No new classes needed to be scheduled (already scheduled or no schedule configured)');
+      }
+    } catch (error) {
+      console.error('❌ Error auto-scheduling classes:', error);
+      // Don't show error to user as this is a background operation
+    } finally {
+      setAutoScheduleLoading(false);
+    }
+  };
 
   // Load class data
   useEffect(() => {
@@ -84,6 +114,9 @@ export default function ClassDetails() {
           console.log('🔍 Page Debug: Class data loaded:', classDoc);
           console.log('🔍 Page Debug: Teacher ID:', classDoc.teacherId);
           console.log('🔍 Page Debug: Class Name:', classDoc.name);
+          
+          // Auto-schedule classes for next week if needed
+          autoScheduleClasses(classDoc);
         } else {
           setError('Class not found');
         }
@@ -223,6 +256,12 @@ export default function ClassDetails() {
                   <Clock className="w-4 h-4" />
                   <span>{classData?.year || 'Year'}</span>
                 </div>
+                {autoScheduleLoading && (
+                  <div className="flex items-center space-x-2 text-blue-200 bg-blue-500/20 px-3 py-1 rounded-full">
+                    <div className="w-3 h-3 border border-blue-200 border-t-transparent rounded-full animate-spin"></div>
+                    <span className="text-xs">Auto-scheduling classes...</span>
+                  </div>
+                )}
               </div>
             </div>
             <div className="hidden md:block">
