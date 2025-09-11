@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
   ArrowLeft,
@@ -49,21 +49,24 @@ export default function ClassGradeAnalytics() {
   const { teacher } = useTeacherAuth();
   const classId = params.classId as string;
 
-  // Use optimized hook for analytics
-  const {
-    analytics,
-    studentPerformances,
-    loading,
-    error,
-    loadingStudents,
-    loadStudentPerformances,
-    refresh
-  } = useOptimizedGradeAnalytics(classId, teacher?.id);
-
-  // Separate state for class data and other UI state
+  // Fast loading states - show data as soon as it's available
+  const [initialLoading, setInitialLoading] = useState(true);
   const [classData, setClassData] = useState<ClassDocument | null>(null);
+  const [basicAnalytics, setBasicAnalytics] = useState<any>(null);
+  const [fullAnalytics, setFullAnalytics] = useState<ClassAnalytics | null>(null);
+  const [studentPerformances, setStudentPerformances] = useState<StudentPerformanceData[]>([]);
   const [performanceTrends, setPerformanceTrends] = useState<PerformanceTrend[]>([]);
-  const [classLoading, setClassLoading] = useState(true);
+  
+  // Loading states for progressive loading
+  const [loadingStates, setLoadingStates] = useState({
+    class: true,
+    basicAnalytics: true,
+    fullAnalytics: true,
+    students: false,
+    trends: false
+  });
+  
+  const [error, setError] = useState<string | null>(null);
   
   // UI state
   const [activeTab, setActiveTab] = useState<'overview' | 'students' | 'trends'>('overview');
@@ -74,63 +77,118 @@ export default function ClassGradeAnalytics() {
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
   const [selectedStudentData, setSelectedStudentData] = useState<StudentPerformanceData | null>(null);
 
-  // Load class data separately (lightweight operation)
+  // Fast initial load - parallel loading of essential data
   useEffect(() => {
-    const loadClassData = async () => {
+    const fastInitialLoad = async () => {
       if (!classId || !teacher?.id) return;
 
-      setClassLoading(true);
+      console.log('🚀 Starting fast initial load for class:', classId);
+      setInitialLoading(true);
 
       try {
-        const classDoc = await ClassFirestoreService.getClassById(classId);
-        if (!classDoc) {
+        // Load class data and basic analytics in parallel
+        const [classResult, basicAnalyticsResult] = await Promise.allSettled([
+          ClassFirestoreService.getClassById(classId),
+          // For now, use the regular analytics as "basic" - we can optimize this later
+          GradeAnalyticsService.getClassAnalytics(classId)
+        ]);
+
+        // Handle class data
+        if (classResult.status === 'fulfilled' && classResult.value) {
+          const classDoc = classResult.value;
+          
+          // Verify teacher access
+          if (classDoc.teacherId !== teacher.id) {
+            throw new Error('Access denied: You are not the teacher for this class');
+          }
+          
+          setClassData(classDoc);
+          setLoadingStates(prev => ({ ...prev, class: false }));
+          console.log('✅ Class data loaded');
+        } else {
           throw new Error('Class not found');
         }
 
-        // Verify teacher has access to this class
-        if (classDoc.teacherId !== teacher.id) {
-          throw new Error('Access denied: You are not the teacher for this class');
+        // Handle basic analytics
+        if (basicAnalyticsResult.status === 'fulfilled' && basicAnalyticsResult.value) {
+          setBasicAnalytics(basicAnalyticsResult.value);
+          setFullAnalytics(basicAnalyticsResult.value); // Use same data for now
+          setLoadingStates(prev => ({ ...prev, basicAnalytics: false, fullAnalytics: false }));
+          console.log('✅ Analytics loaded');
         }
 
-        setClassData(classDoc);
+        setInitialLoading(false);
+
       } catch (err: any) {
-        console.error('Error loading class data:', err);
-        // Class loading error will be handled by the main error state
-      } finally {
-        setClassLoading(false);
+        console.error('❌ Error in fast initial load:', err);
+        setError(err.message);
+        setInitialLoading(false);
       }
     };
 
-    loadClassData();
+    fastInitialLoad();
   }, [classId, teacher?.id]);
 
-  // Load additional data based on active tab
-  useEffect(() => {
-    const loadTabData = async () => {
-      try {
-        switch (activeTab) {
-          case 'students':
-            if (studentPerformances.length === 0 && !loadingStudents) {
-              await loadStudentPerformances();
-            }
-            break;
+  // Lazy load students when tab is accessed
+  const loadStudentsData = useCallback(async () => {
+    if (!classId || loadingStates.students) return;
 
-          case 'trends':
-            if (performanceTrends.length === 0) {
-              const trends = await GradeAnalyticsService.getPerformanceTrends(classId, 'month');
-              setPerformanceTrends(trends);
-            }
-            break;
-        }
-      } catch (error) {
-        console.error(`Error loading ${activeTab} data:`, error);
-      }
-    };
+    setLoadingStates(prev => ({ ...prev, students: true }));
 
-    if (analytics && classId) {
-      loadTabData();
+    try {
+      console.log('🔄 Loading students data...');
+      // Get all students for the class - this should return an array
+      const students = await Promise.all([
+        GradeAnalyticsService.getStudentPerformanceData(classId)
+      ]);
+      
+      // For now, create mock student data if needed
+      const studentList: StudentPerformanceData[] = students.length > 0 ? [students[0]] : [];
+      setStudentPerformances(studentList);
+      console.log('✅ Students data loaded:', studentList.length);
+    } catch (error) {
+      console.error('❌ Error loading students:', error);
+    } finally {
+      setLoadingStates(prev => ({ ...prev, students: false }));
     }
-  }, [activeTab, analytics, classId, studentPerformances.length, loadingStudents, loadStudentPerformances]);
+  }, [classId, loadingStates.students]);
+
+  // Lazy load trends when tab is accessed
+  const loadTrendsData = useCallback(async () => {
+    if (!classId || loadingStates.trends) return;
+
+    setLoadingStates(prev => ({ ...prev, trends: true }));
+
+    try {
+      console.log('🔄 Loading trends data...');
+      const trends = await GradeAnalyticsService.getPerformanceTrends(classId, 'month');
+      setPerformanceTrends(trends);
+      console.log('✅ Trends data loaded');
+    } catch (error) {
+      console.error('❌ Error loading trends:', error);
+    } finally {
+      setLoadingStates(prev => ({ ...prev, trends: false }));
+    }
+  }, [classId, loadingStates.trends]);
+
+  // Handle tab changes with lazy loading
+  const handleTabChange = (tab: 'overview' | 'students' | 'trends') => {
+    setActiveTab(tab);
+    
+    // Lazy load data for the selected tab
+    switch (tab) {
+      case 'students':
+        if (studentPerformances.length === 0) {
+          loadStudentsData();
+        }
+        break;
+      case 'trends':
+        if (performanceTrends.length === 0) {
+          loadTrendsData();
+        }
+        break;
+    }
+  };
 
   // Filter students based on search
   const filteredStudents = studentPerformances.filter(student =>
@@ -157,6 +215,7 @@ export default function ClassGradeAnalytics() {
 
   // Export class analytics report as CSV
   const exportReport = () => {
+    const analytics = fullAnalytics || basicAnalytics;
     if (!analytics || !classData) return;
 
     // Prepare CSV data
@@ -214,11 +273,22 @@ export default function ClassGradeAnalytics() {
     document.body.removeChild(link);
   };
 
-  // Loading state - show if class data or analytics are loading
-  if (classLoading || loading) {
+  // Show initial loading screen
+  if (initialLoading) {
     return (
       <TeacherLayout>
-        <GradeAnalyticsLoading />
+        <div className="space-y-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <div className="animate-pulse">
+              <div className="h-8 bg-gray-300 dark:bg-gray-600 rounded w-1/3 mb-2"></div>
+              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+            </div>
+          </div>
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="text-gray-600 dark:text-gray-300 mt-2">Loading class data...</p>
+          </div>
+        </div>
       </TeacherLayout>
     );
   }
@@ -248,7 +318,16 @@ export default function ClassGradeAnalytics() {
     );
   }
 
-  if (!classData || !analytics) {
+  // Refresh all data
+  const refresh = () => {
+    window.location.reload();
+  };
+
+  // Use basic analytics for immediate display, fallback to full analytics
+  const analytics = fullAnalytics || basicAnalytics;
+
+  // Show class data with progressive loading of analytics
+  if (!classData) {
     return (
       <TeacherLayout>
         <div className="text-center py-12">
@@ -368,7 +447,7 @@ export default function ClassGradeAnalytics() {
                 return (
                   <button
                     key={tab.id}
-                    onClick={() => setActiveTab(tab.id as any)}
+                    onClick={() => handleTabChange(tab.id as any)}
                     className={`flex items-center py-4 px-1 border-b-2 font-medium text-sm ${
                       activeTab === tab.id
                         ? 'border-blue-500 text-blue-600 dark:text-blue-400'
@@ -391,7 +470,7 @@ export default function ClassGradeAnalytics() {
                 <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
                   <Button 
                     variant="outline"
-                    onClick={() => setActiveTab('students')}
+                    onClick={() => handleTabChange('students')}
                     className="flex items-center justify-center h-16"
                   >
                     <Users className="w-5 h-5 mr-2" />
@@ -404,9 +483,9 @@ export default function ClassGradeAnalytics() {
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
                     Recent Tests Performance
                   </h3>
-                  {analytics.recentTests.length > 0 ? (
+                  {analytics.recentTests && analytics.recentTests.length > 0 ? (
                     <div className="space-y-3">
-                      {analytics.recentTests.map((test) => (
+                      {analytics.recentTests.map((test: any) => (
                         <div key={test.testId} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                           <div>
                             <p className="font-medium text-gray-900 dark:text-white">
@@ -456,12 +535,22 @@ export default function ClassGradeAnalytics() {
                       className="pl-10"
                     />
                   </div>
+                  <Button
+                    variant="outline"
+                    onClick={loadStudentsData}
+                    disabled={loadingStates.students}
+                  >
+                    {loadingStates.students ? 'Loading...' : 'Load Students'}
+                  </Button>
                 </div>
 
                 {/* Students List */}
-                {loadingStudents ? (
-                  <StudentListSkeleton />
-                ) : (
+                {loadingStates.students ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                    <p className="text-gray-600 dark:text-gray-300 mt-2">Loading students...</p>
+                  </div>
+                ) : filteredStudents.length > 0 ? (
                   <div className="space-y-3">
                     {filteredStudents.map((student) => (
                       <div key={student.studentId} className="border border-gray-200 dark:border-gray-700 rounded-lg">
@@ -542,6 +631,21 @@ export default function ClassGradeAnalytics() {
                       </div>
                     ))}
                   </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500 dark:text-gray-400">
+                      {searchTerm ? 'No students found matching your search.' : 'No student performance data available.'}
+                    </p>
+                    <Button
+                      variant="outline"
+                      onClick={loadStudentsData}
+                      className="mt-4"
+                      disabled={loadingStates.students}
+                    >
+                      {loadingStates.students ? 'Loading...' : 'Load Student Data'}
+                    </Button>
+                  </div>
                 )}
               </div>
             )}
@@ -552,12 +656,25 @@ export default function ClassGradeAnalytics() {
                   Performance Trends
                 </h3>
                 
-                {performanceTrends.length === 0 ? (
+                {loadingStates.trends ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                    <p className="text-gray-600 dark:text-gray-300 mt-2">Loading trends...</p>
+                  </div>
+                ) : performanceTrends.length === 0 ? (
                   <div className="text-center py-8">
                     <BarChart3 className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
                     <p className="text-gray-500 dark:text-gray-400">
                       No trend data available yet
                     </p>
+                    <Button
+                      variant="outline"
+                      onClick={loadTrendsData}
+                      className="mt-4"
+                      disabled={loadingStates.trends}
+                    >
+                      {loadingStates.trends ? 'Loading...' : 'Load Trend Data'}
+                    </Button>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -590,12 +707,14 @@ export default function ClassGradeAnalytics() {
       </div>
 
       {/* Student Detail Modal */}
-      <StudentDetailModal
-        isOpen={isStudentModalOpen}
-        onClose={closeStudentModal}
-        student={selectedStudentData}
-        classId={classId}
-      />
+      {isStudentModalOpen && selectedStudentData && (
+        <StudentDetailModal
+          isOpen={isStudentModalOpen}
+          onClose={closeStudentModal}
+          student={selectedStudentData}
+          classId={classId}
+        />
+      )}
     </TeacherLayout>
   );
 }
