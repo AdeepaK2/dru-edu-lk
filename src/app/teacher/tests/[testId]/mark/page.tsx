@@ -240,6 +240,16 @@ export default function MarkSubmissions() {
       
       await updateDoc(submissionRef, updateData);
       
+      // Update test statistics
+      try {
+        const { TestStatisticsService } = await import('@/apiservices/testStatisticsService');
+        await TestStatisticsService.updateStatisticsForGradedSubmission(testId);
+        console.log('✅ Test statistics updated for graded submission');
+      } catch (statsError) {
+        console.warn('⚠️ Failed to update test statistics:', statsError);
+        // Don't fail the grading process if statistics update fails
+      }
+      
       console.log('✅ Grade saved successfully to database');
       
       // Update local submission data

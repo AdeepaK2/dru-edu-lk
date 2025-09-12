@@ -441,6 +441,16 @@ export class SubmissionService {
       const cleanSubmission = this.removeUndefinedValues(submission);
       await setDoc(doc(firestore, this.COLLECTIONS.SUBMISSIONS, attemptId), cleanSubmission);
       
+      // Update test statistics
+      try {
+        const { TestStatisticsService } = await import('./testStatisticsService');
+        await TestStatisticsService.updateStatisticsForNewSubmission(realtimeSession.testId);
+        console.log('✅ Test statistics updated for new submission');
+      } catch (statsError) {
+        console.warn('⚠️ Failed to update test statistics:', statsError);
+        // Don't fail the submission process if statistics update fails
+      }
+      
       // Clean up realtime session
       await RealtimeTestService.cleanupSession(attemptId);
       
@@ -805,6 +815,17 @@ export class SubmissionService {
       });
 
       await batch.commit();
+      
+      // Update test statistics after grading
+      try {
+        const { TestStatisticsService } = await import('./testStatisticsService');
+        await TestStatisticsService.updateStatisticsForGradedSubmission(submission.testId);
+        console.log('✅ Test statistics updated for graded submission');
+      } catch (statsError) {
+        console.warn('⚠️ Failed to update test statistics:', statsError);
+        // Don't fail the grading process if statistics update fails
+      }
+      
       console.log('✅ Essay question graded successfully');
     } catch (error) {
       console.error('Error grading essay question:', error);
@@ -1008,6 +1029,16 @@ export class SubmissionService {
       
       await updateDoc(submissionRef, updateData);
       
+      // Update test statistics after grading
+      try {
+        const { TestStatisticsService } = await import('./testStatisticsService');
+        await TestStatisticsService.updateStatisticsForGradedSubmission(submission.testId);
+        console.log('✅ Test statistics updated for graded submission');
+      } catch (statsError) {
+        console.warn('⚠️ Failed to update test statistics:', statsError);
+        // Don't fail the grading process if statistics update fails
+      }
+      
       console.log('✅ Essay grades updated successfully');
     } catch (error) {
       console.error('Error updating essay grades:', error);
@@ -1025,6 +1056,13 @@ export class SubmissionService {
     try {
       const submissionRef = doc(firestore, this.COLLECTIONS.SUBMISSIONS, submissionId);
       
+      // Get the submission to get testId for statistics update
+      const submissionDoc = await getDoc(submissionRef);
+      if (!submissionDoc.exists()) {
+        throw new Error('Submission not found');
+      }
+      const submission = submissionDoc.data() as StudentSubmission;
+      
       // Update submission with overall grade
       const updateData = {
         overallGrade: {
@@ -1041,6 +1079,16 @@ export class SubmissionService {
       };
       
       await updateDoc(submissionRef, updateData);
+      
+      // Update test statistics after grading
+      try {
+        const { TestStatisticsService } = await import('./testStatisticsService');
+        await TestStatisticsService.updateStatisticsForGradedSubmission(submission.testId);
+        console.log('✅ Test statistics updated for graded submission');
+      } catch (statsError) {
+        console.warn('⚠️ Failed to update test statistics:', statsError);
+        // Don't fail the grading process if statistics update fails
+      }
       
       console.log('✅ Submission grade updated successfully');
     } catch (error) {

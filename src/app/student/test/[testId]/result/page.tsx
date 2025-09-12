@@ -35,6 +35,18 @@ export default function TestResultPage() {
   const [allAttempts, setAllAttempts] = useState<any[]>([]);
   const [bestAttempt, setBestAttempt] = useState<any | null>(null);
   
+  // Test statistics and ranking
+  const [testStats, setTestStats] = useState<{
+    averageScore: number;
+    highestScore: number;
+    totalParticipants: number;
+  } | null>(null);
+  const [studentRanking, setStudentRanking] = useState<{
+    rank: number;
+    percentile: number;
+    totalParticipants: number;
+  } | null>(null);
+  
   // Question order states for handling shuffled results
   const [originalOrderAnswers, setOriginalOrderAnswers] = useState<any[]>([]);
   const [isShuffledAttempt, setIsShuffledAttempt] = useState(false);
@@ -386,6 +398,41 @@ export default function TestResultPage() {
             optionsCount: testData.questions[0].options?.length
           } : null
         });
+        
+        // Load test statistics and student ranking
+        try {
+          const { TestStatisticsService } = await import('@/apiservices/testStatisticsService');
+          
+          // Get test statistics
+          const stats = await TestStatisticsService.getTestStatistics(testId);
+          if (stats) {
+            setTestStats({
+              averageScore: stats.averageScore,
+              highestScore: stats.highestScore,
+              totalParticipants: stats.submittedCount
+            });
+            
+            // Get student ranking if we have a score
+            if (submissionData.percentage !== undefined) {
+              const ranking = await TestStatisticsService.getStudentRanking(
+                testId,
+                student.id,
+                submissionData.percentage
+              );
+              
+              if (ranking) {
+                setStudentRanking({
+                  rank: ranking.rank,
+                  percentile: ranking.percentile,
+                  totalParticipants: ranking.totalParticipants
+                });
+              }
+            }
+          }
+        } catch (statsError) {
+          console.warn('⚠️ Could not load test statistics:', statsError);
+          // Don't fail the whole page if statistics fail to load
+        }
         
         setLoading(false);
       } catch (error) {
@@ -1034,6 +1081,89 @@ export default function TestResultPage() {
                 </p>
               </div>
             </div>
+            
+            {/* Test Statistics and Performance */}
+            {(testStats || studentRanking) && (
+              <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                <h3 className="text-md font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                  <Trophy className="h-5 w-5 mr-2" />
+                  Test Performance & Rankings
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* Class Average */}
+                  {testStats && (
+                    <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-md text-center">
+                      <div className="text-2xl font-bold text-blue-800 dark:text-blue-300">
+                        {testStats.averageScore.toFixed(1)}%
+                      </div>
+                      <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
+                        Class Average
+                      </p>
+                    </div>
+                  )}
+                  
+                  {/* Highest Score */}
+                  {testStats && (
+                    <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-md text-center">
+                      <div className="text-2xl font-bold text-green-800 dark:text-green-300">
+                        {testStats.highestScore.toFixed(1)}%
+                      </div>
+                      <p className="text-sm text-green-600 dark:text-green-400 mt-1">
+                        Highest Score
+                      </p>
+                    </div>
+                  )}
+                  
+                  {/* Your Rank */}
+                  {studentRanking && (
+                    <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-md text-center">
+                      <div className="text-2xl font-bold text-purple-800 dark:text-purple-300">
+                        #{studentRanking.rank}
+                      </div>
+                      <p className="text-sm text-purple-600 dark:text-purple-400 mt-1">
+                        Your Rank
+                      </p>
+                      <p className="text-xs text-purple-500 dark:text-purple-500 mt-1">
+                        of {studentRanking.totalParticipants} students
+                      </p>
+                    </div>
+                  )}
+                  
+                  {/* Percentile */}
+                  {studentRanking && (
+                    <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-md text-center">
+                      <div className="text-2xl font-bold text-orange-800 dark:text-orange-300">
+                        {studentRanking.percentile}%
+                      </div>
+                      <p className="text-sm text-orange-600 dark:text-orange-400 mt-1">
+                        Percentile
+                      </p>
+                      <p className="text-xs text-orange-500 dark:text-orange-500 mt-1">
+                        Better than {studentRanking.percentile}% of students
+                      </p>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Performance Insight */}
+                {submission.percentage !== undefined && testStats && (
+                  <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-md">
+                    <div className="flex items-center mb-2">
+                      <Target className="h-4 w-4 text-gray-600 dark:text-gray-400 mr-2" />
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">Performance Insight</span>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {submission.percentage > testStats.averageScore 
+                        ? `Great job! You scored ${(submission.percentage - testStats.averageScore).toFixed(1)} points above the class average.`
+                        : submission.percentage === testStats.averageScore
+                        ? `You scored exactly at the class average.`
+                        : `You scored ${(testStats.averageScore - submission.percentage).toFixed(1)} points below the class average. Consider reviewing the topics you found challenging.`
+                      }
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
             
             {/* MCQ Results Summary */}
             {submission.mcqResults && submission.mcqResults.length > 0 && (
