@@ -1,17 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { 
-  collection, 
-  query, 
-  where, 
-  getDocs, 
-  orderBy, 
-  Timestamp,
-  limit as firestoreLimit,
-  startAfter,
-  doc,
-  getDoc
-} from 'firebase/firestore';
-import { firestore } from '@/utils/firebase-client';
+import firebaseAdmin from '@/utils/firebase-server';
 import { gzip } from 'zlib';
 import { promisify } from 'util';
 
@@ -118,6 +106,9 @@ function timestampToISOString(timestamp: any): string {
   if (timestamp.toDate) {
     return timestamp.toDate().toISOString();
   }
+  if (timestamp.seconds) {
+    return new Date(timestamp.seconds * 1000).toISOString();
+  }
   if (timestamp instanceof Date) {
     return timestamp.toISOString();
   }
@@ -157,44 +148,35 @@ function checkRateLimit(apiKey: string, maxRequests: number = 60, windowMs: numb
   return true;
 }
 
-// Get students with their enrollments (optimized with parallel processing)
+// Get students with their enrollments (optimized with parallel processing using Admin SDK)
 async function getStudentsData(sinceDate?: Date, limit?: number): Promise<SyncStudent[]> {
   try {
     const startTime = Date.now();
     
-    let studentsQuery = query(
-      collection(firestore, 'students'),
-      orderBy('updatedAt', 'desc')
-    );
+    // Build query using Firebase Admin SDK
+    let studentsQuery = firebaseAdmin.db.collection('students').orderBy('updatedAt', 'desc');
 
     // Add date filter if provided
     if (sinceDate) {
-      studentsQuery = query(
-        collection(firestore, 'students'),
-        where('updatedAt', '>=', Timestamp.fromDate(sinceDate)),
-        orderBy('updatedAt', 'desc')
-      );
+      studentsQuery = studentsQuery.where('updatedAt', '>=', sinceDate);
     }
 
     // Add limit if provided
     if (limit) {
-      studentsQuery = query(
-        studentsQuery,
-        firestoreLimit(limit)
-      );
+      studentsQuery = studentsQuery.limit(limit);
     }
 
-    const studentsSnapshot = await getDocs(studentsQuery);
+    const studentsSnapshot = await studentsQuery.get();
     
     // Parallel enrollment fetching for all students
     const enrollmentPromises = studentsSnapshot.docs.map(async (studentDoc) => {
-      const enrollmentsQuery = query(
-        collection(firestore, 'studentEnrollments'),
-        where('studentId', '==', studentDoc.id),
-        orderBy('createdAt', 'desc')
-      );
+      const enrollmentsSnapshot = await firebaseAdmin.db
+        .collection('studentEnrollments')
+        .where('studentId', '==', studentDoc.id)
+        .orderBy('createdAt', 'desc')
+        .get();
       
-      return getDocs(enrollmentsQuery);
+      return enrollmentsSnapshot;
     });
 
     const enrollmentsResults = await Promise.all(enrollmentPromises);
@@ -247,32 +229,23 @@ async function getStudentsData(sinceDate?: Date, limit?: number): Promise<SyncSt
   }
 }
 
-// Get classes data
+// Get classes data using Firebase Admin SDK
 async function getClassesData(sinceDate?: Date, limit?: number): Promise<SyncClass[]> {
   try {
-    let classesQuery = query(
-      collection(firestore, 'classes'),
-      orderBy('updatedAt', 'desc')
-    );
+    // Build query using Firebase Admin SDK
+    let classesQuery = firebaseAdmin.db.collection('classes').orderBy('updatedAt', 'desc');
 
     // Add date filter if provided
     if (sinceDate) {
-      classesQuery = query(
-        collection(firestore, 'classes'),
-        where('updatedAt', '>=', Timestamp.fromDate(sinceDate)),
-        orderBy('updatedAt', 'desc')
-      );
+      classesQuery = classesQuery.where('updatedAt', '>=', sinceDate);
     }
 
     // Add limit if provided
     if (limit) {
-      classesQuery = query(
-        classesQuery,
-        firestoreLimit(limit)
-      );
+      classesQuery = classesQuery.limit(limit);
     }
 
-    const classesSnapshot = await getDocs(classesQuery);
+    const classesSnapshot = await classesQuery.get();
     const classes: SyncClass[] = [];
 
     for (const classDoc of classesSnapshot.docs) {
@@ -282,13 +255,13 @@ async function getClassesData(sinceDate?: Date, limit?: number): Promise<SyncCla
       let teacherName = undefined;
       if (classData.teacherId) {
         try {
-          const teacherQuery = query(
-            collection(firestore, 'teachers'),
-            where('__name__', '==', classData.teacherId)
-          );
-          const teacherSnapshot = await getDocs(teacherQuery);
-          if (!teacherSnapshot.empty) {
-            teacherName = teacherSnapshot.docs[0].data().name;
+          const teacherDoc = await firebaseAdmin.db
+            .collection('teachers')
+            .doc(classData.teacherId)
+            .get();
+          
+          if (teacherDoc.exists) {
+            teacherName = teacherDoc.data()?.name;
           }
         } catch (error) {
           console.warn(`Could not fetch teacher name for ${classData.teacherId}`);
@@ -560,26 +533,24 @@ export async function POST(request: NextRequest) {
       classes: []
     };
 
-    // Fetch specific students if requested (with parallel processing)
+    // Fetch specific students if requested (with parallel processing using Admin SDK)
     if (studentIds && Array.isArray(studentIds)) {
       const studentPromises = studentIds.map(async (studentId) => {
         try {
-          const studentQuery = query(
-            collection(firestore, 'students'),
-            where('__name__', '==', studentId)
-          );
-          const studentSnapshot = await getDocs(studentQuery);
+          const studentDoc = await firebaseAdmin.db
+            .collection('students')
+            .doc(studentId)
+            .get();
           
-          if (!studentSnapshot.empty) {
-            const studentDoc = studentSnapshot.docs[0];
+          if (studentDoc.exists) {
             const studentData = studentDoc.data();
             
             // Get enrollments for this student
-            const enrollmentsQuery = query(
-              collection(firestore, 'studentEnrollments'),
-              where('studentId', '==', studentId)
-            );
-            const enrollmentsSnapshot = await getDocs(enrollmentsQuery);
+            const enrollmentsSnapshot = await firebaseAdmin.db
+              .collection('studentEnrollments')
+              .where('studentId', '==', studentId)
+              .get();
+              
             const enrollments: SyncEnrollment[] = enrollmentsSnapshot.docs.map(enrollDoc => {
               const enrollData = enrollDoc.data();
               return {
@@ -598,18 +569,18 @@ export async function POST(request: NextRequest) {
 
             return {
               id: studentDoc.id,
-              name: studentData.name,
-              email: studentData.email,
-              phone: studentData.phone,
-              status: studentData.status,
+              name: studentData?.name,
+              email: studentData?.email,
+              phone: studentData?.phone,
+              status: studentData?.status,
               enrollments,
-              parent: studentData.parent ? {
+              parent: studentData?.parent ? {
                 name: studentData.parent.name,
                 email: studentData.parent.email,
                 phone: studentData.parent.phone,
               } : undefined,
-              createdAt: timestampToISOString(studentData.createdAt),
-              updatedAt: timestampToISOString(studentData.updatedAt),
+              createdAt: timestampToISOString(studentData?.createdAt),
+              updatedAt: timestampToISOString(studentData?.updatedAt),
             };
           }
           return null;
@@ -623,31 +594,29 @@ export async function POST(request: NextRequest) {
       result.students = studentResults.filter(s => s !== null) as SyncStudent[];
     }
 
-    // Fetch specific classes if requested (with parallel processing)
+    // Fetch specific classes if requested (with parallel processing using Admin SDK)
     if (classIds && Array.isArray(classIds)) {
       const classPromises = classIds.map(async (classId) => {
         try {
-          const classQuery = query(
-            collection(firestore, 'classes'),
-            where('__name__', '==', classId)
-          );
-          const classSnapshot = await getDocs(classQuery);
+          const classDoc = await firebaseAdmin.db
+            .collection('classes')
+            .doc(classId)
+            .get();
           
-          if (!classSnapshot.empty) {
-            const classDoc = classSnapshot.docs[0];
+          if (classDoc.exists) {
             const classData = classDoc.data();
             
             // Get teacher name if teacherId exists
             let teacherName = undefined;
-            if (classData.teacherId) {
+            if (classData?.teacherId) {
               try {
-                const teacherQuery = query(
-                  collection(firestore, 'teachers'),
-                  where('__name__', '==', classData.teacherId)
-                );
-                const teacherSnapshot = await getDocs(teacherQuery);
-                if (!teacherSnapshot.empty) {
-                  teacherName = teacherSnapshot.docs[0].data().name;
+                const teacherDoc = await firebaseAdmin.db
+                  .collection('teachers')
+                  .doc(classData.teacherId)
+                  .get();
+                  
+                if (teacherDoc.exists) {
+                  teacherName = teacherDoc.data()?.name;
                 }
               } catch (error) {
                 console.warn(`Could not fetch teacher name for ${classData.teacherId}`);
@@ -656,22 +625,22 @@ export async function POST(request: NextRequest) {
 
             return {
               id: classDoc.id,
-              classId: classData.classId,
-              name: classData.name,
-              subject: classData.subject,
-              subjectId: classData.subjectId,
-              year: classData.year,
-              centerId: classData.centerId,
-              schedule: classData.schedule || [],
-              sessionFee: classData.sessionFee || 0,
-              teacherId: classData.teacherId,
+              classId: classData?.classId,
+              name: classData?.name,
+              subject: classData?.subject,
+              subjectId: classData?.subjectId,
+              year: classData?.year,
+              centerId: classData?.centerId,
+              schedule: classData?.schedule || [],
+              sessionFee: classData?.sessionFee || 0,
+              teacherId: classData?.teacherId,
               teacherName,
-              status: classData.status,
-              enrolledStudents: classData.enrolledStudents || 0,
-              waitingList: classData.waitingList || 0,
-              description: classData.description,
-              createdAt: timestampToISOString(classData.createdAt),
-              updatedAt: timestampToISOString(classData.updatedAt),
+              status: classData?.status,
+              enrolledStudents: classData?.enrolledStudents || 0,
+              waitingList: classData?.waitingList || 0,
+              description: classData?.description,
+              createdAt: timestampToISOString(classData?.createdAt),
+              updatedAt: timestampToISOString(classData?.updatedAt),
             };
           }
           return null;
