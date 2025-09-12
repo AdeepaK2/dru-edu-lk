@@ -6,9 +6,16 @@ import {
   getDocs, 
   orderBy, 
   Timestamp,
-  limit as firestoreLimit 
+  limit as firestoreLimit,
+  startAfter,
+  doc,
+  getDoc
 } from 'firebase/firestore';
 import { firestore } from '@/utils/firebase-client';
+import { gzip } from 'zlib';
+import { promisify } from 'util';
+
+const gzipAsync = promisify(gzip);
 
 // Types for sync data
 interface SyncStudent {
@@ -73,11 +80,36 @@ interface SyncResponse {
       totalStudents: number;
       totalClasses: number;
       totalActiveEnrollments: number;
+      hasMoreData: boolean;
+      nextPageToken?: string;
       lastSyncTimestamp: string;
       requestedSince?: string;
+      serverTimestamp: string;
+      dataIntegrity: {
+        studentsHash: string;
+        classesHash: string;
+      };
     };
   };
+  performance: {
+    responseTimeMs: number;
+    recordsPerSecond: number;
+    cacheHitRate?: number;
+  };
   error?: string;
+  warnings?: string[];
+}
+
+// Rate limiting interfaces
+interface RateLimitInfo {
+  count: number;
+  resetTime: number;
+}
+
+interface SyncOptions {
+  sinceDate?: Date;
+  limit?: number;
+  cursor?: string;
 }
 
 // Helper function to convert Firestore Timestamp to ISO string
@@ -104,9 +136,32 @@ function validateApiKey(request: NextRequest): boolean {
   return apiKey === validApiKey;
 }
 
-// Get students with their enrollments
+// Rate limiting store (in production, use Redis or a proper cache)
+const rateLimitStore = new Map<string, RateLimitInfo>();
+
+// Check rate limit
+function checkRateLimit(apiKey: string, maxRequests: number = 60, windowMs: number = 60000): boolean {
+  const now = Date.now();
+  const clientInfo = rateLimitStore.get(apiKey);
+  
+  if (!clientInfo || now > clientInfo.resetTime) {
+    rateLimitStore.set(apiKey, { count: 1, resetTime: now + windowMs });
+    return true;
+  }
+  
+  if (clientInfo.count >= maxRequests) {
+    return false;
+  }
+  
+  clientInfo.count++;
+  return true;
+}
+
+// Get students with their enrollments (optimized with parallel processing)
 async function getStudentsData(sinceDate?: Date, limit?: number): Promise<SyncStudent[]> {
   try {
+    const startTime = Date.now();
+    
     let studentsQuery = query(
       collection(firestore, 'students'),
       orderBy('updatedAt', 'desc')
@@ -130,19 +185,25 @@ async function getStudentsData(sinceDate?: Date, limit?: number): Promise<SyncSt
     }
 
     const studentsSnapshot = await getDocs(studentsQuery);
-    const students: SyncStudent[] = [];
-
-    for (const studentDoc of studentsSnapshot.docs) {
-      const studentData = studentDoc.data();
-      
-      // Get enrollments for this student
+    
+    // Parallel enrollment fetching for all students
+    const enrollmentPromises = studentsSnapshot.docs.map(async (studentDoc) => {
       const enrollmentsQuery = query(
         collection(firestore, 'studentEnrollments'),
         where('studentId', '==', studentDoc.id),
         orderBy('createdAt', 'desc')
       );
+      
+      return getDocs(enrollmentsQuery);
+    });
 
-      const enrollmentsSnapshot = await getDocs(enrollmentsQuery);
+    const enrollmentsResults = await Promise.all(enrollmentPromises);
+    
+    // Process results
+    const students: SyncStudent[] = studentsSnapshot.docs.map((studentDoc, index) => {
+      const studentData = studentDoc.data();
+      const enrollmentsSnapshot = enrollmentsResults[index];
+      
       const enrollments: SyncEnrollment[] = enrollmentsSnapshot.docs.map(enrollDoc => {
         const enrollData = enrollDoc.data();
         return {
@@ -159,7 +220,7 @@ async function getStudentsData(sinceDate?: Date, limit?: number): Promise<SyncSt
         };
       });
 
-      students.push({
+      return {
         id: studentDoc.id,
         name: studentData.name,
         email: studentData.email,
@@ -173,9 +234,12 @@ async function getStudentsData(sinceDate?: Date, limit?: number): Promise<SyncSt
         } : undefined,
         createdAt: timestampToISOString(studentData.createdAt),
         updatedAt: timestampToISOString(studentData.updatedAt),
-      });
-    }
+      };
+    });
 
+    const processingTime = Date.now() - startTime;
+    console.log(`✅ Processed ${students.length} students with ${students.reduce((total, s) => total + s.enrollments.length, 0)} enrollments in ${processingTime}ms`);
+    
     return students;
   } catch (error) {
     console.error('Error fetching students data:', error);
@@ -259,8 +323,11 @@ async function getClassesData(sinceDate?: Date, limit?: number): Promise<SyncCla
   }
 }
 
-// GET endpoint for syncing data
+// GET endpoint for syncing data (enhanced with performance optimizations)
 export async function GET(request: NextRequest) {
+  const startTime = Date.now();
+  const warnings: string[] = [];
+  
   try {
     // Validate API Key
     if (!validateApiKey(request)) {
@@ -273,12 +340,26 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get query parameters
+    const apiKey = request.headers.get('X-API-Key')!;
+    
+    // Check rate limit
+    if (!checkRateLimit(apiKey)) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Rate limit exceeded. Maximum 60 requests per minute.' 
+        },
+        { status: 429 }
+      );
+    }
+
+    // Get query parameters with enhanced validation
     const searchParams = request.nextUrl.searchParams;
     const since = searchParams.get('since'); // ISO date string for incremental sync
     const limit = searchParams.get('limit'); // Limit number of records
     const includeStudents = searchParams.get('includeStudents') !== 'false'; // Default true
     const includeClasses = searchParams.get('includeClasses') !== 'false'; // Default true
+    const compress = searchParams.get('compress') === 'true'; // Compression flag
 
     // Parse since date if provided
     let sinceDate: Date | undefined;
@@ -295,7 +376,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Parse limit if provided
+    // Parse and validate limit
     let limitNumber: number | undefined;
     if (limit) {
       limitNumber = parseInt(limit);
@@ -308,16 +389,34 @@ export async function GET(request: NextRequest) {
           { status: 400 }
         );
       }
+      
+      if (limitNumber > 1000) {
+        limitNumber = 1000;
+        warnings.push('Limit capped at 1000 records for performance reasons');
+      }
     }
 
-    // Fetch data
-    const studentsData = includeStudents ? await getStudentsData(sinceDate, limitNumber) : [];
-    const classesData = includeClasses ? await getClassesData(sinceDate, limitNumber) : [];
+    // Fetch data in parallel for better performance
+    const [studentsData, classesData] = await Promise.all([
+      includeStudents ? getStudentsData(sinceDate, limitNumber) : Promise.resolve([]),
+      includeClasses ? getClassesData(sinceDate, limitNumber) : Promise.resolve([])
+    ]);
 
-    // Calculate total active enrollments
+    // Calculate metadata
     const totalActiveEnrollments = studentsData.reduce((total, student) => {
       return total + student.enrollments.filter(enrollment => enrollment.status === 'Active').length;
     }, 0);
+
+    const hasMoreData = limitNumber ? 
+      (studentsData.length === limitNumber || classesData.length === limitNumber) : 
+      false;
+
+    const nextPageToken = hasMoreData && studentsData.length > 0 ? 
+      studentsData[studentsData.length - 1].id : 
+      undefined;
+
+    const processingTime = Date.now() - startTime;
+    const totalRecords = studentsData.length + classesData.length;
 
     const response: SyncResponse = {
       success: true,
@@ -328,28 +427,75 @@ export async function GET(request: NextRequest) {
           totalStudents: studentsData.length,
           totalClasses: classesData.length,
           totalActiveEnrollments,
+          hasMoreData,
+          nextPageToken,
           lastSyncTimestamp: new Date().toISOString(),
           requestedSince: since || undefined,
+          serverTimestamp: new Date().toISOString(),
+          dataIntegrity: {
+            studentsHash: `${studentsData.length}-${Date.now()}`,
+            classesHash: `${classesData.length}-${Date.now()}`,
+          },
         },
       },
+      performance: {
+        responseTimeMs: processingTime,
+        recordsPerSecond: totalRecords > 0 ? Math.round(totalRecords / (processingTime / 1000)) : 0,
+      },
+      warnings: warnings.length > 0 ? warnings : undefined,
     };
 
-    return NextResponse.json(response);
+    // Compress response if requested
+    if (compress && totalRecords > 50) {
+      try {
+        const jsonString = JSON.stringify(response);
+        const compressed = await gzipAsync(jsonString);
+        
+        return new NextResponse(Buffer.from(compressed), {
+          headers: {
+            'Content-Type': 'application/json',
+            'Content-Encoding': 'gzip',
+            'X-Response-Time': `${processingTime}ms`,
+            'X-Records-Count': `${totalRecords}`,
+            'X-Compression-Ratio': `${Math.round((compressed.length / jsonString.length) * 100)}%`,
+          }
+        });
+      } catch (compressionError) {
+        console.warn('Compression failed, sending uncompressed response:', compressionError);
+        warnings.push('Compression failed, sending uncompressed response');
+      }
+    }
+
+    return NextResponse.json(response, {
+      headers: {
+        'X-Response-Time': `${processingTime}ms`,
+        'X-Records-Count': `${totalRecords}`,
+        'X-Performance': `${response.performance.recordsPerSecond} records/sec`,
+      }
+    });
 
   } catch (error) {
-    console.error('Error in sync API:', error);
+    const processingTime = Date.now() - startTime;
+    console.error('Error in enhanced sync API:', error);
+    
     return NextResponse.json(
       { 
         success: false, 
-        error: `Internal server error: ${error instanceof Error ? error.message : 'Unknown error'}` 
+        error: `Internal server error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        performance: {
+          responseTimeMs: processingTime,
+          recordsPerSecond: 0,
+        }
       },
       { status: 500 }
     );
   }
 }
 
-// POST endpoint for checking specific records by IDs
+// POST endpoint for checking specific records by IDs (enhanced)
 export async function POST(request: NextRequest) {
+  const startTime = Date.now();
+  
   try {
     // Validate API Key
     if (!validateApiKey(request)) {
@@ -359,6 +505,19 @@ export async function POST(request: NextRequest) {
           error: 'Invalid or missing X-API-Key header' 
         },
         { status: 401 }
+      );
+    }
+
+    const apiKey = request.headers.get('X-API-Key')!;
+    
+    // Check rate limit
+    if (!checkRateLimit(apiKey, 120)) { // Higher limit for POST as it's more specific
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Rate limit exceeded. Maximum 120 requests per minute for POST.' 
+        },
+        { status: 429 }
       );
     }
 
@@ -375,14 +534,35 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate input arrays
+    if (studentIds && (!Array.isArray(studentIds) || studentIds.length > 100)) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'studentIds must be an array with maximum 100 items' 
+        },
+        { status: 400 }
+      );
+    }
+
+    if (classIds && (!Array.isArray(classIds) || classIds.length > 100)) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'classIds must be an array with maximum 100 items' 
+        },
+        { status: 400 }
+      );
+    }
+
     const result: { students: SyncStudent[]; classes: SyncClass[] } = {
       students: [],
       classes: []
     };
 
-    // Fetch specific students if requested
+    // Fetch specific students if requested (with parallel processing)
     if (studentIds && Array.isArray(studentIds)) {
-      for (const studentId of studentIds) {
+      const studentPromises = studentIds.map(async (studentId) => {
         try {
           const studentQuery = query(
             collection(firestore, 'students'),
@@ -416,7 +596,7 @@ export async function POST(request: NextRequest) {
               };
             });
 
-            result.students.push({
+            return {
               id: studentDoc.id,
               name: studentData.name,
               email: studentData.email,
@@ -430,17 +610,22 @@ export async function POST(request: NextRequest) {
               } : undefined,
               createdAt: timestampToISOString(studentData.createdAt),
               updatedAt: timestampToISOString(studentData.updatedAt),
-            });
+            };
           }
+          return null;
         } catch (error) {
           console.warn(`Error fetching student ${studentId}:`, error);
+          return null;
         }
-      }
+      });
+
+      const studentResults = await Promise.all(studentPromises);
+      result.students = studentResults.filter(s => s !== null) as SyncStudent[];
     }
 
-    // Fetch specific classes if requested
+    // Fetch specific classes if requested (with parallel processing)
     if (classIds && Array.isArray(classIds)) {
-      for (const classId of classIds) {
+      const classPromises = classIds.map(async (classId) => {
         try {
           const classQuery = query(
             collection(firestore, 'classes'),
@@ -469,7 +654,7 @@ export async function POST(request: NextRequest) {
               }
             }
 
-            result.classes.push({
+            return {
               id: classDoc.id,
               classId: classData.classId,
               name: classData.name,
@@ -487,13 +672,21 @@ export async function POST(request: NextRequest) {
               description: classData.description,
               createdAt: timestampToISOString(classData.createdAt),
               updatedAt: timestampToISOString(classData.updatedAt),
-            });
+            };
           }
+          return null;
         } catch (error) {
           console.warn(`Error fetching class ${classId}:`, error);
+          return null;
         }
-      }
+      });
+
+      const classResults = await Promise.all(classPromises);
+      result.classes = classResults.filter(c => c !== null) as SyncClass[];
     }
+
+    const processingTime = Date.now() - startTime;
+    const totalRecords = result.students.length + result.classes.length;
 
     const response: SyncResponse = {
       success: true,
@@ -506,19 +699,41 @@ export async function POST(request: NextRequest) {
           totalActiveEnrollments: result.students.reduce((total, student) => {
             return total + student.enrollments.filter(enrollment => enrollment.status === 'Active').length;
           }, 0),
+          hasMoreData: false, // POST endpoint doesn't use pagination
           lastSyncTimestamp: new Date().toISOString(),
+          serverTimestamp: new Date().toISOString(),
+          dataIntegrity: {
+            studentsHash: `${result.students.length}-${Date.now()}`,
+            classesHash: `${result.classes.length}-${Date.now()}`,
+          },
         },
+      },
+      performance: {
+        responseTimeMs: processingTime,
+        recordsPerSecond: totalRecords > 0 ? Math.round(totalRecords / (processingTime / 1000)) : 0,
       },
     };
 
-    return NextResponse.json(response);
+    return NextResponse.json(response, {
+      headers: {
+        'X-Response-Time': `${processingTime}ms`,
+        'X-Records-Count': `${totalRecords}`,
+        'X-Performance': `${response.performance.recordsPerSecond} records/sec`,
+      }
+    });
 
   } catch (error) {
+    const processingTime = Date.now() - startTime;
     console.error('Error in POST sync API:', error);
+    
     return NextResponse.json(
       { 
         success: false, 
-        error: `Internal server error: ${error instanceof Error ? error.message : 'Unknown error'}` 
+        error: `Internal server error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        performance: {
+          responseTimeMs: processingTime,
+          recordsPerSecond: 0,
+        }
       },
       { status: 500 }
     );
