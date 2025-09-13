@@ -85,7 +85,7 @@ export default function StudyMaterialUploadModal({
     order: 1,
     difficulty: 'Beginner',
     dueDate: '',
-    groupingPreference: 'auto',
+    groupingPreference: 'group',
     customGroupId: ''
   });
 
@@ -101,7 +101,7 @@ export default function StudyMaterialUploadModal({
         order: 1,
         difficulty: 'Beginner',
         dueDate: '',
-        groupingPreference: 'auto',
+        groupingPreference: 'group',
         customGroupId: ''
       });
       setFiles([]);
