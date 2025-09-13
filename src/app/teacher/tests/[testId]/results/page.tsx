@@ -37,6 +37,16 @@ interface TestStats {
   passRate: number;
   averageTime: number;
   questionStats: QuestionStat[];
+  passedCount: number;
+  failedCount: number;
+  pendingCount: number;
+  highestScoreStudent?: {
+    name: string;
+    email: string;
+    score: number;
+    marks: string;
+  };
+  classAverage: number;
 }
 
 interface QuestionStat {
@@ -115,7 +125,11 @@ export default function TestResultsPage() {
         lowestScore: 0,
         passRate: 0,
         averageTime: 0,
-        questionStats: []
+        questionStats: [],
+        passedCount: 0,
+        failedCount: 0,
+        pendingCount: submissions.length,
+        classAverage: 0
       };
     }
 
@@ -123,7 +137,7 @@ export default function TestResultsPage() {
     const times = submittedSubmissions.map(s => s.totalTimeSpent || 0);
     
     // Calculate pass rate based on teacher's passing score configuration
-    const passedCount = submittedSubmissions.filter(s => {
+    const passedSubmissions = submittedSubmissions.filter(s => {
       // If there's a passing score configured, use it
       if (test.config?.passingScore) {
         const percentage = s.percentage || 0;
@@ -131,7 +145,28 @@ export default function TestResultsPage() {
       }
       // Fallback to passStatus if no passing score is configured
       return s.passStatus === 'passed';
-    }).length;
+    });
+
+    const failedSubmissions = submittedSubmissions.filter(s => {
+      if (test.config?.passingScore) {
+        const percentage = s.percentage || 0;
+        return percentage < test.config.passingScore;
+      }
+      return s.passStatus === 'failed';
+    });
+
+    const pendingSubmissions = submissions.filter(s => 
+      s.status !== 'submitted' && s.status !== 'auto_submitted'
+    );
+
+    // Find highest scoring student
+    const highestScoringSubmission = submittedSubmissions.reduce((prev, current) => {
+      return (current.percentage || 0) > (prev.percentage || 0) ? current : prev;
+    }, submittedSubmissions[0]);
+
+    // Calculate class average (including all submissions, not just submitted ones)
+    const allScores = submissions.map(s => s.percentage || 0);
+    const classAverage = allScores.reduce((sum, score) => sum + score, 0) / allScores.length;
 
     // Calculate question statistics
     const questionStats: QuestionStat[] = [];
@@ -167,9 +202,19 @@ export default function TestResultsPage() {
       averageScore: scores.reduce((sum, score) => sum + score, 0) / scores.length,
       highestScore: Math.max(...scores),
       lowestScore: Math.min(...scores),
-      passRate: (passedCount / submittedSubmissions.length) * 100,
+      passRate: (passedSubmissions.length / submittedSubmissions.length) * 100,
       averageTime: times.reduce((sum, time) => sum + time, 0) / times.length,
-      questionStats
+      questionStats,
+      passedCount: passedSubmissions.length,
+      failedCount: failedSubmissions.length,
+      pendingCount: pendingSubmissions.length,
+      highestScoreStudent: highestScoringSubmission ? {
+        name: highestScoringSubmission.studentName,
+        email: highestScoringSubmission.studentEmail || '',
+        score: highestScoringSubmission.percentage || 0,
+        marks: `${highestScoringSubmission.autoGradedScore || 0}/${highestScoringSubmission.maxScore || 0}`
+      } : undefined,
+      classAverage: isNaN(classAverage) ? 0 : classAverage
     };
   };
 
@@ -397,7 +442,7 @@ export default function TestResultsPage() {
             {/* Summary Statistics */}
             {stats && (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                     <div className="flex items-center">
                       <Users className="h-8 w-8 text-blue-600" />
@@ -420,13 +465,13 @@ export default function TestResultsPage() {
                       <BarChart3 className="h-8 w-8 text-green-600" />
                       <div className="ml-4">
                         <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                          Average Score
+                          Class Average
                         </p>
                         <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                          {stats.averageScore.toFixed(1)}%
+                          {stats.classAverage.toFixed(1)}%
                         </p>
                         <p className="text-xs text-gray-400 dark:text-gray-500">
-                          High: {stats.highestScore}% | Low: {stats.lowestScore}%
+                          Submitted: {stats.averageScore.toFixed(1)}%
                         </p>
                       </div>
                     </div>
@@ -443,7 +488,7 @@ export default function TestResultsPage() {
                           {stats.passRate.toFixed(1)}%
                         </p>
                         <p className="text-xs text-gray-400 dark:text-gray-500">
-                          {Math.round((stats.passRate / 100) * stats.submittedCount)} passed
+                          {stats.passedCount} passed, {stats.failedCount} failed
                         </p>
                       </div>
                     </div>
@@ -460,8 +505,90 @@ export default function TestResultsPage() {
                           {formatTime(Math.round(stats.averageTime))}
                         </p>
                         <p className="text-xs text-gray-400 dark:text-gray-500">
-                          per submission
+                          {stats.pendingCount} pending
                         </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Additional Stats Row */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* Highest Scoring Student */}
+                  {stats.highestScoreStudent && (
+                    <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-lg shadow p-6 border border-yellow-200 dark:border-yellow-700">
+                      <div className="flex items-center">
+                        <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
+                          <Trophy className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+                        </div>
+                        <div className="ml-4 flex-1">
+                          <p className="text-sm font-medium text-yellow-800 dark:text-yellow-300">
+                            Highest Score
+                          </p>
+                          <p className="text-xl font-bold text-yellow-900 dark:text-yellow-100">
+                            {stats.highestScoreStudent.name}
+                          </p>
+                          <p className="text-sm text-yellow-700 dark:text-yellow-400">
+                            {stats.highestScoreStudent.score}% ({stats.highestScoreStudent.marks} marks)
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Score Distribution */}
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                    <div className="flex items-center mb-4">
+                      <Target className="h-6 w-6 text-blue-600" />
+                      <h4 className="ml-2 text-lg font-medium text-gray-900 dark:text-white">
+                        Score Range
+                      </h4>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500 dark:text-gray-400">Highest:</span>
+                        <span className="font-medium text-gray-900 dark:text-white">{stats.highestScore}%</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500 dark:text-gray-400">Lowest:</span>
+                        <span className="font-medium text-gray-900 dark:text-white">{stats.lowestScore}%</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500 dark:text-gray-400">Range:</span>
+                        <span className="font-medium text-gray-900 dark:text-white">{stats.highestScore - stats.lowestScore}%</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Status Summary */}
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                    <div className="flex items-center mb-4">
+                      <CheckCircle className="h-6 w-6 text-green-600" />
+                      <h4 className="ml-2 text-lg font-medium text-gray-900 dark:text-white">
+                        Status Summary
+                      </h4>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                          <span className="text-sm text-gray-600 dark:text-gray-300">Passed</span>
+                        </div>
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">{stats.passedCount}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <div className="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
+                          <span className="text-sm text-gray-600 dark:text-gray-300">Failed</span>
+                        </div>
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">{stats.failedCount}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
+                          <span className="text-sm text-gray-600 dark:text-gray-300">Pending</span>
+                        </div>
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">{stats.pendingCount}</span>
                       </div>
                     </div>
                   </div>
