@@ -47,6 +47,7 @@ export default function TestTakePage() {
   // Timer state
   const [remainingTime, setRemainingTime] = useState<number>(0);
   const [timeExpired, setTimeExpired] = useState(false);
+  const [isResumingAttempt, setIsResumingAttempt] = useState(false);
   
   // Connection state
   const [isOnline, setIsOnline] = useState(true); // Default to true for SSR
@@ -310,6 +311,8 @@ export default function TestTakePage() {
     let lastServerSync = Date.now();
     let lastServerTime = remainingTime;
     
+    console.log('⏰ Timer useEffect starting with remaining time:', remainingTime, 'seconds');
+    
     const interval = setInterval(async () => {
       try {
         serverSyncCounter++;
@@ -328,11 +331,14 @@ export default function TestTakePage() {
           syncInterval = 2; // Sync every 2 seconds
         }
         
-        // Check if we should sync with server
-        const shouldSyncWithServer = serverSyncCounter % syncInterval === 0;
+        // For the first few ticks or when resuming, don't sync with server to avoid overriding resumed time
+        // This gives time for the UI to show the correct resumed time
+        const shouldSyncWithServer = serverSyncCounter % syncInterval === 0 && 
+                                   serverSyncCounter > 3 && 
+                                   !isResumingAttempt;
         
         if (shouldSyncWithServer) {
-          console.log('🔄 Syncing time with server...');
+          console.log('🔄 Syncing time with server... (tick:', serverSyncCounter, ', isResuming:', isResumingAttempt, ')');
           const { AttemptManagementService } = await import('@/apiservices/attemptManagementService');
           const timeCalc = await AttemptManagementService.updateAttemptTime(attemptId);
           
@@ -896,6 +902,7 @@ export default function TestTakePage() {
         if (activeAttempt) {
           // Resume existing attempt
           console.log('🔄 Resuming existing attempt:', activeAttempt.id);
+          setIsResumingAttempt(true);
           newAttemptId = activeAttempt.id;
           
           setAttemptId(newAttemptId);
@@ -921,21 +928,39 @@ export default function TestTakePage() {
             console.warn('⚠️ Could not store student info in localStorage:', storageError);
           }
           
-          // 🔥 CRITICAL: Get the actual remaining time from attempt management FIRST
-          console.log('⏰ Getting actual remaining time from attempt management...');
-          const timeCalc = await AttemptManagementService.updateAttemptTime(newAttemptId);
+          // 🔥 CRITICAL: Calculate remaining time based on Firestore data for resumed attempts
+          // This avoids potential issues with real-time database state corruption
+          console.log('⏰ Calculating remaining time from Firestore attempt data...');
+          let calculatedRemainingTime = 0;
           
-          if (timeCalc.isExpired) {
-            console.log('⏰ Attempt has expired, auto-submitting...');
+          if (activeAttempt.endTime) {
+            const endTime = activeAttempt.endTime.toDate ? activeAttempt.endTime.toDate() : new Date(activeAttempt.endTime.seconds * 1000);
+            calculatedRemainingTime = Math.max(0, Math.floor((endTime.getTime() - Date.now()) / 1000));
+          } else if (activeAttempt.startedAt && activeAttempt.totalTimeAllowed) {
+            const startTime = activeAttempt.startedAt.toDate ? activeAttempt.startedAt.toDate() : new Date(activeAttempt.startedAt.seconds * 1000);
+            const endTime = new Date(startTime.getTime() + (activeAttempt.totalTimeAllowed * 1000));
+            calculatedRemainingTime = Math.max(0, Math.floor((endTime.getTime() - Date.now()) / 1000));
+          } else if (activeAttempt.timeRemaining) {
+            calculatedRemainingTime = activeAttempt.timeRemaining;
+          }
+          
+          console.log('⏰ Calculated remaining time from Firestore:', calculatedRemainingTime, 'seconds');
+          
+          // Set the calculated remaining time directly instead of using AttemptManagementService
+          setRemainingTime(calculatedRemainingTime);
+          console.log('✅ Set remaining time for resumed attempt:', calculatedRemainingTime, 'seconds');
+          
+          // Check if already expired
+          if (calculatedRemainingTime <= 0) {
+            console.log('⏰ Attempt has already expired based on Firestore data, auto-submitting...');
             setTimeExpired(true);
             await handleAutoSubmit();
             setLoading(false);
             return;
           }
           
-          // Set the ACTUAL remaining time, not the full test duration
-          setRemainingTime(timeCalc.timeRemaining);
-          console.log('✅ Restored actual remaining time:', timeCalc.timeRemaining, 'seconds');
+          // Clear the resuming flag after a short delay to allow timer to stabilize
+          setTimeout(() => setIsResumingAttempt(false), 2000);
           
           // 🔥 CRITICAL: For resumed attempts, do NOT restart the session
           // This prevents clearing existing answers and resetting time
