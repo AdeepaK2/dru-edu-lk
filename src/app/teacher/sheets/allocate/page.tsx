@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowLeft,
@@ -42,7 +42,24 @@ interface Class {
   studentCount: number;
 }
 
-export default function AllocateSheetPage() {
+// Loading component for Suspense fallback
+function AllocateSheetPageLoading() {
+  return (
+    <TeacherLayout>
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center justify-center py-12">
+            <Loader className="h-8 w-8 animate-spin text-blue-600 mr-3" />
+            <span className="text-gray-600">Loading allocation page...</span>
+          </div>
+        </div>
+      </div>
+    </TeacherLayout>
+  );
+}
+
+// Main component that uses useSearchParams
+function AllocateSheetPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const templateId = searchParams.get('templateId');
@@ -477,5 +494,14 @@ export default function AllocateSheetPage() {
         </div>
       </div>
     </TeacherLayout>
+  );
+}
+
+// Main export component with Suspense boundary
+export default function AllocateSheetPage() {
+  return (
+    <Suspense fallback={<AllocateSheetPageLoading />}>
+      <AllocateSheetPageContent />
+    </Suspense>
   );
 }
