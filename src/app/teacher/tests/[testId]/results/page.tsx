@@ -717,74 +717,130 @@ export default function TestResultsPage() {
                     </tr>
                   </thead>
                   <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                    {filteredSubmissions.map((submission) => (
-                      <tr key={submission.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div>
-                            <div className="text-sm font-medium text-gray-900 dark:text-white">
-                              {submission.studentName}
+                    {filteredSubmissions.map((submission) => {
+                      const isHighestScorer = stats?.highestScoreStudent && 
+                        submission.studentName === stats.highestScoreStudent.name &&
+                        (submission.percentage || 0) === stats.highestScoreStudent.score;
+                      
+                      return (
+                        <tr 
+                          key={submission.id} 
+                          className={`${
+                            isHighestScorer
+                              ? 'bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 border-l-4 border-yellow-400 hover:from-yellow-100 hover:to-orange-100 dark:hover:from-yellow-900/30 dark:hover:to-orange-900/30'
+                              : 'hover:bg-gray-50 dark:hover:bg-gray-700'
+                          }`}
+                        >
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div>
+                                <div className={`text-sm font-medium ${
+                                  isHighestScorer 
+                                    ? 'text-yellow-900 dark:text-yellow-100' 
+                                    : 'text-gray-900 dark:text-white'
+                                }`}>
+                                  {submission.studentName}
+                                  {isHighestScorer && (
+                                    <Trophy className="inline ml-2 h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                                  )}
+                                </div>
+                                <div className={`text-sm ${
+                                  isHighestScorer 
+                                    ? 'text-yellow-700 dark:text-yellow-300' 
+                                    : 'text-gray-500 dark:text-gray-400'
+                                }`}>
+                                  {submission.studentEmail}
+                                  {isHighestScorer && (
+                                    <span className="ml-2 text-xs font-medium text-yellow-800 dark:text-yellow-200">
+                                      🏆 Highest Score
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
                             </div>
-                            <div className="text-sm text-gray-500 dark:text-gray-400">
-                              {submission.studentEmail}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="text-sm font-medium text-gray-900 dark:text-white">
-                              {submission.percentage || 0}%
-                            </div>
-                            {(submission.percentage || 0) >= 80 ? (
-                              <TrendingUp className="ml-2 h-4 w-4 text-green-500" />
-                            ) : (submission.percentage || 0) >= 60 ? (
-                              <Minus className="ml-2 h-4 w-4 text-yellow-500" />
-                            ) : (
-                              <TrendingDown className="ml-2 h-4 w-4 text-red-500" />
-                            )}
-                          </div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400">
-                            {submission.autoGradedScore || 0}/{submission.maxScore || 0} marks
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {(() => {
-                            const passStatus = getSubmissionPassStatus(submission);
-                            return (
-                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                passStatus === 'passed' 
-                                  ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                                  : passStatus === 'failed'
-                                  ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-                                  : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className={`text-sm font-medium ${
+                                isHighestScorer 
+                                  ? 'text-yellow-900 dark:text-yellow-100' 
+                                  : 'text-gray-900 dark:text-white'
                               }`}>
-                                {passStatus === 'passed' && <CheckCircle className="h-3 w-3 mr-1" />}
-                                {passStatus === 'failed' && <XCircle className="h-3 w-3 mr-1" />}
-                                {passStatus === 'pending' && <AlertTriangle className="h-3 w-3 mr-1" />}
-                                {passStatus === 'passed' ? 'Passed' : 
-                                 passStatus === 'failed' ? 'Failed' : 'Pending'}
-                              </span>
-                            );
-                          })()}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                          {formatTime(submission.totalTimeSpent || 0)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                          {formatDateTime(submission.submittedAt)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <button
-                            onClick={() => {
-                              // Navigate to detailed view
-                              router.push(`/teacher/tests/${testId}/results/${submission.id}`);
-                            }}
-                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                                {submission.percentage || 0}%
+                                {isHighestScorer && (
+                                  <span className="ml-2 text-xs bg-yellow-200 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200 px-2 py-1 rounded-full font-medium">
+                                    TOP SCORE
+                                  </span>
+                                )}
+                              </div>
+                              {(submission.percentage || 0) >= 80 ? (
+                                <TrendingUp className="ml-2 h-4 w-4 text-green-500" />
+                              ) : (submission.percentage || 0) >= 60 ? (
+                                <Minus className="ml-2 h-4 w-4 text-yellow-500" />
+                              ) : (
+                                <TrendingDown className="ml-2 h-4 w-4 text-red-500" />
+                              )}
+                            </div>
+                            <div className={`text-xs ${
+                              isHighestScorer 
+                                ? 'text-yellow-700 dark:text-yellow-300' 
+                                : 'text-gray-500 dark:text-gray-400'
+                            }`}>
+                              {submission.autoGradedScore || 0}/{submission.maxScore || 0} marks
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {(() => {
+                              const passStatus = getSubmissionPassStatus(submission);
+                              return (
+                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                  passStatus === 'passed' 
+                                    ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                                    : passStatus === 'failed'
+                                    ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+                                    : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
+                                }`}>
+                                  {passStatus === 'passed' && <CheckCircle className="h-3 w-3 mr-1" />}
+                                  {passStatus === 'failed' && <XCircle className="h-3 w-3 mr-1" />}
+                                  {passStatus === 'pending' && <AlertTriangle className="h-3 w-3 mr-1" />}
+                                  {passStatus === 'passed' ? 'Passed' : 
+                                   passStatus === 'failed' ? 'Failed' : 'Pending'}
+                                </span>
+                              );
+                            })()}
+                          </td>
+                          <td className={`px-6 py-4 whitespace-nowrap text-sm ${
+                            isHighestScorer 
+                              ? 'text-yellow-900 dark:text-yellow-100' 
+                              : 'text-gray-900 dark:text-white'
+                          }`}>
+                            {formatTime(submission.totalTimeSpent || 0)}
+                          </td>
+                          <td className={`px-6 py-4 whitespace-nowrap text-sm ${
+                            isHighestScorer 
+                              ? 'text-yellow-700 dark:text-yellow-300' 
+                              : 'text-gray-500 dark:text-gray-400'
+                          }`}>
+                            {formatDateTime(submission.submittedAt)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button
+                              onClick={() => {
+                                // Navigate to detailed view
+                                router.push(`/teacher/tests/${testId}/results/${submission.id}`);
+                              }}
+                              className={`${
+                                isHighestScorer
+                                  ? 'text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-200'
+                                  : 'text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300'
+                              }`}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
