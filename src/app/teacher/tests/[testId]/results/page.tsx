@@ -40,6 +40,7 @@ interface TestStats {
   passedCount: number;
   failedCount: number;
   pendingCount: number;
+  lateSubmissionsCount: number;
   highestScoreStudent?: {
     name: string;
     email: string;
@@ -129,6 +130,7 @@ export default function TestResultsPage() {
         passedCount: 0,
         failedCount: 0,
         pendingCount: submissions.length,
+        lateSubmissionsCount: 0,
         classAverage: 0
       };
     }
@@ -158,6 +160,11 @@ export default function TestResultsPage() {
     const pendingSubmissions = submissions.filter(s => 
       s.status !== 'submitted' && s.status !== 'auto_submitted'
     );
+
+    // Count late submissions
+    const lateSubmissionsCount = submittedSubmissions.filter(s => 
+      s.lateSubmission?.isLateSubmission
+    ).length;
 
     // Find highest scoring student
     const highestScoringSubmission = submittedSubmissions.reduce((prev, current) => {
@@ -208,6 +215,7 @@ export default function TestResultsPage() {
       passedCount: passedSubmissions.length,
       failedCount: failedSubmissions.length,
       pendingCount: pendingSubmissions.length,
+      lateSubmissionsCount,
       highestScoreStudent: highestScoringSubmission ? {
         name: highestScoringSubmission.studentName,
         email: highestScoringSubmission.studentEmail || '',
@@ -238,7 +246,8 @@ export default function TestResultsPage() {
                          (statusFilter === 'submitted' && (submission.status === 'submitted' || submission.status === 'auto_submitted')) ||
                          (statusFilter === 'pending' && submission.manualGradingPending) ||
                          (statusFilter === 'passed' && submissionPassStatus === 'passed') ||
-                         (statusFilter === 'failed' && submissionPassStatus === 'failed');
+                         (statusFilter === 'failed' && submissionPassStatus === 'failed') ||
+                         (statusFilter === 'late' && submission.lateSubmission?.isLateSubmission);
 
     return matchesSearch && matchesStatus;
   });
@@ -251,6 +260,23 @@ export default function TestResultsPage() {
     }
     // Fallback to stored passStatus if no passing score is configured
     return submission.passStatus as 'passed' | 'failed' | 'pending';
+  };
+
+  // Helper function to check if a submission is a late submission
+  const isLateSubmission = (submission: StudentSubmission): boolean => {
+    return submission.lateSubmission?.isLateSubmission || false;
+  };
+
+  // Helper function to format late submission details
+  const getLateSubmissionInfo = (submission: StudentSubmission) => {
+    if (!submission.lateSubmission?.isLateSubmission) return null;
+    
+    return {
+      approvedBy: submission.lateSubmission.approvedByName,
+      reason: submission.lateSubmission.reason,
+      originalDeadline: submission.lateSubmission.originalDeadline,
+      approvedAt: submission.lateSubmission.approvedAt
+    };
   };
 
   const formatTime = (seconds: number) => {
@@ -294,7 +320,7 @@ export default function TestResultsPage() {
 
   const exportResults = () => {
     // Create CSV content
-    const headers = ['Student Name', 'Email', 'Score (%)', 'Status', 'Time Spent', 'Submitted At'];
+    const headers = ['Student Name', 'Email', 'Score (%)', 'Status', 'Type', 'Time Spent', 'Submitted At'];
     const csvContent = [
       headers.join(','),
       ...filteredSubmissions.map(submission => [
@@ -302,6 +328,7 @@ export default function TestResultsPage() {
         submission.studentEmail || '',
         submission.percentage || 0,
         submission.status,
+        isLateSubmission(submission) ? 'Late Submission' : 'Regular',
         formatTime(submission.totalTimeSpent || 0),
         formatDateTime(submission.submittedAt)
       ].join(','))
@@ -442,7 +469,7 @@ export default function TestResultsPage() {
             {/* Summary Statistics */}
             {stats && (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
                   <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                     <div className="flex items-center">
                       <Users className="h-8 w-8 text-blue-600" />
@@ -506,6 +533,23 @@ export default function TestResultsPage() {
                         </p>
                         <p className="text-xs text-gray-400 dark:text-gray-500">
                           {stats.pendingCount} pending
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                    <div className="flex items-center">
+                      <AlertTriangle className="h-8 w-8 text-orange-600" />
+                      <div className="ml-4">
+                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                          Late Submissions
+                        </p>
+                        <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                          {stats.lateSubmissionsCount}
+                        </p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500">
+                          of {stats.submittedCount} submitted
                         </p>
                       </div>
                     </div>
@@ -687,6 +731,7 @@ export default function TestResultsPage() {
                       <option value="pending">Pending Review</option>
                       <option value="passed">Passed</option>
                       <option value="failed">Failed</option>
+                      <option value="late">Late Submissions</option>
                     </select>
                   </div>
                 </div>
@@ -704,6 +749,9 @@ export default function TestResultsPage() {
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Type
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Time Spent
@@ -808,6 +856,30 @@ export default function TestResultsPage() {
                                 </span>
                               );
                             })()}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {isLateSubmission(submission) ? (
+                              <div className="group relative">
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400 cursor-help">
+                                  <Clock className="h-3 w-3 mr-1" />
+                                  Late Submission
+                                </span>
+                                {getLateSubmissionInfo(submission) && (
+                                  <div className="absolute bottom-full left-0 mb-2 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none">
+                                    <div className="font-medium mb-1">Late Submission Details:</div>
+                                    <div>Approved by: {getLateSubmissionInfo(submission)?.approvedBy}</div>
+                                    {getLateSubmissionInfo(submission)?.reason && (
+                                      <div>Reason: {getLateSubmissionInfo(submission)?.reason}</div>
+                                    )}
+                                    <div>Original deadline: {formatDateTime(getLateSubmissionInfo(submission)?.originalDeadline)}</div>
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+                                Regular
+                              </span>
+                            )}
                           </td>
                           <td className={`px-6 py-4 whitespace-nowrap text-sm ${
                             isHighestScorer 

@@ -1,0 +1,319 @@
+import { firestore } from '@/utils/firebase-client';
+import { collection, doc, getDoc, setDoc, updateDoc, getDocs, query, where, Timestamp } from 'firebase/firestore';
+
+export interface SheetTemplate {
+  id: string;
+  name: string;
+  description?: string;
+  fileName: string;
+  filePath: string; // Path in public folder
+  teacherId: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+export interface SheetAllocation {
+  id: string;
+  templateId: string;
+  templateName: string;
+  teacherId: string;
+  teacherName: string;
+  classId: string;
+  className: string;
+  title: string;
+  description?: string;
+  dueDate?: Timestamp;
+  allocatedAt: Timestamp;
+  status: 'active' | 'completed' | 'cancelled';
+}
+
+export interface StudentSheet {
+  id: string;
+  allocationId: string;
+  studentId: string;
+  studentName: string;
+  studentEmail: string;
+  googleSheetId: string;
+  googleSheetUrl: string;
+  status: 'assigned' | 'in_progress' | 'submitted' | 'graded';
+  lastModified?: Timestamp;
+  submittedAt?: Timestamp;
+  grade?: number;
+  feedback?: string;
+  createdAt: Timestamp;
+}
+
+export class GoogleSheetsService {
+  private static readonly COLLECTIONS = {
+    SHEET_TEMPLATES: 'sheetTemplates',
+    SHEET_ALLOCATIONS: 'sheetAllocations',
+    STUDENT_SHEETS: 'studentSheets'
+  };
+
+  /**
+   * Create a new sheet template record
+   */
+  static async createTemplate(template: Omit<SheetTemplate, 'id' | 'createdAt' | 'updatedAt'>): Promise<SheetTemplate> {
+    try {
+      const templateId = `template_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const now = Timestamp.now();
+
+      const newTemplate: SheetTemplate = {
+        id: templateId,
+        ...template,
+        createdAt: now,
+        updatedAt: now
+      };
+
+      await setDoc(doc(firestore, this.COLLECTIONS.SHEET_TEMPLATES, templateId), newTemplate);
+      
+      console.log('✅ Sheet template created:', templateId);
+      return newTemplate;
+    } catch (error) {
+      console.error('❌ Error creating sheet template:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all templates for a teacher
+   */
+  static async getTeacherTemplates(teacherId: string): Promise<SheetTemplate[]> {
+    try {
+      const templatesQuery = query(
+        collection(firestore, this.COLLECTIONS.SHEET_TEMPLATES),
+        where('teacherId', '==', teacherId)
+      );
+
+      const snapshot = await getDocs(templatesQuery);
+      const templates: SheetTemplate[] = [];
+
+      snapshot.forEach(doc => {
+        templates.push({ id: doc.id, ...doc.data() } as SheetTemplate);
+      });
+
+      return templates;
+    } catch (error) {
+      console.error('❌ Error getting teacher templates:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Allocate sheets to class (this will call API route for Google Sheets creation)
+   */
+  static async allocateSheetToClass(
+    templateId: string,
+    classId: string,
+    className: string,
+    teacherId: string,
+    teacherName: string,
+    students: Array<{ id: string; name: string; email: string }>,
+    title: string,
+    description?: string,
+    dueDate?: Date,
+    teacherEmail?: string
+  ): Promise<SheetAllocation> {
+    try {
+      // Get template details
+      const templateDoc = await getDoc(doc(firestore, this.COLLECTIONS.SHEET_TEMPLATES, templateId));
+      if (!templateDoc.exists()) {
+        throw new Error('Template not found');
+      }
+
+      const template = templateDoc.data() as SheetTemplate;
+      
+      // Create allocation record
+      const allocationId = `allocation_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const allocation: SheetAllocation = {
+        id: allocationId,
+        templateId,
+        templateName: template.name,
+        teacherId,
+        teacherName,
+        classId,
+        className,
+        title,
+        description,
+        dueDate: dueDate ? Timestamp.fromDate(dueDate) : undefined,
+        allocatedAt: Timestamp.now(),
+        status: 'active'
+      };
+
+      await setDoc(doc(firestore, this.COLLECTIONS.SHEET_ALLOCATIONS, allocationId), allocation);
+
+      // Call API route to create Google Sheets for students
+      const response = await fetch('/api/sheets/create-for-students', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          allocationId,
+          templateFilePath: template.filePath,
+          students,
+          title,
+          teacherEmail: teacherEmail || `${teacherName.toLowerCase().replace(/\s+/g, '.')}@teacher.edu`
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create sheets for students');
+      }
+
+      console.log(`✅ Allocated sheets to class: ${className}`);
+      return allocation;
+    } catch (error) {
+      console.error('❌ Error allocating sheets to class:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all sheets for a specific allocation
+   */
+  static async getAllocationSheets(allocationId: string): Promise<StudentSheet[]> {
+    try {
+      const sheetsQuery = query(
+        collection(firestore, this.COLLECTIONS.STUDENT_SHEETS),
+        where('allocationId', '==', allocationId)
+      );
+
+      const snapshot = await getDocs(sheetsQuery);
+      const sheets: StudentSheet[] = [];
+
+      snapshot.forEach(doc => {
+        sheets.push({ id: doc.id, ...doc.data() } as StudentSheet);
+      });
+
+      return sheets;
+    } catch (error) {
+      console.error('❌ Error getting allocation sheets:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update student sheet status
+   */
+  static async updateSheetStatus(
+    sheetId: string,
+    status: StudentSheet['status'],
+    additionalData?: Partial<StudentSheet>
+  ): Promise<void> {
+    try {
+      const updateData = {
+        status,
+        lastModified: Timestamp.now(),
+        ...additionalData
+      };
+
+      await updateDoc(doc(firestore, this.COLLECTIONS.STUDENT_SHEETS, sheetId), updateData);
+      console.log(`✅ Updated sheet ${sheetId} status to ${status}`);
+    } catch (error) {
+      console.error('❌ Error updating sheet status:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get teacher's sheet allocations
+   */
+  static async getTeacherAllocations(teacherId: string): Promise<SheetAllocation[]> {
+    try {
+      const allocationsQuery = query(
+        collection(firestore, this.COLLECTIONS.SHEET_ALLOCATIONS),
+        where('teacherId', '==', teacherId)
+      );
+
+      const snapshot = await getDocs(allocationsQuery);
+      const allocations: SheetAllocation[] = [];
+
+      snapshot.forEach(doc => {
+        allocations.push({ id: doc.id, ...doc.data() } as SheetAllocation);
+      });
+
+      return allocations;
+    } catch (error) {
+      console.error('❌ Error getting teacher allocations:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a template
+   */
+  static async deleteTemplate(templateId: string): Promise<void> {
+    try {
+      await updateDoc(doc(firestore, this.COLLECTIONS.SHEET_TEMPLATES, templateId), {
+        updatedAt: Timestamp.now()
+        // Add soft delete flag if needed
+      });
+      console.log(`✅ Template ${templateId} deleted`);
+    } catch (error) {
+      console.error('❌ Error deleting template:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create a student sheet record
+   */
+  static async createStudentSheet(studentSheet: StudentSheet): Promise<void> {
+    try {
+      await setDoc(doc(firestore, this.COLLECTIONS.STUDENT_SHEETS, studentSheet.id), studentSheet);
+      console.log('✅ Student sheet record created:', studentSheet.id);
+    } catch (error) {
+      console.error('❌ Error creating student sheet record:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get student sheets for an allocation
+   */
+  static async getStudentSheetsByAllocation(allocationId: string): Promise<StudentSheet[]> {
+    try {
+      const sheetsQuery = query(
+        collection(firestore, this.COLLECTIONS.STUDENT_SHEETS),
+        where('allocationId', '==', allocationId)
+      );
+
+      const snapshot = await getDocs(sheetsQuery);
+      const studentSheets: StudentSheet[] = [];
+
+      snapshot.forEach(doc => {
+        studentSheets.push({ id: doc.id, ...doc.data() } as StudentSheet);
+      });
+
+      return studentSheets;
+    } catch (error) {
+      console.error('❌ Error getting student sheets:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get student sheets for a specific student
+   */
+  static async getStudentSheets(studentId: string): Promise<StudentSheet[]> {
+    try {
+      const sheetsQuery = query(
+        collection(firestore, this.COLLECTIONS.STUDENT_SHEETS),
+        where('studentId', '==', studentId)
+      );
+
+      const snapshot = await getDocs(sheetsQuery);
+      const studentSheets: StudentSheet[] = [];
+
+      snapshot.forEach(doc => {
+        studentSheets.push({ id: doc.id, ...doc.data() } as StudentSheet);
+      });
+
+      return studentSheets;
+    } catch (error) {
+      console.error('❌ Error getting student sheets:', error);
+      throw error;
+    }
+  }
+}

@@ -134,6 +134,17 @@ export interface StudentSubmission {
     recommendedActions?: string[];
   };
   
+  // Late submission tracking
+  lateSubmission?: {
+    isLateSubmission: boolean;
+    approvalId: string;
+    approvedBy: string;
+    approvedByName: string;
+    originalDeadline: Timestamp;
+    approvedAt: Timestamp;
+    reason?: string;
+  };
+  
   // Integrity monitoring
   integrityReport: {
     tabSwitches: number;

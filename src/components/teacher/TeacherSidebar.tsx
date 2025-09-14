@@ -16,7 +16,8 @@ import {
   Menu,
   X,
   Book,
-  DollarSign
+  DollarSign,
+  FileSpreadsheet
 } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/utils/firebase-client';
@@ -68,6 +69,12 @@ const sidebarItems: SidebarItem[] = [
     label: 'Lessons',
     href: '/teacher/lessons',
     icon: Book,
+  },
+  {
+    id: 'sheets',
+    label: 'Sheet Management',
+    href: '/teacher/sheets',
+    icon: FileSpreadsheet,
   },
   {
     id: 'grades',
