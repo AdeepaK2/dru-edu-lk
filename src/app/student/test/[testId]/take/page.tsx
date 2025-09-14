@@ -851,6 +851,39 @@ export default function TestTakePage() {
           // setRemainingTime(flexTest.duration * 60); // convert to seconds
         }
         
+        // If test is not normally available, check for late submission approval
+        if (!testAvailable && student?.id) {
+          console.log('🔍 Test not normally available, checking for late submission approval...');
+          try {
+            const { LateSubmissionService } = await import('@/apiservices/lateSubmissionService');
+            const lateSubmissionApproval = await LateSubmissionService.checkLateSubmissionApproval(testData.id, student.id);
+            
+            if (lateSubmissionApproval && lateSubmissionApproval.status === 'approved') {
+              const lateDeadlineTime = getTimestamp(lateSubmissionApproval.newDeadline);
+              const isWithinLateDeadline = now <= lateDeadlineTime;
+              
+              console.log('🕐 Late submission approval found:', {
+                approvalId: lateSubmissionApproval.id,
+                status: lateSubmissionApproval.status,
+                newDeadline: new Date(lateDeadlineTime).toISOString(),
+                currentTime: new Date(now).toISOString(),
+                isWithinLateDeadline
+              });
+              
+              if (isWithinLateDeadline) {
+                console.log('✅ Late submission approved and within deadline - allowing test access');
+                testAvailable = true;
+              } else {
+                console.log('❌ Late submission deadline has passed');
+              }
+            } else {
+              console.log('❌ No valid late submission approval found');
+            }
+          } catch (error) {
+            console.error('Error checking late submission approval:', error);
+          }
+        }
+        
         if (!testAvailable) {
           console.error('❌ Test not available. Debugging info:');
           console.error('❌ Test type:', testData.type);
