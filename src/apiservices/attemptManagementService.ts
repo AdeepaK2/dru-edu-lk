@@ -110,6 +110,14 @@ export class AttemptManagementService {
       // Get attempt summary to check limits and get next attempt number
       const summary = await this.getAttemptSummary(testId, studentId);
       
+      console.log('🔍 Attempt summary:', {
+        canCreateNewAttempt: summary.canCreateNewAttempt,
+        totalAttempts: summary.totalAttempts,
+        attemptsAllowed: summary.attemptsAllowed,
+        testId,
+        studentId
+      });
+      
       if (!summary.canCreateNewAttempt) {
         throw new Error('Cannot create new attempt - limit reached or test not available');
       }
@@ -675,7 +683,7 @@ export class AttemptManagementService {
 
       // Calculate summary
       const totalAttempts = attempts.length;
-      const canCreateNewAttempt = totalAttempts < attemptsAllowed && this.isTestAvailable(test);
+      const canCreateNewAttempt = totalAttempts < attemptsAllowed && await this.isTestAvailable(test, studentId);
       const bestScore = attempts.reduce((max, attempt) => 
         Math.max(max, attempt.percentage || 0), 0
       );
@@ -770,18 +778,74 @@ export class AttemptManagementService {
       : (test as FlexibleTest).duration || 90;
   }
 
-  private static isTestAvailable(test: Test): boolean {
+  private static async isTestAvailable(test: Test, studentId?: string): Promise<boolean> {
     const now = Timestamp.now();
     
+    console.log('🔍 Checking test availability:', {
+      testId: test.id,
+      testType: test.type,
+      studentId,
+      currentTime: now.seconds
+    });
+    
+    // Check normal test availability first
+    let normallyAvailable = false;
     if (test.type === 'live') {
       const liveTest = test as LiveTest;
-      return now.seconds >= liveTest.studentJoinTime.seconds && 
-             now.seconds <= liveTest.actualEndTime.seconds;
+      normallyAvailable = now.seconds >= liveTest.studentJoinTime.seconds && 
+                         now.seconds <= liveTest.actualEndTime.seconds;
+      console.log('🔍 Live test availability check:', {
+        joinTime: liveTest.studentJoinTime.seconds,
+        endTime: liveTest.actualEndTime.seconds,
+        normallyAvailable
+      });
     } else {
       const flexTest = test as FlexibleTest;
-      return now.seconds >= flexTest.availableFrom.seconds && 
-             now.seconds <= flexTest.availableTo.seconds;
+      normallyAvailable = now.seconds >= flexTest.availableFrom.seconds && 
+                         now.seconds <= flexTest.availableTo.seconds;
+      console.log('🔍 Flexible test availability check:', {
+        fromTime: flexTest.availableFrom.seconds,
+        toTime: flexTest.availableTo.seconds,
+        normallyAvailable
+      });
     }
+    
+    // If normally available, return true
+    if (normallyAvailable) {
+      console.log('✅ Test is normally available');
+      return true;
+    }
+    
+    // If not normally available but studentId is provided, check for late submission approval
+    if (studentId) {
+      console.log('🔍 Test not normally available, checking late submission approval...');
+      try {
+        const { LateSubmissionService } = await import('./lateSubmissionService');
+        const lateSubmissionApproval = await LateSubmissionService.checkLateSubmissionApproval(test.id, studentId);
+        
+        if (lateSubmissionApproval && lateSubmissionApproval.status === 'approved') {
+          // Check if we're within the late submission deadline
+          const lateDeadlineAvailable = now.seconds <= lateSubmissionApproval.newDeadline.seconds;
+          console.log('🕐 Late submission check:', {
+            hasApproval: !!lateSubmissionApproval,
+            approvalStatus: lateSubmissionApproval.status,
+            currentTime: now.seconds,
+            lateDeadline: lateSubmissionApproval.newDeadline.seconds,
+            isWithinLateDeadline: lateDeadlineAvailable
+          });
+          return lateDeadlineAvailable;
+        } else {
+          console.log('❌ No valid late submission approval found');
+        }
+      } catch (error) {
+        console.error('Error checking late submission approval:', error);
+      }
+    } else {
+      console.log('⚠️ No studentId provided for late submission check');
+    }
+    
+    console.log('❌ Test is not available');
+    return false;
   }
 
   private static async logConnectionEvent(
