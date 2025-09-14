@@ -220,9 +220,9 @@ export class LateSubmissionService {
       
       // Mark as late submission
       const lateSubmissionData = {
-        isLateSubmission: true,
-        status: 'late_submission',
-        lateSubmissionInfo: {
+        lateSubmission: {
+          isLateSubmission: true,
+          approvalId: approvalId,
           approvedBy: approval.approvedBy,
           approvedByName: approval.approvedByName,
           originalDeadline: approval.originalDeadline,
