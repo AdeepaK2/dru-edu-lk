@@ -1725,24 +1725,28 @@ export default function TestResultPage() {
                         )}
 
                         {/* Suggested Answer/Model Answer for Essay Questions */}
-                        {(questionDetails?.suggestedAnswerContent || questionDetails?.suggestedAnswerImageUrl) && (
+                        {questionDetails?.questionData && answer.questionType === 'essay' && (
+                          // Only show if we have model answer data in questionData
+                          (questionDetails.questionData as any)?.suggestedAnswerContent || 
+                          (questionDetails.questionData as any)?.suggestedAnswerImageUrl
+                        ) && (
                           <div>
                             <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                               Model Answer:
                             </div>
                             <div className="p-4 rounded-lg bg-green-50 border border-green-200 dark:bg-green-900/20 dark:border-green-800">
                               {/* Text Model Answer */}
-                              {questionDetails.suggestedAnswerContent && (
+                              {(questionDetails.questionData as any)?.suggestedAnswerContent && (
                                 <p className="text-sm text-green-800 dark:text-green-300 whitespace-pre-wrap mb-3">
-                                  {questionDetails.suggestedAnswerContent}
+                                  {(questionDetails.questionData as any).suggestedAnswerContent}
                                 </p>
                               )}
                               
                               {/* Model Answer Image */}
-                              {questionDetails.suggestedAnswerImageUrl && (
+                              {(questionDetails.questionData as any)?.suggestedAnswerImageUrl && (
                                 <div className="mt-3">
                                   <img
-                                    src={questionDetails.suggestedAnswerImageUrl}
+                                    src={(questionDetails.questionData as any).suggestedAnswerImageUrl}
                                     alt="Model answer"
                                     className="max-w-full h-auto max-h-64 object-contain rounded-lg border border-green-300 dark:border-green-600 bg-white dark:bg-gray-700"
                                     onError={(e) => {
