@@ -1561,15 +1561,33 @@ export default function TestResultPage() {
                         )}
 
                         {/* Explanation */}
-                        {mcqResult.explanation && (
+                        {(mcqResult.explanation || questionDetails?.explanation || questionDetails?.explanationImageUrl) && (
                           <div>
                             <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                               Explanation:
                             </div>
                             <div className="p-4 rounded-lg bg-blue-50 border border-blue-200 dark:bg-blue-900/20 dark:border-blue-800">
-                              <p className="text-sm text-blue-800 dark:text-blue-300">
-                                {mcqResult.explanation}
-                              </p>
+                              {/* Text Explanation */}
+                              {(mcqResult.explanation || questionDetails?.explanation) && (
+                                <p className="text-sm text-blue-800 dark:text-blue-300 mb-3">
+                                  {mcqResult.explanation || questionDetails?.explanation}
+                                </p>
+                              )}
+                              
+                              {/* Explanation Image */}
+                              {questionDetails?.explanationImageUrl && (
+                                <div className="mt-3">
+                                  <img
+                                    src={questionDetails.explanationImageUrl}
+                                    alt="Answer explanation"
+                                    className="max-w-full h-auto max-h-64 object-contain rounded-lg border border-blue-300 dark:border-blue-600 bg-white dark:bg-gray-700"
+                                    onError={(e) => {
+                                      const target = e.target as HTMLImageElement;
+                                      target.style.display = 'none';
+                                    }}
+                                  />
+                                </div>
+                              )}
                             </div>
                           </div>
                         )}
@@ -1702,6 +1720,42 @@ export default function TestResultPage() {
                               <span className="text-sm text-yellow-700 dark:text-yellow-300">
                                 This question requires manual grading and is still pending review by your teacher.
                               </span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Suggested Answer/Model Answer for Essay Questions */}
+                        {questionDetails?.questionData && answer.questionType === 'essay' && (
+                          // Only show if we have model answer data in questionData
+                          (questionDetails.questionData as any)?.suggestedAnswerContent || 
+                          (questionDetails.questionData as any)?.suggestedAnswerImageUrl
+                        ) && (
+                          <div>
+                            <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                              Model Answer:
+                            </div>
+                            <div className="p-4 rounded-lg bg-green-50 border border-green-200 dark:bg-green-900/20 dark:border-green-800">
+                              {/* Text Model Answer */}
+                              {(questionDetails.questionData as any)?.suggestedAnswerContent && (
+                                <p className="text-sm text-green-800 dark:text-green-300 whitespace-pre-wrap mb-3">
+                                  {(questionDetails.questionData as any).suggestedAnswerContent}
+                                </p>
+                              )}
+                              
+                              {/* Model Answer Image */}
+                              {(questionDetails.questionData as any)?.suggestedAnswerImageUrl && (
+                                <div className="mt-3">
+                                  <img
+                                    src={(questionDetails.questionData as any).suggestedAnswerImageUrl}
+                                    alt="Model answer"
+                                    className="max-w-full h-auto max-h-64 object-contain rounded-lg border border-green-300 dark:border-green-600 bg-white dark:bg-gray-700"
+                                    onError={(e) => {
+                                      const target = e.target as HTMLImageElement;
+                                      target.style.display = 'none';
+                                    }}
+                                  />
+                                </div>
+                              )}
                             </div>
                           </div>
                         )}
