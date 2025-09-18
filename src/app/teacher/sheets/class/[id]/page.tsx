@@ -82,12 +82,19 @@ export default function ClassSheetManagementPage() {
       // For each allocation, get the student sheets
       const allocationsWithSheets = await Promise.all(
         classAllocations.map(async (allocation) => {
-          // For now, we'll return empty student sheets array since the method doesn't exist yet
-          // In a real implementation, you'd have GoogleSheetsService.getStudentSheetsByAllocation(allocation.id)
-          return {
-            allocation,
-            studentSheets: [] as StudentSheet[]
-          };
+          try {
+            const studentSheets = await GoogleSheetsService.getStudentSheetsByAllocation(allocation.id);
+            return {
+              allocation,
+              studentSheets
+            };
+          } catch (error) {
+            console.warn(`Could not load student sheets for allocation ${allocation.id}:`, error);
+            return {
+              allocation,
+              studentSheets: [] as StudentSheet[]
+            };
+          }
         })
       );
       
