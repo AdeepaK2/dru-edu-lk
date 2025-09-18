@@ -12,15 +12,19 @@ import {
   Mail,
   CheckCircle,
   AlertCircle,
-  Loader
+  Loader,
+  ExternalLink,
+  UserPlus,
+  Eye
 } from 'lucide-react';
 import TeacherLayout from '@/components/teacher/TeacherLayout';
-import { GoogleSheetsService, SheetTemplate } from '@/apiservices/googleSheetsService';
+import { GoogleSheetsService, SheetTemplate, SheetAllocation, StudentSheet } from '@/apiservices/googleSheetsService';
 import { ClassFirestoreService } from '@/apiservices/classFirestoreService';
 import { StudentFirestoreService } from '@/apiservices/studentFirestoreService';
 import { StudentEnrollmentFirestoreService, EnrollmentWithParent } from '@/apiservices/studentEnrollmentFirestoreService';
 import { ClassDocument } from '@/models/classSchema';
 import { StudentDocument } from '@/models/studentSchema';
+import { useTeacherAuth } from '@/hooks/useTeacherAuth';
 
 interface Student {
   id: string;
@@ -28,6 +32,8 @@ interface Student {
   name: string;
   email: string;
   selected: boolean;
+  hasSheet?: boolean;
+  sheetUrl?: string;
   parent?: {
     name: string;
     email: string;
@@ -40,6 +46,14 @@ interface Class {
   name: string;
   subject: string;
   studentCount: number;
+}
+
+interface AllocationData {
+  id: string;
+  title: string;
+  description?: string;
+  dueDate?: Date;
+  studentSheets: StudentSheet[];
 }
 
 // Loading component for Suspense fallback
@@ -63,6 +77,7 @@ function AllocateSheetPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const templateId = searchParams.get('templateId');
+  const { teacher, loading: authLoading } = useTeacherAuth();
 
   const [template, setTemplate] = useState<SheetTemplate | null>(null);
   const [classes, setClasses] = useState<Class[]>([]);
@@ -74,31 +89,32 @@ function AllocateSheetPageContent() {
   const [loading, setLoading] = useState(true);
   const [allocating, setAllocating] = useState(false);
   const [studentsLoading, setStudentsLoading] = useState(false);
-
-  // Mock teacher data - replace with actual teacher context
-  const teacherId = 'teacher123';
-  const teacherName = 'John Smith';
+  const [existingAllocation, setExistingAllocation] = useState<AllocationData | null>(null);
+  const [viewMode, setViewMode] = useState<'allocate' | 'manage'>('allocate');
 
   useEffect(() => {
-    if (templateId) {
+    if (templateId && teacher) {
       loadInitialData();
     }
-  }, [templateId]);
+  }, [templateId, teacher]);
 
   useEffect(() => {
-    if (selectedClassId) {
+    if (selectedClassId && teacher) {
       loadClassStudents();
     } else {
       setStudents([]);
+      setExistingAllocation(null);
     }
-  }, [selectedClassId]);
+  }, [selectedClassId, teacher]);
 
   const loadInitialData = async () => {
+    if (!teacher) return;
+    
     try {
       setLoading(true);
       
       // Load template details
-      const templates = await GoogleSheetsService.getTeacherTemplates(teacherId);
+      const templates = await GoogleSheetsService.getTeacherTemplates(teacher.id);
       const currentTemplate = templates.find(t => t.id === templateId);
       
       if (!currentTemplate) {
@@ -110,8 +126,8 @@ function AllocateSheetPageContent() {
       setTemplate(currentTemplate);
       setTitle(`${currentTemplate.name} Assignment`);
       
-      // Load teacher's classes with enrollment counts
-      const teacherClasses = await ClassFirestoreService.getClassesByTeacher(teacherId);
+      // Load only classes that this teacher teaches
+      const teacherClasses = await ClassFirestoreService.getClassesByTeacher(teacher.id);
       const classesWithCounts = await Promise.all(
         teacherClasses.map(async (cls) => {
           const studentCount = await StudentEnrollmentFirestoreService.getEnrolledStudentsCount(cls.id);
@@ -134,8 +150,36 @@ function AllocateSheetPageContent() {
   };
 
   const loadClassStudents = async () => {
+    if (!teacher) return;
+    
     try {
       setStudentsLoading(true);
+      
+      // Check if there's already an allocation for this template and class
+      const existingAllocations = await GoogleSheetsService.getAllocations(teacher.id);
+      const classAllocation = existingAllocations.find(
+        (alloc: any) => alloc.templateId === templateId && alloc.classId === selectedClassId
+      );
+      
+      if (classAllocation) {
+        // Convert to AllocationData format
+        const allocationData: AllocationData = {
+          id: classAllocation.id,
+          title: classAllocation.title,
+          description: classAllocation.description,
+          dueDate: classAllocation.dueDate ? classAllocation.dueDate.toDate() : undefined,
+          studentSheets: classAllocation.studentSheets
+        };
+        
+        setExistingAllocation(allocationData);
+        setViewMode('manage');
+        setTitle(classAllocation.title);
+        setDescription(classAllocation.description || '');
+        setDueDate(classAllocation.dueDate ? classAllocation.dueDate.toDate().toISOString().slice(0, 16) : '');
+      } else {
+        setExistingAllocation(null);
+        setViewMode('allocate');
+      }
       
       // Get enrolled students for the class
       const enrolledStudents = await StudentEnrollmentFirestoreService.getEnrolledStudentsByClassId(selectedClassId);
@@ -150,12 +194,28 @@ function AllocateSheetPageContent() {
         try {
           const studentData = await StudentFirestoreService.getStudentById(enrollment.studentId);
           if (studentData) {
+            // Check if this student has a sheet in the existing allocation
+            let hasSheet = false;
+            let sheetUrl = '';
+            
+            if (classAllocation) {
+              const studentSheet = classAllocation.studentSheets.find(
+                (sheet: any) => sheet.studentId === enrollment.studentId
+              );
+              if (studentSheet) {
+                hasSheet = true;
+                sheetUrl = studentSheet.googleSheetUrl;
+              }
+            }
+            
             return {
               id: enrollment.id, // enrollment ID
               studentId: enrollment.studentId,
               name: studentData.name,
               email: studentData.email || `${studentData.name.toLowerCase().replace(/\s+/g, '.')}@student.edu`,
-              selected: true, // Default to all selected
+              selected: !hasSheet, // Don't select students who already have sheets
+              hasSheet,
+              sheetUrl,
               parent: enrollment.parent
             };
           }
@@ -198,6 +258,8 @@ function AllocateSheetPageContent() {
   };
 
   const handleAllocate = async () => {
+    if (!teacher) return;
+    
     try {
       if (!selectedClassId) {
         alert('Please select a class');
@@ -223,8 +285,8 @@ function AllocateSheetPageContent() {
         templateId!,
         selectedClassId,
         selectedClass?.name || 'Unknown Class',
-        teacherId,
-        teacherName,
+        teacher.id,
+        teacher.name,
         selectedStudents.map(s => ({ id: s.studentId, name: s.name, email: s.email })),
         title,
         description || undefined,
@@ -241,7 +303,52 @@ function AllocateSheetPageContent() {
     }
   };
 
-  if (loading) {
+  const handleAllocateToNewStudents = async () => {
+    if (!teacher || !existingAllocation) return;
+    
+    try {
+      const newStudents = students.filter(s => s.selected && !s.hasSheet);
+      if (newStudents.length === 0) {
+        alert('No new students selected');
+        return;
+      }
+
+      setAllocating(true);
+
+      // Call API to create sheets for new students
+      const response = await fetch('/api/sheets/create-for-students', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          allocationId: existingAllocation.id,
+          templatePath: template?.filePath,
+          students: newStudents.map(s => ({ id: s.studentId, name: s.name, email: s.email })),
+          teacherEmail: teacher.email
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create sheets for new students');
+      }
+
+      alert(`Successfully allocated sheets to ${newStudents.length} new students!`);
+      // Reload the page to show updated state
+      window.location.reload();
+    } catch (error) {
+      console.error('Error allocating sheets to new students:', error);
+      alert('Error allocating sheets to new students. Please try again.');
+    } finally {
+      setAllocating(false);
+    }
+  };
+
+  const openStudentSheet = (sheetUrl: string) => {
+    window.open(sheetUrl, '_blank');
+  };
+
+  if (authLoading || loading) {
     return (
       <TeacherLayout>
         <div className="space-y-6">
@@ -296,10 +403,15 @@ function AllocateSheetPageContent() {
             </button>
             <div>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Allocate Sheet to Class
+                {viewMode === 'allocate' ? 'Allocate Sheet to Class' : 'Manage Class Sheets'}
               </h1>
               <p className="text-gray-500 dark:text-gray-400 mt-1">
                 Template: {template.name}
+                {existingAllocation && (
+                  <span className="ml-2 text-green-600 dark:text-green-400">
+                    • Already allocated to {students.filter(s => s.hasSheet).length} students
+                  </span>
+                )}
               </p>
             </div>
           </div>
@@ -379,14 +491,22 @@ function AllocateSheetPageContent() {
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                Select Students
+                {viewMode === 'allocate' ? 'Select Students' : 'Class Sheet Status'}
               </h3>
-              {students.length > 0 && (
+              {students.length > 0 && !existingAllocation && (
                 <button
                   onClick={handleSelectAll}
                   className="text-sm text-blue-600 hover:text-blue-500"
                 >
                   {students.every(s => s.selected) ? 'Deselect All' : 'Select All'}
+                </button>
+              )}
+              {students.length > 0 && existingAllocation && students.some(s => !s.hasSheet) && (
+                <button
+                  onClick={handleSelectAll}
+                  className="text-sm text-green-600 hover:text-green-500"
+                >
+                  {students.filter(s => !s.hasSheet).every(s => s.selected) ? 'Deselect New Students' : 'Select New Students'}
                 </button>
               )}
             </div>
@@ -415,31 +535,60 @@ function AllocateSheetPageContent() {
             ) : (
               <div className="space-y-2 max-h-64 overflow-y-auto">
                 {students.map((student) => (
-                  <label
+                  <div
                     key={student.id}
-                    className="flex items-center p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
+                    className={`p-3 border rounded-lg ${
+                      student.hasSheet 
+                        ? 'border-green-200 bg-green-50 dark:bg-green-900/20 dark:border-green-700' 
+                        : 'border-gray-200 dark:border-gray-700'
+                    }`}
                   >
-                    <input
-                      type="checkbox"
-                      checked={student.selected}
-                      onChange={() => handleStudentToggle(student.id)}
-                      className="mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2">
-                        <User className="h-4 w-4 text-gray-400" />
-                        <span className="font-medium text-gray-900 dark:text-white">
-                          {student.name}
-                        </span>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        {!student.hasSheet && (
+                          <input
+                            type="checkbox"
+                            checked={student.selected}
+                            onChange={() => handleStudentToggle(student.id)}
+                            className="mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                          />
+                        )}
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2">
+                            <User className="h-4 w-4 text-gray-400" />
+                            <span className="font-medium text-gray-900 dark:text-white">
+                              {student.name}
+                            </span>
+                            {student.hasSheet && (
+                              <CheckCircle className="h-4 w-4 text-green-500" />
+                            )}
+                          </div>
+                          <div className="flex items-center space-x-2 mt-1">
+                            <Mail className="h-3 w-3 text-gray-400" />
+                            <span className="text-sm text-gray-500 dark:text-gray-400">
+                              {student.email}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-2 mt-1">
-                        <Mail className="h-3 w-3 text-gray-400" />
-                        <span className="text-sm text-gray-500 dark:text-gray-400">
-                          {student.email}
-                        </span>
-                      </div>
+                      
+                      {student.hasSheet && student.sheetUrl && (
+                        <button
+                          onClick={() => openStudentSheet(student.sheetUrl!)}
+                          className="ml-3 inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-blue-600 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/50 dark:text-blue-300 dark:hover:bg-blue-900/70"
+                        >
+                          <ExternalLink className="h-3 w-3 mr-1" />
+                          View Sheet
+                        </button>
+                      )}
                     </div>
-                  </label>
+                    
+                    {student.hasSheet && (
+                      <div className="mt-2 text-xs text-green-600 dark:text-green-400">
+                        ✓ Sheet already allocated
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
             )}
@@ -449,7 +598,22 @@ function AllocateSheetPageContent() {
                 <p className="text-sm text-blue-600 dark:text-blue-400">
                   <CheckCircle className="h-4 w-4 inline mr-1" />
                   {selectedCount} student{selectedCount !== 1 ? 's' : ''} selected
+                  {viewMode === 'manage' && ' for new allocation'}
                 </p>
+              </div>
+            )}
+
+            {/* Summary for existing allocation */}
+            {existingAllocation && (
+              <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                <div className="text-sm text-green-600 dark:text-green-400">
+                  <FileSpreadsheet className="h-4 w-4 inline mr-1" />
+                  Existing allocation: "{existingAllocation.title}"
+                  <br />
+                  <span className="text-xs">
+                    {students.filter(s => s.hasSheet).length} students already have sheets
+                  </span>
+                </div>
               </div>
             )}
           </div>
@@ -459,9 +623,19 @@ function AllocateSheetPageContent() {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-500 dark:text-gray-400">
-              {selectedCount > 0 && (
+              {viewMode === 'allocate' && selectedCount > 0 && (
                 <>
                   Ready to allocate sheets to {selectedCount} student{selectedCount !== 1 ? 's' : ''}
+                </>
+              )}
+              {viewMode === 'manage' && selectedCount > 0 && (
+                <>
+                  Ready to allocate sheets to {selectedCount} new student{selectedCount !== 1 ? 's' : ''}
+                </>
+              )}
+              {viewMode === 'manage' && selectedCount === 0 && (
+                <>
+                  All enrolled students have been allocated sheets
                 </>
               )}
             </div>
@@ -470,25 +644,48 @@ function AllocateSheetPageContent() {
                 onClick={() => router.back()}
                 className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700"
               >
-                Cancel
+                Back
               </button>
-              <button
-                onClick={handleAllocate}
-                disabled={!selectedClassId || !title.trim() || selectedCount === 0 || allocating}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {allocating ? (
-                  <>
-                    <Loader className="h-4 w-4 mr-2 animate-spin" />
-                    Allocating...
-                  </>
-                ) : (
-                  <>
-                    <Send className="h-4 w-4 mr-2" />
-                    Allocate Sheets
-                  </>
-                )}
-              </button>
+              
+              {viewMode === 'allocate' && (
+                <button
+                  onClick={handleAllocate}
+                  disabled={!selectedClassId || !title.trim() || selectedCount === 0 || allocating}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {allocating ? (
+                    <>
+                      <Loader className="h-4 w-4 mr-2 animate-spin" />
+                      Allocating...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4 mr-2" />
+                      Allocate Sheets
+                    </>
+                  )}
+                </button>
+              )}
+
+              {viewMode === 'manage' && selectedCount > 0 && (
+                <button
+                  onClick={handleAllocateToNewStudents}
+                  disabled={allocating}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {allocating ? (
+                    <>
+                      <Loader className="h-4 w-4 mr-2 animate-spin" />
+                      Adding...
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Add Sheets for New Students
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           </div>
         </div>

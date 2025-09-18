@@ -316,4 +316,36 @@ export class GoogleSheetsService {
       throw error;
     }
   }
+
+  /**
+   * Get all allocations for a teacher
+   */
+  static async getAllocations(teacherId: string): Promise<Array<SheetAllocation & { studentSheets: StudentSheet[] }>> {
+    try {
+      const allocationsQuery = query(
+        collection(firestore, this.COLLECTIONS.SHEET_ALLOCATIONS),
+        where('teacherId', '==', teacherId)
+      );
+
+      const snapshot = await getDocs(allocationsQuery);
+      const allocations: Array<SheetAllocation & { studentSheets: StudentSheet[] }> = [];
+
+      for (const docSnapshot of snapshot.docs) {
+        const allocation = { id: docSnapshot.id, ...docSnapshot.data() } as SheetAllocation;
+        
+        // Get student sheets for this allocation
+        const studentSheets = await this.getStudentSheetsByAllocation(allocation.id);
+        
+        allocations.push({
+          ...allocation,
+          studentSheets
+        });
+      }
+
+      return allocations;
+    } catch (error) {
+      console.error('❌ Error getting allocations:', error);
+      throw error;
+    }
+  }
 }

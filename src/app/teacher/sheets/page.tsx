@@ -19,22 +19,29 @@ import {
 } from 'lucide-react';
 import TeacherLayout from '@/components/teacher/TeacherLayout';
 import { GoogleSheetsService, SheetTemplate, SheetAllocation } from '@/apiservices/googleSheetsService';
+import { storage } from '@/utils/firebase-client';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { useTeacherAuth } from '@/hooks/useTeacherAuth';
 
 export default function SheetManagementPage() {
   const router = useRouter();
+  const { teacher, loading: authLoading } = useTeacherAuth();
   const [activeTab, setActiveTab] = useState<'templates' | 'allocations'>('templates');
   const [templates, setTemplates] = useState<SheetTemplate[]>([]);
   const [allocations, setAllocations] = useState<SheetAllocation[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploadLoading, setUploadLoading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<string>('');
 
-  // Mock teacher ID - replace with actual teacher data
-  const teacherId = 'teacher123';
-  const teacherName = 'John Smith';
+  // Get teacher data from auth
+  const teacherId = teacher?.id || '';
+  const teacherName = teacher?.name || 'Unknown Teacher';
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (!authLoading && teacher?.id) {
+      loadData();
+    }
+  }, [authLoading, teacher]);
 
   const loadData = async () => {
     try {
@@ -57,14 +64,21 @@ export default function SheetManagementPage() {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    if (!teacher?.id) {
+      alert('You must be logged in to upload templates');
+      return;
+    }
+
     try {
       setUploadLoading(true);
+      setUploadProgress('Validating file...');
       
       // Validate file type
       const allowedTypes = [
         'application/vnd.ms-excel',
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'text/csv'
+        'text/csv',
+        'application/csv'
       ];
       
       if (!allowedTypes.includes(file.type)) {
@@ -72,28 +86,65 @@ export default function SheetManagementPage() {
         return;
       }
 
+      // Validate file size (max 10MB)
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      if (file.size > maxSize) {
+        alert('File size too large. Maximum size is 10MB.');
+        return;
+      }
+
+      setUploadProgress('Preparing upload...');
+
+      // Create unique filename
+      const timestamp = Date.now();
+      const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+      const fileName = `${timestamp}_${safeName}`;
+      
+      // Create storage reference
+      const storageRef = ref(storage, `sheet-templates/${teacherId}/${fileName}`);
+      
+      setUploadProgress('Uploading to Firebase Storage...');
+      console.log('📤 Uploading file to Firebase Storage...');
+      
+      // Upload file to Firebase Storage
+      const uploadResult = await uploadBytes(storageRef, file);
+      console.log('✅ File uploaded successfully:', uploadResult);
+      
+      setUploadProgress('Getting download URL...');
+      
+      // Get download URL
+      const downloadURL = await getDownloadURL(uploadResult.ref);
+      console.log('🔗 Download URL obtained:', downloadURL);
+
+      setUploadProgress('Creating template record...');
+
       // Create template name from filename
       const templateName = file.name.replace(/\.[^/.]+$/, '');
       
-      // For now, we'll simulate uploading to public folder
-      // In a real implementation, you'd upload to your file storage
-      const filePath = `/templates/${Date.now()}_${file.name}`;
-      
+      // Create template record in Firestore
       const template = await GoogleSheetsService.createTemplate({
         name: templateName,
         fileName: file.name,
-        filePath: filePath,
+        filePath: downloadURL, // Use Firebase Storage URL
         teacherId: teacherId,
         description: `Uploaded template: ${templateName}`
       });
 
       setTemplates(prev => [template, ...prev]);
+      
+      // Reset file input
+      event.target.value = '';
+      
+      setUploadProgress('Complete!');
       alert('Template uploaded successfully!');
+      console.log('✅ Template created in database:', template);
+      
     } catch (error) {
-      console.error('Error uploading template:', error);
-      alert('Error uploading template. Please try again.');
+      console.error('❌ Error uploading template:', error);
+      alert(`Error uploading template: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setUploadLoading(false);
+      setUploadProgress('');
     }
   };
 
@@ -133,7 +184,7 @@ export default function SheetManagementPage() {
     }
   };
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <TeacherLayout>
         <div className="space-y-6">
@@ -182,10 +233,17 @@ export default function SheetManagementPage() {
                   }`}
                   disabled={uploadLoading}
                 >
-                  <Upload className="h-4 w-4 mr-2" />
-                  {uploadLoading ? 'Uploading...' : 'Upload Template'}
+                  <Upload className={`h-4 w-4 mr-2 ${uploadLoading ? 'animate-spin' : ''}`} />
+                  {uploadLoading ? (uploadProgress || 'Uploading...') : 'Upload Template'}
                 </button>
               </label>
+              
+              {/* Upload Progress Indicator */}
+              {uploadLoading && uploadProgress && (
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  {uploadProgress}
+                </div>
+              )}
             </div>
           </div>
 
@@ -282,10 +340,23 @@ export default function SheetManagementPage() {
                           <Share className="h-4 w-4 mr-1" />
                           Allocate
                         </button>
-                        <button className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                        <button 
+                          onClick={() => window.open(template.filePath, '_blank')}
+                          className="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-300"
+                          title="Download template"
+                        >
+                          <Download className="h-4 w-4" />
+                        </button>
+                        <button 
+                          className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                          title="Edit template"
+                        >
                           <Edit className="h-4 w-4" />
                         </button>
-                        <button className="p-2 text-gray-400 hover:text-red-600">
+                        <button 
+                          className="p-2 text-gray-400 hover:text-red-600"
+                          title="Delete template"
+                        >
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
