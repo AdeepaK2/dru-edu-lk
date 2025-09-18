@@ -71,9 +71,16 @@ export default function SheetManagementPage() {
             const allocations = await GoogleSheetsService.getAllocations(teacher.id);
             const classAllocations = allocations.filter(alloc => alloc.classId === cls.id);
             sheetAllocations = classAllocations.length;
-            classAllocations.forEach(alloc => {
-              activeSheets += alloc.studentSheets.length;
-            });
+            
+            // Get student sheets count for each allocation
+            for (const alloc of classAllocations) {
+              try {
+                const studentSheets = await GoogleSheetsService.getStudentSheetsByAllocation(alloc.id);
+                activeSheets += studentSheets.length;
+              } catch (error) {
+                console.warn('Could not load student sheets for allocation:', alloc.id);
+              }
+            }
           } catch (error) {
             console.warn('Could not load allocations for class:', cls.id);
           }
