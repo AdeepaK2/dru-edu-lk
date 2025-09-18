@@ -258,17 +258,22 @@ function AllocateSheetPageContent() {
     try {
       setStudentsLoading(true);
       
-      // Check if there's already an allocation for this template and class
+      // Check if there's already an allocation for this class (regardless of template)
       const existingAllocations = await GoogleSheetsService.getAllocations(teacher.id);
       const classAllocation = existingAllocations.find(
-        (alloc: any) => alloc.templateId === selectedTemplateId && alloc.classId === selectedClassId
+        (alloc: any) => alloc.classId === selectedClassId
       );
+      
+      console.log('🔍 Checking for existing allocations for class:', selectedClassId);
+      console.log('📋 Found allocations:', existingAllocations.length);
+      console.log('🎯 Class allocation found:', classAllocation);
       
       if (classAllocation) {
         // Get student sheets for this allocation
         let studentSheets: StudentSheet[] = [];
         try {
           studentSheets = await GoogleSheetsService.getStudentSheetsByAllocation(classAllocation.id);
+          console.log('📄 Student sheets found:', studentSheets.length);
         } catch (error) {
           console.warn('Could not load student sheets for allocation:', error);
         }
@@ -908,6 +913,10 @@ function AllocateSheetPageContent() {
                     <br />
                     <span className="text-xs">
                       {students.filter(s => s.hasSheet).length} students already have sheets
+                    </span>
+                    <br />
+                    <span className="text-xs text-gray-500">
+                      Debug: Total students: {students.length}, With sheets: {students.filter(s => s.hasSheet).length}
                     </span>
                   </div>
                 </div>
