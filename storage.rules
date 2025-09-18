@@ -43,6 +43,11 @@ service firebase.storage {
       allow read, write: if request.auth != null;
     }
     
+    // Allow authenticated teachers to upload and manage sheet templates
+    match /templates/{templateId} {
+      allow read, write, delete: if request.auth != null;
+    }
+    
     // Allow authenticated admin users to upload and manage publication images
     match /publications/{allPaths=**} {
       allow read: if true; // Public read access for publication images
