@@ -265,13 +265,21 @@ function AllocateSheetPageContent() {
       );
       
       if (classAllocation) {
+        // Get student sheets for this allocation
+        let studentSheets: StudentSheet[] = [];
+        try {
+          studentSheets = await GoogleSheetsService.getStudentSheetsByAllocation(classAllocation.id);
+        } catch (error) {
+          console.warn('Could not load student sheets for allocation:', error);
+        }
+
         // Convert to AllocationData format
         const allocationData: AllocationData = {
           id: classAllocation.id,
           title: classAllocation.title,
           description: classAllocation.description,
           dueDate: classAllocation.dueDate ? classAllocation.dueDate.toDate() : undefined,
-          studentSheets: classAllocation.studentSheets
+          studentSheets: studentSheets
         };
         
         setExistingAllocation(allocationData);
@@ -440,6 +448,105 @@ function AllocateSheetPageContent() {
     } catch (error) {
       console.error('Error allocating sheets to new students:', error);
       alert('Error allocating sheets to new students. Please try again.');
+    } finally {
+      setAllocating(false);
+    }
+  };
+
+  const handleDiagnoseAllocation = async () => {
+    if (!existingAllocation) return;
+    
+    try {
+      const diagnostics = await GoogleSheetsService.getAllocationDiagnostics(existingAllocation.id);
+      
+      let message = `Allocation Diagnostics:\n\n`;
+      message += `- Allocation exists: ${diagnostics.allocation ? 'Yes' : 'No'}\n`;
+      message += `- Student sheets found: ${diagnostics.studentsWithSheets}\n`;
+      message += `- Is healthy: ${diagnostics.isHealthy ? 'Yes' : 'No'}\n`;
+      
+      if (diagnostics.issues.length > 0) {
+        message += `\nIssues found:\n${diagnostics.issues.map(issue => `- ${issue}`).join('\n')}`;
+      }
+      
+      alert(message);
+    } catch (error) {
+      console.error('Error diagnosing allocation:', error);
+      alert('Error diagnosing allocation. Please try again.');
+    }
+  };
+
+  const handleDeleteBrokenAllocation = async () => {
+    if (!existingAllocation) return;
+    
+    const confirmed = confirm(
+      `Are you sure you want to delete this allocation?\n\n` +
+      `This will remove the allocation "${existingAllocation.title}" and any associated student sheets.\n\n` +
+      `You can then create a new allocation for this class.`
+    );
+    
+    if (!confirmed) return;
+    
+    try {
+      setAllocating(true);
+      await GoogleSheetsService.deleteAllocation(existingAllocation.id);
+      alert('Allocation deleted successfully. You can now create a new allocation.');
+      router.push('/teacher/sheets');
+    } catch (error) {
+      console.error('Error deleting allocation:', error);
+      alert('Error deleting allocation. Please try again.');
+    } finally {
+      setAllocating(false);
+    }
+  };
+
+  const handleRetryAllocation = async () => {
+    if (!teacher || !existingAllocation) return;
+    
+    const confirmed = confirm(
+      `This will attempt to create sheets for all students in the class who don't have sheets yet.\n\n` +
+      `Continue?`
+    );
+    
+    if (!confirmed) return;
+    
+    try {
+      setAllocating(true);
+      
+      // Get all students who don't have sheets
+      const studentsWithoutSheets = students.filter(s => !s.hasSheet);
+      
+      if (studentsWithoutSheets.length === 0) {
+        alert('All students already have sheets for this allocation.');
+        return;
+      }
+      
+      // Call API to create sheets for students without sheets
+      const response = await fetch('/api/sheets/create-for-students', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          allocationId: existingAllocation.id,
+          templateFilePath: template?.filePath,
+          students: studentsWithoutSheets.map(s => ({ id: s.studentId, name: s.name, email: s.email })),
+          title: existingAllocation.title,
+          teacherEmail: teacher.email
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create sheets for students');
+      }
+
+      const result = await response.json();
+      alert(`Successfully created ${result.createdSheets} sheets for students!`);
+      
+      // Reload the page to show updated state
+      window.location.reload();
+    } catch (error) {
+      console.error('Error retrying allocation:', error);
+      alert('Error creating sheets for students. Please try again.');
     } finally {
       setAllocating(false);
     }
@@ -793,15 +900,52 @@ function AllocateSheetPageContent() {
 
             {/* Summary for existing allocation */}
             {existingAllocation && (
-              <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                <div className="text-sm text-green-600 dark:text-green-400">
-                  <FileSpreadsheet className="h-4 w-4 inline mr-1" />
-                  Existing allocation: "{existingAllocation.title}"
-                  <br />
-                  <span className="text-xs">
-                    {students.filter(s => s.hasSheet).length} students already have sheets
-                  </span>
+              <div className="mt-4 space-y-4">
+                <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                  <div className="text-sm text-green-600 dark:text-green-400">
+                    <FileSpreadsheet className="h-4 w-4 inline mr-1" />
+                    Existing allocation: "{existingAllocation.title}"
+                    <br />
+                    <span className="text-xs">
+                      {students.filter(s => s.hasSheet).length} students already have sheets
+                    </span>
+                  </div>
                 </div>
+
+                {/* Diagnostic and cleanup tools */}
+                {students.filter(s => s.hasSheet).length === 0 && (
+                  <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                    <div className="text-sm text-yellow-800 dark:text-yellow-200 mb-3">
+                      <AlertCircle className="h-4 w-4 inline mr-1" />
+                      No student sheets found for this allocation. This might indicate an issue during the allocation process.
+                    </div>
+                    <div className="flex gap-2 flex-wrap">
+                      <button
+                        onClick={handleDiagnoseAllocation}
+                        disabled={allocating}
+                        className="px-3 py-1 text-xs bg-yellow-100 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200 rounded border border-yellow-300 dark:border-yellow-600 hover:bg-yellow-200 dark:hover:bg-yellow-700 disabled:opacity-50"
+                      >
+                        <Eye className="h-3 w-3 inline mr-1" />
+                        Diagnose
+                      </button>
+                      <button
+                        onClick={handleRetryAllocation}
+                        disabled={allocating}
+                        className="px-3 py-1 text-xs bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 rounded border border-blue-300 dark:border-blue-600 hover:bg-blue-200 dark:hover:bg-blue-700 disabled:opacity-50"
+                      >
+                        <Plus className="h-3 w-3 inline mr-1" />
+                        Retry Creation
+                      </button>
+                      <button
+                        onClick={handleDeleteBrokenAllocation}
+                        disabled={allocating}
+                        className="px-3 py-1 text-xs bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-200 rounded border border-red-300 dark:border-red-600 hover:bg-red-200 dark:hover:bg-red-700 disabled:opacity-50"
+                      >
+                        🗑️ Delete & Start Over
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

@@ -1,5 +1,5 @@
 import { firestore } from '@/utils/firebase-client';
-import { collection, doc, getDoc, setDoc, updateDoc, getDocs, query, where, Timestamp } from 'firebase/firestore';
+import { collection, doc, getDoc, setDoc, updateDoc, getDocs, query, where, Timestamp, deleteDoc } from 'firebase/firestore';
 
 export interface SheetTemplate {
   id: string;
@@ -318,6 +318,74 @@ export class GoogleSheetsService {
       return studentSheets;
     } catch (error) {
       console.error('❌ Error getting student sheets:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete an allocation and all associated student sheets
+   */
+  static async deleteAllocation(allocationId: string): Promise<void> {
+    try {
+      // First, get all student sheets for this allocation
+      const studentSheets = await this.getStudentSheetsByAllocation(allocationId);
+      
+      // Delete all student sheet documents
+      const deletePromises = studentSheets.map(sheet => 
+        deleteDoc(doc(firestore, this.COLLECTIONS.STUDENT_SHEETS, sheet.id))
+      );
+      
+      await Promise.all(deletePromises);
+      
+      // Delete the allocation document
+      await deleteDoc(doc(firestore, this.COLLECTIONS.SHEET_ALLOCATIONS, allocationId));
+      
+      console.log(`✅ Deleted allocation ${allocationId} and ${studentSheets.length} student sheets`);
+    } catch (error) {
+      console.error('❌ Error deleting allocation:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Check allocation health and get diagnostics
+   */
+  static async getAllocationDiagnostics(allocationId: string): Promise<{
+    allocation: SheetAllocation | null;
+    studentSheets: StudentSheet[];
+    studentsWithSheets: number;
+    totalStudentsExpected: number;
+    isHealthy: boolean;
+    issues: string[];
+  }> {
+    try {
+      // Get allocation
+      const allocationDoc = await getDoc(doc(firestore, this.COLLECTIONS.SHEET_ALLOCATIONS, allocationId));
+      const allocation = allocationDoc.exists() ? { id: allocationDoc.id, ...allocationDoc.data() } as SheetAllocation : null;
+      
+      // Get student sheets
+      const studentSheets = await this.getStudentSheetsByAllocation(allocationId);
+      
+      const issues: string[] = [];
+      
+      if (!allocation) {
+        issues.push('Allocation record not found');
+      }
+      
+      if (studentSheets.length === 0) {
+        issues.push('No student sheets found for this allocation');
+      }
+      
+      return {
+        allocation,
+        studentSheets,
+        studentsWithSheets: studentSheets.length,
+        totalStudentsExpected: 0, // We don't store this info, would need to get from class
+        isHealthy: issues.length === 0 && studentSheets.length > 0,
+        issues
+      };
+    } catch (error) {
+      console.error('❌ Error getting allocation diagnostics:', error);
       throw error;
     }
   }
