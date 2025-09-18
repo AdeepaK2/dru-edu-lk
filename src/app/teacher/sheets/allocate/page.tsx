@@ -463,6 +463,7 @@ function AllocateSheetPageContent() {
     
     try {
       const diagnostics = await GoogleSheetsService.getAllocationDiagnostics(existingAllocation.id);
+      const debugInfo = await GoogleSheetsService.debugStudentSheetsForAllocation(existingAllocation.id);
       
       let message = `Allocation Diagnostics:\n\n`;
       message += `- Allocation exists: ${diagnostics.allocation ? 'Yes' : 'No'}\n`;
@@ -473,6 +474,27 @@ function AllocateSheetPageContent() {
         message += `\nIssues found:\n${diagnostics.issues.map(issue => `- ${issue}`).join('\n')}`;
       }
       
+      message += `\n\nDetailed Debug Info:\n`;
+      message += `- Allocation ID: ${existingAllocation.id}\n`;
+      message += `- Student sheets in database: ${debugInfo.studentSheetsCount}\n`;
+      
+      if (debugInfo.studentSheetsDetails.length > 0) {
+        message += `\nStudent Sheet Details:\n`;
+        debugInfo.studentSheetsDetails.forEach((sheet, index) => {
+          message += `${index + 1}. ${sheet.studentName} (${sheet.studentEmail})\n`;
+          message += `   - Has Google Sheet: ${sheet.hasGoogleSheet}\n`;
+          message += `   - Status: ${sheet.status}\n`;
+          if (sheet.googleSheetUrl) {
+            message += `   - URL: ${sheet.googleSheetUrl}\n`;
+          }
+          message += `\n`;
+        });
+      } else {
+        message += `\n❌ No student sheet records found in the database!\n`;
+        message += `This means the Google Sheets creation process failed completely.`;
+      }
+      
+      console.log('🔍 Full diagnostic data:', { diagnostics, debugInfo });
       alert(message);
     } catch (error) {
       console.error('Error diagnosing allocation:', error);

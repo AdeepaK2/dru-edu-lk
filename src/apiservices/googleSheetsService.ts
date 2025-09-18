@@ -76,6 +76,56 @@ export class GoogleSheetsService {
   }
 
   /**
+   * Debug function to get detailed information about student sheets for an allocation
+   */
+  static async debugStudentSheetsForAllocation(allocationId: string): Promise<{
+    allocationExists: boolean;
+    studentSheets: StudentSheet[];
+    studentSheetsCount: number;
+    studentSheetsDetails: Array<{
+      studentName: string;
+      studentEmail: string;
+      hasGoogleSheet: boolean;
+      googleSheetUrl?: string;
+      status: string;
+    }>;
+  }> {
+    try {
+      console.log('🔍 Debug: Checking student sheets for allocation:', allocationId);
+      
+      // Check if allocation exists
+      const allocationDoc = await getDoc(doc(firestore, this.COLLECTIONS.SHEET_ALLOCATIONS, allocationId));
+      const allocationExists = allocationDoc.exists();
+      
+      console.log('📋 Allocation exists:', allocationExists);
+      
+      // Get student sheets
+      const studentSheets = await this.getStudentSheetsByAllocation(allocationId);
+      
+      console.log('📄 Student sheets found:', studentSheets.length);
+      console.log('📊 Student sheets data:', studentSheets);
+      
+      const studentSheetsDetails = studentSheets.map(sheet => ({
+        studentName: sheet.studentName,
+        studentEmail: sheet.studentEmail,
+        hasGoogleSheet: !!sheet.googleSheetId,
+        googleSheetUrl: sheet.googleSheetUrl,
+        status: sheet.status
+      }));
+      
+      return {
+        allocationExists,
+        studentSheets,
+        studentSheetsCount: studentSheets.length,
+        studentSheetsDetails
+      };
+    } catch (error) {
+      console.error('❌ Error debugging student sheets:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Get all templates for a teacher
    */
   static async getTeacherTemplates(teacherId: string): Promise<SheetTemplate[]> {
@@ -147,6 +197,9 @@ export class GoogleSheetsService {
 
       await setDoc(doc(firestore, this.COLLECTIONS.SHEET_ALLOCATIONS, allocationId), allocation);
 
+      console.log(`📋 Created allocation record: ${allocationId}`);
+      console.log(`🔄 Calling API to create ${students.length} Google Sheets...`);
+
       // Call API route to create Google Sheets for students
       const response = await fetch('/api/sheets/create-for-students', {
         method: 'POST',
@@ -162,10 +215,16 @@ export class GoogleSheetsService {
         }),
       });
 
+      console.log(`📡 API Response status: ${response.status}`);
+      
       if (!response.ok) {
-        throw new Error('Failed to create sheets for students');
+        const errorText = await response.text();
+        console.error('❌ API Error Response:', errorText);
+        throw new Error(`Failed to create sheets for students: ${response.status} - ${errorText}`);
       }
 
+      const result = await response.json();
+      console.log(`✅ API Success:`, result);
       console.log(`✅ Allocated sheets to class: ${className}`);
       return allocation;
     } catch (error) {

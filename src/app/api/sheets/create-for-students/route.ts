@@ -36,6 +36,27 @@ export async function POST(request: NextRequest) {
     const { allocationId, templateFilePath, students, title, teacherEmail } = body;
 
     console.log('🔄 Creating Google Sheets for students:', students.length);
+    console.log('📋 Request data:', { allocationId, templateFilePath, title, teacherEmail });
+
+    // Check if Google Sheets credentials are configured
+    const hasCredentials = !!(
+      process.env.GOOGLE_SHEETS_SERVICE_ACCOUNT_EMAIL &&
+      process.env.GOOGLE_SHEETS_PRIVATE_KEY &&
+      process.env.GOOGLE_SHEETS_PROJECT_ID
+    );
+
+    console.log('🔑 Google Sheets credentials configured:', hasCredentials);
+    
+    if (!hasCredentials) {
+      console.error('❌ Missing Google Sheets API credentials');
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Google Sheets API credentials not configured. Please set GOOGLE_SHEETS_SERVICE_ACCOUNT_EMAIL, GOOGLE_SHEETS_PRIVATE_KEY, and GOOGLE_SHEETS_PROJECT_ID environment variables.'
+        },
+        { status: 500 }
+      );
+    }
 
     const auth = getGoogleAuth();
     const sheets = google.sheets({ version: 'v4', auth });
