@@ -19,6 +19,7 @@ import { useTeacherAuth } from '@/hooks/useTeacherAuth';
 import { GoogleSheetsService, SheetAllocation, StudentSheet } from '@/apiservices/googleSheetsService';
 import { ClassFirestoreService } from '@/apiservices/classFirestoreService';
 import { StudentEnrollmentFirestoreService } from '@/apiservices/studentEnrollmentFirestoreService';
+import { StudentFirestoreService } from '@/apiservices/studentFirestoreService';
 
 interface ClassInfo {
   id: string;
@@ -28,9 +29,18 @@ interface ClassInfo {
   studentCount: number;
 }
 
-interface AllocationWithSheets {
-  allocation: SheetAllocation;
-  studentSheets: StudentSheet[];
+interface StudentWithSheets {
+  studentId: string;
+  studentName: string;
+  studentEmail: string;
+  sheets: Array<{
+    id: string;
+    allocationId: string;
+    templateName: string;
+    googleSheetUrl: string;
+    status: 'assigned' | 'in_progress' | 'submitted' | 'graded';
+    createdAt: Date;
+  }>;
 }
 
 export default function ClassSheetManagementPage() {
@@ -41,9 +51,8 @@ export default function ClassSheetManagementPage() {
   
   // State
   const [classInfo, setClassInfo] = useState<ClassInfo | null>(null);
-  const [allocationsWithSheets, setAllocationsWithSheets] = useState<AllocationWithSheets[]>([]);
+  const [studentsWithSheets, setStudentsWithSheets] = useState<StudentWithSheets[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedAllocation, setSelectedAllocation] = useState<string>('');
 
   useEffect(() => {
     if (!authLoading && teacher?.id && classId) {
@@ -75,30 +84,57 @@ export default function ClassSheetManagementPage() {
         studentCount
       });
       
-      // Load sheet allocations for this class
+      // Get all enrolled students for this class
+      const enrolledStudents = await StudentEnrollmentFirestoreService.getEnrolledStudentsByClassId(classId);
+      if (!enrolledStudents || enrolledStudents.length === 0) {
+        setStudentsWithSheets([]);
+        return;
+      }
+
+      // Get all allocations for this class to get template names
       const allAllocations = await GoogleSheetsService.getAllocations(teacher.id);
       const classAllocations = allAllocations.filter(alloc => alloc.classId === classId);
       
-      // For each allocation, get the student sheets
-      const allocationsWithSheets = await Promise.all(
-        classAllocations.map(async (allocation) => {
+      // For each student, get their individual sheets
+      const studentsWithSheets = await Promise.all(
+        enrolledStudents.map(async (enrollment) => {
           try {
-            const studentSheets = await GoogleSheetsService.getStudentSheetsByAllocation(allocation.id);
+            const studentData = await StudentFirestoreService.getStudentById(enrollment.studentId);
+            if (!studentData) return null;
+
+            // Get all student sheets for this student
+            const studentSheets = await GoogleSheetsService.getStudentSheets(enrollment.studentId);
+            
+            // Filter sheets that belong to allocations for this class and add template names
+            const classSheets = studentSheets
+              .filter(sheet => classAllocations.some(alloc => alloc.id === sheet.allocationId))
+              .map(sheet => {
+                const allocation = classAllocations.find(alloc => alloc.id === sheet.allocationId);
+                return {
+                  id: sheet.id,
+                  allocationId: sheet.allocationId,
+                  templateName: allocation?.templateName || 'Unknown Template',
+                  googleSheetUrl: sheet.googleSheetUrl,
+                  status: sheet.status,
+                  createdAt: sheet.createdAt.toDate()
+                };
+              });
+
             return {
-              allocation,
-              studentSheets
+              studentId: enrollment.studentId,
+              studentName: studentData.name,
+              studentEmail: studentData.email || `${studentData.name.toLowerCase().replace(/\s+/g, '.')}@student.edu`,
+              sheets: classSheets
             };
           } catch (error) {
-            console.warn(`Could not load student sheets for allocation ${allocation.id}:`, error);
-            return {
-              allocation,
-              studentSheets: [] as StudentSheet[]
-            };
+            console.warn(`Could not load student data for ${enrollment.studentId}:`, error);
+            return null;
           }
         })
       );
-      
-      setAllocationsWithSheets(allocationsWithSheets);
+
+      const validStudents = studentsWithSheets.filter(student => student !== null) as StudentWithSheets[];
+      setStudentsWithSheets(validStudents);
       
     } catch (error) {
       console.error('Error loading class data:', error);
@@ -114,11 +150,6 @@ export default function ClassSheetManagementPage() {
 
   const openSheet = (sheetUrl: string) => {
     window.open(sheetUrl, '_blank');
-  };
-
-  const downloadAllSheets = async (allocation: SheetAllocation) => {
-    // This would implement downloading all sheets as a ZIP file
-    alert('Download functionality will be implemented');
   };
 
   if (authLoading || loading) {
@@ -200,111 +231,95 @@ export default function ClassSheetManagementPage() {
             </div>
           </div>
 
-          {/* Allocations List */}
-          <div className="space-y-6">
-            {allocationsWithSheets.length === 0 ? (
-              <div className="bg-white rounded-lg shadow p-12 text-center">
+          {/* Students and Their Sheets */}
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-semibold text-gray-800">Students & Their Sheets</h2>
+              <span className="text-sm text-gray-600">
+                {studentsWithSheets.length} student{studentsWithSheets.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+
+            {studentsWithSheets.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">
                 <FileSpreadsheet className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No Sheet Allocations</h3>
-                <p className="text-gray-500 mb-6">
-                  You haven't allocated any sheets to this class yet.
+                <p className="text-lg mb-2">No students with sheets yet</p>
+                <p className="text-sm">
+                  Students will appear here after you allocate sheets to this class
                 </p>
                 <button
                   onClick={createNewAllocation}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                 >
                   Create First Allocation
                 </button>
               </div>
             ) : (
-              allocationsWithSheets.map(({ allocation, studentSheets }) => (
-                <div key={allocation.id} className="bg-white rounded-lg shadow">
-                  <div className="p-6 border-b border-gray-200">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-lg font-medium text-gray-900">
-                          {allocation.templateName}
-                        </h3>
-                        <div className="flex items-center space-x-4 mt-1 text-sm text-gray-500">
-                          <div className="flex items-center space-x-1">
-                            <Calendar className="h-4 w-4" />
-                            <span>
-                              Created {new Date(allocation.allocatedAt.toDate()).toLocaleDateString()}
-                            </span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <Users className="h-4 w-4" />
-                            <span>{studentSheets.length} student sheets</span>
-                          </div>
+              <div className="space-y-4">
+                {studentsWithSheets.map((student) => (
+                  <div 
+                    key={student.studentId}
+                    className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                          <span className="text-blue-600 text-sm font-medium">
+                            {student.studentName.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-gray-900">{student.studentName}</h3>
+                          <p className="text-sm text-gray-600">{student.studentEmail}</p>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => downloadAllSheets(allocation)}
-                          className="p-2 text-gray-400 hover:text-blue-600 rounded-md hover:bg-blue-50"
-                          title="Download all sheets"
-                        >
-                          <Download className="h-4 w-4" />
-                        </button>
-                        <button
-                          className="p-2 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-50"
-                          title="Settings"
-                        >
-                          <Settings className="h-4 w-4" />
-                        </button>
-                      </div>
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {student.sheets.length} sheet{student.sheets.length !== 1 ? 's' : ''}
+                      </span>
                     </div>
-                  </div>
 
-                  {/* Student Sheets */}
-                  <div className="divide-y divide-gray-200">
-                    {studentSheets.length === 0 ? (
-                      <div className="p-8 text-center">
-                        <Users className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                        <p className="text-gray-500 text-sm">No student sheets yet</p>
-                      </div>
+                    {student.sheets.length === 0 ? (
+                      <p className="text-sm text-gray-500 italic ml-13">No sheets assigned yet</p>
                     ) : (
-                      studentSheets.map((studentSheet, index) => (
-                        <div key={index} className="p-4 hover:bg-gray-50">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-3">
-                              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                                <span className="text-blue-600 text-sm font-medium">
-                                  {studentSheet.studentName.charAt(0).toUpperCase()}
-                                </span>
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium text-gray-900">
-                                  {studentSheet.studentName}
-                                </p>
-                                <p className="text-xs text-gray-500">
-                                  Student ID: {studentSheet.studentId}
-                                </p>
-                              </div>
+                      <div className="space-y-2 ml-13">
+                        {student.sheets.map((sheet) => (
+                          <div 
+                            key={sheet.id}
+                            className="flex items-center justify-between p-3 bg-gray-50 rounded-md"
+                          >
+                            <div className="flex-1">
+                              <p className="font-medium text-gray-900">{sheet.templateName}</p>
+                              <p className="text-sm text-gray-600">
+                                Created: {sheet.createdAt.toLocaleDateString()}
+                              </p>
                             </div>
-                            
-                            <div className="flex items-center space-x-2">
-                              <div className="flex items-center space-x-1">
-                                <CheckCircle className="h-4 w-4 text-green-500" />
-                                <span className="text-xs text-green-600">
-                                  {studentSheet.status}
-                                </span>
-                              </div>
+                            <div className="flex items-center gap-3">
+                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                sheet.status === 'graded' 
+                                  ? 'bg-green-100 text-green-800'
+                                  : sheet.status === 'submitted'
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : sheet.status === 'in_progress'
+                                  ? 'bg-yellow-100 text-yellow-800'
+                                  : 'bg-gray-100 text-gray-800'
+                              }`}>
+                                {sheet.status.replace('_', ' ')}
+                              </span>
                               <button
-                                onClick={() => openSheet(studentSheet.googleSheetUrl)}
-                                className="p-1 text-gray-400 hover:text-blue-600 rounded"
-                                title="Open sheet"
+                                onClick={() => openSheet(sheet.googleSheetUrl)}
+                                className="inline-flex items-center px-3 py-1.5 border border-blue-300 text-sm font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
                               >
-                                <ExternalLink className="h-4 w-4" />
+                                <ExternalLink className="w-4 h-4 mr-1.5" />
+                                Open Sheet
                               </button>
                             </div>
                           </div>
-                        </div>
-                      ))
+                        ))}
+                      </div>
                     )}
                   </div>
-                </div>
-              ))
+                ))}
+              </div>
             )}
           </div>
         </div>
