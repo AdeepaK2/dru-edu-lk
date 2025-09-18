@@ -15,7 +15,9 @@ import {
   Loader,
   ExternalLink,
   UserPlus,
-  Eye
+  Eye,
+  Upload,
+  Plus
 } from 'lucide-react';
 import TeacherLayout from '@/components/teacher/TeacherLayout';
 import { GoogleSheetsService, SheetTemplate, SheetAllocation, StudentSheet } from '@/apiservices/googleSheetsService';
@@ -25,6 +27,8 @@ import { StudentEnrollmentFirestoreService, EnrollmentWithParent } from '@/apise
 import { ClassDocument } from '@/models/classSchema';
 import { StudentDocument } from '@/models/studentSchema';
 import { useTeacherAuth } from '@/hooks/useTeacherAuth';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage } from '@/utils/firebase-client';
 
 interface Student {
   id: string;
@@ -77,11 +81,14 @@ function AllocateSheetPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const templateId = searchParams.get('templateId');
+  const classId = searchParams.get('classId');
   const { teacher, loading: authLoading } = useTeacherAuth();
 
   const [template, setTemplate] = useState<SheetTemplate | null>(null);
+  const [availableTemplates, setAvailableTemplates] = useState<SheetTemplate[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>(templateId || '');
   const [classes, setClasses] = useState<Class[]>([]);
-  const [selectedClassId, setSelectedClassId] = useState<string>('');
+  const [selectedClassId, setSelectedClassId] = useState<string>(classId || '');
   const [students, setStudents] = useState<Student[]>([]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -91,9 +98,30 @@ function AllocateSheetPageContent() {
   const [studentsLoading, setStudentsLoading] = useState(false);
   const [existingAllocation, setExistingAllocation] = useState<AllocationData | null>(null);
   const [viewMode, setViewMode] = useState<'allocate' | 'manage'>('allocate');
+  
+  // Template upload states
+  const [showTemplateUpload, setShowTemplateUpload] = useState(false);
+  const [uploadLoading, setUploadLoading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<string>('');
 
   useEffect(() => {
-    if (templateId && teacher) {
+    if (teacher) {
+      loadInitialData();
+    }
+  }, [teacher]);
+
+  useEffect(() => {
+    if (selectedTemplateId && availableTemplates.length > 0) {
+      const currentTemplate = availableTemplates.find(t => t.id === selectedTemplateId);
+      if (currentTemplate) {
+        setTemplate(currentTemplate);
+        setTitle(`${currentTemplate.name} Assignment`);
+      }
+    }
+  }, [selectedTemplateId, availableTemplates]);
+
+  useEffect(() => {
+    if (selectedClassId && teacher && selectedTemplateId) {
       loadInitialData();
     }
   }, [templateId, teacher]);
@@ -113,18 +141,22 @@ function AllocateSheetPageContent() {
     try {
       setLoading(true);
       
-      // Load template details
+      // Load all available templates for this teacher
       const templates = await GoogleSheetsService.getTeacherTemplates(teacher.id);
-      const currentTemplate = templates.find(t => t.id === templateId);
+      setAvailableTemplates(templates);
       
-      if (!currentTemplate) {
-        alert('Template not found');
-        router.back();
-        return;
+      // If templateId was provided, set it as selected
+      if (templateId) {
+        const currentTemplate = templates.find(t => t.id === templateId);
+        if (!currentTemplate) {
+          alert('Template not found');
+          router.back();
+          return;
+        }
+        setTemplate(currentTemplate);
+        setSelectedTemplateId(templateId);
+        setTitle(`${currentTemplate.name} Assignment`);
       }
-      
-      setTemplate(currentTemplate);
-      setTitle(`${currentTemplate.name} Assignment`);
       
       // Load only classes that this teacher teaches
       const teacherClasses = await ClassFirestoreService.getClassesByTeacher(teacher.id);
@@ -149,6 +181,78 @@ function AllocateSheetPageContent() {
     }
   };
 
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !teacher?.id) return;
+
+    // Validate file type
+    const allowedTypes = [
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'text/csv'
+    ];
+    
+    if (!allowedTypes.includes(file.type)) {
+      alert('Please select an Excel (.xlsx, .xls) or CSV file');
+      return;
+    }
+
+    try {
+      setUploadLoading(true);
+      setUploadProgress('Preparing upload...');
+
+      // Create unique filename
+      const timestamp = Date.now();
+      const fileName = `${timestamp}_${file.name}`;
+      const storageRef = ref(storage, `templates/${fileName}`);
+
+      setUploadProgress('Uploading file...');
+      
+      // Upload to Firebase Storage
+      const snapshot = await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+
+      setUploadProgress('Saving template...');
+
+      // Save template metadata to Firestore
+      const newTemplate = await GoogleSheetsService.createTemplate({
+        name: file.name.replace(/\.[^/.]+$/, ''), // Remove file extension
+        description: `Uploaded template: ${file.name}`,
+        fileName: file.name,
+        filePath: downloadURL,
+        teacherId: teacher.id
+      });
+
+      setUploadProgress('Template uploaded successfully!');
+      
+      // Reload templates
+      const updatedTemplates = await GoogleSheetsService.getTeacherTemplates(teacher.id);
+      setAvailableTemplates(updatedTemplates);
+      
+      // Auto-select the newly uploaded template
+      if (newTemplate?.id) {
+        setSelectedTemplateId(newTemplate.id);
+        setTemplate(newTemplate);
+        setTitle(`${newTemplate.name} Assignment`);
+      }
+      
+      // Reset form
+      event.target.value = '';
+      setShowTemplateUpload(false);
+      
+      setTimeout(() => {
+        setUploadProgress('');
+      }, 2000);
+
+    } catch (error) {
+      console.error('Error uploading template:', error);
+      alert('Error uploading template. Please try again.');
+      setUploadProgress('');
+    } finally {
+      setUploadLoading(false);
+    }
+  };
+
   const loadClassStudents = async () => {
     if (!teacher) return;
     
@@ -158,7 +262,7 @@ function AllocateSheetPageContent() {
       // Check if there's already an allocation for this template and class
       const existingAllocations = await GoogleSheetsService.getAllocations(teacher.id);
       const classAllocation = existingAllocations.find(
-        (alloc: any) => alloc.templateId === templateId && alloc.classId === selectedClassId
+        (alloc: any) => alloc.templateId === selectedTemplateId && alloc.classId === selectedClassId
       );
       
       if (classAllocation) {
@@ -282,7 +386,7 @@ function AllocateSheetPageContent() {
       const selectedClass = classes.find(c => c.id === selectedClassId);
       
       await GoogleSheetsService.allocateSheetToClass(
-        templateId!,
+        selectedTemplateId!,
         selectedClassId,
         selectedClass?.name || 'Unknown Class',
         teacher.id,
@@ -371,17 +475,117 @@ function AllocateSheetPageContent() {
   if (!template) {
     return (
       <TeacherLayout>
-        <div className="text-center py-12">
-          <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
-          <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-            Template Not Found
-          </h2>
-          <button
-            onClick={() => router.back()}
-            className="text-blue-600 hover:text-blue-500"
-          >
-            Go back
-          </button>
+        <div className="space-y-6">
+          {/* Header */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <div className="flex items-center mb-4">
+              <button
+                onClick={() => router.back()}
+                className="mr-4 p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </button>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  Select Template
+                </h1>
+                <p className="text-gray-500 dark:text-gray-400 mt-1">
+                  Choose a template or upload a new one to allocate to your class
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Template Selection */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-lg font-medium text-gray-900 dark:text-white">
+                Available Templates
+              </h2>
+              <button
+                onClick={() => setShowTemplateUpload(!showTemplateUpload)}
+                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Upload New Template
+              </button>
+            </div>
+
+            {/* Upload Section */}
+            {showTemplateUpload && (
+              <div className="mb-6 p-4 border border-gray-200 dark:border-gray-600 rounded-lg">
+                <h3 className="text-md font-medium text-gray-900 dark:text-white mb-4">
+                  Upload Excel Template
+                </h3>
+                <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
+                  <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                  <div className="space-y-2">
+                    <p className="text-gray-600 dark:text-gray-400">
+                      Upload Excel (.xlsx, .xls) or CSV files
+                    </p>
+                    <label className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                      <Upload className="h-4 w-4 mr-2" />
+                      {uploadLoading ? 'Uploading...' : 'Choose File'}
+                      <input
+                        type="file"
+                        accept=".xlsx,.xls,.csv"
+                        onChange={handleFileUpload}
+                        disabled={uploadLoading}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                  {uploadProgress && (
+                    <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900 rounded-md">
+                      <p className="text-blue-600 dark:text-blue-300 text-sm">{uploadProgress}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Template List */}
+            {availableTemplates.length === 0 ? (
+              <div className="text-center py-8">
+                <FileSpreadsheet className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                  No Templates Available
+                </h3>
+                <p className="text-gray-500 dark:text-gray-400">
+                  Upload your first template to get started
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {availableTemplates.map((tmpl) => (
+                  <div
+                    key={tmpl.id}
+                    onClick={() => {
+                      setSelectedTemplateId(tmpl.id);
+                      setTemplate(tmpl);
+                      setTitle(`${tmpl.name} Assignment`);
+                    }}
+                    className="p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                  >
+                    <div className="flex items-start space-x-3">
+                      <FileSpreadsheet className="h-6 w-6 text-blue-600 mt-1" />
+                      <div className="flex-1">
+                        <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+                          {tmpl.name}
+                        </h4>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                          {tmpl.description}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          File: {tmpl.fileName}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </TeacherLayout>
     );
