@@ -1,201 +1,196 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  Plus,
   FileSpreadsheet,
   Upload,
   Users,
-  Calendar,
-  Edit,
-  Trash2,
-  Eye,
+  BookOpen,
+  Search,
   Download,
-  Share,
-  Clock,
-  CheckCircle,
-  AlertCircle
+  ChevronRight,
+  Clock
 } from 'lucide-react';
 import TeacherLayout from '@/components/teacher/TeacherLayout';
-import { GoogleSheetsService, SheetTemplate, SheetAllocation } from '@/apiservices/googleSheetsService';
-import { storage } from '@/utils/firebase-client';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useTeacherAuth } from '@/hooks/useTeacherAuth';
+import { GoogleSheetsService, SheetTemplate } from '@/apiservices/googleSheetsService';
+import { ClassFirestoreService } from '@/apiservices/classFirestoreService';
+import { StudentEnrollmentFirestoreService } from '@/apiservices/studentEnrollmentFirestoreService';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage } from '@/utils/firebase-client';
+
+interface ClassWithStats {
+  id: string;
+  name: string;
+  subject: string;
+  year: string;
+  studentCount: number;
+  sheetAllocations: number;
+  activeSheets: number;
+}
 
 export default function SheetManagementPage() {
   const router = useRouter();
   const { teacher, loading: authLoading } = useTeacherAuth();
-  const [activeTab, setActiveTab] = useState<'templates' | 'allocations'>('templates');
+  
+  const [activeTab, setActiveTab] = useState<'classes' | 'templates'>('classes');
+  const [classes, setClasses] = useState<ClassWithStats[]>([]);
+  const [classesLoading, setClassesLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
   const [templates, setTemplates] = useState<SheetTemplate[]>([]);
-  const [allocations, setAllocations] = useState<SheetAllocation[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [templatesLoading, setTemplatesLoading] = useState(false);
   const [uploadLoading, setUploadLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string>('');
 
-  // Get teacher data from auth
-  const teacherId = teacher?.id || '';
-  const teacherName = teacher?.name || 'Unknown Teacher';
-
   useEffect(() => {
     if (!authLoading && teacher?.id) {
-      loadData();
+      if (activeTab === 'classes') {
+        loadClasses();
+      } else {
+        loadTemplates();
+      }
     }
-  }, [authLoading, teacher]);
+  }, [authLoading, teacher, activeTab]);
 
-  const loadData = async () => {
+  const loadClasses = async () => {
+    if (!teacher?.id) return;
+    
     try {
-      setLoading(true);
-      const [templatesData, allocationsData] = await Promise.all([
-        GoogleSheetsService.getTeacherTemplates(teacherId),
-        GoogleSheetsService.getTeacherAllocations(teacherId)
-      ]);
+      setClassesLoading(true);
+      const teacherClasses = await ClassFirestoreService.getClassesByTeacher(teacher.id);
       
-      setTemplates(templatesData);
-      setAllocations(allocationsData);
+      const classesWithStats = await Promise.all(
+        teacherClasses.map(async (cls) => {
+          const studentCount = await StudentEnrollmentFirestoreService.getEnrolledStudentsCount(cls.id);
+          
+          let sheetAllocations = 0;
+          let activeSheets = 0;
+          
+          try {
+            const allocations = await GoogleSheetsService.getAllocations(teacher.id);
+            const classAllocations = allocations.filter(alloc => alloc.classId === cls.id);
+            sheetAllocations = classAllocations.length;
+            classAllocations.forEach(alloc => {
+              activeSheets += alloc.studentSheets.length;
+            });
+          } catch (error) {
+            console.warn('Could not load allocations for class:', cls.id);
+          }
+          
+          return {
+            id: cls.id,
+            name: cls.name,
+            subject: cls.subject,
+            year: cls.year,
+            studentCount,
+            sheetAllocations,
+            activeSheets
+          };
+        })
+      );
+      
+      setClasses(classesWithStats);
     } catch (error) {
-      console.error('Error loading data:', error);
+      console.error('Error loading classes:', error);
     } finally {
-      setLoading(false);
+      setClassesLoading(false);
     }
   };
 
-  const handleTemplateUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  const loadTemplates = async () => {
+    if (!teacher?.id) return;
+    
+    try {
+      setTemplatesLoading(true);
+      const templatesData = await GoogleSheetsService.getTeacherTemplates(teacher.id);
+      setTemplates(templatesData);
+    } catch (error) {
+      console.error('Error loading templates:', error);
+    } finally {
+      setTemplatesLoading(false);
+    }
+  };
 
-    if (!teacher?.id) {
-      alert('You must be logged in to upload templates');
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !teacher?.id) return;
+
+    const allowedTypes = [
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'text/csv'
+    ];
+    
+    if (!allowedTypes.includes(file.type)) {
+      alert('Please select an Excel (.xlsx, .xls) or CSV file');
       return;
     }
 
     try {
       setUploadLoading(true);
-      setUploadProgress('Validating file...');
-      
-      // Validate file type
-      const allowedTypes = [
-        'application/vnd.ms-excel',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'text/csv',
-        'application/csv'
-      ];
-      
-      if (!allowedTypes.includes(file.type)) {
-        alert('Please upload an Excel (.xlsx, .xls) or CSV file');
-        return;
-      }
-
-      // Validate file size (max 10MB)
-      const maxSize = 10 * 1024 * 1024; // 10MB
-      if (file.size > maxSize) {
-        alert('File size too large. Maximum size is 10MB.');
-        return;
-      }
-
       setUploadProgress('Preparing upload...');
 
-      // Create unique filename
       const timestamp = Date.now();
-      const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-      const fileName = `${timestamp}_${safeName}`;
-      
-      // Create storage reference
-      const storageRef = ref(storage, `sheet-templates/${teacherId}/${fileName}`);
-      
-      setUploadProgress('Uploading to Firebase Storage...');
-      console.log('📤 Uploading file to Firebase Storage...');
-      
-      // Upload file to Firebase Storage
-      const uploadResult = await uploadBytes(storageRef, file);
-      console.log('✅ File uploaded successfully:', uploadResult);
-      
-      setUploadProgress('Getting download URL...');
-      
-      // Get download URL
-      const downloadURL = await getDownloadURL(uploadResult.ref);
-      console.log('🔗 Download URL obtained:', downloadURL);
+      const fileName = `${timestamp}_${file.name}`;
+      const storageRef = ref(storage, `templates/${fileName}`);
 
-      setUploadProgress('Creating template record...');
-
-      // Create template name from filename
-      const templateName = file.name.replace(/\.[^/.]+$/, '');
+      setUploadProgress('Uploading file...');
       
-      // Create template record in Firestore
-      const template = await GoogleSheetsService.createTemplate({
-        name: templateName,
+      const snapshot = await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+
+      setUploadProgress('Saving template...');
+
+      await GoogleSheetsService.createTemplate({
+        name: file.name.replace(/\.[^/.]+$/, ''),
+        description: `Uploaded template: ${file.name}`,
         fileName: file.name,
-        filePath: downloadURL, // Use Firebase Storage URL
-        teacherId: teacherId,
-        description: `Uploaded template: ${templateName}`
+        filePath: downloadURL,
+        teacherId: teacher.id
       });
 
-      setTemplates(prev => [template, ...prev]);
+      setUploadProgress('Template uploaded successfully!');
       
-      // Reset file input
+      await loadTemplates();
       event.target.value = '';
       
-      setUploadProgress('Complete!');
-      alert('Template uploaded successfully!');
-      console.log('✅ Template created in database:', template);
-      
+      setTimeout(() => {
+        setUploadProgress('');
+      }, 2000);
+
     } catch (error) {
-      console.error('❌ Error uploading template:', error);
-      alert(`Error uploading template: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('Error uploading template:', error);
+      alert('Error uploading template. Please try again.');
+      setUploadProgress('');
     } finally {
       setUploadLoading(false);
-      setUploadProgress('');
     }
   };
 
-  const handleAllocateSheet = (templateId: string) => {
-    router.push(`/teacher/sheets/allocate?templateId=${templateId}`);
+  const downloadTemplate = (template: SheetTemplate) => {
+    window.open(template.filePath, '_blank');
   };
 
-  const formatDate = (timestamp: any) => {
-    if (!timestamp) return 'N/A';
-    
-    let date: Date;
-    if (timestamp && typeof timestamp.toDate === 'function') {
-      date = timestamp.toDate();
-    } else if (timestamp instanceof Date) {
-      date = timestamp;
-    } else {
-      date = new Date(timestamp);
-    }
-    
-    return date.toLocaleDateString('en-AU', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+  const openClassManagement = (classData: ClassWithStats) => {
+    router.push(`/teacher/sheets/class/${classData.id}`);
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'active':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'completed':
-        return <CheckCircle className="h-4 w-4 text-blue-500" />;
-      case 'cancelled':
-        return <AlertCircle className="h-4 w-4 text-red-500" />;
-      default:
-        return <Clock className="h-4 w-4 text-yellow-500" />;
-    }
-  };
+  const filteredClasses = classes.filter(cls => 
+    cls.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    cls.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    cls.year.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-  if (authLoading || loading) {
+  if (authLoading) {
     return (
       <TeacherLayout>
-        <div className="space-y-6">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <div className="animate-pulse space-y-4">
-              <div className="h-8 bg-gray-300 dark:bg-gray-600 rounded w-1/4"></div>
-              <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-1/2"></div>
-              <div className="grid grid-cols-3 gap-4">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-32 bg-gray-300 dark:bg-gray-600 rounded"></div>
-                ))}
+        <div className="min-h-screen bg-gray-50 p-6">
+          <div className="max-w-6xl mx-auto">
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="w-8 h-8 border-t-2 border-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading...</p>
               </div>
             </div>
           </div>
@@ -206,251 +201,228 @@ export default function SheetManagementPage() {
 
   return (
     <TeacherLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Sheet Management
-              </h1>
-              <p className="text-gray-500 dark:text-gray-400 mt-1">
-                Manage templates and allocate Google Sheets to students
-              </p>
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="bg-white rounded-lg shadow mb-6 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Sheet Management</h1>
+                <p className="text-gray-500 mt-1">
+                  Manage your classes and Google Sheets templates
+                </p>
+              </div>
+              <div className="flex items-center space-x-3">
+                <FileSpreadsheet className="h-8 w-8 text-blue-600" />
+              </div>
             </div>
-            <div className="flex items-center space-x-3">
-              <label className="relative">
-                <input
-                  type="file"
-                  accept=".xlsx,.xls,.csv"
-                  onChange={handleTemplateUpload}
-                  className="hidden"
-                  disabled={uploadLoading}
-                />
+
+            {/* Tabs */}
+            <div className="mt-6 border-b border-gray-200">
+              <nav className="-mb-px flex space-x-8">
                 <button
-                  className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-                    uploadLoading ? 'opacity-50 cursor-not-allowed' : ''
+                  onClick={() => setActiveTab('classes')}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === 'classes'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
-                  disabled={uploadLoading}
                 >
-                  <Upload className={`h-4 w-4 mr-2 ${uploadLoading ? 'animate-spin' : ''}`} />
-                  {uploadLoading ? (uploadProgress || 'Uploading...') : 'Upload Template'}
+                  <Users className="h-4 w-4 inline mr-2" />
+                  My Classes
                 </button>
-              </label>
-              
-              {/* Upload Progress Indicator */}
-              {uploadLoading && uploadProgress && (
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  {uploadProgress}
-                </div>
-              )}
+                <button
+                  onClick={() => setActiveTab('templates')}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === 'templates'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  <FileSpreadsheet className="h-4 w-4 inline mr-2" />
+                  Templates
+                </button>
+              </nav>
             </div>
           </div>
 
-          {/* Tabs */}
-          <div className="border-b border-gray-200 dark:border-gray-700">
-            <nav className="-mb-px flex space-x-8">
-              <button
-                onClick={() => setActiveTab('templates')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'templates'
-                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-                }`}
-              >
-                <FileSpreadsheet className="h-4 w-4 inline mr-2" />
-                Templates ({templates.length})
-              </button>
-              <button
-                onClick={() => setActiveTab('allocations')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'allocations'
-                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-                }`}
-              >
-                <Users className="h-4 w-4 inline mr-2" />
-                Allocations ({allocations.length})
-              </button>
-            </nav>
-          </div>
-        </div>
-
-        {/* Content */}
-        {activeTab === 'templates' ? (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-            <div className="p-6">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                Template Library
-              </h3>
-              
-              {templates.length === 0 ? (
-                <div className="text-center py-12">
-                  <FileSpreadsheet className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                    No Templates Yet
-                  </h3>
-                  <p className="text-gray-500 dark:text-gray-400 mb-4">
-                    Upload your first Excel or CSV template to get started
-                  </p>
-                  <label className="relative">
+          {/* Classes Tab */}
+          {activeTab === 'classes' && (
+            <div className="space-y-6">
+              {/* Search and Filter */}
+              <div className="bg-white rounded-lg shadow p-4">
+                <div className="flex items-center space-x-4">
+                  <div className="flex-1 relative">
+                    <Search className="h-5 w-5 absolute left-3 top-3 text-gray-400" />
                     <input
-                      type="file"
-                      accept=".xlsx,.xls,.csv"
-                      onChange={handleTemplateUpload}
-                      className="hidden"
+                      type="text"
+                      placeholder="Search classes..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
-                    <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
-                      <Upload className="h-4 w-4 mr-2" />
-                      Upload Template
-                    </button>
-                  </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Classes Grid */}
+              {classesLoading ? (
+                <div className="text-center py-12">
+                  <div className="w-8 h-8 border-t-2 border-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-gray-600">Loading your classes...</p>
+                </div>
+              ) : filteredClasses.length === 0 ? (
+                <div className="text-center py-12">
+                  <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Classes Found</h3>
+                  <p className="text-gray-500">
+                    {searchTerm ? 'No classes match your search.' : 'You haven\'t been assigned to any classes yet.'}
+                  </p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {templates.map((template) => (
-                    <div key={template.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-1">
-                            {template.name}
-                          </h4>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            {template.fileName}
-                          </p>
+                  {filteredClasses.map((classData) => (
+                    <div
+                      key={classData.id}
+                      className="bg-white rounded-lg shadow hover:shadow-md transition-shadow cursor-pointer"
+                      onClick={() => openClassManagement(classData)}
+                    >
+                      <div className="p-6">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2">
+                              <BookOpen className="h-5 w-5 text-blue-600" />
+                              <h3 className="text-lg font-semibold text-gray-900 truncate">
+                                {classData.name}
+                              </h3>
+                            </div>
+                            <p className="text-sm text-gray-500 mt-1">{classData.subject}</p>
+                            <p className="text-xs text-gray-400">{classData.year}</p>
+                          </div>
+                          <ChevronRight className="h-5 w-5 text-gray-400" />
                         </div>
-                        <FileSpreadsheet className="h-8 w-8 text-green-500" />
-                      </div>
-                      
-                      {template.description && (
-                        <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
-                          {template.description}
-                        </p>
-                      )}
-                      
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-                        Created: {formatDate(template.createdAt)}
-                      </div>
-                      
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => handleAllocateSheet(template.id)}
-                          className="flex-1 inline-flex items-center justify-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-                        >
-                          <Share className="h-4 w-4 mr-1" />
-                          Allocate
-                        </button>
-                        <button 
-                          onClick={() => window.open(template.filePath, '_blank')}
-                          className="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-300"
-                          title="Download template"
-                        >
-                          <Download className="h-4 w-4" />
-                        </button>
-                        <button 
-                          className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                          title="Edit template"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </button>
-                        <button 
-                          className="p-2 text-gray-400 hover:text-red-600"
-                          title="Delete template"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+
+                        <div className="mt-4 space-y-2">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-600">Students:</span>
+                            <span className="font-medium">{classData.studentCount}</span>
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-600">Sheet Allocations:</span>
+                            <span className="font-medium">{classData.sheetAllocations}</span>
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-600">Active Sheets:</span>
+                            <span className="font-medium text-green-600">{classData.activeSheets}</span>
+                          </div>
+                        </div>
+
+                        <div className="mt-4 pt-4 border-t border-gray-100">
+                          <div className="flex items-center text-xs text-gray-500">
+                            <Clock className="h-3 w-3 mr-1" />
+                            Click to manage sheets for this class
+                          </div>
+                        </div>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
             </div>
-          </div>
-        ) : (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-            <div className="p-6">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                Sheet Allocations
-              </h3>
-              
-              {allocations.length === 0 ? (
-                <div className="text-center py-12">
-                  <Users className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                    No Allocations Yet
-                  </h3>
-                  <p className="text-gray-500 dark:text-gray-400">
-                    Start by uploading a template and allocating it to a class
+          )}
+
+          {/* Templates Tab */}
+          {activeTab === 'templates' && (
+            <div className="space-y-6">
+              {/* Upload Section */}
+              <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Upload New Template</h3>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                  <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                  <div className="space-y-2">
+                    <p className="text-gray-600">Upload Excel or CSV template files</p>
+                    <label className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                      <Upload className="h-4 w-4 mr-2" />
+                      {uploadLoading ? 'Uploading...' : 'Choose File'}
+                      <input
+                        type="file"
+                        accept=".xlsx,.xls,.csv"
+                        onChange={handleFileUpload}
+                        disabled={uploadLoading}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                  {uploadProgress && (
+                    <div className="mt-4 p-3 bg-blue-50 rounded-md">
+                      <p className="text-blue-600 text-sm">{uploadProgress}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Templates List */}
+              <div className="bg-white rounded-lg shadow">
+                <div className="p-6 border-b border-gray-200">
+                  <h3 className="text-lg font-medium text-gray-900">My Templates</h3>
+                  <p className="text-gray-500 text-sm mt-1">
+                    Templates you can allocate to your classes
                   </p>
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  {allocations.map((allocation) => (
-                    <div key={allocation.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-3 mb-2">
-                            <h4 className="text-lg font-medium text-gray-900 dark:text-white">
-                              {allocation.title}
-                            </h4>
-                            {getStatusIcon(allocation.status)}
-                            <span className={`text-sm font-medium capitalize ${
-                              allocation.status === 'active' ? 'text-green-600' :
-                              allocation.status === 'completed' ? 'text-blue-600' :
-                              allocation.status === 'cancelled' ? 'text-red-600' :
-                              'text-yellow-600'
-                            }`}>
-                              {allocation.status}
-                            </span>
+
+                {templatesLoading ? (
+                  <div className="text-center py-12">
+                    <div className="w-8 h-8 border-t-2 border-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading templates...</p>
+                  </div>
+                ) : templates.length === 0 ? (
+                  <div className="text-center py-12">
+                    <FileSpreadsheet className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No Templates</h3>
+                    <p className="text-gray-500">Upload your first template to get started</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-gray-200">
+                    {templates.map((template) => (
+                      <div key={template.id} className="p-6 hover:bg-gray-50">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-start space-x-3">
+                            <FileSpreadsheet className="h-6 w-6 text-blue-600 mt-1" />
+                            <div>
+                              <h4 className="text-sm font-medium text-gray-900">
+                                {template.name}
+                              </h4>
+                              <p className="text-sm text-gray-500 mt-1">
+                                {template.description}
+                              </p>
+                              <p className="text-xs text-gray-400 mt-1">
+                                File: {template.fileName}
+                              </p>
+                            </div>
                           </div>
-                          
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600 dark:text-gray-300">
-                            <div>
-                              <span className="font-medium">Template:</span> {allocation.templateName}
-                            </div>
-                            <div>
-                              <span className="font-medium">Class:</span> {allocation.className}
-                            </div>
-                            <div>
-                              <span className="font-medium">Allocated:</span> {formatDate(allocation.allocatedAt)}
-                            </div>
-                            {allocation.dueDate && (
-                              <div>
-                                <span className="font-medium">Due:</span> {formatDate(allocation.dueDate)}
-                              </div>
-                            )}
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => downloadTemplate(template)}
+                              className="p-2 text-gray-400 hover:text-blue-600 rounded-md hover:bg-blue-50"
+                              title="Download template"
+                            >
+                              <Download className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => router.push(`/teacher/sheets/allocate?templateId=${template.id}`)}
+                              className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                            >
+                              Allocate to Class
+                            </button>
                           </div>
-                          
-                          {allocation.description && (
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                              {allocation.description}
-                            </p>
-                          )}
-                        </div>
-                        
-                        <div className="flex items-center space-x-2 ml-4">
-                          <button
-                            onClick={() => router.push(`/teacher/sheets/view/${allocation.id}`)}
-                            className="p-2 text-gray-400 hover:text-blue-600"
-                            title="View Details"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </button>
-                          <button
-                            className="p-2 text-gray-400 hover:text-green-600"
-                            title="Download Reports"
-                          >
-                            <Download className="h-4 w-4" />
-                          </button>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </TeacherLayout>
   );
