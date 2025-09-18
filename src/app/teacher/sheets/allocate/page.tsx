@@ -92,7 +92,6 @@ function AllocateSheetPageContent() {
   const [students, setStudents] = useState<Student[]>([]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [dueDate, setDueDate] = useState('');
   const [loading, setLoading] = useState(true);
   const [allocating, setAllocating] = useState(false);
   const [studentsLoading, setStudentsLoading] = useState(false);
@@ -279,7 +278,6 @@ function AllocateSheetPageContent() {
         setViewMode('manage');
         setTitle(classAllocation.title);
         setDescription(classAllocation.description || '');
-        setDueDate(classAllocation.dueDate ? classAllocation.dueDate.toDate().toISOString().slice(0, 16) : '');
       } else {
         setExistingAllocation(null);
         setViewMode('allocate');
@@ -393,8 +391,7 @@ function AllocateSheetPageContent() {
         teacher.name,
         selectedStudents.map(s => ({ id: s.studentId, name: s.name, email: s.email })),
         title,
-        description || undefined,
-        dueDate ? new Date(dueDate) : undefined
+        description || undefined
       );
 
       alert(`Successfully allocated sheets to ${selectedStudents.length} students!`);
@@ -654,19 +651,6 @@ function AllocateSheetPageContent() {
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                   placeholder="Enter assignment description"
-                />
-              </div>
-
-              {/* Due Date */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Due Date (Optional)
-                </label>
-                <input
-                  type="datetime-local"
-                  value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                 />
               </div>
 

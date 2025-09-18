@@ -111,7 +111,6 @@ export class GoogleSheetsService {
     students: Array<{ id: string; name: string; email: string }>,
     title: string,
     description?: string,
-    dueDate?: Date,
     teacherEmail?: string
   ): Promise<SheetAllocation> {
     try {
@@ -125,7 +124,10 @@ export class GoogleSheetsService {
       
       // Create allocation record
       const allocationId = `allocation_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      const allocation: SheetAllocation = {
+      const allocation: Omit<SheetAllocation, 'description' | 'dueDate'> & {
+        description?: string;
+        dueDate?: Timestamp;
+      } = {
         id: allocationId,
         templateId,
         templateName: template.name,
@@ -134,11 +136,14 @@ export class GoogleSheetsService {
         classId,
         className,
         title,
-        description,
-        dueDate: dueDate ? Timestamp.fromDate(dueDate) : undefined,
         allocatedAt: Timestamp.now(),
         status: 'active'
       };
+
+      // Only add description if it has a value
+      if (description && description.trim()) {
+        allocation.description = description;
+      }
 
       await setDoc(doc(firestore, this.COLLECTIONS.SHEET_ALLOCATIONS, allocationId), allocation);
 
