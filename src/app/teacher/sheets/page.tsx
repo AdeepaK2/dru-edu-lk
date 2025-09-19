@@ -17,7 +17,8 @@ import { useTeacherAuth } from '@/hooks/useTeacherAuth';
 import { ClassFirestoreService } from '@/apiservices/classFirestoreService';
 import { StudentEnrollmentFirestoreService } from '@/apiservices/studentEnrollmentFirestoreService';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { storage } from '@/utils/firebase-client';
+import { storage, firestore } from '@/utils/firebase-client';
+import { collection, addDoc, getDocs, query, where, orderBy, serverTimestamp } from 'firebase/firestore';
 
 interface SheetTemplate {
   id: string;
@@ -125,12 +126,24 @@ export default function SheetManagementPage() {
     
     try {
       setTemplatesLoading(true);
-      console.log('Client: Starting to load templates...');
-      const templatesResponse = await fetch('/api/sheets/templates');
-      console.log('Client: Templates response status:', templatesResponse.status);
-      const templatesData = await templatesResponse.json();
-      console.log('Client: Templates data received:', templatesData);
-      const templates = templatesData.success ? templatesData.templates : [];
+      console.log('Client: Starting to load templates directly from Firestore...');
+      
+      // Direct Firestore query instead of API call
+      const templatesQuery = query(
+        collection(firestore, 'sheetTemplates'),
+        where('isActive', '==', true),
+        orderBy('uploadedAt', 'desc')
+      );
+      
+      const snapshot = await getDocs(templatesQuery);
+      console.log('Client: Firestore query returned:', snapshot.size, 'documents');
+      
+      const templates = snapshot.docs.map(doc => {
+        const data = { id: doc.id, ...doc.data() } as SheetTemplate;
+        console.log('Client: Template found:', data);
+        return data;
+      });
+      
       console.log('Client: Final templates array:', templates);
       setTemplates(templates);
     } catch (error) {
@@ -170,18 +183,15 @@ export default function SheetManagementPage() {
 
       setUploadProgress('Saving template...');
 
-      await fetch('/api/sheets/templates', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: file.name.replace(/\.[^/.]+$/, ''),
-          description: `Uploaded template: ${file.name}`,
-          fileName: file.name,
-          filePath: downloadURL,
-          uploadedBy: teacher.id
-        })
+      // Direct Firestore save instead of API call
+      await addDoc(collection(firestore, 'sheetTemplates'), {
+        name: file.name.replace(/\.[^/.]+$/, ''),
+        description: `Uploaded template: ${file.name}`,
+        fileName: file.name,
+        filePath: downloadURL,
+        uploadedBy: teacher.id,
+        uploadedAt: serverTimestamp(),
+        isActive: true
       });
 
       setUploadProgress('Template uploaded successfully!');
