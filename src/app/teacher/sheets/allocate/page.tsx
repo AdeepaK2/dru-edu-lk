@@ -20,7 +20,7 @@ import {
   Plus
 } from 'lucide-react';
 import TeacherLayout from '@/components/teacher/TeacherLayout';
-import { GoogleSheetsService, SheetTemplate, SheetAllocation, StudentSheet } from '@/apiservices/googleSheetsService';
+import { SheetManagerService, SheetTemplate, SheetAllocation, StudentSheet } from '@/apiservices/sheetManagerService';
 import { ClassFirestoreService } from '@/apiservices/classFirestoreService';
 import { StudentFirestoreService } from '@/apiservices/studentFirestoreService';
 import { StudentEnrollmentFirestoreService, EnrollmentWithParent } from '@/apiservices/studentEnrollmentFirestoreService';
@@ -141,7 +141,7 @@ function AllocateSheetPageContent() {
       setLoading(true);
       
       // Load all available templates for this teacher
-      const templates = await GoogleSheetsService.getTeacherTemplates(teacher.id);
+      const templates = await SheetManagerService.getTemplates();
       setAvailableTemplates(templates);
       
       // If templateId was provided, set it as selected
@@ -214,25 +214,28 @@ function AllocateSheetPageContent() {
       setUploadProgress('Saving template...');
 
       // Save template metadata to Firestore
-      const newTemplate = await GoogleSheetsService.createTemplate({
+      const newTemplateId = await SheetManagerService.createTemplate({
         name: file.name.replace(/\.[^/.]+$/, ''), // Remove file extension
         description: `Uploaded template: ${file.name}`,
         fileName: file.name,
         filePath: downloadURL,
-        teacherId: teacher.id
+        uploadedBy: teacher.id
       });
 
       setUploadProgress('Template uploaded successfully!');
       
       // Reload templates
-      const updatedTemplates = await GoogleSheetsService.getTeacherTemplates(teacher.id);
+      const updatedTemplates = await SheetManagerService.getTemplates();
       setAvailableTemplates(updatedTemplates);
       
       // Auto-select the newly uploaded template
-      if (newTemplate?.id) {
-        setSelectedTemplateId(newTemplate.id);
-        setTemplate(newTemplate);
-        setTitle(`${newTemplate.name} Assignment`);
+      if (newTemplateId) {
+        setSelectedTemplateId(newTemplateId);
+        const createdTemplate = await SheetManagerService.getTemplateById(newTemplateId);
+        if (createdTemplate) {
+          setTemplate(createdTemplate);
+          setTitle(`${createdTemplate.name} Assignment`);
+        }
       }
       
       // Reset form
@@ -259,7 +262,7 @@ function AllocateSheetPageContent() {
       setStudentsLoading(true);
       
       // Check if there's already an allocation for this class (regardless of template)
-      const existingAllocations = await GoogleSheetsService.getAllocations(teacher.id);
+      const existingAllocations = await SheetManagerService.getAllocations();
       const classAllocation = existingAllocations.find(
         (alloc: any) => alloc.classId === selectedClassId
       );
@@ -268,11 +271,11 @@ function AllocateSheetPageContent() {
       console.log('📋 Found allocations:', existingAllocations.length);
       console.log('🎯 Class allocation found:', classAllocation);
       
+      // Get student sheets for this allocation (if exists)
+      let studentSheets: StudentSheet[] = [];
       if (classAllocation) {
-        // Get student sheets for this allocation
-        let studentSheets: StudentSheet[] = [];
         try {
-          studentSheets = await GoogleSheetsService.getStudentSheetsByAllocation(classAllocation.id);
+          studentSheets = await SheetManagerService.getStudentSheets(classAllocation.id);
           console.log('📄 Student sheets found:', studentSheets.length);
         } catch (error) {
           console.warn('Could not load student sheets for allocation:', error);
@@ -283,7 +286,6 @@ function AllocateSheetPageContent() {
           id: classAllocation.id,
           title: classAllocation.title,
           description: classAllocation.description,
-          dueDate: classAllocation.dueDate ? classAllocation.dueDate.toDate() : undefined,
           studentSheets: studentSheets
         };
         
@@ -314,7 +316,7 @@ function AllocateSheetPageContent() {
             let sheetUrl = '';
             
             if (classAllocation) {
-              const studentSheet = classAllocation.studentSheets.find(
+              const studentSheet = studentSheets.find(
                 (sheet: any) => sheet.studentId === enrollment.studentId
               );
               if (studentSheet) {
@@ -396,16 +398,46 @@ function AllocateSheetPageContent() {
 
       const selectedClass = classes.find(c => c.id === selectedClassId);
       
-      await GoogleSheetsService.allocateSheetToClass(
-        selectedTemplateId!,
-        selectedClassId,
-        selectedClass?.name || 'Unknown Class',
-        teacher.id,
-        teacher.name,
-        selectedStudents.map(s => ({ id: s.studentId, name: s.name, email: s.email })),
+      // Create the allocation first
+      const allocationId = await SheetManagerService.createAllocation({
+        templateId: selectedTemplateId!,
+        templateName: template?.name || 'Unknown Template',
+        classId: selectedClassId,
+        className: selectedClass?.name || 'Unknown Class',
         title,
-        description || undefined
-      );
+        description: description || '',
+        teacherId: teacher.id,
+        teacherEmail: teacher.email,
+        studentCount: selectedStudents.length
+      });
+
+      // Then call the API to create the actual Google Sheets
+      const response = await fetch('/api/sheets/create-for-students', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          allocationId,
+          templateFileId: template?.googleFileId || template?.filePath, // Use Google file ID if available, fallback to filePath
+          students: selectedStudents.map(s => ({ id: s.studentId, name: s.name, email: s.email })),
+          title,
+          className: selectedClass?.name || 'Unknown Class',
+          teacherEmail: teacher.email
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create Google Sheets for students');
+      }
+
+      const result = await response.json();
+      
+      // Update allocation status
+      await SheetManagerService.updateAllocation(allocationId, {
+        status: 'completed',
+        sheetsCreated: result.createdSheets
+      });
 
       alert(`Successfully allocated sheets to ${selectedStudents.length} students!`);
       router.push('/teacher/sheets');
@@ -437,8 +469,10 @@ function AllocateSheetPageContent() {
         },
         body: JSON.stringify({
           allocationId: existingAllocation.id,
-          templatePath: template?.filePath,
+          templateFileId: template?.googleFileId || template?.filePath,
           students: newStudents.map(s => ({ id: s.studentId, name: s.name, email: s.email })),
+          title: existingAllocation.title,
+          className: classes.find(c => c.id === selectedClassId)?.name || 'Unknown Class',
           teacherEmail: teacher.email
         })
       });
@@ -462,31 +496,39 @@ function AllocateSheetPageContent() {
     if (!existingAllocation) return;
     
     try {
-      const diagnostics = await GoogleSheetsService.getAllocationDiagnostics(existingAllocation.id);
-      const debugInfo = await GoogleSheetsService.debugStudentSheetsForAllocation(existingAllocation.id);
+      // Get student sheets for diagnostics
+      const studentSheets = await SheetManagerService.getStudentSheets(existingAllocation.id);
       
       let message = `Allocation Diagnostics:\n\n`;
-      message += `- Allocation exists: ${diagnostics.allocation ? 'Yes' : 'No'}\n`;
-      message += `- Student sheets found: ${diagnostics.studentsWithSheets}\n`;
-      message += `- Is healthy: ${diagnostics.isHealthy ? 'Yes' : 'No'}\n`;
+      message += `- Allocation ID: ${existingAllocation.id}\n`;
+      message += `- Title: ${existingAllocation.title}\n`;
+      message += `- Total students in class: ${students.length}\n`;
+      message += `- Student sheets created: ${studentSheets.length}\n`;
+      message += `- Is healthy: ${studentSheets.length > 0 ? 'Yes' : 'No'}\n`;
       
-      if (diagnostics.issues.length > 0) {
-        message += `\nIssues found:\n${diagnostics.issues.map(issue => `- ${issue}`).join('\n')}`;
+      // Check for issues
+      const issues = [];
+      if (studentSheets.length === 0) {
+        issues.push('No student sheets found in database');
+      }
+      const studentsWithoutSheets = students.filter(s => !s.hasSheet);
+      if (studentsWithoutSheets.length > 0) {
+        issues.push(`${studentsWithoutSheets.length} students missing sheets`);
+      }
+      
+      if (issues.length > 0) {
+        message += `\nIssues found:\n${issues.map(issue => `- ${issue}`).join('\n')}`;
       }
       
       message += `\n\nDetailed Debug Info:\n`;
-      message += `- Allocation ID: ${existingAllocation.id}\n`;
-      message += `- Student sheets in database: ${debugInfo.studentSheetsCount}\n`;
       
-      if (debugInfo.studentSheetsDetails.length > 0) {
+      if (studentSheets.length > 0) {
         message += `\nStudent Sheet Details:\n`;
-        debugInfo.studentSheetsDetails.forEach((sheet, index) => {
+        studentSheets.forEach((sheet, index) => {
           message += `${index + 1}. ${sheet.studentName} (${sheet.studentEmail})\n`;
-          message += `   - Has Google Sheet: ${sheet.hasGoogleSheet}\n`;
           message += `   - Status: ${sheet.status}\n`;
-          if (sheet.googleSheetUrl) {
-            message += `   - URL: ${sheet.googleSheetUrl}\n`;
-          }
+          message += `   - Sheet ID: ${sheet.googleSheetId}\n`;
+          message += `   - Created: ${sheet.createdAt.toDate().toLocaleString()}\n`;
           message += `\n`;
         });
       } else {
@@ -494,7 +536,7 @@ function AllocateSheetPageContent() {
         message += `This means the Google Sheets creation process failed completely.`;
       }
       
-      console.log('🔍 Full diagnostic data:', { diagnostics, debugInfo });
+      console.log('🔍 Full diagnostic data:', { allocation: existingAllocation, studentSheets });
       alert(message);
     } catch (error) {
       console.error('Error diagnosing allocation:', error);
@@ -515,7 +557,7 @@ function AllocateSheetPageContent() {
     
     try {
       setAllocating(true);
-      await GoogleSheetsService.deleteAllocation(existingAllocation.id);
+      await SheetManagerService.deleteAllocation(existingAllocation.id);
       alert('Allocation deleted successfully. You can now create a new allocation.');
       router.push('/teacher/sheets');
     } catch (error) {
