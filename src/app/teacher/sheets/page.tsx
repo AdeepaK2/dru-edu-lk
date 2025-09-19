@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import TeacherLayout from '@/components/teacher/TeacherLayout';
 import { useTeacherAuth } from '@/hooks/useTeacherAuth';
-import { GoogleSheetsService, SheetTemplate } from '@/apiservices/googleSheetsService';
+import { SheetManagerService, SheetTemplate } from '@/apiservices/sheetManagerService';
 import { ClassFirestoreService } from '@/apiservices/classFirestoreService';
 import { StudentEnrollmentFirestoreService } from '@/apiservices/studentEnrollmentFirestoreService';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -68,14 +68,14 @@ export default function SheetManagementPage() {
           let activeSheets = 0;
           
           try {
-            const allocations = await GoogleSheetsService.getAllocations(teacher.id);
+            const allocations = await SheetManagerService.getAllocations();
             const classAllocations = allocations.filter(alloc => alloc.classId === cls.id);
             sheetAllocations = classAllocations.length;
             
             // Get student sheets count for each allocation
             for (const alloc of classAllocations) {
               try {
-                const studentSheets = await GoogleSheetsService.getStudentSheetsByAllocation(alloc.id);
+                const studentSheets = await SheetManagerService.getStudentSheets(alloc.id);
                 activeSheets += studentSheets.length;
               } catch (error) {
                 console.warn('Could not load student sheets for allocation:', alloc.id);
@@ -110,7 +110,7 @@ export default function SheetManagementPage() {
     
     try {
       setTemplatesLoading(true);
-      const templatesData = await GoogleSheetsService.getTeacherTemplates(teacher.id);
+      const templatesData = await SheetManagerService.getTemplates();
       setTemplates(templatesData);
     } catch (error) {
       console.error('Error loading templates:', error);
@@ -149,12 +149,12 @@ export default function SheetManagementPage() {
 
       setUploadProgress('Saving template...');
 
-      await GoogleSheetsService.createTemplate({
+      await SheetManagerService.createTemplate({
         name: file.name.replace(/\.[^/.]+$/, ''),
         description: `Uploaded template: ${file.name}`,
         fileName: file.name,
         filePath: downloadURL,
-        teacherId: teacher.id
+        uploadedBy: teacher.id
       });
 
       setUploadProgress('Template uploaded successfully!');
