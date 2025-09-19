@@ -12,13 +12,15 @@ import {
   Calendar,
   BookOpen,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  Trash2
 } from 'lucide-react';
 import TeacherLayout from '@/components/teacher/TeacherLayout';
 import { useTeacherAuth } from '@/hooks/useTeacherAuth';
 import { ClassFirestoreService } from '@/apiservices/classFirestoreService';
 import { StudentEnrollmentFirestoreService } from '@/apiservices/studentEnrollmentFirestoreService';
 import { StudentFirestoreService } from '@/apiservices/studentFirestoreService';
+import { SheetManagerService } from '@/apiservices/sheetManagerService';
 import { firestore } from '@/utils/firebase-client';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 
@@ -82,6 +84,13 @@ export default function ClassSheetManagementPage() {
   const [classInfo, setClassInfo] = useState<ClassInfo | null>(null);
   const [studentsWithSheets, setStudentsWithSheets] = useState<StudentWithSheets[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [sheetToDelete, setSheetToDelete] = useState<{ 
+    sheetId: string; 
+    studentName: string; 
+    templateName: string; 
+  } | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!authLoading && teacher?.id && classId) {
@@ -188,6 +197,38 @@ export default function ClassSheetManagementPage() {
 
   const openSheet = (sheetUrl: string) => {
     window.open(sheetUrl, '_blank');
+  };
+
+  const handleDeleteSheet = (sheetId: string, studentName: string, templateName: string) => {
+    setSheetToDelete({ sheetId, studentName, templateName });
+    setDeleteModalOpen(true);
+  };
+
+  const confirmDeleteSheet = async () => {
+    if (!sheetToDelete) return;
+    
+    try {
+      setDeleting(true);
+      await SheetManagerService.deleteStudentSheet(sheetToDelete.sheetId);
+      
+      // Refresh the data
+      await loadClassData();
+      
+      // Close modal
+      setDeleteModalOpen(false);
+      setSheetToDelete(null);
+      
+    } catch (error) {
+      console.error('Error deleting sheet:', error);
+      alert('Error deleting sheet. Please try again.');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const cancelDelete = () => {
+    setDeleteModalOpen(false);
+    setSheetToDelete(null);
   };
 
   if (authLoading || loading) {
@@ -350,6 +391,13 @@ export default function ClassSheetManagementPage() {
                                 <ExternalLink className="w-4 h-4 mr-1.5" />
                                 Open Sheet
                               </button>
+                              <button
+                                onClick={() => handleDeleteSheet(sheet.id, student.studentName, sheet.templateName)}
+                                className="inline-flex items-center px-3 py-1.5 border border-red-300 text-sm font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
+                                title="Delete this sheet"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
                             </div>
                           </div>
                         ))}
@@ -361,6 +409,48 @@ export default function ClassSheetManagementPage() {
             )}
           </div>
         </div>
+
+        {/* Delete Confirmation Modal */}
+        {deleteModalOpen && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+              <div className="mt-3 text-center">
+                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                  <Trash2 className="h-6 w-6 text-red-600" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mt-2">Delete Student Sheet</h3>
+                <div className="mt-2 px-7 py-3">
+                  <p className="text-sm text-gray-500">
+                    Are you sure you want to delete the sheet "{sheetToDelete?.templateName}" 
+                    for student "{sheetToDelete?.studentName}"?
+                  </p>
+                  <p className="text-xs text-red-600 mt-2">
+                    This action cannot be undone. The Google Sheet will be permanently deleted.
+                  </p>
+                </div>
+                <div className="flex justify-center gap-4 px-4 py-3">
+                  <button
+                    onClick={cancelDelete}
+                    disabled={deleting}
+                    className="px-4 py-2 bg-gray-300 text-gray-700 text-base font-medium rounded-md shadow-sm hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300 disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmDeleteSheet}
+                    disabled={deleting}
+                    className="px-4 py-2 bg-red-600 text-white text-base font-medium rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 flex items-center"
+                  >
+                    {deleting && (
+                      <div className="w-4 h-4 border-t-2 border-white rounded-full animate-spin mr-2"></div>
+                    )}
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </TeacherLayout>
   );

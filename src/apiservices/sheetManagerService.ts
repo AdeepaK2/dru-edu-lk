@@ -190,6 +190,16 @@ export class SheetManagerService {
   }
 
   // Cleanup operations
+  static async deleteStudentSheet(studentSheetId: string): Promise<void> {
+    try {
+      await adminFirestore.collection('studentSheets').doc(studentSheetId).delete();
+      console.log('Student sheet deleted successfully:', studentSheetId);
+    } catch (error) {
+      console.error('Error deleting student sheet:', error);
+      throw error;
+    }
+  }
+
   static async deleteAllocation(id: string): Promise<void> {
     try {
       // Delete all student sheets for this allocation
