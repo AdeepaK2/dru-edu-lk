@@ -27,7 +27,8 @@ import { ClassDocument } from '@/models/classSchema';
 import { StudentDocument } from '@/models/studentSchema';
 import { useTeacherAuth } from '@/hooks/useTeacherAuth';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { storage } from '@/utils/firebase-client';
+import { storage, firestore } from '@/utils/firebase-client';
+import { collection, addDoc, getDocs, query, where, orderBy, serverTimestamp } from 'firebase/firestore';
 
 interface SheetTemplate {
   id: string;
@@ -181,17 +182,19 @@ function AllocateSheetPageContent() {
       
       // Load all available templates for this teacher
       console.log('Loading templates...');
-      const templatesResponse = await fetch('/api/sheets/templates');
-      console.log('Templates response status:', templatesResponse.status);
-      const templatesData = await templatesResponse.json();
-      console.log('Templates data received:', templatesData);
-      const templates = templatesData.success ? templatesData.templates : [];
+      const templatesQuery = query(
+        collection(firestore, 'sheetTemplates'),
+        where('isActive', '==', true),
+        orderBy('uploadedAt', 'desc')
+      );
+      const templatesSnapshot = await getDocs(templatesQuery);
+      const templates = templatesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SheetTemplate));
       console.log('Templates processed:', templates.length, 'templates');
       setAvailableTemplates(templates);
       
       // If templateId was provided, set it as selected
       if (templateId) {
-        const currentTemplate = templates.find((t: any) => t.id === templateId);
+        const currentTemplate = templates.find((t: SheetTemplate) => t.id === templateId);
         if (!currentTemplate) {
           alert('Template not found');
           router.back();
@@ -258,41 +261,37 @@ function AllocateSheetPageContent() {
 
       setUploadProgress('Saving template...');
 
-      // Save template metadata to Firestore
-      const response = await fetch('/api/sheets/templates', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: file.name.replace(/\.[^/.]+$/, ''), // Remove file extension
-          description: `Uploaded template: ${file.name}`,
-          fileName: file.name,
-          filePath: downloadURL,
-          uploadedBy: teacher.id
-        })
+      // Save template metadata to Firestore directly
+      const docRef = await addDoc(collection(firestore, 'sheetTemplates'), {
+        name: file.name.replace(/\.[^/.]+$/, ''), // Remove file extension
+        description: `Uploaded template: ${file.name}`,
+        fileName: file.name,
+        filePath: downloadURL,
+        uploadedBy: teacher.id,
+        uploadedAt: serverTimestamp(),
+        isActive: true
       });
 
-      const result = await response.json();
-      const newTemplateId = result.success ? result.templateId : null;
+      const newTemplateId = docRef.id;
 
       setUploadProgress('Template uploaded successfully!');
       
       // Reload templates
       console.log('Reloading templates after upload...');
-      const templatesResponse = await fetch('/api/sheets/templates');
-      const templatesData = await templatesResponse.json();
-      console.log('Templates reload response:', templatesData);
-      const updatedTemplates = templatesData.success ? templatesData.templates : [];
+      const templatesQuery = query(
+        collection(firestore, 'sheetTemplates'),
+        where('isActive', '==', true),
+        orderBy('uploadedAt', 'desc')
+      );
+      const templatesSnapshot = await getDocs(templatesQuery);
+      const updatedTemplates = templatesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SheetTemplate));
       console.log('Updated templates count:', updatedTemplates.length);
       setAvailableTemplates(updatedTemplates);
       
       // Auto-select the newly uploaded template
       if (newTemplateId) {
         setSelectedTemplateId(newTemplateId);
-        const templateResponse = await fetch(`/api/sheets/templates/${newTemplateId}`);
-        const templateData = await templateResponse.json();
-        const createdTemplate = templateData.success ? templateData.template : null;
+        const createdTemplate = updatedTemplates.find(t => t.id === newTemplateId);
         if (createdTemplate) {
           setTemplate(createdTemplate);
           setTitle(`${createdTemplate.name} Assignment`);
@@ -323,11 +322,14 @@ function AllocateSheetPageContent() {
       setStudentsLoading(true);
       
       // Check if there's already an allocation for this class (regardless of template)
-      const allocationsResponse = await fetch('/api/sheets/allocations');
-      const allocationsData = await allocationsResponse.json();
-      const existingAllocations = allocationsData.success ? allocationsData.allocations : [];
+      const allocationsQuery = query(
+        collection(firestore, 'sheetAllocations'),
+        where('classId', '==', selectedClassId)
+      );
+      const allocationsSnapshot = await getDocs(allocationsQuery);
+      const existingAllocations = allocationsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SheetAllocation));
       const classAllocation = existingAllocations.find(
-        (alloc: any) => alloc.classId === selectedClassId
+        (alloc: SheetAllocation) => alloc.classId === selectedClassId
       );
       
       console.log('🔍 Checking for existing allocations for class:', selectedClassId);
@@ -338,9 +340,12 @@ function AllocateSheetPageContent() {
       let studentSheets: StudentSheet[] = [];
       if (classAllocation) {
         try {
-          const studentsResponse = await fetch(`/api/sheets/student-sheets?allocationId=${classAllocation.id}`);
-          const studentsData = await studentsResponse.json();
-          studentSheets = studentsData.success ? studentsData.studentSheets : [];
+          const studentSheetsQuery = query(
+            collection(firestore, 'studentSheets'),
+            where('allocationId', '==', classAllocation.id)
+          );
+          const studentSheetsSnapshot = await getDocs(studentSheetsQuery);
+          studentSheets = studentSheetsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as StudentSheet));
           console.log('📄 Student sheets found:', studentSheets.length);
         } catch (error) {
           console.warn('Could not load student sheets for allocation:', error);
@@ -580,9 +585,12 @@ function AllocateSheetPageContent() {
     
     try {
       // Get student sheets for diagnostics
-      const studentsResponse = await fetch(`/api/sheets/student-sheets?allocationId=${existingAllocation.id}`);
-      const studentsData = await studentsResponse.json();
-      const studentSheets = studentsData.success ? studentsData.studentSheets : [];
+      const studentSheetsQuery = query(
+        collection(firestore, 'studentSheets'),
+        where('allocationId', '==', existingAllocation.id)
+      );
+      const studentSheetsSnapshot = await getDocs(studentSheetsQuery);
+      const studentSheets = studentSheetsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as StudentSheet));
       
       let message = `Allocation Diagnostics:\n\n`;
       message += `- Allocation ID: ${existingAllocation.id}\n`;
