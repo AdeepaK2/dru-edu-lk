@@ -68,8 +68,11 @@ export async function POST(request: NextRequest) {
     for (const student of students) {
       try {
         console.log(`📝 Creating sheet for ${student.name}...`);
+        console.log(`📧 Student email: ${student.email}`);
+        console.log(`👨‍🏫 Teacher email: ${teacherEmail}`);
 
         // Create a new spreadsheet
+        console.log(`🔄 Step 1: Creating Google Sheet...`);
         const createResponse = await sheets.spreadsheets.create({
           requestBody: {
             properties: {
@@ -89,8 +92,10 @@ export async function POST(request: NextRequest) {
 
         const spreadsheetId = createResponse.data.spreadsheetId!;
         const spreadsheetUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit`;
+        console.log(`✅ Step 1 Complete: Created sheet ${spreadsheetId}`);
 
         // Add some initial content/instructions
+        console.log(`🔄 Step 2: Adding initial content...`);
         await sheets.spreadsheets.values.update({
           spreadsheetId,
           range: 'A1:B3',
@@ -103,8 +108,10 @@ export async function POST(request: NextRequest) {
             ]
           }
         });
+        console.log(`✅ Step 2 Complete: Added initial content`);
 
         // Share with student (edit permissions)
+        console.log(`🔄 Step 3: Sharing with student...`);
         await drive.permissions.create({
           fileId: spreadsheetId,
           requestBody: {
@@ -115,8 +122,10 @@ export async function POST(request: NextRequest) {
           sendNotificationEmail: true,
           emailMessage: `Hi ${student.name}, you have been assigned a Google Sheet for: ${title}. Please complete your work in this sheet.`
         });
+        console.log(`✅ Step 3 Complete: Shared with student`);
 
         // Share with teacher (edit permissions)
+        console.log(`🔄 Step 4: Sharing with teacher...`);
         await drive.permissions.create({
           fileId: spreadsheetId,
           requestBody: {
@@ -126,8 +135,10 @@ export async function POST(request: NextRequest) {
           },
           sendNotificationEmail: false
         });
+        console.log(`✅ Step 4 Complete: Shared with teacher`);
 
         // Create student sheet record in database
+        console.log(`🔄 Step 5: Saving to database...`);
         const studentSheetId = `student_sheet_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         const studentSheet = {
           id: studentSheetId,
@@ -142,12 +153,20 @@ export async function POST(request: NextRequest) {
         };
 
         await GoogleSheetsService.createStudentSheet(studentSheet);
+        console.log(`✅ Step 5 Complete: Saved to database`);
+        
         studentSheets.push(studentSheet);
 
         console.log(`✅ Created sheet for ${student.name}: ${spreadsheetId}`);
 
       } catch (error) {
         console.error(`❌ Error creating sheet for ${student.name}:`, error);
+        console.error(`❌ Error details:`, {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined,
+          studentEmail: student.email,
+          teacherEmail: teacherEmail
+        });
         // Continue with other students even if one fails
       }
     }
