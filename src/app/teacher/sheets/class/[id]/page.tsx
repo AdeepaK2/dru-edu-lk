@@ -19,6 +19,8 @@ import { useTeacherAuth } from '@/hooks/useTeacherAuth';
 import { ClassFirestoreService } from '@/apiservices/classFirestoreService';
 import { StudentEnrollmentFirestoreService } from '@/apiservices/studentEnrollmentFirestoreService';
 import { StudentFirestoreService } from '@/apiservices/studentFirestoreService';
+import { firestore } from '@/utils/firebase-client';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 
 interface SheetAllocation {
   id: string;
@@ -119,10 +121,12 @@ export default function ClassSheetManagementPage() {
       }
 
       // Get all allocations for this class to get template names
-      const allocationsResponse = await fetch('/api/sheets/allocations');
-      const allocationsData = await allocationsResponse.json();
-      const allAllocations = allocationsData.success ? allocationsData.allocations : [];
-      const classAllocations = allAllocations.filter((alloc: any) => alloc.classId === classId);
+      const allocationsQuery = query(
+        collection(firestore, 'sheetAllocations'),
+        where('classId', '==', classId)
+      );
+      const allocationsSnapshot = await getDocs(allocationsQuery);
+      const classAllocations = allocationsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SheetAllocation));
       
       // For each student, get their individual sheets
       const studentsWithSheets = await Promise.all(
@@ -132,15 +136,18 @@ export default function ClassSheetManagementPage() {
             if (!studentData) return null;
 
             // Get all student sheets for this student
-            const studentSheetsResponse = await fetch(`/api/sheets/student-sheets?studentId=${enrollment.studentId}`);
-            const studentSheetsData = await studentSheetsResponse.json();
-            const studentSheets = studentSheetsData.success ? studentSheetsData.studentSheets : [];
+            const studentSheetsQuery = query(
+              collection(firestore, 'studentSheets'),
+              where('studentId', '==', enrollment.studentId)
+            );
+            const studentSheetsSnapshot = await getDocs(studentSheetsQuery);
+            const studentSheets = studentSheetsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as StudentSheet));
             
             // Filter sheets that belong to allocations for this class and add template names
             const classSheets = studentSheets
-              .filter((sheet: any) => classAllocations.some((alloc: any) => alloc.id === sheet.allocationId))
-              .map((sheet: any) => {
-                const allocation = classAllocations.find((alloc: any) => alloc.id === sheet.allocationId);
+              .filter((sheet: StudentSheet) => classAllocations.some((alloc: SheetAllocation) => alloc.id === sheet.allocationId))
+              .map((sheet: StudentSheet) => {
+                const allocation = classAllocations.find((alloc: SheetAllocation) => alloc.id === sheet.allocationId);
                 return {
                   id: sheet.id,
                   allocationId: sheet.allocationId,

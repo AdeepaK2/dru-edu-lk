@@ -80,19 +80,24 @@ export default function SheetManagementPage() {
           let activeSheets = 0;
           
           try {
-            const allocationsResponse = await fetch('/api/sheets/allocations');
-            const allocationsData = await allocationsResponse.json();
-            const allocations = allocationsData.success ? allocationsData.allocations : [];
-            const classAllocations = allocations.filter((alloc: any) => alloc.classId === cls.id);
+            // Direct Firestore query for sheet allocations
+            const allocationsQuery = query(
+              collection(firestore, 'sheetAllocations'),
+              where('classId', '==', cls.id)
+            );
+            const allocationsSnapshot = await getDocs(allocationsQuery);
+            const classAllocations = allocationsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             sheetAllocations = classAllocations.length;
             
             // Get student sheets count for each allocation
             for (const alloc of classAllocations) {
               try {
-                const studentSheetsResponse = await fetch(`/api/sheets/student-sheets?allocationId=${alloc.id}`);
-                const studentSheetsData = await studentSheetsResponse.json();
-                const studentSheets = studentSheetsData.success ? studentSheetsData.studentSheets : [];
-                activeSheets += studentSheets.length;
+                const studentSheetsQuery = query(
+                  collection(firestore, 'studentSheets'),
+                  where('allocationId', '==', alloc.id)
+                );
+                const studentSheetsSnapshot = await getDocs(studentSheetsQuery);
+                activeSheets += studentSheetsSnapshot.size;
               } catch (error) {
                 console.warn('Could not load student sheets for allocation:', alloc.id);
               }
