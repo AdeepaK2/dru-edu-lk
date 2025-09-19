@@ -468,13 +468,17 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
   const handleEditMaterial = (material: any, group?: any) => {
     if (group?.isGroup && group?.materials?.length > 1) {
       // Editing a group
-      setEditingGroup(group);
+      setEditingGroup({
+        ...group,
+        groupId: group.materials[0]?.groupId || group.id // Ensure we have the actual groupId
+      });
       setMaterialToEdit({
         id: group.id,
         title: group.groupTitle || group.title,
         description: group.materials[0]?.description || '',
         isRequired: group.isRequired || false,
         lessonId: group.lessonId,
+        groupId: group.materials[0]?.groupId || group.id,
         materials: group.materials
       });
     } else {
@@ -498,6 +502,10 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
     
     try {
       setEditLoading(true);
+      
+      // Declare groupId and groupTitle outside the loop
+      let groupId: string | undefined;
+      let groupTitle: string | undefined;
       
       // Step 1: Upload new files if any
       if (newFilesToAdd.length > 0) {
@@ -536,13 +544,42 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
             }
             
             // Use same groupId if editing a group, or create new group if adding to single
-            const groupId = editingGroup?.groupId || 
-              (materialToEdit.materials ? materialToEdit.groupId : undefined) ||
-              (newFilesToAdd.length > 0 && !editingGroup ? `group_${Date.now()}` : undefined);
             
-            const groupTitle = editingGroup?.groupTitle || 
-              editedData.title ||
-              (newFilesToAdd.length > 0 && !editingGroup ? editedData.title : undefined);
+            console.log('🔍 Debug groupId assignment:', {
+              editingGroup: !!editingGroup,
+              editingGroupGroupId: editingGroup?.groupId,
+              editingGroupIsGroup: editingGroup?.isGroup,
+              materialToEditMaterials: !!materialToEdit.materials,
+              firstMaterialGroupId: editingGroup?.materials?.[0]?.groupId,
+              newFilesToAddLength: newFilesToAdd.length
+            });
+            
+            if (editingGroup && editingGroup.isGroup && editingGroup.groupId) {
+              // When editing a real group (has groupId), use the existing groupId
+              groupId = editingGroup.groupId;
+              groupTitle = editingGroup.groupTitle || editedData.title;
+              console.log('📦 Using existing real group:', { groupId, groupTitle });
+            } else if (editingGroup && !editingGroup.isGroup && newFilesToAdd.length > 0) {
+              // When editing a single material (fake group) and adding files, create a new group
+              groupId = `group_${Date.now()}`;
+              groupTitle = editedData.title;
+              console.log('📦 Converting single to group:', { groupId, groupTitle });
+            } else if (materialToEdit.materials && materialToEdit.materials.length > 0 && materialToEdit.groupId) {
+              // Fallback: use groupId from materialToEdit if it has materials and groupId
+              groupId = materialToEdit.groupId;
+              groupTitle = materialToEdit.title;
+              console.log('📦 Using material group:', { groupId, groupTitle });
+            } else if (newFilesToAdd.length > 1) {
+              // Creating a new group when adding multiple files
+              groupId = `group_${Date.now()}`;
+              groupTitle = editedData.title;
+              console.log('📦 Creating new group for multiple files:', { groupId, groupTitle });
+            } else {
+              // Single material - no group
+              groupId = undefined;
+              groupTitle = undefined;
+              console.log('📦 Single material, no group');
+            }
             
             // Create new material in the same group
             const materialData: StudyMaterialData = {
@@ -596,12 +633,24 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
       }
       
       // Step 3: Update main material properties
-      if (editingGroup) {
-        // For groups, update the group properties by updating the first material
+      if (editingGroup && editingGroup.isGroup) {
+        // For real groups, update the group properties by updating the first material
         const firstMaterial = materialToEdit.materials[0];
         if (firstMaterial && !filesToRemove.includes(firstMaterial.id)) {
           await updateStudyMaterial(firstMaterial.id, {
             groupTitle: editedData.title,
+            description: editedData.description,
+            isRequired: editedData.isRequired
+          });
+        }
+      } else if (editingGroup && !editingGroup.isGroup && newFilesToAdd.length > 0) {
+        // Converting single material to group - update the original material to have groupId
+        const originalMaterial = materialToEdit.materials[0];
+        if (originalMaterial && !filesToRemove.includes(originalMaterial.id)) {
+          await updateStudyMaterial(originalMaterial.id, {
+            groupId: groupId,
+            groupTitle: editedData.title,
+            title: editedData.title, // Also update the title
             description: editedData.description,
             isRequired: editedData.isRequired
           });
