@@ -14,11 +14,22 @@ import {
 } from 'lucide-react';
 import TeacherLayout from '@/components/teacher/TeacherLayout';
 import { useTeacherAuth } from '@/hooks/useTeacherAuth';
-import { SheetManagerService, SheetTemplate } from '@/apiservices/sheetManagerService';
 import { ClassFirestoreService } from '@/apiservices/classFirestoreService';
 import { StudentEnrollmentFirestoreService } from '@/apiservices/studentEnrollmentFirestoreService';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '@/utils/firebase-client';
+
+interface SheetTemplate {
+  id: string;
+  name: string;
+  description: string;
+  fileName: string;
+  filePath: string;
+  googleFileId?: string;
+  uploadedBy: string;
+  uploadedAt: any;
+  isActive: boolean;
+}
 
 interface ClassWithStats {
   id: string;
@@ -68,14 +79,18 @@ export default function SheetManagementPage() {
           let activeSheets = 0;
           
           try {
-            const allocations = await SheetManagerService.getAllocations();
-            const classAllocations = allocations.filter(alloc => alloc.classId === cls.id);
+            const allocationsResponse = await fetch('/api/sheets/allocations');
+            const allocationsData = await allocationsResponse.json();
+            const allocations = allocationsData.success ? allocationsData.allocations : [];
+            const classAllocations = allocations.filter((alloc: any) => alloc.classId === cls.id);
             sheetAllocations = classAllocations.length;
             
             // Get student sheets count for each allocation
             for (const alloc of classAllocations) {
               try {
-                const studentSheets = await SheetManagerService.getStudentSheets(alloc.id);
+                const studentSheetsResponse = await fetch(`/api/sheets/student-sheets?allocationId=${alloc.id}`);
+                const studentSheetsData = await studentSheetsResponse.json();
+                const studentSheets = studentSheetsData.success ? studentSheetsData.studentSheets : [];
                 activeSheets += studentSheets.length;
               } catch (error) {
                 console.warn('Could not load student sheets for allocation:', alloc.id);
@@ -110,8 +125,10 @@ export default function SheetManagementPage() {
     
     try {
       setTemplatesLoading(true);
-      const templatesData = await SheetManagerService.getTemplates();
-      setTemplates(templatesData);
+      const templatesResponse = await fetch('/api/sheets/templates');
+      const templatesData = await templatesResponse.json();
+      const templates = templatesData.success ? templatesData.templates : [];
+      setTemplates(templates);
     } catch (error) {
       console.error('Error loading templates:', error);
     } finally {
@@ -149,12 +166,18 @@ export default function SheetManagementPage() {
 
       setUploadProgress('Saving template...');
 
-      await SheetManagerService.createTemplate({
-        name: file.name.replace(/\.[^/.]+$/, ''),
-        description: `Uploaded template: ${file.name}`,
-        fileName: file.name,
-        filePath: downloadURL,
-        uploadedBy: teacher.id
+      await fetch('/api/sheets/templates', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: file.name.replace(/\.[^/.]+$/, ''),
+          description: `Uploaded template: ${file.name}`,
+          fileName: file.name,
+          filePath: downloadURL,
+          uploadedBy: teacher.id
+        })
       });
 
       setUploadProgress('Template uploaded successfully!');

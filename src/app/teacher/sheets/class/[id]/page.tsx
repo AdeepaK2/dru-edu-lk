@@ -16,10 +16,37 @@ import {
 } from 'lucide-react';
 import TeacherLayout from '@/components/teacher/TeacherLayout';
 import { useTeacherAuth } from '@/hooks/useTeacherAuth';
-import { GoogleSheetsService, SheetAllocation, StudentSheet } from '@/apiservices/googleSheetsService';
 import { ClassFirestoreService } from '@/apiservices/classFirestoreService';
 import { StudentEnrollmentFirestoreService } from '@/apiservices/studentEnrollmentFirestoreService';
 import { StudentFirestoreService } from '@/apiservices/studentFirestoreService';
+
+interface SheetAllocation {
+  id: string;
+  templateId: string;
+  templateName: string;
+  classId: string;
+  className: string;
+  title: string;
+  description: string;
+  teacherId: string;
+  teacherEmail: string;
+  createdAt: any;
+  status: 'pending' | 'completed' | 'failed';
+  studentCount: number;
+  sheetsCreated: number;
+}
+
+interface StudentSheet {
+  id: string;
+  allocationId: string;
+  studentId: string;
+  studentName: string;
+  studentEmail: string;
+  googleSheetId: string;
+  googleSheetUrl: string;
+  status: 'assigned' | 'in-progress' | 'completed' | 'graded';
+  createdAt: any;
+}
 
 interface ClassInfo {
   id: string;
@@ -92,8 +119,10 @@ export default function ClassSheetManagementPage() {
       }
 
       // Get all allocations for this class to get template names
-      const allAllocations = await GoogleSheetsService.getAllocations(teacher.id);
-      const classAllocations = allAllocations.filter(alloc => alloc.classId === classId);
+      const allocationsResponse = await fetch('/api/sheets/allocations');
+      const allocationsData = await allocationsResponse.json();
+      const allAllocations = allocationsData.success ? allocationsData.allocations : [];
+      const classAllocations = allAllocations.filter((alloc: any) => alloc.classId === classId);
       
       // For each student, get their individual sheets
       const studentsWithSheets = await Promise.all(
@@ -103,13 +132,15 @@ export default function ClassSheetManagementPage() {
             if (!studentData) return null;
 
             // Get all student sheets for this student
-            const studentSheets = await GoogleSheetsService.getStudentSheets(enrollment.studentId);
+            const studentSheetsResponse = await fetch(`/api/sheets/student-sheets?studentId=${enrollment.studentId}`);
+            const studentSheetsData = await studentSheetsResponse.json();
+            const studentSheets = studentSheetsData.success ? studentSheetsData.studentSheets : [];
             
             // Filter sheets that belong to allocations for this class and add template names
             const classSheets = studentSheets
-              .filter(sheet => classAllocations.some(alloc => alloc.id === sheet.allocationId))
-              .map(sheet => {
-                const allocation = classAllocations.find(alloc => alloc.id === sheet.allocationId);
+              .filter((sheet: any) => classAllocations.some((alloc: any) => alloc.id === sheet.allocationId))
+              .map((sheet: any) => {
+                const allocation = classAllocations.find((alloc: any) => alloc.id === sheet.allocationId);
                 return {
                   id: sheet.id,
                   allocationId: sheet.allocationId,
