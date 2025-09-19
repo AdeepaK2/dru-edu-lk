@@ -133,24 +133,45 @@ export default function SheetManagementPage() {
       setTemplatesLoading(true);
       console.log('Client: Starting to load templates directly from Firestore...');
       
-      // Direct Firestore query instead of API call
-      const templatesQuery = query(
+      // First, let's try loading ALL templates to see what's in the database
+      const allTemplatesQuery = query(
         collection(firestore, 'sheetTemplates'),
-        where('isActive', '==', true),
         orderBy('uploadedAt', 'desc')
       );
       
-      const snapshot = await getDocs(templatesQuery);
-      console.log('Client: Firestore query returned:', snapshot.size, 'documents');
+      const allSnapshot = await getDocs(allTemplatesQuery);
+      console.log('Client: Total templates in database:', allSnapshot.size);
       
-      const templates = snapshot.docs.map(doc => {
-        const data = { id: doc.id, ...doc.data() } as SheetTemplate;
-        console.log('Client: Template found:', data);
-        return data;
+      // Log all templates for debugging
+      allSnapshot.docs.forEach(doc => {
+        const data = doc.data();
+        console.log('Client: Template in DB:', { id: doc.id, ...data });
       });
       
+      // Filter for active templates (more flexible filtering)
+      const templates = allSnapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() } as SheetTemplate))
+        .filter(template => {
+          // Simple and type-safe isActive check
+          const isActiveValue = template.isActive;
+          // Convert to string and check for truthy values
+          const stringValue = String(isActiveValue).toLowerCase();
+          const isActive = isActiveValue === true || stringValue === 'true' || stringValue === '1';
+          console.log(`Template ${template.name}: isActive = ${isActiveValue} (${typeof isActiveValue}), filtered = ${isActive}`);
+          return isActive;
+        });
+      
+      console.log('Client: Filtered active templates:', templates.length);
       console.log('Client: Final templates array:', templates);
-      setTemplates(templates);
+      
+      // TEMPORARY: If no active templates found, show all templates for debugging
+      if (templates.length === 0 && allSnapshot.size > 0) {
+        console.log('Client: No active templates found, showing all templates for debugging');
+        const allTemplates = allSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SheetTemplate));
+        setTemplates(allTemplates);
+      } else {
+        setTemplates(templates);
+      }
     } catch (error) {
       console.error('Error loading templates:', error);
     } finally {
