@@ -3,7 +3,10 @@ import { SheetManagerService } from '@/apiservices/sheetManagerService';
 
 export async function GET() {
   try {
+    console.log('GET /api/sheets/templates - Starting request');
     const templates = await SheetManagerService.getTemplates();
+    console.log('GET /api/sheets/templates - Templates fetched:', templates.length, 'templates');
+    console.log('GET /api/sheets/templates - First template:', templates[0]);
     return NextResponse.json({ success: true, templates });
   } catch (error) {
     console.error('Error fetching templates:', error);

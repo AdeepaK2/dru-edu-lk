@@ -47,13 +47,21 @@ export class SheetManagerService {
   // Template operations
   static async getTemplates(): Promise<SheetTemplate[]> {
     try {
+      console.log('SheetManagerService.getTemplates - Starting query');
       const snapshot = await adminFirestore
         .collection('sheetTemplates')
         .where('isActive', '==', true)
         .orderBy('uploadedAt', 'desc')
         .get();
       
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SheetTemplate));
+      console.log('SheetManagerService.getTemplates - Query result:', snapshot.size, 'documents');
+      const templates = snapshot.docs.map(doc => {
+        const data = { id: doc.id, ...doc.data() } as SheetTemplate;
+        console.log('SheetManagerService.getTemplates - Template:', data.id, data.name);
+        return data;
+      });
+      
+      return templates;
     } catch (error) {
       console.error('Error fetching templates:', error);
       return [];
@@ -72,11 +80,14 @@ export class SheetManagerService {
 
   static async createTemplate(template: Omit<SheetTemplate, 'id' | 'uploadedAt' | 'isActive'>): Promise<string> {
     try {
-      const docRef = await adminFirestore.collection('sheetTemplates').add({
+      const templateData = {
         ...template,
         uploadedAt: Timestamp.now(),
         isActive: true
-      });
+      };
+      console.log('SheetManagerService.createTemplate - Creating template:', templateData);
+      const docRef = await adminFirestore.collection('sheetTemplates').add(templateData);
+      console.log('SheetManagerService.createTemplate - Template created with ID:', docRef.id);
       return docRef.id;
     } catch (error) {
       console.error('Error creating template:', error);
