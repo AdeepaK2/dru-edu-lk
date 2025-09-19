@@ -498,7 +498,7 @@ function AllocateSheetPageContent() {
         },
         body: JSON.stringify({
           allocationId,
-          templateFileId: template?.googleFileId || template?.filePath, // Use Google file ID if available, fallback to filePath
+          templateFileUrl: template?.filePath, // Use Firebase Storage URL
           students: selectedStudents.map(s => ({ id: s.studentId, name: s.name, email: s.email })),
           title,
           className: selectedClass?.name || 'Unknown Class',
@@ -557,7 +557,7 @@ function AllocateSheetPageContent() {
         },
         body: JSON.stringify({
           allocationId: existingAllocation.id,
-          templateFileId: template?.googleFileId || template?.filePath,
+          templateFileUrl: template?.filePath,
           students: newStudents.map(s => ({ id: s.studentId, name: s.name, email: s.email })),
           title: existingAllocation.title,
           className: classes.find(c => c.id === selectedClassId)?.name || 'Unknown Class',
@@ -692,7 +692,7 @@ function AllocateSheetPageContent() {
         },
         body: JSON.stringify({
           allocationId: existingAllocation.id,
-          templateFilePath: template?.filePath,
+          templateFileUrl: template?.filePath,
           students: studentsWithoutSheets.map(s => ({ id: s.studentId, name: s.name, email: s.email })),
           title: existingAllocation.title,
           teacherEmail: teacher.email

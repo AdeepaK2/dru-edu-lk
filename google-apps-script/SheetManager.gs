@@ -64,16 +64,43 @@ function testConnection() {
  */
 function createStudentSheets(data) {
   try {
-    const { templateFileId, students, className, templateName } = data;
+    const { templateFileUrl, students, className, templateName } = data;
     
-    if (!templateFileId || !students || !Array.isArray(students)) {
+    if (!templateFileUrl || !students || !Array.isArray(students)) {
       return createResponse({ error: 'Missing required parameters' }, 400);
     }
     
     console.log(`Creating sheets for ${students.length} students`);
+    console.log(`Template URL: ${templateFileUrl}`);
     
-    // Get the template file
-    const templateFile = DriveApp.getFileById(templateFileId);
+    // Download the template file from Firebase Storage URL
+    let templateFile;
+    try {
+      console.log('Downloading template from Firebase Storage...');
+      const response = UrlFetchApp.fetch(templateFileUrl);
+      const blob = response.getBlob();
+      
+      // Determine the correct MIME type based on the file extension
+      let mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'; // Default to .xlsx
+      if (templateFileUrl.includes('.csv')) {
+        mimeType = 'text/csv';
+      } else if (templateFileUrl.includes('.xls') && !templateFileUrl.includes('.xlsx')) {
+        mimeType = 'application/vnd.ms-excel';
+      }
+      
+      blob.setContentType(mimeType);
+      
+      // Create a temporary file in Google Drive
+      const tempFileName = `temp_template_${Date.now()}`;
+      templateFile = DriveApp.createFile(blob.setName(tempFileName));
+      
+      console.log(`✅ Template downloaded and uploaded to Drive: ${templateFile.getId()}`);
+      
+    } catch (downloadError) {
+      console.error('❌ Error downloading template:', downloadError);
+      return createResponse({ error: 'Failed to download template: ' + downloadError.toString() }, 500);
+    }
+    
     const sharedFolder = DriveApp.getFolderById(SHARED_FOLDER_ID);
     
     const results = [];
@@ -125,6 +152,16 @@ function createStudentSheets(data) {
       }
     }
     
+    // Clean up the temporary template file
+    try {
+      if (templateFile) {
+        DriveApp.getFileById(templateFile.getId()).setTrashed(true);
+        console.log('🗑️ Cleaned up temporary template file');
+      }
+    } catch (cleanupError) {
+      console.warn('⚠️ Could not clean up temporary file:', cleanupError);
+    }
+    
     return createResponse({
       success: true,
       message: `Created ${results.length} sheets successfully`,
@@ -139,6 +176,17 @@ function createStudentSheets(data) {
     
   } catch (error) {
     console.error('Error in createStudentSheets:', error);
+    
+    // Clean up the temporary template file if it exists
+    try {
+      if (templateFile) {
+        DriveApp.getFileById(templateFile.getId()).setTrashed(true);
+        console.log('🗑️ Cleaned up temporary template file after error');
+      }
+    } catch (cleanupError) {
+      console.warn('⚠️ Could not clean up temporary file after error:', cleanupError);
+    }
+    
     return createResponse({ error: error.toString() }, 500);
   }
 }

@@ -4,7 +4,7 @@ import { adminFirestore } from '@/utils/firebase-admin';
 
 interface CreateSheetsRequest {
   allocationId: string;
-  templateFileId: string; // Changed from templateFilePath to templateFileId
+  templateFileUrl: string; // Changed to templateFileUrl to be more accurate
   students: Array<{
     id: string;
     name: string;
@@ -18,10 +18,10 @@ interface CreateSheetsRequest {
 export async function POST(request: NextRequest) {
   try {
     const body: CreateSheetsRequest = await request.json();
-    const { allocationId, templateFileId, students, title, className, teacherEmail } = body;
+    const { allocationId, templateFileUrl, students, title, className, teacherEmail } = body;
 
     console.log('🔄 Creating Google Sheets for students via Apps Script:', students.length);
-    console.log('📋 Request data:', { allocationId, templateFileId, title, className, teacherEmail });
+    console.log('📋 Request data:', { allocationId, templateFileUrl, title, className, teacherEmail });
 
     // Check if Google Apps Script URL is configured
     const appsScriptUrl = process.env.GOOGLE_APPS_SCRIPT_URL;
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     // Prepare data for Google Apps Script
     const appsScriptData = {
       action: 'createStudentSheets',
-      templateFileId,
+      templateFileUrl,
       students: students.map(student => ({
         id: student.id,
         name: student.name
