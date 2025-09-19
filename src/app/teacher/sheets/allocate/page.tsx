@@ -180,9 +180,13 @@ function AllocateSheetPageContent() {
       setLoading(true);
       
       // Load all available templates for this teacher
+      console.log('Loading templates...');
       const templatesResponse = await fetch('/api/sheets/templates');
+      console.log('Templates response status:', templatesResponse.status);
       const templatesData = await templatesResponse.json();
+      console.log('Templates data received:', templatesData);
       const templates = templatesData.success ? templatesData.templates : [];
+      console.log('Templates processed:', templates.length, 'templates');
       setAvailableTemplates(templates);
       
       // If templateId was provided, set it as selected
@@ -275,9 +279,12 @@ function AllocateSheetPageContent() {
       setUploadProgress('Template uploaded successfully!');
       
       // Reload templates
+      console.log('Reloading templates after upload...');
       const templatesResponse = await fetch('/api/sheets/templates');
       const templatesData = await templatesResponse.json();
+      console.log('Templates reload response:', templatesData);
       const updatedTemplates = templatesData.success ? templatesData.templates : [];
+      console.log('Updated templates count:', updatedTemplates.length);
       setAvailableTemplates(updatedTemplates);
       
       // Auto-select the newly uploaded template
