@@ -20,7 +20,6 @@ import {
   Plus
 } from 'lucide-react';
 import TeacherLayout from '@/components/teacher/TeacherLayout';
-import { SheetManagerService, SheetTemplate, SheetAllocation, StudentSheet } from '@/apiservices/sheetManagerService';
 import { ClassFirestoreService } from '@/apiservices/classFirestoreService';
 import { StudentFirestoreService } from '@/apiservices/studentFirestoreService';
 import { StudentEnrollmentFirestoreService, EnrollmentWithParent } from '@/apiservices/studentEnrollmentFirestoreService';
@@ -29,6 +28,46 @@ import { StudentDocument } from '@/models/studentSchema';
 import { useTeacherAuth } from '@/hooks/useTeacherAuth';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '@/utils/firebase-client';
+
+interface SheetTemplate {
+  id: string;
+  name: string;
+  description: string;
+  fileName: string;
+  filePath: string;
+  googleFileId?: string;
+  uploadedBy: string;
+  uploadedAt: any;
+  isActive: boolean;
+}
+
+interface SheetAllocation {
+  id: string;
+  templateId: string;
+  templateName: string;
+  classId: string;
+  className: string;
+  title: string;
+  description: string;
+  teacherId: string;
+  teacherEmail: string;
+  createdAt: any;
+  status: 'pending' | 'completed' | 'failed';
+  studentCount: number;
+  sheetsCreated: number;
+}
+
+interface StudentSheet {
+  id: string;
+  allocationId: string;
+  studentId: string;
+  studentName: string;
+  studentEmail: string;
+  googleSheetId: string;
+  googleSheetUrl: string;
+  status: 'assigned' | 'in-progress' | 'completed' | 'graded';
+  createdAt: any;
+}
 
 interface Student {
   id: string;
@@ -141,12 +180,14 @@ function AllocateSheetPageContent() {
       setLoading(true);
       
       // Load all available templates for this teacher
-      const templates = await SheetManagerService.getTemplates();
+      const templatesResponse = await fetch('/api/sheets/templates');
+      const templatesData = await templatesResponse.json();
+      const templates = templatesData.success ? templatesData.templates : [];
       setAvailableTemplates(templates);
       
       // If templateId was provided, set it as selected
       if (templateId) {
-        const currentTemplate = templates.find(t => t.id === templateId);
+        const currentTemplate = templates.find((t: any) => t.id === templateId);
         if (!currentTemplate) {
           alert('Template not found');
           router.back();
@@ -214,24 +255,37 @@ function AllocateSheetPageContent() {
       setUploadProgress('Saving template...');
 
       // Save template metadata to Firestore
-      const newTemplateId = await SheetManagerService.createTemplate({
-        name: file.name.replace(/\.[^/.]+$/, ''), // Remove file extension
-        description: `Uploaded template: ${file.name}`,
-        fileName: file.name,
-        filePath: downloadURL,
-        uploadedBy: teacher.id
+      const response = await fetch('/api/sheets/templates', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: file.name.replace(/\.[^/.]+$/, ''), // Remove file extension
+          description: `Uploaded template: ${file.name}`,
+          fileName: file.name,
+          filePath: downloadURL,
+          uploadedBy: teacher.id
+        })
       });
+
+      const result = await response.json();
+      const newTemplateId = result.success ? result.templateId : null;
 
       setUploadProgress('Template uploaded successfully!');
       
       // Reload templates
-      const updatedTemplates = await SheetManagerService.getTemplates();
+      const templatesResponse = await fetch('/api/sheets/templates');
+      const templatesData = await templatesResponse.json();
+      const updatedTemplates = templatesData.success ? templatesData.templates : [];
       setAvailableTemplates(updatedTemplates);
       
       // Auto-select the newly uploaded template
       if (newTemplateId) {
         setSelectedTemplateId(newTemplateId);
-        const createdTemplate = await SheetManagerService.getTemplateById(newTemplateId);
+        const templateResponse = await fetch(`/api/sheets/templates/${newTemplateId}`);
+        const templateData = await templateResponse.json();
+        const createdTemplate = templateData.success ? templateData.template : null;
         if (createdTemplate) {
           setTemplate(createdTemplate);
           setTitle(`${createdTemplate.name} Assignment`);
@@ -262,7 +316,9 @@ function AllocateSheetPageContent() {
       setStudentsLoading(true);
       
       // Check if there's already an allocation for this class (regardless of template)
-      const existingAllocations = await SheetManagerService.getAllocations();
+      const allocationsResponse = await fetch('/api/sheets/allocations');
+      const allocationsData = await allocationsResponse.json();
+      const existingAllocations = allocationsData.success ? allocationsData.allocations : [];
       const classAllocation = existingAllocations.find(
         (alloc: any) => alloc.classId === selectedClassId
       );
@@ -275,7 +331,9 @@ function AllocateSheetPageContent() {
       let studentSheets: StudentSheet[] = [];
       if (classAllocation) {
         try {
-          studentSheets = await SheetManagerService.getStudentSheets(classAllocation.id);
+          const studentsResponse = await fetch(`/api/sheets/student-sheets?allocationId=${classAllocation.id}`);
+          const studentsData = await studentsResponse.json();
+          studentSheets = studentsData.success ? studentsData.studentSheets : [];
           console.log('📄 Student sheets found:', studentSheets.length);
         } catch (error) {
           console.warn('Could not load student sheets for allocation:', error);
@@ -399,17 +457,26 @@ function AllocateSheetPageContent() {
       const selectedClass = classes.find(c => c.id === selectedClassId);
       
       // Create the allocation first
-      const allocationId = await SheetManagerService.createAllocation({
-        templateId: selectedTemplateId!,
-        templateName: template?.name || 'Unknown Template',
-        classId: selectedClassId,
-        className: selectedClass?.name || 'Unknown Class',
-        title,
-        description: description || '',
-        teacherId: teacher.id,
-        teacherEmail: teacher.email,
-        studentCount: selectedStudents.length
+      const allocationResponse = await fetch('/api/sheets/allocations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          templateId: selectedTemplateId!,
+          templateName: template?.name || 'Unknown Template',
+          classId: selectedClassId,
+          className: selectedClass?.name || 'Unknown Class',
+          title,
+          description: description || '',
+          teacherId: teacher.id,
+          teacherEmail: teacher.email,
+          studentCount: selectedStudents.length
+        })
       });
+
+      const allocationData = await allocationResponse.json();
+      const allocationId = allocationData.success ? allocationData.allocationId : null;
 
       // Then call the API to create the actual Google Sheets
       const response = await fetch('/api/sheets/create-for-students', {
@@ -434,9 +501,18 @@ function AllocateSheetPageContent() {
       const result = await response.json();
       
       // Update allocation status
-      await SheetManagerService.updateAllocation(allocationId, {
-        status: 'completed',
-        sheetsCreated: result.createdSheets
+      await fetch('/api/sheets/allocations', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          allocationId,
+          updates: {
+            status: 'completed',
+            sheetsCreated: result.createdSheets
+          }
+        })
       });
 
       alert(`Successfully allocated sheets to ${selectedStudents.length} students!`);
@@ -497,7 +573,9 @@ function AllocateSheetPageContent() {
     
     try {
       // Get student sheets for diagnostics
-      const studentSheets = await SheetManagerService.getStudentSheets(existingAllocation.id);
+      const studentsResponse = await fetch(`/api/sheets/student-sheets?allocationId=${existingAllocation.id}`);
+      const studentsData = await studentsResponse.json();
+      const studentSheets = studentsData.success ? studentsData.studentSheets : [];
       
       let message = `Allocation Diagnostics:\n\n`;
       message += `- Allocation ID: ${existingAllocation.id}\n`;
@@ -524,7 +602,7 @@ function AllocateSheetPageContent() {
       
       if (studentSheets.length > 0) {
         message += `\nStudent Sheet Details:\n`;
-        studentSheets.forEach((sheet, index) => {
+        studentSheets.forEach((sheet: any, index: number) => {
           message += `${index + 1}. ${sheet.studentName} (${sheet.studentEmail})\n`;
           message += `   - Status: ${sheet.status}\n`;
           message += `   - Sheet ID: ${sheet.googleSheetId}\n`;
@@ -557,7 +635,9 @@ function AllocateSheetPageContent() {
     
     try {
       setAllocating(true);
-      await SheetManagerService.deleteAllocation(existingAllocation.id);
+      await fetch(`/api/sheets/allocations?id=${existingAllocation.id}`, {
+        method: 'DELETE'
+      });
       alert('Allocation deleted successfully. You can now create a new allocation.');
       router.push('/teacher/sheets');
     } catch (error) {
