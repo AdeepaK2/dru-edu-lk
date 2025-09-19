@@ -18,7 +18,8 @@ import {
   BookOpenCheck,
   ShoppingCart,
   PlayCircle,
-  FileCheck
+  FileCheck,
+  FileSpreadsheet
 } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/utils/firebase-client';
@@ -81,6 +82,12 @@ function buildSidebarItems(upcomingQuizCount: number): SidebarItem[] {
       label: 'Study Materials',
       href: '/student/study',
       icon: BookOpenCheck,
+    },
+    {
+      id: 'sheets',
+      label: 'My Sheets',
+      href: '/student/sheets',
+      icon: FileSpreadsheet,
     },
     {
       id: 'videos',

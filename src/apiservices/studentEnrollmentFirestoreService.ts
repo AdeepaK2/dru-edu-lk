@@ -130,4 +130,27 @@ export class StudentEnrollmentFirestoreService {
       return 0;
     }
   }
+
+  /**
+   * Get all enrollments for a specific student
+   */
+  static async getEnrollmentsByStudentId(studentId: string): Promise<StudentEnrollmentDocument[]> {
+    try {
+      const q = query(
+        this.collectionRef,
+        where('studentId', '==', studentId)
+      );
+      
+      const querySnapshot = await getDocs(q);
+      
+      return querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as StudentEnrollmentDocument[];
+      
+    } catch (error) {
+      console.error('❌ Error loading student enrollments:', error);
+      throw new Error(`Failed to load student enrollments: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
 }
