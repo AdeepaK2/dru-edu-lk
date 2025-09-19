@@ -62,6 +62,35 @@ export async function POST(request: NextRequest) {
     const sheets = google.sheets({ version: 'v4', auth });
     const drive = google.drive({ version: 'v3', auth });
 
+    // Find the shared folder - this is REQUIRED now
+    let folderId = null;
+    try {
+      console.log('🔍 Looking for shared folder "Dru Edu Sheets"...');
+      const folderSearch = await drive.files.list({
+        q: "name='Dru Edu Sheets' and mimeType='application/vnd.google-apps.folder'",
+        fields: 'files(id, name, owners)'
+      });
+      
+      if (folderSearch.data.files && folderSearch.data.files.length > 0) {
+        folderId = folderSearch.data.files[0].id!;
+        console.log(`✅ Found shared folder: ${folderId}`);
+      } else {
+        console.log('❌ Shared folder "Dru Edu Sheets" not found!');
+        return NextResponse.json({
+          success: false,
+          error: 'Shared folder "Dru Edu Sheets" not found. Please create a folder named "Dru Edu Sheets" in Google Drive and share it with the service account.',
+          serviceAccountEmail: 'sheet-admin@dru-edu.iam.gserviceaccount.com'
+        }, { status: 500 });
+      }
+    } catch (error) {
+      console.log('❌ Could not search for folder:', error);
+      return NextResponse.json({
+        success: false,
+        error: 'Could not access shared folder. Make sure you have shared a folder with the service account.',
+        details: error
+      }, { status: 500 });
+    }
+
     const studentSheets = [];
 
     // Create individual Google Sheets for each student
@@ -71,8 +100,8 @@ export async function POST(request: NextRequest) {
         console.log(`📧 Student email: ${student.email}`);
         console.log(`👨‍🏫 Teacher email: ${teacherEmail}`);
 
-        // Create a new spreadsheet
-        console.log(`🔄 Step 1: Creating Google Sheet...`);
+        // Create a new spreadsheet in the shared folder
+        console.log(`🔄 Step 1: Creating Google Sheet in shared folder...`);
         const createResponse = await sheets.spreadsheets.create({
           requestBody: {
             properties: {
@@ -93,6 +122,16 @@ export async function POST(request: NextRequest) {
         const spreadsheetId = createResponse.data.spreadsheetId!;
         const spreadsheetUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit`;
         console.log(`✅ Step 1 Complete: Created sheet ${spreadsheetId}`);
+
+        // Move to shared folder - this is REQUIRED
+        console.log(`🔄 Step 1.5: Moving sheet to shared folder...`);
+        await drive.files.update({
+          fileId: spreadsheetId,
+          addParents: folderId,
+          removeParents: 'root',
+          fields: 'id, parents'
+        });
+        console.log(`✅ Step 1.5 Complete: Moved to shared folder`);
 
         // Add some initial content/instructions
         console.log(`🔄 Step 2: Adding initial content...`);
