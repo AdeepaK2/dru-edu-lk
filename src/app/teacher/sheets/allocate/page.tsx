@@ -1073,10 +1073,6 @@ function AllocateSheetPageContent() {
                     <span className="text-xs">
                       {students.filter(s => s.hasSheet).length} students already have sheets
                     </span>
-                    <br />
-                    <span className="text-xs text-gray-500">
-                      Debug: Total students: {students.length}, With sheets: {students.filter(s => s.hasSheet).length}
-                    </span>
                   </div>
                 </div>
 
