@@ -20,7 +20,6 @@ import { useTeacherAuth } from '@/hooks/useTeacherAuth';
 import { ClassFirestoreService } from '@/apiservices/classFirestoreService';
 import { StudentEnrollmentFirestoreService } from '@/apiservices/studentEnrollmentFirestoreService';
 import { StudentFirestoreService } from '@/apiservices/studentFirestoreService';
-import { SheetManagerService } from '@/apiservices/sheetManagerService';
 import { firestore } from '@/utils/firebase-client';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 
@@ -209,7 +208,14 @@ export default function ClassSheetManagementPage() {
     
     try {
       setDeleting(true);
-      await SheetManagerService.deleteStudentSheet(sheetToDelete.sheetId);
+      
+      const response = await fetch(`/api/sheets/student?sheetId=${sheetToDelete.sheetId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete sheet');
+      }
       
       // Refresh the data
       await loadClassData();
