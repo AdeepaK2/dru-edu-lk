@@ -125,9 +125,13 @@ export default function SheetManagementPage() {
     
     try {
       setTemplatesLoading(true);
+      console.log('Client: Starting to load templates...');
       const templatesResponse = await fetch('/api/sheets/templates');
+      console.log('Client: Templates response status:', templatesResponse.status);
       const templatesData = await templatesResponse.json();
+      console.log('Client: Templates data received:', templatesData);
       const templates = templatesData.success ? templatesData.templates : [];
+      console.log('Client: Final templates array:', templates);
       setTemplates(templates);
     } catch (error) {
       console.error('Error loading templates:', error);
