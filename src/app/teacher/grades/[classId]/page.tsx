@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
   ArrowLeft,
@@ -49,19 +49,23 @@ export default function ClassGradeAnalytics() {
   const { teacher } = useTeacherAuth();
   const classId = params.classId as string;
 
-  // Fast loading states - show data as soon as it's available
-  const [initialLoading, setInitialLoading] = useState(true);
+  // Optimized state management with immediate UI feedback
   const [classData, setClassData] = useState<ClassDocument | null>(null);
-  const [basicAnalytics, setBasicAnalytics] = useState<any>(null);
+  const [quickStats, setQuickStats] = useState<{
+    totalStudents: number;
+    averagePerformance: number;
+    passRate: number;
+    testsCompleted: number;
+  } | null>(null);
   const [fullAnalytics, setFullAnalytics] = useState<ClassAnalytics | null>(null);
   const [studentPerformances, setStudentPerformances] = useState<StudentPerformanceData[]>([]);
   const [performanceTrends, setPerformanceTrends] = useState<PerformanceTrend[]>([]);
   
-  // Loading states for progressive loading
+  // Progressive loading states - show content as soon as it's available
   const [loadingStates, setLoadingStates] = useState({
     class: true,
-    basicAnalytics: true,
-    fullAnalytics: true,
+    quickStats: true,
+    fullAnalytics: false,
     students: false,
     trends: false
   });
@@ -72,114 +76,179 @@ export default function ClassGradeAnalytics() {
   const [activeTab, setActiveTab] = useState<'overview' | 'students' | 'trends'>('overview');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [studentsPerPage] = useState(10); // Pagination for better performance
   
   // Modal state
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
   const [selectedStudentData, setSelectedStudentData] = useState<StudentPerformanceData | null>(null);
 
-  // Fast initial load - parallel loading of essential data
+  // Cache for performance optimization
+  const [dataCache, setDataCache] = useState<Map<string, any>>(new Map());
+
+  // Immediate load - get essential data first for instant feedback
   useEffect(() => {
-    const fastInitialLoad = async () => {
+    const immediateLoad = async () => {
       if (!classId || !teacher?.id) return;
 
-      console.log('🚀 Starting fast initial load for class:', classId);
-      setInitialLoading(true);
-
+      console.log('🚀 Immediate load for class:', classId);
+      
       try {
-        // Load class data and basic analytics in parallel
-        const [classResult, basicAnalyticsResult] = await Promise.allSettled([
-          ClassFirestoreService.getClassById(classId),
-          // For now, use the regular analytics as "basic" - we can optimize this later
-          GradeAnalyticsService.getClassAnalytics(classId)
-        ]);
-
-        // Handle class data
-        if (classResult.status === 'fulfilled' && classResult.value) {
-          const classDoc = classResult.value;
-          
-          // Verify teacher access
-          if (classDoc.teacherId !== teacher.id) {
-            throw new Error('Access denied: You are not the teacher for this class');
-          }
-          
-          setClassData(classDoc);
-          setLoadingStates(prev => ({ ...prev, class: false }));
-          console.log('✅ Class data loaded');
-        } else {
+        // Load class data first - fastest operation
+        const classResult = await ClassFirestoreService.getClassById(classId);
+        
+        if (!classResult) {
           throw new Error('Class not found');
         }
-
-        // Handle basic analytics
-        if (basicAnalyticsResult.status === 'fulfilled' && basicAnalyticsResult.value) {
-          setBasicAnalytics(basicAnalyticsResult.value);
-          setFullAnalytics(basicAnalyticsResult.value); // Use same data for now
-          setLoadingStates(prev => ({ ...prev, basicAnalytics: false, fullAnalytics: false }));
-          console.log('✅ Analytics loaded');
+        
+        // Verify teacher access
+        if (classResult.teacherId !== teacher.id) {
+          throw new Error('Access denied: You are not the teacher for this class');
         }
+        
+        setClassData(classResult);
+        setLoadingStates(prev => ({ ...prev, class: false }));
+        console.log('✅ Class data loaded immediately');
 
-        setInitialLoading(false);
-
+        // Get quick stats in parallel - don't wait for full analytics
+        getQuickStats(classId);
+        
       } catch (err: any) {
-        console.error('❌ Error in fast initial load:', err);
+        console.error('❌ Error in immediate load:', err);
         setError(err.message);
-        setInitialLoading(false);
+        setLoadingStates(prev => ({ ...prev, class: false, quickStats: false }));
       }
     };
 
-    fastInitialLoad();
+    immediateLoad();
   }, [classId, teacher?.id]);
 
-  // Lazy load students when tab is accessed
-  const loadStudentsData = useCallback(async () => {
-    if (!classId || loadingStates.students) return;
+  // Quick stats calculation - optimized for speed
+  const getQuickStats = useCallback(async (classId: string) => {
+    const cacheKey = `quickStats_${classId}`;
+    
+    // Check cache first
+    if (dataCache.has(cacheKey)) {
+      const cached = dataCache.get(cacheKey);
+      setQuickStats(cached);
+      setLoadingStates(prev => ({ ...prev, quickStats: false }));
+      return;
+    }
+
+    try {
+      // Use lightweight analytics call or build quick stats from enrollments
+      const analytics = await GradeAnalyticsService.getClassAnalytics(classId);
+      
+      const stats = {
+        totalStudents: analytics.totalStudents,
+        averagePerformance: analytics.averagePerformance,
+        passRate: analytics.passRate,
+        testsCompleted: analytics.testsCompleted
+      };
+      
+      setQuickStats(stats);
+      setDataCache(prev => new Map(prev).set(cacheKey, stats));
+      setLoadingStates(prev => ({ ...prev, quickStats: false }));
+      
+      // After quick stats, load full analytics in background
+      setTimeout(() => loadFullAnalytics(classId), 100);
+      
+    } catch (error) {
+      console.error('❌ Error loading quick stats:', error);
+      setLoadingStates(prev => ({ ...prev, quickStats: false }));
+    }
+  }, [dataCache]);
+
+  // Background loading of full analytics
+  const loadFullAnalytics = useCallback(async (classId: string) => {
+    const cacheKey = `fullAnalytics_${classId}`;
+    
+    if (dataCache.has(cacheKey)) {
+      setFullAnalytics(dataCache.get(cacheKey));
+      return;
+    }
+
+    setLoadingStates(prev => ({ ...prev, fullAnalytics: true }));
+    
+    try {
+      const analytics = await GradeAnalyticsService.getClassAnalytics(classId);
+      setFullAnalytics(analytics);
+      setDataCache(prev => new Map(prev).set(cacheKey, analytics));
+    } catch (error) {
+      console.error('❌ Error loading full analytics:', error);
+    } finally {
+      setLoadingStates(prev => ({ ...prev, fullAnalytics: false }));
+    }
+  }, [dataCache]);
+
+  // Lazy load students with pagination
+  const loadStudentsData = useCallback(async (page: number = 1) => {
+    const cacheKey = `students_${classId}_${page}`;
+    
+    if (dataCache.has(cacheKey)) {
+      const cached = dataCache.get(cacheKey);
+      setStudentPerformances(prev => {
+        // Merge with existing data for infinite scroll feel
+        const newData = page === 1 ? cached : [...prev, ...cached];
+        return newData;
+      });
+      return;
+    }
 
     setLoadingStates(prev => ({ ...prev, students: true }));
 
     try {
-      console.log('🔄 Loading students data...');
-      // Get all students for the class - this should return an array
-      const students = await Promise.all([
-        GradeAnalyticsService.getStudentPerformanceData(classId)
-      ]);
+      // TODO: Implement paginated student loading in service
+      // For now, load all and cache, but implement pagination in UI
+      const students = await GradeAnalyticsService.getStudentPerformanceData('', classId);
       
-      // For now, create mock student data if needed
-      const studentList: StudentPerformanceData[] = students.length > 0 ? [students[0]] : [];
-      setStudentPerformances(studentList);
-      console.log('✅ Students data loaded:', studentList.length);
+      // Simulate pagination
+      const startIndex = (page - 1) * studentsPerPage;
+      const endIndex = startIndex + studentsPerPage;
+      const paginatedStudents = Array.isArray(students) 
+        ? students.slice(startIndex, endIndex)
+        : [students].slice(startIndex, endIndex);
+      
+      setStudentPerformances(prev => page === 1 ? paginatedStudents : [...prev, ...paginatedStudents]);
+      setDataCache(prev => new Map(prev).set(cacheKey, paginatedStudents));
+      
     } catch (error) {
       console.error('❌ Error loading students:', error);
     } finally {
       setLoadingStates(prev => ({ ...prev, students: false }));
     }
-  }, [classId, loadingStates.students]);
+  }, [classId, studentsPerPage, dataCache]);
 
-  // Lazy load trends when tab is accessed
+  // Optimized trends loading
   const loadTrendsData = useCallback(async () => {
-    if (!classId || loadingStates.trends) return;
+    const cacheKey = `trends_${classId}`;
+    
+    if (dataCache.has(cacheKey)) {
+      setPerformanceTrends(dataCache.get(cacheKey));
+      return;
+    }
 
     setLoadingStates(prev => ({ ...prev, trends: true }));
 
     try {
-      console.log('🔄 Loading trends data...');
       const trends = await GradeAnalyticsService.getPerformanceTrends(classId, 'month');
       setPerformanceTrends(trends);
-      console.log('✅ Trends data loaded');
+      setDataCache(prev => new Map(prev).set(cacheKey, trends));
     } catch (error) {
       console.error('❌ Error loading trends:', error);
     } finally {
       setLoadingStates(prev => ({ ...prev, trends: false }));
     }
-  }, [classId, loadingStates.trends]);
+  }, [classId, dataCache]);
 
-  // Handle tab changes with lazy loading
-  const handleTabChange = (tab: 'overview' | 'students' | 'trends') => {
+  // Optimized tab switching with preloading
+  const handleTabChange = useCallback((tab: 'overview' | 'students' | 'trends') => {
     setActiveTab(tab);
     
-    // Lazy load data for the selected tab
     switch (tab) {
       case 'students':
         if (studentPerformances.length === 0) {
-          loadStudentsData();
+          loadStudentsData(1);
         }
         break;
       case 'trends':
@@ -188,105 +257,140 @@ export default function ClassGradeAnalytics() {
         }
         break;
     }
-  };
+  }, [studentPerformances.length, performanceTrends.length, loadStudentsData, loadTrendsData]);
 
-  // Filter students based on search
-  const filteredStudents = studentPerformances.filter(student =>
-    student.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    student.studentEmail.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Memoized filtered students for better performance
+  const filteredStudents = useMemo(() => {
+    if (!searchTerm) return studentPerformances;
+    
+    const term = searchTerm.toLowerCase();
+    return studentPerformances.filter(student =>
+      student.studentName.toLowerCase().includes(term) ||
+      student.studentEmail.toLowerCase().includes(term)
+    );
+  }, [studentPerformances, searchTerm]);
 
-  // View individual student performance
-  const viewStudentDetails = (studentId: string) => {
+  // Optimized pagination
+  const loadMoreStudents = useCallback(() => {
+    const nextPage = Math.floor(studentPerformances.length / studentsPerPage) + 1;
+    loadStudentsData(nextPage);
+  }, [studentPerformances.length, studentsPerPage, loadStudentsData]);
+
+  // Quick student detail view
+  const viewStudentDetails = useCallback((studentId: string) => {
     setSelectedStudent(selectedStudent === studentId ? null : studentId);
-  };
+  }, [selectedStudent]);
 
-  // Open student detail modal
-  const openStudentModal = (student: StudentPerformanceData) => {
+  // Modal operations
+  const openStudentModal = useCallback((student: StudentPerformanceData) => {
     setSelectedStudentData(student);
     setIsStudentModalOpen(true);
-  };
+  }, []);
 
-  // Close student detail modal
-  const closeStudentModal = () => {
+  const closeStudentModal = useCallback(() => {
     setIsStudentModalOpen(false);
     setSelectedStudentData(null);
-  };
+  }, []);
 
-  // Export class analytics report as CSV
-  const exportReport = () => {
-    const analytics = fullAnalytics || basicAnalytics;
+  // Optimized export functionality
+  const exportReport = useCallback(() => {
+    const analytics = fullAnalytics || quickStats;
     if (!analytics || !classData) return;
 
-    // Prepare CSV data
-    const csvData = [];
-    
-    // Header information
-    csvData.push(['Class Analytics Report']);
-    csvData.push(['Class Name:', classData.name]);
-    csvData.push(['Teacher:', teacher?.name || 'N/A']);
-    csvData.push(['Generated:', new Date().toLocaleDateString()]);
-    csvData.push(['']); // Empty row
-    
-    // Class Overview
-    csvData.push(['CLASS OVERVIEW']);
-    csvData.push(['Total Students:', analytics.totalStudents]);
-    csvData.push(['Average Performance:', `${Math.round(analytics.averagePerformance)}%`]);
-    csvData.push(['Tests Completed:', analytics.testsCompleted]);
-    csvData.push(['Pass Rate:', `${Math.round(analytics.passRate)}%`]);
-    csvData.push(['']); // Empty row
-    
-    // Student Performance
-    if (studentPerformances.length > 0) {
-      csvData.push(['STUDENT PERFORMANCE']);
-      csvData.push(['Student Name', 'Email', 'Average Score (%)', 'Total Tests', 'Passed Tests', 'Trend', 'Weak Topics']);
+    // Use Web Workers for heavy CSV processing if needed
+    const generateCSV = () => {
+      const csvData = [];
       
-      studentPerformances.forEach(student => {
-        const weakTopics = student.weakTopics.map(t => `${t.topic} (${Math.round(t.averageScore)}%)`).join('; ');
-        csvData.push([
-          student.studentName,
-          student.studentEmail,
-          Math.round(student.overallAverage),
-          student.totalTests,
-          student.passedTests,
-          student.improvementTrend,
-          weakTopics || 'None'
-        ]);
-      });
-      csvData.push(['']); // Empty row
-    }
-    
-    // Convert to CSV string
-    const csvContent = csvData.map(row => 
-      row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
-    ).join('\n');
-    
-    // Create and download file
+      csvData.push(['Class Analytics Report']);
+      csvData.push(['Class Name:', classData.name]);
+      csvData.push(['Teacher:', teacher?.name || 'N/A']);
+      csvData.push(['Generated:', new Date().toLocaleDateString()]);
+      csvData.push(['']);
+      
+      csvData.push(['CLASS OVERVIEW']);
+      csvData.push(['Total Students:', analytics.totalStudents || 'N/A']);
+      csvData.push(['Average Performance:', `${Math.round(analytics.averagePerformance || 0)}%`]);
+      csvData.push(['Tests Completed:', analytics.testsCompleted || 'N/A']);
+      csvData.push(['Pass Rate:', `${Math.round(analytics.passRate || 0)}%`]);
+      csvData.push(['']);
+      
+      if (studentPerformances.length > 0) {
+        csvData.push(['STUDENT PERFORMANCE']);
+        csvData.push(['Student Name', 'Email', 'Average Score (%)', 'Total Tests', 'Passed Tests', 'Trend']);
+        
+        studentPerformances.forEach(student => {
+          csvData.push([
+            student.studentName,
+            student.studentEmail,
+            Math.round(student.overallAverage),
+            student.totalTests,
+            student.passedTests,
+            student.improvementTrend
+          ]);
+        });
+      }
+      
+      return csvData.map(row => 
+        row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
+      ).join('\n');
+    };
+
+    const csvContent = generateCSV();
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', `${classData.name}_Analytics_Report_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `${classData.name}_Analytics_${new Date().toISOString().split('T')[0]}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  };
+    URL.revokeObjectURL(url);
+  }, [fullAnalytics, quickStats, classData, teacher?.name, studentPerformances]);
 
-  // Show initial loading screen
-  if (initialLoading) {
+  // Refresh with cache invalidation
+  const refresh = useCallback(() => {
+    setDataCache(new Map());
+    window.location.reload();
+  }, []);
+
+  // Early loading screen with skeleton
+  if (loadingStates.class) {
     return (
       <TeacherLayout>
         <div className="space-y-6">
+          {/* Header Skeleton */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <div className="animate-pulse">
-              <div className="h-8 bg-gray-300 dark:bg-gray-600 rounded w-1/3 mb-2"></div>
-              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="animate-pulse">
+                  <div className="h-8 bg-gray-300 dark:bg-gray-600 rounded w-16 mb-2"></div>
+                </div>
+                <div className="animate-pulse">
+                  <div className="h-6 bg-gray-300 dark:bg-gray-600 rounded w-48 mb-2"></div>
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32"></div>
+                </div>
+              </div>
+              <div className="animate-pulse flex space-x-3">
+                <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-24"></div>
+                <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-16"></div>
+              </div>
             </div>
           </div>
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="text-gray-600 dark:text-gray-300 mt-2">Loading class data...</p>
+
+          {/* Stats Skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                <div className="animate-pulse flex items-center">
+                  <div className="w-12 h-12 bg-gray-300 dark:bg-gray-600 rounded-lg"></div>
+                  <div className="ml-4 flex-1">
+                    <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-20 mb-2"></div>
+                    <div className="h-6 bg-gray-300 dark:bg-gray-600 rounded w-12"></div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </TeacherLayout>
@@ -308,7 +412,7 @@ export default function ClassGradeAnalytics() {
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Go Back
               </Button>
-              <Button onClick={() => window.location.reload()}>
+              <Button onClick={refresh}>
                 Try Again
               </Button>
             </div>
@@ -318,15 +422,6 @@ export default function ClassGradeAnalytics() {
     );
   }
 
-  // Refresh all data
-  const refresh = () => {
-    window.location.reload();
-  };
-
-  // Use basic analytics for immediate display, fallback to full analytics
-  const analytics = fullAnalytics || basicAnalytics;
-
-  // Show class data with progressive loading of analytics
   if (!classData) {
     return (
       <TeacherLayout>
@@ -336,6 +431,14 @@ export default function ClassGradeAnalytics() {
       </TeacherLayout>
     );
   }
+
+  // Use quickStats for immediate display, fallback to fullAnalytics
+  const displayStats = quickStats || fullAnalytics || {
+    totalStudents: 0,
+    averagePerformance: 0,
+    passRate: 0,
+    testsCompleted: 0
+  };
 
   return (
     <TeacherLayout>
@@ -358,7 +461,7 @@ export default function ClassGradeAnalytics() {
                   {classData.name}
                 </h1>
                 <p className="text-gray-600 dark:text-gray-300">
-                  {classData.subject} • Year {classData.year} • {analytics.totalStudents} students
+                  {classData.subject} • Year {classData.year} • {displayStats.totalStudents} students
                 </p>
               </div>
             </div>
@@ -385,7 +488,7 @@ export default function ClassGradeAnalytics() {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Students</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {analytics.totalStudents}
+                  {displayStats.totalStudents}
                 </p>
               </div>
             </div>
@@ -399,7 +502,7 @@ export default function ClassGradeAnalytics() {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Average Performance</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {Math.round(analytics.averagePerformance)}%
+                  {Math.round(displayStats.averagePerformance)}%
                 </p>
               </div>
             </div>
@@ -413,7 +516,7 @@ export default function ClassGradeAnalytics() {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Pass Rate</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {Math.round(analytics.passRate)}%
+                  {Math.round(displayStats.passRate)}%
                 </p>
               </div>
             </div>
@@ -427,7 +530,7 @@ export default function ClassGradeAnalytics() {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Tests Completed</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {analytics.testsCompleted}
+                  {displayStats.testsCompleted}
                 </p>
               </div>
             </div>
@@ -483,9 +586,9 @@ export default function ClassGradeAnalytics() {
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
                     Recent Tests Performance
                   </h3>
-                  {analytics.recentTests && analytics.recentTests.length > 0 ? (
+                  {fullAnalytics?.recentTests && fullAnalytics.recentTests.length > 0 ? (
                     <div className="space-y-3">
-                      {analytics.recentTests.map((test: any) => (
+                      {fullAnalytics.recentTests.map((test: any) => (
                         <div key={test.testId} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                           <div>
                             <p className="font-medium text-gray-900 dark:text-white">
@@ -537,7 +640,7 @@ export default function ClassGradeAnalytics() {
                   </div>
                   <Button
                     variant="outline"
-                    onClick={loadStudentsData}
+                    onClick={() => loadStudentsData(1)}
                     disabled={loadingStates.students}
                   >
                     {loadingStates.students ? 'Loading...' : 'Load Students'}
@@ -630,6 +733,19 @@ export default function ClassGradeAnalytics() {
                         )}
                       </div>
                     ))}
+                    
+                    {/* Load More Button */}
+                    {studentPerformances.length > 0 && studentPerformances.length % studentsPerPage === 0 && (
+                      <div className="text-center pt-4">
+                        <Button
+                          variant="outline"
+                          onClick={loadMoreStudents}
+                          disabled={loadingStates.students}
+                        >
+                          {loadingStates.students ? 'Loading...' : 'Load More Students'}
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="text-center py-8">
@@ -639,7 +755,7 @@ export default function ClassGradeAnalytics() {
                     </p>
                     <Button
                       variant="outline"
-                      onClick={loadStudentsData}
+                      onClick={() => loadStudentsData(1)}
                       className="mt-4"
                       disabled={loadingStates.students}
                     >

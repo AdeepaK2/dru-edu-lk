@@ -101,6 +101,26 @@ export class GradeAnalyticsService {
   };
 
   /**
+   * Helper function to recalculate pass status based on teacher's configured passing score
+   * This matches the logic used in the test result page
+   */
+  private static getActualPassStatus(submission: StudentSubmission, test?: Test): string {
+    // If teacher has configured a passing score, use it
+    if (test?.config?.passingScore && submission.percentage !== undefined) {
+      return submission.percentage >= test.config.passingScore ? 'passed' : 'failed';
+    }
+    
+    // For essay tests that haven't been manually graded, show pending
+    const isEssayTest = test?.questions?.some(q => q.type === 'essay' || q.questionType === 'essay');
+    if (isEssayTest && submission.manualGradingPending) {
+      return 'pending_review';
+    }
+    
+    // Fallback to stored passStatus
+    return submission.passStatus || 'pending_review';
+  }
+
+  /**
    * Get comprehensive analytics for a specific class
    */
   static async getClassAnalytics(classId: string): Promise<ClassAnalytics> {
@@ -167,10 +187,29 @@ export class GradeAnalyticsService {
         ? completedSubmissions.reduce((sum, s) => sum + (s.percentage || 0), 0) / completedSubmissions.length
         : 0;
 
-      // Calculate pass rate
-      const passedSubmissions = completedSubmissions.filter(s => s.passStatus === 'passed');
+      // Calculate pass rate using proper logic that considers teacher's passing score
+      let passedSubmissions = 0;
+      for (const submission of completedSubmissions) {
+        try {
+          // Get test data to check teacher's passing score configuration
+          const testDoc = await getDoc(doc(firestore, 'tests', submission.testId));
+          const testData = testDoc.exists() ? { id: testDoc.id, ...testDoc.data() } as Test : undefined;
+          
+          const actualPassStatus = this.getActualPassStatus(submission, testData);
+          if (actualPassStatus === 'passed') {
+            passedSubmissions++;
+          }
+        } catch (error) {
+          console.warn(`Could not get test data for ${submission.testId}, using stored passStatus:`, error);
+          // Fallback to stored passStatus if we can't get test data
+          if (submission.passStatus === 'passed') {
+            passedSubmissions++;
+          }
+        }
+      }
+      
       const passRate = completedSubmissions.length > 0
-        ? (passedSubmissions.length / completedSubmissions.length) * 100
+        ? (passedSubmissions / completedSubmissions.length) * 100
         : 0;
 
       // Get student performances
@@ -365,7 +404,27 @@ export class GradeAnalyticsService {
         : 0;
 
       const totalTests = submissions.length;
-      const passedTests = completedSubmissions.filter(s => s.passStatus === 'passed').length;
+      
+      // Calculate passed tests using proper logic that considers teacher's passing score
+      let passedTests = 0;
+      for (const submission of completedSubmissions) {
+        try {
+          // Get test data to check teacher's passing score configuration
+          const testDoc = await getDoc(doc(firestore, 'tests', submission.testId));
+          const testData = testDoc.exists() ? { id: testDoc.id, ...testDoc.data() } as Test : undefined;
+          
+          const actualPassStatus = this.getActualPassStatus(submission, testData);
+          if (actualPassStatus === 'passed') {
+            passedTests++;
+          }
+        } catch (error) {
+          console.warn(`Could not get test data for ${submission.testId}, using stored passStatus:`, error);
+          // Fallback to stored passStatus if we can't get test data
+          if (submission.passStatus === 'passed') {
+            passedTests++;
+          }
+        }
+      }
 
       console.log('📊 Performance calculation:', {
         studentId,
@@ -728,9 +787,18 @@ export class GradeAnalyticsService {
         ? completedSubmissions.reduce((sum, s) => sum + (s.percentage || 0), 0) / completedSubmissions.length
         : 0;
 
-      const passedSubmissions = completedSubmissions.filter(s => s.passStatus === 'passed');
+      // Calculate passed submissions using proper logic that considers teacher's passing score
+      let passedSubmissionsCount = 0;
+      for (const submission of completedSubmissions) {
+        const test = data.tests.find(t => t.id === submission.testId);
+        const actualPassStatus = this.getActualPassStatus(submission, test);
+        if (actualPassStatus === 'passed') {
+          passedSubmissionsCount++;
+        }
+      }
+      
       const passRate = completedSubmissions.length > 0
-        ? (passedSubmissions.length / completedSubmissions.length) * 100
+        ? (passedSubmissionsCount / completedSubmissions.length) * 100
         : 0;
 
       return {
