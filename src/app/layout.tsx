@@ -3,6 +3,7 @@ import { Inter, Poppins, Merriweather } from "next/font/google";
 import "./globals.css";
 import { ToastProvider } from "@/components/ui";
 import { TimezoneProvider } from "@/components/TimezoneProvider";
+import { Analytics } from "@vercel/analytics/next"
 
 // Configure fonts with subsets
 const inter = Inter({
@@ -239,6 +240,7 @@ export default function RootLayout({
         <TimezoneProvider>
           <ToastProvider>
             {children}
+            <Analytics />
           </ToastProvider>
         </TimezoneProvider>
       </body>
