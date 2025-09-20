@@ -42,7 +42,7 @@ import {
 } from '@/apiservices/gradeAnalyticsService';
 
 // Import fast analytics hook
-import { useFastAnalytics } from '@/hooks/useFastAnalytics';
+import { useSuperFastAnalytics } from '@/hooks/useSuperFastAnalytics';
 
 export default function ClassGradeAnalytics() {
   const params = useParams();
@@ -50,7 +50,7 @@ export default function ClassGradeAnalytics() {
   const { teacher } = useTeacherAuth();
   const classId = params.classId as string;
 
-  // Use fast analytics hook for lightning-fast loading
+  // Use super fast analytics hook for lightning-fast loading
   const {
     quickStats,
     fullAnalytics,
@@ -61,8 +61,8 @@ export default function ClassGradeAnalytics() {
     lastUpdated,
     refresh: refreshAnalytics,
     forceRecompute,
-    invalidateCache
-  } = useFastAnalytics({
+    cached
+  } = useSuperFastAnalytics({
     classId,
     teacherId: teacher?.id || '',
     autoRefresh: true,
@@ -227,7 +227,7 @@ export default function ClassGradeAnalytics() {
         setHasMoreStudents(endIndex < allStudents.length);
         
         // Map schema format to component format with proper types
-        const mappedStudents: StudentPerformanceData[] = cachedStudents.map(student => ({
+        const mappedStudents: StudentPerformanceData[] = cachedStudents.map((student: any) => ({
           studentId: student.studentId,
           studentName: student.studentName,
           studentEmail: student.studentEmail,
