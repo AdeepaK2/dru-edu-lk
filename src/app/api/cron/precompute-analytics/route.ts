@@ -27,11 +27,17 @@ export async function GET(request: NextRequest) {
   console.log('🔄 Starting nightly analytics pre-computation...');
 
   try {
-    // Verify this is a cron request (security check)
+    // Verify this is a cron request (security check for Vercel)
     const authHeader = request.headers.get('authorization');
-    if (process.env.NODE_ENV === 'production' && !authHeader?.includes('Bearer cron-')) {
+    const userAgent = request.headers.get('user-agent');
+    const isVercelCron = userAgent?.includes('vercel') || request.headers.get('x-vercel-cron');
+    
+    // Allow Vercel cron jobs or authorized requests
+    if (process.env.NODE_ENV === 'production' && !isVercelCron && !authHeader?.includes('Bearer cron-')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    console.log('🔐 Cron request authorized:', { isVercelCron, hasAuth: !!authHeader });
 
     const cronResult: CronResult = {
       totalClasses: 0,
