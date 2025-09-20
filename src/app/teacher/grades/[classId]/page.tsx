@@ -29,6 +29,7 @@ import TeacherLayout from '@/components/teacher/TeacherLayout';
 import { StudentDetailModal } from '@/components/teacher/StudentDetailModal';
 import { GradeAnalyticsLoading, StudentListSkeleton } from '@/components/teacher/GradeAnalyticsSkeletons';
 import Link from 'next/link';
+import { Timestamp } from 'firebase/firestore';
 
 // Import services and types
 import { ClassFirestoreService } from '@/apiservices/classFirestoreService';
@@ -40,8 +41,8 @@ import {
   PerformanceTrend 
 } from '@/apiservices/gradeAnalyticsService';
 
-// Import optimized hook
-import { useOptimizedGradeAnalytics } from '@/hooks/useOptimizedGradeAnalytics';
+// Import fast analytics hook
+import { useFastAnalytics } from '@/hooks/useFastAnalytics';
 
 export default function ClassGradeAnalytics() {
   const params = useParams();
@@ -49,23 +50,32 @@ export default function ClassGradeAnalytics() {
   const { teacher } = useTeacherAuth();
   const classId = params.classId as string;
 
-  // Optimized state management with immediate UI feedback
+  // Use fast analytics hook for lightning-fast loading
+  const {
+    quickStats,
+    fullAnalytics,
+    loadingQuick,
+    loadingFull,
+    error: analyticsError,
+    isStale,
+    lastUpdated,
+    refresh: refreshAnalytics,
+    forceRecompute,
+    invalidateCache
+  } = useFastAnalytics({
+    classId,
+    teacherId: teacher?.id || '',
+    autoRefresh: true,
+    refreshInterval: 30000 // Refresh every 30 seconds
+  });
+
+  // Local state for UI management
   const [classData, setClassData] = useState<ClassDocument | null>(null);
-  const [quickStats, setQuickStats] = useState<{
-    totalStudents: number;
-    averagePerformance: number;
-    passRate: number;
-    testsCompleted: number;
-  } | null>(null);
-  const [fullAnalytics, setFullAnalytics] = useState<ClassAnalytics | null>(null);
   const [studentPerformances, setStudentPerformances] = useState<StudentPerformanceData[]>([]);
   const [performanceTrends, setPerformanceTrends] = useState<PerformanceTrend[]>([]);
   
-  // Progressive loading states - show content as soon as it's available
   const [loadingStates, setLoadingStates] = useState({
     class: true,
-    quickStats: true,
-    fullAnalytics: false,
     students: false,
     trends: false
   });
@@ -77,169 +87,141 @@ export default function ClassGradeAnalytics() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [studentsPerPage] = useState(10); // Pagination for better performance
+  const [studentsPerPage] = useState(10);
   
   // Modal state
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
   const [selectedStudentData, setSelectedStudentData] = useState<StudentPerformanceData | null>(null);
 
-  // Cache for performance optimization
-  const [dataCache, setDataCache] = useState<Map<string, any>>(new Map());
-
-  // Immediate load - get essential data first for instant feedback
+  // Load class data (one-time)
   useEffect(() => {
-    const immediateLoad = async () => {
+    const loadClassData = async () => {
       if (!classId || !teacher?.id) return;
 
-      console.log('🚀 Immediate load for class:', classId);
-      
       try {
-        // Load class data first - fastest operation
+        setLoadingStates(prev => ({ ...prev, class: true }));
+        
         const classResult = await ClassFirestoreService.getClassById(classId);
         
         if (!classResult) {
           throw new Error('Class not found');
         }
         
-        // Verify teacher access
         if (classResult.teacherId !== teacher.id) {
           throw new Error('Access denied: You are not the teacher for this class');
         }
         
         setClassData(classResult);
-        setLoadingStates(prev => ({ ...prev, class: false }));
-        console.log('✅ Class data loaded immediately');
-
-        // Get quick stats in parallel - don't wait for full analytics
-        getQuickStats(classId);
+        console.log('✅ Class data loaded');
         
       } catch (err: any) {
-        console.error('❌ Error in immediate load:', err);
+        console.error('❌ Error loading class data:', err);
         setError(err.message);
-        setLoadingStates(prev => ({ ...prev, class: false, quickStats: false }));
+      } finally {
+        setLoadingStates(prev => ({ ...prev, class: false }));
       }
     };
 
-    immediateLoad();
+    loadClassData();
   }, [classId, teacher?.id]);
 
-  // Quick stats calculation - optimized for speed
-  const getQuickStats = useCallback(async (classId: string) => {
-    const cacheKey = `quickStats_${classId}`;
-    
-    // Check cache first
-    if (dataCache.has(cacheKey)) {
-      const cached = dataCache.get(cacheKey);
-      setQuickStats(cached);
-      setLoadingStates(prev => ({ ...prev, quickStats: false }));
-      return;
+  // Handle analytics errors
+  useEffect(() => {
+    if (analyticsError) {
+      setError(analyticsError);
     }
+  }, [analyticsError]);
 
-    try {
-      // Use lightweight analytics call or build quick stats from enrollments
-      const analytics = await GradeAnalyticsService.getClassAnalytics(classId);
-      
-      const stats = {
-        totalStudents: analytics.totalStudents,
-        averagePerformance: analytics.averagePerformance,
-        passRate: analytics.passRate,
-        testsCompleted: analytics.testsCompleted
-      };
-      
-      setQuickStats(stats);
-      setDataCache(prev => new Map(prev).set(cacheKey, stats));
-      setLoadingStates(prev => ({ ...prev, quickStats: false }));
-      
-      // After quick stats, load full analytics in background
-      setTimeout(() => loadFullAnalytics(classId), 100);
-      
-    } catch (error) {
-      console.error('❌ Error loading quick stats:', error);
-      setLoadingStates(prev => ({ ...prev, quickStats: false }));
-    }
-  }, [dataCache]);
-
-  // Background loading of full analytics
-  const loadFullAnalytics = useCallback(async (classId: string) => {
-    const cacheKey = `fullAnalytics_${classId}`;
-    
-    if (dataCache.has(cacheKey)) {
-      setFullAnalytics(dataCache.get(cacheKey));
-      return;
-    }
-
-    setLoadingStates(prev => ({ ...prev, fullAnalytics: true }));
-    
-    try {
-      const analytics = await GradeAnalyticsService.getClassAnalytics(classId);
-      setFullAnalytics(analytics);
-      setDataCache(prev => new Map(prev).set(cacheKey, analytics));
-    } catch (error) {
-      console.error('❌ Error loading full analytics:', error);
-    } finally {
-      setLoadingStates(prev => ({ ...prev, fullAnalytics: false }));
-    }
-  }, [dataCache]);
-
-  // Lazy load students with pagination
+  // Load students data (lazy loaded)
   const loadStudentsData = useCallback(async (page: number = 1) => {
-    const cacheKey = `students_${classId}_${page}`;
-    
-    if (dataCache.has(cacheKey)) {
-      const cached = dataCache.get(cacheKey);
-      setStudentPerformances(prev => {
-        // Merge with existing data for infinite scroll feel
-        const newData = page === 1 ? cached : [...prev, ...cached];
-        return newData;
-      });
-      return;
-    }
+    if (!classId) return;
 
     setLoadingStates(prev => ({ ...prev, students: true }));
 
     try {
-      // TODO: Implement paginated student loading in service
-      // For now, load all and cache, but implement pagination in UI
-      const students = await GradeAnalyticsService.getStudentPerformanceData('', classId);
-      
-      // Simulate pagination
-      const startIndex = (page - 1) * studentsPerPage;
-      const endIndex = startIndex + studentsPerPage;
-      const paginatedStudents = Array.isArray(students) 
-        ? students.slice(startIndex, endIndex)
-        : [students].slice(startIndex, endIndex);
-      
-      setStudentPerformances(prev => page === 1 ? paginatedStudents : [...prev, ...paginatedStudents]);
-      setDataCache(prev => new Map(prev).set(cacheKey, paginatedStudents));
+      // Use fullAnalytics if available, otherwise fall back to direct API
+      if (fullAnalytics?.detailedStats?.studentPerformances && fullAnalytics.detailedStats.studentPerformances.length > 0) {
+        console.log('📊 Using cached student data');
+        const startIndex = (page - 1) * studentsPerPage;
+        const endIndex = startIndex + studentsPerPage;
+        const cachedStudents = fullAnalytics.detailedStats.studentPerformances.slice(startIndex, endIndex);
+        
+        // Map schema format to component format with proper types
+        const mappedStudents: StudentPerformanceData[] = cachedStudents.map(student => ({
+          studentId: student.studentId,
+          studentName: student.studentName,
+          studentEmail: student.studentEmail,
+          overallAverage: student.overallAverage,
+          totalTests: student.totalTests,
+          passedTests: student.passedTests,
+          weakTopics: student.weakTopics,
+          strongTopics: student.strongTopics,
+          improvementTrend: student.improvementTrend,
+          lastActiveDate: student.lastActiveDate ? Timestamp.fromDate(student.lastActiveDate) : null,
+          recentTestScores: [] // Add missing field for compatibility
+        }));
+        
+        setStudentPerformances(prev => page === 1 ? mappedStudents : [...prev, ...mappedStudents]);
+      } else {
+        console.log('🔄 Fetching student data from API');
+        const students = await GradeAnalyticsService.getStudentPerformanceData('', classId);
+        
+        const startIndex = (page - 1) * studentsPerPage;
+        const endIndex = startIndex + studentsPerPage;
+        const paginatedStudents = Array.isArray(students) 
+          ? students.slice(startIndex, endIndex)
+          : [students].slice(startIndex, endIndex);
+        
+        setStudentPerformances(prev => page === 1 ? paginatedStudents : [...prev, ...paginatedStudents]);
+      }
       
     } catch (error) {
       console.error('❌ Error loading students:', error);
     } finally {
       setLoadingStates(prev => ({ ...prev, students: false }));
     }
-  }, [classId, studentsPerPage, dataCache]);
+  }, [classId, studentsPerPage, fullAnalytics]);
 
-  // Optimized trends loading
+  // Load trends data (lazy loaded)
   const loadTrendsData = useCallback(async () => {
-    const cacheKey = `trends_${classId}`;
-    
-    if (dataCache.has(cacheKey)) {
-      setPerformanceTrends(dataCache.get(cacheKey));
-      return;
-    }
+    if (!classId) return;
 
     setLoadingStates(prev => ({ ...prev, trends: true }));
 
     try {
-      const trends = await GradeAnalyticsService.getPerformanceTrends(classId, 'month');
-      setPerformanceTrends(trends);
-      setDataCache(prev => new Map(prev).set(cacheKey, trends));
+      // Use fullAnalytics if available
+      if (fullAnalytics?.detailedStats?.performanceTrends && fullAnalytics.detailedStats.performanceTrends.length > 0) {
+        console.log('📊 Using cached trends data');
+        setPerformanceTrends(fullAnalytics.detailedStats.performanceTrends);
+      } else {
+        console.log('🔄 Fetching trends data from API');
+        const trends = await GradeAnalyticsService.getPerformanceTrends(classId, 'month');
+        setPerformanceTrends(trends);
+      }
     } catch (error) {
       console.error('❌ Error loading trends:', error);
     } finally {
       setLoadingStates(prev => ({ ...prev, trends: false }));
     }
-  }, [classId, dataCache]);
+  }, [classId, fullAnalytics]);
+
+  // Use quickStats for immediate display, fallback to fullAnalytics
+  const displayStats = useMemo(() => {
+    if (quickStats) {
+      return quickStats;
+    }
+    if (fullAnalytics?.quickStats) {
+      return fullAnalytics.quickStats;
+    }
+    return {
+      totalStudents: 0,
+      averagePerformance: 0,
+      passRate: 0,
+      testsCompleted: 0,
+      passedTests: 0,
+      totalTests: 0
+    };
+  }, [quickStats, fullAnalytics]);
 
   // Optimized tab switching with preloading
   const handleTabChange = useCallback((tab: 'overview' | 'students' | 'trends') => {
@@ -294,7 +276,7 @@ export default function ClassGradeAnalytics() {
 
   // Optimized export functionality
   const exportReport = useCallback(() => {
-    const analytics = fullAnalytics || quickStats;
+    const analytics = displayStats;
     if (!analytics || !classData) return;
 
     // Use Web Workers for heavy CSV processing if needed
@@ -346,13 +328,15 @@ export default function ClassGradeAnalytics() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-  }, [fullAnalytics, quickStats, classData, teacher?.name, studentPerformances]);
+  }, [displayStats, classData, teacher?.name, studentPerformances]);
 
   // Refresh with cache invalidation
-  const refresh = useCallback(() => {
-    setDataCache(new Map());
-    window.location.reload();
-  }, []);
+  const refreshData = useCallback(() => {
+    refreshAnalytics();
+    setStudentPerformances([]);
+    setPerformanceTrends([]);
+    setCurrentPage(1);
+  }, [refreshAnalytics]);
 
   // Early loading screen with skeleton
   if (loadingStates.class) {
@@ -412,7 +396,7 @@ export default function ClassGradeAnalytics() {
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Go Back
               </Button>
-              <Button onClick={refresh}>
+              <Button onClick={refreshData}>
                 Try Again
               </Button>
             </div>
@@ -431,14 +415,6 @@ export default function ClassGradeAnalytics() {
       </TeacherLayout>
     );
   }
-
-  // Use quickStats for immediate display, fallback to fullAnalytics
-  const displayStats = quickStats || fullAnalytics || {
-    totalStudents: 0,
-    averagePerformance: 0,
-    passRate: 0,
-    testsCompleted: 0
-  };
 
   return (
     <TeacherLayout>
@@ -471,7 +447,7 @@ export default function ClassGradeAnalytics() {
                 <Download className="w-4 h-4 mr-2" />
                 Export Report
               </Button>
-              <Button variant="outline" size="sm" onClick={refresh}>
+              <Button variant="outline" size="sm" onClick={refreshData}>
                 Refresh
               </Button>
             </div>
@@ -586,9 +562,9 @@ export default function ClassGradeAnalytics() {
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
                     Recent Tests Performance
                   </h3>
-                  {fullAnalytics?.recentTests && fullAnalytics.recentTests.length > 0 ? (
+                  {fullAnalytics?.detailedStats?.recentTests && fullAnalytics.detailedStats.recentTests.length > 0 ? (
                     <div className="space-y-3">
-                      {fullAnalytics.recentTests.map((test: any) => (
+                      {fullAnalytics.detailedStats.recentTests.map((test: any) => (
                         <div key={test.testId} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                           <div>
                             <p className="font-medium text-gray-900 dark:text-white">
