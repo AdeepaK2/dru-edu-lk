@@ -1,4 +1,5 @@
 'use client';
+import UpdateDisplayNameComponent from '@/components/temp/UpdateDisplayNameComponent';
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -184,6 +185,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-6">
+      <UpdateDisplayNameComponent />
       {/* Welcome Header */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
         <div className="flex justify-between items-center">
