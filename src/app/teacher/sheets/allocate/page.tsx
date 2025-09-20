@@ -1055,17 +1055,6 @@ function AllocateSheetPageContent() {
             {/* Summary for existing allocation */}
             {existingAllocation && (
               <div className="mt-4 space-y-4">
-                <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                  <div className="text-sm text-green-600 dark:text-green-400">
-                    <FileSpreadsheet className="h-4 w-4 inline mr-1" />
-                    Existing allocation: "{existingAllocation.title}"
-                    <br />
-                    <span className="text-xs">
-                      {students.filter(s => s.hasSheet).length} students already have sheets
-                    </span>
-                  </div>
-                </div>
-
                 {/* Diagnostic and cleanup tools */}
                 {students.filter(s => s.hasSheet).length === 0 && (
                   <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
