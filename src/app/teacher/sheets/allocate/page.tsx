@@ -181,7 +181,6 @@ function AllocateSheetPageContent() {
       setLoading(true);
       
       // Load all available templates for this teacher
-      console.log('Loading templates...');
       const templatesQuery = query(
         collection(firestore, 'sheetTemplates'),
         where('isActive', '==', true),
@@ -189,7 +188,6 @@ function AllocateSheetPageContent() {
       );
       const templatesSnapshot = await getDocs(templatesQuery);
       const templates = templatesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SheetTemplate));
-      console.log('Templates processed:', templates.length, 'templates');
       setAvailableTemplates(templates);
       
       // If templateId was provided, set it as selected
@@ -277,7 +275,6 @@ function AllocateSheetPageContent() {
       setUploadProgress('Template uploaded successfully!');
       
       // Reload templates
-      console.log('Reloading templates after upload...');
       const templatesQuery = query(
         collection(firestore, 'sheetTemplates'),
         where('isActive', '==', true),
@@ -285,7 +282,6 @@ function AllocateSheetPageContent() {
       );
       const templatesSnapshot = await getDocs(templatesQuery);
       const updatedTemplates = templatesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SheetTemplate));
-      console.log('Updated templates count:', updatedTemplates.length);
       setAvailableTemplates(updatedTemplates);
       
       // Auto-select the newly uploaded template
@@ -332,10 +328,6 @@ function AllocateSheetPageContent() {
         (alloc: SheetAllocation) => alloc.classId === selectedClassId
       );
       
-      console.log('🔍 Checking for existing allocations for class:', selectedClassId);
-      console.log('📋 Found allocations:', existingAllocations.length);
-      console.log('🎯 Class allocation found:', classAllocation);
-      
       // Get student sheets for this allocation (if exists)
       let studentSheets: StudentSheet[] = [];
       if (classAllocation) {
@@ -346,7 +338,6 @@ function AllocateSheetPageContent() {
           );
           const studentSheetsSnapshot = await getDocs(studentSheetsQuery);
           studentSheets = studentSheetsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as StudentSheet));
-          console.log('📄 Student sheets found:', studentSheets.length);
         } catch (error) {
           console.warn('Could not load student sheets for allocation:', error);
         }
@@ -629,7 +620,6 @@ function AllocateSheetPageContent() {
         message += `This means the Google Sheets creation process failed completely.`;
       }
       
-      console.log('🔍 Full diagnostic data:', { allocation: existingAllocation, studentSheets });
       alert(message);
     } catch (error) {
       console.error('Error diagnosing allocation:', error);
@@ -1072,10 +1062,6 @@ function AllocateSheetPageContent() {
                     <br />
                     <span className="text-xs">
                       {students.filter(s => s.hasSheet).length} students already have sheets
-                    </span>
-                    <br />
-                    <span className="text-xs text-gray-500">
-                      Debug: Total students: {students.length}, With sheets: {students.filter(s => s.hasSheet).length}
                     </span>
                   </div>
                 </div>
