@@ -454,6 +454,41 @@ export default function ClassGradeAnalytics() {
           </div>
         </div>
 
+        {/* Loading Progress Bar */}
+        {(loadingQuick || loadingFull || isStale) && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center space-x-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                <span className="text-sm text-gray-600 dark:text-gray-300">
+                  {loadingQuick ? 'Loading analytics...' : 
+                   loadingFull ? 'Computing detailed statistics...' : 
+                   isStale ? 'Refreshing data...' : 'Processing...'}
+                </span>
+              </div>
+              {lastUpdated && (
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  Last updated: {lastUpdated.toLocaleTimeString()}
+                </span>
+              )}
+            </div>
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+              <div 
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  loadingQuick ? 'bg-blue-600 w-1/3' :
+                  loadingFull ? 'bg-blue-600 w-2/3' :
+                  'bg-green-600 w-full'
+                }`}
+              ></div>
+            </div>
+            {isStale && (
+              <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                Data may be outdated. Refreshing in background...
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Key Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
@@ -463,9 +498,13 @@ export default function ClassGradeAnalytics() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Students</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {displayStats.totalStudents}
-                </p>
+                {loadingQuick ? (
+                  <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-16"></div>
+                ) : (
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {displayStats.totalStudents}
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -477,9 +516,13 @@ export default function ClassGradeAnalytics() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Average Performance</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {Math.round(displayStats.averagePerformance)}%
-                </p>
+                {loadingQuick ? (
+                  <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-20"></div>
+                ) : (
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {Math.round(displayStats.averagePerformance)}%
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -491,9 +534,13 @@ export default function ClassGradeAnalytics() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Pass Rate</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {Math.round(displayStats.passRate)}%
-                </p>
+                {loadingQuick ? (
+                  <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-20"></div>
+                ) : (
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {Math.round(displayStats.passRate)}%
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -505,9 +552,13 @@ export default function ClassGradeAnalytics() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Tests Completed</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {displayStats.testsCompleted}
-                </p>
+                {loadingQuick ? (
+                  <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-16"></div>
+                ) : (
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {displayStats.testsCompleted}
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -562,7 +613,23 @@ export default function ClassGradeAnalytics() {
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
                     Recent Tests Performance
                   </h3>
-                  {fullAnalytics?.detailedStats?.recentTests && fullAnalytics.detailedStats.recentTests.length > 0 ? (
+                  {loadingFull || loadingQuick ? (
+                    // Show loading skeleton while analytics are being computed
+                    <div className="space-y-3">
+                      {[1, 2, 3].map((i) => (
+                        <div key={i} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg animate-pulse">
+                          <div className="flex-1">
+                            <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-3/4 mb-2"></div>
+                            <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                          </div>
+                          <div className="text-right">
+                            <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-16 mb-2"></div>
+                            <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-20"></div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : fullAnalytics?.detailedStats?.recentTests && fullAnalytics.detailedStats.recentTests.length > 0 ? (
                     <div className="space-y-3">
                       {fullAnalytics.detailedStats.recentTests.map((test: any) => (
                         <div key={test.testId} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
