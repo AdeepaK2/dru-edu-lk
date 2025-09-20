@@ -181,6 +181,7 @@ function AllocateSheetPageContent() {
       setLoading(true);
       
       // Load all available templates for this teacher
+      console.log('Loading templates...');
       const templatesQuery = query(
         collection(firestore, 'sheetTemplates'),
         where('isActive', '==', true),
@@ -188,6 +189,7 @@ function AllocateSheetPageContent() {
       );
       const templatesSnapshot = await getDocs(templatesQuery);
       const templates = templatesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SheetTemplate));
+      console.log('Templates processed:', templates.length, 'templates');
       setAvailableTemplates(templates);
       
       // If templateId was provided, set it as selected
@@ -275,6 +277,7 @@ function AllocateSheetPageContent() {
       setUploadProgress('Template uploaded successfully!');
       
       // Reload templates
+      console.log('Reloading templates after upload...');
       const templatesQuery = query(
         collection(firestore, 'sheetTemplates'),
         where('isActive', '==', true),
@@ -282,6 +285,7 @@ function AllocateSheetPageContent() {
       );
       const templatesSnapshot = await getDocs(templatesQuery);
       const updatedTemplates = templatesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SheetTemplate));
+      console.log('Updated templates count:', updatedTemplates.length);
       setAvailableTemplates(updatedTemplates);
       
       // Auto-select the newly uploaded template
@@ -328,6 +332,10 @@ function AllocateSheetPageContent() {
         (alloc: SheetAllocation) => alloc.classId === selectedClassId
       );
       
+      console.log('🔍 Checking for existing allocations for class:', selectedClassId);
+      console.log('📋 Found allocations:', existingAllocations.length);
+      console.log('🎯 Class allocation found:', classAllocation);
+      
       // Get student sheets for this allocation (if exists)
       let studentSheets: StudentSheet[] = [];
       if (classAllocation) {
@@ -338,6 +346,7 @@ function AllocateSheetPageContent() {
           );
           const studentSheetsSnapshot = await getDocs(studentSheetsQuery);
           studentSheets = studentSheetsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as StudentSheet));
+          console.log('📄 Student sheets found:', studentSheets.length);
         } catch (error) {
           console.warn('Could not load student sheets for allocation:', error);
         }
@@ -1052,43 +1061,9 @@ function AllocateSheetPageContent() {
               </div>
             )}
 
-            {/* Summary for existing allocation */}
+            Summary for existing allocation
             {existingAllocation && (
               <div className="mt-4 space-y-4">
-                {/* Diagnostic and cleanup tools */}
-                {students.filter(s => s.hasSheet).length === 0 && (
-                  <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-                    <div className="text-sm text-yellow-800 dark:text-yellow-200 mb-3">
-                      <AlertCircle className="h-4 w-4 inline mr-1" />
-                      No student sheets found for this allocation. This might indicate an issue during the allocation process.
-                    </div>
-                    <div className="flex gap-2 flex-wrap">
-                      <button
-                        onClick={handleDiagnoseAllocation}
-                        disabled={allocating}
-                        className="px-3 py-1 text-xs bg-yellow-100 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200 rounded border border-yellow-300 dark:border-yellow-600 hover:bg-yellow-200 dark:hover:bg-yellow-700 disabled:opacity-50"
-                      >
-                        <Eye className="h-3 w-3 inline mr-1" />
-                        Diagnose
-                      </button>
-                      <button
-                        onClick={handleRetryAllocation}
-                        disabled={allocating}
-                        className="px-3 py-1 text-xs bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 rounded border border-blue-300 dark:border-blue-600 hover:bg-blue-200 dark:hover:bg-blue-700 disabled:opacity-50"
-                      >
-                        <Plus className="h-3 w-3 inline mr-1" />
-                        Retry Creation
-                      </button>
-                      <button
-                        onClick={handleDeleteBrokenAllocation}
-                        disabled={allocating}
-                        className="px-3 py-1 text-xs bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-200 rounded border border-red-300 dark:border-red-600 hover:bg-red-200 dark:hover:bg-red-700 disabled:opacity-50"
-                      >
-                        🗑️ Delete & Start Over
-                      </button>
-                    </div>
-                  </div>
-                )}
               </div>
             )}
           </div>
