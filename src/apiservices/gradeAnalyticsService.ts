@@ -293,11 +293,55 @@ export class GradeAnalyticsService {
   }
 
   /**
+   * Get all student performances for a specific class
+   */
+  static async getClassStudentPerformances(classId: string): Promise<StudentPerformanceData[]> {
+    try {
+      console.log('🔍 Getting student performances for class:', classId);
+
+      // Get all enrollments for the class
+      const enrollmentsQuery = query(
+        collection(firestore, this.COLLECTIONS.ENROLLMENTS),
+        where('classId', '==', classId),
+        where('status', '==', 'Active')
+      );
+      const enrollmentsSnapshot = await getDocs(enrollmentsQuery);
+      const enrollments = enrollmentsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as StudentEnrollment[];
+
+      console.log('👥 Active enrollments found:', enrollments.length);
+
+      if (enrollments.length === 0) {
+        console.warn('⚠️ No active enrollments found for class:', classId);
+        return [];
+      }
+
+      // Calculate student performances
+      const studentPerformances = await this.calculateStudentPerformances(enrollments);
+      
+      console.log('📊 Student performances calculated:', studentPerformances.length);
+      return studentPerformances;
+
+    } catch (error) {
+      console.error('Error getting class student performances:', error);
+      throw new Error('Failed to load student performances');
+    }
+  }
+
+  /**
    * Get detailed performance data for a specific student
    */
   static async getStudentPerformanceData(studentId: string, classId?: string): Promise<StudentPerformanceData> {
     try {
       console.log('🔍 Getting performance data for student:', { studentId, classId });
+
+      // Validate studentId to prevent empty path errors
+      if (!studentId || studentId.trim() === '') {
+        console.error('❌ Empty or invalid studentId provided:', studentId);
+        throw new Error('Student ID is required and cannot be empty');
+      }
 
       // Get student info
       const studentInfo = await StudentFirestoreService.getStudentById(studentId);

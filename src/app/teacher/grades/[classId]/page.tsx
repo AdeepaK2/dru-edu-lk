@@ -71,11 +71,13 @@ export default function ClassGradeAnalytics() {
 
   // Local state for UI management
   const [classData, setClassData] = useState<ClassDocument | null>(null);
+  const [classTests, setClassTests] = useState<any[]>([]);
   const [studentPerformances, setStudentPerformances] = useState<StudentPerformanceData[]>([]);
   const [performanceTrends, setPerformanceTrends] = useState<PerformanceTrend[]>([]);
   
   const [loadingStates, setLoadingStates] = useState({
     class: true,
+    tests: true,
     students: false,
     trends: false
   });
@@ -87,7 +89,9 @@ export default function ClassGradeAnalytics() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [studentsPerPage] = useState(10);
+  const [studentsPerPage] = useState(20); // Increased for better performance
+  const [hasMoreStudents, setHasMoreStudents] = useState(true);
+  const [totalStudentCount, setTotalStudentCount] = useState(0);
   
   // Modal state
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
@@ -114,6 +118,9 @@ export default function ClassGradeAnalytics() {
         setClassData(classResult);
         console.log('✅ Class data loaded');
         
+        // Load class tests for immediate display
+        loadClassTests();
+        
       } catch (err: any) {
         console.error('❌ Error loading class data:', err);
         setError(err.message);
@@ -125,6 +132,40 @@ export default function ClassGradeAnalytics() {
     loadClassData();
   }, [classId, teacher?.id]);
 
+  // Load class tests for immediate display
+  const loadClassTests = useCallback(async () => {
+    if (!classId) return;
+
+    try {
+      setLoadingStates(prev => ({ ...prev, tests: true }));
+      
+      // Use the existing method from GradeAnalyticsService
+      const { query, collection, where, getDocs } = await import('firebase/firestore');
+      const { firestore } = await import('@/utils/firebase-client');
+      
+      // Query tests that include this classId
+      const testsQuery = query(
+        collection(firestore, 'tests'),
+        where('classIds', 'array-contains', classId)
+      );
+      
+      const testsSnapshot = await getDocs(testsQuery);
+      const tests = testsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      
+      setClassTests(tests || []);
+      console.log('📝 Class tests loaded:', tests?.length || 0);
+      
+    } catch (error) {
+      console.error('❌ Error loading class tests:', error);
+      setClassTests([]);
+    } finally {
+      setLoadingStates(prev => ({ ...prev, tests: false }));
+    }
+  }, [classId]);
+
   // Handle analytics errors
   useEffect(() => {
     if (analyticsError) {
@@ -132,19 +173,58 @@ export default function ClassGradeAnalytics() {
     }
   }, [analyticsError]);
 
-  // Load students data (lazy loaded)
-  const loadStudentsData = useCallback(async (page: number = 1) => {
+  // Fallback recovery mechanism - if analytics fail, try direct API calls
+  const handleAnalyticsRecovery = useCallback(async () => {
+    try {
+      console.log('🔄 Attempting analytics recovery...');
+      setError(null);
+      
+      // Try to get class analytics directly as fallback
+      const classAnalytics = await GradeAnalyticsService.getClassAnalytics(classId);
+      
+      // Set basic stats from fallback data
+      const fallbackStats = {
+        totalStudents: classAnalytics.totalStudents,
+        averagePerformance: classAnalytics.averagePerformance,
+        passRate: classAnalytics.passRate,
+        testsCompleted: classAnalytics.testsCompleted,
+        passedTests: 0,
+        totalTests: 0,
+        id: `fallback_${classId}`,
+        lastUpdated: new Date(),
+        isStale: false
+      };
+      
+      // Manually set the analytics using the hook's refresh
+      await refreshAnalytics();
+      
+      console.log('✅ Analytics recovery successful');
+      
+    } catch (err: any) {
+      console.error('❌ Analytics recovery failed:', err);
+      setError('Unable to load analytics data. Please try refreshing the page.');
+    }
+  }, [classId, refreshAnalytics]);
+
+  // Load students data (optimized pagination)
+  const loadStudentsData = useCallback(async (page: number = 1, reset: boolean = false) => {
     if (!classId) return;
 
     setLoadingStates(prev => ({ ...prev, students: true }));
 
     try {
-      // Use fullAnalytics if available, otherwise fall back to direct API
+      // Use fullAnalytics if available for fast loading
       if (fullAnalytics?.detailedStats?.studentPerformances && fullAnalytics.detailedStats.studentPerformances.length > 0) {
         console.log('📊 Using cached student data');
+        const allStudents = fullAnalytics.detailedStats.studentPerformances;
+        setTotalStudentCount(allStudents.length);
+        
         const startIndex = (page - 1) * studentsPerPage;
         const endIndex = startIndex + studentsPerPage;
-        const cachedStudents = fullAnalytics.detailedStats.studentPerformances.slice(startIndex, endIndex);
+        const cachedStudents = allStudents.slice(startIndex, endIndex);
+        
+        // Check if there are more students
+        setHasMoreStudents(endIndex < allStudents.length);
         
         // Map schema format to component format with proper types
         const mappedStudents: StudentPerformanceData[] = cachedStudents.map(student => ({
@@ -161,22 +241,32 @@ export default function ClassGradeAnalytics() {
           recentTestScores: [] // Add missing field for compatibility
         }));
         
-        setStudentPerformances(prev => page === 1 ? mappedStudents : [...prev, ...mappedStudents]);
+        setStudentPerformances(prev => {
+          if (reset || page === 1) return mappedStudents;
+          return [...prev, ...mappedStudents];
+        });
       } else {
         console.log('🔄 Fetching student data from API');
-        const students = await GradeAnalyticsService.getStudentPerformanceData('', classId);
+        // Get class student performances directly
+        const allStudents = await GradeAnalyticsService.getClassStudentPerformances(classId);
+        setTotalStudentCount(allStudents.length);
         
         const startIndex = (page - 1) * studentsPerPage;
         const endIndex = startIndex + studentsPerPage;
-        const paginatedStudents = Array.isArray(students) 
-          ? students.slice(startIndex, endIndex)
-          : [students].slice(startIndex, endIndex);
+        const paginatedStudents = allStudents.slice(startIndex, endIndex);
         
-        setStudentPerformances(prev => page === 1 ? paginatedStudents : [...prev, ...paginatedStudents]);
+        // Check if there are more students
+        setHasMoreStudents(endIndex < allStudents.length);
+        
+        setStudentPerformances(prev => {
+          if (reset || page === 1) return paginatedStudents;
+          return [...prev, ...paginatedStudents];
+        });
       }
       
     } catch (error) {
       console.error('❌ Error loading students:', error);
+      setHasMoreStudents(false);
     } finally {
       setLoadingStates(prev => ({ ...prev, students: false }));
     }
@@ -230,7 +320,7 @@ export default function ClassGradeAnalytics() {
     switch (tab) {
       case 'students':
         if (studentPerformances.length === 0) {
-          loadStudentsData(1);
+          loadStudentsData(1, true);
         }
         break;
       case 'trends':
@@ -252,11 +342,23 @@ export default function ClassGradeAnalytics() {
     );
   }, [studentPerformances, searchTerm]);
 
-  // Optimized pagination
+  // Optimized pagination with infinite scroll
   const loadMoreStudents = useCallback(() => {
-    const nextPage = Math.floor(studentPerformances.length / studentsPerPage) + 1;
-    loadStudentsData(nextPage);
-  }, [studentPerformances.length, studentsPerPage, loadStudentsData]);
+    if (!loadingStates.students && hasMoreStudents) {
+      const nextPage = Math.floor(studentPerformances.length / studentsPerPage) + 1;
+      loadStudentsData(nextPage, false);
+    }
+  }, [studentPerformances.length, studentsPerPage, loadStudentsData, loadingStates.students, hasMoreStudents]);
+
+  // Auto-load more students when scrolling near bottom
+  const handleStudentScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    const isNearBottom = scrollTop + clientHeight >= scrollHeight - 1000; // 1000px before bottom
+    
+    if (isNearBottom && !loadingStates.students && hasMoreStudents && !searchTerm) {
+      loadMoreStudents();
+    }
+  }, [loadMoreStudents, loadingStates.students, hasMoreStudents, searchTerm]);
 
   // Quick student detail view
   const viewStudentDetails = useCallback((studentId: string) => {
@@ -385,20 +487,32 @@ export default function ClassGradeAnalytics() {
     return (
       <TeacherLayout>
         <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
+          <div className="text-center max-w-md">
             <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
               Error Loading Analytics
             </h3>
-            <p className="text-gray-600 dark:text-gray-300 mb-4">{error}</p>
-            <div className="space-x-3">
-              <Button variant="outline" onClick={() => router.back()}>
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Go Back
+            <p className="text-gray-600 dark:text-gray-300 mb-6">{error}</p>
+            <div className="space-y-3">
+              <div className="flex space-x-3 justify-center">
+                <Button variant="outline" onClick={() => router.back()}>
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Go Back
+                </Button>
+                <Button onClick={refreshData}>
+                  Try Again
+                </Button>
+              </div>
+              <Button 
+                variant="outline" 
+                onClick={handleAnalyticsRecovery}
+                className="w-full"
+              >
+                Use Alternative Method
               </Button>
-              <Button onClick={refreshData}>
-                Try Again
-              </Button>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                If the issue persists, try the alternative loading method or contact support.
+              </p>
             </div>
           </div>
         </div>
@@ -611,10 +725,10 @@ export default function ClassGradeAnalytics() {
                 {/* Recent Tests */}
                 <div>
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                    Recent Tests Performance
+                    Class Tests
                   </h3>
-                  {loadingFull || loadingQuick ? (
-                    // Show loading skeleton while analytics are being computed
+                  {loadingStates.tests ? (
+                    // Show loading skeleton while tests are being loaded
                     <div className="space-y-3">
                       {[1, 2, 3].map((i) => (
                         <div key={i} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg animate-pulse">
@@ -629,28 +743,35 @@ export default function ClassGradeAnalytics() {
                         </div>
                       ))}
                     </div>
-                  ) : fullAnalytics?.detailedStats?.recentTests && fullAnalytics.detailedStats.recentTests.length > 0 ? (
+                  ) : classTests && classTests.length > 0 ? (
                     <div className="space-y-3">
-                      {fullAnalytics.detailedStats.recentTests.map((test: any) => (
-                        <div key={test.testId} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                      {classTests.slice(0, 5).map((test: any) => (
+                        <div key={test.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                           <div>
                             <p className="font-medium text-gray-900 dark:text-white">
-                              {test.testTitle}
+                              {test.title}
                             </p>
                             <p className="text-sm text-gray-500 dark:text-gray-400">
-                              {test.createdAt.toLocaleDateString()}
+                              {test.createdAt?.toDate ? test.createdAt.toDate().toLocaleDateString() : 'N/A'}
                             </p>
                           </div>
                           <div className="text-right">
                             <p className="font-medium text-gray-900 dark:text-white">
-                              Avg: {Math.round(test.averageScore)}%
+                              {test.questions?.length || 0} questions
                             </p>
                             <p className="text-sm text-gray-500 dark:text-gray-400">
-                              {Math.round(test.completionRate)}% completed
+                              {test.config?.timeLimit || 'No'} time limit
                             </p>
                           </div>
                         </div>
                       ))}
+                      {classTests.length > 5 && (
+                        <div className="text-center p-4">
+                          <Button variant="outline" size="sm">
+                            View All {classTests.length} Tests
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="text-center p-8 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
@@ -659,7 +780,7 @@ export default function ClassGradeAnalytics() {
                         No tests created yet
                       </h4>
                       <p className="text-gray-500 dark:text-gray-400">
-                        Tests will appear here once they are created and completed by students
+                        Tests will appear here once they are created for this class
                       </p>
                     </div>
                   )}
@@ -697,7 +818,10 @@ export default function ClassGradeAnalytics() {
                     <p className="text-gray-600 dark:text-gray-300 mt-2">Loading students...</p>
                   </div>
                 ) : filteredStudents.length > 0 ? (
-                  <div className="space-y-3">
+                  <div 
+                    className="space-y-3 max-h-96 overflow-y-auto"
+                    onScroll={handleStudentScroll}
+                  >
                     {filteredStudents.map((student) => (
                       <div key={student.studentId} className="border border-gray-200 dark:border-gray-700 rounded-lg">
                         <div 
@@ -778,8 +902,12 @@ export default function ClassGradeAnalytics() {
                     ))}
                     
                     {/* Load More Button */}
-                    {studentPerformances.length > 0 && studentPerformances.length % studentsPerPage === 0 && (
-                      <div className="text-center pt-4">
+                    {/* Pagination info and Load More */}
+                    <div className="text-center pt-4 border-t border-gray-200 dark:border-gray-700">
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
+                        Showing {filteredStudents.length} of {totalStudentCount} students
+                      </p>
+                      {hasMoreStudents && !searchTerm && (
                         <Button
                           variant="outline"
                           onClick={loadMoreStudents}
@@ -787,8 +915,8 @@ export default function ClassGradeAnalytics() {
                         >
                           {loadingStates.students ? 'Loading...' : 'Load More Students'}
                         </Button>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                 ) : (
                   <div className="text-center py-8">
