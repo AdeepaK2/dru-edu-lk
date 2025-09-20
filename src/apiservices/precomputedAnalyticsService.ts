@@ -452,6 +452,26 @@ export class PrecomputedAnalyticsService {
     }
   }
 
+  /**
+   * Batch store pre-computed analytics for cron job
+   */
+  static async batchStoreAnalytics(classId: string): Promise<void> {
+    try {
+      console.log('🗄️ Batch storing analytics for class:', classId);
+      
+      // Trigger both quick stats and full analytics computation
+      await Promise.all([
+        this.computeAndCacheQuickStats(classId),
+        this.computeAndCacheFullAnalytics(classId)
+      ]);
+
+      console.log('✅ Batch analytics storage completed for class:', classId);
+    } catch (error) {
+      console.error('❌ Error in batch storing analytics:', error);
+      throw error;
+    }
+  }
+
   private static calculatePerformanceDistribution(analytics: any): Array<{
     range: string;
     count: number;
