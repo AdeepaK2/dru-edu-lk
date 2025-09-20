@@ -467,9 +467,10 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
 
   const handleEditMaterial = (material: any, group?: any) => {
     if (group?.isGroup && group?.materials?.length > 1) {
-      // Editing a group
+      // Editing a real group (multiple materials)
       setEditingGroup({
         ...group,
+        isGroup: true,
         groupId: group.materials[0]?.groupId || group.id // Ensure we have the actual groupId
       });
       setMaterialToEdit({
@@ -482,13 +483,20 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
         materials: group.materials
       });
     } else {
-      // Editing single material
-      setEditingGroup(null);
+      // Editing single material (fake group) - set up for potential conversion to real group
+      setEditingGroup({
+        ...group,
+        isGroup: false, // This is a fake group (single material)
+        groupId: material.groupId || null, // May or may not have a groupId
+        materials: group?.materials || [material]
+      });
       setMaterialToEdit({
         ...material,
         title: material.title || '',
         description: material.description || '',
-        isRequired: material.isRequired || false
+        isRequired: material.isRequired || false,
+        materials: group?.materials || [material], // Include the current material
+        groupId: material.groupId || null
       });
     }
     setNewFilesToAdd([]);
@@ -523,10 +531,18 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
         groupTitle = editingGroup.groupTitle || editedData.title;
         console.log('📦 Using existing real group:', { groupId, groupTitle });
       } else if (editingGroup && !editingGroup.isGroup && newFilesToAdd.length > 0) {
-        // When editing a single material (fake group) and adding files, create a new group
-        groupId = `group_${Date.now()}`;
-        groupTitle = editedData.title;
-        console.log('📦 Converting single to group:', { groupId, groupTitle });
+        // When editing a single material (fake group) and adding files
+        if (editingGroup.groupId) {
+          // Single material already has a groupId, use it
+          groupId = editingGroup.groupId;
+          groupTitle = editedData.title;
+          console.log('📦 Using existing single material group:', { groupId, groupTitle });
+        } else {
+          // Single material doesn't have groupId, create a new group
+          groupId = `group_${Date.now()}`;
+          groupTitle = editedData.title;
+          console.log('📦 Converting single to new group:', { groupId, groupTitle });
+        }
       } else if (materialToEdit.groupId) {
         // Use groupId from materialToEdit if it exists
         groupId = materialToEdit.groupId;
@@ -648,16 +664,22 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
           });
         }
       } else if (editingGroup && !editingGroup.isGroup && newFilesToAdd.length > 0) {
-        // Converting single material to group - update the original material to have groupId
+        // Converting single material to group or adding to existing single material group
         const originalMaterial = materialToEdit.materials[0];
         if (originalMaterial && !filesToRemove.includes(originalMaterial.id)) {
-          await updateStudyMaterial(originalMaterial.id, {
+          const updateData: any = {
             groupId: groupId,
             groupTitle: editedData.title,
-            title: editedData.title, // Also update the title
             description: editedData.description,
             isRequired: editedData.isRequired
-          });
+          };
+          
+          // Only update title if we're creating a new group (not if we're adding to existing group)
+          if (!editingGroup.groupId) {
+            updateData.title = editedData.title;
+          }
+          
+          await updateStudyMaterial(originalMaterial.id, updateData);
         }
       } else {
         // For single materials, update normally
