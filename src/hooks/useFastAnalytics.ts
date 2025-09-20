@@ -54,12 +54,47 @@ export function useFastAnalytics({
   // Refs for cleanup and tracking
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const isUnmountedRef = useRef(false);
+  const lastFullAnalyticsLoad = useRef<number>(0);
+  const lastBackgroundRefresh = useRef<number>(0);
+  const retryCount = useRef<{ quickStats: number; fullAnalytics: number }>({ quickStats: 0, fullAnalytics: 0 });
+
+  // Retry utility with exponential backoff
+  const retryWithBackoff = useCallback(async (
+    operation: () => Promise<void>, 
+    operationType: 'quickStats' | 'fullAnalytics',
+    maxRetries: number = 3
+  ) => {
+    const currentRetries = retryCount.current[operationType];
+    
+    try {
+      await operation();
+      // Reset retry count on success
+      retryCount.current[operationType] = 0;
+    } catch (error) {
+      if (currentRetries < maxRetries) {
+        const delay = Math.min(1000 * Math.pow(2, currentRetries), 10000); // Cap at 10 seconds
+        console.log(`⏳ Retrying ${operationType} in ${delay}ms... (attempt ${currentRetries + 1}/${maxRetries})`);
+        
+        retryCount.current[operationType]++;
+        
+        setTimeout(() => {
+          if (!isUnmountedRef.current) {
+            retryWithBackoff(operation, operationType, maxRetries);
+          }
+        }, delay);
+      } else {
+        console.error(`❌ Max retries exceeded for ${operationType}`);
+        retryCount.current[operationType] = 0;
+        throw error;
+      }
+    }
+  }, []);
   
-  // Load quick stats (immediate)
+  // Load quick stats (immediate) with retry logic
   const loadQuickStats = useCallback(async () => {
     if (!classId || isUnmountedRef.current) return;
     
-    try {
+    const operation = async () => {
       setLoadingQuick(true);
       setError(null);
       
@@ -70,9 +105,12 @@ export function useFastAnalytics({
         setQuickStats(stats);
         console.log('✅ Quick stats loaded:', stats);
       }
-      
+    };
+    
+    try {
+      await retryWithBackoff(operation, 'quickStats');
     } catch (err: any) {
-      console.error('❌ Error loading quick stats:', err);
+      console.error('❌ Error loading quick stats after retries:', err);
       if (!isUnmountedRef.current) {
         setError(err.message || 'Failed to load quick stats');
       }
@@ -81,13 +119,13 @@ export function useFastAnalytics({
         setLoadingQuick(false);
       }
     }
-  }, [classId]);
+  }, [classId, retryWithBackoff]);
 
   // Load full analytics (background)
   const loadFullAnalytics = useCallback(async () => {
     if (!classId || isUnmountedRef.current) return;
     
-    try {
+    const operation = async () => {
       setLoadingFull(true);
       
       console.log('🔄 Loading full analytics from cache...');
@@ -97,16 +135,19 @@ export function useFastAnalytics({
         setFullAnalytics(analytics);
         console.log('✅ Full analytics loaded:', analytics ? 'Found' : 'Not found');
       }
-      
+    };
+    
+    try {
+      await retryWithBackoff(operation, 'fullAnalytics');
     } catch (err: any) {
-      console.error('❌ Error loading full analytics:', err);
+      console.error('❌ Error loading full analytics after retries:', err);
       // Don't set error for full analytics failure - quick stats might still work
     } finally {
       if (!isUnmountedRef.current) {
         setLoadingFull(false);
       }
     }
-  }, [classId]);
+  }, [classId, retryWithBackoff]);
 
   // Refresh all data
   const refresh = useCallback(async () => {
@@ -151,14 +192,22 @@ export function useFastAnalytics({
     }
   }, [classId]);
 
-  // Setup auto-refresh
+  // Setup auto-refresh with intelligent intervals
   useEffect(() => {
     if (!autoRefresh || !refreshInterval) return;
     
     refreshIntervalRef.current = setInterval(() => {
       if (!isUnmountedRef.current) {
         console.log('🔄 Auto-refreshing analytics...');
-        refresh();
+        
+        // Always refresh quick stats
+        loadQuickStats();
+        
+        // Refresh full analytics less frequently to reduce load
+        if (Date.now() - lastFullAnalyticsLoad.current > refreshInterval * 3) {
+          loadFullAnalytics();
+          lastFullAnalyticsLoad.current = Date.now();
+        }
       }
     }, refreshInterval);
     
@@ -168,7 +217,7 @@ export function useFastAnalytics({
         refreshIntervalRef.current = null;
       }
     };
-  }, [autoRefresh, refreshInterval, refresh]);
+  }, [autoRefresh, refreshInterval, loadQuickStats, loadFullAnalytics]);
 
   // Initial load
   useEffect(() => {
@@ -201,6 +250,34 @@ export function useFastAnalytics({
   // Calculate derived states
   const isStale = quickStats?.isStale || fullAnalytics?.isStale || false;
   const lastUpdated = quickStats?.lastUpdated || fullAnalytics?.lastUpdated || null;
+
+  // Intelligent prefetching - trigger background computation when data is stale
+  useEffect(() => {
+    if (!quickStats || !isStale || !classId || !teacherId) return;
+    
+    const now = Date.now();
+    const cooldownPeriod = 2 * 60 * 1000; // 2 minutes
+    
+    if (now - lastBackgroundRefresh.current > cooldownPeriod) {
+      console.log('🔄 Triggering background computation for stale data...');
+      lastBackgroundRefresh.current = now;
+      
+      // Trigger background computation without blocking UI
+      PrecomputedAnalyticsService.computeAndCacheFullAnalytics(classId)
+        .then(() => {
+          console.log('✅ Background computation completed');
+          // Reload quick stats after a delay to get fresh data
+          setTimeout(() => {
+            if (!isUnmountedRef.current) {
+              loadQuickStats();
+            }
+          }, 3000);
+        })
+        .catch(err => {
+          console.warn('⚠️ Background computation failed:', err);
+        });
+    }
+  }, [quickStats, isStale, classId, teacherId, loadQuickStats]);
 
   return {
     // Data
