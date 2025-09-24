@@ -96,6 +96,9 @@ export default function ClassGradeAnalytics() {
   // Modal state
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
   const [selectedStudentData, setSelectedStudentData] = useState<StudentPerformanceData | null>(null);
+  
+  // Success state for showing recovery messages
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
   // Load class data (one-time)
   useEffect(() => {
@@ -166,18 +169,32 @@ export default function ClassGradeAnalytics() {
     }
   }, [classId]);
 
-  // Handle analytics errors
+  // Handle analytics errors - only set critical errors, not loading failures
   useEffect(() => {
-    if (analyticsError) {
-      setError(analyticsError);
+    if (analyticsError && !loadingQuick && !loadingFull) {
+      // Only show error if we're not currently loading and have no data at all
+      if (!quickStats && !fullAnalytics?.quickStats) {
+        setError(analyticsError);
+      }
     }
-  }, [analyticsError]);
+    
+    // Clear error if we successfully have data and show success message
+    if ((quickStats || fullAnalytics?.quickStats) && error && !error.includes('not found') && !error.includes('Access denied')) {
+      setError(null);
+      setShowSuccessMessage(true);
+      // Auto-hide success message after 5 seconds
+      setTimeout(() => setShowSuccessMessage(false), 5000);
+    }
+  }, [analyticsError, loadingQuick, loadingFull, quickStats, fullAnalytics, error]);
 
   // Fallback recovery mechanism - if analytics fail, try direct API calls
   const handleAnalyticsRecovery = useCallback(async () => {
     try {
       console.log('🔄 Attempting analytics recovery...');
       setError(null);
+      
+      // Show loading state during recovery
+      setLoadingStates(prev => ({ ...prev, students: true }));
       
       // Try to get class analytics directly as fallback
       const classAnalytics = await GradeAnalyticsService.getClassAnalytics(classId);
@@ -195,16 +212,18 @@ export default function ClassGradeAnalytics() {
         isStale: false
       };
       
-      // Manually set the analytics using the hook's refresh
-      await refreshAnalytics();
+      // Try to force recompute analytics
+      await forceRecompute();
       
       console.log('✅ Analytics recovery successful');
       
     } catch (err: any) {
       console.error('❌ Analytics recovery failed:', err);
       setError('Unable to load analytics data. Please try refreshing the page.');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, students: false }));
     }
-  }, [classId, refreshAnalytics]);
+  }, [classId, forceRecompute]);
 
   // Load students data (optimized pagination)
   const loadStudentsData = useCallback(async (page: number = 1, reset: boolean = false) => {
@@ -434,14 +453,18 @@ export default function ClassGradeAnalytics() {
 
   // Refresh with cache invalidation
   const refreshData = useCallback(() => {
+    setError(null); // Clear any existing errors
+    setShowSuccessMessage(false); // Clear success message
     refreshAnalytics();
     setStudentPerformances([]);
     setPerformanceTrends([]);
     setCurrentPage(1);
   }, [refreshAnalytics]);
 
-  // Early loading screen with skeleton
-  if (loadingStates.class) {
+  // Show skeleton loading when class is loading OR when we have no data but analytics are loading
+  const shouldShowSkeleton = loadingStates.class || (!classData && (loadingQuick || loadingFull));
+  
+  if (shouldShowSkeleton) {
     return (
       <TeacherLayout>
         <div className="space-y-6">
@@ -464,6 +487,27 @@ export default function ClassGradeAnalytics() {
             </div>
           </div>
 
+          {/* Loading Progress Bar */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center space-x-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                <span className="text-sm text-gray-600 dark:text-gray-300">
+                  {loadingStates.class ? 'Loading class data...' : 
+                   loadingQuick ? 'Loading analytics...' : 
+                   loadingFull ? 'Computing detailed statistics...' : 
+                   'Initializing...'}
+                </span>
+              </div>
+            </div>
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+              <div 
+                className="bg-blue-600 h-2 rounded-full transition-all duration-300 animate-pulse"
+                style={{ width: loadingStates.class ? '25%' : loadingQuick ? '50%' : loadingFull ? '75%' : '100%' }}
+              ></div>
+            </div>
+          </div>
+
           {/* Stats Skeleton */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {[1, 2, 3, 4].map((i) => (
@@ -478,19 +522,40 @@ export default function ClassGradeAnalytics() {
               </div>
             ))}
           </div>
+
+          {/* Tab Navigation Skeleton */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+            <div className="border-b border-gray-200 dark:border-gray-700">
+              <nav className="flex space-x-8 px-6">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="animate-pulse py-4">
+                    <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-20"></div>
+                  </div>
+                ))}
+              </nav>
+            </div>
+            <div className="p-6">
+              <div className="animate-pulse space-y-4">
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+              </div>
+            </div>
+          </div>
         </div>
       </TeacherLayout>
     );
   }
 
-  if (error) {
+  // Only show error screen for critical errors (class not found, access denied, etc.)
+  if (error && !loadingStates.class && (!classData || error.includes('not found') || error.includes('Access denied'))) {
     return (
       <TeacherLayout>
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center max-w-md">
             <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              Error Loading Analytics
+              Error Loading Class
             </h3>
             <p className="text-gray-600 dark:text-gray-300 mb-6">{error}</p>
             <div className="space-y-3">
@@ -600,6 +665,77 @@ export default function ClassGradeAnalytics() {
                 Data may be outdated. Refreshing in background...
               </p>
             )}
+          </div>
+        )}
+
+        {/* Non-Critical Error Warning */}
+        {error && !error.includes('not found') && !error.includes('Access denied') && classData && (
+          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+            <div className="flex items-start space-x-3">
+              <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <h4 className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                  Analytics Warning
+                </h4>
+                <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                  {error}. Data fetching is happening in the background. Please wait or try the options below.
+                </p>
+                <div className="flex space-x-2 mt-3">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={refreshData}
+                    className="text-amber-700 border-amber-300 hover:bg-amber-100 dark:text-amber-200 dark:border-amber-600 dark:hover:bg-amber-800/30"
+                  >
+                    Retry
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={handleAnalyticsRecovery}
+                    className="text-amber-700 border-amber-300 hover:bg-amber-100 dark:text-amber-200 dark:border-amber-600 dark:hover:bg-amber-800/30"
+                  >
+                    Alternative Method
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={() => setError(null)}
+                    className="text-amber-700 border-amber-300 hover:bg-amber-100 dark:text-amber-200 dark:border-amber-600 dark:hover:bg-amber-800/30"
+                  >
+                    Dismiss
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Success Message when data loads after error */}
+        {showSuccessMessage && !error && (quickStats || fullAnalytics?.quickStats) && (
+          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+                <div>
+                  <h4 className="text-sm font-medium text-green-800 dark:text-green-200">
+                    Analytics Loaded Successfully
+                  </h4>
+                  <p className="text-sm text-green-700 dark:text-green-300">
+                    {cached ? 'Using cached data for fast loading' : 'Fresh data loaded from server'}
+                    {lastUpdated && ` • Last updated: ${lastUpdated.toLocaleTimeString()}`}
+                  </p>
+                </div>
+              </div>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={() => setShowSuccessMessage(false)}
+                className="text-green-700 border-green-300 hover:bg-green-100 dark:text-green-200 dark:border-green-600 dark:hover:bg-green-800/30"
+              >
+                ×
+              </Button>
+            </div>
           </div>
         )}
 
