@@ -21,7 +21,9 @@ import {
   ChevronRight,
   User,
   XCircle,
-  GraduationCap
+  GraduationCap,
+  FileText,
+  Trophy
 } from 'lucide-react';
 import { Button, Input } from '@/components/ui';
 import { useTeacherAuth } from '@/hooks/useTeacherAuth';
@@ -85,7 +87,7 @@ export default function ClassGradeAnalytics() {
   const [error, setError] = useState<string | null>(null);
   
   // UI state
-  const [activeTab, setActiveTab] = useState<'overview' | 'students' | 'trends'>('overview');
+  const [activeTab, setActiveTab] = useState<'tests' | 'students'>('tests');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -333,7 +335,7 @@ export default function ClassGradeAnalytics() {
   }, [quickStats, fullAnalytics]);
 
   // Optimized tab switching with preloading
-  const handleTabChange = useCallback((tab: 'overview' | 'students' | 'trends') => {
+  const handleTabChange = useCallback((tab: 'tests' | 'students') => {
     setActiveTab(tab);
     
     switch (tab) {
@@ -342,13 +344,11 @@ export default function ClassGradeAnalytics() {
           loadStudentsData(1, true);
         }
         break;
-      case 'trends':
-        if (performanceTrends.length === 0) {
-          loadTrendsData();
-        }
+      case 'tests':
+        // Tests are loaded by default
         break;
     }
-  }, [studentPerformances.length, performanceTrends.length, loadStudentsData, loadTrendsData]);
+  }, [studentPerformances.length, loadStudentsData]);
 
   // Memoized filtered students for better performance
   const filteredStudents = useMemo(() => {
@@ -819,9 +819,8 @@ export default function ClassGradeAnalytics() {
           <div className="border-b border-gray-200 dark:border-gray-700">
             <nav className="flex space-x-8 px-6">
               {[
-                { id: 'overview', label: 'Overview', icon: BarChart3 },
-                { id: 'students', label: 'Students', icon: Users },
-                { id: 'trends', label: 'Trends', icon: TrendingUp }
+                { id: 'tests', label: 'Tests', icon: BookOpen, count: classTests.length },
+                { id: 'students', label: 'Students', icon: Users, count: displayStats.totalStudents }
               ].map((tab) => {
                 const Icon = tab.icon;
                 return (
@@ -836,6 +835,15 @@ export default function ClassGradeAnalytics() {
                   >
                     <Icon className="w-4 h-4 mr-2" />
                     {tab.label}
+                    {tab.count > 0 && (
+                      <span className={`ml-2 px-2 py-1 text-xs rounded-full ${
+                        activeTab === tab.id
+                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+                          : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
+                      }`}>
+                        {tab.count}
+                      </span>
+                    )}
                   </button>
                 );
               })}
@@ -844,283 +852,295 @@ export default function ClassGradeAnalytics() {
 
           {/* Tab Content */}
           <div className="p-6">
-            {activeTab === 'overview' && (
-              <div className="space-y-6">
-                {/* Class Quick Actions */}
-                <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
-                  <Button 
-                    variant="outline"
-                    onClick={() => handleTabChange('students')}
-                    className="flex items-center justify-center h-16"
-                  >
-                    <Users className="w-5 h-5 mr-2" />
-                    View All Students
-                  </Button>
-                </div>
-
-                {/* Recent Tests */}
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                    Class Tests
-                  </h3>
-                  {loadingStates.tests ? (
-                    // Show loading skeleton while tests are being loaded
-                    <div className="space-y-3">
-                      {[1, 2, 3].map((i) => (
-                        <div key={i} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg animate-pulse">
-                          <div className="flex-1">
-                            <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-3/4 mb-2"></div>
-                            <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
-                          </div>
-                          <div className="text-right">
-                            <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-16 mb-2"></div>
-                            <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-20"></div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : classTests && classTests.length > 0 ? (
-                    <div className="space-y-3">
-                      {classTests.slice(0, 5).map((test: any) => (
-                        <div key={test.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                          <div>
-                            <p className="font-medium text-gray-900 dark:text-white">
-                              {test.title}
-                            </p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                              {test.createdAt?.toDate ? test.createdAt.toDate().toLocaleDateString() : 'N/A'}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-medium text-gray-900 dark:text-white">
-                              {test.questions?.length || 0} questions
-                            </p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                              {test.config?.timeLimit || 'No'} time limit
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                      {classTests.length > 5 && (
-                        <div className="text-center p-4">
-                          <Button variant="outline" size="sm">
-                            View All {classTests.length} Tests
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="text-center p-8 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                      <BookOpen className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                      <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                        No tests created yet
-                      </h4>
-                      <p className="text-gray-500 dark:text-gray-400">
-                        Tests will appear here once they are created for this class
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'students' && (
+            {activeTab === 'tests' && (
               <div className="space-y-4">
-                {/* Search */}
-                <div className="flex items-center space-x-4">
-                  <div className="relative flex-1">
+                {/* Search and Filter */}
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                    Class Tests ({classTests.length})
+                  </h3>
+                  <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                     <Input
                       type="text"
-                      placeholder="Search students..."
+                      placeholder="Search tests..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-10"
                     />
                   </div>
-                  <Button
-                    variant="outline"
-                    onClick={() => loadStudentsData(1)}
-                    disabled={loadingStates.students}
-                  >
-                    {loadingStates.students ? 'Loading...' : 'Load Students'}
-                  </Button>
                 </div>
 
-                {/* Students List */}
-                {loadingStates.students ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                    <p className="text-gray-600 dark:text-gray-300 mt-2">Loading students...</p>
-                  </div>
-                ) : filteredStudents.length > 0 ? (
-                  <div 
-                    className="space-y-3 max-h-96 overflow-y-auto"
-                    onScroll={handleStudentScroll}
-                  >
-                    {filteredStudents.map((student) => (
-                      <div key={student.studentId} className="border border-gray-200 dark:border-gray-700 rounded-lg">
-                        <div 
-                          className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50"
-                          onClick={() => viewStudentDetails(student.studentId)}
-                        >
-                          <div className="flex items-center space-x-4">
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                              student.overallAverage >= 80 
-                                ? 'bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400'
-                                : student.overallAverage >= 60
-                                ? 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400'
-                                : 'bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400'
-                            }`}>
-                              <User className="w-5 h-5" />
-                            </div>
-                            <div>
-                              <p className="font-medium text-gray-900 dark:text-white">
-                                {student.studentName}
-                              </p>
-                              <p className="text-sm text-gray-500 dark:text-gray-400">
-                                {student.studentEmail}
-                              </p>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center space-x-4">
-                            <div className="text-right">
-                              <p className="font-medium text-gray-900 dark:text-white">
-                                {Math.round(student.overallAverage)}%
-                              </p>
-                              <p className="text-sm text-gray-500 dark:text-gray-400">
-                                {student.totalTests} tests
-                              </p>
-                            </div>
-                            <div className="flex items-center">
-                              {student.improvementTrend === 'improving' && (
-                                <TrendingUp className="w-4 h-4 text-green-500" />
-                              )}
-                              {student.improvementTrend === 'declining' && (
-                                <TrendingDown className="w-4 h-4 text-red-500" />
-                              )}
-                              <ChevronRight className="w-4 h-4 text-gray-400 ml-2" />
-                            </div>
+                {/* Tests List */}
+                {loadingStates.tests ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="flex items-center justify-between p-6 bg-gray-50 dark:bg-gray-700/50 rounded-lg animate-pulse">
+                        <div className="flex-1">
+                          <div className="h-5 bg-gray-300 dark:bg-gray-600 rounded w-3/4 mb-2"></div>
+                          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mb-2"></div>
+                          <div className="flex space-x-4">
+                            <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-20"></div>
+                            <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-24"></div>
+                            <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-16"></div>
                           </div>
                         </div>
-
-                        {/* Student Details (Expandable) */}
-                        {selectedStudent === student.studentId && (
-                          <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-700/30">
-                            {/* Weak Topics Only */}
-                            <div>
-                              <h4 className="font-medium text-gray-900 dark:text-white mb-3">
-                                Areas for Improvement
+                        <div className="text-right">
+                          <div className="h-8 bg-gray-300 dark:bg-gray-600 rounded w-24 mb-2"></div>
+                          <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-20"></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : classTests && classTests.length > 0 ? (
+                  <div className="space-y-3">
+                    {classTests
+                      .filter(test => 
+                        !searchTerm || 
+                        test.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        test.subject?.toLowerCase().includes(searchTerm.toLowerCase())
+                      )
+                      .map((test: any) => (
+                      <div key={test.id} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 hover:shadow-md transition-shadow cursor-pointer"
+                           onClick={() => router.push(`/teacher/tests/${test.id}/results`)}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-3 mb-2">
+                              <h4 className="text-lg font-medium text-gray-900 dark:text-white">
+                                {test.title}
                               </h4>
-                              {student.weakTopics.length > 0 ? (
-                                <div className="space-y-2">
-                                  {student.weakTopics.slice(0, 5).map((topic) => (
-                                    <div key={topic.topic} className="flex items-center justify-between p-2 bg-red-50 dark:bg-red-900/20 rounded">
-                                      <span className="text-sm text-gray-700 dark:text-gray-300">
-                                        {topic.topic}
-                                      </span>
-                                      <span className="text-sm font-medium text-red-600 dark:text-red-400">
-                                        {Math.round(topic.averageScore)}% correct
-                                      </span>
-                                    </div>
-                                  ))}
-                                </div>
-                              ) : (
-                                <p className="text-sm text-gray-500 dark:text-gray-400 italic">
-                                  No areas identified for improvement
-                                </p>
+                              <span className={`px-2 py-1 text-xs rounded-full font-medium ${
+                                test.type === 'live' 
+                                  ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+                                  : 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+                              }`}>
+                                {test.type === 'live' ? 'Live Test' : 'Flexible Test'}
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                              {test.description || 'No description provided'}
+                            </p>
+                            <div className="flex items-center space-x-6 text-sm text-gray-500 dark:text-gray-400">
+                              <span className="flex items-center">
+                                <Calendar className="h-4 w-4 mr-1" />
+                                Created: {test.createdAt?.toDate ? test.createdAt.toDate().toLocaleDateString() : 'N/A'}
+                              </span>
+                              <span className="flex items-center">
+                                <FileText className="h-4 w-4 mr-1" />
+                                {test.questions?.length || 0} questions
+                              </span>
+                              <span className="flex items-center">
+                                <Clock className="h-4 w-4 mr-1" />
+                                {test.duration || test.config?.timeLimit || 'No'} min
+                              </span>
+                              {test.config?.passingScore && (
+                                <span className="flex items-center">
+                                  <Trophy className="h-4 w-4 mr-1" />
+                                  {test.config.passingScore}% to pass
+                                </span>
                               )}
                             </div>
                           </div>
-                        )}
+                          <div className="text-right">
+                            <Button variant="outline" size="sm">
+                              <Eye className="w-4 h-4 mr-2" />
+                              View Results
+                            </Button>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                              Click to see detailed results
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     ))}
-                    
-                    {/* Load More Button */}
-                    {/* Pagination info and Load More */}
-                    <div className="text-center pt-4 border-t border-gray-200 dark:border-gray-700">
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
-                        Showing {filteredStudents.length} of {totalStudentCount} students
-                      </p>
-                      {hasMoreStudents && !searchTerm && (
-                        <Button
-                          variant="outline"
-                          onClick={loadMoreStudents}
-                          disabled={loadingStates.students}
-                        >
-                          {loadingStates.students ? 'Loading...' : 'Load More Students'}
-                        </Button>
-                      )}
-                    </div>
                   </div>
                 ) : (
-                  <div className="text-center py-8">
-                    <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500 dark:text-gray-400">
-                      {searchTerm ? 'No students found matching your search.' : 'No student performance data available.'}
+                  <div className="text-center p-12 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                    <BookOpen className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+                    <h4 className="text-xl font-medium text-gray-900 dark:text-white mb-2">
+                      No tests created yet
+                    </h4>
+                    <p className="text-gray-500 dark:text-gray-400 mb-6">
+                      Tests will appear here once they are created for this class
                     </p>
-                    <Button
-                      variant="outline"
-                      onClick={() => loadStudentsData(1)}
-                      className="mt-4"
-                      disabled={loadingStates.students}
+                    <Button 
+                      onClick={() => router.push(`/teacher/tests/create?classId=${classId}`)}
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
                     >
-                      {loadingStates.students ? 'Loading...' : 'Load Student Data'}
+                      Create First Test
                     </Button>
                   </div>
                 )}
               </div>
             )}
 
-            {activeTab === 'trends' && (
+            {activeTab === 'students' && (
               <div className="space-y-4">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                  Performance Trends
-                </h3>
-                
-                {loadingStates.trends ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                    <p className="text-gray-600 dark:text-gray-300 mt-2">Loading trends...</p>
-                  </div>
-                ) : performanceTrends.length === 0 ? (
-                  <div className="text-center py-8">
-                    <BarChart3 className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-                    <p className="text-gray-500 dark:text-gray-400">
-                      No trend data available yet
-                    </p>
+                {/* Search and Controls */}
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                    Class Students ({displayStats.totalStudents})
+                  </h3>
+                  <div className="flex items-center space-x-3">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                      <Input
+                        type="text"
+                        placeholder="Search students..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
                     <Button
                       variant="outline"
-                      onClick={loadTrendsData}
-                      className="mt-4"
-                      disabled={loadingStates.trends}
+                      onClick={() => loadStudentsData(1, true)}
+                      disabled={loadingStates.students}
                     >
-                      {loadingStates.trends ? 'Loading...' : 'Load Trend Data'}
+                      {loadingStates.students ? 'Loading...' : 'Refresh'}
                     </Button>
                   </div>
-                ) : (
-                  <div className="space-y-4">
-                    {performanceTrends.map((trend, index) => (
-                      <div key={index} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                        <div>
-                          <p className="font-medium text-gray-900 dark:text-white">
-                            {trend.date.toLocaleDateString()}
-                          </p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            {trend.testsCompleted} tests completed
-                          </p>
+                </div>
+
+                {/* Students Grid */}
+                {loadingStates.students ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {[1, 2, 3, 4, 5, 6].map((i) => (
+                      <div key={i} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 animate-pulse">
+                        <div className="flex items-center space-x-4 mb-4">
+                          <div className="w-12 h-12 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
+                          <div className="flex-1">
+                            <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-3/4 mb-2"></div>
+                            <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <p className="font-medium text-gray-900 dark:text-white">
-                            {Math.round(trend.averageScore)}%
-                          </p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            {trend.studentsActive} students active
-                          </p>
+                        <div className="space-y-2">
+                          <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
+                          <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
                         </div>
                       </div>
                     ))}
+                  </div>
+                ) : filteredStudents.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {filteredStudents.map((student) => (
+                      <div 
+                        key={student.studentId} 
+                        className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 hover:shadow-lg transition-all cursor-pointer hover:border-blue-300 dark:hover:border-blue-600"
+                        onClick={() => router.push(`/teacher/grades/${classId}/student/${student.studentId}`)}
+                      >
+                        <div className="flex items-center space-x-4 mb-4">
+                          <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-medium ${
+                            student.overallAverage >= 80 
+                              ? 'bg-green-500'
+                              : student.overallAverage >= 60
+                              ? 'bg-yellow-500'
+                              : 'bg-red-500'
+                          }`}>
+                            {student.studentName.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-gray-900 dark:text-white truncate">
+                              {student.studentName}
+                            </p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                              {student.studentEmail}
+                            </p>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-600 dark:text-gray-300">Overall Average</span>
+                            <div className="flex items-center space-x-2">
+                              <span className="font-bold text-gray-900 dark:text-white">
+                                {Math.round(student.overallAverage)}%
+                              </span>
+                              {student.improvementTrend === 'improving' && (
+                                <TrendingUp className="w-4 h-4 text-green-500" />
+                              )}
+                              {student.improvementTrend === 'declining' && (
+                                <TrendingDown className="w-4 h-4 text-red-500" />
+                              )}
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-600 dark:text-gray-300">Tests Taken</span>
+                            <span className="font-medium text-gray-900 dark:text-white">
+                              {student.totalTests}
+                            </span>
+                          </div>
+                          
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-600 dark:text-gray-300">Tests Passed</span>
+                            <span className="font-medium text-green-600 dark:text-green-400">
+                              {student.passedTests}
+                            </span>
+                          </div>
+                          
+                          {student.lastActiveDate && (
+                            <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
+                              <span className="text-xs text-gray-500 dark:text-gray-400">
+                                Last active: {student.lastActiveDate.toDate().toLocaleDateString()}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="mt-4">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="w-full"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              router.push(`/teacher/grades/${classId}/student/${student.studentId}`);
+                            }}
+                          >
+                            <Eye className="w-4 h-4 mr-2" />
+                            View Details
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <h4 className="text-xl font-medium text-gray-900 dark:text-white mb-2">
+                      {searchTerm ? 'No students found' : 'No students enrolled'}
+                    </h4>
+                    <p className="text-gray-500 dark:text-gray-400 mb-6">
+                      {searchTerm 
+                        ? 'Try adjusting your search criteria' 
+                        : 'Students will appear here once they are enrolled in this class'
+                      }
+                    </p>
+                    {!searchTerm && (
+                      <Button 
+                        onClick={() => router.push(`/teacher/classes/${classId}`)}
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                      >
+                        Manage Class
+                      </Button>
+                    )}
+                  </div>
+                )}
+                
+                {/* Load More */}
+                {filteredStudents.length > 0 && hasMoreStudents && !searchTerm && (
+                  <div className="text-center pt-6 border-t border-gray-200 dark:border-gray-700">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                      Showing {filteredStudents.length} of {totalStudentCount} students
+                    </p>
+                    <Button
+                      variant="outline"
+                      onClick={loadMoreStudents}
+                      disabled={loadingStates.students}
+                    >
+                      {loadingStates.students ? 'Loading...' : 'Load More Students'}
+                    </Button>
                   </div>
                 )}
               </div>
