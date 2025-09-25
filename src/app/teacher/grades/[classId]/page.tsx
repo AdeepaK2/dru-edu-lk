@@ -75,12 +75,16 @@ export default function ClassGradeAnalytics() {
   const [classData, setClassData] = useState<ClassDocument | null>(null);
   const [classTests, setClassTests] = useState<any[]>([]);
   const [studentPerformances, setStudentPerformances] = useState<StudentPerformanceData[]>([]);
+  const [basicStudents, setBasicStudents] = useState<any[]>([]);
+  const [studentsEnhanced, setStudentsEnhanced] = useState(false);
   const [performanceTrends, setPerformanceTrends] = useState<PerformanceTrend[]>([]);
   
   const [loadingStates, setLoadingStates] = useState({
     class: true,
     tests: true,
     students: false,
+    studentsBasic: false,
+    studentsEnhancement: false,
     trends: false
   });
   
@@ -227,7 +231,167 @@ export default function ClassGradeAnalytics() {
     }
   }, [classId, forceRecompute]);
 
-  // Load students data (optimized pagination)
+  // Fast basic student loading - just get names and emails first
+  const loadBasicStudents = useCallback(async () => {
+    if (!classId) return;
+    
+    setLoadingStates(prev => ({ ...prev, studentsBasic: true }));
+    
+    try {
+      console.log('⚡ Loading basic student info fast...');
+      
+      const { query, collection, where, getDocs, documentId } = await import('firebase/firestore');
+      const { firestore } = await import('@/utils/firebase-client');
+      
+      // Get enrolled students with minimal data for instant display
+      const enrollmentsQuery = query(
+        collection(firestore, 'studentEnrollments'),
+        where('classId', '==', classId),
+        where('status', '==', 'enrolled')
+      );
+      
+      const enrollmentsSnapshot = await getDocs(enrollmentsQuery);
+      const studentIds = enrollmentsSnapshot.docs.map(doc => doc.data().studentId);
+      
+      if (studentIds.length === 0) {
+        setBasicStudents([]);
+        setTotalStudentCount(0);
+        return;
+      }
+      
+      // Get basic student info in batches for speed
+      const studentsData = [];
+      const batchSize = 10;
+      
+      for (let i = 0; i < studentIds.length; i += batchSize) {
+        const batch = studentIds.slice(i, i + batchSize);
+        const studentsQuery = query(
+          collection(firestore, 'students'),
+          where(documentId(), 'in', batch)
+        );
+        
+        const studentsSnapshot = await getDocs(studentsQuery);
+        const batchStudents = studentsSnapshot.docs.map(doc => ({
+          studentId: doc.id,
+          studentName: doc.data().name || 'Unknown Student',
+          studentEmail: doc.data().email || '',
+          // Placeholder values for fast loading
+          overallAverage: 0,
+          totalTests: 0,
+          passedTests: 0,
+          improvementTrend: 'stable' as const,
+          lastActiveDate: null,
+          isBasicData: true // Flag to indicate this is basic data
+        }));
+        
+        studentsData.push(...batchStudents);
+      }
+      
+      setBasicStudents(studentsData);
+      setTotalStudentCount(studentsData.length);
+      console.log(`⚡ Loaded ${studentsData.length} students instantly`);
+      
+      // Auto-trigger enhancement after basic data is loaded
+      setTimeout(() => enhanceStudentsData(), 100);
+      
+    } catch (error) {
+      console.error('❌ Error loading basic students:', error);
+      setBasicStudents([]);
+    } finally {
+      setLoadingStates(prev => ({ ...prev, studentsBasic: false }));
+    }
+  }, [classId]);
+
+  // Enhanced student loading - add analytics data in background
+  const enhanceStudentsData = useCallback(async () => {
+    if (!classId || basicStudents.length === 0) return;
+    
+    setLoadingStates(prev => ({ ...prev, studentsEnhancement: true }));
+    
+    try {
+      console.log('📊 Enhancing student data with analytics...');
+      
+      // Try cached data first for instant enhancement
+      if (fullAnalytics?.detailedStats?.studentPerformances) {
+        console.log('⚡ Using cached analytics for enhancement');
+        
+        const enhancedStudents = basicStudents.map(basicStudent => {
+          const analyticsData = fullAnalytics.detailedStats.studentPerformances.find(
+            (s: any) => s.studentId === basicStudent.studentId
+          );
+          
+          if (analyticsData) {
+            return {
+              ...basicStudent,
+              overallAverage: analyticsData.overallAverage || 0,
+              totalTests: analyticsData.totalTests || 0,
+              passedTests: analyticsData.passedTests || 0,
+              weakTopics: analyticsData.weakTopics || [],
+              strongTopics: analyticsData.strongTopics || [],
+              improvementTrend: analyticsData.improvementTrend || 'stable',
+              lastActiveDate: analyticsData.lastActiveDate ? {
+                toDate: () => new Date(analyticsData.lastActiveDate)
+              } : null,
+              isBasicData: false
+            };
+          }
+          
+          return basicStudent;
+        });
+        
+        setStudentPerformances(enhancedStudents);
+        setStudentsEnhanced(true);
+      } else {
+        console.log('🔄 Fetching fresh analytics for enhancement');
+        // Get fresh analytics data
+        const allStudents = await GradeAnalyticsService.getClassStudentPerformances(classId);
+        
+        const enhancedStudents = basicStudents.map(basicStudent => {
+          const analyticsData = allStudents.find(
+            s => s.studentId === basicStudent.studentId
+          );
+          
+          if (analyticsData) {
+            return {
+              ...basicStudent,
+              ...analyticsData,
+              isBasicData: false
+            };
+          }
+          
+          return basicStudent;
+        });
+        
+        setStudentPerformances(enhancedStudents);
+        setStudentsEnhanced(true);
+      }
+      
+      console.log('✅ Student data enhanced with analytics');
+      
+    } catch (error) {
+      console.error('❌ Error enhancing student data:', error);
+      // Keep basic data if enhancement fails
+      setStudentPerformances(basicStudents.map(s => ({ ...s, isBasicData: false })));
+    } finally {
+      setLoadingStates(prev => ({ ...prev, studentsEnhancement: false }));
+    }
+  }, [classId, basicStudents, fullAnalytics]);
+
+  // Auto-load basic students when switching to students tab
+  useEffect(() => {
+    if (activeTab === 'students' && basicStudents.length === 0 && !loadingStates.studentsBasic) {
+      loadBasicStudents();
+    }
+  }, [activeTab, basicStudents.length, loadingStates.studentsBasic, loadBasicStudents]);
+
+  // Auto-enhance students when fullAnalytics becomes available
+  useEffect(() => {
+    if (fullAnalytics && basicStudents.length > 0 && !studentsEnhanced && !loadingStates.studentsEnhancement) {
+      enhanceStudentsData();
+    }
+  }, [fullAnalytics, basicStudents.length, studentsEnhanced, loadingStates.studentsEnhancement, enhanceStudentsData]);
+
+  // Load students data (optimized pagination) - legacy support
   const loadStudentsData = useCallback(async (page: number = 1, reset: boolean = false) => {
     if (!classId) return;
 
@@ -350,16 +514,7 @@ export default function ClassGradeAnalytics() {
     }
   }, [studentPerformances.length, loadStudentsData]);
 
-  // Memoized filtered students for better performance
-  const filteredStudents = useMemo(() => {
-    if (!searchTerm) return studentPerformances;
-    
-    const term = searchTerm.toLowerCase();
-    return studentPerformances.filter(student =>
-      student.studentName.toLowerCase().includes(term) ||
-      student.studentEmail.toLowerCase().includes(term)
-    );
-  }, [studentPerformances, searchTerm]);
+
 
   // Optimized pagination with infinite scroll
   const loadMoreStudents = useCallback(() => {
@@ -451,12 +606,23 @@ export default function ClassGradeAnalytics() {
     URL.revokeObjectURL(url);
   }, [displayStats, classData, teacher?.name, studentPerformances]);
 
+  // Computed values for display
+  const displayStudents = studentPerformances.length > 0 ? studentPerformances : basicStudents;
+  
+  const filteredStudents = displayStudents.filter(student =>
+    !searchTerm || 
+    student.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    student.studentEmail.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   // Refresh with cache invalidation
   const refreshData = useCallback(() => {
     setError(null); // Clear any existing errors
     setShowSuccessMessage(false); // Clear success message
     refreshAnalytics();
     setStudentPerformances([]);
+    setBasicStudents([]);
+    setStudentsEnhanced(false);
     setPerformanceTrends([]);
     setCurrentPage(1);
   }, [refreshAnalytics]);
@@ -633,14 +799,17 @@ export default function ClassGradeAnalytics() {
           </div>
         </div>
 
-        {/* Loading Progress Bar */}
-        {(loadingQuick || loadingFull || isStale) && (
+        {/* Loading Progress Bar with Priority Indicators */}
+        {(loadingStates.tests || loadingStates.studentsBasic || loadingStates.studentsEnhancement || loadingQuick || loadingFull || isStale) && (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-3">
               <div className="flex items-center space-x-2">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
                 <span className="text-sm text-gray-600 dark:text-gray-300">
-                  {loadingQuick ? 'Loading analytics...' : 
+                  {loadingStates.tests ? 'Loading tests...' :
+                   loadingStates.studentsBasic ? 'Loading students...' :
+                   loadingStates.studentsEnhancement ? 'Enhancing student data...' :
+                   loadingQuick ? 'Loading analytics...' : 
                    loadingFull ? 'Computing detailed statistics...' : 
                    isStale ? 'Refreshing data...' : 'Processing...'}
                 </span>
@@ -651,17 +820,43 @@ export default function ClassGradeAnalytics() {
                 </span>
               )}
             </div>
+            
+            {/* Priority Loading Steps */}
+            <div className="flex items-center space-x-4 mb-2">
+              <div className="flex items-center space-x-2">
+                <div className={`w-3 h-3 rounded-full ${!loadingStates.tests ? 'bg-green-500' : 'bg-blue-500 animate-pulse'}`}></div>
+                <span className="text-xs text-gray-600 dark:text-gray-400">Tests</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className={`w-3 h-3 rounded-full ${
+                  !loadingStates.studentsBasic && basicStudents.length > 0 ? 'bg-green-500' : 
+                  loadingStates.studentsBasic ? 'bg-blue-500 animate-pulse' : 'bg-gray-300 dark:bg-gray-600'
+                }`}></div>
+                <span className="text-xs text-gray-600 dark:text-gray-400">Students</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className={`w-3 h-3 rounded-full ${
+                  studentsEnhanced ? 'bg-green-500' : 
+                  loadingStates.studentsEnhancement ? 'bg-blue-500 animate-pulse' : 'bg-gray-300 dark:bg-gray-600'
+                }`}></div>
+                <span className="text-xs text-gray-600 dark:text-gray-400">Analytics</span>
+              </div>
+            </div>
+            
             <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
               <div 
                 className={`h-2 rounded-full transition-all duration-300 ${
-                  loadingQuick ? 'bg-blue-600 w-1/3' :
-                  loadingFull ? 'bg-blue-600 w-2/3' :
+                  loadingStates.tests ? 'bg-blue-600 w-1/4' :
+                  loadingStates.studentsBasic ? 'bg-blue-600 w-1/2' :
+                  loadingStates.studentsEnhancement ? 'bg-blue-600 w-3/4' :
+                  loadingQuick ? 'bg-blue-600 w-4/5' :
+                  loadingFull ? 'bg-blue-600 w-9/10' :
                   'bg-green-600 w-full'
                 }`}
               ></div>
             </div>
             {isStale && (
-              <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+              <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
                 Data may be outdated. Refreshing in background...
               </p>
             )}
@@ -978,9 +1173,19 @@ export default function ClassGradeAnalytics() {
               <div className="space-y-4">
                 {/* Search and Controls */}
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                    Class Students ({displayStats.totalStudents})
-                  </h3>
+                  <div className="flex items-center space-x-3">
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                      Class Students ({totalStudentCount})
+                    </h3>
+                    {loadingStates.studentsEnhancement && (
+                      <div className="flex items-center space-x-2 px-3 py-1 bg-blue-50 dark:bg-blue-900/20 rounded-full">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                        <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+                          Loading analytics...
+                        </span>
+                      </div>
+                    )}
+                  </div>
                   <div className="flex items-center space-x-3">
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -994,16 +1199,21 @@ export default function ClassGradeAnalytics() {
                     </div>
                     <Button
                       variant="outline"
-                      onClick={() => loadStudentsData(1, true)}
-                      disabled={loadingStates.students}
+                      onClick={() => {
+                        setBasicStudents([]);
+                        setStudentPerformances([]);
+                        setStudentsEnhanced(false);
+                        loadBasicStudents();
+                      }}
+                      disabled={loadingStates.studentsBasic}
                     >
-                      {loadingStates.students ? 'Loading...' : 'Refresh'}
+                      {loadingStates.studentsBasic ? 'Loading...' : 'Refresh'}
                     </Button>
                   </div>
                 </div>
 
                 {/* Students Grid */}
-                {loadingStates.students ? (
+                {loadingStates.studentsBasic ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {[1, 2, 3, 4, 5, 6].map((i) => (
                       <div key={i} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 animate-pulse">
@@ -1030,19 +1240,32 @@ export default function ClassGradeAnalytics() {
                         onClick={() => router.push(`/teacher/grades/${classId}/student/${student.studentId}`)}
                       >
                         <div className="flex items-center space-x-4 mb-4">
-                          <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-medium ${
-                            student.overallAverage >= 80 
+                          <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-medium relative ${
+                            student.isBasicData 
+                              ? 'bg-gray-400'
+                              : student.overallAverage >= 80 
                               ? 'bg-green-500'
                               : student.overallAverage >= 60
                               ? 'bg-yellow-500'
                               : 'bg-red-500'
                           }`}>
                             {student.studentName.charAt(0).toUpperCase()}
+                            {student.isBasicData && loadingStates.studentsEnhancement && (
+                              <div className="absolute inset-0 rounded-full border-2 border-blue-400 border-t-transparent animate-spin"></div>
+                            )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium text-gray-900 dark:text-white truncate">
-                              {student.studentName}
-                            </p>
+                            <div className="flex items-center space-x-2">
+                              <p className="font-medium text-gray-900 dark:text-white truncate">
+                                {student.studentName}
+                              </p>
+                              {student.isBasicData && loadingStates.studentsEnhancement && (
+                                <div className="flex items-center space-x-1">
+                                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+                                  <span className="text-xs text-blue-600 dark:text-blue-400">Loading stats</span>
+                                </div>
+                              )}
+                            </div>
                             <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
                               {student.studentEmail}
                             </p>
@@ -1053,37 +1276,62 @@ export default function ClassGradeAnalytics() {
                           <div className="flex items-center justify-between">
                             <span className="text-sm text-gray-600 dark:text-gray-300">Overall Average</span>
                             <div className="flex items-center space-x-2">
-                              <span className="font-bold text-gray-900 dark:text-white">
-                                {Math.round(student.overallAverage)}%
-                              </span>
-                              {student.improvementTrend === 'improving' && (
-                                <TrendingUp className="w-4 h-4 text-green-500" />
-                              )}
-                              {student.improvementTrend === 'declining' && (
-                                <TrendingDown className="w-4 h-4 text-red-500" />
+                              {student.isBasicData ? (
+                                <div className="w-16 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                              ) : (
+                                <>
+                                  <span className="font-bold text-gray-900 dark:text-white">
+                                    {Math.round(student.overallAverage)}%
+                                  </span>
+                                  {student.improvementTrend === 'improving' && (
+                                    <TrendingUp className="w-4 h-4 text-green-500" />
+                                  )}
+                                  {student.improvementTrend === 'declining' && (
+                                    <TrendingDown className="w-4 h-4 text-red-500" />
+                                  )}
+                                </>
                               )}
                             </div>
                           </div>
                           
                           <div className="flex items-center justify-between">
                             <span className="text-sm text-gray-600 dark:text-gray-300">Tests Taken</span>
-                            <span className="font-medium text-gray-900 dark:text-white">
-                              {student.totalTests}
-                            </span>
+                            {student.isBasicData ? (
+                              <div className="w-12 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                            ) : (
+                              <span className="font-medium text-gray-900 dark:text-white">
+                                {student.totalTests}
+                              </span>
+                            )}
                           </div>
                           
                           <div className="flex items-center justify-between">
                             <span className="text-sm text-gray-600 dark:text-gray-300">Tests Passed</span>
-                            <span className="font-medium text-green-600 dark:text-green-400">
-                              {student.passedTests}
-                            </span>
+                            {student.isBasicData ? (
+                              <div className="w-12 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                            ) : (
+                              <span className="font-medium text-green-600 dark:text-green-400">
+                                {student.passedTests}
+                              </span>
+                            )}
                           </div>
                           
-                          {student.lastActiveDate && (
+                          {!student.isBasicData && student.lastActiveDate && (
                             <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
                               <span className="text-xs text-gray-500 dark:text-gray-400">
                                 Last active: {student.lastActiveDate.toDate().toLocaleDateString()}
                               </span>
+                            </div>
+                          )}
+                          
+                          {student.isBasicData && (
+                            <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
+                              <div className="flex items-center space-x-2">
+                                <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+                                <span className="text-xs text-blue-600 dark:text-blue-400">
+                                  Loading performance data...
+                                </span>
+                              </div>
                             </div>
                           )}
                         </div>
