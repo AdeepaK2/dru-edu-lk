@@ -391,12 +391,25 @@ export default function ClassGradePage() {
       {/* Tabs */}
       <Tabs defaultValue="tests" className="space-y-6">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="tests">Tests Analytics</TabsTrigger>
+          <TabsTrigger value="tests">Class Tests Analytics</TabsTrigger>
           <TabsTrigger value="students">Students Performance</TabsTrigger>
         </TabsList>
 
         {/* Tests Tab */}
         <TabsContent value="tests" className="space-y-6">
+          {/* Info Banner */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-center gap-2">
+              <BookOpen className="h-5 w-5 text-blue-600" />
+              <div>
+                <h4 className="text-sm font-semibold text-blue-900">Class Tests Only</h4>
+                <p className="text-sm text-blue-700">
+                  This section shows only tests assigned to the entire class. Individual student assignments are not included.
+                </p>
+              </div>
+            </div>
+          </div>
+
           {isLoadingTests ? (
             <div className="grid gap-6">
               {[...Array(3)].map((_, i) => (
@@ -415,9 +428,10 @@ export default function ClassGradePage() {
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <BookOpen className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No Tests Found</h3>
+                <h3 className="text-lg font-semibold mb-2">No Class Tests Found</h3>
                 <p className="text-muted-foreground text-center">
-                  No tests have been created for this class yet.
+                  No class-wide tests have been assigned to this class yet.<br />
+                  Only tests assigned to the entire class will appear here.
                 </p>
               </CardContent>
             </Card>
