@@ -191,7 +191,7 @@ export class GradeAnalyticsService {
       for (const classDoc of classesSnapshot.docs) {
         const classData = classDoc.data() as ClassDocument;
         
-        // Get test statistics for this class
+        // Get test statistics for this class (class-based tests only)
         const testsQuery = query(
           collection(firestore, this.COLLECTIONS.TESTS),
           where('classIds', 'array-contains', classDoc.id),
@@ -199,8 +199,16 @@ export class GradeAnalyticsService {
         );
         const testsSnapshot = await getDocs(testsQuery);
         
+        // Filter to only include class-based tests
+        const classBasedTests = testsSnapshot.docs.filter(doc => {
+          const testData = doc.data();
+          return testData.assignmentType !== 'student-based' && 
+                 testData.classIds && 
+                 testData.classIds.length > 0;
+        });
+        
         // Calculate completed tests
-        const completedTests = testsSnapshot.docs.filter(doc => 
+        const completedTests = classBasedTests.filter(doc => 
           doc.data().status === 'completed'
         ).length;
         
@@ -218,7 +226,7 @@ export class GradeAnalyticsService {
           subjectId: classData.subjectId,
           year: classData.year,
           enrolledStudents: classData.enrolledStudents || 0,
-          totalTests: testsSnapshot.docs.length,
+          totalTests: classBasedTests.length,
           completedTests,
           averageScore,
           lastActivityDate
@@ -233,11 +241,11 @@ export class GradeAnalyticsService {
   }
 
   /**
-   * Get detailed test analytics for a specific class
+   * Get detailed test analytics for a specific class (class-based tests only)
    */
   static async getClassTestAnalytics(classId: string): Promise<TestSummary[]> {
     try {
-      // Get all tests for this class
+      // Get all tests for this class - focusing on class-based tests only
       const testsQuery = query(
         collection(firestore, this.COLLECTIONS.TESTS),
         where('classIds', 'array-contains', classId),
@@ -248,7 +256,21 @@ export class GradeAnalyticsService {
       const testsSnapshot = await getDocs(testsQuery);
       const testSummaries: TestSummary[] = [];
       
-      for (const testDoc of testsSnapshot.docs) {
+      // Filter to only include class-based tests (not student-based tests)
+      const classBasedTests = testsSnapshot.docs.filter(doc => {
+        const testData = doc.data();
+        // Include tests that are either explicitly class-based or don't have assignmentType set (legacy class-based tests)
+        const isClassBased = testData.assignmentType !== 'student-based' && 
+                            testData.classIds && 
+                            testData.classIds.length > 0;
+        
+        console.log(`Test "${testData.title}" - assignmentType: ${testData.assignmentType}, classIds: ${JSON.stringify(testData.classIds)}, isClassBased: ${isClassBased}`);
+        return isClassBased;
+      });
+      
+      console.log(`Found ${testsSnapshot.docs.length} total tests, ${classBasedTests.length} class-based tests for class ${classId}`);
+      
+      for (const testDoc of classBasedTests) {
         const testData = testDoc.data() as Test;
         
         // Get submissions for this test
@@ -346,7 +368,7 @@ export class GradeAnalyticsService {
         
         const studentData = studentDoc.data();
         
-        // Get all tests assigned to this class
+        // Get all class-based tests assigned to this class
         const testsQuery = query(
           collection(firestore, this.COLLECTIONS.TESTS),
           where('classIds', 'array-contains', classId),
@@ -354,17 +376,39 @@ export class GradeAnalyticsService {
         );
         const testsSnapshot = await getDocs(testsQuery);
         
-        // Get student submissions
-        const submissionsQuery = query(
-          collection(firestore, this.COLLECTIONS.SUBMISSIONS),
-          where('studentId', '==', studentId),
-          where('classId', '==', classId)
-        );
-        const submissionsSnapshot = await getDocs(submissionsQuery);
-        const submissions = submissionsSnapshot.docs.map(doc => doc.data() as StudentSubmission);
+        // Filter to only class-based tests
+        const classBasedTests = testsSnapshot.docs.filter(doc => {
+          const testData = doc.data();
+          return testData.assignmentType !== 'student-based' && 
+                 testData.classIds && 
+                 testData.classIds.length > 0;
+        });
+        
+        const classBasedTestIds = classBasedTests.map(doc => doc.id);
+        
+        // Get student submissions only for class-based tests
+        let submissions: StudentSubmission[] = [];
+        if (classBasedTestIds.length > 0) {
+          // Split into chunks if more than 10 tests (Firestore 'in' limit)
+          const chunks = [];
+          for (let i = 0; i < classBasedTestIds.length; i += 10) {
+            chunks.push(classBasedTestIds.slice(i, i + 10));
+          }
+          
+          for (const chunk of chunks) {
+            const submissionsQuery = query(
+              collection(firestore, this.COLLECTIONS.SUBMISSIONS),
+              where('studentId', '==', studentId),
+              where('classId', '==', classId),
+              where('testId', 'in', chunk)
+            );
+            const submissionsSnapshot = await getDocs(submissionsQuery);
+            submissions.push(...submissionsSnapshot.docs.map(doc => doc.data() as StudentSubmission));
+          }
+        }
         
         // Calculate statistics
-        const totalTestsAssigned = testsSnapshot.docs.length;
+        const totalTestsAssigned = classBasedTests.length;
         const totalTestsAttempted = submissions.length;
         const completedSubmissions = submissions.filter(s => s.status === 'submitted');
         const totalTestsCompleted = completedSubmissions.length;
@@ -487,9 +531,31 @@ export class GradeAnalyticsService {
   // Helper methods
   private static async calculateClassAverageScore(classId: string): Promise<number> {
     try {
+      // Get only submissions for class-based tests
+      const testsQuery = query(
+        collection(firestore, this.COLLECTIONS.TESTS),
+        where('classIds', 'array-contains', classId),
+        where('isDeleted', '!=', true)
+      );
+      const testsSnapshot = await getDocs(testsQuery);
+      
+      // Filter to only class-based tests
+      const classBasedTestIds = testsSnapshot.docs
+        .filter(doc => {
+          const testData = doc.data();
+          return testData.assignmentType !== 'student-based' && 
+                 testData.classIds && 
+                 testData.classIds.length > 0;
+        })
+        .map(doc => doc.id);
+      
+      if (classBasedTestIds.length === 0) return 0;
+      
+      // Get submissions only for class-based tests
       const submissionsQuery = query(
         collection(firestore, this.COLLECTIONS.SUBMISSIONS),
-        where('classId', '==', classId)
+        where('classId', '==', classId),
+        where('testId', 'in', classBasedTestIds.slice(0, 10)) // Firestore 'in' limit is 10
       );
       const submissionsSnapshot = await getDocs(submissionsQuery);
       
@@ -506,9 +572,31 @@ export class GradeAnalyticsService {
 
   private static async getLastClassActivity(classId: string): Promise<Date | undefined> {
     try {
+      // Get only class-based tests for this class
+      const testsQuery = query(
+        collection(firestore, this.COLLECTIONS.TESTS),
+        where('classIds', 'array-contains', classId),
+        where('isDeleted', '!=', true)
+      );
+      const testsSnapshot = await getDocs(testsQuery);
+      
+      // Filter to only class-based tests
+      const classBasedTestIds = testsSnapshot.docs
+        .filter(doc => {
+          const testData = doc.data();
+          return testData.assignmentType !== 'student-based' && 
+                 testData.classIds && 
+                 testData.classIds.length > 0;
+        })
+        .map(doc => doc.id);
+      
+      if (classBasedTestIds.length === 0) return undefined;
+      
+      // Get latest submission from class-based tests only
       const submissionsQuery = query(
         collection(firestore, this.COLLECTIONS.SUBMISSIONS),
         where('classId', '==', classId),
+        where('testId', 'in', classBasedTestIds.slice(0, 10)), // Firestore 'in' limit is 10
         orderBy('submittedAt', 'desc'),
         limit(1)
       );
