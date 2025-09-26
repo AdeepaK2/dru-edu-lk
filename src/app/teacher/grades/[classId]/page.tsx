@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '@/utils/firebase-client';
+import TeacherLayout from '@/components/teacher/TeacherLayout';
 import { 
   Card, 
   CardContent, 
@@ -345,25 +346,30 @@ export default function ClassGradePage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto p-6 space-y-6">
-        <LoadingSkeleton className="h-8 w-64" />
-        <LoadingSkeleton className="h-96 w-full" />
-      </div>
+      <TeacherLayout>
+        <div className="container mx-auto p-6 space-y-6">
+          <LoadingSkeleton className="h-8 w-64" />
+          <LoadingSkeleton className="h-96 w-full" />
+        </div>
+      </TeacherLayout>
     );
   }
 
   if (!user) {
     return (
-      <div className="container mx-auto p-6">
-        <SimpleAlert>
-          Please log in to view class grades.
-        </SimpleAlert>
-      </div>
+      <TeacherLayout>
+        <div className="container mx-auto p-6">
+          <SimpleAlert>
+            Please log in to view class grades.
+          </SimpleAlert>
+        </div>
+      </TeacherLayout>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <TeacherLayout>
+      <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button 
@@ -631,6 +637,7 @@ export default function ClassGradePage() {
         }}
         classId={classId}
       />
-    </div>
+      </div>
+    </TeacherLayout>
   );
 }

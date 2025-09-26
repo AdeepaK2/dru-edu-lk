@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '@/utils/firebase-client';
+import TeacherLayout from '@/components/teacher/TeacherLayout';
 import { 
   Card, 
   CardContent, 
@@ -109,44 +110,49 @@ export default function TeacherGradesPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto p-6 space-y-6">
-        <div className="space-y-2">
-          <LoadingSkeleton className="h-8 w-64" />
-          <LoadingSkeleton className="h-4 w-96" />
+      <TeacherLayout>
+        <div className="container mx-auto p-6 space-y-6">
+          <div className="space-y-2">
+            <LoadingSkeleton className="h-8 w-64" />
+            <LoadingSkeleton className="h-4 w-96" />
+          </div>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {[...Array(6)].map((_, i) => (
+              <Card key={i}>
+                <CardHeader>
+                  <LoadingSkeleton className="h-6 w-48" />
+                  <LoadingSkeleton className="h-4 w-32" />
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <LoadingSkeleton className="h-4 w-full" />
+                    <LoadingSkeleton className="h-4 w-3/4" />
+                    <LoadingSkeleton className="h-4 w-1/2" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {[...Array(6)].map((_, i) => (
-            <Card key={i}>
-              <CardHeader>
-                <LoadingSkeleton className="h-6 w-48" />
-                <LoadingSkeleton className="h-4 w-32" />
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <LoadingSkeleton className="h-4 w-full" />
-                  <LoadingSkeleton className="h-4 w-3/4" />
-                  <LoadingSkeleton className="h-4 w-1/2" />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
+      </TeacherLayout>
     );
   }
 
   if (!user) {
     return (
-      <div className="container mx-auto p-6">
-        <SimpleAlert>
-          Please log in to view your grades.
-        </SimpleAlert>
-      </div>
+      <TeacherLayout>
+        <div className="container mx-auto p-6">
+          <SimpleAlert>
+            Please log in to view your grades.
+          </SimpleAlert>
+        </div>
+      </TeacherLayout>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <TeacherLayout>
+      <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
       <div className="space-y-2">
         <h1 className="text-3xl font-bold tracking-tight">Grade Analytics</h1>
@@ -339,6 +345,7 @@ export default function TeacherGradesPage() {
           </Card>
         </div>
       )}
-    </div>
+      </div>
+    </TeacherLayout>
   );
 }
