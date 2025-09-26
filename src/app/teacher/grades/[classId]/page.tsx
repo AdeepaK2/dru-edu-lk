@@ -324,6 +324,10 @@ export default function ClassGradePage() {
     setIsModalOpen(true);
   };
 
+  const handleTestClick = (testId: string) => {
+    router.push(`/teacher/tests/${testId}/results`);
+  };
+
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat('en-US', {
       year: 'numeric',
@@ -446,7 +450,11 @@ export default function ClassGradePage() {
               {/* Test Summary Cards */}
               <div className="grid gap-6">
                 {tests.map((test) => (
-                  <Card key={test.id}>
+                  <Card 
+                    key={test.id} 
+                    className="cursor-pointer hover:shadow-lg transition-shadow duration-200"
+                    onClick={() => handleTestClick(test.id)}
+                  >
                     <CardHeader>
                       <div className="flex justify-between items-start">
                         <div>
@@ -468,22 +476,18 @@ export default function ClassGradePage() {
                     
                     <CardContent className="space-y-4">
                       {/* Test Statistics */}
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="grid grid-cols-3 gap-4">
                         <div className="text-center">
                           <div className="text-2xl font-bold">{test.completedStudents}</div>
                           <div className="text-sm text-muted-foreground">Completed</div>
                         </div>
                         <div className="text-center">
-                          <div className="text-2xl font-bold">{test.averageScore.toFixed(1)}</div>
+                          <div className="text-2xl font-bold">{test.averageScore.toFixed(1)}%</div>
                           <div className="text-sm text-muted-foreground">Average</div>
                         </div>
                         <div className="text-center">
                           <div className="text-2xl font-bold">{test.passRate.toFixed(1)}%</div>
                           <div className="text-sm text-muted-foreground">Pass Rate</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-2xl font-bold">{test.averageTimeSpent.toFixed(0)}m</div>
-                          <div className="text-sm text-muted-foreground">Avg Time</div>
                         </div>
                       </div>
 

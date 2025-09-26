@@ -51,9 +51,6 @@ export interface TestSummary {
   lowestScore: number;
   passRate: number; // percentage
   
-  // Time statistics
-  averageTimeSpent: number; // in minutes
-  
   // Submission statistics
   onTimeSubmissions: number;
   lateSubmissions: number;
@@ -371,24 +368,24 @@ export class GradeAnalyticsService {
         const completedSubmissions = submissions.filter(s => s.status === 'submitted');
         const completedStudents = completedSubmissions.length;
         
-        // Calculate scores
-        const scores = completedSubmissions
-          .filter(s => s.totalScore !== undefined)
-          .map(s => s.totalScore!);
+        // Calculate scores using percentage (0-100 scale)
+        const percentageScores = completedSubmissions
+          .filter(s => s.percentage !== undefined && s.percentage !== null)
+          .map(s => s.percentage!);
         
-        const averageScore = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
-        const highestScore = scores.length > 0 ? Math.max(...scores) : 0;
-        const lowestScore = scores.length > 0 ? Math.min(...scores) : 0;
+        console.log(`📊 [GRADE ANALYTICS] Test "${testData.title}": ${completedSubmissions.length} completed submissions, ${percentageScores.length} with percentage scores`);
+        console.log(`📊 [GRADE ANALYTICS] Percentage scores:`, percentageScores);
         
-        // Calculate pass rate (assuming 50% is passing)
-        const passingScore = testData.config.passingScore || (testData.totalMarks * 0.5);
-        const passedStudents = scores.filter(score => score >= passingScore).length;
-        const passRate = scores.length > 0 ? (passedStudents / scores.length) * 100 : 0;
+        const averageScore = percentageScores.length > 0 ? percentageScores.reduce((a, b) => a + b, 0) / percentageScores.length : 0;
+        const highestScore = percentageScores.length > 0 ? Math.max(...percentageScores) : 0;
+        const lowestScore = percentageScores.length > 0 ? Math.min(...percentageScores) : 0;
         
-        // Calculate time statistics
-        const timeSpentData = completedSubmissions.map(s => s.totalTimeSpent / 60); // Convert to minutes
-        const averageTimeSpent = timeSpentData.length > 0 ? 
-          timeSpentData.reduce((a, b) => a + b, 0) / timeSpentData.length : 0;
+        // Calculate pass rate using percentage scores
+        const passingPercentage = testData.config?.passingScore || 50; // Default to 50%
+        const passedStudents = percentageScores.filter(score => score >= passingPercentage).length;
+        const passRate = percentageScores.length > 0 ? (passedStudents / percentageScores.length) * 100 : 0;
+        
+        console.log(`📊 [GRADE ANALYTICS] Test "${testData.title}": avg=${averageScore.toFixed(1)}%, high=${highestScore}%, low=${lowestScore}%, pass=${passRate.toFixed(1)}%`);
         
         // Calculate submission statistics
         const lateSubmissions = submissions.filter(s => s.lateSubmission?.isLateSubmission).length;
@@ -413,7 +410,6 @@ export class GradeAnalyticsService {
           highestScore,
           lowestScore,
           passRate,
-          averageTimeSpent,
           onTimeSubmissions,
           lateSubmissions,
           questionAnalysis
