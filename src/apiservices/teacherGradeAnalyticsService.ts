@@ -177,6 +177,8 @@ export class GradeAnalyticsService {
    */
   static async getTeacherClassesSummary(teacherId: string): Promise<ClassSummary[]> {
     try {
+      console.log(`🔍 [GRADE ANALYTICS] Getting classes summary for teacher: ${teacherId}`);
+      
       // Get classes taught by teacher
       const classesQuery = query(
         collection(firestore, this.COLLECTIONS.CLASSES),
@@ -186,6 +188,8 @@ export class GradeAnalyticsService {
       );
       
       const classesSnapshot = await getDocs(classesQuery);
+      console.log(`✅ [GRADE ANALYTICS] Found ${classesSnapshot.docs.length} active classes for teacher`);
+      
       const classSummaries: ClassSummary[] = [];
       
       for (const classDoc of classesSnapshot.docs) {
@@ -194,18 +198,25 @@ export class GradeAnalyticsService {
         // Get test statistics for this class (class-based tests only)
         const testsQuery = query(
           collection(firestore, this.COLLECTIONS.TESTS),
-          where('classIds', 'array-contains', classDoc.id),
-          where('isDeleted', '!=', true)
+          where('classIds', 'array-contains', classDoc.id)
         );
         const testsSnapshot = await getDocs(testsQuery);
         
-        // Filter to only include class-based tests
+        // Filter to only include class-based tests and active tests
         const classBasedTests = testsSnapshot.docs.filter(doc => {
           const testData = doc.data();
+          
+          // First filter out soft-deleted tests
+          if (testData.isDeleted === true) {
+            return false;
+          }
+          
           return testData.assignmentType !== 'student-based' && 
                  testData.classIds && 
                  testData.classIds.length > 0;
         });
+        
+        console.log(`✅ [GRADE ANALYTICS] Class "${classData.name}": Found ${testsSnapshot.docs.length} total tests, ${classBasedTests.length} class-based tests`);
         
         // Calculate completed tests
         const completedTests = classBasedTests.filter(doc => 
@@ -233,6 +244,9 @@ export class GradeAnalyticsService {
         });
       }
       
+      console.log(`✅ [GRADE ANALYTICS] Returning ${classSummaries.length} class summaries with total tests:`, 
+        classSummaries.map(c => ({ className: c.name, totalTests: c.totalTests })));
+      
       return classSummaries;
     } catch (error) {
       console.error('Error getting teacher classes summary:', error);
@@ -249,22 +263,27 @@ export class GradeAnalyticsService {
       const testsQuery = query(
         collection(firestore, this.COLLECTIONS.TESTS),
         where('classIds', 'array-contains', classId),
-        where('isDeleted', '!=', true),
         orderBy('createdAt', 'desc')
       );
       
       const testsSnapshot = await getDocs(testsQuery);
       const testSummaries: TestSummary[] = [];
       
-      // Filter to only include class-based tests (not student-based tests)
+      // Filter to only include class-based tests (not student-based tests) and active tests
       const classBasedTests = testsSnapshot.docs.filter(doc => {
         const testData = doc.data();
+        
+        // First filter out soft-deleted tests (same approach as TestService)
+        if (testData.isDeleted === true) {
+          return false;
+        }
+        
         // Include tests that are either explicitly class-based or don't have assignmentType set (legacy class-based tests)
         const isClassBased = testData.assignmentType !== 'student-based' && 
                             testData.classIds && 
                             testData.classIds.length > 0;
         
-        console.log(`Test "${testData.title}" - assignmentType: ${testData.assignmentType}, classIds: ${JSON.stringify(testData.classIds)}, isClassBased: ${isClassBased}`);
+        console.log(`Test "${testData.title}" - assignmentType: ${testData.assignmentType}, classIds: ${JSON.stringify(testData.classIds)}, isClassBased: ${isClassBased}, isDeleted: ${testData.isDeleted}`);
         return isClassBased;
       });
       
