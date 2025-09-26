@@ -310,19 +310,27 @@ export class GradeAnalyticsService {
       console.error('Error getting teacher classes summary:', error);
       throw error;
     }
-  }  /**
+  }/**
    * Get detailed test analytics for a specific class (class-based tests only)
    */
   static async getClassTestAnalytics(classId: string): Promise<TestSummary[]> {
     try {
-      // Get all tests for this class - focusing on class-based tests only
+      console.log(`🔍 [GRADE ANALYTICS] Getting test analytics for class: ${classId}`);
+      
+      // Simplified approach: Get all tests for this class without orderBy to avoid index issues
       const testsQuery = query(
         collection(firestore, this.COLLECTIONS.TESTS),
-        where('classIds', 'array-contains', classId),
-        orderBy('createdAt', 'desc')
+        where('classIds', 'array-contains', classId)
       );
       
       const testsSnapshot = await getDocs(testsQuery);
+      console.log(`✅ [GRADE ANALYTICS] Found ${testsSnapshot.docs.length} total tests for class ${classId}`);
+      
+      if (testsSnapshot.empty) {
+        console.log(`⚠️ [GRADE ANALYTICS] No tests found for class ${classId}`);
+        return [];
+      }
+      
       const testSummaries: TestSummary[] = [];
       
       // Filter to only include class-based tests (not student-based tests) and active tests
@@ -331,6 +339,7 @@ export class GradeAnalyticsService {
         
         // First filter out soft-deleted tests (same approach as TestService)
         if (testData.isDeleted === true) {
+          console.log(`⚠️ [GRADE ANALYTICS] Filtering out deleted test: ${testData.title}`);
           return false;
         }
         
@@ -339,11 +348,11 @@ export class GradeAnalyticsService {
                             testData.classIds && 
                             testData.classIds.length > 0;
         
-        console.log(`Test "${testData.title}" - assignmentType: ${testData.assignmentType}, classIds: ${JSON.stringify(testData.classIds)}, isClassBased: ${isClassBased}, isDeleted: ${testData.isDeleted}`);
+        console.log(`🔍 [GRADE ANALYTICS] Test "${testData.title}" - assignmentType: ${testData.assignmentType}, classIds: ${JSON.stringify(testData.classIds)}, isClassBased: ${isClassBased}, isDeleted: ${testData.isDeleted}`);
         return isClassBased;
       });
       
-      console.log(`Found ${testsSnapshot.docs.length} total tests, ${classBasedTests.length} class-based tests for class ${classId}`);
+      console.log(`✅ [GRADE ANALYTICS] Found ${testsSnapshot.docs.length} total tests, ${classBasedTests.length} class-based tests for class ${classId}`);
       
       for (const testDoc of classBasedTests) {
         const testData = testDoc.data() as Test;
@@ -411,6 +420,10 @@ export class GradeAnalyticsService {
         });
       }
       
+      // Sort by creation date (newest first) since we couldn't do it in the query
+      testSummaries.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      
+      console.log(`✅ [GRADE ANALYTICS] Returning ${testSummaries.length} test summaries for class ${classId}`);
       return testSummaries;
     } catch (error) {
       console.error('Error getting class test analytics:', error);
