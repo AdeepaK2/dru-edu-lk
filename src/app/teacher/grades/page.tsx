@@ -2,408 +2,343 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  BarChart3,
-  TrendingUp,
-  Users,
-  BookOpen,
-  Search,
-  Filter,
-  Eye,
-  AlertTriangle,
-  CheckCircle,
-  XCircle,
-  Target,
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { auth } from '@/utils/firebase-client';
+import { 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle 
+} from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import Button from '@/components/ui/Button';
+import { 
+  BarChart3, 
+  Users, 
+  BookOpen, 
   Calendar,
-  ArrowRight,
-  GraduationCap
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  ChevronRight
 } from 'lucide-react';
-import { Button, Input } from '@/components/ui';
-import { useTeacherAuth } from '@/hooks/useTeacherAuth';
-import TeacherLayout from '@/components/teacher/TeacherLayout';
-import { ClassCardSkeleton } from '@/components/teacher/GradeAnalyticsSkeletons';
-import Link from 'next/link';
+import { GradeAnalyticsService, ClassSummary } from '@/apiservices/teacherGradeAnalyticsService';
 
-// Import optimized hooks
-import { useOptimizedClassList } from '@/hooks/useOptimizedGradeAnalytics';
-import { ClassDocument } from '@/models/classSchema';
-import { ClassAnalytics } from '@/apiservices/gradeAnalyticsService';
+// Simple loading skeleton component
+const LoadingSkeleton = ({ className }: { className?: string }) => (
+  <div className={`animate-pulse bg-gray-200 rounded ${className}`}></div>
+);
 
-interface ClassWithAnalytics extends ClassDocument {
-  analytics?: ClassAnalytics;
-  studentCount: number;
-  recentActivity?: string;
-}
+// Simple alert component
+const SimpleAlert = ({ children }: { children: React.ReactNode }) => (
+  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative">
+    {children}
+  </div>
+);
 
-export default function TeacherGrades() {
-  const { teacher } = useTeacherAuth();
+export default function TeacherGradesPage() {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [classes, setClasses] = useState<ClassSummary[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadingError, setLoadingError] = useState<string | null>(null);
   const router = useRouter();
-  const [searchTerm, setSearchTerm] = useState('');
-  
-  // Use optimized hook
-  const { classes, loading, error, refresh } = useOptimizedClassList(teacher?.id);
 
-  // Filter classes based on search term
-  const filteredClasses = classes.filter(classDoc =>
-    classDoc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    classDoc.subject?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    classDoc.year.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
+      setLoading(false);
+    });
 
-  // Navigate to class analytics
-  const viewClassAnalytics = (classId: string) => {
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (loading || !user) return;
+
+    loadClassesSummary();
+  }, [user, loading]);
+
+  const loadClassesSummary = async () => {
+    try {
+      setIsLoading(true);
+      setLoadingError(null);
+      
+      if (!user?.uid) {
+        throw new Error('User not authenticated');
+      }
+
+      const classesSummary = await GradeAnalyticsService.getTeacherClassesSummary(user.uid);
+      setClasses(classesSummary);
+    } catch (error) {
+      console.error('Error loading classes summary:', error);
+      setLoadingError(error instanceof Error ? error.message : 'Failed to load classes');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleClassClick = (classId: string) => {
     router.push(`/teacher/grades/${classId}`);
+  };
+
+  const formatLastActivity = (date?: Date) => {
+    if (!date) return 'No activity';
+    
+    const now = new Date();
+    const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (diffInDays === 0) return 'Today';
+    if (diffInDays === 1) return 'Yesterday';
+    if (diffInDays < 7) return `${diffInDays} days ago`;
+    if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} weeks ago`;
+    return date.toLocaleDateString();
+  };
+
+  const getPerformanceIcon = (average: number) => {
+    if (average >= 75) return <TrendingUp className="h-4 w-4 text-green-500" />;
+    if (average >= 60) return <Minus className="h-4 w-4 text-yellow-500" />;
+    return <TrendingDown className="h-4 w-4 text-red-500" />;
+  };
+
+  const getPerformanceBadgeVariant = (average: number): "default" | "secondary" | "destructive" => {
+    if (average >= 75) return "default";
+    if (average >= 60) return "secondary";
+    return "destructive";
   };
 
   if (loading) {
     return (
-      <TeacherLayout>
-        <div className="space-y-6">
-          {/* Header skeleton */}
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-300 dark:bg-gray-600 rounded w-1/3 mb-2"></div>
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
-          </div>
-          
-          {/* Cards skeleton */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="animate-pulse">
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-                  <div className="h-6 bg-gray-300 dark:bg-gray-600 rounded mb-4"></div>
-                  <div className="space-y-3">
-                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
-                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="space-y-2">
+          <LoadingSkeleton className="h-8 w-64" />
+          <LoadingSkeleton className="h-4 w-96" />
         </div>
-      </TeacherLayout>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {[...Array(6)].map((_, i) => (
+            <Card key={i}>
+              <CardHeader>
+                <LoadingSkeleton className="h-6 w-48" />
+                <LoadingSkeleton className="h-4 w-32" />
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <LoadingSkeleton className="h-4 w-full" />
+                  <LoadingSkeleton className="h-4 w-3/4" />
+                  <LoadingSkeleton className="h-4 w-1/2" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
     );
   }
 
-  if (error) {
+  if (!user) {
     return (
-      <TeacherLayout>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              Error Loading Classes
-            </h3>
-            <p className="text-gray-600 dark:text-gray-300 mb-4">{error}</p>
-            <Button onClick={() => window.location.reload()}>
-              Try Again
-            </Button>
-          </div>
-        </div>
-      </TeacherLayout>
+      <div className="container mx-auto p-6">
+        <SimpleAlert>
+          Please log in to view your grades.
+        </SimpleAlert>
+      </div>
     );
   }
 
   return (
-    <TeacherLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Grade Analytics
-              </h1>
-              <p className="text-gray-600 dark:text-gray-300 mt-1">
-                Monitor student performance and identify learning gaps across your classes
-              </p>
-            </div>
-            
-            <div className="mt-4 sm:mt-0 flex items-center space-x-3">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  type="text"
-                  placeholder="Search classes..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-64"
-                />
-              </div>
-              <Button variant="outline" size="sm">
-                <Filter className="w-4 h-4 mr-2" />
-                Filter
-              </Button>
-              <Button variant="outline" size="sm" onClick={refresh}>
-                Refresh
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Quick Stats Overview */}
-        {classes.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-              <div className="flex items-center">
-                <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
-                  <BookOpen className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Classes</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {classes.length}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-              <div className="flex items-center">
-                <div className="w-12 h-12 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
-                  <Users className="w-6 h-6 text-green-600 dark:text-green-400" />
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Students</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {classes.reduce((sum, c) => sum + c.studentCount, 0)}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-              <div className="flex items-center">
-                <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/20 rounded-lg flex items-center justify-center">
-                  <BarChart3 className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Avg Performance</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {classes.length > 0 
-                      ? Math.round(
-                          classes
-                            .filter(c => c.analytics)
-                            .reduce((sum, c) => sum + (c.analytics?.averagePerformance || 0), 0) / 
-                          classes.filter(c => c.analytics).length || 1
-                        )
-                      : 0}%
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-              <div className="flex items-center">
-                <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg flex items-center justify-center">
-                  <Target className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Pass Rate</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {classes.length > 0 
-                      ? Math.round(
-                          classes
-                            .filter(c => c.analytics)
-                            .reduce((sum, c) => sum + (c.analytics?.passRate || 0), 0) / 
-                          classes.filter(c => c.analytics).length || 1
-                        )
-                      : 0}%
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Class Cards */}
-        {filteredClasses.length === 0 ? (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-12 text-center">
-            <BookOpen className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              No Classes Found
-            </h3>
-            <p className="text-gray-500 dark:text-gray-400 mb-6">
-              {searchTerm 
-                ? `No classes match your search for "${searchTerm}"`
-                : "You don't have any classes assigned yet."
-              }
-            </p>
-            {!searchTerm && (
-              <Link href="/teacher/classes">
-                <Button>
-                  <BookOpen className="w-4 h-4 mr-2" />
-                  Manage Classes
-                </Button>
-              </Link>
-            )}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {loading ? (
-              // Show skeleton cards while loading
-              Array.from({ length: 6 }).map((_, i) => (
-                <ClassCardSkeleton key={i} />
-              ))
-            ) : (
-              filteredClasses.map((classDoc) => (
-              <div
-                key={classDoc.id}
-                className="bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer"
-                onClick={() => viewClassAnalytics(classDoc.id)}
-              >
-                <div className="p-6">
-                  {/* Class Header */}
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-                        {classDoc.name}
-                      </h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {classDoc.subject} • Year {classDoc.year}
-                      </p>
-                    </div>
-                    <div className="ml-4">
-                      <div className={`w-3 h-3 rounded-full ${
-                        classDoc.status === 'Active' 
-                          ? 'bg-green-400' 
-                          : 'bg-gray-400'
-                      }`} />
-                    </div>
-                  </div>
-
-                  {/* Analytics Data - Show loading state for individual classes */}
-                  {!classDoc.analytics ? (
-                    <div className="space-y-3 animate-pulse">
-                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
-                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {/* Key Metrics */}
-                      <div className="grid grid-cols-3 gap-3">
-                        <div className="text-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                          <p className="text-xs text-gray-500 dark:text-gray-400">Students</p>
-                          <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                            {classDoc.analytics.totalStudents}
-                          </p>
-                        </div>
-                        <div className="text-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                          <p className="text-xs text-gray-500 dark:text-gray-400">Avg Score</p>
-                          <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                            {Math.round(classDoc.analytics.averagePerformance)}%
-                          </p>
-                        </div>
-                        <div className="text-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                          <p className="text-xs text-gray-500 dark:text-gray-400">Pass Rate</p>
-                          <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                            {Math.round(classDoc.analytics.passRate)}%
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Performance Indicators */}
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-gray-600 dark:text-gray-300">Tests Completed</span>
-                          <span className="font-medium text-gray-900 dark:text-white">
-                            {classDoc.analytics.testsCompleted}
-                          </span>
-                        </div>
-                        
-                        {classDoc.analytics.strugglingStudents.length > 0 && (
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="flex items-center text-amber-600 dark:text-amber-400">
-                              <AlertTriangle className="w-3 h-3 mr-1" />
-                              Need Help
-                            </span>
-                            <span className="font-medium">
-                              {classDoc.analytics.strugglingStudents.length} students
-                            </span>
-                          </div>
-                        )}
-
-                        {classDoc.analytics.topPerformers.length > 0 && (
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="flex items-center text-green-600 dark:text-green-400">
-                              <CheckCircle className="w-3 h-3 mr-1" />
-                              Top Performers
-                            </span>
-                            <span className="font-medium">
-                              {classDoc.analytics.topPerformers.length} students
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* No data state */}
-                  {!classDoc.analytics && !loading && (
-                    <div className="text-center py-4">
-                      <BarChart3 className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        No test data available
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Action Button */}
-                  <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="w-full"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        viewClassAnalytics(classDoc.id);
-                      }}
-                    >
-                      <Eye className="w-4 h-4 mr-2" />
-                      View Analytics
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ))
-            )}
-          </div>
-        )}
-
-        {/* Help Section */}
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg p-6">
-          <div className="flex items-start space-x-4">
-            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center flex-shrink-0">
-              <GraduationCap className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-            </div>
-            <div className="flex-1">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                Understanding Grade Analytics
-              </h3>
-              <p className="text-gray-600 dark:text-gray-300 mb-4">
-                Click on any class card to view detailed analytics including student performance trends, 
-                topic-wise analysis, and personalized learning recommendations.
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                <div className="flex items-center">
-                  <TrendingUp className="w-4 h-4 text-green-500 mr-2" />
-                  <span className="text-gray-700 dark:text-gray-300">Performance tracking</span>
-                </div>
-                <div className="flex items-center">
-                  <Target className="w-4 h-4 text-blue-500 mr-2" />
-                  <span className="text-gray-700 dark:text-gray-300">Learning gap analysis</span>
-                </div>
-                <div className="flex items-center">
-                  <BookOpen className="w-4 h-4 text-purple-500 mr-2" />
-                  <span className="text-gray-700 dark:text-gray-300">Lesson recommendations</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+    <div className="container mx-auto p-6 space-y-6">
+      {/* Header */}
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold tracking-tight">Grade Analytics</h1>
+        <p className="text-muted-foreground">
+          Monitor student performance and class analytics across all your classes
+        </p>
       </div>
-    </TeacherLayout>
+
+      {/* Error Alert */}
+      {loadingError && (
+        <SimpleAlert>
+          {loadingError}
+        </SimpleAlert>
+      )}
+
+      {/* Classes Grid */}
+      {isLoading ? (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {[...Array(6)].map((_, i) => (
+            <Card key={i}>
+              <CardHeader>
+                <LoadingSkeleton className="h-6 w-48" />
+                <LoadingSkeleton className="h-4 w-32" />
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <LoadingSkeleton className="h-4 w-full" />
+                  <LoadingSkeleton className="h-4 w-3/4" />
+                  <LoadingSkeleton className="h-4 w-1/2" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : classes.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <BookOpen className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No Classes Found</h3>
+            <p className="text-muted-foreground text-center">
+              You don't have any active classes assigned yet.
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {classes.map((classItem) => (
+            <Card 
+              key={classItem.id} 
+              className="cursor-pointer hover:shadow-lg transition-shadow duration-300"
+              onClick={() => handleClassClick(classItem.id)}
+            >
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <CardTitle className="text-lg">{classItem.name}</CardTitle>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Badge variant="secondary" className="text-xs">
+                        {classItem.classId}
+                      </Badge>
+                      <span>{classItem.subject} • {classItem.year}</span>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                </div>
+              </CardHeader>
+              
+              <CardContent className="space-y-4">
+                {/* Key Metrics */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Students</span>
+                    </div>
+                    <p className="text-2xl font-bold">{classItem.enrolledStudents}</p>
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <BookOpen className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Tests</span>
+                    </div>
+                    <p className="text-2xl font-bold">{classItem.totalTests}</p>
+                  </div>
+                </div>
+
+                {/* Performance Overview */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Class Average</span>
+                    <div className="flex items-center gap-2">
+                      {getPerformanceIcon(classItem.averageScore)}
+                      <Badge variant={getPerformanceBadgeVariant(classItem.averageScore)}>
+                        {classItem.averageScore.toFixed(1)}%
+                      </Badge>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Completed Tests</span>
+                    <span className="text-sm font-medium">
+                      {classItem.completedTests} / {classItem.totalTests}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Last Activity */}
+                <div className="flex items-center justify-between pt-2 border-t">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">Last Activity</span>
+                  </div>
+                  <span className="text-sm font-medium">
+                    {formatLastActivity(classItem.lastActivityDate)}
+                  </span>
+                </div>
+
+                {/* Quick Actions */}
+                <div className="pt-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full"
+                    onClick={(e: React.MouseEvent) => {
+                      e.stopPropagation();
+                      handleClassClick(classItem.id);
+                    }}
+                  >
+                    <BarChart3 className="h-4 w-4 mr-2" />
+                    View Analytics
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Summary Statistics */}
+      {classes.length > 0 && (
+        <div className="grid gap-4 md:grid-cols-4">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-2">
+                <BookOpen className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium">Total Classes</span>
+              </div>
+              <p className="text-2xl font-bold mt-2">{classes.length}</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-2">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium">Total Students</span>
+              </div>
+              <p className="text-2xl font-bold mt-2">
+                {classes.reduce((sum, c) => sum + c.enrolledStudents, 0)}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-2">
+                <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium">Total Tests</span>
+              </div>
+              <p className="text-2xl font-bold mt-2">
+                {classes.reduce((sum, c) => sum + c.totalTests, 0)}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-2">
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium">Overall Average</span>
+              </div>
+              <p className="text-2xl font-bold mt-2">
+                {classes.length > 0 
+                  ? (classes.reduce((sum, c) => sum + c.averageScore, 0) / classes.length).toFixed(1)
+                  : '0'
+                }%
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+    </div>
   );
 }
