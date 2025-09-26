@@ -21,9 +21,11 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
-  ChevronRight
+  ChevronRight,
+  RefreshCw
 } from 'lucide-react';
-import { GradeAnalyticsService, ClassSummary } from '@/apiservices/teacherGradeAnalyticsService';
+import { ClassSummary } from '@/apiservices/teacherGradeAnalyticsService';
+import { useTeacherClassesSummary } from '@/hooks/useGradeAnalytics';
 
 // Simple loading skeleton component
 const LoadingSkeleton = ({ className }: { className?: string }) => (
@@ -39,45 +41,20 @@ const SimpleAlert = ({ children }: { children: React.ReactNode }) => (
 
 export default function TeacherGradesPage() {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [classes, setClasses] = useState<ClassSummary[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadingError, setLoadingError] = useState<string | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
-      setLoading(false);
+      setAuthLoading(false);
     });
 
     return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    if (loading || !user) return;
-
-    loadClassesSummary();
-  }, [user, loading]);
-
-  const loadClassesSummary = async () => {
-    try {
-      setIsLoading(true);
-      setLoadingError(null);
-      
-      if (!user?.uid) {
-        throw new Error('User not authenticated');
-      }
-
-      const classesSummary = await GradeAnalyticsService.getTeacherClassesSummary(user.uid);
-      setClasses(classesSummary);
-    } catch (error) {
-      console.error('Error loading classes summary:', error);
-      setLoadingError(error instanceof Error ? error.message : 'Failed to load classes');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Use SWR hook for data fetching
+  const { classes, isLoading, error, mutate, isEmpty } = useTeacherClassesSummary(user?.uid || null);
 
   const handleClassClick = (classId: string) => {
     router.push(`/teacher/grades/${classId}`);
@@ -108,7 +85,7 @@ export default function TeacherGradesPage() {
     return "destructive";
   };
 
-  if (loading) {
+  if (authLoading) {
     return (
       <TeacherLayout>
         <div className="container mx-auto p-6 space-y-6">
@@ -154,17 +131,28 @@ export default function TeacherGradesPage() {
     <TeacherLayout>
       <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Grade Analytics</h1>
-        <p className="text-muted-foreground">
-          Monitor student performance and class analytics across all your classes
-        </p>
+      <div className="flex items-start justify-between">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold tracking-tight">Grade Analytics</h1>
+          <p className="text-muted-foreground">
+            Monitor student performance and class analytics across all your classes
+          </p>
+        </div>
+        <Button 
+          variant="outline" 
+          onClick={() => mutate()}
+          disabled={isLoading}
+          className="flex items-center gap-2"
+        >
+          <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
       </div>
 
       {/* Error Alert */}
-      {loadingError && (
+      {error && (
         <SimpleAlert>
-          {loadingError}
+          {error.message || 'Failed to load classes'}
         </SimpleAlert>
       )}
 

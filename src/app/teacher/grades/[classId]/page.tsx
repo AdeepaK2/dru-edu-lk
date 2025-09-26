@@ -33,14 +33,15 @@ import {
   Award,
   AlertCircle,
   Download,
-  Eye
+  Eye,
+  RefreshCw
 } from 'lucide-react';
 import { 
-  GradeAnalyticsService, 
   TestSummary, 
   StudentPerformanceSummary,
   DetailedStudentReport 
 } from '@/apiservices/teacherGradeAnalyticsService';
+import { useClassAnalytics, useDetailedStudentReport } from '@/hooks/useGradeAnalytics';
 
 // Simple loading skeleton component
 const LoadingSkeleton = ({ className }: { className?: string }) => (
@@ -66,28 +67,11 @@ const StudentReportModal = ({
   onClose: () => void;
   classId: string;
 }) => {
-  const [detailedReport, setDetailedReport] = useState<DetailedStudentReport | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (isOpen && student) {
-      loadDetailedReport();
-    }
-  }, [isOpen, student]);
-
-  const loadDetailedReport = async () => {
-    if (!student) return;
-    
-    try {
-      setLoading(true);
-      const report = await GradeAnalyticsService.getDetailedStudentReport(student.id, classId);
-      setDetailedReport(report);
-    } catch (error) {
-      console.error('Error loading detailed report:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Use SWR hook for detailed student report
+  const { report: detailedReport, isLoading: loading, error: reportError } = useDetailedStudentReport(
+    isOpen && student ? student.id : null,
+    isOpen && student ? classId : null
+  );
 
   if (!isOpen || !student) return null;
 
@@ -271,12 +255,7 @@ const StudentReportModal = ({
 
 export default function ClassGradePage() {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [tests, setTests] = useState<TestSummary[]>([]);
-  const [students, setStudents] = useState<StudentPerformanceSummary[]>([]);
-  const [isLoadingTests, setIsLoadingTests] = useState(true);
-  const [isLoadingStudents, setIsLoadingStudents] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [selectedStudent, setSelectedStudent] = useState<StudentPerformanceSummary | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   
@@ -287,37 +266,14 @@ export default function ClassGradePage() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
-      setLoading(false);
+      setAuthLoading(false);
     });
 
     return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    if (loading || !user || !classId) return;
-
-    loadClassData();
-  }, [user, loading, classId]);
-
-  const loadClassData = async () => {
-    try {
-      setError(null);
-      
-      // Load tests and students in parallel
-      const [testsData, studentsData] = await Promise.all([
-        GradeAnalyticsService.getClassTestAnalytics(classId).finally(() => setIsLoadingTests(false)),
-        GradeAnalyticsService.getClassStudentAnalytics(classId).finally(() => setIsLoadingStudents(false))
-      ]);
-
-      setTests(testsData);
-      setStudents(studentsData);
-    } catch (error) {
-      console.error('Error loading class data:', error);
-      setError(error instanceof Error ? error.message : 'Failed to load class data');
-      setIsLoadingTests(false);
-      setIsLoadingStudents(false);
-    }
-  };
+  // Use SWR hook for combined analytics
+  const { tests, students, isLoading, error, mutate } = useClassAnalytics(classId);
 
   const handleStudentClick = (student: StudentPerformanceSummary) => {
     setSelectedStudent(student);
@@ -348,7 +304,7 @@ export default function ClassGradePage() {
     return "destructive";
   };
 
-  if (loading) {
+  if (authLoading) {
     return (
       <TeacherLayout>
         <div className="container mx-auto p-6 space-y-6">
@@ -375,20 +331,31 @@ export default function ClassGradePage() {
     <TeacherLayout>
       <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-start justify-between">
+        <div className="flex items-center gap-4">
+          <Button 
+            variant="outline" 
+            onClick={() => router.back()}
+            className="p-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Class Analytics</h1>
+            <p className="text-muted-foreground">
+              Detailed analytics for tests and student performance
+            </p>
+          </div>
+        </div>
         <Button 
           variant="outline" 
-          onClick={() => router.back()}
-          className="p-2"
+          onClick={() => mutate()}
+          disabled={isLoading}
+          className="flex items-center gap-2"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+          Refresh
         </Button>
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Class Analytics</h1>
-          <p className="text-muted-foreground">
-            Detailed analytics for tests and student performance
-          </p>
-        </div>
       </div>
 
       {/* Error Alert */}
@@ -420,7 +387,7 @@ export default function ClassGradePage() {
             </div>
           </div>
 
-          {isLoadingTests ? (
+          {isLoading ? (
             <div className="grid gap-6">
               {[...Array(3)].map((_, i) => (
                 <Card key={i}>
@@ -530,7 +497,7 @@ export default function ClassGradePage() {
 
         {/* Students Tab */}
         <TabsContent value="students" className="space-y-6">
-          {isLoadingStudents ? (
+          {isLoading ? (
             <div className="grid gap-4">
               {[...Array(5)].map((_, i) => (
                 <Card key={i}>

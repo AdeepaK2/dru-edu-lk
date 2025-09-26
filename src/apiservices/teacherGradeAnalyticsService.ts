@@ -497,18 +497,41 @@ export class GradeAnalyticsService {
         const completedSubmissions = submissions.filter(s => s.status === 'submitted');
         const totalTestsCompleted = completedSubmissions.length;
         
-        // Calculate pass/fail
-        const passedTests = completedSubmissions.filter(s => s.passStatus === 'passed').length;
-        const failedTests = completedSubmissions.filter(s => s.passStatus === 'failed').length;
+        // Calculate pass/fail using same logic as test analytics (percentage + teacher's passing score)
+        let passedTests = 0;
+        let failedTests = 0;
         
-        // Calculate scores
-        const scores = completedSubmissions
-          .filter(s => s.totalScore !== undefined)
-          .map(s => s.totalScore!);
+        for (const submission of completedSubmissions) {
+          // Get test data to check teacher's passing score configuration
+          const testQuery = classBasedTests.find(doc => doc.id === submission.testId);
+          if (testQuery) {
+            const testData = testQuery.data();
+            const passingPercentage = testData.config?.passingScore || 50;
+            
+            if (submission.percentage !== undefined && submission.percentage !== null) {
+              if (submission.percentage >= passingPercentage) {
+                passedTests++;
+              } else {
+                failedTests++;
+              }
+            }
+          } else {
+            // Fallback to stored passStatus if test not found
+            if (submission.passStatus === 'passed') passedTests++;
+            else if (submission.passStatus === 'failed') failedTests++;
+          }
+        }
         
-        const overallAverage = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
-        const highestScore = scores.length > 0 ? Math.max(...scores) : 0;
-        const lowestScore = scores.length > 0 ? Math.min(...scores) : 0;
+        // Calculate scores using percentage (0-100 scale) - same as test analytics
+        const percentageScores = completedSubmissions
+          .filter(s => s.percentage !== undefined && s.percentage !== null)
+          .map(s => s.percentage!);
+        
+        const overallAverage = percentageScores.length > 0 ? percentageScores.reduce((a, b) => a + b, 0) / percentageScores.length : 0;
+        const highestScore = percentageScores.length > 0 ? Math.max(...percentageScores) : 0;
+        const lowestScore = percentageScores.length > 0 ? Math.min(...percentageScores) : 0;
+        
+        console.log(`📊 [STUDENT ANALYTICS] Student "${studentData.name}": avg=${overallAverage.toFixed(1)}%, passed=${passedTests}, failed=${failedTests}`);
         
         // Calculate late submissions
         const lateSubmissions = submissions.filter(s => s.lateSubmission?.isLateSubmission).length;
