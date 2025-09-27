@@ -18,6 +18,7 @@ export const classSchema = z.object({
   schedule: z.array(timeSlotSchema).min(1, 'At least one time slot is required'),
   sessionFee: z.number().min(0, 'Session fee must be positive'),
   teacherId: z.string().optional(), // Will be assigned later
+  coTeacherId: z.string().optional(), // Co-teacher assignment
   description: z.string().optional(),
   zoomLink: z.string().url('Please enter a valid Zoom URL').optional().or(z.literal('')),
 });
@@ -55,6 +56,8 @@ export interface ClassDisplayData {
   year: string;
   teacher: string;
   teacherId?: string; // Add teacherId for editing
+  coTeacher?: string;
+  coTeacherId?: string; // Add coTeacherId for editing
   schedule: string;
   students: number;
   status: string;
@@ -67,7 +70,7 @@ export interface ClassDisplayData {
 }
 
 // Helper function to convert ClassDocument to ClassDisplayData
-export function classDocumentToDisplay(doc: ClassDocument, centerName?: string, teacherName?: string): ClassDisplayData {
+export function classDocumentToDisplay(doc: ClassDocument, centerName?: string, teacherName?: string, coTeacherName?: string): ClassDisplayData {
   const scheduleText = doc.schedule.map(slot => 
     `${slot.day}: ${slot.startTime} - ${slot.endTime}`
   ).join(', ');
@@ -81,6 +84,8 @@ export function classDocumentToDisplay(doc: ClassDocument, centerName?: string, 
     year: doc.year,
     teacher: teacherName || (doc.teacherId ? 'Assigned' : 'Not Assigned'),
     teacherId: doc.teacherId,
+    coTeacher: coTeacherName || (doc.coTeacherId ? 'Assigned' : 'Not Assigned'),
+    coTeacherId: doc.coTeacherId,
     schedule: scheduleText,
     students: doc.enrolledStudents,
     status: doc.status,

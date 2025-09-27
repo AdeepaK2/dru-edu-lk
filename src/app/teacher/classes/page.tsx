@@ -41,9 +41,11 @@ export default function TeacherClasses() {
   const { teacher } = useTeacherAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [classes, setClasses] = useState<ClassWithStats[]>([]);
+  const [coClasses, setCoClasses] = useState<ClassWithStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [activeTab, setActiveTab] = useState<'main' | 'co'>('main');
   const [zoomLinkModal, setZoomLinkModal] = useState<{
     isOpen: boolean;
     classId: string;
@@ -55,6 +57,11 @@ export default function TeacherClasses() {
   });
   const [updatingZoom, setUpdatingZoom] = useState(false);
 
+  // Helper function to check if current teacher is the main teacher for a class
+  const isMainTeacher = (classItem: ClassWithStats): boolean => {
+    return classItem.teacherId === teacher?.id;
+  };
+
   // Load teacher's classes
   useEffect(() => {
     const loadClasses = async () => {
@@ -64,14 +71,19 @@ export default function TeacherClasses() {
       setError(null);
       
       try {
-        // Get classes assigned to this teacher
+        // Get classes assigned to this teacher as main teacher
         console.log('🔍 Teacher ID in CLASSES page:', teacher.id);
         console.log('🔍 Teacher object in CLASSES page:', teacher);
         const teacherClasses = await ClassFirestoreService.getClassesByTeacher(teacher.id);
         console.log('✅ Raw teacher classes result in CLASSES page:', teacherClasses);
         console.log('✅ Number of classes found in CLASSES page:', teacherClasses.length);
+
+        // Get classes assigned to this teacher as co-teacher
+        const coTeacherClasses = await ClassFirestoreService.getClassesByCoTeacher(teacher.id);
+        console.log('✅ Raw co-teacher classes result in CLASSES page:', coTeacherClasses);
+        console.log('✅ Number of co-teacher classes found in CLASSES page:', coTeacherClasses.length);
         
-        // Get additional stats for each class
+        // Get additional stats for each main teacher class
         const classesWithStats = await Promise.all(
           teacherClasses.map(async (classDoc) => {
             try {
@@ -101,8 +113,40 @@ export default function TeacherClasses() {
             }
           })
         );
+
+        // Get additional stats for each co-teacher class
+        const coClassesWithStats = await Promise.all(
+          coTeacherClasses.map(async (classDoc) => {
+            try {
+              // Use optimized student query with enrollment system
+              const students = await FirestoreOptimizer.getStudentsByClassOptimized(classDoc.id);
+              const studentCount = students.length;
+              
+              // Calculate next class time
+              const nextClass = getNextClassTime(classDoc.schedule);
+              
+              return {
+                ...classDoc,
+                studentCount,
+                avgGrade: Math.round(Math.random() * 30 + 70), // TODO: Calculate real average grade
+                nextClass,
+                recentActivity: `${studentCount} students enrolled`
+              } as ClassWithStats;
+            } catch (err) {
+              console.error(`Error loading stats for co-teacher class ${classDoc.id}:`, err);
+              return {
+                ...classDoc,
+                studentCount: classDoc.enrolledStudents || 0,
+                avgGrade: 0,
+                nextClass: 'TBD',
+                recentActivity: 'No recent activity'
+              } as ClassWithStats;
+            }
+          })
+        );
         
         setClasses(classesWithStats);
+        setCoClasses(coClassesWithStats);
       } catch (err: any) {
         console.error('Error loading teacher classes:', err);
         setError(err.message || 'Failed to load classes');
@@ -176,9 +220,17 @@ export default function TeacherClasses() {
       
       await ClassFirestoreService.updateZoomLink(zoomLinkModal.classId, zoomLink);
       
-      // Update the local state
+      // Update the local state for both main classes and co-classes
       setClasses(prevClasses => 
         prevClasses.map(cls => 
+          cls.id === zoomLinkModal.classId 
+            ? { ...cls, zoomLink: zoomLink.trim() || undefined }
+            : cls
+        )
+      );
+
+      setCoClasses(prevCoClasses => 
+        prevCoClasses.map(cls => 
           cls.id === zoomLinkModal.classId 
             ? { ...cls, zoomLink: zoomLink.trim() || undefined }
             : cls
@@ -201,8 +253,9 @@ export default function TeacherClasses() {
     }
   };
 
-  // Filter classes based on search term
-  const filteredClasses = classes.filter(cls =>
+  // Filter classes based on search term and active tab
+  const currentClasses = activeTab === 'main' ? classes : coClasses;
+  const filteredClasses = currentClasses.filter(cls =>
     cls.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     cls.year.toLowerCase().includes(searchTerm.toLowerCase()) ||
     cls.subject.toLowerCase().includes(searchTerm.toLowerCase())
@@ -226,7 +279,7 @@ export default function TeacherClasses() {
       <div className="space-y-6">
         {/* Header */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
                 My Classes
@@ -238,9 +291,33 @@ export default function TeacherClasses() {
             <div className="flex items-center bg-blue-50 dark:bg-blue-900/20 px-4 py-2 rounded-lg">
               <GraduationCap className="w-5 h-5 text-blue-600 dark:text-blue-400 mr-2" />
               <span className="text-blue-600 dark:text-blue-400 font-medium">
-                {filteredClasses.length} Classes
+                {filteredClasses.length} {activeTab === 'main' ? 'Main Classes' : 'Co-Classes'}
               </span>
             </div>
+          </div>
+
+          {/* Class Type Tabs */}
+          <div className="flex space-x-1 bg-gray-100 dark:bg-gray-700 p-1 rounded-lg">
+            <button
+              onClick={() => setActiveTab('main')}
+              className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                activeTab === 'main'
+                  ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm'
+                  : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+              }`}
+            >
+              Main Classes ({classes.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('co')}
+              className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                activeTab === 'co'
+                  ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm'
+                  : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+              }`}
+            >
+              Co-Classes ({coClasses.length})
+            </button>
           </div>
         </div>
 
@@ -321,6 +398,19 @@ export default function TeacherClasses() {
                       </p>
                     </div>
                     <div className="flex flex-col space-y-1">
+                      {/* Role Badge */}
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                        isMainTeacher(cls) 
+                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+                          : 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                      }`}>
+                        {isMainTeacher(cls) ? 'Main Teacher' : 'Co-Teacher'}
+                      </span>
+                      {activeTab === 'co' && (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300">
+                          Co-Teacher
+                        </span>
+                      )}
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
                         {cls.year}
                       </span>
@@ -366,14 +456,16 @@ export default function TeacherClasses() {
                       <h4 className="text-sm font-medium text-gray-900 dark:text-white">
                         Meeting Link
                       </h4>
-                      <button
-                        onClick={() => handleOpenZoomModal(cls.id, cls.zoomLink || '')}
-                        className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-medium flex items-center"
-                        title="Edit Zoom Link"
-                      >
-                        <Edit className="w-3 h-3 mr-1" />
-                        {cls.zoomLink ? 'Edit' : 'Add'}
-                      </button>
+                      {isMainTeacher(cls) && (
+                        <button
+                          onClick={() => handleOpenZoomModal(cls.id, cls.zoomLink || '')}
+                          className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-medium flex items-center"
+                          title="Edit Zoom Link"
+                        >
+                          <Edit className="w-3 h-3 mr-1" />
+                          {cls.zoomLink ? 'Edit' : 'Add'}
+                        </button>
+                      )}
                     </div>
                     {cls.zoomLink ? (
                       <button
@@ -385,7 +477,7 @@ export default function TeacherClasses() {
                       </button>
                     ) : (
                       <div className="text-center py-3 text-gray-500 dark:text-gray-400 text-sm border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
-                        No meeting link set
+                        {isMainTeacher(cls) ? 'No meeting link set' : 'Contact main teacher for meeting link'}
                       </div>
                     )}
                   </div>
@@ -426,6 +518,17 @@ export default function TeacherClasses() {
                               {cls.year}
                             </span>
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
+                              {cls.subject}
+                            </span>
+                            {/* Role Badge */}
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              isMainTeacher(cls) 
+                                ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+                                : 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400'
+                            }`}>
+                              {isMainTeacher(cls) ? 'Main Teacher' : 'Co-Teacher'}
+                            </span>
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300">
                               {cls.status}
                             </span>
                           </div>
@@ -472,15 +575,17 @@ export default function TeacherClasses() {
                         </button>
                       ) : null}
                       
-                      {/* Edit Zoom Link */}
-                      <button
-                        onClick={() => handleOpenZoomModal(cls.id, cls.zoomLink || '')}
-                        className="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 py-1.5 px-3 rounded-lg flex items-center space-x-1 transition-colors text-sm"
-                        title={cls.zoomLink ? 'Edit Zoom Link' : 'Add Zoom Link'}
-                      >
-                        <LinkIcon className="w-4 h-4" />
-                        <span>{cls.zoomLink ? 'Edit' : 'Add'} Link</span>
-                      </button>
+                      {/* Edit Zoom Link - Only for main teachers */}
+                      {isMainTeacher(cls) && (
+                        <button
+                          onClick={() => handleOpenZoomModal(cls.id, cls.zoomLink || '')}
+                          className="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 py-1.5 px-3 rounded-lg flex items-center space-x-1 transition-colors text-sm"
+                          title={cls.zoomLink ? 'Edit Zoom Link' : 'Add Zoom Link'}
+                        >
+                          <LinkIcon className="w-4 h-4" />
+                          <span>{cls.zoomLink ? 'Edit' : 'Add'} Link</span>
+                        </button>
+                      )}
                       
                       <Link href={`/teacher/classes/${cls.id}`}>
                         <Button size="sm" className="flex items-center space-x-2">

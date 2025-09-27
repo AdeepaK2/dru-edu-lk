@@ -88,6 +88,10 @@ export class ClassFirestoreService {
         documentData.teacherId = validatedData.teacherId;
       }
 
+      if (validatedData.coTeacherId && validatedData.coTeacherId.trim()) {
+        documentData.coTeacherId = validatedData.coTeacherId;
+      }
+
       const docRef = await addDoc(this.collectionRef, documentData);
       console.log('Class created with ID:', docRef.id);
       return docRef.id;
@@ -390,6 +394,43 @@ export class ClassFirestoreService {
     } catch (error) {
       console.error('Error fetching classes by teacher:', error);
       throw new Error(`Failed to fetch classes: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Get classes by co-teacher ID
+   */
+  static async getClassesByCoTeacher(coTeacherId: string): Promise<ClassDocument[]> {
+    try {
+      console.log('🔍 Searching for classes with coTeacherId:', coTeacherId);
+      
+      const q = query(
+        this.collectionRef,
+        where('coTeacherId', '==', coTeacherId)
+      );
+      
+      const snapshot = await getDocs(q);
+      console.log('🔍 Raw co-teacher query returned', snapshot.docs.length, 'documents');
+      
+      const classes = snapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          ...data,
+          id: doc.id,
+          createdAt: data.createdAt,
+          updatedAt: data.updatedAt,
+        } as ClassDocument;
+      })
+      // Filter for active classes
+      .filter(cls => cls.status === 'Active')
+      // Sort by name
+      .sort((a, b) => a.name.localeCompare(b.name));
+      
+      console.log('✅ After filtering, returning', classes.length, 'active co-teacher classes');
+      return classes;
+    } catch (error) {
+      console.error('Error fetching classes by co-teacher:', error);
+      throw new Error(`Failed to fetch co-teacher classes: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
