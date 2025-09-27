@@ -1,20 +1,27 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { BookOpen, Users, Clock, Award, Search, Filter } from 'lucide-react';
+import { BookOpen, Users, Clock, Award, Search, Filter, ExternalLink } from 'lucide-react';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { getEnrollmentsByStudent } from '@/services/studentEnrollmentService';
 import { StudentEnrollment } from '@/models/studentEnrollmentSchema';
+import { ClassFirestoreService } from '@/apiservices/classFirestoreService';
+import { ClassDocument } from '@/models/classSchema';
 import { Button, Input } from '@/components/ui';
+
+// Extended interface to include class details with zoom link
+interface EnrollmentWithClassData extends StudentEnrollment {
+  classData?: ClassDocument;
+}
 
 export default function StudentClassesPage() {
   const { student, loading: authLoading } = useStudentAuth();
-  const [enrollments, setEnrollments] = useState<StudentEnrollment[]>([]);
+  const [enrollments, setEnrollments] = useState<EnrollmentWithClassData[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
-  // Load student's enrollments
+  // Load student's enrollments and class data
   useEffect(() => {
     const loadEnrollments = async () => {
       if (!student?.id) return;
@@ -22,7 +29,27 @@ export default function StudentClassesPage() {
       try {
         setLoading(true);
         const studentEnrollments = await getEnrollmentsByStudent(student.id);
-        setEnrollments(studentEnrollments);
+        
+        // Fetch class details for each enrollment (including zoom links)
+        const enrollmentsWithClassData = await Promise.all(
+          studentEnrollments.map(async (enrollment) => {
+            try {
+              const classData = await ClassFirestoreService.getClassById(enrollment.classId);
+              return {
+                ...enrollment,
+                classData
+              } as EnrollmentWithClassData;
+            } catch (error) {
+              console.error(`Error loading class data for ${enrollment.classId}:`, error);
+              return {
+                ...enrollment,
+                classData: undefined
+              } as EnrollmentWithClassData;
+            }
+          })
+        );
+        
+        setEnrollments(enrollmentsWithClassData);
       } catch (error) {
         console.error('Error loading enrollments:', error);
       } finally {
@@ -34,6 +61,13 @@ export default function StudentClassesPage() {
       loadEnrollments();
     }
   }, [student?.id]);
+
+  // Handle joining Zoom meeting
+  const handleJoinZoom = (zoomLink: string) => {
+    if (zoomLink) {
+      window.open(zoomLink, '_blank', 'noopener,noreferrer');
+    }
+  };
 
   // Filter enrollments based on search and status
   const filteredEnrollments = enrollments.filter(enrollment => {
@@ -218,6 +252,35 @@ export default function StudentClassesPage() {
                     <p className="text-sm text-gray-600 dark:text-gray-300">
                       <span className="font-medium">Notes:</span> {enrollment.notes}
                     </p>
+                  </div>
+                )}
+
+                {/* Zoom Meeting Link */}
+                {enrollment.classData?.zoomLink && (
+                  <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
+                    <div className="mb-3">
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Meeting Link:
+                      </p>
+                      <div className="space-y-2">
+                        {/* Full Meeting URL */}
+                        <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                          <p className="text-sm text-blue-700 dark:text-blue-300 break-all">
+                            {enrollment.classData.zoomLink}
+                          </p>
+                        </div>
+                        {/* Join Button */}
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => handleJoinZoom(enrollment.classData!.zoomLink!)}
+                          className="w-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center space-x-2"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                          <span>Join Now</span>
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 )}
 
