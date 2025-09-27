@@ -114,6 +114,9 @@ export interface BaseTest {
   questions: TestQuestion[];
   totalMarks: number;
   
+  // Exam PDF (for essay questions)
+  examPdfUrl?: string; // URL to the generated exam PDF in Firebase Storage
+  
   // Status and timing
   status: TestStatus;
   isDeleted?: boolean; // For soft deletion

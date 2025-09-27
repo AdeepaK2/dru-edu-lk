@@ -38,6 +38,7 @@ import { TestExtensionService } from '@/apiservices/testExtensionService';
 import ExtendTestModal from '@/components/teacher/ExtendTestModal';
 import ViewAssignedStudentsModal from '@/components/modals/ViewAssignedStudentsModal';
 import LateSubmissionModal from '@/components/modals/LateSubmissionModal';
+import ExamPDFViewer from '@/components/teacher/ExamPDFViewer';
 
 export default function TeacherTests() {
   const { teacher, loading: authLoading, error: authError } = useTeacherAuth();
@@ -266,8 +267,44 @@ export default function TeacherTests() {
   };
 
   const handleTestCreated = (newTest: Test) => {
+    console.log('🎯 Test created callback received:', {
+      id: newTest.id,
+      title: newTest.title,
+      questionType: newTest.config?.questionType,
+      examPdfUrl: (newTest as any).examPdfUrl,
+      hasQuestions: !!newTest.questions?.length,
+      questionTypes: newTest.questions?.map(q => q.questionType || q.type)
+    });
+    
+    // Add the new test immediately to the UI
     setTests(prev => [newTest, ...prev]);
     setShowCreateModal(false);
+    
+    // For essay tests, refresh data multiple times to catch PDF generation
+    if (newTest.config?.questionType === 'essay' || 
+        newTest.questions?.some(q => q.questionType === 'essay' || q.type === 'essay')) {
+      
+      console.log('📄 Essay test detected, setting up PDF refresh intervals...');
+      
+      // Immediate refresh after 2 seconds
+      setTimeout(() => {
+        console.log('🔄 First PDF refresh (2s)...');
+        loadTeacherData();
+      }, 2000);
+      
+      // Second refresh after 5 seconds  
+      setTimeout(() => {
+        console.log('🔄 Second PDF refresh (5s)...');
+        loadTeacherData();
+      }, 5000);
+      
+      // Third refresh after 10 seconds
+      setTimeout(() => {
+        console.log('🔄 Final PDF refresh (10s)...');
+        loadTeacherData();
+      }, 10000);
+    }
+    
     // If we were creating for a specific class, stay in class detail view
     // Otherwise go back to overview
   };
@@ -907,6 +944,40 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
                                   </div>
                                 )}
 
+                                {/* Exam PDF Viewer for essay tests - DEBUG */}
+                                {(() => {
+                                  const hasEssayType = test.config?.questionType === 'essay';
+                                  const hasPdfUrl = !!(test as any).examPdfUrl;
+                                  const hasEssayQuestions = test.questions?.some(q => q.questionType === 'essay' || q.type === 'essay');
+                                  
+                                  console.log('🔍 PDF Viewer Debug for test:', test.id, {
+                                    title: test.title,
+                                    configQuestionType: test.config?.questionType,
+                                    hasEssayType,
+                                    examPdfUrl: (test as any).examPdfUrl,
+                                    hasPdfUrl,
+                                    hasEssayQuestions,
+                                    questionCount: test.questions?.length,
+                                    firstQuestionType: test.questions?.[0]?.questionType || test.questions?.[0]?.type
+                                  });
+                                  
+                                  const shouldShowPDF = (hasEssayType || hasEssayQuestions) && hasPdfUrl;
+                                  
+                                  if (shouldShowPDF) {
+                                    return (
+                                      <div className="mb-3">
+                                        <ExamPDFViewer
+                                          examPdfUrl={(test as any).examPdfUrl}
+                                          testTitle={test.title}
+                                          testNumber={test.displayNumber || test.testNumber?.toString() || '1'}
+                                        />
+                                      </div>
+                                    );
+                                  }
+                                  
+                                  return null;
+                                })()}
+
                                 {test.totalAssignedStudents && test.assignmentSummary && (
                                   <div className="mb-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
                                     <div className="text-sm text-green-800 dark:text-green-400">
@@ -1151,6 +1222,40 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
                                         )}
                                       </div>
                                     )}
+
+                                    {/* Exam PDF Viewer for essay tests - DEBUG */}
+                                    {(() => {
+                                      const hasEssayType = test.config?.questionType === 'essay';
+                                      const hasPdfUrl = !!(test as any).examPdfUrl;
+                                      const hasEssayQuestions = test.questions?.some(q => q.questionType === 'essay' || q.type === 'essay');
+                                      
+                                      console.log('🔍 PDF Viewer Debug for class test:', test.id, {
+                                        title: test.title,
+                                        configQuestionType: test.config?.questionType,
+                                        hasEssayType,
+                                        examPdfUrl: (test as any).examPdfUrl,
+                                        hasPdfUrl,
+                                        hasEssayQuestions,
+                                        questionCount: test.questions?.length,
+                                        firstQuestionType: test.questions?.[0]?.questionType || test.questions?.[0]?.type
+                                      });
+                                      
+                                      const shouldShowPDF = (hasEssayType || hasEssayQuestions) && hasPdfUrl;
+                                      
+                                      if (shouldShowPDF) {
+                                        return (
+                                          <div className="mt-4">
+                                            <ExamPDFViewer
+                                              examPdfUrl={(test as any).examPdfUrl}
+                                              testTitle={test.title}
+                                              testNumber={test.displayNumber || test.testNumber?.toString() || '1'}
+                                            />
+                                          </div>
+                                        );
+                                      }
+                                      
+                                      return null;
+                                    })()}
 
                                     {isLive && status.status === 'live' && (
                                       <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
