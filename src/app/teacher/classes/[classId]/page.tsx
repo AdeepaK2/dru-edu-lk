@@ -27,10 +27,12 @@ import {
   UserCheck,
   X,
   MessageSquare,
-  Send
+  Send,
+  Edit3
 } from 'lucide-react';
 import TeacherLayout from '@/components/teacher/TeacherLayout';
 import { Button } from '@/components/ui';
+import { useTeacherAuth } from '@/hooks/useTeacherAuth';
 import Message from '@/components/teacher/Message';
 import Mail from '@/components/teacher/Mail';
 import { ClassFirestoreService } from '@/apiservices/classFirestoreService';
@@ -54,6 +56,13 @@ import { StudyMaterialDisplayData, StudyMaterialData } from '@/models/studyMater
 import StudyMaterialUploadModal from '@/components/modals/StudyMaterialUploadModal';
 import AttendanceTab from '@/components/teacher/AttendanceTab';
 import ZoomLinkModal from '@/components/modals/ZoomLinkModal';
+import RemarkModal from '@/components/teacher/RemarkModal';
+import { 
+  StudentRemark, 
+  StudentRemarkData,
+  getRemarkColor 
+} from '@/models/studentRemarkSchema';
+import { StudentRemarkFirestoreService } from '@/apiservices/studentRemarkFirestoreService';
 
 interface TabData {
   id: string;
@@ -65,6 +74,7 @@ interface TabData {
 export default function ClassDetails() {
   const params = useParams();
   const classId = params.classId as string;
+  const { teacher } = useTeacherAuth();
   
   const [activeTab, setActiveTab] = useState('study-materials');
   const [classData, setClassData] = useState<ClassDocument | null>(null);
@@ -83,6 +93,14 @@ export default function ClassDetails() {
     currentLink: ''
   });
   const [updatingZoom, setUpdatingZoom] = useState(false);
+  const [remarkModal, setRemarkModal] = useState<{
+    isOpen: boolean;
+    studentId: string;
+    studentName: string;
+    existingRemark?: StudentRemark | null;
+  }>({ isOpen: false, studentId: '', studentName: '' });
+  const [savingRemark, setSavingRemark] = useState(false);
+  const [classRemarks, setClassRemarks] = useState<Map<string, StudentRemark>>(new Map());
 
   // Auto-schedule classes for next week
   const autoScheduleClasses = async (classDoc: ClassDocument) => {
@@ -154,6 +172,86 @@ export default function ClassDetails() {
     }
   };
 
+  // Handle opening remark modal
+  const handleOpenRemarkModal = (studentId: string, studentName: string) => {
+    setRemarkModal({
+      isOpen: true,
+      studentId,
+      studentName,
+      existingRemark: classRemarks.get(studentId) || null,
+    });
+  };
+
+  // Handle closing remark modal
+  const handleCloseRemarkModal = () => {
+    setRemarkModal({ isOpen: false, studentId: '', studentName: '' });
+  };
+
+  // Handle saving remark
+  const handleSaveRemark = async (remarkData: {
+    remarkLevel: any;
+    customRemark?: string;
+    additionalNotes?: string;
+    isVisible: boolean;
+  }) => {
+    if (!classData) return;
+
+    setSavingRemark(true);
+    try {
+      const fullRemarkData: StudentRemarkData = {
+        studentId: remarkModal.studentId,
+        classId: classId,
+        teacherId: teacher?.id || classData.teacherId || '',
+        studentName: remarkModal.studentName,
+        className: classData.name,
+        subject: classData.subject,
+        remarkLevel: remarkData.remarkLevel,
+        isVisible: remarkData.isVisible,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      // Only include optional fields if they have values
+      if (remarkData.customRemark && remarkData.customRemark.trim()) {
+        fullRemarkData.customRemark = remarkData.customRemark;
+      }
+      if (remarkData.additionalNotes && remarkData.additionalNotes.trim()) {
+        fullRemarkData.additionalNotes = remarkData.additionalNotes;
+      }
+
+      let remarkId: string;
+
+      if (remarkModal.existingRemark) {
+        // Update existing remark
+        await StudentRemarkFirestoreService.updateRemark(
+          remarkModal.existingRemark.id,
+          fullRemarkData
+        );
+        remarkId = remarkModal.existingRemark.id;
+      } else {
+        // Create new remark
+        remarkId = await StudentRemarkFirestoreService.createRemark(fullRemarkData);
+      }
+
+      // Update local state
+      const updatedRemark: StudentRemark = {
+        id: remarkId,
+        ...fullRemarkData,
+        createdAt: remarkModal.existingRemark?.createdAt || new Date(),
+        updatedAt: new Date(),
+      };
+
+      setClassRemarks(prev => new Map(prev.set(remarkModal.studentId, updatedRemark)));
+
+      console.log('✅ Remark saved successfully');
+    } catch (error: any) {
+      console.error('❌ Error saving remark:', error);
+      throw new Error(error.message || 'Failed to save remark');
+    } finally {
+      setSavingRemark(false);
+    }
+  };
+
   // Load class data
   useEffect(() => {
     const loadClassData = async () => {
@@ -201,6 +299,28 @@ export default function ClassDetails() {
 
     if (classId) {
       loadEnrollments();
+    }
+  }, [classId]);
+
+  // Load class remarks
+  useEffect(() => {
+    const loadClassRemarks = async () => {
+      try {
+        const remarks = await StudentRemarkFirestoreService.getRemarksByClass(classId);
+        const remarksMap = new Map<string, StudentRemark>();
+        remarks.forEach(remark => {
+          remarksMap.set(remark.studentId, remark);
+        });
+        setClassRemarks(remarksMap);
+        console.log('✅ Loaded class remarks:', remarks.length);
+      } catch (error) {
+        console.error('❌ Error loading class remarks:', error);
+        // Don't set error state for remarks, just log it
+      }
+    };
+
+    if (classId) {
+      loadClassRemarks();
     }
   }, [classId]);
 
@@ -413,7 +533,10 @@ export default function ClassDetails() {
               <StudentsTab 
                 classId={classId} 
                 enrollments={enrollments} 
-                loading={enrollmentsLoading} 
+                loading={enrollmentsLoading}
+                classRemarks={classRemarks}
+                handleOpenRemarkModal={handleOpenRemarkModal}
+                savingRemark={savingRemark}
               />
             )}
             {activeTab === 'attendance' && <AttendanceTab classData={classData} classId={classId} />}
@@ -435,6 +558,21 @@ export default function ClassDetails() {
         onSubmit={handleUpdateZoomLink}
         loading={updatingZoom}
         currentZoomLink={zoomLinkModal.currentLink}
+      />
+
+      {/* Remark Modal */}
+      <RemarkModal
+        isOpen={remarkModal.isOpen}
+        onClose={handleCloseRemarkModal}
+        studentId={remarkModal.studentId}
+        studentName={remarkModal.studentName}
+        classId={classId}
+        className={classData?.name || ''}
+        subject={classData?.subject || ''}
+        teacherId={teacher?.id || ''}
+        existingRemark={remarkModal.existingRemark}
+        onSave={handleSaveRemark}
+        isSaving={savingRemark}
       />
     </TeacherLayout>
   );
@@ -1833,11 +1971,17 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
 function StudentsTab({ 
   classId, 
   enrollments, 
-  loading 
+  loading,
+  classRemarks,
+  handleOpenRemarkModal,
+  savingRemark
 }: { 
   classId: string; 
   enrollments: StudentEnrollment[]; 
-  loading: boolean; 
+  loading: boolean;
+  classRemarks: Map<string, StudentRemark>;
+  handleOpenRemarkModal: (studentId: string, studentName: string) => void;
+  savingRemark: boolean;
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [studentsWithDetails, setStudentsWithDetails] = useState<any[]>([]);
@@ -2042,6 +2186,22 @@ function StudentsTab({
                             Enrolled: {student.enrolledAt.toLocaleDateString()}
                           </div>
                           
+                          {/* Teacher Remark Display */}
+                          {classRemarks.get(student.studentId) && (
+                            <div className="flex items-center text-sm">
+                              <MessageSquare className="w-4 h-4 mr-2 text-blue-500" />
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRemarkColor(classRemarks.get(student.studentId)!.remarkLevel)}`}>
+                                {classRemarks.get(student.studentId)!.remarkLevel === 'Custom' 
+                                  ? (classRemarks.get(student.studentId)!.customRemark || classRemarks.get(student.studentId)!.remarkLevel)
+                                  : classRemarks.get(student.studentId)!.remarkLevel
+                                }
+                              </span>
+                              {!classRemarks.get(student.studentId)!.isVisible && (
+                                <span className="ml-2 text-xs text-gray-400">(Hidden)</span>
+                              )}
+                            </div>
+                          )}
+                          
                           {/* Parent Information */}
                           {student.parent && (
                             <div className="mt-3 pt-2 border-t border-gray-200 dark:border-gray-600">
@@ -2092,7 +2252,17 @@ function StudentsTab({
 
                   {/* Stats section removed per user request */}
 
-                  {/* Action Buttons - Removed per user request */}
+                  {/* Remark Action Button */}
+                  <div className="flex items-center">
+                    <button
+                      onClick={() => handleOpenRemarkModal(student.studentId, student.studentName)}
+                      disabled={savingRemark}
+                      className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                      {classRemarks.has(student.studentId) ? 'Edit Remark' : 'Add Remark'}
+                    </button>
+                  </div>
                 </div>
 
                 {/* Mobile Stats - Removed per user request */}

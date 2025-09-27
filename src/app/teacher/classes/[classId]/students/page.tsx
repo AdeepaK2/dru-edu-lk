@@ -17,11 +17,15 @@ import {
   GraduationCap,
   TrendingUp,
   Clock,
-  BookOpen
+  BookOpen,
+  MessageSquare,
+  Edit3,
+  Plus
 } from 'lucide-react';
 import { Button, Input } from '@/components/ui';
 import { useTeacherAuth } from '@/hooks/useTeacherAuth';
 import TeacherLayout from '@/components/teacher/TeacherLayout';
+import RemarkModal from '@/components/teacher/RemarkModal';
 import Link from 'next/link';
 
 // Import services and types
@@ -29,12 +33,31 @@ import { getEnrollmentsByClass } from '@/services/studentEnrollmentService';
 import { ClassFirestoreService } from '@/apiservices/classFirestoreService';
 import { StudentEnrollment } from '@/models/studentEnrollmentSchema';
 import { ClassDocument } from '@/models/classSchema';
+import { 
+  StudentRemark, 
+  StudentRemarkData,
+  getRemarkColor 
+} from '@/models/studentRemarkSchema';
+import { StudentRemarkFirestoreService } from '@/apiservices/studentRemarkFirestoreService';
 
-interface StudentWithStats extends StudentEnrollment {
+interface StudentWithStats {
+  id: string;
+  studentId: string;
+  classId: string;
+  studentName: string;
+  studentEmail: string;
+  className: string;
+  subject: string;
+  enrolledAt: Date;
+  status: 'Active' | 'Inactive' | 'Completed' | 'Dropped';
+  grade?: number;
+  attendance: number;
+  notes?: string;
   testResults?: number;
   videosWatched?: number;
   lastActivity?: string;
   averageGrade?: number;
+  remark?: StudentRemark;
 }
 
 export default function ClassStudents() {
@@ -48,6 +71,13 @@ export default function ClassStudents() {
   const [classInfo, setClassInfo] = useState<ClassDocument | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [remarkModal, setRemarkModal] = useState<{
+    isOpen: boolean;
+    studentId: string;
+    studentName: string;
+    existingRemark?: StudentRemark | null;
+  }>({ isOpen: false, studentId: '', studentName: '' });
+  const [savingRemark, setSavingRemark] = useState(false);
 
   // Load class info and students
   useEffect(() => {
@@ -67,13 +97,24 @@ export default function ClassStudents() {
         const enrollments = await getEnrollmentsByClass(classId);
         console.log('✅ Found enrollments:', enrollments.length);
         
-        // Add mock stats for each student (TODO: Replace with real data)
-        const studentsWithStats: StudentWithStats[] = enrollments.map(enrollment => ({
+        // Load remarks for all students in this class
+        const classRemarks = await StudentRemarkFirestoreService.getRemarksByClass(classId);
+        console.log('✅ Found remarks:', classRemarks.length);
+        
+        // Create a map of student ID to remark
+        const remarksMap = new Map<string, StudentRemark>();
+        classRemarks.forEach(remark => {
+          remarksMap.set(remark.studentId, remark);
+        });
+        
+        // Add mock stats and remarks for each student
+        const studentsWithStats: StudentWithStats[] = enrollments.map((enrollment: StudentEnrollment) => ({
           ...enrollment,
           testResults: Math.floor(Math.random() * 15) + 5, // 5-20 tests
           videosWatched: Math.floor(Math.random() * 30) + 10, // 10-40 videos
           lastActivity: getRandomLastActivity(),
           averageGrade: Math.floor(Math.random() * 30) + 70, // 70-100%
+          remark: remarksMap.get(enrollment.studentId) || undefined,
         }));
         
         setStudents(studentsWithStats);
@@ -98,6 +139,87 @@ export default function ClassStudents() {
       '2 weeks ago'
     ];
     return activities[Math.floor(Math.random() * activities.length)];
+  };
+
+  // Handle opening remark modal
+  const handleOpenRemarkModal = (student: StudentWithStats) => {
+    setRemarkModal({
+      isOpen: true,
+      studentId: student.studentId,
+      studentName: student.studentName,
+      existingRemark: student.remark || null,
+    });
+  };
+
+  // Handle closing remark modal
+  const handleCloseRemarkModal = () => {
+    setRemarkModal({ isOpen: false, studentId: '', studentName: '' });
+  };
+
+  // Handle saving remark
+  const handleSaveRemark = async (remarkData: {
+    remarkLevel: any;
+    customRemark?: string;
+    additionalNotes?: string;
+    isVisible: boolean;
+  }) => {
+    if (!teacher || !classInfo) return;
+
+    setSavingRemark(true);
+    try {
+      const currentStudent = students.find(s => s.studentId === remarkModal.studentId);
+      if (!currentStudent) throw new Error('Student not found');
+
+      const fullRemarkData: StudentRemarkData = {
+        studentId: remarkModal.studentId,
+        classId: classId,
+        teacherId: teacher.id,
+        studentName: remarkModal.studentName,
+        className: classInfo.name,
+        subject: classInfo.subject,
+        remarkLevel: remarkData.remarkLevel,
+        customRemark: remarkData.customRemark,
+        additionalNotes: remarkData.additionalNotes,
+        isVisible: remarkData.isVisible,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      let remarkId: string;
+
+      if (remarkModal.existingRemark) {
+        // Update existing remark
+        await StudentRemarkFirestoreService.updateRemark(
+          remarkModal.existingRemark.id,
+          fullRemarkData
+        );
+        remarkId = remarkModal.existingRemark.id;
+      } else {
+        // Create new remark
+        remarkId = await StudentRemarkFirestoreService.createRemark(fullRemarkData);
+      }
+
+      // Update local state
+      const updatedRemark: StudentRemark = {
+        id: remarkId,
+        ...fullRemarkData,
+        createdAt: remarkModal.existingRemark?.createdAt || new Date(),
+        updatedAt: new Date(),
+      };
+
+      setStudents(prev => prev.map(student => 
+        student.studentId === remarkModal.studentId
+          ? { ...student, remark: updatedRemark }
+          : student
+      ));
+
+      console.log('✅ Remark saved successfully');
+    } catch (error: any) {
+      console.error('❌ Error saving remark:', error);
+      setError(error.message || 'Failed to save remark');
+    } finally {
+      setSavingRemark(false);
+    }
   };
 
   // Filter students based on search term
@@ -267,6 +389,18 @@ export default function ClassStudents() {
                             <Calendar className="w-4 h-4 mr-2" />
                             Enrolled: {student.enrolledAt.toLocaleDateString()}
                           </div>
+                          {/* Remark Display */}
+                          {student.remark && (
+                            <div className="flex items-center text-sm">
+                              <MessageSquare className="w-4 h-4 mr-2 text-blue-500" />
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRemarkColor(student.remark.remarkLevel)}`}>
+                                {student.remark.remarkLevel === 'Custom' ? (student.remark.customRemark || student.remark.remarkLevel) : student.remark.remarkLevel}
+                              </span>
+                              {!student.remark.isVisible && (
+                                <span className="ml-2 text-xs text-gray-400">(Hidden)</span>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -305,6 +439,18 @@ export default function ClassStudents() {
 
                   {/* Action Buttons */}
                   <div className="flex items-center space-x-2">
+                    <Button
+                      variant={student.remark ? "primary" : "outline"}
+                      size="sm"
+                      className="flex items-center space-x-1"
+                      onClick={() => handleOpenRemarkModal(student)}
+                    >
+                      {student.remark ? <Edit3 className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                      <span className="hidden sm:inline">
+                        {student.remark ? 'Edit Remark' : 'Add Remark'}
+                      </span>
+                    </Button>
+                    
                     <Button
                       variant="outline"
                       size="sm"
@@ -404,6 +550,23 @@ export default function ClassStudents() {
               </Button>
             )}
           </div>
+        )}
+
+        {/* Remark Modal */}
+        {remarkModal.isOpen && classInfo && teacher && (
+          <RemarkModal
+            isOpen={remarkModal.isOpen}
+            onClose={handleCloseRemarkModal}
+            studentId={remarkModal.studentId}
+            studentName={remarkModal.studentName}
+            classId={classId}
+            className={classInfo.name}
+            subject={classInfo.subject}
+            teacherId={teacher.id}
+            existingRemark={remarkModal.existingRemark}
+            onSave={handleSaveRemark}
+            isSaving={savingRemark}
+          />
         )}
       </div>
     </TeacherLayout>

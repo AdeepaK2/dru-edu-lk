@@ -1,17 +1,23 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { BookOpen, Users, Clock, Award, Search, Filter, ExternalLink } from 'lucide-react';
+import { BookOpen, Users, Clock, Award, Search, Filter, ExternalLink, MessageSquare } from 'lucide-react';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { getEnrollmentsByStudent } from '@/services/studentEnrollmentService';
 import { StudentEnrollment } from '@/models/studentEnrollmentSchema';
 import { ClassFirestoreService } from '@/apiservices/classFirestoreService';
 import { ClassDocument } from '@/models/classSchema';
 import { Button, Input } from '@/components/ui';
+import { 
+  StudentRemark, 
+  getRemarkColor 
+} from '@/models/studentRemarkSchema';
+import { StudentRemarkFirestoreService } from '@/apiservices/studentRemarkFirestoreService';
 
-// Extended interface to include class details with zoom link
+// Extended interface to include class details with zoom link and remark
 interface EnrollmentWithClassData extends StudentEnrollment {
   classData?: ClassDocument;
+  remark?: StudentRemark;
 }
 
 export default function StudentClassesPage() {
@@ -30,6 +36,13 @@ export default function StudentClassesPage() {
         setLoading(true);
         const studentEnrollments = await getEnrollmentsByStudent(student.id);
         
+        // Load visible remarks for this student
+        const studentRemarks = await StudentRemarkFirestoreService.getVisibleRemarksByStudent(student.id);
+        const remarksMap = new Map<string, StudentRemark>();
+        studentRemarks.forEach(remark => {
+          remarksMap.set(remark.classId, remark);
+        });
+        
         // Fetch class details for each enrollment (including zoom links)
         const enrollmentsWithClassData = await Promise.all(
           studentEnrollments.map(async (enrollment) => {
@@ -37,13 +50,15 @@ export default function StudentClassesPage() {
               const classData = await ClassFirestoreService.getClassById(enrollment.classId);
               return {
                 ...enrollment,
-                classData
+                classData,
+                remark: remarksMap.get(enrollment.classId)
               } as EnrollmentWithClassData;
             } catch (error) {
               console.error(`Error loading class data for ${enrollment.classId}:`, error);
               return {
                 ...enrollment,
-                classData: undefined
+                classData: undefined,
+                remark: remarksMap.get(enrollment.classId)
               } as EnrollmentWithClassData;
             }
           })
@@ -248,10 +263,37 @@ export default function StudentClassesPage() {
 
                 {/* Notes */}
                 {enrollment.notes && (
-                  <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
+                  <div className="border-t border-gray-200 dark:border-gray-600 pt-3 mb-3">
                     <p className="text-sm text-gray-600 dark:text-gray-300">
                       <span className="font-medium">Notes:</span> {enrollment.notes}
                     </p>
+                  </div>
+                )}
+
+                {/* Teacher Remark */}
+                {enrollment.remark && (
+                  <div className="border-t border-gray-200 dark:border-gray-600 pt-3 mb-3">
+                    <div className="flex items-start space-x-3">
+                      <MessageSquare className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Teacher Remark:
+                        </p>
+                        <div className="space-y-2">
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getRemarkColor(enrollment.remark.remarkLevel)}`}>
+                            {enrollment.remark.remarkLevel === 'Custom' ? enrollment.remark.customRemark : enrollment.remark.remarkLevel}
+                          </span>
+                          {enrollment.remark.additionalNotes && (
+                            <p className="text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg">
+                              {enrollment.remark.additionalNotes}
+                            </p>
+                          )}
+                          <p className="text-xs text-gray-400">
+                            Updated: {enrollment.remark.updatedAt.toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 )}
 
