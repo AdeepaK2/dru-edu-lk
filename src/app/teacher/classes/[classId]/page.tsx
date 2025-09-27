@@ -20,7 +20,7 @@ import {
   AlertCircle,
   Filter,
   Search,
-  Link,
+  Link as LinkIcon,
   PlayCircle,
   FileIcon,
   ExternalLink,
@@ -53,6 +53,7 @@ import {
 import { StudyMaterialDisplayData, StudyMaterialData } from '@/models/studyMaterialSchema';
 import StudyMaterialUploadModal from '@/components/modals/StudyMaterialUploadModal';
 import AttendanceTab from '@/components/teacher/AttendanceTab';
+import ZoomLinkModal from '@/components/modals/ZoomLinkModal';
 
 interface TabData {
   id: string;
@@ -74,6 +75,14 @@ export default function ClassDetails() {
   const [materialsCount, setMaterialsCount] = useState<number>(0);
   const [materialsLoading, setMaterialsLoading] = useState(true);
   const [autoScheduleLoading, setAutoScheduleLoading] = useState(false);
+  const [zoomLinkModal, setZoomLinkModal] = useState<{
+    isOpen: boolean;
+    currentLink: string;
+  }>({
+    isOpen: false,
+    currentLink: ''
+  });
+  const [updatingZoom, setUpdatingZoom] = useState(false);
 
   // Auto-schedule classes for next week
   const autoScheduleClasses = async (classDoc: ClassDocument) => {
@@ -100,6 +109,48 @@ export default function ClassDetails() {
       // Don't show error to user as this is a background operation
     } finally {
       setAutoScheduleLoading(false);
+    }
+  };
+
+  // Handle Zoom link modal
+  const handleOpenZoomModal = (currentLink: string = '') => {
+    setZoomLinkModal({
+      isOpen: true,
+      currentLink
+    });
+  };
+
+  const handleCloseZoomModal = () => {
+    setZoomLinkModal({
+      isOpen: false,
+      currentLink: ''
+    });
+  };
+
+  const handleUpdateZoomLink = async (zoomLink: string) => {
+    try {
+      setUpdatingZoom(true);
+      
+      await ClassFirestoreService.updateZoomLink(classId, zoomLink);
+      
+      // Update the local state
+      setClassData(prevClass => 
+        prevClass ? { ...prevClass, zoomLink: zoomLink.trim() || undefined } : null
+      );
+
+      console.log('✅ Zoom link updated successfully');
+    } catch (err: any) {
+      console.error('Error updating Zoom link:', err);
+      throw new Error(err.message || 'Failed to update Zoom link');
+    } finally {
+      setUpdatingZoom(false);
+    }
+  };
+
+  // Handle joining Zoom meeting
+  const handleJoinZoom = (zoomLink: string) => {
+    if (zoomLink) {
+      window.open(zoomLink, '_blank', 'noopener,noreferrer');
     }
   };
 
@@ -264,10 +315,58 @@ export default function ClassDetails() {
                 )}
               </div>
             </div>
-            <div className="hidden md:block">
+            <div className="hidden md:flex flex-col items-end space-y-3">
+              {/* Zoom Meeting Section */}
+              <div className="flex items-center space-x-2">
+                {classData?.zoomLink ? (
+                  <button
+                    onClick={() => handleJoinZoom(classData.zoomLink!)}
+                    className="bg-white/20 hover:bg-white/30 text-white py-2 px-4 rounded-lg flex items-center space-x-2 transition-colors text-sm font-medium"
+                    title="Join Zoom Meeting"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    <span>Join Meeting</span>
+                  </button>
+                ) : null}
+                
+                <button
+                  onClick={() => handleOpenZoomModal(classData?.zoomLink || '')}
+                  className="bg-white/10 hover:bg-white/20 text-white py-2 px-4 rounded-lg flex items-center space-x-2 transition-colors text-sm font-medium border border-white/20"
+                  title={classData?.zoomLink ? 'Edit Zoom Link' : 'Add Zoom Link'}
+                >
+                  <LinkIcon className="w-4 h-4" />
+                  <span>{classData?.zoomLink ? 'Edit' : 'Add'} Link</span>
+                </button>
+              </div>
+              
               <div className="w-16 h-16 bg-blue-400/30 rounded-full flex items-center justify-center">
                 <Award className="w-8 h-8 text-white" />
               </div>
+            </div>
+          </div>
+          
+          {/* Mobile Zoom Controls */}
+          <div className="md:hidden mt-4 pt-4 border-t border-white/20">
+            <div className="flex items-center justify-center space-x-2">
+              {classData?.zoomLink ? (
+                <button
+                  onClick={() => handleJoinZoom(classData.zoomLink!)}
+                  className="bg-white/20 hover:bg-white/30 text-white py-2 px-4 rounded-lg flex items-center space-x-2 transition-colors text-sm font-medium flex-1"
+                  title="Join Zoom Meeting"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  <span>Join Meeting</span>
+                </button>
+              ) : null}
+              
+              <button
+                onClick={() => handleOpenZoomModal(classData?.zoomLink || '')}
+                className="bg-white/10 hover:bg-white/20 text-white py-2 px-4 rounded-lg flex items-center space-x-2 transition-colors text-sm font-medium border border-white/20"
+                title={classData?.zoomLink ? 'Edit Zoom Link' : 'Add Zoom Link'}
+              >
+                <LinkIcon className="w-4 h-4" />
+                <span>{classData?.zoomLink ? 'Edit' : 'Add'} Link</span>
+              </button>
             </div>
           </div>
         </div>
@@ -328,6 +427,15 @@ export default function ClassDetails() {
           </div>
         </div>
       </div>
+
+      {/* Zoom Link Modal */}
+      <ZoomLinkModal
+        isOpen={zoomLinkModal.isOpen}
+        onClose={handleCloseZoomModal}
+        onSubmit={handleUpdateZoomLink}
+        loading={updatingZoom}
+        currentZoomLink={zoomLinkModal.currentLink}
+      />
     </TeacherLayout>
   );
 }
@@ -1506,7 +1614,7 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                         }}
                         className="flex items-center space-x-2"
                       >
-                        <Link className="w-4 h-4" />
+                        <LinkIcon className="w-4 h-4" />
                         <span>Add Link</span>
                       </Button>
                     </div>

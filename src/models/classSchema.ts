@@ -19,6 +19,7 @@ export const classSchema = z.object({
   sessionFee: z.number().min(0, 'Session fee must be positive'),
   teacherId: z.string().optional(), // Will be assigned later
   description: z.string().optional(),
+  zoomLink: z.string().url('Please enter a valid Zoom URL').optional().or(z.literal('')),
 });
 
 // Class update schema (all fields optional except required ones for updates)
@@ -41,6 +42,7 @@ export interface ClassDocument extends ClassData {
   updatedAt: Timestamp;
   createdBy?: string; // Admin ID who created the class
   lastModifiedBy?: string; // Admin ID who last modified the class
+  zoomLink?: string; // Default Zoom link for the class
 }
 
 // Frontend display interface (for backward compatibility with existing UI)
@@ -61,6 +63,7 @@ export interface ClassDisplayData {
   centerName: string;
   sessionFee: number;
   waitingList?: number;
+  zoomLink?: string; // Default Zoom link for the class
 }
 
 // Helper function to convert ClassDocument to ClassDisplayData
@@ -86,6 +89,7 @@ export function classDocumentToDisplay(doc: ClassDocument, centerName?: string, 
     centerName: centerName || `Center ${doc.centerId}`,
     sessionFee: doc.sessionFee,
     waitingList: doc.waitingList,
+    zoomLink: doc.zoomLink,
   };
 }
 
@@ -108,6 +112,10 @@ export function formDataToClass(formData: any): ClassData {
 
   if (formData.description && formData.description.trim()) {
     classData.description = formData.description;
+  }
+
+  if (formData.zoomLink && formData.zoomLink.trim()) {
+    classData.zoomLink = formData.zoomLink;
   }
 
   return classData;

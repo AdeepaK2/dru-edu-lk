@@ -12,7 +12,10 @@ import {
   ChevronRight,
   AlertCircle,
   Grid3X3,
-  List
+  List,
+  Link as LinkIcon,
+  ExternalLink,
+  Edit
 } from 'lucide-react';
 import { Button, Input } from '@/components/ui';
 import { useTeacherAuth } from '@/hooks/useTeacherAuth';
@@ -25,6 +28,7 @@ import { StudentFirestoreService } from '@/apiservices/studentFirestoreService';
 import { SubjectFirestoreService } from '@/apiservices/subjectFirestoreService';
 import { ClassDocument } from '@/models/classSchema';
 import { FirestoreOptimizer } from '@/utils/teacher-performance';
+import ZoomLinkModal from '@/components/modals/ZoomLinkModal';
 
 interface ClassWithStats extends ClassDocument {
   studentCount: number;
@@ -40,6 +44,16 @@ export default function TeacherClasses() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [zoomLinkModal, setZoomLinkModal] = useState<{
+    isOpen: boolean;
+    classId: string;
+    currentLink: string;
+  }>({
+    isOpen: false,
+    classId: '',
+    currentLink: ''
+  });
+  const [updatingZoom, setUpdatingZoom] = useState(false);
 
   // Load teacher's classes
   useEffect(() => {
@@ -137,6 +151,54 @@ export default function TeacherClasses() {
     }
     
     return 'No upcoming classes';
+  };
+
+  // Handle Zoom link modal
+  const handleOpenZoomModal = (classId: string, currentLink: string = '') => {
+    setZoomLinkModal({
+      isOpen: true,
+      classId,
+      currentLink
+    });
+  };
+
+  const handleCloseZoomModal = () => {
+    setZoomLinkModal({
+      isOpen: false,
+      classId: '',
+      currentLink: ''
+    });
+  };
+
+  const handleUpdateZoomLink = async (zoomLink: string) => {
+    try {
+      setUpdatingZoom(true);
+      
+      await ClassFirestoreService.updateZoomLink(zoomLinkModal.classId, zoomLink);
+      
+      // Update the local state
+      setClasses(prevClasses => 
+        prevClasses.map(cls => 
+          cls.id === zoomLinkModal.classId 
+            ? { ...cls, zoomLink: zoomLink.trim() || undefined }
+            : cls
+        )
+      );
+
+      console.log('✅ Zoom link updated successfully');
+    } catch (err: any) {
+      console.error('Error updating Zoom link:', err);
+      throw new Error(err.message || 'Failed to update Zoom link');
+    } finally {
+      setUpdatingZoom(false);
+    }
+  };
+
+  // Handle joining Zoom meeting
+  const handleJoinZoom = (zoomLink: string) => {
+    if (zoomLink) {
+      window.open(zoomLink, '_blank', 'noopener,noreferrer');
+    }
   };
 
   // Filter classes based on search term
@@ -298,6 +360,36 @@ export default function TeacherClasses() {
                     </div>
                   </div>
 
+                  {/* Zoom Link Section */}
+                  <div className="mb-6">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+                        Meeting Link
+                      </h4>
+                      <button
+                        onClick={() => handleOpenZoomModal(cls.id, cls.zoomLink || '')}
+                        className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-medium flex items-center"
+                        title="Edit Zoom Link"
+                      >
+                        <Edit className="w-3 h-3 mr-1" />
+                        {cls.zoomLink ? 'Edit' : 'Add'}
+                      </button>
+                    </div>
+                    {cls.zoomLink ? (
+                      <button
+                        onClick={() => handleJoinZoom(cls.zoomLink!)}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg flex items-center justify-center space-x-2 transition-colors text-sm font-medium"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                        <span>Join Meeting</span>
+                      </button>
+                    ) : (
+                      <div className="text-center py-3 text-gray-500 dark:text-gray-400 text-sm border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
+                        No meeting link set
+                      </div>
+                    )}
+                  </div>
+
                   {/* Actions */}
                   <div className="flex space-x-3">
                     <Link
@@ -368,6 +460,28 @@ export default function TeacherClasses() {
                     </div>
                     
                     <div className="flex items-center space-x-2 ml-4">
+                      {/* Zoom Link Button */}
+                      {cls.zoomLink ? (
+                        <button
+                          onClick={() => handleJoinZoom(cls.zoomLink!)}
+                          className="bg-blue-600 hover:bg-blue-700 text-white py-1.5 px-3 rounded-lg flex items-center space-x-1 transition-colors text-sm font-medium"
+                          title="Join Zoom Meeting"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                          <span>Join</span>
+                        </button>
+                      ) : null}
+                      
+                      {/* Edit Zoom Link */}
+                      <button
+                        onClick={() => handleOpenZoomModal(cls.id, cls.zoomLink || '')}
+                        className="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 py-1.5 px-3 rounded-lg flex items-center space-x-1 transition-colors text-sm"
+                        title={cls.zoomLink ? 'Edit Zoom Link' : 'Add Zoom Link'}
+                      >
+                        <LinkIcon className="w-4 h-4" />
+                        <span>{cls.zoomLink ? 'Edit' : 'Add'} Link</span>
+                      </button>
+                      
                       <Link href={`/teacher/classes/${cls.id}`}>
                         <Button size="sm" className="flex items-center space-x-2">
                           <Eye className="w-4 h-4" />
@@ -398,6 +512,15 @@ export default function TeacherClasses() {
           </div>
         )}
       </div>
+
+      {/* Zoom Link Modal */}
+      <ZoomLinkModal
+        isOpen={zoomLinkModal.isOpen}
+        onClose={handleCloseZoomModal}
+        onSubmit={handleUpdateZoomLink}
+        loading={updatingZoom}
+        currentZoomLink={zoomLinkModal.currentLink}
+      />
     </TeacherLayout>
   );
 }

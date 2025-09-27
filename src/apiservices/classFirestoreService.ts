@@ -454,4 +454,20 @@ export class ClassFirestoreService {
     }
   }
 
+  /**
+   * Update Zoom link for a class
+   */
+  static async updateZoomLink(classId: string, zoomLink: string): Promise<void> {
+    try {
+      const docRef = doc(this.collectionRef, classId);
+      await updateDoc(docRef, {
+        zoomLink: zoomLink.trim() || null,
+        updatedAt: Timestamp.now()
+      });
+    } catch (error) {
+      console.error('Error updating class Zoom link:', error);
+      throw new Error(`Failed to update Zoom link: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
 }
