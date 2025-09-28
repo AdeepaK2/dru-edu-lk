@@ -128,6 +128,14 @@ export default function TestPage() {
           const attemptData = { id: doc.id, ...doc.data() } as any;
           allAttempts.push(attemptData);
           
+          console.log('🔍 Processing attempt:', {
+            id: attemptData.id,
+            status: attemptData.status,
+            submittedAt: attemptData.submittedAt,
+            isLateSubmission: attemptData.isLateSubmission,
+            lateSubmissionId: attemptData.lateSubmissionId
+          });
+          
           // Check if attempt has expired by comparing current time with endTime
           let isExpired = false;
           if (attemptData.endTime) {
@@ -143,7 +151,7 @@ export default function TestPage() {
           // Categorize attempts based on status and time validity
           const isCompleted = attemptData.status === 'submitted' || 
                              attemptData.status === 'auto_submitted' || 
-                             attemptData.submittedAt ||
+                             (attemptData.submittedAt && attemptData.submittedAt.seconds > 0) || // Only if actually submitted
                              isExpired; // Expired attempts are considered completed
           
           const isActive = !isCompleted && (
@@ -152,6 +160,13 @@ export default function TestPage() {
             attemptData.status === 'paused' ||
             (!attemptData.submittedAt && !attemptData.status)
           );
+          
+          console.log('🔍 Attempt categorization:', {
+            id: attemptData.id,
+            isExpired,
+            isCompleted,
+            isActive
+          });
           
           if (isCompleted) {
             completedAttempts.push(attemptData);
@@ -165,7 +180,55 @@ export default function TestPage() {
           ? (testData as FlexibleTest).attemptsAllowed || 1 
           : 1;
         
-        const canCreateNewAttempt = completedAttempts.length < attemptsAllowed || activeAttempts.length > 0;
+        // Separate regular attempts from late submission attempts before calculating limits
+        const regularCompletedAttempts = completedAttempts.filter(attempt => 
+          !attempt.isLateSubmission && !attempt.lateSubmissionId
+        );
+        const activeRegularAttempts = activeAttempts.filter(attempt => 
+          !attempt.isLateSubmission && !attempt.lateSubmissionId
+        );
+        
+        // For regular attempts, check against the normal limit
+        let canCreateNewAttempt = regularCompletedAttempts.length < attemptsAllowed || activeRegularAttempts.length > 0;
+        
+        // If late submission is approved and active, allow new attempt regardless of previous regular attempts
+        if (lateSubmissionInfo && lateSubmissionInfo.status === 'approved') {
+          const lateDeadlineSeconds = lateSubmissionInfo.newDeadline?.seconds || 
+                                     (lateSubmissionInfo.newDeadline?.getTime ? lateSubmissionInfo.newDeadline.getTime() / 1000 : 0);
+          
+          if (now < lateDeadlineSeconds) {
+            // Check if there are any late submission attempts already
+            const lateSubmissionAttempts = allAttempts.filter(attempt => 
+              attempt.isLateSubmission === true || attempt.lateSubmissionId
+            );
+            
+            console.log('🕒 Late submission attempts found:', lateSubmissionAttempts.length);
+            
+            // Allow new attempt if no late submission attempts exist yet
+            if (lateSubmissionAttempts.length === 0) {
+              canCreateNewAttempt = true;
+              console.log('✅ Late submission opportunity: allowing new attempt');
+            } else {
+              // Check if existing late submission attempts are completed
+              const completedLateAttempts = lateSubmissionAttempts.filter(attempt => {
+                const isLateCompleted = attempt.status === 'submitted' || 
+                                       attempt.status === 'auto_submitted' || 
+                                       (attempt.submittedAt && attempt.submittedAt.seconds > 0);
+                return isLateCompleted;
+              });
+              
+              const activeLateAttempts = lateSubmissionAttempts.filter(attempt => {
+                const isLateCompleted = attempt.status === 'submitted' || 
+                                       attempt.status === 'auto_submitted' || 
+                                       (attempt.submittedAt && attempt.submittedAt.seconds > 0);
+                return !isLateCompleted;
+              });
+              
+              canCreateNewAttempt = completedLateAttempts.length === 0 || activeLateAttempts.length > 0;
+              console.log('🕒 Late submission check: completed late attempts =', completedLateAttempts.length, 'active late attempts =', activeLateAttempts.length);
+            }
+          }
+        }
         
         // Find best score from completed attempts
         let bestScore: number | undefined;
@@ -181,10 +244,17 @@ export default function TestPage() {
           lastAttemptDate = latestAttempt.submittedAt;
         }
         
+        console.log('📊 Attempt breakdown:', {
+          total: completedAttempts.length,
+          regular: regularCompletedAttempts.length,
+          lateSubmission: completedAttempts.length - regularCompletedAttempts.length,
+          canCreateNew: canCreateNewAttempt
+        });
+        
         const attemptData: AttemptSummary = {
           testId,
           studentId: student.id,
-          totalAttempts: completedAttempts.length, // Only count completed attempts
+          totalAttempts: regularCompletedAttempts.length, // Only count regular attempts for the limit
           attemptsAllowed,
           canCreateNewAttempt,
           bestScore,
@@ -843,13 +913,13 @@ export default function TestPage() {
                           (attemptInfo as any).hasActiveAttempt
                             ? 'text-blue-600 dark:text-blue-400'
                             : attemptInfo.canCreateNewAttempt 
-                              ? 'text-green-600 dark:text-green-400' 
+                              ? isLateSubmissionActive ? 'text-orange-600 dark:text-orange-400' : 'text-green-600 dark:text-green-400'
                               : 'text-red-600 dark:text-red-400'
                         }`}>
                           {(attemptInfo as any).hasActiveAttempt 
                             ? 'Resume Available' 
                             : attemptInfo.canCreateNewAttempt 
-                              ? 'Can attempt' 
+                              ? isLateSubmissionActive ? 'Late submission available' : 'Can attempt'
                               : 'Cannot attempt'
                           }
                         </p>
@@ -881,10 +951,12 @@ export default function TestPage() {
                     {attemptInfo.totalAttempts > 0 && (
                       <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
                         <p className="text-sm text-gray-600 dark:text-gray-400">
-                          You have completed {attemptInfo.totalAttempts} attempt{attemptInfo.totalAttempts !== 1 ? 's' : ''} for this test.
-                          {attemptInfo.canCreateNewAttempt && !(attemptInfo as any).hasActiveAttempt ? (
+                          You have completed {attemptInfo.totalAttempts} regular attempt{attemptInfo.totalAttempts !== 1 ? 's' : ''} for this test.
+                          {isLateSubmissionActive ? (
+                            ' You can use your late submission opportunity to attempt this test.'
+                          ) : attemptInfo.canCreateNewAttempt && !(attemptInfo as any).hasActiveAttempt ? (
                             ` You can attempt ${attemptInfo.attemptsAllowed - attemptInfo.totalAttempts} more time${attemptInfo.attemptsAllowed - attemptInfo.totalAttempts !== 1 ? 's' : ''}.`
-                          ) : !attemptInfo.canCreateNewAttempt ? (
+                          ) : !attemptInfo.canCreateNewAttempt && !isLateSubmissionActive ? (
                             ' You have used all available attempts.'
                           ) : ''}
                         </p>
