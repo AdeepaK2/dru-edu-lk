@@ -88,6 +88,10 @@ export class ClassFirestoreService {
         documentData.teacherId = validatedData.teacherId;
       }
 
+      if (validatedData.coTeacherId && validatedData.coTeacherId.trim()) {
+        documentData.coTeacherId = validatedData.coTeacherId;
+      }
+
       const docRef = await addDoc(this.collectionRef, documentData);
       console.log('Class created with ID:', docRef.id);
       return docRef.id;
@@ -394,6 +398,43 @@ export class ClassFirestoreService {
   }
 
   /**
+   * Get classes by co-teacher ID
+   */
+  static async getClassesByCoTeacher(coTeacherId: string): Promise<ClassDocument[]> {
+    try {
+      console.log('🔍 Searching for classes with coTeacherId:', coTeacherId);
+      
+      const q = query(
+        this.collectionRef,
+        where('coTeacherId', '==', coTeacherId)
+      );
+      
+      const snapshot = await getDocs(q);
+      console.log('🔍 Raw co-teacher query returned', snapshot.docs.length, 'documents');
+      
+      const classes = snapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          ...data,
+          id: doc.id,
+          createdAt: data.createdAt,
+          updatedAt: data.updatedAt,
+        } as ClassDocument;
+      })
+      // Filter for active classes
+      .filter(cls => cls.status === 'Active')
+      // Sort by name
+      .sort((a, b) => a.name.localeCompare(b.name));
+      
+      console.log('✅ After filtering, returning', classes.length, 'active co-teacher classes');
+      return classes;
+    } catch (error) {
+      console.error('Error fetching classes by co-teacher:', error);
+      throw new Error(`Failed to fetch co-teacher classes: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
    * Debug method: Get all classes to inspect teacherId values
    */
   static async getAllClassesForDebug(): Promise<ClassDocument[]> {
@@ -451,6 +492,22 @@ export class ClassFirestoreService {
       // If the above query fails (e.g., due to missing index), try a different approach
       // You might need to implement this differently based on your enrollment system
       return [];
+    }
+  }
+
+  /**
+   * Update Zoom link for a class
+   */
+  static async updateZoomLink(classId: string, zoomLink: string): Promise<void> {
+    try {
+      const docRef = doc(this.collectionRef, classId);
+      await updateDoc(docRef, {
+        zoomLink: zoomLink.trim() || null,
+        updatedAt: Timestamp.now()
+      });
+    } catch (error) {
+      console.error('Error updating class Zoom link:', error);
+      throw new Error(`Failed to update Zoom link: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
