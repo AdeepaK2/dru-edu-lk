@@ -45,6 +45,7 @@ export default function ClassModal({
     subject: '',
     subjectId: '',
     teacherId: '',
+    coTeacherId: '',
     schedule: [{ day: '', startTime: '', endTime: '' }],
     sessionFee: 0,
     description: ''
@@ -86,6 +87,7 @@ export default function ClassModal({
           subject: initialData.subject || '',
           subjectId: initialData.subjectId || '', // Use the subjectId from initialData
           teacherId: initialData.teacherId || '', // Populate from existing data
+          coTeacherId: initialData.coTeacherId || '', // Populate co-teacher data
           schedule: scheduleSlots.length > 0 ? scheduleSlots : [{ day: '', startTime: '', endTime: '' }],
           sessionFee: initialData.sessionFee || 0,
           description: initialData.description || ''
@@ -97,6 +99,7 @@ export default function ClassModal({
           subject: '',
           subjectId: '',
           teacherId: '',
+          coTeacherId: '',
           schedule: [{ day: '', startTime: '', endTime: '' }],
           sessionFee: 0,
           description: ''
@@ -248,6 +251,11 @@ export default function ClassModal({
         classData.teacherId = formData.teacherId.trim();
       }
 
+      // Only add coTeacherId if it's selected
+      if (formData.coTeacherId && formData.coTeacherId.trim()) {
+        classData.coTeacherId = formData.coTeacherId.trim();
+      }
+
       await onSubmit(classData);
     } catch (error) {
       console.error('Error submitting form:', error);
@@ -261,6 +269,7 @@ export default function ClassModal({
       subject: '',
       subjectId: '',
       teacherId: '',
+      coTeacherId: '',
       schedule: [{ day: '', startTime: '', endTime: '' }],
       sessionFee: 0,
       description: ''
@@ -398,6 +407,32 @@ export default function ClassModal({
               {errors.teacherId && (
                 <p className="mt-1 text-sm text-red-600 dark:text-red-400">
                   {errors.teacherId}
+                </p>
+              )}
+            </div>
+
+            {/* Co-Teacher Assignment */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Co-Teacher (Optional)
+              </label>
+              <select
+                value={formData.coTeacherId || ''}
+                onChange={(e) => handleInputChange('coTeacherId', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+              >
+                <option value="">No co-teacher assigned</option>
+                {teachers
+                  .filter(teacher => teacher.status === 'Active' && teacher.id !== formData.teacherId)
+                  .map(teacher => (
+                    <option key={teacher.id} value={teacher.id}>
+                      {teacher.name} - {teacher.subjects?.join(', ') || 'Various'}
+                    </option>
+                  ))}
+              </select>
+              {errors.coTeacherId && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                  {errors.coTeacherId}
                 </p>
               )}
             </div>

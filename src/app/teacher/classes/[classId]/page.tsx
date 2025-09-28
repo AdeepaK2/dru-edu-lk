@@ -20,17 +20,19 @@ import {
   AlertCircle,
   Filter,
   Search,
-  Link,
+  Link as LinkIcon,
   PlayCircle,
   FileIcon,
   ExternalLink,
   UserCheck,
   X,
   MessageSquare,
-  Send
+  Send,
+  Edit3
 } from 'lucide-react';
 import TeacherLayout from '@/components/teacher/TeacherLayout';
 import { Button } from '@/components/ui';
+import { useTeacherAuth } from '@/hooks/useTeacherAuth';
 import Message from '@/components/teacher/Message';
 import Mail from '@/components/teacher/Mail';
 import { ClassFirestoreService } from '@/apiservices/classFirestoreService';
@@ -53,6 +55,14 @@ import {
 import { StudyMaterialDisplayData, StudyMaterialData } from '@/models/studyMaterialSchema';
 import StudyMaterialUploadModal from '@/components/modals/StudyMaterialUploadModal';
 import AttendanceTab from '@/components/teacher/AttendanceTab';
+import ZoomLinkModal from '@/components/modals/ZoomLinkModal';
+import RemarkModal from '@/components/teacher/RemarkModal';
+import { 
+  StudentRemark, 
+  StudentRemarkData,
+  getRemarkColor 
+} from '@/models/studentRemarkSchema';
+import { StudentRemarkFirestoreService } from '@/apiservices/studentRemarkFirestoreService';
 
 interface TabData {
   id: string;
@@ -64,6 +74,7 @@ interface TabData {
 export default function ClassDetails() {
   const params = useParams();
   const classId = params.classId as string;
+  const { teacher } = useTeacherAuth();
   
   const [activeTab, setActiveTab] = useState('study-materials');
   const [classData, setClassData] = useState<ClassDocument | null>(null);
@@ -74,6 +85,22 @@ export default function ClassDetails() {
   const [materialsCount, setMaterialsCount] = useState<number>(0);
   const [materialsLoading, setMaterialsLoading] = useState(true);
   const [autoScheduleLoading, setAutoScheduleLoading] = useState(false);
+  const [zoomLinkModal, setZoomLinkModal] = useState<{
+    isOpen: boolean;
+    currentLink: string;
+  }>({
+    isOpen: false,
+    currentLink: ''
+  });
+  const [updatingZoom, setUpdatingZoom] = useState(false);
+  const [remarkModal, setRemarkModal] = useState<{
+    isOpen: boolean;
+    studentId: string;
+    studentName: string;
+    existingRemark?: StudentRemark | null;
+  }>({ isOpen: false, studentId: '', studentName: '' });
+  const [savingRemark, setSavingRemark] = useState(false);
+  const [classRemarks, setClassRemarks] = useState<Map<string, StudentRemark>>(new Map());
 
   // Auto-schedule classes for next week
   const autoScheduleClasses = async (classDoc: ClassDocument) => {
@@ -100,6 +127,128 @@ export default function ClassDetails() {
       // Don't show error to user as this is a background operation
     } finally {
       setAutoScheduleLoading(false);
+    }
+  };
+
+  // Handle Zoom link modal
+  const handleOpenZoomModal = (currentLink: string = '') => {
+    setZoomLinkModal({
+      isOpen: true,
+      currentLink
+    });
+  };
+
+  const handleCloseZoomModal = () => {
+    setZoomLinkModal({
+      isOpen: false,
+      currentLink: ''
+    });
+  };
+
+  const handleUpdateZoomLink = async (zoomLink: string) => {
+    try {
+      setUpdatingZoom(true);
+      
+      await ClassFirestoreService.updateZoomLink(classId, zoomLink);
+      
+      // Update the local state
+      setClassData(prevClass => 
+        prevClass ? { ...prevClass, zoomLink: zoomLink.trim() || undefined } : null
+      );
+
+      console.log('✅ Zoom link updated successfully');
+    } catch (err: any) {
+      console.error('Error updating Zoom link:', err);
+      throw new Error(err.message || 'Failed to update Zoom link');
+    } finally {
+      setUpdatingZoom(false);
+    }
+  };
+
+  // Handle joining Zoom meeting
+  const handleJoinZoom = (zoomLink: string) => {
+    if (zoomLink) {
+      window.open(zoomLink, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  // Handle opening remark modal
+  const handleOpenRemarkModal = (studentId: string, studentName: string) => {
+    setRemarkModal({
+      isOpen: true,
+      studentId,
+      studentName,
+      existingRemark: classRemarks.get(studentId) || null,
+    });
+  };
+
+  // Handle closing remark modal
+  const handleCloseRemarkModal = () => {
+    setRemarkModal({ isOpen: false, studentId: '', studentName: '' });
+  };
+
+  // Handle saving remark
+  const handleSaveRemark = async (remarkData: {
+    remarkLevel: any;
+    customRemark?: string;
+    additionalNotes?: string;
+    isVisible: boolean;
+  }) => {
+    if (!classData) return;
+
+    setSavingRemark(true);
+    try {
+      const fullRemarkData: StudentRemarkData = {
+        studentId: remarkModal.studentId,
+        classId: classId,
+        teacherId: teacher?.id || classData.teacherId || '',
+        studentName: remarkModal.studentName,
+        className: classData.name,
+        subject: classData.subject,
+        remarkLevel: remarkData.remarkLevel,
+        isVisible: remarkData.isVisible,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      // Only include optional fields if they have values
+      if (remarkData.customRemark && remarkData.customRemark.trim()) {
+        fullRemarkData.customRemark = remarkData.customRemark;
+      }
+      if (remarkData.additionalNotes && remarkData.additionalNotes.trim()) {
+        fullRemarkData.additionalNotes = remarkData.additionalNotes;
+      }
+
+      let remarkId: string;
+
+      if (remarkModal.existingRemark) {
+        // Update existing remark
+        await StudentRemarkFirestoreService.updateRemark(
+          remarkModal.existingRemark.id,
+          fullRemarkData
+        );
+        remarkId = remarkModal.existingRemark.id;
+      } else {
+        // Create new remark
+        remarkId = await StudentRemarkFirestoreService.createRemark(fullRemarkData);
+      }
+
+      // Update local state
+      const updatedRemark: StudentRemark = {
+        id: remarkId,
+        ...fullRemarkData,
+        createdAt: remarkModal.existingRemark?.createdAt || new Date(),
+        updatedAt: new Date(),
+      };
+
+      setClassRemarks(prev => new Map(prev.set(remarkModal.studentId, updatedRemark)));
+
+      console.log('✅ Remark saved successfully');
+    } catch (error: any) {
+      console.error('❌ Error saving remark:', error);
+      throw new Error(error.message || 'Failed to save remark');
+    } finally {
+      setSavingRemark(false);
     }
   };
 
@@ -150,6 +299,28 @@ export default function ClassDetails() {
 
     if (classId) {
       loadEnrollments();
+    }
+  }, [classId]);
+
+  // Load class remarks
+  useEffect(() => {
+    const loadClassRemarks = async () => {
+      try {
+        const remarks = await StudentRemarkFirestoreService.getRemarksByClass(classId);
+        const remarksMap = new Map<string, StudentRemark>();
+        remarks.forEach(remark => {
+          remarksMap.set(remark.studentId, remark);
+        });
+        setClassRemarks(remarksMap);
+        console.log('✅ Loaded class remarks:', remarks.length);
+      } catch (error) {
+        console.error('❌ Error loading class remarks:', error);
+        // Don't set error state for remarks, just log it
+      }
+    };
+
+    if (classId) {
+      loadClassRemarks();
     }
   }, [classId]);
 
@@ -264,10 +435,58 @@ export default function ClassDetails() {
                 )}
               </div>
             </div>
-            <div className="hidden md:block">
+            <div className="hidden md:flex flex-col items-end space-y-3">
+              {/* Zoom Meeting Section */}
+              <div className="flex items-center space-x-2">
+                {classData?.zoomLink ? (
+                  <button
+                    onClick={() => handleJoinZoom(classData.zoomLink!)}
+                    className="bg-white/20 hover:bg-white/30 text-white py-2 px-4 rounded-lg flex items-center space-x-2 transition-colors text-sm font-medium"
+                    title="Join Zoom Meeting"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    <span>Join Meeting</span>
+                  </button>
+                ) : null}
+                
+                <button
+                  onClick={() => handleOpenZoomModal(classData?.zoomLink || '')}
+                  className="bg-white/10 hover:bg-white/20 text-white py-2 px-4 rounded-lg flex items-center space-x-2 transition-colors text-sm font-medium border border-white/20"
+                  title={classData?.zoomLink ? 'Edit Zoom Link' : 'Add Zoom Link'}
+                >
+                  <LinkIcon className="w-4 h-4" />
+                  <span>{classData?.zoomLink ? 'Edit' : 'Add'} Link</span>
+                </button>
+              </div>
+              
               <div className="w-16 h-16 bg-blue-400/30 rounded-full flex items-center justify-center">
                 <Award className="w-8 h-8 text-white" />
               </div>
+            </div>
+          </div>
+          
+          {/* Mobile Zoom Controls */}
+          <div className="md:hidden mt-4 pt-4 border-t border-white/20">
+            <div className="flex items-center justify-center space-x-2">
+              {classData?.zoomLink ? (
+                <button
+                  onClick={() => handleJoinZoom(classData.zoomLink!)}
+                  className="bg-white/20 hover:bg-white/30 text-white py-2 px-4 rounded-lg flex items-center space-x-2 transition-colors text-sm font-medium flex-1"
+                  title="Join Zoom Meeting"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  <span>Join Meeting</span>
+                </button>
+              ) : null}
+              
+              <button
+                onClick={() => handleOpenZoomModal(classData?.zoomLink || '')}
+                className="bg-white/10 hover:bg-white/20 text-white py-2 px-4 rounded-lg flex items-center space-x-2 transition-colors text-sm font-medium border border-white/20"
+                title={classData?.zoomLink ? 'Edit Zoom Link' : 'Add Zoom Link'}
+              >
+                <LinkIcon className="w-4 h-4" />
+                <span>{classData?.zoomLink ? 'Edit' : 'Add'} Link</span>
+              </button>
             </div>
           </div>
         </div>
@@ -314,7 +533,10 @@ export default function ClassDetails() {
               <StudentsTab 
                 classId={classId} 
                 enrollments={enrollments} 
-                loading={enrollmentsLoading} 
+                loading={enrollmentsLoading}
+                classRemarks={classRemarks}
+                handleOpenRemarkModal={handleOpenRemarkModal}
+                savingRemark={savingRemark}
               />
             )}
             {activeTab === 'attendance' && <AttendanceTab classData={classData} classId={classId} />}
@@ -328,6 +550,30 @@ export default function ClassDetails() {
           </div>
         </div>
       </div>
+
+      {/* Zoom Link Modal */}
+      <ZoomLinkModal
+        isOpen={zoomLinkModal.isOpen}
+        onClose={handleCloseZoomModal}
+        onSubmit={handleUpdateZoomLink}
+        loading={updatingZoom}
+        currentZoomLink={zoomLinkModal.currentLink}
+      />
+
+      {/* Remark Modal */}
+      <RemarkModal
+        isOpen={remarkModal.isOpen}
+        onClose={handleCloseRemarkModal}
+        studentId={remarkModal.studentId}
+        studentName={remarkModal.studentName}
+        classId={classId}
+        className={classData?.name || ''}
+        subject={classData?.subject || ''}
+        teacherId={teacher?.id || ''}
+        existingRemark={remarkModal.existingRemark}
+        onSave={handleSaveRemark}
+        isSaving={savingRemark}
+      />
     </TeacherLayout>
   );
 }
@@ -1506,7 +1752,7 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                         }}
                         className="flex items-center space-x-2"
                       >
-                        <Link className="w-4 h-4" />
+                        <LinkIcon className="w-4 h-4" />
                         <span>Add Link</span>
                       </Button>
                     </div>
@@ -1725,11 +1971,17 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
 function StudentsTab({ 
   classId, 
   enrollments, 
-  loading 
+  loading,
+  classRemarks,
+  handleOpenRemarkModal,
+  savingRemark
 }: { 
   classId: string; 
   enrollments: StudentEnrollment[]; 
-  loading: boolean; 
+  loading: boolean;
+  classRemarks: Map<string, StudentRemark>;
+  handleOpenRemarkModal: (studentId: string, studentName: string) => void;
+  savingRemark: boolean;
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [studentsWithDetails, setStudentsWithDetails] = useState<any[]>([]);
@@ -1934,6 +2186,22 @@ function StudentsTab({
                             Enrolled: {student.enrolledAt.toLocaleDateString()}
                           </div>
                           
+                          {/* Teacher Remark Display */}
+                          {classRemarks.get(student.studentId) && (
+                            <div className="flex items-center text-sm">
+                              <MessageSquare className="w-4 h-4 mr-2 text-blue-500" />
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRemarkColor(classRemarks.get(student.studentId)!.remarkLevel)}`}>
+                                {classRemarks.get(student.studentId)!.remarkLevel === 'Custom' 
+                                  ? (classRemarks.get(student.studentId)!.customRemark || classRemarks.get(student.studentId)!.remarkLevel)
+                                  : classRemarks.get(student.studentId)!.remarkLevel
+                                }
+                              </span>
+                              {!classRemarks.get(student.studentId)!.isVisible && (
+                                <span className="ml-2 text-xs text-gray-400">(Hidden)</span>
+                              )}
+                            </div>
+                          )}
+                          
                           {/* Parent Information */}
                           {student.parent && (
                             <div className="mt-3 pt-2 border-t border-gray-200 dark:border-gray-600">
@@ -1984,7 +2252,17 @@ function StudentsTab({
 
                   {/* Stats section removed per user request */}
 
-                  {/* Action Buttons - Removed per user request */}
+                  {/* Remark Action Button */}
+                  <div className="flex items-center">
+                    <button
+                      onClick={() => handleOpenRemarkModal(student.studentId, student.studentName)}
+                      disabled={savingRemark}
+                      className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                      {classRemarks.has(student.studentId) ? 'Edit Remark' : 'Add Remark'}
+                    </button>
+                  </div>
                 </div>
 
                 {/* Mobile Stats - Removed per user request */}

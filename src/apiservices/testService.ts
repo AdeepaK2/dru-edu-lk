@@ -811,6 +811,17 @@ export class TestService {
         await StudentTestAssignmentService.deleteTestAssignments(testId);
       }
       
+      // Delete exam PDF from Firebase Storage if it exists (for essay tests)
+      if (testData.examPdfUrl) {
+        console.log('🗑️ Deleting exam PDF from Firebase Storage...');
+        try {
+          const { ExamPDFService } = await import('@/services/examPDFService');
+          await ExamPDFService.deleteExamPDF(testData.examPdfUrl);
+        } catch (pdfError) {
+          console.warn('⚠️ Failed to delete exam PDF, continuing with test deletion:', pdfError);
+        }
+      }
+      
       // Delete test
       batch.delete(doc(firestore, this.COLLECTIONS.TESTS, testId));
       

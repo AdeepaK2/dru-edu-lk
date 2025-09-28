@@ -11,6 +11,7 @@ import { Button, TextArea } from '@/components/ui';
 import { Test, TestQuestion } from '@/models/testSchema';
 import { PdfAttachment } from '@/models/studentSubmissionSchema';
 import { PdfUploadComponent } from '@/components/student/PdfUploadComponent';
+import { ExamPDFService } from '@/services/examPDFService';
 
 // Student layout component
 const StudentLayout = ({ children }: { children: React.ReactNode }) => children;
@@ -53,6 +54,10 @@ export default function TakeEssayTestPage() {
   
   // Confirmation dialog state
   const [showConfirmSubmit, setShowConfirmSubmit] = useState(false);
+  
+  // PDF generation state
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
 
   // Format remaining time for display
   const formatTime = (seconds: number) => {
@@ -70,6 +75,57 @@ export default function TakeEssayTestPage() {
       element.requestFullscreen().catch((err) => {
         console.warn('Could not enter fullscreen mode:', err);
       });
+    }
+  };
+  
+  // Generate and download exam paper PDF
+  const handleDownloadExamPaper = async () => {
+    if (!test || !essayQuestions || essayQuestions.length === 0) return;
+    
+    try {
+      setIsGeneratingPdf(true);
+      setPdfError(null);
+      
+      console.log('📄 Generating exam paper PDF...');
+      
+      // Convert test questions to the format expected by ExamPDFService
+      const pdfQuestions = essayQuestions.map((q, index) => ({
+        id: q.id,
+        title: `Question ${index + 1}`,
+        content: q.questionText || q.content || '',
+        imageUrl: q.imageUrl,
+        type: 'essay' as const,
+        points: q.points || q.marks || 0,
+        difficultyLevel: 'medium' as const,
+        createdAt: new Date() as any,
+        updatedAt: new Date() as any
+      }));
+      
+      // Generate the PDF
+      const pdfBlob = await ExamPDFService.generateExamPDF({
+        title: 'Dru Education',
+        testNumber: String(test.testNumber || `T-${testId.substring(0, 8)}`),
+        className: (test as any).classNames?.[0] || test.subjectName || 'Exam',
+        date: new Date().toLocaleDateString(),
+        questions: pdfQuestions
+      });
+      
+      // Create download link
+      const url = URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${test.title?.replace(/[^a-zA-Z0-9]/g, '_') || 'exam_paper'}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      console.log('✅ Exam paper PDF downloaded successfully!');
+    } catch (error) {
+      console.error('❌ Error generating exam paper PDF:', error);
+      setPdfError('Failed to generate exam paper PDF. Please try again.');
+    } finally {
+      setIsGeneratingPdf(false);
     }
   };
 
@@ -543,6 +599,48 @@ export default function TakeEssayTestPage() {
             <p>• <strong>Submit before time expires</strong> - no individual question submissions needed</p>
           </div>
         </div>
+
+        {/* Exam Paper PDF Download */}
+        {test.examPdfUrl ? (
+          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-6">
+            <div className="flex items-start space-x-3">
+              <FileText className="h-6 w-6 text-green-600 dark:text-green-400 mt-0.5" />
+              <div className="flex-1">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-lg font-medium text-green-800 dark:text-green-200">
+                    📄 Exam Paper
+                  </h3>
+                  <a
+                    href={test.examPdfUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md transition-colors duration-200"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Download PDF
+                  </a>
+                </div>
+                <p className="text-sm text-green-600 dark:text-green-300">
+                  Download the exam paper created by your teacher with all questions formatted for printing.
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-gray-50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-800 rounded-lg p-6">
+            <div className="flex items-start space-x-3">
+              <FileText className="h-6 w-6 text-gray-400 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300">
+                  📄 Exam Paper
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  No PDF exam paper available. Please refer to the questions below.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* All Questions Display */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
