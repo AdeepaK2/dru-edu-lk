@@ -38,31 +38,113 @@ export class ExamPDFService {
     const contentWidth = pageWidth - (margin * 2);
     let currentY = margin;
 
-    // Add title page
-    pdf.setFontSize(24);
-    pdf.setFont('helvetica', 'bold');
-    const titleText = 'Dru Education';
-    const titleWidth = pdf.getTextWidth(titleText);
-    pdf.text(titleText, (pageWidth - titleWidth) / 2, currentY);
+    // Load logo
+    let logoData: string | null = null;
+    try {
+      logoData = await this.loadImageAsBase64('/Logo.png');
+      console.log('✅ Logo loaded successfully');
+    } catch (error) {
+      console.warn('⚠️ Failed to load logo:', error);
+    }
 
-    currentY += 15;
+    // Function to add header with logo and border to each page
+    const addPageHeader = (isFirstPage: boolean = false) => {
+      // Add paper-like background
+      pdf.setFillColor(252, 252, 248); // Slightly off-white paper color
+      pdf.rect(0, 0, pageWidth, pageHeight, 'F');
 
-    // Add test number
-    pdf.setFontSize(16);
-    pdf.setFont('helvetica', 'normal');
-    const testNumberText = `Test No: ${testNumber}`;
-    const testNumberWidth = pdf.getTextWidth(testNumberText);
-    pdf.text(testNumberText, (pageWidth - testNumberWidth) / 2, currentY);
+      // Add subtle paper texture (light grid pattern)
+      pdf.setDrawColor(245, 245, 240);
+      pdf.setLineWidth(0.1);
 
-    currentY += 10;
+      // Add very subtle horizontal lines to simulate paper texture
+      for (let y = 10; y < pageHeight; y += 15) {
+        pdf.line(5, y, pageWidth - 5, y);
+      }
 
-    // Add class and date
-    pdf.setFontSize(12);
-    const classDateText = `${className} - ${date}`;
-    const classDateWidth = pdf.getTextWidth(classDateText);
-    pdf.text(classDateText, (pageWidth - classDateWidth) / 2, currentY);
+      // Add main content border with rounded corners effect
+      pdf.setDrawColor(0, 0, 0); // Black border
+      pdf.setLineWidth(0.8);
+      pdf.setFillColor(255, 255, 255); // White fill for content area
+      pdf.roundedRect(margin - 8, margin - 8, pageWidth - (margin * 2) + 16, pageHeight - (margin * 2) + 16, 3, 3, 'FD');
 
-    currentY += 20;
+      // Add logo at the top - centered on first page, left on others
+      if (logoData) {
+        try {
+          const logoSize = 20; // Square size for circular logo
+          let logoX;
+
+          if (isFirstPage) {
+            // Center logo on first page
+            logoX = (pageWidth - logoSize) / 2;
+          } else {
+            // Left align logo on other pages
+            logoX = margin - 5;
+          }
+
+          const logoY = margin - 2;
+
+          // Add the circular logo directly (no background needed since logo has transparent background)
+          pdf.addImage(logoData, 'PNG', logoX, logoY, logoSize, logoSize);
+          currentY = margin + logoSize + 8;
+        } catch (error) {
+          console.warn('⚠️ Failed to add logo to page:', error);
+          currentY = margin + 5;
+        }
+      } else {
+        currentY = margin + 5;
+      }
+
+      if (isFirstPage) {
+        // Add title page content only on first page
+        pdf.setFontSize(24);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(51, 51, 51); // Dark gray text
+        const titleText = 'Dru Education';
+        const titleWidth = pdf.getTextWidth(titleText);
+        pdf.text(titleText, (pageWidth - titleWidth) / 2, currentY);
+
+        currentY += 15;
+
+        // Add test number
+        pdf.setFontSize(16);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(102, 102, 102); // Medium gray text
+        const testNumberText = `Test No: ${testNumber}`;
+        const testNumberWidth = pdf.getTextWidth(testNumberText);
+        pdf.text(testNumberText, (pageWidth - testNumberWidth) / 2, currentY);
+
+        currentY += 10;
+
+        // Add class and date
+        pdf.setFontSize(12);
+        pdf.setTextColor(102, 102, 102);
+        const classDateText = `${className} - ${date}`;
+        const classDateWidth = pdf.getTextWidth(classDateText);
+        pdf.text(classDateText, (pageWidth - classDateWidth) / 2, currentY);
+
+        currentY += 25;
+
+        // Add student name section
+        pdf.setFontSize(12);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(51, 51, 51);
+        const nameLabel = 'Student Name:';
+        pdf.text(nameLabel, margin, currentY);
+
+        // Add underline for student to write name
+        const nameStartX = margin + pdf.getTextWidth(nameLabel) + 5;
+        const underlineLength = 80;
+        pdf.setDrawColor(0, 0, 0);
+        pdf.setLineWidth(0.5);
+        pdf.line(nameStartX, currentY + 2, nameStartX + underlineLength, currentY + 2);
+
+        currentY += 20;
+      }
+    };
+
+    // Add first page with header
+    addPageHeader(true);
 
     // Process each question
     for (let i = 0; i < questions.length; i++) {
@@ -77,14 +159,17 @@ export class ExamPDFService {
       // Check if we need a new page for the question
       if (currentY > pageHeight - 100) { // Leave space for question content
         pdf.addPage();
-        currentY = margin;
+        addPageHeader(false);
       }
 
       // Add question number
-      pdf.setFontSize(14);
+      pdf.setFontSize(16);
       pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(31, 31, 31); // Very dark gray for prominence
+
       pdf.text(`${i + 1}.`, margin, currentY);
-      currentY += 10;
+      pdf.setTextColor(51, 51, 51); // Reset to normal text color
+      currentY += 12;
 
       // Add question image if available
       if (question.imageUrl) {
@@ -114,7 +199,7 @@ export class ExamPDFService {
                 // Check if image fits on current page
                 if (currentY + imgHeight > pageHeight - margin - 20) {
                   pdf.addPage();
-                  currentY = margin;
+                  addPageHeader(false);
                 }
 
                 // Add the image to PDF
@@ -150,38 +235,62 @@ export class ExamPDFService {
       if (question.content) {
         pdf.setFontSize(12);
         pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(51, 51, 51); // Dark gray for better readability
 
         const lines = pdf.splitTextToSize(question.content, contentWidth - 10);
         pdf.text(lines, margin + 10, currentY);
-        currentY += (lines.length * 5) + 10;
+        currentY += (lines.length * 6) + 12; // Slightly more spacing for better readability
       }
 
       // Add blank page for student answers
       pdf.addPage();
-      currentY = margin;
+      addPageHeader(false);
 
-      // Add "Answer Space" header on the blank page
-      pdf.setFontSize(14);
+      // Add "Answer Space" header on the blank page with enhanced styling
+      pdf.setFontSize(16);
       pdf.setFont('helvetica', 'bold');
-      const answerText = `Answer for Question ${i + 1}`;
-      pdf.text(answerText, margin, currentY);
-      currentY += 20;
+      pdf.setTextColor(31, 31, 31);
 
-      // Add some lines for writing
+      const answerText = `Answer for Question ${i + 1}`;
+      const answerWidth = pdf.getTextWidth(answerText);
+
+      // Add subtle background for answer header
+      pdf.setFillColor(245, 245, 245);
+      pdf.roundedRect((pageWidth - answerWidth) / 2 - 5, currentY - 4, answerWidth + 10, 10, 2, 2, 'F');
+
+      pdf.text(answerText, (pageWidth - answerWidth) / 2, currentY);
+      pdf.setTextColor(51, 51, 51); // Reset text color
+      currentY += 25;
+
+      // Add some lines for writing (notebook-style ruled paper)
       pdf.setFontSize(10);
       pdf.setFont('helvetica', 'normal');
-      const lineSpacing = 8;
-      const maxLines = Math.floor((pageHeight - currentY - margin) / lineSpacing);
+      const lineSpacing = 10; // Slightly larger spacing for better writing
+      const maxLines = Math.floor((pageHeight - currentY - margin - 10) / lineSpacing);
 
+      // Add margin line on the left
+      pdf.setDrawColor(200, 200, 200);
+      pdf.setLineWidth(0.2);
+      pdf.line(margin - 3, currentY, margin - 3, currentY + (maxLines * lineSpacing));
+
+      // Add main writing lines
+      pdf.setDrawColor(0, 0, 0);
+      pdf.setLineWidth(0.3);
       for (let line = 0; line < maxLines; line++) {
         const lineY = currentY + (line * lineSpacing);
         pdf.line(margin, lineY, pageWidth - margin, lineY);
+
+        // Add subtle dots at the beginning of each line (like some notebooks)
+        if (line % 2 === 0) {
+          pdf.setFillColor(150, 150, 150);
+          pdf.circle(margin - 1, lineY, 0.3, 'F');
+        }
       }
 
       // Start new page for next question (if not the last question)
       if (i < questions.length - 1) {
         pdf.addPage();
-        currentY = margin;
+        addPageHeader(false);
       }
     }
 
@@ -223,8 +332,13 @@ export class ExamPDFService {
           
           canvas.width = img.width;
           canvas.height = img.height;
+          
+          // Fill with white background first to handle transparency
+          ctx.fillStyle = 'white';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          
           ctx.drawImage(img, 0, 0);
-          const dataURL = canvas.toDataURL('image/jpeg', 0.8);
+          const dataURL = canvas.toDataURL('image/png'); // Keep as PNG to preserve transparency
           console.log('✅ Image converted to base64 successfully');
           resolve(dataURL);
         } catch (canvasError) {
@@ -308,6 +422,35 @@ export class ExamPDFService {
       console.warn('⚠️ Firebase upload failed, falling back to local download:', uploadError);
       // Fallback to local download
       return await this.generateAndDownloadExamPDF(options);
+    }
+  }
+
+  /**
+   * Delete exam PDF from Firebase Storage
+   */
+  static async deleteExamPDF(examPdfUrl: string): Promise<void> {
+    try {
+      console.log('🗑️ Deleting exam PDF from Firebase Storage:', examPdfUrl);
+      const { ref, deleteObject } = await import('firebase/storage');
+      const { storage } = await import('@/utils/firebase-client');
+
+      // Extract the file path from the URL
+      const url = new URL(examPdfUrl);
+      const pathMatch = url.pathname.match(/\/o\/(.+?)\?/);
+      
+      if (!pathMatch) {
+        throw new Error('Invalid exam PDF URL format');
+      }
+
+      const filePath = decodeURIComponent(pathMatch[1]);
+      const storageRef = ref(storage, filePath);
+      
+      await deleteObject(storageRef);
+      console.log('✅ Exam PDF deleted successfully from Firebase Storage');
+    } catch (error) {
+      console.error('❌ Error deleting exam PDF:', error);
+      // Don't throw error as this shouldn't prevent test deletion
+      console.warn('⚠️ Continuing with test deletion despite PDF deletion failure');
     }
   }
 }
