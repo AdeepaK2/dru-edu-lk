@@ -675,7 +675,73 @@ export default function CreateTestModal({
       const testId = await TestService.createTest(finalTestData as any); // Type assertion for now
 
       console.log('Test created successfully:', testId);
-      onTestCreated({ ...testData, id: testId });
+
+      // Generate PDF for essay questions
+      let examPdfUrl: string | undefined;
+      if (formData.questionType === 'essay' && finalTestData.questions && finalTestData.questions.length > 0) {
+        try {
+          console.log('📄 Generating exam PDF for essay questions...');
+
+          // Import the PDF service
+          const { ExamPDFService } = await import('@/services/examPDFService');
+
+          // Get class name for PDF
+          const className = selectedClassId ?
+            availableClasses.find(c => c.id === selectedClassId)?.name || 'Unknown Class' :
+            availableClasses[0]?.name || 'Unknown Class';
+
+          // Prepare essay questions for PDF generation
+          const essayQuestions = finalTestData.questions
+            .filter((q: any) => q.type === 'essay')
+            .map((q: any) => ({
+              id: q.questionId || q.id,
+              title: q.questionText || q.title || '',
+              content: q.content || '',
+              imageUrl: q.imageUrl || undefined,
+              type: 'essay' as const,
+              points: q.points || q.marks || 1,
+              topic: q.topic || undefined,
+              subtopic: q.subtopic || undefined,
+              reference: undefined,
+              difficultyLevel: q.difficultyLevel || 'medium',
+              createdAt: new Timestamp(0, 0), // Placeholder
+              updatedAt: new Timestamp(0, 0), // Placeholder
+            }));
+
+          // Generate PDF
+          examPdfUrl = await ExamPDFService.generateAndUploadExamPDF({
+            title: 'Dru Education',
+            testNumber: formData.testNumber,
+            className: className,
+            date: new Date().toLocaleDateString(),
+            questions: essayQuestions
+          });
+
+          console.log('✅ Exam PDF generated and uploaded:', examPdfUrl);
+
+          // Update the test with the PDF URL
+          await TestService.updateTest(testId, { examPdfUrl });
+          
+          console.log('✅ Test updated with PDF URL in database');
+
+        } catch (pdfError) {
+          console.error('❌ Error generating exam PDF:', pdfError);
+          // Don't fail the test creation if PDF generation fails
+          // The test will still be created without the PDF
+        }
+      }
+
+      // Call the callback with the complete test data including PDF URL
+      const completeTestData = { ...testData, id: testId, examPdfUrl };
+      console.log('📤 Calling onTestCreated with:', {
+        id: testId,
+        title: completeTestData.title,
+        questionType: completeTestData.config?.questionType,
+        examPdfUrl: examPdfUrl,
+        hasExamPdfUrl: !!examPdfUrl
+      });
+      
+      onTestCreated(completeTestData);
       
     } catch (error) {
       console.error('Error creating test:', error);
@@ -1199,10 +1265,8 @@ export default function CreateTestModal({
                       </label>
                       <input
                         type="number"
-                        min="1"
-                        max="300"
                         value={formData.duration}
-                        onChange={(e) => updateFormData({ duration: parseInt(e.target.value) || 0 })}
+                        onChange={(e) => updateFormData({ duration: parseInt(e.target.value) || 60 })}
                         className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
                           errors.duration ? 'border-red-500' : 'border-gray-300'
                         }`}
@@ -1212,24 +1276,22 @@ export default function CreateTestModal({
                         <p className="mt-1 text-sm text-red-500">{errors.duration}</p>
                       )}
                     </div>
-                  </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Buffer Time (minutes)
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      max="30"
-                      value={formData.bufferTime}
-                      onChange={(e) => updateFormData({ bufferTime: parseInt(e.target.value) || 0 })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                      placeholder="5"
-                    />
-                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      Extra time added to handle technical issues (default: 5 minutes)
-                    </p>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Buffer Time (minutes)
+                      </label>
+                      <input
+                        type="number"
+                        value={formData.bufferTime}
+                        onChange={(e) => updateFormData({ bufferTime: parseInt(e.target.value) || 5 })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                        placeholder="5"
+                      />
+                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        Extra time added to handle technical issues (default: 5 minutes)
+                      </p>
+                    </div>
                   </div>
 
                   {/* Live Test Info */}
