@@ -897,6 +897,11 @@ export default function TestPage() {
                         <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Attempts Allowed</p>
                         <p className="mt-1 text-lg font-semibold text-gray-900 dark:text-white">
                           {attemptInfo.attemptsAllowed}
+                          {isLateSubmissionActive && (
+                            <span className="text-sm text-orange-600 dark:text-orange-400 ml-1">
+                              + Late Submission
+                            </span>
+                          )}
                         </p>
                       </div>
                       
@@ -912,14 +917,18 @@ export default function TestPage() {
                         <p className={`mt-1 text-sm font-medium ${
                           (attemptInfo as any).hasActiveAttempt
                             ? 'text-blue-600 dark:text-blue-400'
-                            : attemptInfo.canCreateNewAttempt 
-                              ? isLateSubmissionActive ? 'text-orange-600 dark:text-orange-400' : 'text-green-600 dark:text-green-400'
+                            : isLateSubmissionActive
+                              ? 'text-orange-600 dark:text-orange-400'
+                              : attemptInfo.canCreateNewAttempt 
+                              ? 'text-green-600 dark:text-green-400'
                               : 'text-red-600 dark:text-red-400'
                         }`}>
                           {(attemptInfo as any).hasActiveAttempt 
                             ? 'Resume Available' 
-                            : attemptInfo.canCreateNewAttempt 
-                              ? isLateSubmissionActive ? 'Late submission available' : 'Can attempt'
+                            : isLateSubmissionActive
+                              ? 'Late submission available'
+                              : attemptInfo.canCreateNewAttempt 
+                              ? 'Can attempt'
                               : 'Cannot attempt'
                           }
                         </p>
@@ -1006,7 +1015,7 @@ export default function TestPage() {
                     isLateSubmissionActive ? 'bg-orange-600 hover:bg-orange-700' : ''
                   }`}
                   variant={isLateSubmissionActive ? 'warning' : 'primary'}
-                  disabled={!canStart || (!(attemptInfo as any)?.hasActiveAttempt && !attemptInfo?.canCreateNewAttempt) || startingTest}
+                  disabled={!canStart || (!(attemptInfo as any)?.hasActiveAttempt && !attemptInfo?.canCreateNewAttempt && !isLateSubmissionActive) || startingTest}
                 >
                   {startingTest ? (
                     <>
