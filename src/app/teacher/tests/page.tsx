@@ -43,11 +43,14 @@ import ExamPDFViewer from '@/components/teacher/ExamPDFViewer';
 export default function TeacherTests() {
   const { teacher, loading: authLoading, error: authError } = useTeacherAuth();
   const [tests, setTests] = useState<Test[]>([]);
+  const [coTests, setCoTests] = useState<Test[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showCreateStudentTestModal, setShowCreateStudentTestModal] = useState(false);
   const [teacherClasses, setTeacherClasses] = useState<ClassDocument[]>([]);
   const [loadingClasses, setLoadingClasses] = useState(true);
+  const [coClasses, setCoClasses] = useState<ClassDocument[]>([]);
+  const [activeTab, setActiveTab] = useState<'main' | 'co'>('main');
   const [questionBanks, setQuestionBanks] = useState<QuestionBank[]>([]);
   const [loadingQuestionBanks, setLoadingQuestionBanks] = useState(true);
   
@@ -118,10 +121,16 @@ export default function TeacherTests() {
       // Load teacher's assigned classes first
       const assignedClasses = await ClassFirestoreService.getClassesByTeacher(teacher!.id);
       setTeacherClasses(assignedClasses);
+      
+      // Load co-teacher classes
+      const coTeacherClasses = await ClassFirestoreService.getClassesByCoTeacher(teacher!.id);
+      setCoClasses(coTeacherClasses);
       setLoadingClasses(false);
       
       console.log('✅ Loaded teacher classes in TESTS page:', assignedClasses.length);
+      console.log('✅ Loaded co-teacher classes in TESTS page:', coTeacherClasses.length);
       console.log('✅ Actual classes data:', assignedClasses);
+      console.log('✅ Actual co-classes data:', coTeacherClasses);
       
       // Load question banks that teacher has access to
       console.log('🔍 Loading accessible question banks for teacher:', teacher!.id);
@@ -194,9 +203,32 @@ export default function TeacherTests() {
         console.warn('No tests found for teacher (this is normal for new teachers):', testError);
         setTests([]); // Set empty array if no tests
       }
+      
+      // Load tests for co-teacher classes
+      try {
+        if (coTeacherClasses.length > 0) {
+          const coClassIds = coTeacherClasses.map(cls => cls.id);
+          console.log('🔍 Loading tests for co-teacher classes:', coClassIds);
+          
+          // Query tests assigned to co-teacher classes
+          const allTests = await TestService.getStudentTests('', coClassIds);
+          
+          // Filter out tests created by this teacher (to avoid duplicates)
+          const coTeacherTests = allTests.filter(test => test.teacherId !== teacher!.id);
+          
+          setCoTests(coTeacherTests);
+          console.log('✅ Loaded co-teacher tests:', coTeacherTests.length);
+        } else {
+          setCoTests([]);
+        }
+      } catch (coTestError) {
+        console.warn('No co-teacher tests found:', coTestError);
+        setCoTests([]);
+      }
 
       // Load enrollment counts for each class
-      await loadEnrollmentCounts(assignedClasses);
+      const allClasses = [...assignedClasses, ...coTeacherClasses];
+      await loadEnrollmentCounts(allClasses);
     } catch (error) {
       console.error('Error loading teacher data:', error);
       alert('Failed to load teacher data. Please refresh the page.');
@@ -344,12 +376,14 @@ export default function TeacherTests() {
 
   // Get selected class info
   const getSelectedClass = () => {
-    return teacherClasses.find(cls => cls.id === selectedClassId);
+    const allClasses = [...teacherClasses, ...coClasses];
+    return allClasses.find(cls => cls.id === selectedClassId);
   };
 
   // Get tests for selected class (excluding custom/student-based tests)
   const getTestsForClass = (classId: string) => {
-    return tests.filter(test => {
+    const allTestsToCheck = activeTab === 'main' ? tests : coTests;
+    return allTestsToCheck.filter(test => {
       // Exclude custom tests (student-based assignments)
       const isCustomTest = test.assignmentType === 'student-based';
       if (isCustomTest) {
@@ -359,6 +393,11 @@ export default function TeacherTests() {
       // Only include tests assigned to this specific class
       return test.classIds.includes(classId);
     });
+  };
+  
+  // Check if current teacher can create tests for a class (only main teachers)
+  const canCreateTestsForClass = (classId: string) => {
+    return teacherClasses.some(cls => cls.id === classId);
   };
 
   // Get unique subjects from teacher's classes
@@ -569,17 +608,20 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
                     </div>
                   ) : (
                     <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                      {teacherClasses.length > 0 ? (
+                      {(activeTab === 'main' ? teacherClasses : coClasses).length > 0 ? (
                         <>
-                          Assigned to {teacherClasses.length} class{teacherClasses.length !== 1 ? 'es' : ''}: {' '}
+                          {activeTab === 'main' ? 'Assigned to' : 'Co-teaching'} {(activeTab === 'main' ? teacherClasses : coClasses).length} class{(activeTab === 'main' ? teacherClasses : coClasses).length !== 1 ? 'es' : ''}: {' '}
                           <span className="font-medium text-gray-700 dark:text-gray-300">
-                            {teacherClasses.map(cls => `${cls.name} (${cls.subject})`).join(', ')}
+                            {(activeTab === 'main' ? teacherClasses : coClasses).map(cls => `${cls.name} (${cls.subject})`).join(', ')}
                           </span>
                         </>
                       ) : (
                         <span className="text-orange-600 dark:text-orange-400 flex items-center">
                           <AlertCircle className="h-4 w-4 mr-1" />
-                          No classes assigned - contact administrator to create tests
+                          {activeTab === 'main' 
+                            ? 'No classes assigned - contact administrator to create tests'
+                            : 'No co-teacher classes assigned'
+                          }
                         </span>
                       )}
                     </div>
@@ -588,14 +630,43 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
               </div>
             </div>
 
+            {/* Tabs */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+              <div className="flex space-x-1 bg-gray-100 dark:bg-gray-700 p-1 rounded-lg">
+                <button
+                  onClick={() => setActiveTab('main')}
+                  className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                    activeTab === 'main'
+                      ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm'
+                      : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                >
+                  My Classes ({teacherClasses.length})
+                </button>
+                <button
+                  onClick={() => setActiveTab('co')}
+                  className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                    activeTab === 'co'
+                      ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm'
+                      : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                >
+                  Co-Classes ({coClasses.length})
+                </button>
+              </div>
+            </div>
+
             {/* Your Classes and Custom Tests */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
               <div className="p-6 border-b border-gray-200 dark:border-gray-700">
                 <h2 className="text-lg font-medium text-gray-900 dark:text-white">
-                  Your Classes
+                  {activeTab === 'main' ? 'Your Classes' : 'Co-Teacher Classes'}
                 </h2>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  Click on a class to view and create tests
+                  {activeTab === 'main' 
+                    ? 'Click on a class to view and create tests'
+                    : 'Click on a class to view tests created by the main teacher'
+                  }
                 </p>
               </div>
 
@@ -605,20 +676,22 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
                     <p className="mt-2 text-gray-600 dark:text-gray-300">Loading classes...</p>
                   </div>
-                ) : teacherClasses.length === 0 ? (
+                ) : (activeTab === 'main' ? teacherClasses : coClasses).length === 0 ? (
                   <div className="text-center py-12">
                     <AlertCircle className="mx-auto h-12 w-12 text-orange-500 mb-4" />
                     <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                      No Classes Assigned
+                      {activeTab === 'main' ? 'No Classes Assigned' : 'No Co-Teacher Classes'}
                     </h3>
                     <p className="text-gray-500 dark:text-gray-400 mb-6">
-                      You need to be assigned to at least one class before you can create tests. 
-                      Please contact your administrator to assign you to classes.
+                      {activeTab === 'main'
+                        ? 'You need to be assigned to at least one class before you can create tests. Please contact your administrator to assign you to classes.'
+                        : 'You are not assigned as a co-teacher to any classes yet.'
+                      }
                     </p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {teacherClasses.map((classItem) => {
+                    {(activeTab === 'main' ? teacherClasses : coClasses).map((classItem) => {
                       const classTests = getTestsForClass(classItem.id);
                       const activeTests = classTests.filter(test => {
                         const status = getTestStatus(test);
@@ -636,9 +709,16 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
                             <div className="bg-white dark:bg-gray-800 rounded-full p-3">
                               <BookOpen className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                             </div>
-                            <span className="text-xs bg-blue-200 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300 px-2 py-1 rounded-full">
-                              {classItem.year}
-                            </span>
+                            <div className="flex flex-col space-y-1">
+                              {activeTab === 'co' && (
+                                <span className="text-xs bg-purple-200 dark:bg-purple-900/50 text-purple-800 dark:text-purple-300 px-2 py-1 rounded-full text-center">
+                                  Co-Teacher
+                                </span>
+                              )}
+                              <span className="text-xs bg-blue-200 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300 px-2 py-1 rounded-full">
+                                {classItem.year}
+                              </span>
+                            </div>
                           </div>
                           
                           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
@@ -670,38 +750,40 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
                       );
                     })}
                     
-                    {/* Custom Tests Box */}
-                    <div
-                      onClick={() => setViewMode('custom-tests')}
-                      className="bg-gradient-to-br from-green-50 to-emerald-100 dark:from-gray-700 dark:to-gray-600 rounded-lg p-6 cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 border-2 border-dashed border-green-300 dark:border-green-600"
-                    >
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="bg-white dark:bg-gray-800 rounded-full p-3">
-                          <Users className="h-6 w-6 text-green-600 dark:text-green-400" />
+                    {/* Only show Custom Tests for main teacher tab */}
+                    {activeTab === 'main' && (
+                      <div
+                        onClick={() => setViewMode('custom-tests')}
+                        className="bg-gradient-to-br from-green-50 to-emerald-100 dark:from-gray-700 dark:to-gray-600 rounded-lg p-6 cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 border-2 border-dashed border-green-300 dark:border-green-600"
+                      >
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="bg-white dark:bg-gray-800 rounded-full p-3">
+                            <Users className="h-6 w-6 text-green-600 dark:text-green-400" />
+                          </div>
+                          <span className="text-xs bg-green-200 dark:bg-green-900/50 text-green-800 dark:text-green-300 px-2 py-1 rounded-full">
+                            Custom
+                          </span>
                         </div>
-                        <span className="text-xs bg-green-200 dark:bg-green-900/50 text-green-800 dark:text-green-300 px-2 py-1 rounded-full">
-                          Custom
-                        </span>
+                        
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                          Custom Tests
+                        </h3>
+                        
+                        <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                          Individual student assignments
+                        </p>
+                        
+                        <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
+                          <span className="flex items-center">
+                            <FileText className="h-4 w-4 mr-1" />
+                            {tests.filter(test => test.assignmentType === 'student-based').length} tests
+                          </span>
+                          <span className="text-green-600 dark:text-green-400 font-medium">
+                            View & Create →
+                          </span>
+                        </div>
                       </div>
-                      
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                        Custom Tests
-                      </h3>
-                      
-                      <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
-                        Individual student assignments
-                      </p>
-                      
-                      <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
-                        <span className="flex items-center">
-                          <FileText className="h-4 w-4 mr-1" />
-                          {tests.filter(test => test.assignmentType === 'student-based').length} tests
-                        </span>
-                        <span className="text-green-600 dark:text-green-400 font-medium">
-                          View & Create →
-                        </span>
-                      </div>
-                    </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -714,13 +796,16 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
                   <Users className="h-8 w-8 text-purple-600" />
                   <div className="ml-4">
                     <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                      Total Students
+                      {activeTab === 'main' ? 'Total Students' : 'Co-Class Students'}
                     </p>
                     <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                      {Object.values(classEnrollmentCounts).reduce((sum, count) => sum + count, 0)}
+                      {activeTab === 'main' 
+                        ? Object.values(classEnrollmentCounts).reduce((sum, count) => sum + count, 0)
+                        : coClasses.reduce((sum, cls) => sum + (classEnrollmentCounts[cls.id] || 0), 0)
+                      }
                     </p>
                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                      Across {teacherClasses.length} class{teacherClasses.length !== 1 ? 'es' : ''}
+                      Across {activeTab === 'main' ? teacherClasses.length : coClasses.length} class{(activeTab === 'main' ? teacherClasses.length : coClasses.length) !== 1 ? 'es' : ''}
                     </p>
                   </div>
                 </div>
@@ -731,10 +816,10 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
                   <FileText className="h-8 w-8 text-blue-600" />
                   <div className="ml-4">
                     <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                      Total Tests
+                      {activeTab === 'main' ? 'My Tests' : 'Co-Class Tests'}
                     </p>
                     <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                      {tests.length}
+                      {activeTab === 'main' ? tests.length : coTests.length}
                     </p>
                   </div>
                 </div>
@@ -748,7 +833,7 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
                       Active Tests
                     </p>
                     <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                      {tests.filter(test => {
+                      {(activeTab === 'main' ? tests : coTests).filter(test => {
                         const status = getTestStatus(test);
                         return status.status === 'live' || status.status === 'active';
                       }).length}
@@ -765,7 +850,7 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
                       Upcoming
                     </p>
                     <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                      {tests.filter(test => getTestStatus(test).status === 'upcoming').length}
+                      {(activeTab === 'main' ? tests : coTests).filter(test => getTestStatus(test).status === 'upcoming').length}
                     </p>
                   </div>
                 </div>
@@ -779,7 +864,7 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
                       Completed
                     </p>
                     <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                      {tests.filter(test => getTestStatus(test).status === 'completed').length}
+                      {(activeTab === 'main' ? tests : coTests).filter(test => getTestStatus(test).status === 'completed').length}
                     </p>
                   </div>
                 </div>
@@ -1094,13 +1179,20 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
                           </div>
                         </div>
                       </div>
-                      <button
-                        onClick={() => handleCreateTestForClass(selectedClassId!)}
-                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Create Test
-                      </button>
+                      {canCreateTestsForClass(selectedClassId!) && (
+                        <button
+                          onClick={() => handleCreateTestForClass(selectedClassId!)}
+                          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Create Test
+                        </button>
+                      )}
+                      {!canCreateTestsForClass(selectedClassId!) && (
+                        <div className="text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 px-4 py-2 rounded-lg">
+                          <span>Only the main teacher can create tests for this class</span>
+                        </div>
+                      )}
                     </div>
                   </div>
 

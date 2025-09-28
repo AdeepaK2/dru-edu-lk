@@ -38,6 +38,7 @@ import StudentAssignmentModal from '@/components/modals/StudentAssignmentModal';
 
 interface TeacherVideoData extends VideoDisplayData {
   assignedClassesCount: number;
+  isOwner: boolean;
 }
 
 interface SubjectGroup {
@@ -72,6 +73,10 @@ export default function TeacherVideos() {
   const [teacherClasses, setTeacherClasses] = useState<any[]>([]);
   const [teacherSubjects, setTeacherSubjects] = useState<any[]>([]);
   const [viewMode, setViewMode] = useState<'grouped' | 'all'>('grouped');
+  const [activeTab, setActiveTab] = useState<'main' | 'co'>('main');
+  const [coClasses, setCoClasses] = useState<any[]>([]);
+  const [coVideos, setCoVideos] = useState<TeacherVideoData[]>([]);
+  const [coSubjectGroups, setCoSubjectGroups] = useState<SubjectGroup[]>([]);
   
   // Filter states
   const [filters, setFilters] = useState<FilterState>({
@@ -163,7 +168,8 @@ export default function TeacherVideos() {
           const displayData = videoDocumentToDisplay(video, {}, {}, teacher.name);
           return {
             ...displayData,
-            assignedClassesCount: video.assignedClassIds?.length || 0
+            assignedClassesCount: video.assignedClassIds?.length || 0,
+            isOwner: true
           } as TeacherVideoData;
         });
         
@@ -172,6 +178,50 @@ export default function TeacherVideos() {
         // Group videos by subjects
         const groupedData = groupVideosBySubjects(videosWithStats, formattedSubjects);
         setSubjectGroups(groupedData);
+        
+        // Load co-teacher classes and videos
+        const coTeacherClasses = await ClassFirestoreService.getClassesByCoTeacher(teacher.id);
+        console.log('✅ Raw co-teacher classes result:', coTeacherClasses);
+        
+        // Convert co-teacher classes to the format expected by the modal
+        const formattedCoClasses = coTeacherClasses.map(cls => ({
+          id: cls.id,
+          name: cls.name,
+          subjectId: cls.subjectId,
+          subject: cls.subject
+        }));
+        
+        setCoClasses(formattedCoClasses);
+        
+        // Get videos assigned to co-teacher classes
+        if (coTeacherClasses.length > 0) {
+          const coClassIds = coTeacherClasses.map(cls => cls.id);
+          const allVideos = await VideoFirestoreService.getAllVideos();
+          
+          // Filter videos assigned to co-teacher classes
+          const coTeacherVideos = allVideos.filter(video => 
+            video.assignedClassIds?.some(classId => coClassIds.includes(classId))
+          );
+          
+          console.log('✅ Videos assigned to co-teacher classes:', coTeacherVideos.length);
+          
+          // Convert to display format with additional stats
+          const coVideosWithStats = coTeacherVideos.map(video => {
+            const isOwner = video.teacherId === teacher.id;
+            const displayData = videoDocumentToDisplay(video, {}, {}, isOwner ? teacher.name : 'Co-Teacher');
+            return {
+              ...displayData,
+              assignedClassesCount: video.assignedClassIds?.length || 0,
+              isOwner
+            } as TeacherVideoData;
+          });
+          
+          setCoVideos(coVideosWithStats);
+          
+          // Group co-videos by subjects
+          const coGroupedData = groupVideosBySubjects(coVideosWithStats, formattedSubjects);
+          setCoSubjectGroups(coGroupedData);
+        }
         
         // Expand all subjects by default
         setExpandedSubjects(new Set(formattedSubjects.map(s => s.id)));
@@ -211,7 +261,7 @@ export default function TeacherVideos() {
 
   // Apply filters to videos
   const getFilteredVideos = () => {
-    let filteredVideos = videos;
+    let filteredVideos = activeTab === 'main' ? videos : coVideos;
     
     // Filter by subject
     if (filters.selectedSubject) {
@@ -240,7 +290,7 @@ export default function TeacherVideos() {
   // Apply filters to subject groups
   const getFilteredSubjectGroups = () => {
     if (!filters.selectedSubject && !filters.selectedClass && !filters.searchTerm) {
-      return subjectGroups;
+      return activeTab === 'main' ? subjectGroups : coSubjectGroups;
     }
     
     const filteredVideos = getFilteredVideos();
@@ -273,7 +323,8 @@ export default function TeacherVideos() {
           const displayData = videoDocumentToDisplay(video, {}, {}, teacher.name);
           return {
             ...displayData,
-            assignedClassesCount: video.assignedClassIds?.length || 0
+            assignedClassesCount: video.assignedClassIds?.length || 0,
+            isOwner: true
           } as TeacherVideoData;
         });
         setVideos(videosWithStats);
@@ -369,7 +420,7 @@ export default function TeacherVideos() {
               <div className="flex items-center bg-blue-50 dark:bg-blue-900/20 px-4 py-2 rounded-lg">
                 <Video className="w-5 h-5 text-blue-600 dark:text-blue-400 mr-2" />
                 <span className="text-blue-600 dark:text-blue-400 font-medium">
-                  {videos.length} Videos
+                  {activeTab === 'main' ? videos.length : coVideos.length} Videos
                 </span>
               </div>
               
@@ -397,14 +448,42 @@ export default function TeacherVideos() {
                 </button>
               </div>
               
-              <Button
-                onClick={() => setShowUploadModal(true)}
-                className="flex items-center space-x-2"
-              >
-                <Upload className="w-4 h-4" />
-                <span>Upload Video</span>
-              </Button>
+              {activeTab === 'main' && (
+                <Button
+                  onClick={() => setShowUploadModal(true)}
+                  className="flex items-center space-x-2"
+                >
+                  <Upload className="w-4 h-4" />
+                  <span>Upload Video</span>
+                </Button>
+              )}
             </div>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <div className="flex space-x-1 bg-gray-100 dark:bg-gray-700 p-1 rounded-lg">
+            <button
+              onClick={() => setActiveTab('main')}
+              className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                activeTab === 'main'
+                  ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm'
+                  : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+              }`}
+            >
+              My Videos ({videos.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('co')}
+              className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                activeTab === 'co'
+                  ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm'
+                  : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+              }`}
+            >
+              Co-Class Videos ({coVideos.length})
+            </button>
           </div>
         </div>
 
@@ -465,7 +544,7 @@ export default function TeacherVideos() {
                 className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               >
                 <option value="">All Classes</option>
-                {teacherClasses.map(cls => (
+                {(activeTab === 'main' ? teacherClasses : coClasses).map(cls => (
                   <option key={cls.id} value={cls.id}>
                     {cls.name} ({cls.subject})
                   </option>
@@ -500,10 +579,12 @@ export default function TeacherVideos() {
                 <p className="text-gray-500 dark:text-gray-400 mb-6">
                   {filters.selectedSubject || filters.selectedClass || filters.searchTerm
                     ? 'Try adjusting your filters'
-                    : 'Get started by uploading videos to your subjects'
+                    : activeTab === 'main' 
+                      ? 'Get started by uploading videos to your subjects'
+                      : 'No videos have been assigned to your co-teacher classes yet'
                   }
                 </p>
-                {!filters.selectedSubject && !filters.selectedClass && !filters.searchTerm && (
+                {!filters.selectedSubject && !filters.selectedClass && !filters.searchTerm && activeTab === 'main' && (
                   <Button onClick={() => setShowUploadModal(true)} className="flex items-center space-x-2">
                     <Upload className="w-4 h-4" />
                     <span>Upload Video</span>
@@ -606,10 +687,12 @@ export default function TeacherVideos() {
                 <p className="text-gray-500 dark:text-gray-400 mb-6">
                   {filters.selectedSubject || filters.selectedClass || filters.searchTerm
                     ? 'Try adjusting your search criteria or filters'
-                    : 'Get started by uploading your first lesson video'
+                    : activeTab === 'main'
+                      ? 'Get started by uploading your first lesson video'
+                      : 'No videos have been assigned to your co-teacher classes yet'
                   }
                 </p>
-                {!filters.selectedSubject && !filters.selectedClass && !filters.searchTerm && (
+                {!filters.selectedSubject && !filters.selectedClass && !filters.searchTerm && activeTab === 'main' && (
                   <Button onClick={() => setShowUploadModal(true)} className="flex items-center space-x-2">
                     <Upload className="w-4 h-4" />
                     <span>Upload Video</span>
@@ -796,35 +879,52 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onView, onEdit, onAssign }
         </div>
 
         {/* Actions */}
-        <div className="grid grid-cols-2 gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onView(video)}
-            className="flex items-center justify-center space-x-1"
-          >
-            <Eye className="w-4 h-4" />
-            <span>View</span>
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onEdit(video)}
-            className="flex items-center justify-center space-x-1"
-          >
-            <Edit2 className="w-4 h-4" />
-            <span>Edit</span>
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onAssign(video)}
-            className="col-span-2 flex items-center justify-center space-x-1"
-          >
-            <Users className="w-4 h-4" />
-            <span>Assign Students</span>
-          </Button>
-        </div>
+        {video.isOwner ? (
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onView(video)}
+              className="flex items-center justify-center space-x-1"
+            >
+              <Eye className="w-4 h-4" />
+              <span>View</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onEdit(video)}
+              className="flex items-center justify-center space-x-1"
+            >
+              <Edit2 className="w-4 h-4" />
+              <span>Edit</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onAssign(video)}
+              className="col-span-2 flex items-center justify-center space-x-1"
+            >
+              <Users className="w-4 h-4" />
+              <span>Assign Students</span>
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onView(video)}
+              className="w-full flex items-center justify-center space-x-1"
+            >
+              <Eye className="w-4 h-4" />
+              <span>View</span>
+            </Button>
+            <div className="text-center text-sm text-gray-500 dark:text-gray-400">
+              <span>Uploaded by {video.teacherName}</span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
