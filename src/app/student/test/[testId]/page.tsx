@@ -128,23 +128,49 @@ export default function TestPage() {
           const attemptData = { id: doc.id, ...doc.data() } as any;
           allAttempts.push(attemptData);
           
+          console.log('🔍 Processing attempt:', {
+            id: attemptData.id,
+            status: attemptData.status,
+            submittedAt: attemptData.submittedAt,
+            isLateSubmission: attemptData.isLateSubmission,
+            lateSubmissionId: attemptData.lateSubmissionId
+          });
+          
           // Check if attempt has expired by comparing current time with endTime
+          // For late submissions, we need to consider the extended deadline
           let isExpired = false;
-          if (attemptData.endTime) {
-            const endTime = attemptData.endTime.toDate ? attemptData.endTime.toDate() : new Date(attemptData.endTime.seconds * 1000);
-            isExpired = now > endTime;
-          } else if (attemptData.startedAt && attemptData.totalTimeAllowed) {
-            // Fallback: calculate end time from start time + duration
-            const startTime = attemptData.startedAt.toDate ? attemptData.startedAt.toDate() : new Date(attemptData.startedAt.seconds * 1000);
-            const endTime = new Date(startTime.getTime() + (attemptData.totalTimeAllowed * 1000));
-            isExpired = now > endTime;
+          
+          // If there's a late submission approved, check against late submission deadline first
+          if (lateSubmissionInfo && lateSubmissionInfo.status === 'approved') {
+            const lateDeadline = lateSubmissionInfo.newDeadline.toDate ? 
+              lateSubmissionInfo.newDeadline.toDate() : 
+              new Date(lateSubmissionInfo.newDeadline.seconds * 1000);
+            isExpired = now > lateDeadline;
+            console.log('📅 Using late submission deadline for expiration check:', {
+              attemptId: attemptData.id,
+              lateDeadline: lateDeadline.toISOString(),
+              currentTime: now.toISOString(),
+              isExpired
+            });
+          } else {
+            // Use original attempt end time logic
+            if (attemptData.endTime) {
+              const endTime = attemptData.endTime.toDate ? attemptData.endTime.toDate() : new Date(attemptData.endTime.seconds * 1000);
+              isExpired = now > endTime;
+            } else if (attemptData.startedAt && attemptData.totalTimeAllowed) {
+              // Fallback: calculate end time from start time + duration
+              const startTime = attemptData.startedAt.toDate ? attemptData.startedAt.toDate() : new Date(attemptData.startedAt.seconds * 1000);
+              const endTime = new Date(startTime.getTime() + (attemptData.totalTimeAllowed * 1000));
+              isExpired = now > endTime;
+            }
           }
           
           // Categorize attempts based on status and time validity
+          // Be more strict about what constitutes a completed attempt
           const isCompleted = attemptData.status === 'submitted' || 
                              attemptData.status === 'auto_submitted' || 
-                             attemptData.submittedAt ||
-                             isExpired; // Expired attempts are considered completed
+                             (attemptData.submittedAt && attemptData.submittedAt.seconds > 0) || // Only if actually submitted
+                             (isExpired && attemptData.status !== 'not_started'); // Only expired attempts that were actually started
           
           const isActive = !isCompleted && (
             attemptData.status === 'in_progress' || 
@@ -152,6 +178,13 @@ export default function TestPage() {
             attemptData.status === 'paused' ||
             (!attemptData.submittedAt && !attemptData.status)
           );
+          
+          console.log('🔍 Attempt categorization:', {
+            id: attemptData.id,
+            isExpired,
+            isCompleted,
+            isActive
+          });
           
           if (isCompleted) {
             completedAttempts.push(attemptData);
@@ -165,7 +198,55 @@ export default function TestPage() {
           ? (testData as FlexibleTest).attemptsAllowed || 1 
           : 1;
         
-        const canCreateNewAttempt = completedAttempts.length < attemptsAllowed || activeAttempts.length > 0;
+        // Separate regular attempts from late submission attempts before calculating limits
+        const regularCompletedAttempts = completedAttempts.filter(attempt => 
+          !attempt.isLateSubmission && !attempt.lateSubmissionId
+        );
+        const activeRegularAttempts = activeAttempts.filter(attempt => 
+          !attempt.isLateSubmission && !attempt.lateSubmissionId
+        );
+        
+        // For regular attempts, check against the normal limit
+        let canCreateNewAttempt = regularCompletedAttempts.length < attemptsAllowed || activeRegularAttempts.length > 0;
+        
+        // If late submission is approved and active, allow new attempt regardless of previous regular attempts
+        if (lateSubmissionInfo && lateSubmissionInfo.status === 'approved') {
+          const lateDeadlineSeconds = lateSubmissionInfo.newDeadline?.seconds || 
+                                     (lateSubmissionInfo.newDeadline?.getTime ? lateSubmissionInfo.newDeadline.getTime() / 1000 : 0);
+          
+          if (now < lateDeadlineSeconds) {
+            // Check if there are any late submission attempts already
+            const lateSubmissionAttempts = allAttempts.filter(attempt => 
+              attempt.isLateSubmission === true || attempt.lateSubmissionId
+            );
+            
+            console.log('🕒 Late submission attempts found:', lateSubmissionAttempts.length);
+            
+            // Allow new attempt if no late submission attempts exist yet
+            if (lateSubmissionAttempts.length === 0) {
+              canCreateNewAttempt = true;
+              console.log('✅ Late submission opportunity: allowing new attempt');
+            } else {
+              // Check if existing late submission attempts are completed
+              const completedLateAttempts = lateSubmissionAttempts.filter(attempt => {
+                const isLateCompleted = attempt.status === 'submitted' || 
+                                       attempt.status === 'auto_submitted' || 
+                                       (attempt.submittedAt && attempt.submittedAt.seconds > 0);
+                return isLateCompleted;
+              });
+              
+              const activeLateAttempts = lateSubmissionAttempts.filter(attempt => {
+                const isLateCompleted = attempt.status === 'submitted' || 
+                                       attempt.status === 'auto_submitted' || 
+                                       (attempt.submittedAt && attempt.submittedAt.seconds > 0);
+                return !isLateCompleted;
+              });
+              
+              canCreateNewAttempt = completedLateAttempts.length === 0 || activeLateAttempts.length > 0;
+              console.log('🕒 Late submission check: completed late attempts =', completedLateAttempts.length, 'active late attempts =', activeLateAttempts.length);
+            }
+          }
+        }
         
         // Find best score from completed attempts
         let bestScore: number | undefined;
@@ -181,10 +262,17 @@ export default function TestPage() {
           lastAttemptDate = latestAttempt.submittedAt;
         }
         
+        console.log('📊 Attempt breakdown:', {
+          total: completedAttempts.length,
+          regular: regularCompletedAttempts.length,
+          lateSubmission: completedAttempts.length - regularCompletedAttempts.length,
+          canCreateNew: canCreateNewAttempt
+        });
+        
         const attemptData: AttemptSummary = {
           testId,
           studentId: student.id,
-          totalAttempts: completedAttempts.length, // Only count completed attempts
+          totalAttempts: regularCompletedAttempts.length, // Only count regular attempts for the limit
           attemptsAllowed,
           canCreateNewAttempt,
           bestScore,
@@ -827,6 +915,11 @@ export default function TestPage() {
                         <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Attempts Allowed</p>
                         <p className="mt-1 text-lg font-semibold text-gray-900 dark:text-white">
                           {attemptInfo.attemptsAllowed}
+                          {isLateSubmissionActive && (
+                            <span className="text-sm text-orange-600 dark:text-orange-400 ml-1">
+                              + Late Submission
+                            </span>
+                          )}
                         </p>
                       </div>
                       
@@ -842,14 +935,18 @@ export default function TestPage() {
                         <p className={`mt-1 text-sm font-medium ${
                           (attemptInfo as any).hasActiveAttempt
                             ? 'text-blue-600 dark:text-blue-400'
-                            : attemptInfo.canCreateNewAttempt 
-                              ? 'text-green-600 dark:text-green-400' 
+                            : isLateSubmissionActive
+                              ? 'text-orange-600 dark:text-orange-400'
+                              : attemptInfo.canCreateNewAttempt 
+                              ? 'text-green-600 dark:text-green-400'
                               : 'text-red-600 dark:text-red-400'
                         }`}>
                           {(attemptInfo as any).hasActiveAttempt 
                             ? 'Resume Available' 
-                            : attemptInfo.canCreateNewAttempt 
-                              ? 'Can attempt' 
+                            : isLateSubmissionActive
+                              ? 'Late submission available'
+                              : attemptInfo.canCreateNewAttempt 
+                              ? 'Can attempt'
                               : 'Cannot attempt'
                           }
                         </p>
@@ -881,10 +978,12 @@ export default function TestPage() {
                     {attemptInfo.totalAttempts > 0 && (
                       <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
                         <p className="text-sm text-gray-600 dark:text-gray-400">
-                          You have completed {attemptInfo.totalAttempts} attempt{attemptInfo.totalAttempts !== 1 ? 's' : ''} for this test.
-                          {attemptInfo.canCreateNewAttempt && !(attemptInfo as any).hasActiveAttempt ? (
+                          You have completed {attemptInfo.totalAttempts} regular attempt{attemptInfo.totalAttempts !== 1 ? 's' : ''} for this test.
+                          {isLateSubmissionActive ? (
+                            ' You can use your late submission opportunity to attempt this test.'
+                          ) : attemptInfo.canCreateNewAttempt && !(attemptInfo as any).hasActiveAttempt ? (
                             ` You can attempt ${attemptInfo.attemptsAllowed - attemptInfo.totalAttempts} more time${attemptInfo.attemptsAllowed - attemptInfo.totalAttempts !== 1 ? 's' : ''}.`
-                          ) : !attemptInfo.canCreateNewAttempt ? (
+                          ) : !attemptInfo.canCreateNewAttempt && !isLateSubmissionActive ? (
                             ' You have used all available attempts.'
                           ) : ''}
                         </p>
@@ -934,7 +1033,7 @@ export default function TestPage() {
                     isLateSubmissionActive ? 'bg-orange-600 hover:bg-orange-700' : ''
                   }`}
                   variant={isLateSubmissionActive ? 'warning' : 'primary'}
-                  disabled={!canStart || (!(attemptInfo as any)?.hasActiveAttempt && !attemptInfo?.canCreateNewAttempt) || startingTest}
+                  disabled={!canStart || (!(attemptInfo as any)?.hasActiveAttempt && !attemptInfo?.canCreateNewAttempt && !isLateSubmissionActive) || startingTest}
                 >
                   {startingTest ? (
                     <>

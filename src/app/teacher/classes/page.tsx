@@ -44,7 +44,7 @@ export default function TeacherClasses() {
   const [coClasses, setCoClasses] = useState<ClassWithStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [activeTab, setActiveTab] = useState<'main' | 'co'>('main');
   const [zoomLinkModal, setZoomLinkModal] = useState<{
     isOpen: boolean;
