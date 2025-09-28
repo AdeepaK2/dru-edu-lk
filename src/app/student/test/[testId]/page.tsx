@@ -137,22 +137,40 @@ export default function TestPage() {
           });
           
           // Check if attempt has expired by comparing current time with endTime
+          // For late submissions, we need to consider the extended deadline
           let isExpired = false;
-          if (attemptData.endTime) {
-            const endTime = attemptData.endTime.toDate ? attemptData.endTime.toDate() : new Date(attemptData.endTime.seconds * 1000);
-            isExpired = now > endTime;
-          } else if (attemptData.startedAt && attemptData.totalTimeAllowed) {
-            // Fallback: calculate end time from start time + duration
-            const startTime = attemptData.startedAt.toDate ? attemptData.startedAt.toDate() : new Date(attemptData.startedAt.seconds * 1000);
-            const endTime = new Date(startTime.getTime() + (attemptData.totalTimeAllowed * 1000));
-            isExpired = now > endTime;
+          
+          // If there's a late submission approved, check against late submission deadline first
+          if (lateSubmissionInfo && lateSubmissionInfo.status === 'approved') {
+            const lateDeadline = lateSubmissionInfo.newDeadline.toDate ? 
+              lateSubmissionInfo.newDeadline.toDate() : 
+              new Date(lateSubmissionInfo.newDeadline.seconds * 1000);
+            isExpired = now > lateDeadline;
+            console.log('📅 Using late submission deadline for expiration check:', {
+              attemptId: attemptData.id,
+              lateDeadline: lateDeadline.toISOString(),
+              currentTime: now.toISOString(),
+              isExpired
+            });
+          } else {
+            // Use original attempt end time logic
+            if (attemptData.endTime) {
+              const endTime = attemptData.endTime.toDate ? attemptData.endTime.toDate() : new Date(attemptData.endTime.seconds * 1000);
+              isExpired = now > endTime;
+            } else if (attemptData.startedAt && attemptData.totalTimeAllowed) {
+              // Fallback: calculate end time from start time + duration
+              const startTime = attemptData.startedAt.toDate ? attemptData.startedAt.toDate() : new Date(attemptData.startedAt.seconds * 1000);
+              const endTime = new Date(startTime.getTime() + (attemptData.totalTimeAllowed * 1000));
+              isExpired = now > endTime;
+            }
           }
           
           // Categorize attempts based on status and time validity
+          // Be more strict about what constitutes a completed attempt
           const isCompleted = attemptData.status === 'submitted' || 
                              attemptData.status === 'auto_submitted' || 
                              (attemptData.submittedAt && attemptData.submittedAt.seconds > 0) || // Only if actually submitted
-                             isExpired; // Expired attempts are considered completed
+                             (isExpired && attemptData.status !== 'not_started'); // Only expired attempts that were actually started
           
           const isActive = !isCompleted && (
             attemptData.status === 'in_progress' || 
