@@ -1,17 +1,17 @@
 import useSWR from 'swr';
 import { 
-  GradeAnalyticsService, 
+  EnhancedGradeAnalyticsService, 
   ClassSummary, 
   TestSummary, 
   StudentPerformanceSummary,
   DetailedStudentReport 
-} from '@/apiservices/teacherGradeAnalyticsService';
+} from '@/apiservices/enhancedGradeAnalyticsService';
 
 // Custom hook for teacher classes summary
 export function useTeacherClassesSummary(teacherId: string | null) {
   const { data, error, isLoading, mutate } = useSWR(
     teacherId ? ['teacher-classes-summary', teacherId] : null,
-    ([_, teacherId]) => GradeAnalyticsService.getTeacherClassesSummary(teacherId),
+    ([_, teacherId]) => EnhancedGradeAnalyticsService.getTeacherClassesSummary(teacherId),
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
@@ -31,10 +31,10 @@ export function useTeacherClassesSummary(teacherId: string | null) {
 }
 
 // Custom hook for class test analytics
-export function useClassTestAnalytics(classId: string | null) {
+export function useClassTestAnalytics(classId: string | null, teacherId?: string | null) {
   const { data, error, isLoading, mutate } = useSWR(
-    classId ? ['class-test-analytics', classId] : null,
-    ([_, classId]) => GradeAnalyticsService.getClassTestAnalytics(classId),
+    classId ? ['class-test-analytics', classId, teacherId] : null,
+    ([_, classId, teacherId]) => EnhancedGradeAnalyticsService.getClassTestAnalytics(classId, teacherId || undefined),
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
@@ -54,10 +54,10 @@ export function useClassTestAnalytics(classId: string | null) {
 }
 
 // Custom hook for class student analytics
-export function useClassStudentAnalytics(classId: string | null) {
+export function useClassStudentAnalytics(classId: string | null, teacherId?: string | null) {
   const { data, error, isLoading, mutate } = useSWR(
-    classId ? ['class-student-analytics', classId] : null,
-    ([_, classId]) => GradeAnalyticsService.getClassStudentAnalytics(classId),
+    classId ? ['class-student-analytics', classId, teacherId] : null,
+    ([_, classId, teacherId]) => EnhancedGradeAnalyticsService.getClassStudentAnalytics(classId, teacherId || undefined),
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
@@ -80,7 +80,7 @@ export function useClassStudentAnalytics(classId: string | null) {
 export function useDetailedStudentReport(studentId: string | null, classId: string | null) {
   const { data, error, isLoading, mutate } = useSWR(
     studentId && classId ? ['detailed-student-report', studentId, classId] : null,
-    ([_, studentId, classId]) => GradeAnalyticsService.getDetailedStudentReport(studentId, classId),
+    ([_, studentId, classId]) => EnhancedGradeAnalyticsService.getDetailedStudentReport(studentId, classId),
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false, // Don't revalidate automatically for detailed reports
@@ -98,10 +98,33 @@ export function useDetailedStudentReport(studentId: string | null, classId: stri
   };
 }
 
+// Hook to force refresh class analytics
+export function useForceRefreshAnalytics() {
+  return {
+    forceRefresh: async (classId: string, teacherId: string) => {
+      try {
+        await EnhancedGradeAnalyticsService.forceRefreshClassAnalytics(classId, teacherId);
+        
+        // Mutate all related SWR caches
+        const { mutate: globalMutate } = await import('swr');
+        globalMutate(key => Array.isArray(key) && (
+          key.includes('teacher-classes-summary') ||
+          key.includes('class-test-analytics') ||
+          key.includes('class-student-analytics')
+        ));
+        
+      } catch (error) {
+        console.error('Error forcing refresh:', error);
+        throw error;
+      }
+    }
+  };
+}
+
 // Custom hook that combines both test and student analytics for a class
-export function useClassAnalytics(classId: string | null) {
-  const testAnalytics = useClassTestAnalytics(classId);
-  const studentAnalytics = useClassStudentAnalytics(classId);
+export function useClassAnalytics(classId: string | null, teacherId?: string | null) {
+  const testAnalytics = useClassTestAnalytics(classId, teacherId);
+  const studentAnalytics = useClassStudentAnalytics(classId, teacherId);
 
   return {
     tests: testAnalytics.tests,

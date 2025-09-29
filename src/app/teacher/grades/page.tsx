@@ -26,7 +26,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { ClassSummary } from '@/apiservices/teacherGradeAnalyticsService';
-import { useTeacherClassesSummary } from '@/hooks/useGradeAnalytics';
+import { useTeacherClassesSummary, useForceRefreshAnalytics } from '@/hooks/useGradeAnalytics';
 
 // Simple loading skeleton component
 const LoadingSkeleton = ({ className }: { className?: string }) => (
@@ -46,7 +46,11 @@ export default function TeacherGradesPage() {
   const [activeTab, setActiveTab] = useState<'main' | 'co'>('main');
   const [coClasses, setCoClasses] = useState<ClassSummary[]>([]);
   const [coClassesLoading, setCoClassesLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const router = useRouter();
+  
+  // Hook for force refreshing analytics
+  const { forceRefresh } = useForceRefreshAnalytics();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -101,6 +105,30 @@ export default function TeacherGradesPage() {
     // Only allow navigation for main teacher classes
     if (activeTab === 'main') {
       router.push(`/teacher/grades/${classId}`);
+    }
+  };
+  
+  const handleRefreshAll = async () => {
+    if (!user?.uid) return;
+    
+    try {
+      setIsRefreshing(true);
+      
+      // Force refresh all classes
+      const refreshPromises = classes.map(classItem => 
+        forceRefresh(classItem.id, user.uid)
+      );
+      
+      await Promise.all(refreshPromises);
+      
+      // Also refresh the main classes list
+      await mutate();
+      
+      console.log('✅ Refreshed all class analytics');
+    } catch (error) {
+      console.error('Error refreshing analytics:', error);
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -182,15 +210,16 @@ export default function TeacherGradesPage() {
             Monitor student performance and class analytics across all your classes
           </p>
         </div>
-        <Button 
-          variant="outline" 
-          onClick={() => mutate()}
-          disabled={isLoading}
-          className="flex items-center gap-2"
-        >
-          <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={handleRefreshAll}
+            disabled={isLoading || isRefreshing || classes.length === 0}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            {isRefreshing ? 'Recalculating...' : 'Full Refresh'}
+          </Button>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -336,7 +365,7 @@ export default function TeacherGradesPage() {
                   </div>
                 </div>
 
-                {/* Last Activity */}
+                {/* Last Activity
                 <div className="flex items-center justify-between pt-2 border-t">
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -345,7 +374,7 @@ export default function TeacherGradesPage() {
                   <span className="text-sm font-medium">
                     {formatLastActivity(classItem.lastActivityDate)}
                   </span>
-                </div>
+                </div> */}
 
                 {/* Quick Actions */}
                 <div className="pt-2">

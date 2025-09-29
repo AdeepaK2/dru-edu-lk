@@ -41,7 +41,7 @@ import {
   StudentPerformanceSummary,
   DetailedStudentReport 
 } from '@/apiservices/teacherGradeAnalyticsService';
-import { useClassAnalytics, useDetailedStudentReport } from '@/hooks/useGradeAnalytics';
+import { useClassAnalytics, useDetailedStudentReport, useForceRefreshAnalytics } from '@/hooks/useGradeAnalytics';
 
 // Simple loading skeleton component
 const LoadingSkeleton = ({ className }: { className?: string }) => (
@@ -258,6 +258,7 @@ export default function ClassGradePage() {
   const [authLoading, setAuthLoading] = useState(true);
   const [selectedStudent, setSelectedStudent] = useState<StudentPerformanceSummary | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   const router = useRouter();
   const params = useParams();
@@ -272,8 +273,11 @@ export default function ClassGradePage() {
     return () => unsubscribe();
   }, []);
 
-  // Use SWR hook for combined analytics
-  const { tests, students, isLoading, error, mutate } = useClassAnalytics(classId);
+  // Hook for force refreshing analytics
+  const { forceRefresh } = useForceRefreshAnalytics();
+  
+  // Use SWR hook for combined analytics with teacherId
+  const { tests, students, isLoading, error, mutate } = useClassAnalytics(classId, user?.uid);
 
   const handleStudentClick = (student: StudentPerformanceSummary) => {
     setSelectedStudent(student);
@@ -282,6 +286,21 @@ export default function ClassGradePage() {
 
   const handleTestClick = (testId: string) => {
     router.push(`/teacher/tests/${testId}/results`);
+  };
+  
+  const handleRefreshAnalytics = async () => {
+    if (!user?.uid) return;
+    
+    try {
+      setIsRefreshing(true);
+      await forceRefresh(classId, user.uid);
+      await mutate();
+      console.log('✅ Refreshed class analytics');
+    } catch (error) {
+      console.error('Error refreshing analytics:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   const formatDate = (date: Date) => {
@@ -347,15 +366,16 @@ export default function ClassGradePage() {
             </p>
           </div>
         </div>
-        <Button 
-          variant="outline" 
-          onClick={() => mutate()}
-          disabled={isLoading}
-          className="flex items-center gap-2"
-        >
-          <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={handleRefreshAnalytics}
+            disabled={isLoading || isRefreshing}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            {isRefreshing ? 'Recalculating...' : 'Full Refresh'}
+          </Button>
+        </div>
       </div>
 
       {/* Error Alert */}
