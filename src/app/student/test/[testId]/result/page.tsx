@@ -659,6 +659,11 @@ export default function TestResultPage() {
       // Import services
       const { SubmissionService } = await import('@/apiservices/submissionService');
       const { AttemptManagementService } = await import('@/apiservices/attemptManagementService');
+      const { BackgroundSubmissionService } = await import('@/apiservices/backgroundSubmissionService');
+      
+      // First check for expired attempts that might need auto-submission
+      console.log('🔍 Checking for expired attempts...');
+      await BackgroundSubmissionService.processExpiredAttemptsForStudent(student.id);
       
       // Get attempt information to find recent attempts
       const attemptData = await AttemptManagementService.getAttemptSummary(testId, student.id);
