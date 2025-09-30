@@ -437,11 +437,54 @@ export class SubmissionService {
         updatedAt: Timestamp.now()
       };
 
-      // Save to Firestore
+      // Save to Firestore with retry logic and verification
       const cleanSubmission = this.removeUndefinedValues(submission);
-      await setDoc(doc(firestore, this.COLLECTIONS.SUBMISSIONS, attemptId), cleanSubmission);
       
-      // Update test statistics
+      // Validate submission before saving
+      if (!cleanSubmission.studentId || !cleanSubmission.testId) {
+        throw new Error(`Invalid submission data: missing studentId (${cleanSubmission.studentId}) or testId (${cleanSubmission.testId})`);
+      }
+      
+      let saveSuccessful = false;
+      let saveAttempts = 0;
+      const maxRetries = 3;
+      
+      while (!saveSuccessful && saveAttempts < maxRetries) {
+        try {
+          saveAttempts++;
+          console.log(`💾 Attempting to save submission (attempt ${saveAttempts}/${maxRetries})...`);
+          
+          await setDoc(doc(firestore, this.COLLECTIONS.SUBMISSIONS, attemptId), cleanSubmission);
+          
+          // Verify the submission was actually saved
+          const verificationDoc = await getDoc(doc(firestore, this.COLLECTIONS.SUBMISSIONS, attemptId));
+          if (verificationDoc.exists()) {
+            const savedData = verificationDoc.data();
+            if (savedData.studentId === cleanSubmission.studentId && savedData.testId === cleanSubmission.testId) {
+              saveSuccessful = true;
+              console.log('✅ Submission save verified successfully');
+            } else {
+              throw new Error('Submission data mismatch after save verification');
+            }
+          } else {
+            throw new Error('Submission document not found after save attempt');
+          }
+          
+        } catch (saveError) {
+          console.error(`❌ Save attempt ${saveAttempts} failed:`, saveError);
+          
+          if (saveAttempts >= maxRetries) {
+            console.error('🚨 All save attempts failed. Preserving realtime session for recovery.');
+            // Don't cleanup session if save failed - preserve for manual recovery
+            throw new Error(`Failed to save submission after ${maxRetries} attempts: ${saveError instanceof Error ? saveError.message : 'Unknown error'}`);
+          }
+          
+          // Wait before retry
+          await new Promise(resolve => setTimeout(resolve, 1000 * saveAttempts));
+        }
+      }
+      
+      // Update test statistics (only after successful save)
       try {
         const { TestStatisticsService } = await import('./testStatisticsService');
         await TestStatisticsService.updateStatisticsForNewSubmission(realtimeSession.testId);
@@ -451,8 +494,14 @@ export class SubmissionService {
         // Don't fail the submission process if statistics update fails
       }
       
-      // Clean up realtime session
-      await RealtimeTestService.cleanupSession(attemptId);
+      // Clean up realtime session (only after successful save)
+      try {
+        await RealtimeTestService.cleanupSession(attemptId);
+        console.log('🧹 Realtime session cleaned up successfully');
+      } catch (cleanupError) {
+        console.warn('⚠️ Failed to cleanup realtime session (not critical):', cleanupError);
+        // Continue - cleanup failure shouldn't break submission process
+      }
       
       console.log('✅ Submission processed successfully:', attemptId);
       return submission;
@@ -753,6 +802,90 @@ export class SubmissionService {
     } catch (error) {
       console.error('Error getting student submissions:', error);
       throw error;
+    }
+  }
+
+  // Recovery method for failed submissions
+  static async recoverSubmissionFromSession(attemptId: string): Promise<StudentSubmission | null> {
+    try {
+      console.log('🔄 Attempting to recover submission from session:', attemptId);
+      
+      // Check if submission already exists
+      const existingSubmission = await this.getSubmission(attemptId);
+      if (existingSubmission) {
+        console.log('✅ Submission already exists, no recovery needed');
+        return existingSubmission;
+      }
+      
+      // Try to get realtime session data
+      const realtimeSession = await RealtimeTestService.getSession(attemptId);
+      if (!realtimeSession) {
+        console.log('❌ No realtime session found for recovery');
+        return null;
+      }
+      
+      // Check if session has enough data for recovery
+      if (!realtimeSession.testId || !realtimeSession.studentId) {
+        console.log('❌ Insufficient session data for recovery');
+        return null;
+      }
+      
+      console.log('🔧 Recovering submission from session data...');
+      
+      // Process the submission again
+      const recoveredSubmission = await this.processSubmission(attemptId, false);
+      
+      console.log('✅ Submission recovered successfully:', attemptId);
+      return recoveredSubmission;
+      
+    } catch (error) {
+      console.error('❌ Failed to recover submission:', error);
+      return null;
+    }
+  }
+
+  // Enhanced method to find submissions with fallback to recovery
+  static async findSubmissionWithRecovery(testId: string, studentId: string): Promise<string | null> {
+    try {
+      // First try normal submission finding
+      const submissions = await this.getStudentSubmissions(studentId);
+      const filteredSubmissions = submissions
+        .filter(sub => sub.testId === testId)
+        .sort((a, b) => b.submittedAt.seconds - a.submittedAt.seconds);
+      
+      if (filteredSubmissions.length > 0) {
+        return filteredSubmissions[0].id;
+      }
+      
+      // If no submissions found, try to find and recover from attempt
+      console.log('🔍 No submissions found, checking for recoverable attempts...');
+      
+      const { AttemptManagementService } = await import('./attemptManagementService');
+      const attemptInfo = await AttemptManagementService.getAttemptSummary(testId, studentId);
+      
+      if (attemptInfo && attemptInfo.attempts.length > 0) {
+        // Find the most recent submitted attempt
+        const submittedAttempts = attemptInfo.attempts.filter(
+          attempt => attempt.status === 'submitted' || attempt.status === 'auto_submitted'
+        );
+        
+        if (submittedAttempts.length > 0) {
+          const latestAttempt = submittedAttempts[submittedAttempts.length - 1];
+          console.log('🔧 Found submitted attempt without submission, attempting recovery:', latestAttempt.attemptId);
+          
+          // Try to recover the submission
+          const recoveredSubmission = await this.recoverSubmissionFromSession(latestAttempt.attemptId);
+          
+          if (recoveredSubmission) {
+            return recoveredSubmission.id;
+          }
+        }
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error in findSubmissionWithRecovery:', error);
+      return null;
     }
   }
 

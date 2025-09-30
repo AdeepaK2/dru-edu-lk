@@ -98,6 +98,16 @@ export const useStudentAuth = () => {
             // Store token in localStorage for API calls (if needed for other services)
             const idToken = await user.getIdToken();
             localStorage.setItem('authToken', idToken);
+
+            // Check for expired attempts when student logs in
+            try {
+              const { BackgroundSubmissionService } = await import('@/apiservices/backgroundSubmissionService');
+              await BackgroundSubmissionService.processExpiredAttemptsForStudent(studentData.id);
+              console.log('✅ Checked for expired attempts on login');
+            } catch (bgError) {
+              console.warn('⚠️ Background submission check failed:', bgError);
+              // Don't fail the login process if background check fails
+            }
           } catch (firestoreError) {
             console.error('Error fetching student data:', firestoreError);
             setAuthState({
