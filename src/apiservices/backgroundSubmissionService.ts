@@ -1,16 +1,7 @@
 // Background Submission Service
 // Handles automatic submission of expired attempts when students are offline
 
-import { 
-  collection, 
-  query, 
-  where, 
-  getDocs, 
-  Timestamp, 
-  orderBy,
-  limit
-} from 'firebase/firestore';
-import { firestore } from '@/utils/firebase-client';
+import firebaseAdmin from '@/utils/firebase-server';
 import { TestAttempt } from '@/models/attemptSchema';
 import { Test, FlexibleTest, LiveTest } from '@/models/testSchema';
 import { AttemptManagementService } from './attemptManagementService';
@@ -39,16 +30,15 @@ export class BackgroundSubmissionService {
     try {
       console.log('🔍 Checking for expired attempts...');
       
-      // Find all active attempts (in_progress, not_started)
-      const attemptsQuery = query(
-        collection(firestore, 'attempts'),
-        where('status', 'in', ['in_progress', 'not_started']),
-        orderBy('startedAt', 'desc'),
-        limit(100) // Process in batches
-      );
+      // Find all active attempts (in_progress, not_started) using admin SDK
+      const attemptsQuery = await firebaseAdmin.db
+        .collection('attempts')
+        .where('status', 'in', ['in_progress', 'not_started'])
+        .orderBy('startedAt', 'desc')
+        .limit(100) // Process in batches
+        .get();
 
-      const attemptsSnapshot = await getDocs(attemptsQuery);
-      const activeAttempts = attemptsSnapshot.docs.map(doc => ({
+      const activeAttempts = attemptsQuery.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       })) as TestAttempt[];
@@ -92,19 +82,15 @@ export class BackgroundSubmissionService {
    */
   private static async checkIfAttemptExpired(attempt: TestAttempt): Promise<boolean> {
     try {
-      // Get the test data
-      const testQuery = query(
-        collection(firestore, 'tests'),
-        where('__name__', '==', attempt.testId)
-      );
+      // Get the test data using admin SDK
+      const testDoc = await firebaseAdmin.db.collection('tests').doc(attempt.testId).get();
       
-      const testSnapshot = await getDocs(testQuery);
-      if (testSnapshot.empty) {
+      if (!testDoc.exists) {
         console.warn(`Test not found for attempt: ${attempt.id}`);
         return false;
       }
 
-      const test = { id: testSnapshot.docs[0].id, ...testSnapshot.docs[0].data() } as Test;
+      const test = { id: testDoc.id, ...testDoc.data() } as Test;
       const now = Date.now();
 
       if (test.type === 'flexible') {
@@ -214,15 +200,14 @@ export class BackgroundSubmissionService {
     try {
       console.log(`🔍 Checking expired attempts for student: ${studentId}`);
 
-      const attemptsQuery = query(
-        collection(firestore, 'attempts'),
-        where('studentId', '==', studentId),
-        where('status', 'in', ['in_progress', 'not_started']),
-        orderBy('startedAt', 'desc')
-      );
+      const attemptsQuery = await firebaseAdmin.db
+        .collection('attempts')
+        .where('studentId', '==', studentId)
+        .where('status', 'in', ['in_progress', 'not_started'])
+        .orderBy('startedAt', 'desc')
+        .get();
 
-      const attemptsSnapshot = await getDocs(attemptsQuery);
-      const activeAttempts = attemptsSnapshot.docs.map(doc => ({
+      const activeAttempts = attemptsQuery.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       })) as TestAttempt[];
@@ -250,14 +235,13 @@ export class BackgroundSubmissionService {
     oldestExpired?: Date;
   }> {
     try {
-      const attemptsQuery = query(
-        collection(firestore, 'attempts'),
-        where('status', 'in', ['in_progress', 'not_started']),
-        orderBy('startedAt', 'asc')
-      );
+      const attemptsQuery = await firebaseAdmin.db
+        .collection('attempts')
+        .where('status', 'in', ['in_progress', 'not_started'])
+        .orderBy('startedAt', 'asc')
+        .get();
 
-      const attemptsSnapshot = await getDocs(attemptsQuery);
-      const activeAttempts = attemptsSnapshot.docs.map(doc => ({
+      const activeAttempts = attemptsQuery.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       })) as TestAttempt[];
@@ -274,14 +258,10 @@ export class BackgroundSubmissionService {
           
           // Get test type for categorization
           try {
-            const testQuery = query(
-              collection(firestore, 'tests'),
-              where('__name__', '==', attempt.testId)
-            );
-            const testSnapshot = await getDocs(testQuery);
+            const testDoc = await firebaseAdmin.db.collection('tests').doc(attempt.testId).get();
             
-            if (!testSnapshot.empty) {
-              const test = testSnapshot.docs[0].data() as Test;
+            if (testDoc.exists) {
+              const test = testDoc.data() as Test;
               if (test.type === 'live') byTestType.live++;
               else if (test.type === 'flexible') byTestType.flexible++;
             }
