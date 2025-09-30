@@ -68,25 +68,33 @@ export default function TestResultPage() {
         const { doc, getDoc } = await import('firebase/firestore');
         const { firestore } = await import('@/utils/firebase-client');
         
-        // Get the submission
-        const subId = submissionId || await findMostRecentSubmissionId(testId, student.id);
+        // Get the submission with enhanced recovery
+        console.log('🔍 Looking for submission for test:', testId, 'student:', student.id);
+        const subId = submissionId || await SubmissionService.findSubmissionWithRecovery(testId, student.id);
+        console.log('🔍 Found submission ID:', subId);
         
         if (!subId) {
-          setError('No submission found for this test.');
+          console.error('❌ No submission ID found');
+          setError('No submission found for this test. The test may still be processing or there may have been an issue during submission.');
           setLoading(false);
           return;
         }
 
+        console.log('📥 Attempting to get submission data for ID:', subId);
         let submissionData = await SubmissionService.getSubmission(subId);
+        console.log('📥 Retrieved submission data:', submissionData ? 'Found' : 'Not found');
         
         if (!submissionData) {
-          setError('Submission not found.');
+          console.error('❌ Submission data not found for ID:', subId);
+          setError('Submission not found. This may be a data consistency issue. Please try the recovery option.');
           setLoading(false);
           return;
         }
 
         // Verify that the submission belongs to the current student
+        console.log('🔐 Verifying submission ownership - submission studentId:', submissionData.studentId, 'current student:', student.id);
         if (submissionData.studentId !== student.id) {
+          console.error('❌ Submission ownership mismatch');
           setError('You do not have permission to view this submission.');
           setLoading(false);
           return;
@@ -489,11 +497,22 @@ export default function TestResultPage() {
     return question || null;
   };
 
-  // Find the most recent submission for this test and student
+  // Find the most recent submission for this test and student with enhanced error handling
   const findMostRecentSubmissionId = async (testId: string, studentId: string) => {
     try {
       // Import services
       const { SubmissionService } = await import('@/apiservices/submissionService');
+      
+      // Try the new enhanced method first
+      const submissionId = await SubmissionService.findSubmissionWithRecovery(testId, studentId);
+      
+      if (submissionId) {
+        console.log('✅ Found submission using enhanced recovery:', submissionId);
+        return submissionId;
+      }
+      
+      // Fallback to original method
+      console.log('🔄 Trying fallback method...');
       
       // Get all submissions for this student
       const submissions = await SubmissionService.getStudentSubmissions(studentId);
@@ -504,9 +523,11 @@ export default function TestResultPage() {
         .sort((a, b) => b.submittedAt.seconds - a.submittedAt.seconds);
       
       if (filteredSubmissions.length === 0) {
+        console.log('❌ No submissions found for this test');
         return null;
       }
       
+      console.log('✅ Found submission using fallback method:', filteredSubmissions[0].id);
       return filteredSubmissions[0].id;
     } catch (error) {
       console.error('Error finding submission:', error);
@@ -625,6 +646,55 @@ export default function TestResultPage() {
     }
   };
 
+  // Handle manual recovery attempt
+  const handleRecoveryAttempt = async () => {
+    if (!testId || !student?.id) return;
+    
+    try {
+      setLoading(true);
+      setError(null);
+      
+      console.log('🔄 Attempting manual recovery...');
+      
+      // Import services
+      const { SubmissionService } = await import('@/apiservices/submissionService');
+      const { AttemptManagementService } = await import('@/apiservices/attemptManagementService');
+      
+      // Get attempt information to find recent attempts
+      const attemptData = await AttemptManagementService.getAttemptSummary(testId, student.id);
+      
+      if (attemptData && attemptData.attempts.length > 0) {
+        // Find the most recent submitted attempt
+        const submittedAttempts = attemptData.attempts.filter(
+          attempt => attempt.status === 'submitted' || attempt.status === 'auto_submitted'
+        );
+        
+        if (submittedAttempts.length > 0) {
+          const latestAttempt = submittedAttempts[submittedAttempts.length - 1];
+          console.log('🔧 Attempting recovery for attempt:', latestAttempt.attemptId);
+          
+          // Try to recover the submission
+          const recoveredSubmission = await SubmissionService.recoverSubmissionFromSession(latestAttempt.attemptId);
+          
+          if (recoveredSubmission) {
+            console.log('✅ Recovery successful! Reloading page...');
+            // Reload the page to show recovered results
+            window.location.reload();
+            return;
+          }
+        }
+      }
+      
+      setError('Recovery attempt failed. No recoverable submission data found. Please contact your teacher for assistance.');
+      
+    } catch (error) {
+      console.error('Recovery attempt failed:', error);
+      setError('Recovery attempt failed. Please try again or contact your teacher for assistance.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Handle going back
   const handleBack = () => {
     router.push('/student/test');
@@ -680,11 +750,23 @@ export default function TestResultPage() {
             <p className="text-red-700 dark:text-red-300 mb-6">
               {error}
             </p>
-            <Button 
-              onClick={handleBack}
-            >
-              Return to Tests
-            </Button>
+            <div className="flex justify-center space-x-4">
+              {error.includes('submission') && !error.includes('Recovery attempt failed') && (
+                <Button 
+                  onClick={handleRecoveryAttempt}
+                  disabled={loading}
+                  variant="outline"
+                  className="border-red-300 text-red-700 hover:bg-red-50"
+                >
+                  {loading ? 'Recovering...' : 'Try Recovery'}
+                </Button>
+              )}
+              <Button 
+                onClick={handleBack}
+              >
+                Return to Tests
+              </Button>
+            </div>
           </div>
         </div>
       </StudentLayout>
