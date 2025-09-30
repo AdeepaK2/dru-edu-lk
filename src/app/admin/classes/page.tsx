@@ -91,7 +91,8 @@ export default function ClassManager() {
             const displayClasses = classDocuments.map(doc => {
               const center = centers?.find(c => c.center.toString() === doc.centerId);
               const teacher = teachers?.find(t => t.id === doc.teacherId);
-              return classDocumentToDisplay(doc, center?.location, teacher?.name);
+              const coTeacher = teachers?.find(t => t.id === doc.coTeacherId);
+              return classDocumentToDisplay(doc, center?.location, teacher?.name, coTeacher?.name);
             });
             resolve(displayClasses);
             unsubscribe();
@@ -328,7 +329,13 @@ export default function ClassManager() {
                     <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
                       <Users className="w-4 h-4 mr-2" />
                       <span>Teacher: {cls.teacher}</span>
-                    </div>                    <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
+                    </div>
+                    {cls.coTeacher && cls.coTeacher !== 'Not Assigned' && (
+                      <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
+                        <Users className="w-4 h-4 mr-2" />
+                        <span>Co-Teacher: {cls.coTeacher}</span>
+                      </div>
+                    )}                    <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
                       <Clock className="w-4 h-4 mr-2" />
                       <span>{cls.schedule}</span>
                     </div>

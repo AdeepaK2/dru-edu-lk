@@ -46,8 +46,9 @@ export default function SheetManagementPage() {
   const router = useRouter();
   const { teacher, loading: authLoading } = useTeacherAuth();
   
-  const [activeTab, setActiveTab] = useState<'classes' | 'templates'>('classes');
+  const [activeTab, setActiveTab] = useState<'classes' | 'co-classes' | 'templates'>('classes');
   const [classes, setClasses] = useState<ClassWithStats[]>([]);
+  const [coClasses, setCoClasses] = useState<ClassWithStats[]>([]);
   const [classesLoading, setClassesLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [templates, setTemplates] = useState<SheetTemplate[]>([]);
@@ -59,6 +60,8 @@ export default function SheetManagementPage() {
     if (!authLoading && teacher?.id) {
       if (activeTab === 'classes') {
         loadClasses();
+      } else if (activeTab === 'co-classes') {
+        loadCoClasses();
       } else {
         loadTemplates();
       }
@@ -121,6 +124,67 @@ export default function SheetManagementPage() {
       setClasses(classesWithStats);
     } catch (error) {
       console.error('Error loading classes:', error);
+    } finally {
+      setClassesLoading(false);
+    }
+  };
+
+  const loadCoClasses = async () => {
+    if (!teacher?.id) return;
+    
+    try {
+      setClassesLoading(true);
+      const teacherCoClasses = await ClassFirestoreService.getClassesByCoTeacher(teacher.id);
+      
+      const coClassesWithStats = await Promise.all(
+        teacherCoClasses.map(async (cls) => {
+          const studentCount = await StudentEnrollmentFirestoreService.getEnrolledStudentsCount(cls.id);
+          
+          let sheetAllocations = 0;
+          let activeSheets = 0;
+          
+          try {
+            // Direct Firestore query for sheet allocations
+            const allocationsQuery = query(
+              collection(firestore, 'sheetAllocations'),
+              where('classId', '==', cls.id)
+            );
+            const allocationsSnapshot = await getDocs(allocationsQuery);
+            const classAllocations = allocationsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            sheetAllocations = classAllocations.length;
+            
+            // Get student sheets count for each allocation
+            for (const alloc of classAllocations) {
+              try {
+                const studentSheetsQuery = query(
+                  collection(firestore, 'studentSheets'),
+                  where('allocationId', '==', alloc.id)
+                );
+                const studentSheetsSnapshot = await getDocs(studentSheetsQuery);
+                activeSheets += studentSheetsSnapshot.size;
+              } catch (error) {
+                console.warn('Could not load student sheets for allocation:', alloc.id);
+              }
+            }
+          } catch (error) {
+            console.warn('Could not load allocations for class:', cls.id);
+          }
+          
+          return {
+            id: cls.id,
+            name: cls.name,
+            subject: cls.subject,
+            year: cls.year,
+            studentCount,
+            sheetAllocations,
+            activeSheets
+          };
+        })
+      );
+      
+      setCoClasses(coClassesWithStats);
+    } catch (error) {
+      console.error('Error loading co-classes:', error);
     } finally {
       setClassesLoading(false);
     }
@@ -246,11 +310,14 @@ export default function SheetManagementPage() {
     router.push(`/teacher/sheets/class/${classData.id}`);
   };
 
-  const filteredClasses = classes.filter(cls => 
-    cls.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    cls.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    cls.year.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredClasses = (() => {
+    const currentClasses = activeTab === 'co-classes' ? coClasses : classes;
+    return currentClasses.filter(cls => 
+      cls.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      cls.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      cls.year.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  })();
 
   if (authLoading) {
     return (
@@ -298,7 +365,18 @@ export default function SheetManagementPage() {
                   }`}
                 >
                   <Users className="h-4 w-4 inline mr-2" />
-                  My Classes
+                  My Classes ({classes.length})
+                </button>
+                <button
+                  onClick={() => setActiveTab('co-classes')}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === 'co-classes'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  <Users className="h-4 w-4 inline mr-2" />
+                  Co-Classes ({coClasses.length})
                 </button>
                 <button
                   onClick={() => setActiveTab('templates')}
@@ -316,21 +394,29 @@ export default function SheetManagementPage() {
           </div>
 
           {/* Classes Tab */}
-          {activeTab === 'classes' && (
+          {(activeTab === 'classes' || activeTab === 'co-classes') && (
             <div className="space-y-6">
               {/* Search and Filter */}
               <div className="bg-white rounded-lg shadow p-4">
-                <div className="flex items-center space-x-4">
+                <div className="flex items-center justify-between">
                   <div className="flex-1 relative">
                     <Search className="h-5 w-5 absolute left-3 top-3 text-gray-400" />
                     <input
                       type="text"
-                      placeholder="Search classes..."
+                      placeholder={`Search ${activeTab === 'co-classes' ? 'co-classes' : 'classes'}...`}
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
+                  {activeTab === 'co-classes' && (
+                    <div className="ml-4 flex items-center text-sm text-gray-600">
+                      <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800 mr-2">
+                        Co-Teacher
+                      </span>
+                      View-only access
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -338,14 +424,24 @@ export default function SheetManagementPage() {
               {classesLoading ? (
                 <div className="text-center py-12">
                   <div className="w-8 h-8 border-t-2 border-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
-                  <p className="text-gray-600">Loading your classes...</p>
+                  <p className="text-gray-600">
+                    Loading {activeTab === 'co-classes' ? 'co-classes' : 'classes'}...
+                  </p>
                 </div>
               ) : filteredClasses.length === 0 ? (
                 <div className="text-center py-12">
                   <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Classes Found</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    {activeTab === 'co-classes' ? 'No Co-Classes Found' : 'No Classes Found'}
+                  </h3>
                   <p className="text-gray-500">
-                    {searchTerm ? 'No classes match your search.' : 'You haven\'t been assigned to any classes yet.'}
+                    {searchTerm 
+                      ? `No ${activeTab === 'co-classes' ? 'co-classes' : 'classes'} match your search.`
+                      : (activeTab === 'co-classes' 
+                          ? 'You are not assigned as a co-teacher to any classes yet.'
+                          : 'You haven\'t been assigned to any classes yet.'
+                        )
+                    }
                   </p>
                 </div>
               ) : (
@@ -353,8 +449,10 @@ export default function SheetManagementPage() {
                   {filteredClasses.map((classData) => (
                     <div
                       key={classData.id}
-                      className="bg-white rounded-lg shadow hover:shadow-md transition-shadow cursor-pointer"
-                      onClick={() => openClassManagement(classData)}
+                      className={`bg-white rounded-lg shadow hover:shadow-md transition-shadow ${
+                        activeTab === 'co-classes' ? 'cursor-default' : 'cursor-pointer'
+                      }`}
+                      onClick={() => activeTab === 'classes' && openClassManagement(classData)}
                     >
                       <div className="p-6">
                         <div className="flex items-start justify-between">
@@ -364,11 +462,18 @@ export default function SheetManagementPage() {
                               <h3 className="text-lg font-semibold text-gray-900 truncate">
                                 {classData.name}
                               </h3>
+                              {activeTab === 'co-classes' && (
+                                <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
+                                  Co-Teacher
+                                </span>
+                              )}
                             </div>
                             <p className="text-sm text-gray-500 mt-1">{classData.subject}</p>
                             <p className="text-xs text-gray-400">{classData.year}</p>
                           </div>
-                          <ChevronRight className="h-5 w-5 text-gray-400" />
+                          {activeTab === 'classes' && (
+                            <ChevronRight className="h-5 w-5 text-gray-400" />
+                          )}
                         </div>
 
                         <div className="mt-4 space-y-2">
