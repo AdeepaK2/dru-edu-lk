@@ -67,10 +67,12 @@ export default function BackgroundSubmissionMonitor() {
       setProcessing(true);
       setError(null);
 
+      // Use POST for manual processing (admin interface)
       const response = await fetch('/api/background/submissions', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          // Note: Admin manual processing doesn't use the cron secret
         }
       });
 
