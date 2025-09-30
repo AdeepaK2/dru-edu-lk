@@ -10,6 +10,7 @@ import {
   Settings
 } from 'lucide-react';
 import { SubjectFirestoreService } from '@/apiservices/subjectFirestoreService';
+import { ClassFirestoreService } from '@/apiservices/classFirestoreService';
 import { useTeacherAuth } from '@/hooks/useTeacherAuth';
 import TeacherLayout from '@/components/teacher/TeacherLayout';
 import { Button, Input, useToast } from '@/components/ui';
@@ -30,6 +31,8 @@ export default function TeacherLessons() {
 
   // State management
   const [subjects, setSubjects] = useState<SubjectCard[]>([]);
+  const [coSubjects, setCoSubjects] = useState<SubjectCard[]>([]);
+  const [activeTab, setActiveTab] = useState<'main' | 'co'>('main');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,12 +45,11 @@ export default function TeacherLessons() {
 
   // Load subjects for teacher
   useEffect(() => {
-    const loadSubjects = async () => {
-      console.log('🔍 Loading subjects for teacher:', {
+    const loadSubjectsFromClasses = async () => {
+      console.log('🔍 Loading subjects from classes for teacher:', {
         teacher: teacher ? {
           id: teacher.id,
-          name: teacher.name,
-          subjects: teacher.subjects
+          name: teacher.name
         } : null
       });
       
@@ -56,92 +58,76 @@ export default function TeacherLessons() {
         return;
       }
       
-      if (!teacher.subjects || teacher.subjects.length === 0) {
-        console.log('❌ Teacher has no subjects assigned:', teacher.subjects);
-        setSubjects([]);
-        setLoading(false);
-        return;
-      }
-      
       setLoading(true);
       setError(null);
       
       try {
-        console.log('📚 Fetching all subjects from Firestore...');
-        // Get all subjects and filter for teacher's subjects
+        // Load main teacher classes
+        const mainClasses = await ClassFirestoreService.getClassesByTeacher(teacher.id);
+        console.log('✅ Loaded main teacher classes:', mainClasses.length);
+        
+        // Load co-teacher classes
+        const coClasses = await ClassFirestoreService.getClassesByCoTeacher(teacher.id);
+        console.log('✅ Loaded co-teacher classes:', coClasses.length);
+        
+        // Get all subjects from Firestore
         const allSubjects = await SubjectFirestoreService.getAllSubjects();
         console.log('📋 All subjects from Firestore:', allSubjects.length);
-        console.log('📋 All subjects detailed:', allSubjects.map(s => ({
-          id: s.id,
-          name: s.name,
-          subjectId: s.subjectId,
-          grade: s.grade,
-          combined: `${s.name}-Grade ${s.grade}`
-        })));
-        console.log('🎯 Teacher assigned subjects:', teacher.subjects);
-        console.log('🎯 Teacher subjects type:', typeof teacher.subjects, Array.isArray(teacher.subjects));
         
-        const teacherSubjects = allSubjects
-          .filter(subject => {
-            // Try multiple matching strategies
-            const matchByName = teacher.subjects?.includes(subject.name);
-            const matchBySubjectId = teacher.subjects?.includes(subject.subjectId);
-            const matchByFirestoreId = teacher.subjects?.includes(subject.id);
-            
-            // Try combined name-grade format
-            const combinedNameGrade = `${subject.name}-Grade ${subject.grade}`;
-            const matchByCombined = teacher.subjects?.includes(combinedNameGrade);
-            
-            // Try partial matching (if teacher subject contains the subject name)
-            const matchByPartialName = teacher.subjects?.some(teacherSubj => 
-              teacherSubj.toLowerCase().includes(subject.name.toLowerCase()) ||
-              subject.name.toLowerCase().includes(teacherSubj.toLowerCase())
-            );
-            
-            const isMatch = matchByName || matchBySubjectId || matchByFirestoreId || matchByCombined || matchByPartialName;
-            
-            console.log(`🔍 Checking subject:`, {
-              name: subject.name,
-              subjectId: subject.subjectId,
-              firestoreId: subject.id,
-              grade: subject.grade,
-              combinedNameGrade,
-              teacherSubjects: teacher.subjects,
-              matchByName,
-              matchBySubjectId,
-              matchByFirestoreId,
-              matchByCombined,
-              matchByPartialName,
-              finalResult: isMatch ? 'MATCH ✅' : 'NO MATCH ❌'
-            });
-            return isMatch;
-          })
+        // Extract unique subject IDs from main classes
+        const mainSubjectIds = Array.from(new Set(mainClasses.map(cls => cls.subjectId)));
+        const mainSubjects = allSubjects
+          .filter(subject => mainSubjectIds.includes(subject.id))
           .map(subject => ({
             id: subject.id,
             name: subject.name,
             description: subject.description,
             grade: subject.grade,
-            isActive: subject.isActive
+            isActive: subject.isActive !== false
           }));
         
-        console.log('✅ Filtered teacher subjects:', teacherSubjects.length, teacherSubjects.map(s => s.name));
-        setSubjects(teacherSubjects);
+        // Extract unique subject IDs from co-classes
+        const coSubjectIds = Array.from(new Set(coClasses.map(cls => cls.subjectId)));
+        const coClassSubjects = allSubjects
+          .filter(subject => coSubjectIds.includes(subject.id))
+          .map(subject => ({
+            id: subject.id,
+            name: subject.name,
+            description: subject.description,
+            grade: subject.grade,
+            isActive: subject.isActive !== false
+          }));
+        
+        console.log('📚 Main teacher subjects:', mainSubjects.length);
+        console.log('📚 Co-teacher subjects:', coClassSubjects.length);
+        
+        setSubjects(mainSubjects);
+        setCoSubjects(coClassSubjects);
+        
+        console.log('✅ Successfully loaded subjects from classes');
       } catch (err: any) {
-        console.error("❌ Error loading subjects:", err);
+        console.error('❌ Error loading subjects from classes:', err);
         setError(err.message || 'Failed to load subjects');
+        setSubjects([]);
+        setCoSubjects([]);
       } finally {
         setLoading(false);
       }
     };
     
-    loadSubjects();
+    loadSubjectsFromClasses();
   }, [teacher]);
 
-  // Filter subjects based on search
-  const filteredSubjects = subjects.filter(subject =>
-    subject.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (subject.description && subject.description.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  // Get filtered subjects based on search term and active tab
+  const getFilteredSubjects = () => {
+    const currentSubjects = activeTab === 'main' ? subjects : coSubjects;
+    return currentSubjects.filter(subject =>
+      subject.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (subject.description && subject.description.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+  };
+
+  const filteredSubjects = getFilteredSubjects();
 
   // Handle manage lessons click
   const handleManageLessons = (subject: SubjectCard) => {
@@ -179,7 +165,7 @@ export default function TeacherLessons() {
             <div className="flex items-center bg-blue-50 dark:bg-blue-900/20 px-4 py-2 rounded-lg">
               <BookOpen className="w-5 h-5 text-blue-600 dark:text-blue-400 mr-2" />
               <span className="text-blue-600 dark:text-blue-400 font-medium">
-                {subjects.length} Subject{subjects.length !== 1 ? 's' : ''}
+                {activeTab === 'main' ? subjects.length : coSubjects.length} Subject{(activeTab === 'main' ? subjects.length : coSubjects.length) !== 1 ? 's' : ''}
               </span>
             </div>
           </div>
@@ -197,6 +183,32 @@ export default function TeacherLessons() {
             </div>
           </div>
         )}
+
+        {/* Tabs */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <div className="flex space-x-1 bg-gray-100 dark:bg-gray-700 p-1 rounded-lg">
+            <button
+              onClick={() => setActiveTab('main')}
+              className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                activeTab === 'main'
+                  ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm'
+                  : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+              }`}
+            >
+              My Subjects ({subjects.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('co')}
+              className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                activeTab === 'co'
+                  ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm'
+                  : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+              }`}
+            >
+              Co-Class Subjects ({coSubjects.length})
+            </button>
+          </div>
+        </div>
 
         {/* Search */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
@@ -216,9 +228,17 @@ export default function TeacherLessons() {
         {filteredSubjects.length === 0 ? (
           <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
             <BookOpen className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">No subjects found</h3>
+            <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
+              {searchTerm ? 'No subjects found' : (activeTab === 'co' ? 'No co-class subjects' : 'No subjects found')}
+            </h3>
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              {searchTerm ? 'Try adjusting your search criteria' : 'No subjects assigned to you'}
+              {searchTerm 
+                ? 'Try adjusting your search criteria' 
+                : (activeTab === 'co' 
+                    ? 'You are not assigned as a co-teacher to any classes' 
+                    : 'No subjects assigned to you'
+                  )
+              }
             </p>
           </div>
         ) : (
@@ -230,13 +250,21 @@ export default function TeacherLessons() {
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                       {subject.name}
                     </h3>
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      subject.isActive 
-                        ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300'
-                        : 'bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-300'
-                    }`}>
-                      {subject.isActive ? 'Active' : 'Inactive'}
-                    </span>
+                    <div className="flex items-center space-x-2">
+                      {/* Role badge for co-class subjects */}
+                      {activeTab === 'co' && (
+                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 dark:bg-purple-900/20 text-purple-800 dark:text-purple-300">
+                          Co-Teacher
+                        </span>
+                      )}
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        subject.isActive 
+                          ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300'
+                          : 'bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-300'
+                      }`}>
+                        {subject.isActive ? 'Active' : 'Inactive'}
+                      </span>
+                    </div>
                   </div>
                   
                   {subject.grade && (
@@ -257,10 +285,15 @@ export default function TeacherLessons() {
                   <div className="mt-4">
                     <Button
                       onClick={() => handleManageLessons(subject)}
-                      className="w-full flex items-center justify-center space-x-2"
+                      disabled={activeTab === 'co'}
+                      className={`w-full flex items-center justify-center space-x-2 ${
+                        activeTab === 'co' 
+                          ? 'opacity-50 cursor-not-allowed' 
+                          : ''
+                      }`}
                     >
                       <Settings className="w-4 h-4" />
-                      <span>Manage Lessons</span>
+                      <span>{activeTab === 'co' ? 'View Only' : 'Manage Lessons'}</span>
                     </Button>
                   </div>
                 </div>

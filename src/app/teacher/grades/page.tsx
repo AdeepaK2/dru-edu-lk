@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '@/utils/firebase-client';
 import TeacherLayout from '@/components/teacher/TeacherLayout';
+import { ClassFirestoreService } from '@/apiservices/classFirestoreService';
 import { 
   Card, 
   CardContent, 
@@ -25,7 +26,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { ClassSummary } from '@/apiservices/teacherGradeAnalyticsService';
-import { useTeacherClassesSummary } from '@/hooks/useGradeAnalytics';
+import { useTeacherClassesSummary, useForceRefreshAnalytics } from '@/hooks/useGradeAnalytics';
 
 // Simple loading skeleton component
 const LoadingSkeleton = ({ className }: { className?: string }) => (
@@ -42,7 +43,14 @@ const SimpleAlert = ({ children }: { children: React.ReactNode }) => (
 export default function TeacherGradesPage() {
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'main' | 'co'>('main');
+  const [coClasses, setCoClasses] = useState<ClassSummary[]>([]);
+  const [coClassesLoading, setCoClassesLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const router = useRouter();
+  
+  // Hook for force refreshing analytics
+  const { forceRefresh } = useForceRefreshAnalytics();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -56,8 +64,72 @@ export default function TeacherGradesPage() {
   // Use SWR hook for data fetching
   const { classes, isLoading, error, mutate, isEmpty } = useTeacherClassesSummary(user?.uid || null);
 
+  // Load co-classes when tab changes to co
+  useEffect(() => {
+    if (activeTab === 'co' && user?.uid && coClasses.length === 0) {
+      loadCoClasses();
+    }
+  }, [activeTab, user?.uid, coClasses.length]);
+
+  const loadCoClasses = async () => {
+    if (!user?.uid) return;
+    
+    try {
+      setCoClassesLoading(true);
+      const teacherCoClasses = await ClassFirestoreService.getClassesByCoTeacher(user.uid);
+      
+      // Convert to ClassSummary format (simplified version for co-classes)
+      const coClassesSummary: ClassSummary[] = teacherCoClasses.map(cls => ({
+        id: cls.id,
+        classId: cls.id,
+        name: cls.name,
+        subject: cls.subject,
+        subjectId: cls.subjectId || '',
+        year: cls.year,
+        enrolledStudents: 0, // Will be loaded separately if needed
+        totalTests: 0,
+        completedTests: 0,
+        averageScore: 0,
+        lastActivityDate: undefined
+      }));
+      
+      setCoClasses(coClassesSummary);
+    } catch (error) {
+      console.error('Error loading co-classes:', error);
+    } finally {
+      setCoClassesLoading(false);
+    }
+  };
+
   const handleClassClick = (classId: string) => {
-    router.push(`/teacher/grades/${classId}`);
+    // Only allow navigation for main teacher classes
+    if (activeTab === 'main') {
+      router.push(`/teacher/grades/${classId}`);
+    }
+  };
+  
+  const handleRefreshAll = async () => {
+    if (!user?.uid) return;
+    
+    try {
+      setIsRefreshing(true);
+      
+      // Force refresh all classes
+      const refreshPromises = classes.map(classItem => 
+        forceRefresh(classItem.id, user.uid)
+      );
+      
+      await Promise.all(refreshPromises);
+      
+      // Also refresh the main classes list
+      await mutate();
+      
+      console.log('✅ Refreshed all class analytics');
+    } catch (error) {
+      console.error('Error refreshing analytics:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   const formatLastActivity = (date?: Date) => {
@@ -138,15 +210,42 @@ export default function TeacherGradesPage() {
             Monitor student performance and class analytics across all your classes
           </p>
         </div>
-        <Button 
-          variant="outline" 
-          onClick={() => mutate()}
-          disabled={isLoading}
-          className="flex items-center gap-2"
-        >
-          <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={handleRefreshAll}
+            disabled={isLoading || isRefreshing || classes.length === 0}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            {isRefreshing ? 'Recalculating...' : 'Full Refresh'}
+          </Button>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <div className="flex space-x-1 bg-gray-100 dark:bg-gray-700 p-1 rounded-lg">
+          <button
+            onClick={() => setActiveTab('main')}
+            className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+              activeTab === 'main'
+                ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm'
+                : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+            }`}
+          >
+            My Classes ({classes.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('co')}
+            className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+              activeTab === 'co'
+                ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm'
+                : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+            }`}
+          >
+            Co-Classes ({coClasses.length})
+          </button>
+        </div>
       </div>
 
       {/* Error Alert */}
@@ -157,7 +256,7 @@ export default function TeacherGradesPage() {
       )}
 
       {/* Classes Grid */}
-      {isLoading ? (
+      {(activeTab === 'main' ? isLoading : coClassesLoading) ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {[...Array(6)].map((_, i) => (
             <Card key={i}>
@@ -175,28 +274,44 @@ export default function TeacherGradesPage() {
             </Card>
           ))}
         </div>
-      ) : classes.length === 0 ? (
+      ) : (activeTab === 'main' ? classes : coClasses).length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <BookOpen className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No Classes Found</h3>
+            <h3 className="text-lg font-semibold mb-2">
+              {activeTab === 'co' ? 'No Co-Classes Found' : 'No Classes Found'}
+            </h3>
             <p className="text-muted-foreground text-center">
-              You don't have any active classes assigned yet.
+              {activeTab === 'co' 
+                ? 'You are not assigned as a co-teacher to any classes yet.'
+                : 'You don\'t have any active classes assigned yet.'
+              }
             </p>
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {classes.map((classItem) => (
+          {(activeTab === 'main' ? classes : coClasses).map((classItem) => (
             <Card 
               key={classItem.id} 
-              className="cursor-pointer hover:shadow-lg transition-shadow duration-300"
+              className={`transition-shadow duration-300 ${
+                activeTab === 'main' 
+                  ? 'cursor-pointer hover:shadow-lg' 
+                  : 'cursor-default opacity-75'
+              }`}
               onClick={() => handleClassClick(classItem.id)}
             >
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
-                    <CardTitle className="text-lg">{classItem.name}</CardTitle>
+                    <div className="flex items-center gap-2">
+                      <CardTitle className="text-lg">{classItem.name}</CardTitle>
+                      {activeTab === 'co' && (
+                        <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-100">
+                          Co-Teacher
+                        </Badge>
+                      )}
+                    </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Badge variant="secondary" className="text-xs">
                         {classItem.classId}
@@ -204,7 +319,9 @@ export default function TeacherGradesPage() {
                       <span>{classItem.subject} • {classItem.year}</span>
                     </div>
                   </div>
-                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                  {activeTab === 'main' && (
+                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                  )}
                 </div>
               </CardHeader>
               
@@ -248,7 +365,7 @@ export default function TeacherGradesPage() {
                   </div>
                 </div>
 
-                {/* Last Activity */}
+                {/* Last Activity
                 <div className="flex items-center justify-between pt-2 border-t">
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -257,21 +374,26 @@ export default function TeacherGradesPage() {
                   <span className="text-sm font-medium">
                     {formatLastActivity(classItem.lastActivityDate)}
                   </span>
-                </div>
+                </div> */}
 
                 {/* Quick Actions */}
                 <div className="pt-2">
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="w-full"
+                    className={`w-full ${
+                      activeTab === 'co' ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
+                    disabled={activeTab === 'co'}
                     onClick={(e: React.MouseEvent) => {
                       e.stopPropagation();
-                      handleClassClick(classItem.id);
+                      if (activeTab === 'main') {
+                        handleClassClick(classItem.id);
+                      }
                     }}
                   >
                     <BarChart3 className="h-4 w-4 mr-2" />
-                    View Analytics
+                    {activeTab === 'co' ? 'View Only' : 'View Analytics'}
                   </Button>
                 </div>
               </CardContent>
@@ -280,8 +402,8 @@ export default function TeacherGradesPage() {
         </div>
       )}
 
-      {/* Summary Statistics */}
-      {classes.length > 0 && (
+      {/* Summary Statistics - Only show for main classes */}
+      {activeTab === 'main' && classes.length > 0 && (
         <div className="grid gap-4 md:grid-cols-4">
           <Card>
             <CardContent className="p-6">
