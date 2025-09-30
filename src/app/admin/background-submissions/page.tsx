@@ -11,6 +11,7 @@ import {
   Users
 } from 'lucide-react';
 import { Button } from '@/components/ui';
+import BackgroundSubmissionMonitor from '@/components/BackgroundSubmissionMonitor';
 
 interface BackgroundSubmissionReport {
   totalExpired: number;
@@ -28,7 +29,7 @@ interface ProcessResults {
   errors: string[];
 }
 
-export default function BackgroundSubmissionMonitor() {
+export default function BackgroundSubmissionPage() {
   const [report, setReport] = useState<BackgroundSubmissionReport | null>(null);
   const [lastProcessResults, setLastProcessResults] = useState<ProcessResults | null>(null);
   const [loading, setLoading] = useState(false);
@@ -279,6 +280,11 @@ export default function BackgroundSubmissionMonitor() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Real-time Monitor */}
+      <div className="mt-8">
+        <BackgroundSubmissionMonitor />
       </div>
     </div>
   );

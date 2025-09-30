@@ -656,14 +656,29 @@ export default function TestResultPage() {
       
       console.log('🔄 Attempting manual recovery...');
       
-      // Import services
+      // Import services (only server-safe ones)
       const { SubmissionService } = await import('@/apiservices/submissionService');
       const { AttemptManagementService } = await import('@/apiservices/attemptManagementService');
-      const { BackgroundSubmissionService } = await import('@/apiservices/backgroundSubmissionService');
       
-      // First check for expired attempts that might need auto-submission
+      // First check for expired attempts that might need auto-submission via API
       console.log('🔍 Checking for expired attempts...');
-      await BackgroundSubmissionService.processExpiredAttemptsForStudent(student.id);
+      try {
+        const response = await fetch('/api/background/student-submissions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ studentId: student.id })
+        });
+        
+        if (response.ok) {
+          console.log('✅ Checked for expired attempts');
+        } else {
+          console.warn('⚠️ Background submission check returned error:', response.status);
+        }
+      } catch (bgError) {
+        console.warn('⚠️ Background submission check failed:', bgError);
+      }
       
       // Get attempt information to find recent attempts
       const attemptData = await AttemptManagementService.getAttemptSummary(testId, student.id);
