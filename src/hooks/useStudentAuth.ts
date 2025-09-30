@@ -101,9 +101,19 @@ export const useStudentAuth = () => {
 
             // Check for expired attempts when student logs in
             try {
-              const { BackgroundSubmissionService } = await import('@/apiservices/backgroundSubmissionService');
-              await BackgroundSubmissionService.processExpiredAttemptsForStudent(studentData.id);
-              console.log('✅ Checked for expired attempts on login');
+              const response = await fetch('/api/background/student-submissions', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ studentId: studentData.id })
+              });
+
+              if (response.ok) {
+                console.log('✅ Checked for expired attempts on login');
+              } else {
+                console.warn('⚠️ Background submission check returned error:', response.status);
+              }
             } catch (bgError) {
               console.warn('⚠️ Background submission check failed:', bgError);
               // Don't fail the login process if background check fails
