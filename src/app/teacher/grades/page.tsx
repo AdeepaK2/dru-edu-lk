@@ -114,8 +114,13 @@ export default function TeacherGradesPage() {
     try {
       setIsRefreshing(true);
       
+      // Get ALL classes for the teacher, not just the currently displayed ones
+      const allTeacherClasses = await ClassFirestoreService.getClassesByTeacher(user.uid);
+      
+      console.log(`🔄 Refreshing analytics for all ${allTeacherClasses.length} classes`);
+      
       // Force refresh all classes
-      const refreshPromises = classes.map(classItem => 
+      const refreshPromises = allTeacherClasses.map(classItem => 
         forceRefresh(classItem.id, user.uid)
       );
       
@@ -124,7 +129,7 @@ export default function TeacherGradesPage() {
       // Also refresh the main classes list
       await mutate();
       
-      console.log('✅ Refreshed all class analytics');
+      console.log(`✅ Refreshed analytics for all ${allTeacherClasses.length} classes`);
     } catch (error) {
       console.error('Error refreshing analytics:', error);
     } finally {
@@ -213,7 +218,7 @@ export default function TeacherGradesPage() {
         <div className="flex gap-2">
           <Button 
             onClick={handleRefreshAll}
-            disabled={isLoading || isRefreshing || classes.length === 0}
+            disabled={isLoading || isRefreshing}
             className="flex items-center gap-2"
           >
             <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
@@ -357,12 +362,12 @@ export default function TeacherGradesPage() {
                     </div>
                   </div>
                   
-                  <div className="flex items-center justify-between">
+                  {/* <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Completed Tests</span>
                     <span className="text-sm font-medium">
                       {classItem.completedTests} / {classItem.totalTests}
                     </span>
-                  </div>
+                  </div> */}
                 </div>
 
                 {/* Last Activity
