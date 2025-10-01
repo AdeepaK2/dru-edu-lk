@@ -44,6 +44,19 @@ export default function Mail({
   const [searchTerm, setSearchTerm] = useState('');
   const [priority, setPriority] = useState<'low' | 'normal' | 'high'>('normal');
   const [teacherData, setTeacherData] = useState<any>(null);
+  
+  // Alert states for success/failure feedback
+  const [alertState, setAlertState] = useState<{
+    show: boolean;
+    type: 'success' | 'error';
+    title: string;
+    message: string;
+  }>({
+    show: false,
+    type: 'success',
+    title: '',
+    message: ''
+  });
 
   // Get dynamic teacher and class names with fallback detection
   const actualTeacherName = teacherData?.name || teacherName || classData?.teacherName || 'DRU Education';
@@ -67,6 +80,37 @@ export default function Mail({
       fallbackMode: fallbackMode
     });
   }, [teacherData, teacherName, classData]);
+
+  // Helper functions for showing alerts
+  const showSuccessAlert = (title: string, message: string) => {
+    setAlertState({
+      show: true,
+      type: 'success',
+      title,
+      message
+    });
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+      setAlertState(prev => ({ ...prev, show: false }));
+    }, 5000);
+  };
+
+  const showErrorAlert = (title: string, message: string) => {
+    setAlertState({
+      show: true,
+      type: 'error',
+      title,
+      message
+    });
+    // Auto-hide after 8 seconds (longer for errors)
+    setTimeout(() => {
+      setAlertState(prev => ({ ...prev, show: false }));
+    }, 8000);
+  };
+
+  const hideAlert = () => {
+    setAlertState(prev => ({ ...prev, show: false }));
+  };
 
   // Load teacher data using client-side Firebase
   useEffect(() => {
@@ -102,7 +146,22 @@ export default function Mail({
   }, [classId]);
 
   const handleSendEmail = async () => {
-    if (!subject.trim() || !emailBody.trim()) return;
+    // Validate required fields
+    if (!subject.trim()) {
+      showErrorAlert(
+        'Subject Required',
+        'Please enter a subject for your email before sending.'
+      );
+      return;
+    }
+    
+    if (!emailBody.trim()) {
+      showErrorAlert(
+        'Message Required',
+        'Please enter a message for your email before sending.'
+      );
+      return;
+    }
     
     // If no students are selected, ask for confirmation
     if (selectedStudents.length === 0) {
@@ -241,6 +300,14 @@ export default function Mail({
       
       console.log(`✅ Email queued for sending to ${emailAddresses.length} recipients via Firebase Mail Extension`);
       
+      // Show success alert
+      const recipientCount = emailAddresses.length;
+      const recipientText = recipientCount === 1 ? 'recipient' : 'recipients';
+      showSuccessAlert(
+        'Email Sent Successfully!',
+        `Your email "${subject.trim()}" has been sent to ${recipientCount} ${recipientText}. Recipients will receive it shortly.`
+      );
+      
       // TODO: Handle file uploads to Firebase Storage and update attachmentUrls
       
       // Refresh email history
@@ -256,7 +323,13 @@ export default function Mail({
       console.log('✅ Email saved successfully with ID:', emailId);
     } catch (error) {
       console.error('❌ Failed to send email:', error);
-      // You might want to show a toast notification here
+      
+      // Show error alert
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      showErrorAlert(
+        'Failed to Send Email',
+        `There was a problem sending your email: ${errorMessage}. Please check your internet connection and try again.`
+      );
     } finally {
       setIsSending(false);
     }
@@ -293,6 +366,53 @@ export default function Mail({
 
   return (
     <div className="space-y-6">
+      {/* Success/Error Alert */}
+      {alertState.show && (
+        <div className={`fixed top-4 right-4 max-w-md w-full z-50 ${
+          alertState.type === 'success' 
+            ? 'bg-green-50 border border-green-200 dark:bg-green-900/20 dark:border-green-800' 
+            : 'bg-red-50 border border-red-200 dark:bg-red-900/20 dark:border-red-800'
+        } rounded-lg shadow-lg p-4 transition-all duration-300 ease-in-out`}>
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              {alertState.type === 'success' ? (
+                <CheckCircle className="h-5 w-5 text-green-400" />
+              ) : (
+                <AlertCircle className="h-5 w-5 text-red-400" />
+              )}
+            </div>
+            <div className="ml-3 flex-1">
+              <h3 className={`text-sm font-medium ${
+                alertState.type === 'success' 
+                  ? 'text-green-800 dark:text-green-200' 
+                  : 'text-red-800 dark:text-red-200'
+              }`}>
+                {alertState.title}
+              </h3>
+              <p className={`mt-1 text-sm ${
+                alertState.type === 'success' 
+                  ? 'text-green-700 dark:text-green-300' 
+                  : 'text-red-700 dark:text-red-300'
+              }`}>
+                {alertState.message}
+              </p>
+            </div>
+            <div className="ml-4 flex-shrink-0">
+              <button
+                onClick={hideAlert}
+                className={`inline-flex rounded-md p-1.5 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                  alertState.type === 'success'
+                    ? 'text-green-500 hover:bg-green-100 dark:hover:bg-green-900/30 focus:ring-green-600'
+                    : 'text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 focus:ring-red-600'
+                }`}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
