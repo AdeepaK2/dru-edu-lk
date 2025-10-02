@@ -180,8 +180,7 @@ export class GradeAnalyticsService {
       const classesQuery = query(
         collection(firestore, this.COLLECTIONS.CLASSES),
         where('teacherId', '==', teacherId),
-        where('status', '==', 'Active'),
-        orderBy('name', 'asc')
+        where('status', '==', 'Active')
       );
       
       const classesSnapshot = await getDocs(classesQuery);
@@ -224,6 +223,7 @@ export class GradeAnalyticsService {
       const testsByClass = new Map<string, any[]>();
       allTestsSnapshot.docs.forEach(doc => {
         const testData = doc.data();
+        const testId = doc.id; // Get the document ID
         
         // Skip deleted tests
         if (testData.isDeleted === true) return;
@@ -238,7 +238,8 @@ export class GradeAnalyticsService {
               if (!testsByClass.has(classId)) {
                 testsByClass.set(classId, []);
               }
-              testsByClass.get(classId)!.push(testData);
+              // Include the document ID with the test data
+              testsByClass.get(classId)!.push({ ...testData, id: testId });
             }
           });
         }
@@ -258,7 +259,65 @@ export class GradeAnalyticsService {
         // Get enrollment count
         const enrolledStudents = enrollmentsByClass.get(classId) || 0;
         
-        console.log(`✅ [GRADE ANALYTICS] Class "${classData.name}": ${enrolledStudents} students, ${classTests.length} tests`);
+        // Calculate average score for the class
+        let averageScore = 0;
+        if (classTests.length > 0) {
+          // Get all completed submissions for this class's tests
+          const testIds = classTests.map(test => test.id).filter(id => id !== undefined && id !== null);
+          
+          console.log(`📊 [CLASS AVERAGE] Class "${classData.name}" (${classId}): has ${testIds.length} tests with IDs:`, testIds);
+          
+          if (testIds.length > 0) {
+            // Fetch submissions for these tests (Firestore 'in' limit is 10)
+            const testIdsChunk = testIds.slice(0, 10);
+            
+            try {
+              const submissionsQuery = query(
+                collection(firestore, this.COLLECTIONS.SUBMISSIONS),
+                where('testId', 'in', testIdsChunk),
+                where('status', '==', 'Submitted')
+              );
+              
+              const submissionsSnapshot = await getDocs(submissionsQuery);
+              
+              console.log(`📊 [CLASS AVERAGE] Class "${classData.name}": found ${submissionsSnapshot.size} submissions`);
+              
+              if (submissionsSnapshot.size > 0) {
+                let totalScoreSum = 0;
+                let validSubmissionsCount = 0;
+                
+                submissionsSnapshot.docs.forEach(doc => {
+                  const submission = doc.data();
+                  // Use multi-level fallback: percentage → totalScore → autoGradedScore
+                  const score = submission.percentage ?? submission.totalScore ?? submission.autoGradedScore ?? 0;
+                  
+                  console.log(`📊 [CLASS AVERAGE] Submission ${doc.id}: testId=${submission.testId}, percentage=${submission.percentage}, totalScore=${submission.totalScore}, autoGradedScore=${submission.autoGradedScore}, score=${score}`);
+                  
+                  if (score > 0) {
+                    totalScoreSum += score;
+                    validSubmissionsCount++;
+                  }
+                });
+                
+                if (validSubmissionsCount > 0) {
+                  averageScore = Math.round((totalScoreSum / validSubmissionsCount) * 10) / 10;
+                }
+                
+                console.log(`📊 [CLASS AVERAGE] Class "${classData.name}": ${validSubmissionsCount} valid submissions, totalSum=${totalScoreSum}, average=${averageScore}%`);
+              } else {
+                console.log(`📊 [CLASS AVERAGE] Class "${classData.name}": NO submissions found for test IDs:`, testIdsChunk);
+              }
+            } catch (error) {
+              console.error(`❌ [CLASS AVERAGE] Error calculating average for class "${classData.name}":`, error);
+            }
+          } else {
+            console.log(`📊 [CLASS AVERAGE] Class "${classData.name}": NO valid test IDs found`);
+          }
+        } else {
+          console.log(`📊 [CLASS AVERAGE] Class "${classData.name}": NO tests in class`);
+        }
+        
+        console.log(`✅ [GRADE ANALYTICS] Class "${classData.name}": ${enrolledStudents} students, ${classTests.length} tests, avg: ${averageScore}%`);
         
         classSummaries.push({
           id: classId,
@@ -270,7 +329,7 @@ export class GradeAnalyticsService {
           enrolledStudents,
           totalTests: classTests.length,
           completedTests,
-          averageScore: 0, // We'll calculate this later if needed, for now set to 0 for speed
+          averageScore,
           lastActivityDate: undefined // We'll calculate this later if needed
         });
       }
@@ -302,7 +361,8 @@ export class GradeAnalyticsService {
           totalTests: c.totalTests 
         })));
       
-      return classSummaries;
+      // Sort by name before returning
+      return classSummaries.sort((a, b) => a.name.localeCompare(b.name));
     } catch (error) {
       console.error('Error getting teacher classes summary:', error);
       throw error;
@@ -370,8 +430,22 @@ export class GradeAnalyticsService {
         
         // Calculate scores using percentage (0-100 scale)
         const percentageScores = completedSubmissions
-          .filter(s => s.percentage !== undefined && s.percentage !== null)
-          .map(s => s.percentage!);
+          .map(s => {
+            // Calculate percentage - try multiple sources
+            let percentage = s.percentage;
+            if (percentage === undefined || percentage === null) {
+              // First try totalScore (includes manual grading)
+              if (s.totalScore !== undefined && s.maxScore > 0) {
+                percentage = (s.totalScore / s.maxScore) * 100;
+              } 
+              // Fallback to autoGradedScore (MCQ only)
+              else if (s.autoGradedScore !== undefined && s.maxScore > 0) {
+                percentage = (s.autoGradedScore / s.maxScore) * 100;
+              }
+            }
+            return percentage;
+          })
+          .filter(p => p !== undefined && p !== null) as number[];
         
         console.log(`📊 [GRADE ANALYTICS] Test "${testData.title}": ${completedSubmissions.length} completed submissions, ${percentageScores.length} with percentage scores`);
         console.log(`📊 [GRADE ANALYTICS] Percentage scores:`, percentageScores);
@@ -455,41 +529,53 @@ export class GradeAnalyticsService {
         // Get all class-based tests assigned to this class
         const testsQuery = query(
           collection(firestore, this.COLLECTIONS.TESTS),
-          where('classIds', 'array-contains', classId),
-          where('isDeleted', '!=', true)
+          where('classIds', 'array-contains', classId)
         );
         const testsSnapshot = await getDocs(testsQuery);
         
-        // Filter to only class-based tests
+        console.log(`🔍 [DEBUG] Found ${testsSnapshot.docs.length} total tests for class ${classId}`);
+        
+        // Filter to only class-based tests and active tests
         const classBasedTests = testsSnapshot.docs.filter(doc => {
           const testData = doc.data();
-          return testData.assignmentType !== 'student-based' && 
+          const isClassBased = testData.assignmentType !== 'student-based' && 
                  testData.classIds && 
-                 testData.classIds.length > 0;
+                 testData.classIds.length > 0 &&
+                 testData.isDeleted !== true;
+          console.log(`🔍 [DEBUG] Test ${doc.id}: assignmentType=${testData.assignmentType}, isDeleted=${testData.isDeleted}, isClassBased=${isClassBased}`);
+          return isClassBased;
         });
         
         const classBasedTestIds = classBasedTests.map(doc => doc.id);
         
-        // Get student submissions only for class-based tests
+        console.log(`🔍 [DEBUG] Class ${classId} has ${classBasedTestIds.length} class-based tests:`, classBasedTestIds);
+        
+        // Get ALL student submissions (not filtered by testId) to avoid missing submissions
         let submissions: StudentSubmission[] = [];
-        if (classBasedTestIds.length > 0) {
-          // Split into chunks if more than 10 tests (Firestore 'in' limit)
-          const chunks = [];
-          for (let i = 0; i < classBasedTestIds.length; i += 10) {
-            chunks.push(classBasedTestIds.slice(i, i + 10));
-          }
-          
-          for (const chunk of chunks) {
-            const submissionsQuery = query(
-              collection(firestore, this.COLLECTIONS.SUBMISSIONS),
-              where('studentId', '==', studentId),
-              where('classId', '==', classId),
-              where('testId', 'in', chunk)
-            );
-            const submissionsSnapshot = await getDocs(submissionsQuery);
-            submissions.push(...submissionsSnapshot.docs.map(doc => doc.data() as StudentSubmission));
-          }
-        }
+        
+        const allSubmissionsQuery = query(
+          collection(firestore, this.COLLECTIONS.SUBMISSIONS),
+          where('studentId', '==', studentId)
+        );
+        const allSubmissionsSnapshot = await getDocs(allSubmissionsQuery);
+        
+        console.log(`🔍 [DEBUG] Student ${studentId} has ${allSubmissionsSnapshot.docs.length} total submissions`);
+        
+        // Filter to only submissions for this class's tests
+        submissions = allSubmissionsSnapshot.docs
+          .map(doc => {
+            const data = doc.data() as StudentSubmission;
+            const belongsToClass = classBasedTestIds.includes(data.testId);
+            
+            if (belongsToClass || allSubmissionsSnapshot.docs.length < 20) { // Log all if few submissions, or just matching ones
+              console.log(`📝 [DEBUG] Submission ${doc.id} for test ${data.testId}: belongsToClass=${belongsToClass}, autoGradedScore=${data.autoGradedScore}, totalScore=${data.totalScore}`);
+            }
+            
+            return data;
+          })
+          .filter(submission => classBasedTestIds.includes(submission.testId));
+        
+        console.log(`📊 [DEBUG] Total submissions for student ${studentId} in class ${classId}: ${submissions.length}`);
         
         // Calculate statistics
         const totalTestsAssigned = classBasedTests.length;
@@ -508,8 +594,23 @@ export class GradeAnalyticsService {
             const testData = testQuery.data();
             const passingPercentage = testData.config?.passingScore || 50;
             
-            if (submission.percentage !== undefined && submission.percentage !== null) {
-              if (submission.percentage >= passingPercentage) {
+            // Calculate percentage - try multiple sources
+            let percentage = submission.percentage;
+            if (percentage === undefined || percentage === null) {
+              // First try totalScore (includes manual grading)
+              if (submission.totalScore !== undefined && submission.maxScore > 0) {
+                percentage = (submission.totalScore / submission.maxScore) * 100;
+              } 
+              // Fallback to autoGradedScore (MCQ only)
+              else if (submission.autoGradedScore !== undefined && submission.maxScore > 0) {
+                percentage = (submission.autoGradedScore / submission.maxScore) * 100;
+              }
+            }
+            
+            console.log(`📊 [DEBUG] Pass/Fail check for submission ${submission.id}: percentage=${percentage?.toFixed(1)}%, passing=${passingPercentage}%`);
+            
+            if (percentage !== undefined && percentage !== null) {
+              if (percentage >= passingPercentage) {
                 passedTests++;
               } else {
                 failedTests++;
@@ -524,14 +625,29 @@ export class GradeAnalyticsService {
         
         // Calculate scores using percentage (0-100 scale) - same as test analytics
         const percentageScores = completedSubmissions
-          .filter(s => s.percentage !== undefined && s.percentage !== null)
-          .map(s => s.percentage!);
+          .map(s => {
+            // Calculate percentage - try multiple sources
+            let percentage = s.percentage;
+            if (percentage === undefined || percentage === null) {
+              // First try totalScore (includes manual grading)
+              if (s.totalScore !== undefined && s.maxScore > 0) {
+                percentage = (s.totalScore / s.maxScore) * 100;
+              } 
+              // Fallback to autoGradedScore (MCQ only)
+              else if (s.autoGradedScore !== undefined && s.maxScore > 0) {
+                percentage = (s.autoGradedScore / s.maxScore) * 100;
+              }
+            }
+            console.log(`📊 [DEBUG] Submission score - totalScore: ${s.totalScore}, autoGradedScore: ${s.autoGradedScore}, maxScore: ${s.maxScore}, percentage: ${percentage?.toFixed(1)}%`);
+            return percentage;
+          })
+          .filter(p => p !== undefined && p !== null) as number[];
         
         const overallAverage = percentageScores.length > 0 ? percentageScores.reduce((a, b) => a + b, 0) / percentageScores.length : 0;
         const highestScore = percentageScores.length > 0 ? Math.max(...percentageScores) : 0;
         const lowestScore = percentageScores.length > 0 ? Math.min(...percentageScores) : 0;
         
-        console.log(`📊 [STUDENT ANALYTICS] Student "${studentData.name}": avg=${overallAverage.toFixed(1)}%, passed=${passedTests}, failed=${failedTests}`);
+        console.log(`📊 [STUDENT ANALYTICS] Student "${studentData.name}": ${completedSubmissions.length} completed, ${percentageScores.length} scored, avg=${overallAverage.toFixed(1)}%, passed=${passedTests}, failed=${failedTests}`);
         
         // Calculate late submissions
         const lateSubmissions = submissions.filter(s => s.lateSubmission?.isLateSubmission).length;
@@ -703,14 +819,17 @@ export class GradeAnalyticsService {
       const submissionsQuery = query(
         collection(firestore, this.COLLECTIONS.SUBMISSIONS),
         where('classId', '==', classId),
-        where('testId', 'in', classBasedTestIds.slice(0, 10)), // Firestore 'in' limit is 10
-        orderBy('submittedAt', 'desc'),
-        limit(1)
+        where('testId', 'in', classBasedTestIds.slice(0, 10)) // Firestore 'in' limit is 10
       );
       const submissionsSnapshot = await getDocs(submissionsQuery);
       
       if (!submissionsSnapshot.empty) {
-        return submissionsSnapshot.docs[0].data().submittedAt.toDate();
+        // Find the most recent submission
+        const submissions = submissionsSnapshot.docs.map(doc => doc.data() as StudentSubmission);
+        const latestSubmission = submissions.reduce((latest, current) => 
+          current.submittedAt.toMillis() > latest.submittedAt.toMillis() ? current : latest
+        );
+        return latestSubmission.submittedAt.toDate();
       }
       return undefined;
     } catch (error) {
@@ -878,25 +997,56 @@ export class GradeAnalyticsService {
 
   private static async getStudentRecentTests(studentId: string, classId: string, limitCount: number): Promise<RecentTestResult[]> {
     try {
+      // Get all class-based tests for this class
+      const testsQuery = query(
+        collection(firestore, this.COLLECTIONS.TESTS),
+        where('classIds', 'array-contains', classId)
+      );
+      const testsSnapshot = await getDocs(testsQuery);
+      
+      // Filter to only class-based tests and active tests
+      const classBasedTestIds = new Set(
+        testsSnapshot.docs
+          .filter(doc => {
+            const testData = doc.data();
+            return testData.assignmentType !== 'student-based' && 
+                   testData.classIds && 
+                   testData.classIds.length > 0 &&
+                   testData.isDeleted !== true;
+          })
+          .map(doc => doc.id)
+      );
+      
       const submissionsQuery = query(
         collection(firestore, this.COLLECTIONS.SUBMISSIONS),
-        where('studentId', '==', studentId),
-        where('classId', '==', classId),
-        orderBy('submittedAt', 'desc'),
-        limit(limitCount)
+        where('studentId', '==', studentId)
       );
       
       const submissionsSnapshot = await getDocs(submissionsQuery);
       
-      return submissionsSnapshot.docs.map(doc => {
-        const submission = doc.data() as StudentSubmission;
+      // Filter by checking if testId is in the class's test list
+      const filteredSubmissions = submissionsSnapshot.docs
+        .map(doc => doc.data() as StudentSubmission)
+        .filter(submission => classBasedTestIds.has(submission.testId))
+        .sort((a, b) => b.submittedAt.toMillis() - a.submittedAt.toMillis())
+        .slice(0, limitCount);
+      
+      return filteredSubmissions.map(submission => {
+        // Calculate percentage if not available
+        let percentage = submission.percentage;
+        if (percentage === undefined || percentage === null) {
+          if (submission.totalScore !== undefined && submission.maxScore > 0) {
+            percentage = (submission.totalScore / submission.maxScore) * 100;
+          }
+        }
+        
         return {
           testId: submission.testId,
           testTitle: submission.testTitle,
           testDate: submission.submittedAt.toDate(),
           score: submission.totalScore || 0,
           maxScore: submission.maxScore,
-          percentage: submission.percentage || 0,
+          percentage: percentage || 0,
           timeSpent: submission.totalTimeSpent / 60, // Convert to minutes
           isLateSubmission: submission.lateSubmission?.isLateSubmission || false,
           passStatus: submission.passStatus || 'pending_review'
@@ -910,24 +1060,49 @@ export class GradeAnalyticsService {
 
   private static async getStudentPerformanceTrend(studentId: string, classId: string): Promise<PerformanceDataPoint[]> {
     try {
+      // Get class subject first
+      const classDoc = await getDoc(doc(firestore, this.COLLECTIONS.CLASSES, classId));
+      const classSubject = classDoc.exists() ? classDoc.data()?.subject || 'Unknown' : 'Unknown';
+      
+      // Get all class-based tests for this class
+      const testsQuery = query(
+        collection(firestore, this.COLLECTIONS.TESTS),
+        where('classIds', 'array-contains', classId)
+      );
+      const testsSnapshot = await getDocs(testsQuery);
+      
+      // Filter to only class-based tests and active tests
+      const classBasedTestIds = new Set(
+        testsSnapshot.docs
+          .filter(doc => {
+            const testData = doc.data();
+            return testData.assignmentType !== 'student-based' && 
+                   testData.classIds && 
+                   testData.classIds.length > 0 &&
+                   testData.isDeleted !== true;
+          })
+          .map(doc => doc.id)
+      );
+      
       const submissionsQuery = query(
         collection(firestore, this.COLLECTIONS.SUBMISSIONS),
-        where('studentId', '==', studentId),
-        where('classId', '==', classId),
-        orderBy('submittedAt', 'asc')
+        where('studentId', '==', studentId)
       );
       
       const submissionsSnapshot = await getDocs(submissionsQuery);
       
-      return submissionsSnapshot.docs.map(doc => {
-        const submission = doc.data() as StudentSubmission;
-        return {
-          date: submission.submittedAt.toDate(),
-          score: submission.totalScore || 0,
-          testTitle: submission.testTitle,
-          subject: 'Unknown' // Would need to get from test data
-        };
-      });
+      // Filter by checking if testId is in the class's test list and sort chronologically
+      const filteredSubmissions = submissionsSnapshot.docs
+        .map(doc => doc.data() as StudentSubmission)
+        .filter(submission => classBasedTestIds.has(submission.testId))
+        .sort((a, b) => a.submittedAt.toMillis() - b.submittedAt.toMillis());
+      
+      return filteredSubmissions.map(submission => ({
+        date: submission.submittedAt.toDate(),
+        score: submission.totalScore || submission.autoGradedScore || 0,
+        testTitle: submission.testTitle,
+        subject: classSubject
+      }));
     } catch (error) {
       console.error('Error getting student performance trend:', error);
       return [];

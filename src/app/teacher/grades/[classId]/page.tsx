@@ -244,6 +244,10 @@ const StudentReportModal = ({
                 </Card>
               )}
             </div>
+          ) : reportError ? (
+            <div className="text-red-600">
+              <p>Failed to load detailed report: {reportError.message}</p>
+            </div>
           ) : (
             <div>Failed to load detailed report</div>
           )}
