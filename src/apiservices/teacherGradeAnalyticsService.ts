@@ -223,7 +223,6 @@ export class GradeAnalyticsService {
       const testsByClass = new Map<string, any[]>();
       allTestsSnapshot.docs.forEach(doc => {
         const testData = doc.data();
-        const testId = doc.id; // Get the document ID
         
         // Skip deleted tests
         if (testData.isDeleted === true) return;
@@ -238,8 +237,7 @@ export class GradeAnalyticsService {
               if (!testsByClass.has(classId)) {
                 testsByClass.set(classId, []);
               }
-              // Include the document ID with the test data
-              testsByClass.get(classId)!.push({ ...testData, id: testId });
+              testsByClass.get(classId)!.push(testData);
             }
           });
         }
@@ -259,65 +257,7 @@ export class GradeAnalyticsService {
         // Get enrollment count
         const enrolledStudents = enrollmentsByClass.get(classId) || 0;
         
-        // Calculate average score for the class
-        let averageScore = 0;
-        if (classTests.length > 0) {
-          // Get all completed submissions for this class's tests
-          const testIds = classTests.map(test => test.id).filter(id => id !== undefined && id !== null);
-          
-          console.log(`📊 [CLASS AVERAGE] Class "${classData.name}" (${classId}): has ${testIds.length} tests with IDs:`, testIds);
-          
-          if (testIds.length > 0) {
-            // Fetch submissions for these tests (Firestore 'in' limit is 10)
-            const testIdsChunk = testIds.slice(0, 10);
-            
-            try {
-              const submissionsQuery = query(
-                collection(firestore, this.COLLECTIONS.SUBMISSIONS),
-                where('testId', 'in', testIdsChunk),
-                where('status', '==', 'Submitted')
-              );
-              
-              const submissionsSnapshot = await getDocs(submissionsQuery);
-              
-              console.log(`📊 [CLASS AVERAGE] Class "${classData.name}": found ${submissionsSnapshot.size} submissions`);
-              
-              if (submissionsSnapshot.size > 0) {
-                let totalScoreSum = 0;
-                let validSubmissionsCount = 0;
-                
-                submissionsSnapshot.docs.forEach(doc => {
-                  const submission = doc.data();
-                  // Use multi-level fallback: percentage → totalScore → autoGradedScore
-                  const score = submission.percentage ?? submission.totalScore ?? submission.autoGradedScore ?? 0;
-                  
-                  console.log(`📊 [CLASS AVERAGE] Submission ${doc.id}: testId=${submission.testId}, percentage=${submission.percentage}, totalScore=${submission.totalScore}, autoGradedScore=${submission.autoGradedScore}, score=${score}`);
-                  
-                  if (score > 0) {
-                    totalScoreSum += score;
-                    validSubmissionsCount++;
-                  }
-                });
-                
-                if (validSubmissionsCount > 0) {
-                  averageScore = Math.round((totalScoreSum / validSubmissionsCount) * 10) / 10;
-                }
-                
-                console.log(`📊 [CLASS AVERAGE] Class "${classData.name}": ${validSubmissionsCount} valid submissions, totalSum=${totalScoreSum}, average=${averageScore}%`);
-              } else {
-                console.log(`📊 [CLASS AVERAGE] Class "${classData.name}": NO submissions found for test IDs:`, testIdsChunk);
-              }
-            } catch (error) {
-              console.error(`❌ [CLASS AVERAGE] Error calculating average for class "${classData.name}":`, error);
-            }
-          } else {
-            console.log(`📊 [CLASS AVERAGE] Class "${classData.name}": NO valid test IDs found`);
-          }
-        } else {
-          console.log(`📊 [CLASS AVERAGE] Class "${classData.name}": NO tests in class`);
-        }
-        
-        console.log(`✅ [GRADE ANALYTICS] Class "${classData.name}": ${enrolledStudents} students, ${classTests.length} tests, avg: ${averageScore}%`);
+        console.log(`✅ [GRADE ANALYTICS] Class "${classData.name}": ${enrolledStudents} students, ${classTests.length} tests`);
         
         classSummaries.push({
           id: classId,
@@ -329,7 +269,7 @@ export class GradeAnalyticsService {
           enrolledStudents,
           totalTests: classTests.length,
           completedTests,
-          averageScore,
+          averageScore: 0, // We'll calculate this later if needed, for now set to 0 for speed
           lastActivityDate: undefined // We'll calculate this later if needed
         });
       }

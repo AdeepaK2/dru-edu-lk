@@ -57,9 +57,33 @@ export class EnhancedGradeAnalyticsService {
     try {
       console.log(`🔄 [ENHANCED ANALYTICS] Getting classes summary for teacher: ${teacherId}`);
       
-      // TEMPORARILY: Always calculate fresh data to ensure class averages are correct
-      // TODO: Re-enable caching once we verify it's working properly
-      console.log(`� [ENHANCED ANALYTICS] Calculating fresh data (cache temporarily disabled)`);
+      // First, try to get cached data (any age)
+      const cachedAnalytics = await ClassAnalyticsFirestoreService.getTeacherCachedAnalytics(teacherId);
+      
+      if (cachedAnalytics.length > 0) {
+        console.log(`✅ [ENHANCED ANALYTICS] Found ${cachedAnalytics.length} cached class summaries`);
+        
+        // Return cached class summaries (even if stale, for immediate display)
+        const classSummaries = cachedAnalytics
+          .filter(cache => cache.classSummary && !cache.isCalculating)
+          .map(cache => ({
+            ...cache.classSummary,
+            lastActivityDate: cache.classSummary.lastActivityDate || undefined // Convert null back to undefined
+          }))
+          .filter(summary => summary !== null && summary !== undefined);
+        
+        if (classSummaries.length > 0) {
+          console.log(`📱 [ENHANCED ANALYTICS] Displaying ${classSummaries.length} cached class summaries immediately`);
+          
+          // Always trigger background recalculation for any cached data
+          // This ensures fresh data is calculated even for recent cache
+          this.triggerBackgroundRecalculation(teacherId, cachedAnalytics);
+          return classSummaries;
+        }
+      }
+      
+      // If no cached data at all, calculate fresh data synchronously
+      console.log(`🔄 [ENHANCED ANALYTICS] No cached data found, calculating fresh data`);
       const freshData = await GradeAnalyticsService.getTeacherClassesSummary(teacherId);
       
       // Cache the fresh data for future requests
@@ -258,9 +282,10 @@ export class EnhancedGradeAnalyticsService {
         const now = new Date();
         
         for (const cache of cachedAnalytics) {
-          // Always recalculate to ensure fresh data (especially for class averages)
-          // Skip only if currently calculating
-          if (!cache.isCalculating) {
+          // Recalculate if data is stale (older than 30 minutes) and not currently calculating
+          const isStale = ClassAnalyticsFirestoreService.isCacheStale(cache, 30);
+          
+          if (isStale && !cache.isCalculating) {
             console.log(`🔄 [BACKGROUND] Recalculating analytics for class ${cache.classId}`);
             try {
               await this.recalculateFullClassAnalytics(cache.classId, teacherId);
