@@ -169,6 +169,43 @@ export class GradeAnalyticsService {
     SUBJECTS: 'subjects'
   };
 
+  // Cache for class tests to avoid repeated fetches
+  private static classTestsCache = new Map<string, { testIds: string[], timestamp: number }>();
+  private static readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+  /**
+   * Get cached class test IDs or fetch them if not cached
+   */
+  private static async getClassTestIds(classId: string): Promise<string[]> {
+    const cached = this.classTestsCache.get(classId);
+    const now = Date.now();
+    
+    if (cached && (now - cached.timestamp) < this.CACHE_DURATION) {
+      return cached.testIds;
+    }
+
+    // Fetch fresh data
+    const testsQuery = query(
+      collection(firestore, this.COLLECTIONS.TESTS),
+      where('classIds', 'array-contains', classId)
+    );
+    const testsSnapshot = await getDocs(testsQuery);
+    
+    const testIds = testsSnapshot.docs
+      .filter(doc => {
+        const testData = doc.data();
+        return testData.assignmentType !== 'student-based' && 
+               testData.classIds && 
+               testData.classIds.length > 0 &&
+               testData.isDeleted !== true;
+      })
+      .map(doc => doc.id);
+    
+    // Cache the result
+    this.classTestsCache.set(classId, { testIds, timestamp: now });
+    return testIds;
+  }
+
   /**
    * Get all classes taught by a teacher with summary analytics
    */
@@ -653,32 +690,82 @@ export class GradeAnalyticsService {
   }
 
   /**
-   * Get detailed report for a specific student
+   * Get detailed report for a specific student (optimized version)
    */
   static async getDetailedStudentReport(studentId: string, classId: string): Promise<DetailedStudentReport> {
     try {
-      // Get basic student performance summary
-      const studentSummaries = await this.getClassStudentAnalytics(classId);
-      const basicSummary = studentSummaries.find(s => s.id === studentId);
+      console.log(`🔍 [DETAILED REPORT] Starting optimized detailed report for student: ${studentId}`);
+      const startTime = Date.now();
       
+      // Run all queries in parallel for better performance
+      const [
+        studentSummaries,
+        classTestIds,
+        classDoc
+      ] = await Promise.all([
+        this.getClassStudentAnalytics(classId),
+        this.getClassTestIds(classId),
+        getDoc(doc(firestore, this.COLLECTIONS.CLASSES, classId))
+      ]);
+      
+      const basicSummary = studentSummaries.find(s => s.id === studentId);
       if (!basicSummary) {
         throw new Error('Student not found in class');
       }
       
-      // Get recent test results
-      const recentTests = await this.getStudentRecentTests(studentId, classId, 10);
+      const classSubject = classDoc.exists() ? classDoc.data()?.subject || 'Unknown' : 'Unknown';
       
-      // Get performance trend data
-      const performanceTrend = await this.getStudentPerformanceTrend(studentId, classId);
+      // Get student submissions in parallel
+      const submissionsQuery = query(
+        collection(firestore, this.COLLECTIONS.SUBMISSIONS),
+        where('studentId', '==', studentId)
+      );
       
-      // Generate recommendations
+      const submissionsSnapshot = await getDocs(submissionsQuery);
+      const allSubmissions = submissionsSnapshot.docs
+        .map(doc => doc.data() as StudentSubmission)
+        .filter(submission => classTestIds.includes(submission.testId))
+        .sort((a, b) => b.submittedAt.toMillis() - a.submittedAt.toMillis());
+      
+      // Process data in parallel
+      const recentTests = allSubmissions.slice(0, 10).map(submission => {
+        let percentage = submission.percentage;
+        if (percentage === undefined || percentage === null) {
+          if (submission.totalScore !== undefined && submission.maxScore > 0) {
+            percentage = (submission.totalScore / submission.maxScore) * 100;
+          }
+        }
+        
+        return {
+          testId: submission.testId,
+          testTitle: submission.testTitle,
+          testDate: submission.submittedAt.toDate(),
+          score: submission.totalScore || 0,
+          maxScore: submission.maxScore,
+          percentage: percentage || 0,
+          timeSpent: submission.totalTimeSpent / 60,
+          isLateSubmission: submission.lateSubmission?.isLateSubmission || false,
+          passStatus: submission.passStatus || 'pending_review'
+        };
+      });
+      
+      // Generate performance trend from all submissions
+      const performanceTrend = allSubmissions
+        .sort((a, b) => a.submittedAt.toMillis() - b.submittedAt.toMillis())
+        .map(submission => ({
+          date: submission.submittedAt.toDate(),
+          score: submission.totalScore || submission.autoGradedScore || 0,
+          testTitle: submission.testTitle,
+          subject: classSubject
+        }));
+      
+      // Generate insights
       const recommendations = this.generateRecommendations(basicSummary, recentTests);
-      
-      // Identify strengths
       const strengths = this.identifyStrengths(basicSummary, recentTests);
-      
-      // Identify areas for improvement
       const areasForImprovement = this.identifyAreasForImprovement(basicSummary);
+      
+      const endTime = Date.now();
+      console.log(`✅ [DETAILED REPORT] Completed in ${endTime - startTime}ms`);
       
       return {
         ...basicSummary,
@@ -979,25 +1066,8 @@ export class GradeAnalyticsService {
 
   private static async getStudentRecentTests(studentId: string, classId: string, limitCount: number): Promise<RecentTestResult[]> {
     try {
-      // Get all class-based tests for this class
-      const testsQuery = query(
-        collection(firestore, this.COLLECTIONS.TESTS),
-        where('classIds', 'array-contains', classId)
-      );
-      const testsSnapshot = await getDocs(testsQuery);
-      
-      // Filter to only class-based tests and active tests
-      const classBasedTestIds = new Set(
-        testsSnapshot.docs
-          .filter(doc => {
-            const testData = doc.data();
-            return testData.assignmentType !== 'student-based' && 
-                   testData.classIds && 
-                   testData.classIds.length > 0 &&
-                   testData.isDeleted !== true;
-          })
-          .map(doc => doc.id)
-      );
+      // Get cached class test IDs
+      const classBasedTestIds = new Set(await this.getClassTestIds(classId));
       
       const submissionsQuery = query(
         collection(firestore, this.COLLECTIONS.SUBMISSIONS),
@@ -1046,25 +1116,8 @@ export class GradeAnalyticsService {
       const classDoc = await getDoc(doc(firestore, this.COLLECTIONS.CLASSES, classId));
       const classSubject = classDoc.exists() ? classDoc.data()?.subject || 'Unknown' : 'Unknown';
       
-      // Get all class-based tests for this class
-      const testsQuery = query(
-        collection(firestore, this.COLLECTIONS.TESTS),
-        where('classIds', 'array-contains', classId)
-      );
-      const testsSnapshot = await getDocs(testsQuery);
-      
-      // Filter to only class-based tests and active tests
-      const classBasedTestIds = new Set(
-        testsSnapshot.docs
-          .filter(doc => {
-            const testData = doc.data();
-            return testData.assignmentType !== 'student-based' && 
-                   testData.classIds && 
-                   testData.classIds.length > 0 &&
-                   testData.isDeleted !== true;
-          })
-          .map(doc => doc.id)
-      );
+      // Get cached class test IDs
+      const classBasedTestIds = new Set(await this.getClassTestIds(classId));
       
       const submissionsQuery = query(
         collection(firestore, this.COLLECTIONS.SUBMISSIONS),
