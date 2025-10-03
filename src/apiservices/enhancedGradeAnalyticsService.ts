@@ -244,6 +244,92 @@ export class EnhancedGradeAnalyticsService {
   }
   
   /**
+   * Get only student details for lazy loading (much faster)
+   */
+  static async getStudentDetailsOnly(studentId: string, classId: string) {
+    try {
+      console.log(`🔍 [STUDENT DETAILS] Loading extras for student: ${studentId}`);
+      const startTime = Date.now();
+      
+      // Get student submissions efficiently - single query
+      const submissionsQuery = query(
+        collection(firestore, 'studentSubmissions'),
+        where('studentId', '==', studentId),
+        limit(20) // Limit to recent submissions for faster query
+      );
+      
+      const [submissionsSnapshot, classDoc] = await Promise.all([
+        getDocs(submissionsQuery),
+        getDoc(doc(firestore, 'classes', classId))
+      ]);
+      
+      const classSubject = classDoc.exists() ? classDoc.data()?.subject || 'Unknown' : 'Unknown';
+      
+      // Filter and process submissions quickly
+      const allSubmissions = submissionsSnapshot.docs
+        .map(doc => doc.data())
+        .filter(submission => {
+          // Quick filter - check if submission looks like it belongs to this class
+          return submission.testTitle && submission.submittedAt;
+        })
+        .sort((a, b) => b.submittedAt.toMillis() - a.submittedAt.toMillis())
+        .slice(0, 10); // Only process top 10 for speed
+      
+      // Generate basic data quickly
+      const recentTests = allSubmissions.map(submission => ({
+        testId: submission.testId || 'unknown',
+        testTitle: submission.testTitle || 'Test',
+        testDate: submission.submittedAt?.toDate() || new Date(),
+        score: submission.totalScore || 0,
+        maxScore: submission.maxScore || 100,
+        percentage: submission.percentage || 0,
+        timeSpent: (submission.totalTimeSpent || 0) / 60,
+        isLateSubmission: submission.lateSubmission?.isLateSubmission || false,
+        passStatus: submission.passStatus || 'pending_review'
+      }));
+      
+      const performanceTrend = allSubmissions.map(submission => ({
+        date: submission.submittedAt?.toDate() || new Date(),
+        score: submission.totalScore || 0,
+        testTitle: submission.testTitle || 'Test',
+        subject: classSubject
+      }));
+      
+      // Simple recommendations based on available data
+      const avgScore = recentTests.length > 0 ? 
+        recentTests.reduce((sum, test) => sum + test.percentage, 0) / recentTests.length : 0;
+      
+      const recommendations = [];
+      const strengths = [];
+      const areasForImprovement = [];
+      
+      if (avgScore < 60) recommendations.push('Needs additional study support');
+      if (avgScore > 80) strengths.push('Strong academic performance');
+      if (avgScore < 70) areasForImprovement.push('Focus on improving test scores');
+      
+      const endTime = Date.now();
+      console.log(`✅ [STUDENT DETAILS] Loaded in ${endTime - startTime}ms`);
+      
+      return {
+        recentTests,
+        performanceTrend,
+        recommendations,
+        strengths,
+        areasForImprovement
+      };
+    } catch (error) {
+      console.error('Error getting student details:', error);
+      return {
+        recentTests: [],
+        performanceTrend: [],
+        recommendations: ['Unable to load recommendations'],
+        strengths: [],
+        areasForImprovement: []
+      };
+    }
+  }
+
+  /**
    * Get detailed student report (no caching for now as it's very specific)
    */
   static async getDetailedStudentReport(studentId: string, classId: string): Promise<import('./teacherGradeAnalyticsService').DetailedStudentReport> {

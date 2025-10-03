@@ -41,7 +41,7 @@ import {
   StudentPerformanceSummary,
   DetailedStudentReport 
 } from '@/apiservices/teacherGradeAnalyticsService';
-import { useClassAnalytics, useDetailedStudentReport, useForceRefreshAnalytics } from '@/hooks/useGradeAnalytics';
+import { useClassAnalytics, useDetailedStudentReport, useInstantStudentReport, useForceRefreshAnalytics } from '@/hooks/useGradeAnalytics';
 
 // Simple loading skeleton component
 const LoadingSkeleton = ({ className }: { className?: string }) => (
@@ -55,8 +55,8 @@ const SimpleAlert = ({ children }: { children: React.ReactNode }) => (
   </div>
 );
 
-// Student Report Modal Component
-const StudentReportModal = ({ 
+// Optimized Student Report Modal Component
+const StudentReportModal = React.memo(({ 
   student, 
   isOpen, 
   onClose, 
@@ -67,12 +67,19 @@ const StudentReportModal = ({
   onClose: () => void;
   classId: string;
 }) => {
-  // Use SWR hook for detailed student report
-  const { report: detailedReport, isLoading: loading, error: reportError } = useDetailedStudentReport(
+  // Use instant loading hook for immediate display with basic data
+  const { 
+    report: detailedReport, 
+    isLoading: loading, 
+    detailsLoading,
+    hasDetails,
+    error: reportError 
+  } = useInstantStudentReport(
     isOpen && student ? student.id : null,
     isOpen && student ? classId : null
   );
 
+  // Early return for better performance
   if (!isOpen || !student) return null;
 
   return (
@@ -85,16 +92,33 @@ const StudentReportModal = ({
               <h2 className="text-2xl font-bold">{student.name}</h2>
               <p className="text-muted-foreground">{student.email}</p>
             </div>
-            <Button variant="outline" onClick={onClose}>
-              ×
-            </Button>
+            <div className="flex items-center gap-2">
+              {loading && (
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  Loading details...
+                </div>
+              )}
+              <Button variant="outline" onClick={onClose}>
+                ×
+              </Button>
+            </div>
           </div>
 
-          {loading ? (
+          {loading && !detailedReport ? (
             <div className="space-y-4">
+              <div className="text-center py-8">
+                <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-500" />
+                <p className="text-gray-600">Loading student performance details...</p>
+              </div>
               <LoadingSkeleton className="h-32 w-full" />
               <LoadingSkeleton className="h-64 w-full" />
             </div>
+          ) : reportError ? (
+            <SimpleAlert>
+              <AlertCircle className="h-4 w-4" />
+              Failed to load detailed report. Please try again.
+            </SimpleAlert>
           ) : detailedReport ? (
             <div className="space-y-6">
               {/* Key Metrics */}
@@ -161,11 +185,20 @@ const StudentReportModal = ({
               {/* Recent Tests */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Recent Tests</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    Recent Tests
+                    {detailsLoading && <RefreshCw className="h-4 w-4 animate-spin" />}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
-                    {detailedReport.recentTests.map((test, index) => (
+                  {detailedReport.recentTests.length === 0 && detailsLoading ? (
+                    <div className="text-center py-4">
+                      <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2" />
+                      <p className="text-sm text-gray-500">Loading recent test results...</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {detailedReport.recentTests.map((test: any, index: number) => (
                       <div key={index} className="flex items-center justify-between p-3 border rounded">
                         <div>
                           <div className="font-medium">{test.testTitle}</div>
@@ -180,24 +213,25 @@ const StudentReportModal = ({
                           </div>
                         </div>
                       </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
               {/* Weak Topics */}
-              {detailedReport.weakTopics.length > 0 && (
+              {(detailedReport.weakTopics && detailedReport.weakTopics.length > 0) && (
                 <Card>
                   <CardHeader>
                     <CardTitle>Areas Needing Improvement</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
-                      {detailedReport.weakTopics.map((topic, index) => (
+                      {detailedReport.weakTopics.map((topic: any, index: number) => (
                         <div key={index} className="flex items-center justify-between p-2 border rounded">
-                          <span>{topic.topic}</span>
+                          <span>{topic.topic || 'Unknown Topic'}</span>
                           <Badge variant="destructive">
-                            {topic.accuracy.toFixed(1)}% accuracy
+                            {topic.accuracy ? topic.accuracy.toFixed(1) : '0'}% accuracy
                           </Badge>
                         </div>
                       ))}
@@ -214,7 +248,7 @@ const StudentReportModal = ({
                   </CardHeader>
                   <CardContent>
                     <ul className="space-y-2">
-                      {detailedReport.recommendations.map((rec, index) => (
+                      {detailedReport.recommendations.map((rec: string, index: number) => (
                         <li key={index} className="flex items-start gap-2">
                           <AlertCircle className="h-4 w-4 text-blue-500 mt-0.5" />
                           <span className="text-sm">{rec}</span>
@@ -233,7 +267,7 @@ const StudentReportModal = ({
                   </CardHeader>
                   <CardContent>
                     <ul className="space-y-2">
-                      {detailedReport.strengths.map((strength, index) => (
+                      {detailedReport.strengths.map((strength: string, index: number) => (
                         <li key={index} className="flex items-start gap-2">
                           <Award className="h-4 w-4 text-green-500 mt-0.5" />
                           <span className="text-sm">{strength}</span>
@@ -244,6 +278,10 @@ const StudentReportModal = ({
                 </Card>
               )}
             </div>
+          ) : reportError ? (
+            <div className="text-red-600">
+              <p>Failed to load detailed report: {reportError.message}</p>
+            </div>
           ) : (
             <div>Failed to load detailed report</div>
           )}
@@ -251,7 +289,7 @@ const StudentReportModal = ({
       </div>
     </div>
   );
-};
+});
 
 export default function ClassGradePage() {
   const [user, setUser] = useState<User | null>(null);
@@ -259,6 +297,7 @@ export default function ClassGradePage() {
   const [selectedStudent, setSelectedStudent] = useState<StudentPerformanceSummary | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [preloadingStudent, setPreloadingStudent] = useState<string | null>(null);
   
   const router = useRouter();
   const params = useParams();
@@ -278,6 +317,17 @@ export default function ClassGradePage() {
   
   // Use SWR hook for combined analytics with teacherId
   const { tests, students, isLoading, error, mutate } = useClassAnalytics(classId, user?.uid);
+
+  // Preload student data on hover
+  const handleStudentHover = (student: StudentPerformanceSummary) => {
+    if (preloadingStudent !== student.id) {
+      setPreloadingStudent(student.id);
+      // Trigger SWR to preload the data
+      import('swr').then(({ mutate }) => {
+        mutate(['detailed-student-report', student.id, classId]);
+      });
+    }
+  };
 
   const handleStudentClick = (student: StudentPerformanceSummary) => {
     setSelectedStudent(student);
@@ -545,8 +595,9 @@ export default function ClassGradePage() {
               {students.map((student) => (
                 <Card 
                   key={student.id} 
-                  className="cursor-pointer hover:shadow-lg transition-shadow duration-200"
+                  className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-blue-300"
                   onClick={() => handleStudentClick(student)}
+                  onMouseEnter={() => handleStudentHover(student)}
                 >
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
