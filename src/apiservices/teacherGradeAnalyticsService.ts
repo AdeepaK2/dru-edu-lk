@@ -174,7 +174,7 @@ export class GradeAnalyticsService {
    */
   static async getTeacherClassesSummary(teacherId: string): Promise<ClassSummary[]> {
     try {
-      console.log(`🔍 [GRADE ANALYTICS] Getting classes summary for teacher: ${teacherId}`);
+      // console.log(`🔍 [GRADE ANALYTICS] Getting classes summary for teacher: ${teacherId}`);
       
       // Get classes taught by teacher
       const classesQuery = query(
@@ -184,7 +184,7 @@ export class GradeAnalyticsService {
       );
       
       const classesSnapshot = await getDocs(classesQuery);
-      console.log(`✅ [GRADE ANALYTICS] Found ${classesSnapshot.docs.length} active classes for teacher`);
+     // console.log(`✅ [GRADE ANALYTICS] Found ${classesSnapshot.docs.length} active classes for teacher`);
       
       if (classesSnapshot.empty) {
         return [];
@@ -257,7 +257,7 @@ export class GradeAnalyticsService {
         // Get enrollment count
         const enrolledStudents = enrollmentsByClass.get(classId) || 0;
         
-        console.log(`✅ [GRADE ANALYTICS] Class "${classData.name}": ${enrolledStudents} students, ${classTests.length} tests`);
+        // console.log(`✅ [GRADE ANALYTICS] Class "${classData.name}": ${enrolledStudents} students, ${classTests.length} tests`);
         
         // Calculate average score for this class
         const averageScore = await this.calculateClassAverageScore(classId);
@@ -297,12 +297,12 @@ export class GradeAnalyticsService {
         });
       }
       
-      console.log(`✅ [GRADE ANALYTICS] Returning ${classSummaries.length} class summaries:`, 
-        classSummaries.map(c => ({ 
-          className: c.name, 
-          students: c.enrolledStudents, 
-          totalTests: c.totalTests 
-        })));
+    //  console.log(`✅ [GRADE ANALYTICS] Returning ${classSummaries.length} class summaries:`, 
+    //     classSummaries.map(c => ({ 
+    //       className: c.name, 
+    //       students: c.enrolledStudents, 
+    //       totalTests: c.totalTests 
+    //     })));
       
       // Sort by name before returning
       return classSummaries.sort((a, b) => a.name.localeCompare(b.name));
@@ -315,7 +315,7 @@ export class GradeAnalyticsService {
    */
   static async getClassTestAnalytics(classId: string): Promise<TestSummary[]> {
     try {
-      console.log(`🔍 [GRADE ANALYTICS] Getting test analytics for class: ${classId}`);
+     // console.log(`🔍 [GRADE ANALYTICS] Getting test analytics for class: ${classId}`);
       
       // Simplified approach: Get all tests for this class without orderBy to avoid index issues
       const testsQuery = query(
@@ -324,7 +324,7 @@ export class GradeAnalyticsService {
       );
       
       const testsSnapshot = await getDocs(testsQuery);
-      console.log(`✅ [GRADE ANALYTICS] Found ${testsSnapshot.docs.length} total tests for class ${classId}`);
+    //  console.log(`✅ [GRADE ANALYTICS] Found ${testsSnapshot.docs.length} total tests for class ${classId}`);
       
       if (testsSnapshot.empty) {
         console.log(`⚠️ [GRADE ANALYTICS] No tests found for class ${classId}`);
@@ -352,7 +352,7 @@ export class GradeAnalyticsService {
         return isClassBased;
       });
       
-      console.log(`✅ [GRADE ANALYTICS] Found ${testsSnapshot.docs.length} total tests, ${classBasedTests.length} class-based tests for class ${classId}`);
+   //   console.log(`✅ [GRADE ANALYTICS] Found ${testsSnapshot.docs.length} total tests, ${classBasedTests.length} class-based tests for class ${classId}`);
       
       for (const testDoc of classBasedTests) {
         const testData = testDoc.data() as Test;
@@ -390,8 +390,8 @@ export class GradeAnalyticsService {
           })
           .filter(p => p !== undefined && p !== null) as number[];
         
-        console.log(`📊 [GRADE ANALYTICS] Test "${testData.title}": ${completedSubmissions.length} completed submissions, ${percentageScores.length} with percentage scores`);
-        console.log(`📊 [GRADE ANALYTICS] Percentage scores:`, percentageScores);
+      //  console.log(`📊 [GRADE ANALYTICS] Test "${testData.title}": ${completedSubmissions.length} completed submissions, ${percentageScores.length} with percentage scores`);
+      //  console.log(`📊 [GRADE ANALYTICS] Percentage scores:`, percentageScores);
         
         const averageScore = percentageScores.length > 0 ? percentageScores.reduce((a, b) => a + b, 0) / percentageScores.length : 0;
         const highestScore = percentageScores.length > 0 ? Math.max(...percentageScores) : 0;
@@ -402,7 +402,7 @@ export class GradeAnalyticsService {
         const passedStudents = percentageScores.filter(score => score >= passingPercentage).length;
         const passRate = percentageScores.length > 0 ? (passedStudents / percentageScores.length) * 100 : 0;
         
-        console.log(`📊 [GRADE ANALYTICS] Test "${testData.title}": avg=${averageScore.toFixed(1)}%, high=${highestScore}%, low=${lowestScore}%, pass=${passRate.toFixed(1)}%`);
+     //   console.log(`📊 [GRADE ANALYTICS] Test "${testData.title}": avg=${averageScore.toFixed(1)}%, high=${highestScore}%, low=${lowestScore}%, pass=${passRate.toFixed(1)}%`);
         
         // Calculate submission statistics
         const lateSubmissions = submissions.filter(s => s.lateSubmission?.isLateSubmission).length;
@@ -436,7 +436,7 @@ export class GradeAnalyticsService {
       // Sort by creation date (newest first) since we couldn't do it in the query
       testSummaries.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
       
-      console.log(`✅ [GRADE ANALYTICS] Returning ${testSummaries.length} test summaries for class ${classId}`);
+     // console.log(`✅ [GRADE ANALYTICS] Returning ${testSummaries.length} test summaries for class ${classId}`);
       return testSummaries;
     } catch (error) {
       console.error('Error getting class test analytics:', error);
@@ -476,7 +476,7 @@ export class GradeAnalyticsService {
         );
         const testsSnapshot = await getDocs(testsQuery);
         
-        console.log(`🔍 [DEBUG] Found ${testsSnapshot.docs.length} total tests for class ${classId}`);
+      //  console.log(`🔍 [DEBUG] Found ${testsSnapshot.docs.length} total tests for class ${classId}`);
         
         // Filter to only class-based tests and active tests
         const classBasedTests = testsSnapshot.docs.filter(doc => {
@@ -485,7 +485,7 @@ export class GradeAnalyticsService {
                  testData.classIds && 
                  testData.classIds.length > 0 &&
                  testData.isDeleted !== true;
-          console.log(`🔍 [DEBUG] Test ${doc.id}: assignmentType=${testData.assignmentType}, isDeleted=${testData.isDeleted}, isClassBased=${isClassBased}`);
+        //  console.log(`🔍 [DEBUG] Test ${doc.id}: assignmentType=${testData.assignmentType}, isDeleted=${testData.isDeleted}, isClassBased=${isClassBased}`);
           return isClassBased;
         });
         
@@ -502,7 +502,7 @@ export class GradeAnalyticsService {
         );
         const allSubmissionsSnapshot = await getDocs(allSubmissionsQuery);
         
-        console.log(`🔍 [DEBUG] Student ${studentId} has ${allSubmissionsSnapshot.docs.length} total submissions`);
+     //   console.log(`🔍 [DEBUG] Student ${studentId} has ${allSubmissionsSnapshot.docs.length} total submissions`);
         
         // Filter to only submissions for this class's tests
         submissions = allSubmissionsSnapshot.docs
@@ -518,7 +518,7 @@ export class GradeAnalyticsService {
           })
           .filter(submission => classBasedTestIds.includes(submission.testId));
         
-        console.log(`📊 [DEBUG] Total submissions for student ${studentId} in class ${classId}: ${submissions.length}`);
+       // console.log(`📊 [DEBUG] Total submissions for student ${studentId} in class ${classId}: ${submissions.length}`);
         
         // Calculate statistics
         const totalTestsAssigned = classBasedTests.length;
@@ -550,7 +550,7 @@ export class GradeAnalyticsService {
               }
             }
             
-            console.log(`📊 [DEBUG] Pass/Fail check for submission ${submission.id}: percentage=${percentage?.toFixed(1)}%, passing=${passingPercentage}%`);
+         //   console.log(`📊 [DEBUG] Pass/Fail check for submission ${submission.id}: percentage=${percentage?.toFixed(1)}%, passing=${passingPercentage}%`);
             
             if (percentage !== undefined && percentage !== null) {
               if (percentage >= passingPercentage) {
@@ -581,7 +581,7 @@ export class GradeAnalyticsService {
                 percentage = (s.autoGradedScore / s.maxScore) * 100;
               }
             }
-            console.log(`📊 [DEBUG] Submission score - totalScore: ${s.totalScore}, autoGradedScore: ${s.autoGradedScore}, maxScore: ${s.maxScore}, percentage: ${percentage?.toFixed(1)}%`);
+         //   console.log(`📊 [DEBUG] Submission score - totalScore: ${s.totalScore}, autoGradedScore: ${s.autoGradedScore}, maxScore: ${s.maxScore}, percentage: ${percentage?.toFixed(1)}%`);
             return percentage;
           })
           .filter(p => p !== undefined && p !== null) as number[];
@@ -589,9 +589,9 @@ export class GradeAnalyticsService {
         const overallAverage = percentageScores.length > 0 ? percentageScores.reduce((a, b) => a + b, 0) / percentageScores.length : 0;
         const highestScore = percentageScores.length > 0 ? Math.max(...percentageScores) : 0;
         const lowestScore = percentageScores.length > 0 ? Math.min(...percentageScores) : 0;
-        
-        console.log(`📊 [STUDENT ANALYTICS] Student "${studentData.name}": ${completedSubmissions.length} completed, ${percentageScores.length} scored, avg=${overallAverage.toFixed(1)}%, passed=${passedTests}, failed=${failedTests}`);
-        
+
+        // console.log(`📊 [STUDENT ANALYTICS] Student "${studentData.name}": ${completedSubmissions.length} completed, ${percentageScores.length} scored, avg=${overallAverage.toFixed(1)}%, passed=${passedTests}, failed=${failedTests}`);
+
         // Calculate late submissions
         const lateSubmissions = submissions.filter(s => s.lateSubmission?.isLateSubmission).length;
         const onTimeSubmissions = submissions.length - lateSubmissions;
