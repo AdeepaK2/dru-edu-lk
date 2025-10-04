@@ -92,6 +92,9 @@ export class TestExtensionService {
       
       console.log('✅ Test deadline extended successfully');
       
+      // 🚨 CRITICAL: Invalidate any active attempt states that might be affected
+      await this.invalidateActiveAttemptStates(testId, newTimestamp);
+      
       // Send email notifications to students and parents
       try {
         console.log('📧 Sending extension notification emails...');
@@ -232,6 +235,81 @@ export class TestExtensionService {
     return `Extended from ${originalDate.toLocaleDateString()} to ${currentDate.toLocaleDateString()}`;
   }
   
+  /**
+   * Invalidate active attempt states when test deadline is extended
+   * This prevents timing conflicts between cached attempt data and new deadline
+   */
+  private static async invalidateActiveAttemptStates(testId: string, newDeadline: Timestamp): Promise<void> {
+    try {
+      console.log('🔄 Invalidating active attempt states for extended test:', testId);
+      
+      // Update all active attempts for this test with new deadline awareness
+      const attemptsQuery = query(
+        collection(firestore, 'testAttempts'),
+        where('testId', '==', testId),
+        where('status', 'in', ['in_progress', 'not_started', 'paused'])
+      );
+      
+      const attemptsSnapshot = await getDocs(attemptsQuery);
+      const updatePromises: Promise<void>[] = [];
+      
+      attemptsSnapshot.forEach((attemptDoc) => {
+        const attemptData = attemptDoc.data();
+        
+        // Add extension flag to attempt so student UI can refresh test data
+        const updatePromise = updateDoc(doc(firestore, 'testAttempts', attemptDoc.id), {
+          testExtendedAt: Timestamp.now(),
+          newTestDeadline: newDeadline,
+          requiresTestDataRefresh: true, // Flag for client to refresh test info
+          lastUpdated: Timestamp.now()
+        });
+        
+        updatePromises.push(updatePromise);
+      });
+      
+      await Promise.all(updatePromises);
+      console.log(`✅ Updated ${updatePromises.length} active attempts with extension info`);
+      
+    } catch (error) {
+      console.error('❌ Error invalidating active attempt states:', error);
+      // Don't throw - extension should still succeed even if this fails
+    }
+  }
+
+  /**
+   * Clear extension refresh flags after client has refreshed test data
+   * Should be called by client after detecting and handling test extension
+   */
+  static async clearExtensionRefreshFlags(testId: string): Promise<void> {
+    try {
+      console.log('🧹 Clearing extension refresh flags for test:', testId);
+      
+      const attemptsQuery = query(
+        collection(firestore, 'testAttempts'),
+        where('testId', '==', testId),
+        where('requiresTestDataRefresh', '==', true)
+      );
+      
+      const attemptsSnapshot = await getDocs(attemptsQuery);
+      const clearPromises: Promise<void>[] = [];
+      
+      attemptsSnapshot.forEach((attemptDoc) => {
+        const clearPromise = updateDoc(doc(firestore, 'testAttempts', attemptDoc.id), {
+          requiresTestDataRefresh: false,
+          extensionHandledAt: Timestamp.now()
+        });
+        
+        clearPromises.push(clearPromise);
+      });
+      
+      await Promise.all(clearPromises);
+      console.log(`✅ Cleared extension flags for ${clearPromises.length} attempts`);
+      
+    } catch (error) {
+      console.error('❌ Error clearing extension refresh flags:', error);
+    }
+  }
+
   /**
    * Get students who might be affected by deadline extension
    */
