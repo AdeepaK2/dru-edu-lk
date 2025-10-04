@@ -139,7 +139,10 @@ export default function TestPage() {
           });
           
           // 🚨 CRITICAL: Check if this attempt was affected by test extension
-          if (attemptData.requiresTestDataRefresh || attemptData.testExtendedAt) {
+          // Only if extension detection is enabled (can be disabled for safety)
+          const enableExtensionDetection = process.env.NEXT_PUBLIC_ENABLE_EXTENSION_DETECTION !== 'false';
+          
+          if (enableExtensionDetection && (attemptData.requiresTestDataRefresh || attemptData.testExtendedAt)) {
             console.log('🔄 Attempt was affected by test extension, refreshing test data...');
             
             // Clear the extension flags first to prevent infinite loops

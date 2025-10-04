@@ -9,6 +9,9 @@ import { v4 as uuidv4 } from 'uuid';
 
 export class TestExtensionService {
   
+  // 🛡️ Feature flag for safety - can be disabled via environment variable
+  private static ENABLE_ATTEMPT_STATE_INVALIDATION = process.env.ENABLE_ATTEMPT_STATE_INVALIDATION !== 'false'; // Default: enabled
+  
   /**
    * Safely convert timestamp to Date object
    */
@@ -93,7 +96,11 @@ export class TestExtensionService {
       console.log('✅ Test deadline extended successfully');
       
       // 🚨 CRITICAL: Invalidate any active attempt states that might be affected
-      await this.invalidateActiveAttemptStates(testId, newTimestamp);
+      if (this.ENABLE_ATTEMPT_STATE_INVALIDATION) {
+        await this.invalidateActiveAttemptStates(testId, newTimestamp);
+      } else {
+        console.log('⚠️ Attempt state invalidation is disabled via feature flag');
+      }
       
       // Send email notifications to students and parents
       try {

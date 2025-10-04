@@ -10,6 +10,10 @@ import { SubmissionService } from './submissionService';
 
 export class BackgroundSubmissionService {
   
+  // 🛡️ Feature flags for safety
+  private static ENABLE_EXTENSION_AWARENESS = process.env.ENABLE_EXTENSION_AWARENESS !== 'false'; // Default: enabled
+  private static ENABLE_ENHANCED_ACTIVITY_CHECK = process.env.ENABLE_ENHANCED_ACTIVITY_CHECK !== 'false'; // Default: enabled
+  
   /**
    * Find and auto-submit all expired attempts
    * This should be called periodically by a background service
@@ -86,7 +90,7 @@ export class BackgroundSubmissionService {
     try {
       // ✅ First, check if student was recently active (within last 5 minutes)
       // This prevents auto-submitting attempts where student is actively working
-      if (attempt.lastActiveAt) {
+      if (this.ENABLE_ENHANCED_ACTIVITY_CHECK && attempt.lastActiveAt) {
         const lastActiveTime = attempt.lastActiveAt.toMillis ? 
           attempt.lastActiveAt.toMillis() : 
           attempt.lastActiveAt.seconds * 1000;
@@ -101,7 +105,7 @@ export class BackgroundSubmissionService {
 
       // 🚨 NEW: Check if test was recently extended
       // If attempt has extension markers, be extra cautious
-      if ((attempt as any).testExtendedAt || (attempt as any).requiresTestDataRefresh) {
+      if (this.ENABLE_EXTENSION_AWARENESS && ((attempt as any).testExtendedAt || (attempt as any).requiresTestDataRefresh)) {
         const extensionTime = (attempt as any).testExtendedAt;
         if (extensionTime) {
           const extendedAtMs = extensionTime.toMillis ? extensionTime.toMillis() : extensionTime.seconds * 1000;
