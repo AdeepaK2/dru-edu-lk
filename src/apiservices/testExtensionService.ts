@@ -4,6 +4,7 @@
 import { firestore } from '@/utils/firebase-client';
 import { doc, updateDoc, Timestamp, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { Test, FlexibleTest, TestExtension } from '@/models/testSchema';
+import { MailService } from './mailService';
 import { v4 as uuidv4 } from 'uuid';
 
 export class TestExtensionService {
@@ -90,6 +91,26 @@ export class TestExtensionService {
       await updateDoc(doc(firestore, 'tests', testId), updateData);
       
       console.log('✅ Test deadline extended successfully');
+      
+      // Send email notifications to students and parents
+      try {
+        console.log('📧 Sending extension notification emails...');
+        await this.sendExtensionNotifications(testId, test, extension);
+        
+        // Mark notifications as sent
+        await updateDoc(doc(firestore, 'tests', testId), {
+          'extensionHistory': [...(flexTest.extensionHistory || []), {
+            ...extension,
+            notificationsSent: true
+          }]
+        });
+        
+        console.log('✅ Extension notification emails sent successfully');
+      } catch (emailError) {
+        console.warn('⚠️ Extension emails failed but test was extended:', emailError);
+        // Don't fail the extension if emails fail
+      }
+      
       return extension;
     } catch (error) {
       console.error('❌ Error extending test deadline:', error);
@@ -237,6 +258,112 @@ export class TestExtensionService {
         completedAttempts: 0,
         notAttempted: 0
       };
+    }
+  }
+
+  /**
+   * Send extension notification emails to students and parents
+   */
+  private static async sendExtensionNotifications(
+    testId: string, 
+    test: Test, 
+    extension: TestExtension
+  ): Promise<void> {
+    try {
+      // Get enrolled students for this test
+      const { StudentEnrollmentFirestoreService } = await import('./studentEnrollmentFirestoreService');
+      const { StudentFirestoreService } = await import('./studentFirestoreService');
+      
+      const enrolledStudents = await Promise.all(
+        test.classIds.map(async (classId: string) => {
+          const enrollments = await StudentEnrollmentFirestoreService.getEnrolledStudentsByClassId(classId);
+          return enrollments.map((enrollment: any) => ({
+            id: enrollment.studentId,
+            name: enrollment.studentName,
+            email: enrollment.studentEmail,
+            parent: enrollment.parent,
+            enrollment
+          }));
+        })
+      );
+      
+      // Flatten the array
+      const allStudents = enrolledStudents.flat();
+      
+      // Remove duplicates (in case student is in multiple classes for the same test)
+      const uniqueStudents = allStudents.filter((student: any, index: number, self: any[]) => 
+        index === self.findIndex((s: any) => s.id === student.id)
+      );
+      
+      console.log(`📧 Sending extension notifications to ${uniqueStudents.length} students`);
+      
+      // Format dates for email
+      const originalDeadline = this.convertTimestampToDate(extension.previousDeadline);
+      const newDeadline = this.convertTimestampToDate(extension.newDeadline);
+      const extensionDays = Math.ceil((newDeadline.getTime() - originalDeadline.getTime()) / (1000 * 60 * 60 * 24));
+      
+      const originalDeadlineStr = originalDeadline.toLocaleString('en-AU', {
+        timeZone: 'Australia/Melbourne',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      
+      const newDeadlineStr = newDeadline.toLocaleString('en-AU', {
+        timeZone: 'Australia/Melbourne',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      
+      // Get class name (use first class if multiple)
+      let className = 'Unknown Class';
+      if (test.classNames && test.classNames.length > 0) {
+        className = test.classNames[0];
+      }
+      
+      // Get subject name
+      const subjectName = test.subjectName || test.subjectId || 'Unknown Subject';
+      
+      // Send emails to all students and their parents
+      const emailPromises = uniqueStudents.map(async (student: any) => {
+        try {
+          if (student.email && student.parent?.email) {
+            await MailService.sendTestExtensionNotificationEmails(
+              student.name,
+              student.email,
+              student.parent.name || 'Parent',
+              student.parent.email,
+              test.title,
+              extension.extendedByName,
+              subjectName,
+              className,
+              originalDeadlineStr,
+              newDeadlineStr,
+              extensionDays,
+              extension.reason
+            );
+            
+            console.log(`✅ Extension email sent to ${student.name} and parent`);
+          } else {
+            console.warn(`⚠️ Missing email addresses for student ${student.name}`);
+          }
+        } catch (error) {
+          console.error(`❌ Failed to send extension email to ${student.name}:`, error);
+        }
+      });
+      
+      // Send all emails in parallel
+      await Promise.all(emailPromises);
+      
+      console.log('✅ All extension notification emails sent');
+    } catch (error) {
+      console.error('❌ Error sending extension notifications:', error);
+      throw error;
     }
   }
 }
