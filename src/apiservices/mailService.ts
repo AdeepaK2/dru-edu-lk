@@ -1661,4 +1661,244 @@ Your  Trusted  Guide for VCE Success</p>
       throw error;
     }
   }
+
+  // Generate test extension notification email for student
+  static generateStudentTestExtensionEmail(
+    studentName: string,
+    studentEmail: string,
+    testTitle: string,
+    teacherName: string,
+    subjectName: string,
+    className: string,
+    originalDeadline: string,
+    newDeadline: string,
+    extensionDays: number,
+    reason?: string
+  ): Omit<MailDocument, 'createdAt' | 'processed'> {
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #4F46E5; text-align: center;">Test Deadline Extended - Dr U Education</h2>
+        
+        <p>Dear ${studentName},</p>
+        
+        <p>Good news! The deadline for your upcoming test has been extended to give you more time to prepare.</p>
+        
+        <div style="background-color: #F3F4F6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="color: #374151; margin-top: 0;">Test Details:</h3>
+          <p><strong>Test:</strong> ${testTitle}</p>
+          <p><strong>Subject:</strong> ${subjectName}</p>
+          <p><strong>Class:</strong> ${className}</p>
+          <p><strong>Teacher:</strong> ${teacherName}</p>
+        </div>
+        
+        <div style="background-color: #FEF3C7; border-left: 4px solid #F59E0B; padding: 15px; margin: 20px 0;">
+          <h4 style="color: #92400E; margin-top: 0;">Deadline Changes:</h4>
+          <p style="margin: 5px 0;"><strong>Original Deadline:</strong> ${originalDeadline}</p>
+          <p style="margin: 5px 0;"><strong>New Deadline:</strong> ${newDeadline}</p>
+          <p style="margin: 5px 0;"><strong>Extension:</strong> ${extensionDays} additional day(s)</p>
+        </div>
+        
+        ${reason ? `
+        <div style="background-color: #EBF8FF; border-left: 4px solid #3B82F6; padding: 15px; margin: 20px 0;">
+          <h4 style="color: #1E40AF; margin-top: 0;">Reason for Extension:</h4>
+          <p style="margin: 0;">${reason}</p>
+        </div>
+        ` : ''}
+        
+        <div style="background-color: #F0FDF4; border-left: 4px solid #22C55E; padding: 15px; margin: 20px 0;">
+          <h4 style="color: #15803D; margin-top: 0;">What This Means:</h4>
+          <ul style="margin: 10px 0; padding-left: 20px;">
+            <li>You now have ${extensionDays} extra day(s) to complete the test</li>
+            <li>The test will remain accessible until the new deadline</li>
+            <li>Use this extra time to review and prepare thoroughly</li>
+            <li>No action is required on your part - just be ready for the new deadline</li>
+          </ul>
+        </div>
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://app.drueducation.com'}/student/test" 
+             style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+            View My Tests
+          </a>
+        </div>
+        
+        <p><strong>Study Tips:</strong></p>
+        <ul>
+          <li>Use the extra time to review difficult topics</li>
+          <li>Practice similar questions if available</li>
+          <li>Ensure you understand the test format and requirements</li>
+          <li>Plan your test-taking strategy for the actual test day</li>
+        </ul>
+        
+        <p>If you have any questions about the test or need additional support, please don't hesitate to contact your teacher.</p>
+        
+        <p>Best of luck with your preparation!</p>
+        
+        <p>Best regards,<br>
+        The Dr U Education Team<br>
+        Your Trusted Guide for VCE Success</p>
+        
+        <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 30px 0;">
+        <p style="font-size: 12px; color: #6B7280; text-align: center;">
+          This is an automated message regarding your test schedule. For questions, please contact your teacher.
+        </p>
+      </div>
+    `;
+
+    return {
+      to: studentEmail,
+      subject: `Test Deadline Extended - ${testTitle}`,
+      html: html.trim()
+    };
+  }
+
+  // Generate test extension notification email for parent
+  static generateParentTestExtensionEmail(
+    parentName: string,
+    parentEmail: string,
+    studentName: string,
+    testTitle: string,
+    teacherName: string,
+    subjectName: string,
+    className: string,
+    originalDeadline: string,
+    newDeadline: string,
+    extensionDays: number,
+    reason?: string
+  ): Omit<MailDocument, 'createdAt' | 'processed'> {
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #4F46E5; text-align: center;">Test Deadline Extended - Dr U Education</h2>
+        
+        <p>Dear ${parentName},</p>
+        
+        <p>We would like to inform you that the deadline for ${studentName}'s upcoming test has been extended to provide additional preparation time.</p>
+        
+        <div style="background-color: #F3F4F6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="color: #374151; margin-top: 0;">Test Details:</h3>
+          <p><strong>Student:</strong> ${studentName}</p>
+          <p><strong>Test:</strong> ${testTitle}</p>
+          <p><strong>Subject:</strong> ${subjectName}</p>
+          <p><strong>Class:</strong> ${className}</p>
+          <p><strong>Teacher:</strong> ${teacherName}</p>
+        </div>
+        
+        <div style="background-color: #FEF3C7; border-left: 4px solid #F59E0B; padding: 15px; margin: 20px 0;">
+          <h4 style="color: #92400E; margin-top: 0;">Deadline Changes:</h4>
+          <p style="margin: 5px 0;"><strong>Original Deadline:</strong> ${originalDeadline}</p>
+          <p style="margin: 5px 0;"><strong>New Deadline:</strong> ${newDeadline}</p>
+          <p style="margin: 5px 0;"><strong>Extension:</strong> ${extensionDays} additional day(s)</p>
+        </div>
+        
+        ${reason ? `
+        <div style="background-color: #EBF8FF; border-left: 4px solid #3B82F6; padding: 15px; margin: 20px 0;">
+          <h4 style="color: #1E40AF; margin-top: 0;">Reason for Extension:</h4>
+          <p style="margin: 0;">${reason}</p>
+        </div>
+        ` : ''}
+        
+        <div style="background-color: #F0FDF4; border-left: 4px solid #22C55E; padding: 15px; margin: 20px 0;">
+          <h4 style="color: #15803D; margin-top: 0;">What This Means:</h4>
+          <ul style="margin: 10px 0; padding-left: 20px;">
+            <li>${studentName} now has ${extensionDays} extra day(s) to complete the test</li>
+            <li>The test will remain accessible until the new deadline</li>
+            <li>This provides additional time for thorough preparation</li>
+            <li>No action is required - ${studentName} has been notified automatically</li>
+          </ul>
+        </div>
+        
+        <p><strong>How You Can Help:</strong></p>
+        <ul>
+          <li>Encourage ${studentName} to use the extra time effectively</li>
+          <li>Help create a quiet study environment for preparation</li>
+          <li>Remind ${studentName} of the new deadline to avoid last-minute rushing</li>
+          <li>Contact the teacher if ${studentName} needs additional support</li>
+        </ul>
+        
+        <p>We appreciate your continued support in ${studentName}'s educational journey. If you have any questions or concerns, please feel free to contact ${teacherName} directly.</p>
+        
+        <p>Thank you for choosing Dr U Education for ${studentName}'s learning needs.</p>
+        
+        <p>Best regards,<br>
+        The Dr U Education Team<br>
+        Your Trusted Guide for VCE Success</p>
+        
+        <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 30px 0;">
+        <p style="font-size: 12px; color: #6B7280; text-align: center;">
+          This is an automated notification regarding ${studentName}'s test schedule. For questions, please contact the teacher.
+        </p>
+      </div>
+    `;
+
+    return {
+      to: parentEmail,
+      subject: `Test Extended for ${studentName} - ${testTitle}`,
+      html: html.trim()
+    };
+  }
+
+  // Send test extension notification emails to both student and parent
+  static async sendTestExtensionNotificationEmails(
+    studentName: string,
+    studentEmail: string,
+    parentName: string,
+    parentEmail: string,
+    testTitle: string,
+    teacherName: string,
+    subjectName: string,
+    className: string,
+    originalDeadline: string,
+    newDeadline: string,
+    extensionDays: number,
+    reason?: string
+  ): Promise<{ studentMailId: string; parentMailId: string }> {
+    try {
+      // Generate emails for both student and parent
+      const studentEmail_data = this.generateStudentTestExtensionEmail(
+        studentName,
+        studentEmail,
+        testTitle,
+        teacherName,
+        subjectName,
+        className,
+        originalDeadline,
+        newDeadline,
+        extensionDays,
+        reason
+      );
+
+      const parentEmail_data = this.generateParentTestExtensionEmail(
+        parentName,
+        parentEmail,
+        studentName,
+        testTitle,
+        teacherName,
+        subjectName,
+        className,
+        originalDeadline,
+        newDeadline,
+        extensionDays,
+        reason
+      );
+
+      // Send both emails
+      const [studentMailId, parentMailId] = await Promise.all([
+        this.createMailDocument(studentEmail_data),
+        this.createMailDocument(parentEmail_data)
+      ]);
+
+      console.log('✅ Test extension notification emails sent:', {
+        studentMailId,
+        parentMailId,
+        studentEmail,
+        parentEmail,
+        testTitle
+      });
+
+      return { studentMailId, parentMailId };
+    } catch (error) {
+      console.error('❌ Error sending test extension notification emails:', error);
+      throw error;
+    }
+  }
 }

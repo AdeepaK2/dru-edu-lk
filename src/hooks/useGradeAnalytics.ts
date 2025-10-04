@@ -99,6 +99,8 @@ export function useInstantStudentReport(studentId: string | null, classId: strin
   // Return basic data immediately, detailed data when available
   const report = basicStudent ? {
     ...basicStudent,
+    // Use the corrected count from detailed data if available
+    totalTestsCompleted: detailedData?.actualTestsCompleted ?? basicStudent.totalTestsCompleted,
     recentTests: detailedData?.recentTests || [],
     performanceTrend: detailedData?.performanceTrend || [],
     recommendations: detailedData?.recommendations || [],

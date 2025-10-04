@@ -8,6 +8,12 @@ export interface ExamPDFOptions {
   className: string;
   date: string;
   questions: EssayQuestion[];
+  // Image display options
+  imageSettings?: {
+    maxImageHeight?: number; // Maximum image height in mm (default: 80)
+    useFullPageForImages?: boolean; // Use full page for each question image
+    largeImageMode?: boolean; // Enable larger images (up to 200mm height)
+  };
 }
 
 export class ExamPDFService {
@@ -15,14 +21,22 @@ export class ExamPDFService {
    * Generate exam PDF for essay questions
    */
   static async generateExamPDF(options: ExamPDFOptions): Promise<Blob> {
-    const { title, testNumber, className, date, questions } = options;
+    const { title, testNumber, className, date, questions, imageSettings } = options;
+
+    // Image settings with defaults - Much larger images
+    const imgSettings = {
+      maxImageHeight: imageSettings?.maxImageHeight || (imageSettings?.largeImageMode ? 280 : 150), // Increased from 200:80 to 280:150
+      useFullPageForImages: imageSettings?.useFullPageForImages || false,
+      largeImageMode: imageSettings?.largeImageMode || false
+    };
 
     console.log('📄 Starting PDF generation with options:', {
       title,
       testNumber,
       className,
       date,
-      questionCount: questions.length
+      questionCount: questions.length,
+      imageSettings: imgSettings
     });
 
     // Create a new jsPDF instance
@@ -96,37 +110,37 @@ export class ExamPDFService {
       }
 
       if (isFirstPage) {
-        // Add title page content only on first page
-        pdf.setFontSize(24);
+        // Add title page content only on first page - more compact layout
+        pdf.setFontSize(20); // Reduced from 24
         pdf.setFont('helvetica', 'bold');
         pdf.setTextColor(51, 51, 51); // Dark gray text
         const titleText = 'Dru Education';
         const titleWidth = pdf.getTextWidth(titleText);
         pdf.text(titleText, (pageWidth - titleWidth) / 2, currentY);
 
-        currentY += 15;
+        currentY += 12; // Reduced from 15
 
         // Add test number
-        pdf.setFontSize(16);
+        pdf.setFontSize(14); // Reduced from 16
         pdf.setFont('helvetica', 'normal');
         pdf.setTextColor(102, 102, 102); // Medium gray text
         const testNumberText = `Test No: ${testNumber}`;
         const testNumberWidth = pdf.getTextWidth(testNumberText);
         pdf.text(testNumberText, (pageWidth - testNumberWidth) / 2, currentY);
 
-        currentY += 10;
+        currentY += 8; // Reduced from 10
 
         // Add class and date
-        pdf.setFontSize(12);
+        pdf.setFontSize(11); // Reduced from 12
         pdf.setTextColor(102, 102, 102);
         const classDateText = `${className} - ${date}`;
         const classDateWidth = pdf.getTextWidth(classDateText);
         pdf.text(classDateText, (pageWidth - classDateWidth) / 2, currentY);
 
-        currentY += 25;
+        currentY += 15; // Reduced from 25
 
-        // Add student name section
-        pdf.setFontSize(12);
+        // Add student name section - more compact
+        pdf.setFontSize(11); // Reduced from 12
         pdf.setFont('helvetica', 'normal');
         pdf.setTextColor(51, 51, 51);
         const nameLabel = 'Student Name:';
@@ -134,12 +148,12 @@ export class ExamPDFService {
 
         // Add underline for student to write name
         const nameStartX = margin + pdf.getTextWidth(nameLabel) + 5;
-        const underlineLength = 80;
+        const underlineLength = 60; // Reduced from 80
         pdf.setDrawColor(0, 0, 0);
         pdf.setLineWidth(0.5);
         pdf.line(nameStartX, currentY + 2, nameStartX + underlineLength, currentY + 2);
 
-        currentY += 20;
+        currentY += 12; // Reduced from 20
       }
     };
 
@@ -157,7 +171,9 @@ export class ExamPDFService {
       });
 
       // Check if we need a new page for the question
-      if (currentY > pageHeight - 100) { // Leave space for question content
+      // For the first question, allow much more space usage before forcing a page break
+      const spaceThreshold = i === 0 ? 200 : 100; // Much more lenient for first question
+      if (currentY > pageHeight - spaceThreshold) { // Leave space for question content
         pdf.addPage();
         addPageHeader(false);
       }
@@ -185,27 +201,74 @@ export class ExamPDFService {
             img.onload = () => {
               try {
                 const imgAspectRatio = img.width / img.height;
-                const maxImgWidth = contentWidth - 20; // Leave some margin
-                const maxImgHeight = 80; // Limit image height
-
-                let imgWidth = maxImgWidth;
-                let imgHeight = maxImgWidth / imgAspectRatio;
-
-                if (imgHeight > maxImgHeight) {
-                  imgHeight = maxImgHeight;
-                  imgWidth = maxImgHeight * imgAspectRatio;
-                }
-
-                // Check if image fits on current page
-                if (currentY + imgHeight > pageHeight - margin - 20) {
+                
+                if (imgSettings.useFullPageForImages) {
+                  // Full page mode: Use entire page for the image
                   pdf.addPage();
                   addPageHeader(false);
-                }
+                  
+                  // Calculate dimensions for full page (with minimal margins)
+                  const fullPageWidth = contentWidth + 20; // Use more width
+                  const fullPageHeight = pageHeight - margin * 2 - 40; // Reduced header space from 60 to 40
+                  
+                  let imgWidth = fullPageWidth;
+                  let imgHeight = fullPageWidth / imgAspectRatio;
+                  
+                  if (imgHeight > fullPageHeight) {
+                    imgHeight = fullPageHeight;
+                    imgWidth = fullPageHeight * imgAspectRatio;
+                  }
+                  
+                  // Center the image on the page
+                  const centerX = (pageWidth - imgWidth) / 2;
+                  const startY = margin + 30; // Reduced from 50 to 30
+                  
+                  pdf.addImage(imgData, 'JPEG', centerX, startY, imgWidth, imgHeight);
+                  
+                  // Add a note about the image
+                  pdf.setFontSize(10);
+                  pdf.setFont('helvetica', 'italic');
+                  pdf.setTextColor(100, 100, 100);
+                  const imageNote = `Question ${i + 1} - Image (Full Page Display)`;
+                  const noteWidth = pdf.getTextWidth(imageNote);
+                  pdf.text(imageNote, (pageWidth - noteWidth) / 2, startY + imgHeight + 15);
+                  pdf.setTextColor(51, 51, 51);
+                  pdf.setFont('helvetica', 'normal');
+                  
+                  console.log(`✅ Full-page image loaded successfully for question ${i + 1}`);
+                } else {
+                  // Standard mode with much larger sizing
+                  const maxImgWidth = contentWidth - 10; // Reduced margin from 20 to 10
+                  const maxImgHeight = imgSettings.maxImageHeight;
 
-                // Add the image to PDF
-                pdf.addImage(imgData, 'JPEG', margin + 10, currentY, imgWidth, imgHeight);
-                currentY += imgHeight + 15;
-                console.log(`✅ Image loaded successfully for question ${i + 1}`);
+                  let imgWidth = maxImgWidth;
+                  let imgHeight = maxImgWidth / imgAspectRatio;
+
+                  if (imgHeight > maxImgHeight) {
+                    imgHeight = maxImgHeight;
+                    imgWidth = maxImgHeight * imgAspectRatio;
+                  }
+
+                  // Check if image fits on current page
+                  // For the first question, be much more lenient with space requirements
+                  const minSpaceRequired = i === 0 ? 80 : 20; // Much less strict for first question
+                  if (currentY + imgHeight > pageHeight - margin - minSpaceRequired) {
+                    // Only add a new page if it's not the first question or if the image is extremely large
+                    if (i > 0 || imgHeight > pageHeight - margin - 120) {
+                      pdf.addPage();
+                      addPageHeader(false);
+                    }
+                    // For first question with large image, allow it to extend much further down the page
+                  }
+
+                  // Center the image horizontally
+                  const centerX = (pageWidth - imgWidth) / 2;
+                  pdf.addImage(imgData, 'JPEG', centerX, currentY, imgWidth, imgHeight);
+                  currentY += imgHeight + 20; // Increased spacing from 15 to 20
+                  
+                  console.log(`✅ Image loaded successfully for question ${i + 1} (${imgWidth.toFixed(1)}x${imgHeight.toFixed(1)} mm)`);
+                }
+                
                 resolve();
               } catch (error) {
                 console.error(`❌ Error adding image to PDF for question ${i + 1}:`, error);
@@ -452,5 +515,62 @@ export class ExamPDFService {
       // Don't throw error as this shouldn't prevent test deletion
       console.warn('⚠️ Continuing with test deletion despite PDF deletion failure');
     }
+  }
+
+  /**
+   * Generate exam PDF with large images (up to 280mm height)
+   */
+  static async generateExamPDFWithLargeImages(options: Omit<ExamPDFOptions, 'imageSettings'>): Promise<Blob> {
+    return this.generateExamPDF({
+      ...options,
+      imageSettings: {
+        largeImageMode: true,
+        maxImageHeight: 280
+      }
+    });
+  }
+
+  /**
+   * Generate exam PDF with full-page images (one page per image)
+   */
+  static async generateExamPDFWithFullPageImages(options: Omit<ExamPDFOptions, 'imageSettings'>): Promise<Blob> {
+    return this.generateExamPDF({
+      ...options,
+      imageSettings: {
+        useFullPageForImages: true,
+        largeImageMode: true
+      }
+    });
+  }
+
+  /**
+   * Generate exam PDF with extra large images (up to 350mm height)
+   */
+  static async generateExamPDFWithExtraLargeImages(options: Omit<ExamPDFOptions, 'imageSettings'>): Promise<Blob> {
+    return this.generateExamPDF({
+      ...options,
+      imageSettings: {
+        largeImageMode: true,
+        maxImageHeight: 350
+      }
+    });
+  }
+
+  /**
+   * Generate exam PDF with custom image settings
+   */
+  static async generateExamPDFWithCustomImageSettings(
+    options: Omit<ExamPDFOptions, 'imageSettings'>,
+    maxImageHeight: number,
+    useFullPageForImages: boolean = false
+  ): Promise<Blob> {
+    return this.generateExamPDF({
+      ...options,
+      imageSettings: {
+        maxImageHeight,
+        useFullPageForImages,
+        largeImageMode: maxImageHeight > 100
+      }
+    });
   }
 }

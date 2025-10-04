@@ -10,6 +10,10 @@ import { SubmissionService } from './submissionService';
 
 export class BackgroundSubmissionService {
   
+  // 🛡️ Feature flags for safety
+  private static ENABLE_EXTENSION_AWARENESS = process.env.ENABLE_EXTENSION_AWARENESS !== 'false'; // Default: enabled
+  private static ENABLE_ENHANCED_ACTIVITY_CHECK = process.env.ENABLE_ENHANCED_ACTIVITY_CHECK !== 'false'; // Default: enabled
+  
   /**
    * Find and auto-submit all expired attempts
    * This should be called periodically by a background service
@@ -32,7 +36,7 @@ export class BackgroundSubmissionService {
       
       // Find all active attempts (in_progress, not_started) using admin SDK
       const attemptsQuery = await firebaseAdmin.db
-        .collection('attempts')
+        .collection('testAttempts')  // ✅ Use correct collection name
         .where('status', 'in', ['in_progress', 'not_started'])
         .orderBy('startedAt', 'desc')
         .limit(100) // Process in batches
@@ -79,9 +83,42 @@ export class BackgroundSubmissionService {
 
   /**
    * Check if a specific attempt has expired based on test type and timing
+   * Enhanced with recent activity check to prevent auto-submitting active sessions
+   * Now also checks for test extensions to avoid submitting recently extended tests
    */
   private static async checkIfAttemptExpired(attempt: TestAttempt): Promise<boolean> {
     try {
+      // ✅ First, check if student was recently active (within last 5 minutes)
+      // This prevents auto-submitting attempts where student is actively working
+      if (this.ENABLE_ENHANCED_ACTIVITY_CHECK && attempt.lastActiveAt) {
+        const lastActiveTime = attempt.lastActiveAt.toMillis ? 
+          attempt.lastActiveAt.toMillis() : 
+          attempt.lastActiveAt.seconds * 1000;
+        const timeSinceActivity = Date.now() - lastActiveTime;
+        const fiveMinutesInMs = 5 * 60 * 1000;
+        
+        if (timeSinceActivity < fiveMinutesInMs) {
+          console.log(`⚡ Attempt ${attempt.id} has recent activity (${Math.round(timeSinceActivity/1000)}s ago), not auto-submitting`);
+          return false;
+        }
+      }
+
+      // 🚨 NEW: Check if test was recently extended
+      // If attempt has extension markers, be extra cautious
+      if (this.ENABLE_EXTENSION_AWARENESS && ((attempt as any).testExtendedAt || (attempt as any).requiresTestDataRefresh)) {
+        const extensionTime = (attempt as any).testExtendedAt;
+        if (extensionTime) {
+          const extendedAtMs = extensionTime.toMillis ? extensionTime.toMillis() : extensionTime.seconds * 1000;
+          const timeSinceExtension = Date.now() - extendedAtMs;
+          const tenMinutesInMs = 10 * 60 * 1000; // Be extra cautious for 10 minutes after extension
+          
+          if (timeSinceExtension < tenMinutesInMs) {
+            console.log(`🔄 Attempt ${attempt.id} was affected by recent test extension (${Math.round(timeSinceExtension/1000)}s ago), not auto-submitting`);
+            return false;
+          }
+        }
+      }
+
       // Get the test data using admin SDK
       const testDoc = await firebaseAdmin.db.collection('tests').doc(attempt.testId).get();
       
@@ -201,7 +238,7 @@ export class BackgroundSubmissionService {
       console.log(`🔍 Checking expired attempts for student: ${studentId}`);
 
       const attemptsQuery = await firebaseAdmin.db
-        .collection('attempts')
+        .collection('testAttempts')  // ✅ Use correct collection name
         .where('studentId', '==', studentId)
         .where('status', 'in', ['in_progress', 'not_started'])
         .orderBy('startedAt', 'desc')
@@ -236,7 +273,7 @@ export class BackgroundSubmissionService {
   }> {
     try {
       const attemptsQuery = await firebaseAdmin.db
-        .collection('attempts')
+        .collection('testAttempts')  // ✅ Use correct collection name
         .where('status', 'in', ['in_progress', 'not_started'])
         .orderBy('startedAt', 'asc')
         .get();

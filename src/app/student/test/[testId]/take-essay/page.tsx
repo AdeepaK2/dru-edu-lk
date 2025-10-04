@@ -58,6 +58,7 @@ export default function TakeEssayTestPage() {
   // PDF generation state
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
 
   // Format remaining time for display
   const formatTime = (seconds: number) => {
@@ -78,6 +79,42 @@ export default function TakeEssayTestPage() {
     }
   };
   
+  // Download exam PDF using API route
+  const downloadExamPdf = async (fileUrl: string, fileName: string) => {
+    if (isDownloadingPdf) return;
+    
+    setIsDownloadingPdf(true);
+    
+    try {
+      const downloadUrl = `/api/download-pdf?url=${encodeURIComponent(fileUrl)}&filename=${encodeURIComponent(fileName)}`;
+      
+      // Create direct download link
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = fileName;
+      link.style.display = 'none';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      console.log('✅ PDF download initiated via API!');
+      
+      // Reset downloading state after delay
+      setTimeout(() => setIsDownloadingPdf(false), 2000);
+    } catch (error) {
+      console.error('❌ Failed to download PDF via API:', error);
+      setIsDownloadingPdf(false);
+      
+      // Fallback: direct link
+      const link = document.createElement('a');
+      link.href = fileUrl;
+      link.download = fileName;
+      link.target = '_blank';
+      link.click();
+    }
+  };
+
   // Generate and download exam paper PDF
   const handleDownloadExamPaper = async () => {
     if (!test || !essayQuestions || essayQuestions.length === 0) return;
@@ -610,15 +647,27 @@ export default function TakeEssayTestPage() {
                   <h3 className="text-lg font-medium text-green-800 dark:text-green-200">
                     📄 Exam Paper
                   </h3>
-                  <a
-                    href={test.examPdfUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md transition-colors duration-200"
+                  <button
+                    onClick={() => downloadExamPdf(test.examPdfUrl!, `${test.title.replace(/[^a-zA-Z0-9]/g, '_')}_Exam_Paper.pdf`)}
+                    disabled={isDownloadingPdf}
+                    className={`inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md transition-colors duration-200 ${
+                      isDownloadingPdf
+                        ? 'text-green-600 bg-green-100 cursor-not-allowed dark:bg-green-900/20 dark:text-green-400'
+                        : 'text-white bg-green-600 hover:bg-green-700'
+                    }`}
                   >
-                    <Download className="w-4 h-4 mr-2" />
-                    Download PDF
-                  </a>
+                    {isDownloadingPdf ? (
+                      <>
+                        <div className="w-4 h-4 mr-2 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
+                        Downloading...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-4 h-4 mr-2" />
+                        Download PDF
+                      </>
+                    )}
+                  </button>
                 </div>
                 <p className="text-sm text-green-600 dark:text-green-300">
                   Download the exam paper created by your teacher with all questions formatted for printing.
@@ -631,12 +680,40 @@ export default function TakeEssayTestPage() {
             <div className="flex items-start space-x-3">
               <FileText className="h-6 w-6 text-gray-400 mt-0.5" />
               <div className="flex-1">
-                <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300">
-                  📄 Exam Paper
-                </h3>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300">
+                    📄 Generate Exam Paper
+                  </h3>
+                  <button
+                    onClick={handleDownloadExamPaper}
+                    disabled={isGeneratingPdf || !test || !essayQuestions || essayQuestions.length === 0}
+                    className={`inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md transition-colors duration-200 ${
+                      isGeneratingPdf
+                        ? 'text-gray-600 bg-gray-100 cursor-not-allowed dark:bg-gray-900/20 dark:text-gray-400'
+                        : 'text-white bg-gray-600 hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600'
+                    }`}
+                  >
+                    {isGeneratingPdf ? (
+                      <>
+                        <div className="w-4 h-4 mr-2 border-2 border-gray-600 border-t-transparent rounded-full animate-spin"></div>
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-4 h-4 mr-2" />
+                        Generate PDF
+                      </>
+                    )}
+                  </button>
+                </div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  No PDF exam paper available. Please refer to the questions below.
+                  No PDF exam paper available. Generate a printable version of the questions below.
                 </p>
+                {pdfError && (
+                  <p className="text-sm text-red-600 dark:text-red-400 mt-2">
+                    {pdfError}
+                  </p>
+                )}
               </div>
             </div>
           </div>

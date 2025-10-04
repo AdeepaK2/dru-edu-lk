@@ -30,6 +30,7 @@ export default function ExtendTestModal({
   const [reason, setReason] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
   if (!isOpen) return null;
 
@@ -64,6 +65,7 @@ export default function ExtendTestModal({
     try {
       setLoading(true);
       setError('');
+      setSuccessMessage('');
 
       // Combine date and time
       const extensionDate = new Date(`${newDeadline}T${newTime}:00`);
@@ -75,6 +77,7 @@ export default function ExtendTestModal({
       }
 
       // Create the extension
+      setSuccessMessage('Extending test deadline...');
       const extension = await TestExtensionService.extendTestDeadline(
         test.id,
         extensionDate,
@@ -83,17 +86,24 @@ export default function ExtendTestModal({
         reason.trim()
       );
 
-      onExtensionCreated(extension);
-      onClose();
+      setSuccessMessage('Test extended successfully! Sending email notifications to students and parents...');
       
-      // Reset form
-      setNewDeadline('');
-      setNewTime('23:59');
-      setReason('');
+      // Small delay to show the message
+      setTimeout(() => {
+        onExtensionCreated(extension);
+        onClose();
+        
+        // Reset form
+        setNewDeadline('');
+        setNewTime('23:59');
+        setReason('');
+        setSuccessMessage('');
+      }, 2000);
     } catch (error: any) {
       setError(error.message || 'Failed to extend deadline');
+      setSuccessMessage('');
     } finally {
-      setLoading(false);
+      setTimeout(() => setLoading(false), 2000);
     }
   };
 
@@ -232,13 +242,34 @@ export default function ExtendTestModal({
             <div className="flex items-center space-x-2">
               <Users className="h-4 w-4 text-yellow-600" />
               <span className="text-sm font-medium text-yellow-800 dark:text-yellow-300">
-                Student Impact
+                Student Impact & Notifications
               </span>
             </div>
-            <p className="text-yellow-900 dark:text-yellow-100 text-sm mt-1">
-              All students will be able to access the test until the new deadline. Students who have already completed the test will not be affected.
-            </p>
+            <div className="text-yellow-900 dark:text-yellow-100 text-sm mt-1">
+              <p className="mb-2">All students will be able to access the test until the new deadline. Students who have already completed the test will not be affected.</p>
+              <p className="font-medium">📧 Automatic Email Notifications:</p>
+              <ul className="list-disc list-inside ml-2 mt-1">
+                <li>Students will receive an email about the deadline extension</li>
+                <li>Parents will also be notified of the changes</li>
+                <li>Emails include the reason and new deadline details</li>
+              </ul>
+            </div>
           </div>
+
+          {/* Success Message Display */}
+          {successMessage && (
+            <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+              <div className="flex items-center space-x-2">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <span className="text-sm font-medium text-green-800 dark:text-green-300">
+                  Success
+                </span>
+              </div>
+              <p className="text-green-900 dark:text-green-100 text-sm mt-1">
+                {successMessage}
+              </p>
+            </div>
+          )}
 
           {/* Error Display */}
           {error && (
