@@ -133,8 +133,35 @@ export default function TestPage() {
             status: attemptData.status,
             submittedAt: attemptData.submittedAt,
             isLateSubmission: attemptData.isLateSubmission,
-            lateSubmissionId: attemptData.lateSubmissionId
+            lateSubmissionId: attemptData.lateSubmissionId,
+            requiresTestDataRefresh: attemptData.requiresTestDataRefresh, // Extension marker
+            testExtendedAt: attemptData.testExtendedAt
           });
+          
+          // 🚨 CRITICAL: Check if this attempt was affected by test extension
+          if (attemptData.requiresTestDataRefresh || attemptData.testExtendedAt) {
+            console.log('🔄 Attempt was affected by test extension, refreshing test data...');
+            
+            // Clear the extension flags first to prevent infinite loops
+            fetch('/api/tests/clear-extension-flags', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ testId, studentId: student.id })
+            }).then(response => {
+              if (response.ok) {
+                console.log('✅ Extension flags cleared');
+              }
+            }).catch(error => {
+              console.warn('⚠️ Failed to clear extension flags:', error);
+            });
+            
+            // Force refresh test data to get latest deadline
+            setTimeout(() => {
+              console.log('♻️ Reloading test data due to extension');
+              loadTestData(); // Recursive call to refresh with latest data
+            }, 500); // Slightly longer delay to ensure flag clearing completes
+            return; // Exit early to prevent stale data processing
+          }
           
           // Check if attempt has expired by comparing current time with endTime
           // For late submissions, we need to consider the extended deadline

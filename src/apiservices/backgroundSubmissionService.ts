@@ -80,6 +80,7 @@ export class BackgroundSubmissionService {
   /**
    * Check if a specific attempt has expired based on test type and timing
    * Enhanced with recent activity check to prevent auto-submitting active sessions
+   * Now also checks for test extensions to avoid submitting recently extended tests
    */
   private static async checkIfAttemptExpired(attempt: TestAttempt): Promise<boolean> {
     try {
@@ -95,6 +96,22 @@ export class BackgroundSubmissionService {
         if (timeSinceActivity < fiveMinutesInMs) {
           console.log(`⚡ Attempt ${attempt.id} has recent activity (${Math.round(timeSinceActivity/1000)}s ago), not auto-submitting`);
           return false;
+        }
+      }
+
+      // 🚨 NEW: Check if test was recently extended
+      // If attempt has extension markers, be extra cautious
+      if ((attempt as any).testExtendedAt || (attempt as any).requiresTestDataRefresh) {
+        const extensionTime = (attempt as any).testExtendedAt;
+        if (extensionTime) {
+          const extendedAtMs = extensionTime.toMillis ? extensionTime.toMillis() : extensionTime.seconds * 1000;
+          const timeSinceExtension = Date.now() - extendedAtMs;
+          const tenMinutesInMs = 10 * 60 * 1000; // Be extra cautious for 10 minutes after extension
+          
+          if (timeSinceExtension < tenMinutesInMs) {
+            console.log(`🔄 Attempt ${attempt.id} was affected by recent test extension (${Math.round(timeSinceExtension/1000)}s ago), not auto-submitting`);
+            return false;
+          }
         }
       }
 
