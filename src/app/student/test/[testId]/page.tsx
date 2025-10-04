@@ -169,15 +169,15 @@ export default function TestPage() {
           // Be more strict about what constitutes a completed attempt
           const isCompleted = attemptData.status === 'submitted' || 
                              attemptData.status === 'auto_submitted' || 
-                             (attemptData.submittedAt && attemptData.submittedAt.seconds > 0) || // Only if actually submitted
-                             (isExpired && attemptData.status !== 'not_started'); // Only expired attempts that were actually started
+                             (attemptData.submittedAt && attemptData.submittedAt.seconds > 0); // Only if actually submitted
           
-          const isActive = !isCompleted && (
-            attemptData.status === 'in_progress' || 
-            attemptData.status === 'not_started' || 
-            attemptData.status === 'paused' ||
-            (!attemptData.submittedAt && !attemptData.status)
-          );
+          // Be more conservative about what constitutes an active attempt
+          const isActive = !isCompleted && 
+                          !isExpired && // ✅ Add expiration check
+                          (attemptData.status === 'in_progress' || 
+                           attemptData.status === 'not_started' || 
+                           attemptData.status === 'paused') &&
+                          (!attemptData.submittedAt); // ✅ Ensure no submission timestamp
           
           console.log('🔍 Attempt categorization:', {
             id: attemptData.id,
@@ -408,13 +408,23 @@ export default function TestPage() {
         activeAttemptsSnapshot.forEach((doc) => {
           const attemptData = doc.data();
           
+          console.log('🔍 Checking attempt for resume validity:', {
+            id: doc.id,
+            status: attemptData.status,
+            submittedAt: attemptData.submittedAt,
+            endTime: attemptData.endTime,
+            startedAt: attemptData.startedAt
+          });
+          
           // Check if attempt is truly active and within time limits
           const isActiveStatus = attemptData.status === 'in_progress' || 
                                  attemptData.status === 'not_started' || 
-                                 attemptData.status === 'paused' ||
-                                 (!attemptData.submittedAt && !attemptData.status);
+                                 attemptData.status === 'paused';
           
-          if (isActiveStatus) {
+          // ✅ Add explicit check for submission timestamp
+          const hasNotBeenSubmitted = !attemptData.submittedAt || attemptData.submittedAt.seconds === 0;
+          
+          if (isActiveStatus && hasNotBeenSubmitted) {
             // Check if still within time limits
             let isWithinTime = true;
             if (attemptData.endTime) {
