@@ -76,26 +76,49 @@ export function useClassStudentAnalytics(classId: string | null, teacherId?: str
   };
 }
 
-// Custom hook for detailed student report
-export function useDetailedStudentReport(studentId: string | null, classId: string | null) {
-  const { data, error, isLoading, mutate } = useSWR(
-    studentId && classId ? ['detailed-student-report', studentId, classId] : null,
-    ([_, studentId, classId]) => EnhancedGradeAnalyticsService.getDetailedStudentReport(studentId, classId),
+// Custom hook for instant student report with lazy detailed loading
+export function useInstantStudentReport(studentId: string | null, classId: string | null) {
+  // Get basic student data instantly from the already loaded class analytics
+  const { students } = useClassStudentAnalytics(classId);
+  const basicStudent = students.find(s => s.id === studentId);
+  
+  // Lazy load detailed data
+  const { data: detailedData, error, isLoading: detailsLoading, mutate } = useSWR(
+    studentId && classId ? ['detailed-student-extras', studentId, classId] : null,
+    ([_, studentId, classId]) => EnhancedGradeAnalyticsService.getStudentDetailsOnly(studentId, classId),
     {
       revalidateOnFocus: false,
-      revalidateOnReconnect: false, // Don't revalidate automatically for detailed reports
-      dedupingInterval: 120000, // 2 minutes deduping for detailed reports
-      errorRetryCount: 2,
-      errorRetryInterval: 3000,
+      revalidateOnReconnect: false,
+      dedupingInterval: 300000, // 5 minutes cache
+      errorRetryCount: 1,
+      errorRetryInterval: 500,
+      keepPreviousData: true,
     }
   );
 
+  // Return basic data immediately, detailed data when available
+  const report = basicStudent ? {
+    ...basicStudent,
+    recentTests: detailedData?.recentTests || [],
+    performanceTrend: detailedData?.performanceTrend || [],
+    recommendations: detailedData?.recommendations || [],
+    strengths: detailedData?.strengths || [],
+    areasForImprovement: detailedData?.areasForImprovement || []
+  } : null;
+
   return {
-    report: data,
-    isLoading,
+    report,
+    isLoading: !basicStudent, // Only loading if basic data not available
+    detailsLoading,
+    hasDetails: !!detailedData,
     error,
     mutate,
   };
+}
+
+// Keep the original for backward compatibility
+export function useDetailedStudentReport(studentId: string | null, classId: string | null) {
+  return useInstantStudentReport(studentId, classId);
 }
 
 // Hook to force refresh class analytics

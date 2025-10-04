@@ -413,6 +413,7 @@ export class SubmissionService {
         
         // Results
         autoGradedScore: autoGradedScore || 0,
+        totalScore: manualGradingPending ? undefined : (autoGradedScore || 0), // Set totalScore immediately for MCQ-only tests
         manualGradingPending,
         maxScore: test.totalMarks || 0,
         percentage: autoGradedScore ? Math.round((autoGradedScore / (test.totalMarks || 1)) * 100) : 0,

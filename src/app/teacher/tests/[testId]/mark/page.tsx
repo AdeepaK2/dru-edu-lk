@@ -70,6 +70,7 @@ export default function MarkSubmissions() {
   const [loading, setLoading] = useState(true);
   const [savingGrades, setSavingGrades] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [downloadingPdfs, setDownloadingPdfs] = useState<Record<string, boolean>>({});
 
   // Load test and submissions
   useEffect(() => {
@@ -275,8 +276,43 @@ export default function MarkSubmissions() {
   };
 
   // Download PDF file
-  const downloadPdf = (fileUrl: string, fileName: string) => {
-    window.open(fileUrl, '_blank');
+  const downloadPdf = async (fileUrl: string, fileName: string) => {
+    const downloadKey = `${fileUrl}_${fileName}`;
+    
+    if (downloadingPdfs[downloadKey]) return;
+    
+    setDownloadingPdfs(prev => ({ ...prev, [downloadKey]: true }));
+    
+    try {
+      const downloadUrl = `/api/download-pdf?url=${encodeURIComponent(fileUrl)}&filename=${encodeURIComponent(fileName)}`;
+      
+      // Create direct download link
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = fileName;
+      link.style.display = 'none';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      console.log('✅ PDF download initiated via API!');
+      
+      // Reset downloading state after delay
+      setTimeout(() => {
+        setDownloadingPdfs(prev => ({ ...prev, [downloadKey]: false }));
+      }, 2000);
+    } catch (error) {
+      console.error('❌ Failed to download PDF via API:', error);
+      setDownloadingPdfs(prev => ({ ...prev, [downloadKey]: false }));
+      
+      // Fallback: direct link
+      const link = document.createElement('a');
+      link.href = fileUrl;
+      link.download = fileName;
+      link.target = '_blank';
+      link.click();
+    }
   };
 
   // Get total score for a submission
@@ -448,10 +484,20 @@ export default function MarkSubmissions() {
                           variant="outline"
                           size="sm"
                           onClick={() => downloadPdf(submission.submissionPdf!.fileUrl, submission.submissionPdf!.fileName)}
+                          disabled={downloadingPdfs[`${submission.submissionPdf!.fileUrl}_${submission.submissionPdf!.fileName}`]}
                           className="flex items-center space-x-2"
                         >
-                          <Download className="w-4 h-4" />
-                          <span>Download PDF</span>
+                          {downloadingPdfs[`${submission.submissionPdf!.fileUrl}_${submission.submissionPdf!.fileName}`] ? (
+                            <>
+                              <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin"></div>
+                              <span>Downloading...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Download className="w-4 h-4" />
+                              <span>Download PDF</span>
+                            </>
+                          )}
                         </Button>
                       )}
                       
@@ -531,10 +577,20 @@ export default function MarkSubmissions() {
                           selectedSubmission.submissionPdf!.fileUrl, 
                           selectedSubmission.submissionPdf!.fileName
                         )}
+                        disabled={downloadingPdfs[`${selectedSubmission.submissionPdf!.fileUrl}_${selectedSubmission.submissionPdf!.fileName}`]}
                         className="flex items-center space-x-2"
                       >
-                        <Download className="w-4 h-4" />
-                        <span>Download</span>
+                        {downloadingPdfs[`${selectedSubmission.submissionPdf!.fileUrl}_${selectedSubmission.submissionPdf!.fileName}`] ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin"></div>
+                            <span>Downloading...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Download className="w-4 h-4" />
+                            <span>Download</span>
+                          </>
+                        )}
                       </Button>
                     </div>
                   </div>

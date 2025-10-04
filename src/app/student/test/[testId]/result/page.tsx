@@ -50,6 +50,7 @@ export default function TestResultPage() {
   // Question order states for handling shuffled results
   const [originalOrderAnswers, setOriginalOrderAnswers] = useState<any[]>([]);
   const [isShuffledAttempt, setIsShuffledAttempt] = useState(false);
+  const [downloadingPdfs, setDownloadingPdfs] = useState<Record<string, boolean>>({});
 
   // UI states
   const [showAllAttempts, setShowAllAttempts] = useState(false);
@@ -715,6 +716,46 @@ export default function TestResultPage() {
     }
   };
 
+  // Download PDF file
+  const downloadPdf = async (fileUrl: string, fileName: string) => {
+    const downloadKey = `${fileUrl}_${fileName}`;
+    
+    if (downloadingPdfs[downloadKey]) return;
+    
+    setDownloadingPdfs(prev => ({ ...prev, [downloadKey]: true }));
+    
+    try {
+      const downloadUrl = `/api/download-pdf?url=${encodeURIComponent(fileUrl)}&filename=${encodeURIComponent(fileName)}`;
+      
+      // Create direct download link
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = fileName;
+      link.style.display = 'none';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      console.log('✅ PDF download initiated via API!');
+      
+      // Reset downloading state after delay
+      setTimeout(() => {
+        setDownloadingPdfs(prev => ({ ...prev, [downloadKey]: false }));
+      }, 2000);
+    } catch (error) {
+      console.error('❌ Failed to download PDF via API:', error);
+      setDownloadingPdfs(prev => ({ ...prev, [downloadKey]: false }));
+      
+      // Fallback: direct link
+      const link = document.createElement('a');
+      link.href = fileUrl;
+      link.download = fileName;
+      link.target = '_blank';
+      link.click();
+    }
+  };
+
   // Handle going back
   const handleBack = () => {
     router.push('/student/test');
@@ -1361,11 +1402,25 @@ export default function TestResultPage() {
                             </div>
                           </div>
                           <button
-                            onClick={() => window.open(pdf.fileUrl, '_blank')}
-                            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-blue-700 dark:hover:bg-blue-600"
+                            onClick={() => downloadPdf(pdf.fileUrl, pdf.fileName || 'Answer_Sheet.pdf')}
+                            disabled={downloadingPdfs[`${pdf.fileUrl}_${pdf.fileName || 'Answer_Sheet.pdf'}`]}
+                            className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+                              downloadingPdfs[`${pdf.fileUrl}_${pdf.fileName || 'Answer_Sheet.pdf'}`]
+                                ? 'text-blue-600 bg-blue-100 cursor-not-allowed dark:bg-blue-900/20 dark:text-blue-400'
+                                : 'text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600'
+                            }`}
                           >
-                            <Download className="w-4 h-4 mr-2" />
-                            Download
+                            {downloadingPdfs[`${pdf.fileUrl}_${pdf.fileName || 'Answer_Sheet.pdf'}`] ? (
+                              <>
+                                <div className="w-4 h-4 mr-2 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                                Downloading...
+                              </>
+                            ) : (
+                              <>
+                                <Download className="w-4 h-4 mr-2" />
+                                Download
+                              </>
+                            )}
                           </button>
                         </div>
                       ))}
@@ -1742,11 +1797,25 @@ export default function TestResultPage() {
                                       </div>
                                     </div>
                                   <button
-                                    onClick={() => window.open(pdf.fileUrl, '_blank')}
-                                    className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-blue-900 dark:text-blue-300 dark:hover:bg-blue-800"
+                                    onClick={() => downloadPdf(pdf.fileUrl, pdf.fileName)}
+                                    disabled={downloadingPdfs[`${pdf.fileUrl}_${pdf.fileName}`]}
+                                    className={`inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+                                      downloadingPdfs[`${pdf.fileUrl}_${pdf.fileName}`]
+                                        ? 'text-blue-600 bg-blue-50 cursor-not-allowed dark:bg-blue-900/10 dark:text-blue-400'
+                                        : 'text-blue-700 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-300 dark:hover:bg-blue-800'
+                                    }`}
                                   >
-                                    <Download className="w-4 h-4 mr-1" />
-                                    Download
+                                    {downloadingPdfs[`${pdf.fileUrl}_${pdf.fileName}`] ? (
+                                      <>
+                                        <div className="w-4 h-4 mr-1 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                                        Downloading...
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Download className="w-4 h-4 mr-1" />
+                                        Download
+                                      </>
+                                    )}
                                   </button>
                                 </div>
                               ))}

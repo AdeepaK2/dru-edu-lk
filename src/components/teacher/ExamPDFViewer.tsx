@@ -14,6 +14,8 @@ export const ExamPDFViewer: React.FC<ExamPDFViewerProps> = ({
   testNumber,
   className = ''
 }) => {
+  const [isDownloading, setIsDownloading] = React.useState(false);
+  
   console.log('📄 ExamPDFViewer rendered with:', {
     examPdfUrl,
     testTitle,
@@ -26,9 +28,41 @@ export const ExamPDFViewer: React.FC<ExamPDFViewerProps> = ({
     return null;
   }
 
-  const handleDownload = () => {
-    console.log('🔽 Opening PDF in new tab...', examPdfUrl);
-    window.open(examPdfUrl, '_blank');
+  const handleDownload = async () => {
+    if (isDownloading) return;
+    
+    setIsDownloading(true);
+    console.log('🔽 Downloading PDF via API...', examPdfUrl);
+    
+    try {
+      const filename = `${testTitle.replace(/[^a-zA-Z0-9]/g, '_')}_${testNumber}.pdf`;
+      const downloadUrl = `/api/download-pdf?url=${encodeURIComponent(examPdfUrl)}&filename=${encodeURIComponent(filename)}`;
+      
+      // Create direct download link
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = filename;
+      link.style.display = 'none';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      console.log('✅ PDF download initiated via API!');
+      
+      // Reset downloading state after a delay
+      setTimeout(() => setIsDownloading(false), 2000);
+    } catch (error) {
+      console.error('❌ Failed to download PDF via API:', error);
+      setIsDownloading(false);
+      
+      // Fallback: direct link
+      const link = document.createElement('a');
+      link.href = examPdfUrl;
+      link.download = `${testTitle.replace(/[^a-zA-Z0-9]/g, '_')}_${testNumber}.pdf`;
+      link.target = '_blank';
+      link.click();
+    }
   };  const handleView = () => {
     window.open(examPdfUrl, '_blank');
   };
@@ -60,10 +94,24 @@ export const ExamPDFViewer: React.FC<ExamPDFViewerProps> = ({
               </button>
               <button
                 onClick={handleDownload}
-                className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-green-700 bg-green-100 hover:bg-green-200 dark:bg-green-800 dark:text-green-200 dark:hover:bg-green-700 rounded-md transition-colors duration-200"
+                disabled={isDownloading}
+                className={`inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-200 ${
+                  isDownloading 
+                    ? 'text-green-600 bg-green-50 cursor-not-allowed dark:bg-green-900/10 dark:text-green-400'
+                    : 'text-green-700 bg-green-100 hover:bg-green-200 dark:bg-green-800 dark:text-green-200 dark:hover:bg-green-700'
+                }`}
               >
-                <Download className="w-3 h-3 mr-1" />
-                Download PDF
+                {isDownloading ? (
+                  <>
+                    <div className="w-3 h-3 mr-1 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
+                    Downloading...
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-3 h-3 mr-1" />
+                    Download PDF
+                  </>
+                )}
               </button>
             </div>
           </div>
