@@ -251,42 +251,79 @@ export class EnhancedGradeAnalyticsService {
       console.log(`🔍 [STUDENT DETAILS] Loading extras for student: ${studentId}`);
       const startTime = Date.now();
       
-      // Get student submissions efficiently - single query
-      const submissionsQuery = query(
-        collection(firestore, 'studentSubmissions'),
-        where('studentId', '==', studentId),
-        limit(20) // Limit to recent submissions for faster query
+      // Get class-based tests first to filter submissions properly
+      const testsQuery = query(
+        collection(firestore, 'tests'),
+        where('classIds', 'array-contains', classId)
       );
       
-      const [submissionsSnapshot, classDoc] = await Promise.all([
-        getDocs(submissionsQuery),
+      const [testsSnapshot, submissionsSnapshot, classDoc] = await Promise.all([
+        getDocs(testsQuery),
+        getDocs(query(
+          collection(firestore, 'studentSubmissions'),
+          where('studentId', '==', studentId),
+          limit(20)
+        )),
         getDoc(doc(firestore, 'classes', classId))
       ]);
       
       const classSubject = classDoc.exists() ? classDoc.data()?.subject || 'Unknown' : 'Unknown';
       
-      // Filter and process submissions quickly
+      // Get class-based test IDs to filter submissions properly
+      const classBasedTestIds = testsSnapshot.docs
+        .filter(doc => {
+          const testData = doc.data();
+          return testData.assignmentType !== 'student-based' && 
+                 testData.classIds && 
+                 testData.classIds.length > 0 &&
+                 testData.isDeleted !== true;
+        })
+        .map(doc => doc.id);
+      
+      console.log(`🔍 [STUDENT DETAILS] Found ${classBasedTestIds.length} class-based tests for class ${classId}`);
+      
+      // Filter and process submissions to only include this class's tests
       const allSubmissions = submissionsSnapshot.docs
         .map(doc => doc.data())
         .filter(submission => {
-          // Quick filter - check if submission looks like it belongs to this class
-          return submission.testTitle && submission.submittedAt;
+          // Properly filter - only submissions for this class's tests
+          const belongsToClass = classBasedTestIds.includes(submission.testId);
+          const hasValidData = submission.testTitle && submission.submittedAt && submission.status === 'submitted';
+          return belongsToClass && hasValidData;
         })
         .sort((a, b) => b.submittedAt.toMillis() - a.submittedAt.toMillis())
         .slice(0, 10); // Only process top 10 for speed
       
-      // Generate basic data quickly
-      const recentTests = allSubmissions.map(submission => ({
-        testId: submission.testId || 'unknown',
-        testTitle: submission.testTitle || 'Test',
-        testDate: submission.submittedAt?.toDate() || new Date(),
-        score: submission.totalScore || 0,
-        maxScore: submission.maxScore || 100,
-        percentage: submission.percentage || 0,
-        timeSpent: (submission.totalTimeSpent || 0) / 60,
-        isLateSubmission: submission.lateSubmission?.isLateSubmission || false,
-        passStatus: submission.passStatus || 'pending_review'
-      }));
+      console.log(`🔍 [STUDENT DETAILS] Found ${allSubmissions.length} valid submissions for this class`);
+      
+      // Generate basic data with proper score calculation
+      const recentTests = allSubmissions.map(submission => {
+        // Calculate actual score - try multiple sources like in the main analytics
+        let actualScore = submission.totalScore;
+        let actualPercentage = submission.percentage;
+        
+        // If totalScore is null/undefined, try autoGradedScore
+        if ((actualScore === null || actualScore === undefined) && submission.autoGradedScore !== undefined) {
+          actualScore = submission.autoGradedScore;
+        }
+        
+        // Calculate percentage if not available
+        if ((actualPercentage === null || actualPercentage === undefined) && actualScore !== undefined && submission.maxScore > 0) {
+          actualPercentage = (actualScore / submission.maxScore) * 100;
+        }
+        
+        return {
+          testId: submission.testId || 'unknown',
+          testTitle: submission.testTitle || 'Test',
+          testDate: submission.submittedAt?.toDate() || new Date(),
+          score: actualScore || 0,
+          maxScore: submission.maxScore || 100,
+          percentage: actualPercentage || 0,
+          timeSpent: (submission.totalTimeSpent || 0) / 60,
+          isLateSubmission: submission.lateSubmission?.isLateSubmission || false,
+          passStatus: submission.passStatus || 'pending_review'
+        };
+      });
       
       const performanceTrend = allSubmissions.map(submission => ({
         date: submission.submittedAt?.toDate() || new Date(),
@@ -315,7 +352,9 @@ export class EnhancedGradeAnalyticsService {
         performanceTrend,
         recommendations,
         strengths,
-        areasForImprovement
+        areasForImprovement,
+        // Include actual completed tests count for this class
+        actualTestsCompleted: allSubmissions.length
       };
     } catch (error) {
       console.error('Error getting student details:', error);
