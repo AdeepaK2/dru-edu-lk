@@ -712,6 +712,7 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
   };
 
   const handleEditMaterial = (material: any, group?: any) => {
+    // If group parameter is provided and it's a real group, edit the group
     if (group?.isGroup && group?.materials?.length > 1) {
       // Editing a real group (multiple materials)
       setEditingGroup({
@@ -729,19 +730,19 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
         materials: group.materials
       });
     } else {
-      // Editing single material (fake group) - set up for potential conversion to real group
+      // Editing single material - either standalone or individual file within a group
+      // When no group is passed or group is null, always edit the individual material
       setEditingGroup({
-        ...group,
-        isGroup: false, // This is a fake group (single material)
+        isGroup: false, // This is a single material edit
         groupId: material.groupId || null, // May or may not have a groupId
-        materials: group?.materials || [material]
+        materials: [material]
       });
       setMaterialToEdit({
         ...material,
         title: material.title || '',
         description: material.description || '',
         isRequired: material.isRequired || false,
-        materials: group?.materials || [material], // Include the current material
+        materials: [material], // Only include the current material
         groupId: material.groupId || null
       });
     }
