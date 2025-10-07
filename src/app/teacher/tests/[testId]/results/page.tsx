@@ -649,48 +649,149 @@ export default function TestResultsPage() {
                     </p>
                   </div>
                   <div className="p-6">
-                    <div className="space-y-4">
+                    <div className="space-y-6">
                       {stats.questionStats.map((questionStat, index) => {
                         const successRate = questionStat.totalAnswers > 0 
                           ? (questionStat.correctAnswers / questionStat.totalAnswers) * 100 
                           : 0;
                         
+                        // Find the corresponding question from test data
+                        const questionData = test.questions?.find(q => q.id === questionStat.questionId || q.questionId === questionStat.questionId);
+                        
                         return (
-                          <div key={questionStat.questionId} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                            <div className="flex items-start justify-between mb-3">
-                              <div className="flex-1">
-                                <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-1">
-                                  Question {index + 1}: {questionStat.questionText.slice(0, 100)}...
-                                </h4>
-                                <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
-                                  <span className="flex items-center">
-                                    <Target className="h-3 w-3 mr-1" />
-                                    {questionStat.questionType.toUpperCase()}
-                                  </span>
-                                  <span className="flex items-center">
-                                    <BarChart3 className="h-3 w-3 mr-1" />
-                                    {questionStat.difficultyLevel}
-                                  </span>
+                          <div key={questionStat.questionId} className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                            <div className="p-6">
+                              <div className="flex items-start justify-between mb-4">
+                                <div className="flex-1">
+                                  <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                                    Question {index + 1}
+                                  </h4>
+                                  <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400 mb-3">
+                                    <span className="flex items-center">
+                                      <Target className="h-4 w-4 mr-1" />
+                                      {questionStat.questionType.toUpperCase()}
+                                    </span>
+                                    <span className="flex items-center">
+                                      <BarChart3 className="h-4 w-4 mr-1" />
+                                      {questionStat.difficultyLevel}
+                                    </span>
+                                    {questionData?.points && (
+                                      <span className="flex items-center">
+                                        <Trophy className="h-4 w-4 mr-1" />
+                                        {questionData.points} {questionData.points === 1 ? 'point' : 'points'}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                                    {successRate.toFixed(1)}%
+                                  </div>
+                                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                                    {questionStat.correctAnswers}/{questionStat.totalAnswers} correct
+                                  </div>
+                                  <div className="text-xs text-gray-400 mt-1">
+                                    Avg: {questionStat.averageScore.toFixed(1)} pts
+                                  </div>
                                 </div>
                               </div>
-                              <div className="text-right">
-                                <div className="text-lg font-bold text-gray-900 dark:text-white">
-                                  {successRate.toFixed(1)}%
-                                </div>
-                                <div className="text-xs text-gray-500 dark:text-gray-400">
-                                  {questionStat.correctAnswers}/{questionStat.totalAnswers} correct
-                                </div>
+
+                              {/* Question Content */}
+                              <div className="mb-4">
+                                {questionData?.questionText && (
+                                  <div className="prose dark:prose-invert max-w-none mb-3">
+                                    <p className="text-gray-900 dark:text-white">{questionData.questionText}</p>
+                                  </div>
+                                )}
+                                
+                                {/* Question Image */}
+                                {questionData?.imageUrl && (
+                                  <div className="mb-4">
+                                    <img
+                                      src={questionData.imageUrl}
+                                      alt={`Question ${index + 1}`}
+                                      className="max-w-full h-auto rounded-lg border border-gray-200 dark:border-gray-600"
+                                      style={{ maxHeight: '400px' }}
+                                    />
+                                  </div>
+                                )}
+
+                                {/* MCQ Options */}
+                                {questionData?.questionType === 'mcq' && questionData?.options && (
+                                  <div className="mt-4">
+                                    <h5 className="text-sm font-medium text-gray-900 dark:text-white mb-2">Options:</h5>
+                                    <div className="space-y-2">
+                                      {questionData.options.map((option, optionIndex) => {
+                                        const isCorrect = questionData.correctOption === optionIndex;
+                                        return (
+                                          <div 
+                                            key={optionIndex}
+                                            className={`p-3 rounded-lg border ${
+                                              isCorrect 
+                                                ? 'border-green-200 bg-green-50 dark:border-green-700 dark:bg-green-900/20' 
+                                                : 'border-gray-200 bg-gray-50 dark:border-gray-600 dark:bg-gray-700/50'
+                                            }`}
+                                          >
+                                            <div className="flex items-center">
+                                              <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-medium mr-3 ${
+                                                isCorrect 
+                                                  ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100' 
+                                                  : 'bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-200'
+                                              }`}>
+                                                {String.fromCharCode(65 + optionIndex)}
+                                              </span>
+                                              <span className={`flex-1 ${
+                                                isCorrect 
+                                                  ? 'text-green-900 dark:text-green-100 font-medium' 
+                                                  : 'text-gray-700 dark:text-gray-300'
+                                              }`}>
+                                                {option}
+                                              </span>
+                                              {isCorrect && (
+                                                <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                                              )}
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Explanation */}
+                                {questionData?.explanation && (
+                                  <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
+                                    <h5 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">Explanation:</h5>
+                                    <p className="text-sm text-blue-800 dark:text-blue-200">{questionData.explanation}</p>
+                                    {questionData.explanationImageUrl && (
+                                      <img
+                                        src={questionData.explanationImageUrl}
+                                        alt="Explanation"
+                                        className="mt-2 max-w-full h-auto rounded border border-blue-200 dark:border-blue-600"
+                                        style={{ maxHeight: '300px' }}
+                                      />
+                                    )}
+                                  </div>
+                                )}
                               </div>
-                            </div>
-                            
-                            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                              <div
-                                className={`h-2 rounded-full ${
-                                  successRate >= 80 ? 'bg-green-500' :
-                                  successRate >= 60 ? 'bg-yellow-500' : 'bg-red-500'
-                                }`}
-                                style={{ width: `${successRate}%` }}
-                              ></div>
+                              
+                              {/* Performance Bar */}
+                              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+                                <div
+                                  className={`h-3 rounded-full transition-all duration-300 ${
+                                    successRate >= 80 ? 'bg-green-500' :
+                                    successRate >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                                  }`}
+                                  style={{ width: `${successRate}%` }}
+                                ></div>
+                              </div>
+                              
+                              {/* Performance Indicator */}
+                              <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                                {successRate >= 80 ? 'Excellent performance' :
+                                 successRate >= 60 ? 'Good performance' :
+                                 successRate >= 40 ? 'Needs improvement' : 'Difficult question'}
+                              </div>
                             </div>
                           </div>
                         );
