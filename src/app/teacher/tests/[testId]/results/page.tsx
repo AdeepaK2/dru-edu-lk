@@ -88,6 +88,73 @@ export default function TestResultsPage() {
       if (!testData) {
         throw new Error('Test not found');
       }
+
+      // Enhance test data with full question details if needed
+      if (testData.questions && testData.questions.length > 0) {
+        console.log('🔍 Loading full question details for teacher results...');
+        
+        try {
+          // Import questionService
+          const { questionService } = await import('@/apiservices/questionBankFirestoreService');
+          
+          // Load full question details for each question
+          const enhancedQuestions = await Promise.all(
+            testData.questions.map(async (testQuestion) => {
+              try {
+                // Get the question ID (could be in questionId or id field)
+                const questionId = testQuestion.questionId || testQuestion.id;
+                
+                // If the question already has full details (imageUrl, options, etc.), use it as is
+                if (testQuestion.imageUrl || (testQuestion.options && testQuestion.options.length > 0)) {
+                  return testQuestion;
+                }
+                
+                // Otherwise, fetch full question details from question bank
+                if (questionId) {
+                  console.log('📥 Fetching full details for question:', questionId);
+                  const fullQuestion = await questionService.getQuestion(questionId);
+                  
+                  if (fullQuestion) {
+                    // Merge test question data with full question details
+                    return {
+                      ...testQuestion,
+                      questionText: fullQuestion.content || fullQuestion.title || testQuestion.questionText,
+                      imageUrl: fullQuestion.imageUrl,
+                      options: fullQuestion.type === 'mcq' && 'options' in fullQuestion 
+                        ? fullQuestion.options?.map((opt: any) => opt.text) || testQuestion.options
+                        : testQuestion.options,
+                      correctOption: fullQuestion.type === 'mcq' && 'options' in fullQuestion
+                        ? fullQuestion.options?.findIndex((opt: any) => opt.isCorrect) ?? testQuestion.correctOption
+                        : testQuestion.correctOption,
+                      explanation: fullQuestion.type === 'mcq' && 'explanation' in fullQuestion 
+                        ? fullQuestion.explanation || testQuestion.explanation
+                        : testQuestion.explanation,
+                      explanationImageUrl: fullQuestion.type === 'mcq' && 'explanationImageUrl' in fullQuestion
+                        ? fullQuestion.explanationImageUrl || testQuestion.explanationImageUrl
+                        : testQuestion.explanationImageUrl,
+                      difficultyLevel: fullQuestion.difficultyLevel || testQuestion.difficultyLevel,
+                    };
+                  }
+                }
+                
+                return testQuestion;
+              } catch (questionError) {
+                console.warn('⚠️ Failed to load full details for question:', testQuestion.questionId || testQuestion.id, questionError);
+                return testQuestion;
+              }
+            })
+          );
+          
+          // Update test data with enhanced questions
+          testData.questions = enhancedQuestions;
+          console.log('✅ Enhanced questions with full details');
+          
+        } catch (enhanceError) {
+          console.warn('⚠️ Failed to enhance questions with full details:', enhanceError);
+          // Continue with original test data if enhancement fails
+        }
+      }
+
       setTest(testData);
 
       // Load submissions
@@ -102,7 +169,8 @@ export default function TestResultsPage() {
         test: testData.title,
         passingScore: testData.config?.passingScore,
         submissions: submissionsData.length,
-        stats: testStats
+        stats: testStats,
+        questionsWithImages: testData.questions?.filter(q => q.imageUrl).length || 0
       });
     } catch (error) {
       console.error('Error loading test results:', error);
@@ -722,7 +790,10 @@ export default function TestResultsPage() {
                                     <h5 className="text-sm font-medium text-gray-900 dark:text-white mb-2">Options:</h5>
                                     <div className="space-y-2">
                                       {questionData.options.map((option, optionIndex) => {
+                                        // Handle both string arrays and object arrays
+                                        const optionText = typeof option === 'string' ? option : (option as any)?.text || String(option);
                                         const isCorrect = questionData.correctOption === optionIndex;
+                                        
                                         return (
                                           <div 
                                             key={optionIndex}
@@ -745,7 +816,7 @@ export default function TestResultsPage() {
                                                   ? 'text-green-900 dark:text-green-100 font-medium' 
                                                   : 'text-gray-700 dark:text-gray-300'
                                               }`}>
-                                                {option}
+                                                {optionText}
                                               </span>
                                               {isCorrect && (
                                                 <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
