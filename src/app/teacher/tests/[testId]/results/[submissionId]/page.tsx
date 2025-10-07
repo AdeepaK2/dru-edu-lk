@@ -49,6 +49,74 @@ export default function IndividualResultPage() {
       if (!testData) {
         throw new Error('Test not found');
       }
+
+      // Enhance test data with full question details if needed
+      if (testData.questions && testData.questions.length > 0) {
+        console.log('🔍 Loading full question details for individual submission...');
+        
+        try {
+          // Import questionService
+          const { questionService } = await import('@/apiservices/questionBankFirestoreService');
+          
+          // Load full question details for each question
+          const enhancedQuestions = await Promise.all(
+            testData.questions.map(async (testQuestion) => {
+              try {
+                // Get the question ID (could be in questionId or id field)
+                const questionId = testQuestion.questionId || testQuestion.id;
+                
+                // If the question already has full details (imageUrl, options, etc.), use it as is
+                if (testQuestion.imageUrl || (testQuestion.options && testQuestion.options.length > 0)) {
+                  return testQuestion;
+                }
+                
+                // Otherwise, fetch full question details from question bank
+                if (questionId) {
+                  console.log('📥 Fetching full details for question:', questionId);
+                  const fullQuestion = await questionService.getQuestion(questionId);
+                  
+                  if (fullQuestion) {
+                    // Merge test question data with full question details
+                    return {
+                      ...testQuestion,
+                      questionText: fullQuestion.content || fullQuestion.title || testQuestion.questionText,
+                      imageUrl: fullQuestion.imageUrl,
+                      options: fullQuestion.type === 'mcq' && 'options' in fullQuestion 
+                        ? fullQuestion.options?.map((opt: any) => opt.text) || testQuestion.options
+                        : testQuestion.options,
+                      correctOption: fullQuestion.type === 'mcq' && 'options' in fullQuestion
+                        ? fullQuestion.options?.findIndex((opt: any) => opt.isCorrect) ?? testQuestion.correctOption
+                        : testQuestion.correctOption,
+                      explanation: fullQuestion.type === 'mcq' && 'explanation' in fullQuestion 
+                        ? fullQuestion.explanation || testQuestion.explanation
+                        : testQuestion.explanation,
+                      explanationImageUrl: fullQuestion.type === 'mcq' && 'explanationImageUrl' in fullQuestion
+                        ? fullQuestion.explanationImageUrl || testQuestion.explanationImageUrl
+                        : testQuestion.explanationImageUrl,
+                      difficultyLevel: fullQuestion.difficultyLevel || testQuestion.difficultyLevel,
+                      points: fullQuestion.points || testQuestion.points,
+                    };
+                  }
+                }
+                
+                return testQuestion;
+              } catch (questionError) {
+                console.warn('⚠️ Failed to load full details for question:', testQuestion.questionId || testQuestion.id, questionError);
+                return testQuestion;
+              }
+            })
+          );
+          
+          // Update test data with enhanced questions
+          testData.questions = enhancedQuestions;
+          console.log('✅ Enhanced questions with full details for individual submission');
+          
+        } catch (enhanceError) {
+          console.warn('⚠️ Failed to enhance questions with full details:', enhanceError);
+          // Continue with original test data if enhancement fails
+        }
+      }
+
       setTest(testData);
 
       // Load submission data
@@ -71,7 +139,8 @@ export default function IndividualResultPage() {
       console.log('✅ Submission details loaded:', {
         test: testData.title,
         student: submissionData.studentName,
-        score: submissionData.percentage
+        score: submissionData.percentage,
+        questionsWithImages: testData.questions?.filter(q => q.imageUrl).length || 0
       });
     } catch (error) {
       console.error('Error loading submission details:', error);
@@ -351,6 +420,18 @@ export default function IndividualResultPage() {
                         <h4 className="text-base font-medium text-gray-900 dark:text-white mb-2">
                           {answer.questionText}
                         </h4>
+                        
+                        {/* Question Image */}
+                        {testQuestion?.imageUrl && (
+                          <div className="mb-4">
+                            <img
+                              src={testQuestion.imageUrl}
+                              alt={`Question ${index + 1}`}
+                              className="max-w-full h-auto rounded-lg border border-gray-200 dark:border-gray-600"
+                              style={{ maxHeight: '400px' }}
+                            />
+                          </div>
+                        )}
                       </div>
                       <div className="text-right">
                         <div className="text-lg font-bold text-gray-900 dark:text-white">
@@ -380,40 +461,61 @@ export default function IndividualResultPage() {
                           </div>
                         </div>
                         
-                        {testQuestion.questionData?.options && (
+                        {testQuestion.options && (
                           <div>
                             <label className="text-sm font-medium text-gray-500 dark:text-gray-400 block mb-2">
                               All Options:
                             </label>
                             <div className="space-y-2">
-                              {testQuestion.options?.map((option: string, optIndex: number) => (
-                                <div 
-                                  key={optIndex}
-                                  className={`p-2 rounded border text-sm ${
-                                    optIndex === testQuestion.correctOption
-                                      ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20 text-green-900 dark:text-green-100'
-                                      : optIndex === (answer.selectedOption || -1)
-                                      ? 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20 text-red-900 dark:text-red-100'
-                                      : 'border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
-                                  }`}
-                                >
-                                  <span className="font-medium">
-                                    {String.fromCharCode(65 + optIndex)}.
-                                  </span>{' '}
-                                  {option}
-                                  {optIndex === testQuestion.correctOption && (
-                                    <span className="ml-2 text-green-600 dark:text-green-400 font-medium">
-                                      (Correct)
-                                    </span>
-                                  )}
-                                  {optIndex === (answer.selectedOption || -1) && optIndex !== testQuestion.correctOption && (
-                                    <span className="ml-2 text-red-600 dark:text-red-400 font-medium">
-                                      (Student's Choice)
-                                    </span>
-                                  )}
-                                </div>
-                              ))}
+                              {testQuestion.options?.map((option: any, optIndex: number) => {
+                                // Handle both string arrays and object arrays
+                                const optionText = typeof option === 'string' ? option : (option as any)?.text || String(option);
+                                
+                                return (
+                                  <div 
+                                    key={optIndex}
+                                    className={`p-2 rounded border text-sm ${
+                                      optIndex === testQuestion.correctOption
+                                        ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20 text-green-900 dark:text-green-100'
+                                        : optIndex === (answer.selectedOption || -1)
+                                        ? 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20 text-red-900 dark:text-red-100'
+                                        : 'border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+                                    }`}
+                                  >
+                                    <span className="font-medium">
+                                      {String.fromCharCode(65 + optIndex)}.
+                                    </span>{' '}
+                                    {optionText}
+                                    {optIndex === testQuestion.correctOption && (
+                                      <span className="ml-2 text-green-600 dark:text-green-400 font-medium">
+                                        (Correct)
+                                      </span>
+                                    )}
+                                    {optIndex === (answer.selectedOption || -1) && optIndex !== testQuestion.correctOption && (
+                                      <span className="ml-2 text-red-600 dark:text-red-400 font-medium">
+                                        (Student's Choice)
+                                      </span>
+                                    )}
+                                  </div>
+                                );
+                              })}
                             </div>
+                          </div>
+                        )}
+
+                        {/* Explanation */}
+                        {testQuestion.explanation && (
+                          <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
+                            <h5 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">Explanation:</h5>
+                            <p className="text-sm text-blue-800 dark:text-blue-200">{testQuestion.explanation}</p>
+                            {testQuestion.explanationImageUrl && (
+                              <img
+                                src={testQuestion.explanationImageUrl}
+                                alt="Explanation"
+                                className="mt-2 max-w-full h-auto rounded border border-blue-200 dark:border-blue-600"
+                                style={{ maxHeight: '300px' }}
+                              />
+                            )}
                           </div>
                         )}
                       </div>
