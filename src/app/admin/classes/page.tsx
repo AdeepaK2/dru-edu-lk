@@ -88,7 +88,11 @@ export default function ClassManager() {
 
   // Real-time subscription to classes data
   useEffect(() => {
-    if (!centers || !teachers) return; // Wait for centers and teachers to load
+    // Wait for centers and teachers to load (arrays can be empty, just check they exist)
+    if (centers === undefined || teachers === undefined) {
+      console.log('Waiting for centers and teachers to load...');
+      return;
+    }
     
     console.log('Setting up real-time class subscription for admin...');
     setLoading(true);
