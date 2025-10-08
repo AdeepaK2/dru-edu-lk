@@ -30,6 +30,7 @@ import { getStudyMaterialsByClassGroupedByWeek, markMaterialCompleted, unmarkMat
 import { LessonFirestoreService } from '@/apiservices/lessonFirestoreService';
 import { ClassDocument } from '@/models/classSchema';
 import { StudyMaterialDocument } from '@/models/studyMaterialSchema';
+import { usePDFViewer } from '@/components/student/StudentLayout';
 
 interface WeeklyMaterials {
   week: number;
@@ -47,6 +48,7 @@ export default function StudentClassPage() {
   const router = useRouter();
   const classId = params.classId as string;
   const { student, loading: authLoading } = useStudentAuth();
+  const { openPDFViewer } = usePDFViewer();
   
   const [classData, setClassData] = useState<ClassDocument | null>(null);
   const [weeklyMaterials, setWeeklyMaterials] = useState<WeeklyMaterials[]>([]);
@@ -157,7 +159,9 @@ export default function StudentClassPage() {
     try {
       if (action === 'view') {
         await incrementViewCount(material.id);
-        if (material.fileType === 'link') {
+        if (material.fileType === 'pdf' && material.fileUrl) {
+          openPDFViewer({ title: material.fileName || material.title, fileUrl: material.fileUrl });
+        } else if (material.fileType === 'link') {
           window.open(material.externalUrl || material.fileUrl, '_blank');
         } else {
           window.open(material.fileUrl, '_blank');

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getStorage, ref, getDownloadURL } from 'firebase/storage';
-import { initializeApp } from 'firebase/app';
+import { getStorage, ref, getDownloadURL} from 'firebase/storage';
+import { initializeApp, getApps } from 'firebase/app';
 
 // Firebase configuration
 const firebaseConfig = {
@@ -13,8 +13,13 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Initialize Firebase (singleton pattern)
+let app;
+try {
+  app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
+} catch (error) {
+  app = initializeApp(firebaseConfig);
+}
 const storage = getStorage(app);
 
 export async function GET(request: NextRequest) {
