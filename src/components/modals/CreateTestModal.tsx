@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { X, ArrowRight, ArrowLeft, Clock, Calendar, Users, BookOpen, AlertCircle, Settings, Target, FileText, Edit, Eye, Check, RefreshCw } from 'lucide-react';
-import { TestType, TestConfig, QuestionSelectionMethod } from '@/models/testSchema';
+import { TestType, TestConfig, QuestionSelectionMethod, TestTemplate } from '@/models/testSchema';
 import { QuestionBank, Question } from '@/models/questionBankSchema';
 import { LessonDocument } from '@/models/lessonSchema';
 import { TestService } from '@/apiservices/testService';
+import { TestTemplateService } from '@/apiservices/testTemplateService';
 import { LessonFirestoreService } from '@/apiservices/lessonFirestoreService';
 import { questionService } from '@/apiservices/questionBankFirestoreService';
 import { TestNumberingService } from '@/apiservices/testNumberingService';
@@ -30,6 +31,10 @@ interface CreateTestModalProps {
 
 // Multi-step form data
 interface TestFormData {
+  // Step 0: Template Selection (NEW)
+  useTemplate: boolean;
+  selectedTemplateId: string;
+
   // Step 1: Basic Info & Type
   title: string;
   testNumber: string; // New field for test numbering
@@ -65,9 +70,14 @@ interface TestFormData {
   allowReviewBeforeSubmit: boolean;
   passingScore: number;
   showResultsImmediately: boolean;
+  saveAsTemplate: boolean;
+  templateIsPublic: boolean;
 }
 
 const INITIAL_FORM_DATA: TestFormData = {
+  useTemplate: false,
+  selectedTemplateId: '',
+
   title: '',
   testNumber: '',
   description: '',
@@ -93,6 +103,8 @@ const INITIAL_FORM_DATA: TestFormData = {
   allowReviewBeforeSubmit: true,
   passingScore: 50,
   showResultsImmediately: false,
+  saveAsTemplate: false,
+  templateIsPublic: false,
 };
 
 export default function CreateTestModal({
@@ -143,7 +155,11 @@ export default function CreateTestModal({
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [previewError, setPreviewError] = useState<string>('');
 
-  const totalSteps = 5; // Updated to 5 steps (added preview step)
+  // State for templates
+  const [availableTemplates, setAvailableTemplates] = useState<TestTemplate[]>([]);
+  const [loadingTemplates, setLoadingTemplates] = useState(false);
+
+  const totalSteps = 6; // Updated to 6 steps (added template selection and preview step)
 
   // Load lessons when question bank is selected
   useEffect(() => {
@@ -159,12 +175,17 @@ export default function CreateTestModal({
     }
   }, [formData.selectedQuestionBankId, formData.questionSelectionMethod, formData.questionType]);
 
-  // Load existing test numbers when modal opens
+  // Load existing test numbers and templates when modal opens
   useEffect(() => {
-    if (isOpen && selectedClassId) {
-      loadExistingTestNumbers();
+    if (isOpen) {
+      if (selectedClassId) {
+        loadExistingTestNumbers();
+      }
+      if (teacher?.id) {
+        loadTemplates();
+      }
     }
-  }, [isOpen, selectedClassId]);
+  }, [isOpen, selectedClassId, teacher?.id]);
 
   // Auto-set showResultsImmediately based on question type
   useEffect(() => {
@@ -179,6 +200,52 @@ export default function CreateTestModal({
       }
     }
   }, [formData.questionType, formData.showResultsImmediately]);
+
+  // Handle template selection
+  useEffect(() => {
+    const loadTemplateData = async () => {
+      if (formData.selectedTemplateId && formData.useTemplate) {
+        try {
+          const template = await TestTemplateService.getTemplate(formData.selectedTemplateId);
+          if (template) {
+            console.log('📋 Loading template data:', template.title);
+
+            // Populate form with template data
+            updateFormData({
+              title: template.title,
+              description: template.description || '',
+              instructions: template.instructions || '',
+              questionType: template.config.questionType || '',
+              questionSelectionMethod: template.config.questionSelectionMethod,
+              totalQuestions: template.config.totalQuestions,
+              shuffleQuestions: template.config.shuffleQuestions,
+              allowReviewBeforeSubmit: template.config.allowReviewBeforeSubmit,
+              passingScore: template.config.passingScore || 50,
+              showResultsImmediately: template.config.showResultsImmediately,
+              selectedQuestions: template.questions || [],
+              // Note: We don't populate timing fields as they should be set fresh for each test
+            });
+
+            // If questions are already selected (manual method), set the question bank
+            if (template.questions && template.questions.length > 0) {
+              // Try to find the question bank from the questions
+              // This is a simplified approach - in practice you might need to store questionBankId in template
+              const questionBank = questionBanks.find(bank =>
+                bank.questionIds?.some(qid => template.questions.some(tq => tq.questionId === qid))
+              );
+              if (questionBank) {
+                updateFormData({ selectedQuestionBankId: questionBank.id });
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error loading template:', error);
+        }
+      }
+    };
+
+    loadTemplateData();
+  }, [formData.selectedTemplateId, formData.useTemplate, questionBanks]);
 
   const loadLessons = async () => {
     if (!formData.selectedQuestionBankId) return;
@@ -289,11 +356,39 @@ export default function CreateTestModal({
     }
   };
 
+  const loadTemplates = async () => {
+    if (!teacher?.id) return;
+
+    try {
+      setLoadingTemplates(true);
+
+      // Load teacher's own templates
+      const teacherTemplates = await TestTemplateService.getTemplatesByTeacher(teacher.id);
+
+      // Load public templates for the same subject
+      const publicTemplates = await TestTemplateService.getPublicTemplates(subjectId);
+
+      // Combine and remove duplicates (prioritize teacher's own templates)
+      const allTemplates = [...teacherTemplates, ...publicTemplates.filter(pt =>
+        !teacherTemplates.some(tt => tt.id === pt.id)
+      )];
+
+      setAvailableTemplates(allTemplates);
+      console.log('📋 Loaded templates:', allTemplates.length);
+
+    } catch (error) {
+      console.error('Error loading templates:', error);
+      setAvailableTemplates([]);
+    } finally {
+      setLoadingTemplates(false);
+    }
+  };
+
   // Reset form when modal opens/closes
   useEffect(() => {
     if (isOpen) {
       setFormData(INITIAL_FORM_DATA);
-      setCurrentStep(1);
+      setCurrentStep(0);
       setErrors({});
     }
   }, [isOpen]);
@@ -376,6 +471,12 @@ export default function CreateTestModal({
     console.log('🔍 Current form data:', formData);
 
     switch (step) {
+      case 0: // Template Selection
+        if (formData.useTemplate && !formData.selectedTemplateId) {
+          newErrors.selectedTemplateId = 'Please select a template';
+        }
+        break;
+
       case 1: // Basic Info & Type
         if (!formData.title.trim()) newErrors.title = 'Test title is required';
         if (!formData.type) newErrors.type = 'Test type is required';
@@ -409,36 +510,39 @@ export default function CreateTestModal({
         break;
         
       case 3: // Question Selection
-        console.log('🔍 Step 3 validation - questionSelectionMethod:', formData.questionSelectionMethod);
-        console.log('🔍 Step 3 validation - selectedQuestionBankId:', formData.selectedQuestionBankId);
-        console.log('🔍 Step 3 validation - totalQuestions:', formData.totalQuestions);
-        
-        if (!formData.questionSelectionMethod) newErrors.questionSelectionMethod = 'Question selection method is required';
-        if (!formData.selectedQuestionBankId) newErrors.selectedQuestionBankId = 'Please select a question bank';
-        if (formData.totalQuestions <= 0) newErrors.totalQuestions = 'Number of questions must be greater than 0';
-        
-        // Validate question type availability in selected bank
-        if (formData.selectedQuestionBankId && formData.questionType) {
-          const selectedBank = questionBanks?.find(bank => bank.id === formData.selectedQuestionBankId);
-          if (selectedBank) {
-            if (formData.questionType === 'mcq' && selectedBank.mcqCount === 0) {
-              newErrors.selectedQuestionBankId = 'Selected question bank has no MCQ questions';
-            } else if (formData.questionType === 'essay' && selectedBank.essayCount === 0) {
-              newErrors.selectedQuestionBankId = 'Selected question bank has no essay questions';
+        // Skip validation if using template (questions already loaded)
+        if (!formData.useTemplate) {
+          console.log('🔍 Step 3 validation - questionSelectionMethod:', formData.questionSelectionMethod);
+          console.log('🔍 Step 3 validation - selectedQuestionBankId:', formData.selectedQuestionBankId);
+          console.log('🔍 Step 3 validation - totalQuestions:', formData.totalQuestions);
+          
+          if (!formData.questionSelectionMethod) newErrors.questionSelectionMethod = 'Question selection method is required';
+          if (!formData.selectedQuestionBankId) newErrors.selectedQuestionBankId = 'Please select a question bank';
+          if (formData.totalQuestions <= 0) newErrors.totalQuestions = 'Number of questions must be greater than 0';
+          
+          // Validate question type availability in selected bank
+          if (formData.selectedQuestionBankId && formData.questionType) {
+            const selectedBank = questionBanks?.find(bank => bank.id === formData.selectedQuestionBankId);
+            if (selectedBank) {
+              if (formData.questionType === 'mcq' && selectedBank.mcqCount === 0) {
+                newErrors.selectedQuestionBankId = 'Selected question bank has no MCQ questions';
+              } else if (formData.questionType === 'essay' && selectedBank.essayCount === 0) {
+                newErrors.selectedQuestionBankId = 'Selected question bank has no essay questions';
+              }
             }
           }
-        }
-        
-        // Only validate lesson/question selection if method is chosen
-        if (formData.questionSelectionMethod === 'auto' && formData.selectedLessonIds.length === 0) {
-          newErrors.selectedLessonIds = 'Please select at least one lesson for auto selection';
-        }
-        
-        if (formData.questionSelectionMethod === 'manual') {
-          if (formData.selectedQuestions.length === 0) {
-            newErrors.selectedQuestions = 'Please select at least one question manually';
-          } else if (formData.selectedQuestions.length < formData.totalQuestions) {
-            newErrors.selectedQuestions = `Please select ${formData.totalQuestions} questions (currently selected: ${formData.selectedQuestions.length})`;
+          
+          // Only validate lesson/question selection if method is chosen
+          if (formData.questionSelectionMethod === 'auto' && formData.selectedLessonIds.length === 0) {
+            newErrors.selectedLessonIds = 'Please select at least one lesson for auto selection';
+          }
+          
+          if (formData.questionSelectionMethod === 'manual') {
+            if (formData.selectedQuestions.length === 0) {
+              newErrors.selectedQuestions = 'Please select at least one question manually';
+            } else if (formData.selectedQuestions.length < formData.totalQuestions) {
+              newErrors.selectedQuestions = `Please select ${formData.totalQuestions} questions (currently selected: ${formData.selectedQuestions.length})`;
+            }
           }
         }
         break;
@@ -460,13 +564,17 @@ export default function CreateTestModal({
 
   const handleNext = () => {
     if (validateStep(currentStep)) {
-      // If moving from step 3 to step 4 and using auto-selection, generate preview
-      if (currentStep === 3 && formData.questionSelectionMethod === 'auto') {
-        generatePreviewQuestions();
+      // If using template and on step 0, skip to step 2 (timing) since basic info and questions are pre-filled
+      if (currentStep === 0 && formData.useTemplate && formData.selectedTemplateId) {
+        setCurrentStep(2); // Skip basic info and question selection
       }
-      
+      // If moving from step 3 to step 4 and using auto-selection, generate preview
+      else if (currentStep === 3 && formData.questionSelectionMethod === 'auto') {
+        generatePreviewQuestions();
+        setCurrentStep(4);
+      }
       // For manual selection, skip the preview step (step 4)
-      if (currentStep === 3 && formData.questionSelectionMethod === 'manual') {
+      else if (currentStep === 3 && formData.questionSelectionMethod === 'manual') {
         setCurrentStep(5); // Jump directly to final configuration
       } else {
         setCurrentStep(prev => Math.min(prev + 1, totalSteps));
@@ -475,11 +583,19 @@ export default function CreateTestModal({
   };
 
   const handlePrevious = () => {
+    // If using template and on step 2, go back to step 0 (template selection)
+    if (currentStep === 2 && formData.useTemplate) {
+      setCurrentStep(0);
+    }
     // If on step 5 and came from manual selection, go back to step 3
-    if (currentStep === 5 && formData.questionSelectionMethod === 'manual') {
+    else if (currentStep === 5 && formData.questionSelectionMethod === 'manual') {
+      setCurrentStep(3);
+    }
+    // If on step 4 and came from auto-selection, go back to step 3
+    else if (currentStep === 4 && formData.questionSelectionMethod === 'auto') {
       setCurrentStep(3);
     } else {
-      setCurrentStep(prev => Math.max(prev - 1, 1));
+      setCurrentStep(prev => Math.max(prev - 1, 0));
     }
   };
 
@@ -742,6 +858,41 @@ export default function CreateTestModal({
       });
       
       onTestCreated(completeTestData);
+
+      // Save as template if requested
+      if (formData.saveAsTemplate) {
+        try {
+          console.log('📋 Saving test as template...');
+          await TestTemplateService.createTemplateFromTest({
+            title: formData.title,
+            description: formData.description,
+            instructions: formData.instructions,
+            teacherId: teacher?.id || '',
+            teacherName: teacher?.name || '',
+            subjectId: subjectId,
+            subjectName: subjectName,
+            config: testConfig,
+            questions: finalTestData.questions,
+            totalMarks: finalTestData.totalMarks,
+            isPublic: formData.templateIsPublic
+          });
+          console.log('✅ Template saved successfully');
+        } catch (templateError) {
+          console.error('❌ Error saving template:', templateError);
+          // Don't fail the test creation if template saving fails
+        }
+      }
+
+      // Increment template usage if template was used
+      if (formData.useTemplate && formData.selectedTemplateId) {
+        try {
+          await TestTemplateService.incrementUsageCount(formData.selectedTemplateId);
+          console.log('✅ Template usage count incremented');
+        } catch (usageError) {
+          console.error('❌ Error incrementing template usage:', usageError);
+          // Don't fail if usage count update fails
+        }
+      }
       
     } catch (error) {
       console.error('Error creating test:', error);
@@ -752,7 +903,7 @@ export default function CreateTestModal({
   };
 
   const handleClose = () => {
-    setCurrentStep(1);
+    setCurrentStep(0);
     setFormData(INITIAL_FORM_DATA);
     setErrors({});
     onClose();
@@ -768,16 +919,16 @@ export default function CreateTestModal({
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center space-x-4">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              Create New Test - Step {currentStep} of {totalSteps}
+              Create New Test - Step {currentStep + 1} of {totalSteps}
             </h2>
             <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
-              <span>Step {currentStep} of {totalSteps}</span>
+              <span>Step {currentStep + 1} of {totalSteps}</span>
               <div className="flex space-x-1">
                 {Array.from({ length: totalSteps }, (_, i) => (
                   <div
                     key={i}
                     className={`w-2 h-2 rounded-full ${
-                      i + 1 <= currentStep 
+                      i + 1 <= currentStep + 1 
                         ? 'bg-blue-600' 
                         : 'bg-gray-300 dark:bg-gray-600'
                     }`}
@@ -798,13 +949,148 @@ export default function CreateTestModal({
         <div className="w-full bg-gray-200 dark:bg-gray-700 h-1">
           <div 
             className="bg-blue-600 h-1 transition-all duration-300"
-            style={{ width: `${(currentStep / totalSteps) * 100}%` }}
+            style={{ width: `${((currentStep + 1) / totalSteps) * 100}%` }}
           />
         </div>
 
         {/* Content */}
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
           
+          {/* Step 0: Template Selection */}
+          {currentStep === 0 && (
+            <div className="space-y-6">
+              <div className="text-center mb-8">
+                <div className="mx-auto w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mb-4">
+                  <FileText className="h-8 w-8 text-green-600 dark:text-green-400" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                  Choose Test Creation Method
+                </h3>
+                <p className="text-gray-500 dark:text-gray-400">
+                  Start from scratch or use a template from previous tests
+                </p>
+              </div>
+
+              <div className="space-y-6">
+                {/* Template Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
+                    How would you like to create this test?
+                  </label>
+                  
+                  <div className="space-y-3">
+                    {/* Create from Scratch */}
+                    <div
+                      onClick={() => updateFormData({ useTemplate: false, selectedTemplateId: '' })}
+                      className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                        !formData.useTemplate
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                          : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-4 h-4 rounded-full border-2 ${
+                          !formData.useTemplate ? 'border-blue-500 bg-blue-500' : 'border-gray-300'
+                        }`}>
+                          {!formData.useTemplate && (
+                            <div className="w-2 h-2 bg-white rounded-full mx-auto mt-0.5"></div>
+                          )}
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-gray-900 dark:text-white">Create from Scratch</h4>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Build a new test by selecting questions and configuring settings
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Use Template */}
+                    <div
+                      onClick={() => updateFormData({ useTemplate: true })}
+                      className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                        formData.useTemplate
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                          : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-4 h-4 rounded-full border-2 ${
+                          formData.useTemplate ? 'border-blue-500 bg-blue-500' : 'border-gray-300'
+                        }`}>
+                          {formData.useTemplate && (
+                            <div className="w-2 h-2 bg-white rounded-full mx-auto mt-0.5"></div>
+                          )}
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-gray-900 dark:text-white">Use Template</h4>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Reuse configuration from a previously created test
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Template Selection Dropdown */}
+                {formData.useTemplate && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Select Template <span className="text-red-500">*</span>
+                    </label>
+                    {loadingTemplates ? (
+                      <div className="flex items-center space-x-2 text-gray-500">
+                        <RefreshCw className="h-4 w-4 animate-spin" />
+                        <span>Loading templates...</span>
+                      </div>
+                    ) : availableTemplates.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                        <p>No templates available</p>
+                        <p className="text-sm">Create your first test to make it available as a template</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2 max-h-60 overflow-y-auto">
+                        {availableTemplates.map((template) => (
+                          <div
+                            key={template.id}
+                            onClick={() => updateFormData({ selectedTemplateId: template.id })}
+                            className={`p-3 border rounded-lg cursor-pointer transition-all ${
+                              formData.selectedTemplateId === template.id
+                                ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <h4 className="font-medium text-gray-900 dark:text-white">{template.title}</h4>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">
+                                  {template.subjectName} • {template.questions.length} questions • {template.config.questionType?.toUpperCase()}
+                                </p>
+                                <p className="text-xs text-gray-400 dark:text-gray-500">
+                                  Created by {template.teacherName} • Used {template.usageCount || 0} times
+                                </p>
+                              </div>
+                              {template.isPublic && (
+                                <span className="text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-1 rounded">
+                                  Public
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {errors.selectedTemplateId && (
+                      <p className="mt-1 text-sm text-red-500">{errors.selectedTemplateId}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Step 1: Basic Information & Test Type */}
           {currentStep === 1 && (
             <div className="space-y-6">
@@ -2260,6 +2546,47 @@ export default function CreateTestModal({
                   </label>
                 </div>
 
+                {/* Save as Template */}
+                <div className="space-y-4">
+                  <h4 className="text-md font-medium text-gray-900 dark:text-white">Template Options</h4>
+                  
+                  <label className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      checked={formData.saveAsTemplate}
+                      onChange={(e) => updateFormData({ saveAsTemplate: e.target.checked })}
+                      className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                    <div>
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">
+                        Save as Template
+                      </span>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Make this test configuration available for future use
+                      </p>
+                    </div>
+                  </label>
+
+                  {formData.saveAsTemplate && (
+                    <label className="flex items-center space-x-3 ml-7">
+                      <input
+                        type="checkbox"
+                        checked={formData.templateIsPublic}
+                        onChange={(e) => updateFormData({ templateIsPublic: e.target.checked })}
+                        className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <div>
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">
+                          Make Public
+                        </span>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          Allow other teachers to use this template
+                        </p>
+                      </div>
+                    </label>
+                  )}
+                </div>
+
                 {/* Test Summary */}
                 <div className="bg-gray-50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
                   <h4 className="text-md font-medium text-gray-900 dark:text-white mb-3">Test Summary</h4>
@@ -2299,7 +2626,7 @@ export default function CreateTestModal({
         <div className="flex items-center justify-between p-6 border-t border-gray-200 dark:border-gray-700">
           <button
             onClick={handlePrevious}
-            disabled={currentStep === 1}
+            disabled={currentStep === 0}
             className="flex items-center space-x-2 px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <ArrowLeft className="h-4 w-4" />

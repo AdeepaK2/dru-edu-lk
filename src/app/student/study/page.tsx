@@ -26,6 +26,22 @@ import {
 } from 'lucide-react';
 import { getEnrollmentsByStudent } from '@/services/studentEnrollmentService';
 import { getStudyMaterialsByClass, getStudyMaterialsByClassGrouped, markMaterialCompleted, unmarkMaterialCompleted } from '@/apiservices/studyMaterialFirestoreService';
+import dynamic from 'next/dynamic';
+
+// Dynamically import PDFViewer to avoid SSR issues
+const PDFViewer = dynamic(() => import('@/components/PDFViewer'), {
+  ssr: false,
+  loading: () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden">
+        <div className="flex items-center justify-center h-64">
+          <div className="w-8 h-8 border-t-2 border-blue-600 border-solid rounded-full animate-spin"></div>
+          <span className="ml-3 text-gray-600 dark:text-gray-400">Loading PDF Viewer...</span>
+        </div>
+      </div>
+    </div>
+  )
+});
 
 interface ClassWithProgress {
   id: string;
@@ -67,6 +83,8 @@ export default function StudentStudyPage() {
   const [materialLoading, setMaterialLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
+  const [pdfViewerOpen, setPdfViewerOpen] = useState(false);
+  const [currentPdfMaterial, setCurrentPdfMaterial] = useState<StudyMaterial | null>(null);
 
   useEffect(() => {
     if (!loading && !student) {
@@ -203,7 +221,10 @@ export default function StudentStudyPage() {
   };
 
   const viewMaterial = (material: StudyMaterial) => {
-    if (material.fileUrl) {
+    if (material.fileType?.toLowerCase() === 'pdf' && material.fileUrl) {
+      setCurrentPdfMaterial(material);
+      setPdfViewerOpen(true);
+    } else if (material.fileUrl) {
       window.open(material.fileUrl, '_blank');
     }
   };
@@ -800,6 +821,18 @@ export default function StudentStudyPage() {
             </Button>
           </CardContent>
         </Card>
+      )}
+
+      {/* PDF Viewer Modal */}
+      {pdfViewerOpen && currentPdfMaterial && (
+        <PDFViewer
+          url={currentPdfMaterial.fileUrl!}
+          title={currentPdfMaterial.title}
+          onClose={() => {
+            setPdfViewerOpen(false);
+            setCurrentPdfMaterial(null);
+          }}
+        />
       )}
     </div>
   );
