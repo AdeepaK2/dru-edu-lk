@@ -341,8 +341,10 @@ export class AttemptManagementService {
       }
       
       // Calculate new totals (only count online time)
-      const newTotalTimeSpent = state.totalTimeSpent + sessionTime;
-      const newTimeRemaining = Math.max(0, state.timeRemaining - sessionTime);
+      // Ensure totalTimeSpent is never null or undefined
+      const currentTotalTimeSpent = state.totalTimeSpent ?? 0;
+      const newTotalTimeSpent = currentTotalTimeSpent + sessionTime;
+      const newTimeRemaining = Math.max(0, (state.timeRemaining ?? 0) - sessionTime);
       
       // Check if attempt should be marked as expired
       const isExpired = newTimeRemaining <= 0;
@@ -378,7 +380,7 @@ export class AttemptManagementService {
       }
 
       const timeCalc: TimeCalculation = {
-        totalTimeAllowed: state.timeRemaining + newTotalTimeSpent,
+        totalTimeAllowed: (state.timeRemaining ?? 0) + newTotalTimeSpent,
         timeSpent: newTotalTimeSpent,
         timeRemaining: newTimeRemaining,
         offlineTime: offlineTime,
@@ -466,7 +468,8 @@ export class AttemptManagementService {
       
       // The time remaining should be the same as when they disconnected
       // (we don't subtract offline time from remaining time)
-      const currentTimeRemaining = state.timeRemaining;
+      const currentTimeRemaining = state.timeRemaining ?? 0;
+      const currentTotalTimeSpent = state.totalTimeSpent ?? 0;
       
       // Check if test has expired based on absolute time
       const isExpired = currentTimeRemaining <= 0;
@@ -476,8 +479,8 @@ export class AttemptManagementService {
         await this.markAttemptAsExpired(attemptId);
         
         return {
-          totalTimeAllowed: state.totalTimeSpent + currentTimeRemaining,
-          timeSpent: state.totalTimeSpent,
+          totalTimeAllowed: currentTotalTimeSpent + currentTimeRemaining,
+          timeSpent: currentTotalTimeSpent,
           timeRemaining: 0,
           offlineTime: offlineTime,
           isExpired: true,
@@ -505,8 +508,8 @@ export class AttemptManagementService {
       console.log('🔌 Time remaining:', currentTimeRemaining, 'seconds');
       
       return {
-        totalTimeAllowed: state.totalTimeSpent + currentTimeRemaining,
-        timeSpent: state.totalTimeSpent,
+        totalTimeAllowed: currentTotalTimeSpent + currentTimeRemaining,
+        timeSpent: currentTotalTimeSpent,
         timeRemaining: currentTimeRemaining,
         offlineTime: offlineTime,
         isExpired: false,
