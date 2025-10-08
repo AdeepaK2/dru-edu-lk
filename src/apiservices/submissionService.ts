@@ -302,7 +302,8 @@ export class SubmissionService {
         // Get actual time calculation from attempt management
         const timeCalc = await AttemptManagementService.updateAttemptTime(attemptId);
         if (timeCalc) {
-          actualTimeSpent = timeCalc.timeSpent || 0;
+          // Ensure timeSpent is never null or undefined
+          actualTimeSpent = Math.max(0, timeCalc.timeSpent ?? 0);
           actualStartTime = Date.now() - (actualTimeSpent * 1000); // Calculate start time from time spent
           actualEndTime = Date.now();
           console.log('✅ Got actual time from attempt management:', {
@@ -315,7 +316,7 @@ export class SubmissionService {
           // Use realtime session data but validate it
           if (realtimeSession.startTime && realtimeSession.lastActivity && 
               realtimeSession.lastActivity > realtimeSession.startTime) {
-            actualTimeSpent = Math.floor((realtimeSession.lastActivity - realtimeSession.startTime) / 1000);
+            actualTimeSpent = Math.max(0, Math.floor((realtimeSession.lastActivity - realtimeSession.startTime) / 1000));
             actualStartTime = realtimeSession.startTime;
             actualEndTime = realtimeSession.lastActivity;
           } else {
@@ -341,7 +342,7 @@ export class SubmissionService {
         // Fallback time calculation
         if (realtimeSession.startTime && realtimeSession.lastActivity && 
             realtimeSession.lastActivity > realtimeSession.startTime) {
-          actualTimeSpent = Math.floor((realtimeSession.lastActivity - realtimeSession.startTime) / 1000);
+          actualTimeSpent = Math.max(0, Math.floor((realtimeSession.lastActivity - realtimeSession.startTime) / 1000));
           actualStartTime = realtimeSession.startTime;
           actualEndTime = realtimeSession.lastActivity;
         } else {
