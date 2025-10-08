@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { BookOpen, Search, Edit2, Trash2, Plus, XCircle, Users, Clock } from 'lucide-react';
 import { ClassDocument, ClassDisplayData, classDocumentToDisplay } from '@/models/classSchema';
 import { CenterDocument } from '@/apiservices/centerFirestoreService';
@@ -25,6 +25,10 @@ export default function ClassManager() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [classToDelete, setClassToDelete] = useState<ClassDisplayData | null>(null);
+  const [classes, setClasses] = useState<ClassDisplayData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  
   // Cache centers data
   const { data: centers = [] } = useCachedData<CenterDocument[]>(
     'centers',
@@ -82,31 +86,38 @@ export default function ClassManager() {
     { ttl: 300 } // Cache for 5 minutes
   );
 
-  // Cache classes data with center and teacher mapping
-  const { data: classes = [], loading, error, refetch } = useCachedData<ClassDisplayData[]>(
-    `classes-${centers?.length || 0}-${teachers?.length || 0}`, // Include centers and teachers in cache key
-    async () => {
-      return new Promise<ClassDisplayData[]>((resolve, reject) => {        const unsubscribe = ClassFirestoreService.subscribeToClasses(
-          (classDocuments: ClassDocument[]) => {
-            const displayClasses = classDocuments.map(doc => {
-              const center = centers?.find(c => c.center.toString() === doc.centerId);
-              const teacher = teachers?.find(t => t.id === doc.teacherId);
-              const coTeacher = teachers?.find(t => t.id === doc.coTeacherId);
-              return classDocumentToDisplay(doc, center?.location, teacher?.name, coTeacher?.name);
-            });
-            resolve(displayClasses);
-            unsubscribe();
-          },
-          (error: Error) => {
-            reject(error);
-            unsubscribe();
-          }
-        );
-      });
-    },    { 
-      ttl: 120 // Cache for 2 minutes
-    }
-  );
+  // Real-time subscription to classes data
+  useEffect(() => {
+    if (!centers || !teachers) return; // Wait for centers and teachers to load
+    
+    console.log('Setting up real-time class subscription for admin...');
+    setLoading(true);
+    
+    const unsubscribe = ClassFirestoreService.subscribeToClasses(
+      (classDocuments: ClassDocument[]) => {
+        console.log('Admin received class updates:', classDocuments.length);
+        const displayClasses = classDocuments.map(doc => {
+          const center = centers?.find(c => c.center.toString() === doc.centerId);
+          const teacher = teachers?.find(t => t.id === doc.teacherId);
+          const coTeacher = teachers?.find(t => t.id === doc.coTeacherId);
+          return classDocumentToDisplay(doc, center?.location, teacher?.name, coTeacher?.name);
+        });
+        setClasses(displayClasses);
+        setLoading(false);
+        setError(null);
+      },
+      (error: Error) => {
+        console.error('Error in admin class subscription:', error);
+        setError(error);
+        setLoading(false);
+      }
+    );
+
+    return () => {
+      console.log('Cleaning up admin class subscription');
+      unsubscribe();
+    };
+  }, [centers, teachers]); // Re-subscribe when centers or teachers change
 
   // Use simple console logging for now
   const showSuccess = (message: string) => console.log('Success:', message);
@@ -123,7 +134,7 @@ export default function ClassManager() {
       showSuccess('Class deleted successfully!');
       setShowDeleteConfirm(false);
       setClassToDelete(null);
-      refetch(); // Refresh data
+      // Real-time subscription will auto-update the list
     } catch (error) {
       console.error('Error deleting class:', error);
       showError(error instanceof Error ? error.message : 'Failed to delete class');
@@ -185,7 +196,7 @@ export default function ClassManager() {
       setModalOpen(false);
       setSelectedClass(null);
       setEditMode(false);
-      refetch(); // Refresh data
+      // Real-time subscription will auto-update the list
     } catch (error) {
       console.error('Error creating class:', error);
       showError(error instanceof Error ? error.message : 'Failed to create class');
@@ -206,7 +217,7 @@ export default function ClassManager() {
       setModalOpen(false);
       setSelectedClass(null);
       setEditMode(false);
-      refetch(); // Refresh data
+      // Real-time subscription will auto-update the list
     } catch (error) {
       console.error('Error updating class:', error);
       showError(error instanceof Error ? error.message : 'Failed to update class');
