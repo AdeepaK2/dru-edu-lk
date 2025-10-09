@@ -158,8 +158,25 @@ export default function CreateTestModal({
   // State for templates
   const [availableTemplates, setAvailableTemplates] = useState<TestTemplate[]>([]);
   const [loadingTemplates, setLoadingTemplates] = useState(false);
+  const [loadingTemplateData, setLoadingTemplateData] = useState(false);
 
   const totalSteps = 6; // Updated to 6 steps (added template selection and preview step)
+  
+  // Calculate effective total steps based on template usage
+  const effectiveTotalSteps = formData.useTemplate && formData.selectedTemplateId ? 4 : totalSteps;
+  
+  // Map current step to effective step for display
+  const getEffectiveStep = (step: number) => {
+    if (formData.useTemplate && formData.selectedTemplateId) {
+      // Template flow: 0->0, 1->1, 2->2, 5->3
+      if (step === 0) return 0;
+      if (step === 1) return 1;
+      if (step === 2) return 2;
+      if (step === 5) return 3;
+      return step;
+    }
+    return step;
+  };
 
   // Load lessons when question bank is selected
   useEffect(() => {
@@ -206,9 +223,18 @@ export default function CreateTestModal({
     const loadTemplateData = async () => {
       if (formData.selectedTemplateId && formData.useTemplate) {
         try {
+          setLoadingTemplateData(true);
           const template = await TestTemplateService.getTemplate(formData.selectedTemplateId);
           if (template) {
             console.log('📋 Loading template data:', template.title);
+            console.log('📋 Template questions:', template.questions);
+            console.log('📋 Template questions details:', template.questions?.map(q => ({
+              id: q.id,
+              questionId: q.questionId,
+              questionText: q.questionText,
+              imageUrl: q.imageUrl,
+              type: q.type
+            })));
 
             // Populate form with template data
             updateFormData({
@@ -223,7 +249,12 @@ export default function CreateTestModal({
               passingScore: template.config.passingScore || 50,
               showResultsImmediately: template.config.showResultsImmediately,
               selectedQuestions: template.questions || [],
-              // Note: We don't populate timing fields as they should be set fresh for each test
+              // Set default timing for templates (can be changed in final config if needed)
+              type: 'flexible',
+              availableFrom: new Date().toISOString().slice(0, 16), // Now
+              availableTo: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16), // 1 week from now
+              duration: 60, // 1 hour default
+              attemptsAllowed: 1,
             });
 
             // If questions are already selected (manual method), set the question bank
@@ -240,7 +271,11 @@ export default function CreateTestModal({
           }
         } catch (error) {
           console.error('Error loading template:', error);
+        } finally {
+          setLoadingTemplateData(false);
         }
+      } else {
+        setLoadingTemplateData(false);
       }
     };
 
@@ -357,16 +392,24 @@ export default function CreateTestModal({
   };
 
   const loadTemplates = async () => {
-    if (!teacher?.id) return;
+    console.log('🔄 Loading templates for teacher:', teacher?.id);
+    if (!teacher?.id) {
+      console.log('❌ No teacher ID available, skipping template load');
+      return;
+    }
 
     try {
       setLoadingTemplates(true);
 
       // Load teacher's own templates
+      console.log('📥 Fetching teacher templates...');
       const teacherTemplates = await TestTemplateService.getTemplatesByTeacher(teacher.id);
+      console.log('✅ Teacher templates loaded:', teacherTemplates.length);
 
       // Load public templates for the same subject
+      console.log('📥 Fetching public templates for subject:', subjectId);
       const publicTemplates = await TestTemplateService.getPublicTemplates(subjectId);
+      console.log('✅ Public templates loaded:', publicTemplates.length);
 
       // Combine and remove duplicates (prioritize teacher's own templates)
       const allTemplates = [...teacherTemplates, ...publicTemplates.filter(pt =>
@@ -374,10 +417,11 @@ export default function CreateTestModal({
       )];
 
       setAvailableTemplates(allTemplates);
-      console.log('📋 Loaded templates:', allTemplates.length);
+      console.log('📋 Total templates loaded:', allTemplates.length, allTemplates);
 
     } catch (error) {
-      console.error('Error loading templates:', error);
+      console.error('❌ Error loading templates:', error);
+      // Don't show error to user - templates will load with fallback method
       setAvailableTemplates([]);
     } finally {
       setLoadingTemplates(false);
@@ -564,9 +608,17 @@ export default function CreateTestModal({
 
   const handleNext = () => {
     if (validateStep(currentStep)) {
-      // If using template and on step 0, skip to step 2 (timing) since basic info and questions are pre-filled
+      // If using template and on step 0, go to step 1 (basic info) since questions are pre-filled
       if (currentStep === 0 && formData.useTemplate && formData.selectedTemplateId) {
-        setCurrentStep(2); // Skip basic info and question selection
+        setCurrentStep(1); // Go to basic info step
+      }
+      // If using template and on step 1 (basic info), go to step 2 (timing)
+      else if (currentStep === 1 && formData.useTemplate && formData.selectedTemplateId) {
+        setCurrentStep(2); // Go to timing step
+      }
+      // If using template and on step 2 (timing), skip question selection and go to final config
+      else if (currentStep === 2 && formData.useTemplate && formData.selectedTemplateId) {
+        setCurrentStep(5); // Skip question selection, go directly to final configuration
       }
       // If moving from step 3 to step 4 and using auto-selection, generate preview
       else if (currentStep === 3 && formData.questionSelectionMethod === 'auto') {
@@ -583,9 +635,17 @@ export default function CreateTestModal({
   };
 
   const handlePrevious = () => {
-    // If using template and on step 2, go back to step 0 (template selection)
-    if (currentStep === 2 && formData.useTemplate) {
-      setCurrentStep(0);
+    // If using template and on step 5 (final config), go back to step 2 (timing)
+    if (currentStep === 5 && formData.useTemplate && formData.selectedTemplateId) {
+      setCurrentStep(2); // Go back to timing
+    }
+    // If using template and on step 2 (timing), go back to step 1 (basic info)
+    else if (currentStep === 2 && formData.useTemplate && formData.selectedTemplateId) {
+      setCurrentStep(1); // Go back to basic info
+    }
+    // If using template and on step 1 (basic info), go back to step 0 (template selection)
+    else if (currentStep === 1 && formData.useTemplate) {
+      setCurrentStep(0); // Go back to template selection
     }
     // If on step 5 and came from manual selection, go back to step 3
     else if (currentStep === 5 && formData.questionSelectionMethod === 'manual') {
@@ -794,56 +854,87 @@ export default function CreateTestModal({
 
       // Generate PDF for essay questions
       let examPdfUrl: string | undefined;
-      if (formData.questionType === 'essay' && finalTestData.questions && finalTestData.questions.length > 0) {
-        try {
-          console.log('📄 Generating exam PDF for essay questions...');
+      // Generate PDF for tests with questions (essay or MCQ with images)
+      if (finalTestData.questions && finalTestData.questions.length > 0) {
+        console.log('📄 Generating PDF for questions...');
+        console.log('📄 Total questions in test:', finalTestData.questions.length);
+        console.log('📄 Question types:', finalTestData.questions.map((q: any) => q.type));
+        
+        // Check if there are essay questions or MCQ questions with images
+        const hasEssayQuestions = finalTestData.questions.some((q: any) => q.type === 'essay');
+        const hasQuestionsWithImages = finalTestData.questions.some((q: any) => q.imageUrl);
+        
+        console.log('📄 Has essay questions:', hasEssayQuestions);
+        console.log('📄 Has questions with images:', hasQuestionsWithImages);
+        
+        if (hasEssayQuestions || hasQuestionsWithImages) {
+          try {
+            console.log('📄 Generating exam PDF for questions...');
 
-          // Import the PDF service
-          const { ExamPDFService } = await import('@/services/examPDFService');
+            // Import the PDF service
+            const { ExamPDFService } = await import('@/services/examPDFService');
 
-          // Get class name for PDF
-          const className = selectedClassId ?
-            availableClasses.find(c => c.id === selectedClassId)?.name || 'Unknown Class' :
-            availableClasses[0]?.name || 'Unknown Class';
+            // Get class name for PDF
+            const className = selectedClassId ?
+              availableClasses.find(c => c.id === selectedClassId)?.name || 'Unknown Class' :
+              availableClasses[0]?.name || 'Unknown Class';
 
-          // Prepare essay questions for PDF generation
-          const essayQuestions = finalTestData.questions
-            .filter((q: any) => q.type === 'essay')
-            .map((q: any) => ({
-              id: q.questionId || q.id,
-              title: q.questionText || q.title || '',
-              content: q.content || '',
-              imageUrl: q.imageUrl || undefined,
-              type: 'essay' as const,
-              points: q.points || q.marks || 1,
-              topic: q.topic || undefined,
-              subtopic: q.subtopic || undefined,
-              reference: undefined,
-              difficultyLevel: q.difficultyLevel || 'medium',
-              createdAt: new Timestamp(0, 0), // Placeholder
-              updatedAt: new Timestamp(0, 0), // Placeholder
-            }));
+            // Prepare questions for PDF generation (include all questions that have images or are essay)
+            console.log('📄 Preparing questions for PDF:', finalTestData.questions);
+            const pdfQuestions = finalTestData.questions
+              .filter((q: any) => q.type === 'essay' || q.imageUrl)
+              .map((q: any) => {
+                console.log('📄 Processing question for PDF:', {
+                  id: q.id,
+                  questionId: q.questionId,
+                  questionText: q.questionText,
+                  title: q.title,
+                  imageUrl: q.imageUrl,
+                  type: q.type
+                });
+                return {
+                  id: q.questionId || q.id,
+                  title: q.questionText || q.title || '',
+                  content: q.content || '',
+                  imageUrl: q.imageUrl || undefined,
+                  type: 'essay' as const, // Treat all as essay for PDF generation
+                  points: q.points || q.marks || 1,
+                  topic: q.topic || undefined,
+                  subtopic: q.subtopic || undefined,
+                  reference: undefined,
+                  difficultyLevel: q.difficultyLevel || 'medium',
+                  createdAt: new Timestamp(0, 0), // Placeholder
+                  updatedAt: new Timestamp(0, 0), // Placeholder
+                };
+              });
+            
+            console.log('📄 Final questions for PDF:', pdfQuestions);
 
-          // Generate PDF
-          examPdfUrl = await ExamPDFService.generateAndUploadExamPDF({
-            title: 'Dru Education',
-            testNumber: formData.testNumber,
-            className: className,
-            date: new Date().toLocaleDateString(),
-            questions: essayQuestions
-          });
+            if (pdfQuestions.length > 0) {
+              // Generate PDF
+              examPdfUrl = await ExamPDFService.generateAndUploadExamPDF({
+                title: 'Dru Education',
+                testNumber: formData.testNumber,
+                className: className,
+                date: new Date().toLocaleDateString(),
+                questions: pdfQuestions
+              });
 
-          console.log('✅ Exam PDF generated and uploaded:', examPdfUrl);
+              console.log('✅ Exam PDF generated and uploaded:', examPdfUrl);
 
-          // Update the test with the PDF URL
-          await TestService.updateTest(testId, { examPdfUrl });
-          
-          console.log('✅ Test updated with PDF URL in database');
-
-        } catch (pdfError) {
-          console.error('❌ Error generating exam PDF:', pdfError);
-          // Don't fail the test creation if PDF generation fails
-          // The test will still be created without the PDF
+              // Update the test with the PDF URL
+              await TestService.updateTest(testId, { examPdfUrl });
+              
+              console.log('✅ Test updated with PDF URL in database');
+            } else {
+              console.log('📄 No questions with images or essay type found, skipping PDF generation');
+            }
+          } catch (pdfError) {
+            console.error('❌ Error generating PDF:', pdfError);
+            // Don't fail the test creation if PDF generation fails
+          }
+        } else {
+          console.log('📄 No essay questions or questions with images found, skipping PDF generation');
         }
       }
 
@@ -862,8 +953,15 @@ export default function CreateTestModal({
       // Save as template if requested
       if (formData.saveAsTemplate) {
         try {
-          console.log('📋 Saving test as template...');
-          await TestTemplateService.createTemplateFromTest({
+          console.log('📋 Saving test as template...', {
+            title: formData.title,
+            teacherId: teacher?.id,
+            teacherName: teacher?.name,
+            subjectId,
+            subjectName,
+            isPublic: formData.templateIsPublic
+          });
+          const templateId = await TestTemplateService.createTemplateFromTest({
             title: formData.title,
             description: formData.description,
             instructions: formData.instructions,
@@ -876,7 +974,7 @@ export default function CreateTestModal({
             totalMarks: finalTestData.totalMarks,
             isPublic: formData.templateIsPublic
           });
-          console.log('✅ Template saved successfully');
+          console.log('✅ Template saved successfully with ID:', templateId);
         } catch (templateError) {
           console.error('❌ Error saving template:', templateError);
           // Don't fail the test creation if template saving fails
@@ -919,16 +1017,16 @@ export default function CreateTestModal({
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center space-x-4">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              Create New Test - Step {currentStep + 1} of {totalSteps}
+              Create New Test - Step {getEffectiveStep(currentStep) + 1} of {effectiveTotalSteps}
             </h2>
             <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
-              <span>Step {currentStep + 1} of {totalSteps}</span>
+              <span>Step {getEffectiveStep(currentStep) + 1} of {effectiveTotalSteps}</span>
               <div className="flex space-x-1">
-                {Array.from({ length: totalSteps }, (_, i) => (
+                {Array.from({ length: effectiveTotalSteps }, (_, i) => (
                   <div
                     key={i}
                     className={`w-2 h-2 rounded-full ${
-                      i + 1 <= currentStep + 1 
+                      i + 1 <= getEffectiveStep(currentStep) + 1 
                         ? 'bg-blue-600' 
                         : 'bg-gray-300 dark:bg-gray-600'
                     }`}
@@ -949,7 +1047,7 @@ export default function CreateTestModal({
         <div className="w-full bg-gray-200 dark:bg-gray-700 h-1">
           <div 
             className="bg-blue-600 h-1 transition-all duration-300"
-            style={{ width: `${((currentStep + 1) / totalSteps) * 100}%` }}
+            style={{ width: `${((getEffectiveStep(currentStep) + 1) / effectiveTotalSteps) * 100}%` }}
           />
         </div>
 
@@ -2641,9 +2739,10 @@ export default function CreateTestModal({
               Cancel
             </button>
             
-            {currentStep < totalSteps ? (
+            {currentStep < 5 ? (
               <button
                 onClick={handleNext}
+                disabled={loadingTemplateData}
                 className="flex items-center space-x-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
               >
                 <span>Next</span>
@@ -2652,13 +2751,13 @@ export default function CreateTestModal({
             ) : (
               <button
                 onClick={handleCreateTest}
-                disabled={isSubmitting}
+                disabled={isSubmitting || loadingTemplateData}
                 className="flex items-center space-x-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:ring-2 focus:ring-green-500 disabled:opacity-50"
               >
-                {isSubmitting ? (
+                {isSubmitting || loadingTemplateData ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                    <span>Creating...</span>
+                    <span>{isSubmitting ? 'Creating...' : 'Loading Template...'}</span>
                   </>
                 ) : (
                   <span>Create Test</span>

@@ -61,19 +61,48 @@ export class TestTemplateService {
   // Get all templates for a teacher
   static async getTemplatesByTeacher(teacherId: string): Promise<TestTemplate[]> {
     try {
-      const q = query(
-        collection(firestore, this.COLLECTIONS.TEMPLATES),
-        where('teacherId', '==', teacherId),
-        orderBy('updatedAt', 'desc')
-      );
-
-      const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      } as TestTemplate));
-    } catch (error) {
+      // Try with orderBy first (requires composite index)
+      try {
+        const q = query(
+          collection(firestore, this.COLLECTIONS.TEMPLATES),
+          where('teacherId', '==', teacherId),
+          orderBy('updatedAt', 'desc')
+        );
+        const querySnapshot = await getDocs(q);
+        return querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        } as TestTemplate));
+      } catch (indexError: any) {
+        // If index error, fall back to fetching without orderBy
+        console.warn('Composite index missing, fetching templates without ordering');
+        const q = query(
+          collection(firestore, this.COLLECTIONS.TEMPLATES),
+          where('teacherId', '==', teacherId)
+        );
+        const querySnapshot = await getDocs(q);
+        const templates = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        } as TestTemplate));
+        
+        // Sort client-side by updatedAt desc
+        return templates.sort((a, b) => {
+          const aTime = a.updatedAt?.toMillis?.() || 0;
+          const bTime = b.updatedAt?.toMillis?.() || 0;
+          return bTime - aTime;
+        });
+      }
+    } catch (error: any) {
       console.error('Error fetching templates:', error);
+      
+      // Check if it's an index error
+      if (error?.code === 'failed-precondition' && error?.message?.includes('index')) {
+        console.warn('Firestore index missing for test_templates. Please deploy indexes.');
+        // Return empty array instead of throwing to prevent app crash
+        return [];
+      }
+      
       throw new Error('Failed to fetch templates');
     }
   }
@@ -81,28 +110,65 @@ export class TestTemplateService {
   // Get public templates (from other teachers)
   static async getPublicTemplates(subjectId?: string): Promise<TestTemplate[]> {
     try {
-      let q = query(
-        collection(firestore, this.COLLECTIONS.TEMPLATES),
-        where('isPublic', '==', true),
-        orderBy('updatedAt', 'desc')
-      );
-
-      if (subjectId) {
-        q = query(
+      // Try with composite query first
+      try {
+        let q = query(
           collection(firestore, this.COLLECTIONS.TEMPLATES),
           where('isPublic', '==', true),
-          where('subjectId', '==', subjectId),
           orderBy('updatedAt', 'desc')
         );
-      }
 
-      const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      } as TestTemplate));
-    } catch (error) {
+        if (subjectId) {
+          q = query(
+            collection(firestore, this.COLLECTIONS.TEMPLATES),
+            where('isPublic', '==', true),
+            where('subjectId', '==', subjectId),
+            orderBy('updatedAt', 'desc')
+          );
+        }
+
+        const querySnapshot = await getDocs(q);
+        return querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        } as TestTemplate));
+      } catch (indexError: any) {
+        // If index error, fall back to fetching all public templates and filtering client-side
+        console.warn('Composite index missing, fetching public templates without ordering/filtering');
+        
+        const q = query(
+          collection(firestore, this.COLLECTIONS.TEMPLATES),
+          where('isPublic', '==', true)
+        );
+        
+        const querySnapshot = await getDocs(q);
+        let templates = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        } as TestTemplate));
+        
+        // Filter by subject client-side if needed
+        if (subjectId) {
+          templates = templates.filter(template => template.subjectId === subjectId);
+        }
+        
+        // Sort client-side by updatedAt desc
+        return templates.sort((a, b) => {
+          const aTime = a.updatedAt?.toMillis?.() || 0;
+          const bTime = b.updatedAt?.toMillis?.() || 0;
+          return bTime - aTime;
+        });
+      }
+    } catch (error: any) {
       console.error('Error fetching public templates:', error);
+      
+      // Check if it's an index error
+      if (error?.code === 'failed-precondition' && error?.message?.includes('index')) {
+        console.warn('Firestore index missing for test_templates. Please deploy indexes.');
+        // Return empty array instead of throwing to prevent app crash
+        return [];
+      }
+      
       throw new Error('Failed to fetch public templates');
     }
   }
