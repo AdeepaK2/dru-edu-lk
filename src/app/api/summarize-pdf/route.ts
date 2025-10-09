@@ -9,17 +9,17 @@ export interface PDFSummary {
 }
 
 // Initialize Gemini AI with server-side environment variable
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_KEY || '');
 const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
 export async function POST(request: NextRequest) {
   try {
     const { text, title } = await request.json();
 
-    console.log('API Key check:', !!process.env.GEMINI_API_KEY);
-    console.log('API Key length:', process.env.GEMINI_API_KEY?.length);
+    console.log('API Key check:', !!process.env.GEMINI_KEY);
+    console.log('API Key length:', process.env.GEMINI_KEY?.length);
 
-    if (!process.env.GEMINI_API_KEY) {
+    if (!process.env.GEMINI_KEY) {
       console.error('Gemini API key not configured on server');
       return NextResponse.json(
         { error: 'Gemini API key not configured on server' },
