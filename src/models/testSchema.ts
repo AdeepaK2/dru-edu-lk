@@ -295,3 +295,32 @@ export interface QuestionBankSelection {
     hard: number;
   };
 }
+
+// Test template for reusing test configurations
+export interface TestTemplate {
+  id: string;
+  title: string;
+  description?: string;
+  instructions?: string;
+
+  // Ownership
+  teacherId: string;
+  teacherName: string;
+  subjectId: string;
+  subjectName: string;
+
+  // Template configuration (same as TestConfig but without dates)
+  config: TestConfig;
+
+  // Questions (same structure as Test.questions)
+  questions: TestQuestion[];
+  totalMarks: number;
+
+  // Template metadata
+  isPublic?: boolean; // Can be used by other teachers
+  usageCount?: number; // How many times this template has been used
+
+  // Timestamps
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}

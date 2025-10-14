@@ -54,6 +54,22 @@ import {
 } from '@/apiservices/studyMaterialFirestoreService';
 import { StudyMaterialDisplayData, StudyMaterialData } from '@/models/studyMaterialSchema';
 import StudyMaterialUploadModal from '@/components/modals/StudyMaterialUploadModal';
+import dynamic from 'next/dynamic';
+
+// Dynamically import PDFViewer to avoid SSR issues
+const PDFViewer = dynamic(() => import('@/components/PDFViewer'), {
+  ssr: false,
+  loading: () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden">
+        <div className="flex items-center justify-center h-64">
+          <div className="w-8 h-8 border-t-2 border-blue-600 border-solid rounded-full animate-spin"></div>
+          <span className="ml-3 text-gray-600 dark:text-gray-400">Loading PDF Viewer...</span>
+        </div>
+      </div>
+    </div>
+  )
+});
 import AttendanceTab from '@/components/teacher/AttendanceTab';
 import ZoomLinkModal from '@/components/modals/ZoomLinkModal';
 import RemarkModal from '@/components/teacher/RemarkModal';
@@ -602,6 +618,8 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
   const [newFilesToAdd, setNewFilesToAdd] = useState<any[]>([]);
   const [filesToRemove, setFilesToRemove] = useState<string[]>([]);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [pdfViewerOpen, setPdfViewerOpen] = useState(false);
+  const [currentPdfMaterial, setCurrentPdfMaterial] = useState<any>(null);
 
   // Load class data and lessons
   useEffect(() => {
@@ -1177,25 +1195,40 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                           <ExternalLink className="w-4 h-4" />
                         </Button>
                       ) : (
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => {
-                            if (material.fileUrl) {
-                              const link = document.createElement('a');
-                              link.href = material.fileUrl;
-                              link.download = material.title || 'download';
-                              link.target = '_blank';
-                              document.body.appendChild(link);
-                              link.click();
-                              document.body.removeChild(link);
-                              incrementDownloadCount(material.id);
-                            }
-                          }}
-                          className="flex items-center space-x-1"
-                        >
-                          <Download className="w-4 h-4" />
-                        </Button>
+                        <>
+                          {material.fileType?.toLowerCase() === 'pdf' && (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => {
+                                setCurrentPdfMaterial(material);
+                                setPdfViewerOpen(true);
+                              }}
+                              className="flex items-center space-x-1"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                          )}
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              if (material.fileUrl) {
+                                const link = document.createElement('a');
+                                link.href = material.fileUrl;
+                                link.download = material.title || 'download';
+                                link.target = '_blank';
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                                incrementDownloadCount(material.id);
+                              }
+                            }}
+                            className="flex items-center space-x-1"
+                          >
+                            <Download className="w-4 h-4" />
+                          </Button>
+                        </>
                       )}
                       <Button 
                         variant="outline" 
@@ -1963,6 +1996,18 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
             </div>
           </div>
         </div>
+      )}
+
+      {/* PDF Viewer Modal */}
+      {pdfViewerOpen && currentPdfMaterial && (
+        <PDFViewer
+          url={currentPdfMaterial.fileUrl}
+          title={currentPdfMaterial.title}
+          onClose={() => {
+            setPdfViewerOpen(false);
+            setCurrentPdfMaterial(null);
+          }}
+        />
       )}
     </>
   );

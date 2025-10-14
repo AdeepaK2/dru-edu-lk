@@ -82,36 +82,35 @@ export default function EnrollmentPage() {
   // Map of teacherId -> teacherName
   const [teacherNames, setTeacherNames] = useState<Record<string, string>>({});
 
-  // Fetch available classes (after authentication)
+  // Fetch available classes with real-time updates (after authentication)
   useEffect(() => {
-    const fetchClasses = async () => {
-      // Wait for authentication to complete
-      if (authLoading) return;
-      
-      try {
-        console.log('Fetching classes...');
-        const classesQuery = query(collection(firestore, 'classes'));
-        const querySnapshot = await getDocs(classesQuery);
-        const classesData = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as ClassDocument[];
-        
-        console.log('Found classes:', classesData.length);
+    // Wait for authentication to complete
+    if (authLoading) return;
+    
+    console.log('Setting up real-time class subscription for enrollment...');
+    
+    // Subscribe to real-time class updates
+    const unsubscribe = ClassFirestoreService.subscribeToClasses(
+      (classesData: ClassDocument[]) => {
+        console.log('Received class updates:', classesData.length);
         
         // Filter only active classes
         const activeClasses = classesData.filter((cls: ClassDocument) => cls.status === 'Active');
         console.log('Active classes:', activeClasses.length);
         setClasses(activeClasses);
-        
-      } catch (error) {
-        console.error('Error fetching classes:', error);
-      } finally {
+        setLoading(false);
+      },
+      (error: Error) => {
+        console.error('Error in class subscription:', error);
         setLoading(false);
       }
-    };
+    );
 
-    fetchClasses();
+    // Cleanup subscription on unmount
+    return () => {
+      console.log('Cleaning up enrollment class subscription');
+      unsubscribe();
+    };
   }, [authLoading]); // Depend on authLoading to run after authentication
 
   // Load teacher names whenever classes change

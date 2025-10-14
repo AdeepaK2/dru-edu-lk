@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { getEnrollmentsByStudent } from '@/services/studentEnrollmentService';
 import { getStudyMaterialsByClass, getStudyMaterialsByClassGrouped, markMaterialCompleted, unmarkMaterialCompleted } from '@/apiservices/studyMaterialFirestoreService';
+import { usePDFViewer } from '@/components/student/StudentLayout';
 
 interface ClassWithProgress {
   id: string;
@@ -67,6 +68,7 @@ export default function StudentStudyPage() {
   const [materialLoading, setMaterialLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
+  const { openPDFViewer } = usePDFViewer();
 
   useEffect(() => {
     if (!loading && !student) {
@@ -136,6 +138,11 @@ export default function StudentStudyPage() {
       setGroupedMaterials(groupedMats);
       // Also keep flat materials for existing functionality
       const flatMaterials = groupedMats.flatMap(group => group.materials);
+      console.log('Loaded materials:', flatMaterials.map(m => ({
+        title: m.title,
+        fileType: m.fileType,
+        fileUrl: m.fileUrl ? 'present' : 'missing'
+      })));
       setMaterials(flatMaterials);
       setSelectedClass(classId);
     } catch (error) {
@@ -203,8 +210,21 @@ export default function StudentStudyPage() {
   };
 
   const viewMaterial = (material: StudyMaterial) => {
-    if (material.fileUrl) {
+    console.log('viewMaterial called with:', {
+      title: material.title,
+      fileType: material.fileType,
+      fileUrl: material.fileUrl,
+      hasFileUrl: !!material.fileUrl
+    });
+
+    if (material.fileType?.toLowerCase() === 'pdf' && material.fileUrl) {
+      console.log('Opening PDF viewer for:', material.title);
+      openPDFViewer({ title: material.title, fileUrl: material.fileUrl });
+    } else if (material.fileUrl) {
+      console.log('Opening external link for:', material.title);
       window.open(material.fileUrl, '_blank');
+    } else {
+      console.log('No fileUrl found for material:', material.title);
     }
   };
 
@@ -594,7 +614,16 @@ export default function StudentStudyPage() {
                                 ) : (
                                   <>
                                     <Button
-                                      onClick={() => viewMaterial(material)}
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        console.log('Eye button clicked for material:', material);
+                                        try {
+                                          viewMaterial(material);
+                                        } catch (error) {
+                                          console.error('Error calling viewMaterial:', error);
+                                        }
+                                      }}
                                       variant="outline"
                                       size="sm"
                                     >
@@ -801,6 +830,8 @@ export default function StudentStudyPage() {
           </CardContent>
         </Card>
       )}
-    </div>
+
+      </div>
+   
   );
 }
