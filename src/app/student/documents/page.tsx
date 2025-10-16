@@ -133,38 +133,54 @@ export default function StudentDocumentsPage() {
   if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="w-8 h-8 border-t-2 border-green-600 rounded-full animate-spin"></div>
+        <div className="w-16 h-16 border-t-4 border-black rounded-full animate-spin"></div>
       </div>
     );
   }
 
   if (!student) {
     return (
-      <div className="p-6 bg-red-50 dark:bg-red-900/20 rounded-lg">
-        <p className="text-red-600 dark:text-red-400">
-          You need to be logged in to access this page.
+      <div className="bg-gradient-to-r from-red-400 via-yellow-400 to-blue-400 rounded-3xl shadow-2xl border-4 border-black p-8 text-center">
+        <div className="text-6xl mb-4">🚫</div>
+        <h2 className="text-2xl font-black text-black mb-2">Access Denied</h2>
+        <p className="text-black font-bold">
+          You need to be logged in to access this magical page! ✨
         </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
-      {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          Student Documents
-        </h1>
-      </div>
-
-      {/* Document Upload Section */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-        <div className="flex items-center space-x-3 mb-6">
-          <FileCheck className="w-5 h-5 text-green-600" />
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Required Documents</h2>
+    <div className="min-h-screen bg-gradient-to-br from-red-400 via-yellow-400 to-blue-400 p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Mickey Mouse Ears Header */}
+        <div className="text-center mb-8">
+          <div className="flex justify-center items-center space-x-8 mb-4">
+            <div className="w-20 h-20 bg-black rounded-full border-4 border-black shadow-lg"></div>
+            <div className="w-32 h-32 bg-black rounded-full border-4 border-black shadow-lg"></div>
+            <div className="w-20 h-20 bg-black rounded-full border-4 border-black shadow-lg"></div>
+          </div>
+          <h1 className="text-5xl font-black text-white mb-2 drop-shadow-lg">
+            📄 Student Documents
+          </h1>
+          <p className="text-xl text-black font-bold">
+            Upload your magical documents here! ✨
+          </p>
         </div>
 
-        <div className="space-y-6">
+        {/* Document Upload Section */}
+        <div className="bg-white rounded-3xl shadow-2xl border-4 border-black overflow-hidden">
+          <div className="bg-gradient-to-r from-red-500 to-yellow-500 text-white p-6 pb-8 border-b-4 border-black">
+            <div className="flex items-center space-x-4">
+              <span className="text-4xl">📋</span>
+              <div>
+                <h2 className="text-3xl font-black">Required Documents</h2>
+                <p className="text-red-100 font-bold text-lg">Complete your enrollment with these magical papers!</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-8">
           {/* Document Upload Grid */}
           <DocumentUploadGrid
             documents={student?.documents || []}
@@ -218,16 +234,18 @@ export default function StudentDocumentsPage() {
             loading={loading.document}
             disabled={loading.document}
           />
+          </div>
 
           {/* Success Message */}
           {allDocumentsVerified() && (
-            <div className="bg-green-50 dark:bg-green-900/30 p-4 rounded-lg border border-green-100 dark:border-green-800">
+            <div className="bg-gradient-to-r from-green-400 to-emerald-500 rounded-2xl border-4 border-black p-6 shadow-lg">
               <div className="flex items-start">
-                <Check className="w-5 h-5 text-green-500 dark:text-green-400 mr-3 mt-0.5" />
+                <span className="text-4xl mr-4">✅</span>
                 <div>
-                  <h4 className="text-sm font-medium text-green-800 dark:text-green-300 mb-1">Documents Verified</h4>
-                  <p className="text-xs text-green-600 dark:text-green-400">
-                    All your required documents have been verified and approved by our admin team. You can download them using the download buttons above.
+                  <h4 className="text-xl font-black text-white mb-2">🎉 Documents Verified!</h4>
+                  <p className="text-green-100 font-bold text-lg">
+                    All your required documents have been verified and approved by our magical admin team! 
+                    You can download them using the download buttons above. ✨
                   </p>
                 </div>
               </div>
@@ -235,14 +253,14 @@ export default function StudentDocumentsPage() {
           )}
           
           {/* Important Information */}
-          <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg border border-blue-100 dark:border-blue-800">
+          <div className="bg-gradient-to-r from-blue-400 to-purple-500 rounded-2xl border-4 border-black p-6 shadow-lg">
             <div className="flex items-start">
-              <Shield className="w-5 h-5 text-blue-500 dark:text-blue-400 mr-3 mt-0.5" />
+              <span className="text-4xl mr-4">🛡️</span>
               <div>
-                <h4 className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-1">Important Information</h4>
-                <p className="text-xs text-blue-600 dark:text-blue-400">
+                <h4 className="text-xl font-black text-white mb-2">Important Magical Information</h4>
+                <p className="text-blue-100 font-bold text-lg">
                   These documents are required for your enrollment. Please upload clear, legible copies in PDF, DOC, or image format. 
-                  Our admin team will verify your documents within 1-2 business days.
+                  Our magical admin team will verify your documents within 1-2 business days! 🪄
                 </p>
               </div>
             </div>

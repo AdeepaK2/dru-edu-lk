@@ -265,10 +265,20 @@ export default function StudentStudyPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="w-8 h-8 border-t-2 border-blue-600 border-solid rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+      <div className="min-h-screen bg-gradient-to-br from-red-400 via-yellow-400 to-blue-400 flex items-center justify-center">
+        <div className="bg-gradient-to-r from-red-500 via-yellow-500 to-blue-500 rounded-3xl shadow-2xl border-4 border-black p-12 text-center">
+          {/* Mickey Mouse Ears */}
+          <div className="absolute -top-4 -left-4 w-12 h-12 bg-black rounded-full"></div>
+          <div className="absolute -top-4 -right-4 w-12 h-12 bg-black rounded-full"></div>
+
+          <div className="text-8xl mb-6">📚</div>
+          <div className="w-12 h-12 border-t-4 border-black border-solid rounded-full animate-spin mx-auto mb-6"></div>
+          <h2 className="text-3xl font-black text-black mb-4">
+            Loading Magical Study Materials
+          </h2>
+          <p className="text-black font-bold text-lg">
+            Getting your learning adventures ready! ✨
+          </p>
         </div>
       </div>
     );
@@ -289,549 +299,573 @@ export default function StudentStudyPage() {
     const currentClass = classes.find(c => c.id === selectedClass);
 
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="min-h-screen bg-gradient-to-br from-red-400 via-yellow-400 to-blue-400 p-6">
         <div className="mb-6">
-          <Button 
+          <Button
             onClick={() => setSelectedClass(null)}
-            variant="outline"
-            className="mb-4"
+            className="mb-4 bg-gradient-to-r from-gray-500 to-slate-500 hover:from-gray-600 hover:to-slate-600 text-white px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black flex items-center space-x-2"
           >
-            ← Back to Dashboard
+            <span>← Back to Magical Dashboard</span>
           </Button>
-          
-          <div className="flex justify-between items-center mb-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                {currentClass?.name}
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400">{currentClass?.subject}</p>
-            </div>
-            <div className="text-right">
-              <div className="text-2xl font-bold text-blue-600">
-                {currentClass?.completedMaterials}/{currentClass?.totalMaterials}
+
+          {/* Class Header */}
+          <div className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-3xl shadow-2xl border-4 border-black p-8 mb-6 relative overflow-hidden">
+            {/* Mickey Mouse Ears */}
+            <div className="absolute -top-4 -left-4 w-12 h-12 bg-black rounded-full"></div>
+            <div className="absolute -top-4 -right-4 w-12 h-12 bg-black rounded-full"></div>
+
+            <div className="flex justify-between items-center relative z-10">
+              <div>
+                <h1 className="text-4xl font-black text-black mb-2 flex items-center">
+                  <span className="text-5xl mr-2">🏫</span>
+                  {currentClass?.name}
+                </h1>
+                <p className="text-black font-bold text-lg">{currentClass?.subject}</p>
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Materials Completed</div>
+              <div className="text-right">
+                <div className="text-4xl font-black text-black">
+                  {currentClass?.completedMaterials}/{currentClass?.totalMaterials}
+                </div>
+                <div className="text-lg text-black font-bold">Magical Materials Completed</div>
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Overall Progress</p>
-                    <p className="text-2xl font-bold">{Math.round(currentClass?.progress || 0)}%</p>
-                  </div>
-                  <TrendingUp className="w-8 h-8 text-blue-500" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div className="bg-gradient-to-r from-blue-400 to-cyan-400 rounded-3xl shadow-2xl border-4 border-black p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-black text-black mb-2">
+                    Overall Progress
+                  </p>
+                  <p className="text-3xl font-black text-black">{Math.round(currentClass?.progress || 0)}%</p>
                 </div>
-                <div className="mt-2 bg-gray-200 rounded-full h-2 dark:bg-gray-700">
-                  <div 
-                    className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
-                    style={{ width: `${currentClass?.progress || 0}%` }}
-                  ></div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Required Materials</p>
-                    <p className="text-2xl font-bold">{Math.round(currentClass?.requiredProgress || 0)}%</p>
-                  </div>
-                  <Award className="w-8 h-8 text-green-500" />
-                </div>
-                <div className="mt-2 bg-gray-200 rounded-full h-2 dark:bg-gray-700">
-                  <div 
-                    className="bg-green-600 h-2 rounded-full transition-all duration-300" 
-                    style={{ width: `${currentClass?.requiredProgress || 0}%` }}
-                  ></div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">New This Week</p>
-                    <p className="text-2xl font-bold">{currentClass?.recentMaterials || 0}</p>
-                  </div>
-                  <Clock className="w-8 h-8 text-orange-500" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Search and Filter */}
-          <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="flex-1">
-              <input
-                type="text"
-                placeholder="Search materials..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-              />
+                <div className="text-4xl">📊</div>
+              </div>
+              <div className="mt-4 bg-black rounded-full h-4 border-2 border-black">
+                <div
+                  className="bg-gradient-to-r from-blue-400 to-cyan-400 h-4 rounded-full transition-all duration-300 border-2 border-black"
+                  style={{ width: `${currentClass?.progress || 0}%` }}
+                ></div>
+              </div>
             </div>
-            <div>
-              <select
-                value={filterType}
-                onChange={(e) => setFilterType(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-              >
-                <option value="all">All Materials</option>
-                <option value="required">Required Only</option>
-                <option value="completed">Completed</option>
-                <option value="pending">Pending</option>
-                <option value="pdf">PDF Files</option>
-                <option value="video">Videos</option>
-                <option value="link">Links</option>
-                <option value="image">Images</option>
-              </select>
+
+            <div className="bg-gradient-to-r from-green-400 to-emerald-400 rounded-3xl shadow-2xl border-4 border-black p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-black text-black mb-2">
+                    Required Materials
+                  </p>
+                  <p className="text-3xl font-black text-black">{Math.round(currentClass?.requiredProgress || 0)}%</p>
+                </div>
+                <div className="text-4xl">🏆</div>
+              </div>
+              <div className="mt-4 bg-black rounded-full h-4 border-2 border-black">
+                <div
+                  className="bg-gradient-to-r from-green-400 to-lime-400 h-4 rounded-full transition-all duration-300 border-2 border-black"
+                  style={{ width: `${currentClass?.requiredProgress || 0}%` }}
+                ></div>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-r from-orange-400 to-red-400 rounded-3xl shadow-2xl border-4 border-black p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-black text-black mb-2">
+                    New This Week
+                  </p>
+                  <p className="text-3xl font-black text-black">{currentClass?.recentMaterials || 0}</p>
+                </div>
+                <div className="text-4xl">🕒</div>
+              </div>
             </div>
           </div>
-        </div>
 
-        {materialLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="w-8 h-8 border-t-2 border-blue-600 border-solid rounded-full animate-spin"></div>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {groupedMaterials.map((group: any) => {
-              const isExpanded = expandedGroups.has(group.id);
-              const completedCount = group.materials.filter((m: any) => m.completedBy?.includes(student?.id || '')).length;
-              const totalCount = group.materials.length;
-              const isGroupCompleted = completedCount === totalCount;
-              
-              return (
-                <Card key={group.id} className={`transition-all ${isGroupCompleted ? 'border-green-200 bg-green-50 dark:bg-green-900/10' : ''}`}>
-                  <CardHeader 
-                    className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 pb-4"
-                    onClick={() => toggleGroupExpansion(group.id)}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start space-x-4 flex-1">
-                        <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                          {group.isGroup ? (
-                            <div className="text-blue-600 font-bold text-sm">
-                              {group.totalFiles}
-                            </div>
-                          ) : (
-                            getFileIcon(group.materials[0]?.fileType || 'other')
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <CardTitle className="flex items-center space-x-2 mb-2">
-                            <span className="truncate">{group.groupTitle || group.materials[0]?.title}</span>
-                            {isGroupCompleted && (
-                              <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
-                            )}
-                            {isExpanded ? (
-                              <ChevronUp className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                            ) : (
-                              <ChevronDown className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                            )}
-                          </CardTitle>
-                          
-                          {/* Display description from the first material (they all have the same description) */}
-                          {group.materials[0]?.description && (
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                              {group.materials[0].description}
-                            </p>
-                          )}
-                          
-                          <div className="flex items-center space-x-2 mb-2">
-                            {group.isGroup && (
-                              <Badge variant="secondary" className="text-xs">
-                                {group.totalFiles} files
-                              </Badge>
-                            )}
-                            {group.fileTypes.map((fileType: string) => (
-                              <Badge key={fileType} variant="secondary" className="text-xs">
-                                {fileType.toUpperCase()}
-                              </Badge>
-                            ))}
-                            {group.isRequired && (
-                              <Badge variant="destructive" className="text-xs">Required</Badge>
-                            )}
-                            {group.lessonName && (
-                              <Badge variant="secondary" className="text-xs">
-                                {group.lessonName}
-                              </Badge>
-                            )}
-                          </div>
-                          
-                          <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                            {new Date(group.uploadedAt?.toDate ? group.uploadedAt.toDate() : group.uploadedAt).toLocaleDateString()}
-                          </div>
-                          
-                          {/* Progress bar for groups */}
-                          {group.isGroup && (
-                            <div className="mt-2">
-                              <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400 mb-1">
-                                <span>Progress</span>
-                                <span>{completedCount}/{totalCount}</span>
-                              </div>
-                              <div className="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
-                                <div 
-                                  className={`h-2 rounded-full transition-all duration-300 ${
-                                    isGroupCompleted ? 'bg-green-600' : 'bg-blue-600'
-                                  }`}
-                                  style={{ width: `${(completedCount / totalCount) * 100}%` }}
-                                ></div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <div className="text-right">
-                        {!group.isGroup ? (
-                          /* Single file actions */
-                          <div className="flex space-x-2">
-                            <Button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleMaterialCompletion(group.materials[0]);
-                              }}
-                              variant={group.materials[0].completedBy?.includes(student?.id || '') ? "success" : "outline"}
-                              size="sm"
-                              className={group.materials[0].completedBy?.includes(student?.id || '')
-                                ? "bg-green-600 hover:bg-green-700 text-white" 
-                                : "border-green-600 text-green-600 hover:bg-green-50"
-                              }
-                            >
-                              {group.materials[0].completedBy?.includes(student?.id || '') ? (
-                                <CheckCircle className="w-4 h-4" />
+          {/* Materials Section */}
+          <div className="mb-6">
+            <h2 className="text-3xl font-black text-black mb-6 flex items-center">
+              <span className="text-4xl mr-3">📖</span>
+              Magical Study Materials
+              <span className="ml-3 text-2xl">✨</span>
+            </h2>
+
+            {/* Search and Filter */}
+            <div className="flex flex-col md:flex-row gap-4 mb-6">
+              <div className="flex-1">
+                <input
+                  type="text"
+                  placeholder="🔍 Search magical materials..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full px-6 py-3 border-4 border-black rounded-3xl focus:ring-4 focus:ring-yellow-400 focus:border-black bg-white text-black font-bold text-lg placeholder-black/60"
+                />
+              </div>
+              <div>
+                <select
+                  value={filterType}
+                  onChange={(e) => setFilterType(e.target.value)}
+                  className="px-6 py-3 border-4 border-black rounded-3xl focus:ring-4 focus:ring-yellow-400 focus:border-black bg-white text-black font-bold text-lg"
+                >
+                  <option value="all">All Materials ✨</option>
+                  <option value="required">Required Only 🏆</option>
+                  <option value="completed">Completed 🎉</option>
+                  <option value="pending">Pending 📝</option>
+                  <option value="pdf">PDF Files 📄</option>
+                  <option value="video">Videos 🎥</option>
+                  <option value="link">Links 🔗</option>
+                  <option value="image">Images 🖼️</option>
+                </select>
+              </div>
+            </div>
+
+            {materialLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="bg-gradient-to-r from-blue-400 to-purple-400 rounded-3xl shadow-2xl border-4 border-black p-8">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-8 h-8 border-4 border-black border-t-transparent rounded-full animate-spin"></div>
+                    <span className="text-2xl font-black text-black">Loading Magical Materials...</span>
+                  </div>
+                </div>
+              </div>
+            ) : groupedMaterials.length === 0 ? (
+              <div className="bg-gradient-to-r from-yellow-200 via-orange-200 to-red-200 rounded-3xl shadow-2xl border-4 border-black p-12 text-center">
+                <div className="text-6xl mb-6">📚</div>
+                <h3 className="text-2xl font-black text-black mb-4">
+                  No Materials Found
+                </h3>
+                <p className="text-black font-bold text-lg">
+                  No study materials match your search. Try adjusting your filters!
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {groupedMaterials.map((group: any) => {
+                  const isExpanded = expandedGroups.has(group.id);
+                  const completedCount = group.materials.filter((m: any) => m.completedBy?.includes(student?.id || '')).length;
+                  const totalCount = group.materials.length;
+                  const isGroupCompleted = completedCount === totalCount;
+
+                  return (
+                    <div key={group.id} className={`bg-gradient-to-r ${isGroupCompleted ? 'from-green-400 to-emerald-400' : 'from-indigo-400 via-purple-400 to-pink-400'} rounded-3xl shadow-2xl border-4 border-black overflow-hidden hover:scale-105 transition-all`}>
+                      <div
+                        className="p-6 cursor-pointer hover:bg-black/10 transition-all"
+                        onClick={() => toggleGroupExpansion(group.id)}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start space-x-4 flex-1">
+                            <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center flex-shrink-0 border-4 border-black">
+                              {group.isGroup ? (
+                                <div className="text-black font-black text-xl">
+                                  {group.totalFiles}
+                                </div>
                               ) : (
-                                <Circle className="w-4 h-4" />
+                                <div className="text-3xl">
+                                  {group.materials[0]?.fileType === 'pdf' ? '📄' :
+                                   group.materials[0]?.fileType === 'video' ? '🎥' :
+                                   group.materials[0]?.fileType === 'link' ? '🔗' :
+                                   group.materials[0]?.fileType === 'image' ? '🖼️' : '📚'}
+                                </div>
                               )}
-                            </Button>
-                            
-                            {group.materials[0].fileType === 'link' ? (
-                              <Button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  openLink(group.materials[0].externalUrl || '');
-                                }}
-                                size="sm"
-                                className="bg-blue-600 hover:bg-blue-700"
-                              >
-                                <ExternalLink className="w-4 h-4" />
-                              </Button>
-                            ) : (
-                              <Button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  viewMaterial(group.materials[0]);
-                                }}
-                                variant="outline"
-                                size="sm"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </Button>
-                            )}
-                          </div>
-                        ) : (
-                          /* Group indicator */
-                          <div className="text-center">
-                            <div className="text-lg font-bold text-gray-900 dark:text-white">
-                              {completedCount}/{totalCount}
                             </div>
-                            <div className="text-xs text-gray-500">completed</div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </CardHeader>
-                  
-                  {/* Collapsible content */}
-                  {isExpanded && (
-                    <CardContent className="pt-0">
-                      <div className="space-y-3 border-t border-gray-100 dark:border-gray-700 pt-4">
-                        {group.materials.map((material: any) => {
-                          const isCompleted = material.completedBy?.includes(student?.id || '') || false;
-                          
-                          return (
-                            <div key={material.id} className={`flex items-center justify-between p-3 border rounded-lg dark:border-gray-700 transition-colors ${
-                              isCompleted 
-                                ? 'border-green-200 bg-green-50 dark:bg-green-900/20 dark:border-green-800' 
-                                : 'border-gray-200 hover:border-gray-300 dark:hover:border-gray-600'
-                            }`}>
-                              <div className="flex items-center space-x-3 flex-1">
-                                <div className="w-8 h-8 bg-white dark:bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0 border">
-                                  {getFileIcon(material.fileType)}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center space-x-2 mb-1">
-                                    {isCompleted && (
-                                      <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
-                                    )}
-                                    <h4 className={`font-medium truncate ${
-                                      isCompleted 
-                                        ? 'text-green-700 dark:text-green-400' 
-                                        : 'text-gray-900 dark:text-white'
-                                    }`}>
-                                      {material.title}
-                                    </h4>
-                                  </div>
-                                  <div className="text-xs text-gray-500 dark:text-gray-400">
-                                    {material.formattedFileSize || '2.3 MB'} • {material.fileType.toUpperCase()}
-                                  </div>
-                                </div>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-2xl font-black text-black mb-2 flex items-center">
+                                <span className="truncate">{group.groupTitle || group.materials[0]?.title}</span>
+                                {isGroupCompleted && (
+                                  <span className="ml-2 text-2xl">🎉</span>
+                                )}
+                                <span className="ml-2 text-xl">
+                                  {isExpanded ? '🔽' : '▶️'}
+                                </span>
+                              </h3>
+
+                              {group.materials[0]?.description && (
+                                <p className="text-black font-bold text-lg mb-3">
+                                  {group.materials[0].description}
+                                </p>
+                              )}
+
+                              <div className="flex items-center space-x-3 mb-3">
+                                {group.isGroup && (
+                                  <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-black bg-white text-black border-2 border-black">
+                                    {group.totalFiles} files 📁
+                                  </span>
+                                )}
+                                {group.fileTypes.map((fileType: string) => (
+                                  <span key={fileType} className="inline-flex items-center px-4 py-2 rounded-full text-sm font-black bg-white text-black border-2 border-black">
+                                    {fileType.toUpperCase()}
+                                  </span>
+                                ))}
+                                {group.isRequired && (
+                                  <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-black bg-red-400 text-white border-2 border-black">
+                                    Required 🏆
+                                  </span>
+                                )}
+                                {group.lessonName && (
+                                  <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-black bg-blue-400 text-white border-2 border-black">
+                                    {group.lessonName}
+                                  </span>
+                                )}
                               </div>
-                              
-                              <div className="flex items-center space-x-2 flex-shrink-0">
-                                {/* Completion Toggle Button */}
+
+                              <div className="text-black font-bold text-lg mb-3">
+                                📅 {new Date(group.uploadedAt?.toDate ? group.uploadedAt.toDate() : group.uploadedAt).toLocaleDateString()}
+                              </div>
+
+                              {group.isGroup && (
+                                <div className="mt-4">
+                                  <div className="flex justify-between text-lg mb-2">
+                                    <span className="font-black text-black">Progress</span>
+                                    <span className="font-black text-black">{completedCount}/{totalCount}</span>
+                                  </div>
+                                  <div className="bg-black rounded-full h-6 border-2 border-black">
+                                    <div
+                                      className="bg-gradient-to-r from-yellow-400 to-orange-400 h-6 rounded-full transition-all duration-300 border-2 border-black"
+                                      style={{ width: `${(completedCount / totalCount) * 100}%` }}
+                                    ></div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="text-right ml-4">
+                            {!group.isGroup ? (
+                              <div className="flex space-x-3">
                                 <Button
-                                  onClick={() => toggleMaterialCompletion(material)}
-                                  variant={isCompleted ? "success" : "outline"}
-                                  size="sm"
-                                  className={isCompleted
-                                    ? "bg-green-600 hover:bg-green-700 text-white" 
-                                    : "border-green-600 text-green-600 hover:bg-green-50"
-                                  }
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleMaterialCompletion(group.materials[0]);
+                                  }}
+                                  className={`px-4 py-2 rounded-full font-black text-sm border-2 border-black transform hover:scale-105 transition-all ${
+                                    group.materials[0].completedBy?.includes(student?.id || '')
+                                      ? 'bg-green-400 text-white hover:bg-green-500'
+                                      : 'bg-yellow-400 text-black hover:bg-yellow-500'
+                                  }`}
                                 >
-                                  {isCompleted ? (
-                                    <CheckCircle className="w-4 h-4" />
-                                  ) : (
-                                    <Circle className="w-4 h-4" />
-                                  )}
+                                  {group.materials[0].completedBy?.includes(student?.id || '') ? '✓ Completed' : 'Mark Complete'}
                                 </Button>
 
-                                {/* Action Button */}
-                                {material.fileType === 'link' ? (
+                                {group.materials[0].fileType === 'link' ? (
                                   <Button
-                                    onClick={() => openLink(material.externalUrl || '')}
-                                    size="sm"
-                                    className="bg-blue-600 hover:bg-blue-700"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      openLink(group.materials[0].externalUrl || '');
+                                    }}
+                                    className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-4 py-2 rounded-full font-black text-sm transform hover:scale-105 transition-all border-2 border-black"
                                   >
-                                    <ExternalLink className="w-4 h-4" />
+                                    🔗 Open Link
                                   </Button>
                                 ) : (
                                   <>
                                     <Button
                                       onClick={(e) => {
-                                        e.preventDefault();
                                         e.stopPropagation();
-                                        console.log('Eye button clicked for material:', material);
-                                        try {
-                                          viewMaterial(material);
-                                        } catch (error) {
-                                          console.error('Error calling viewMaterial:', error);
-                                        }
+                                        viewMaterial(group.materials[0]);
                                       }}
-                                      variant="outline"
-                                      size="sm"
+                                      className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-4 py-2 rounded-full font-black text-sm transform hover:scale-105 transition-all border-2 border-black"
                                     >
-                                      <Eye className="w-4 h-4" />
+                                      👁️ View
                                     </Button>
                                     <Button
-                                      onClick={() => downloadMaterial(material)}
-                                      variant="outline"
-                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        downloadMaterial(group.materials[0]);
+                                      }}
+                                      className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-4 py-2 rounded-full font-black text-sm transform hover:scale-105 transition-all border-2 border-black"
                                     >
-                                      <Download className="w-4 h-4" />
+                                      ⬇️ Download
                                     </Button>
                                   </>
                                 )}
                               </div>
-                            </div>
-                          );
-                        })}
+                            ) : (
+                              <div className="text-center">
+                                <div className="text-3xl font-black text-black">
+                                  {completedCount}/{totalCount}
+                                </div>
+                                <div className="text-lg text-black font-bold">completed</div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    </CardContent>
-                  )}
-                </Card>
-              );
-            })}
+
+                      {isExpanded && (
+                        <div className="border-t-4 border-black bg-white/90 p-6">
+                          <div className="space-y-4">
+                            {group.materials.map((material: any) => {
+                              const isCompleted = material.completedBy?.includes(student?.id || '') || false;
+
+                              return (
+                                <div key={material.id} className={`flex items-center justify-between p-4 border-4 ${isCompleted ? 'border-green-400 bg-green-100' : 'border-gray-400 bg-white'} rounded-2xl transition-all hover:scale-105`}>
+                                  <div className="flex items-center space-x-4 flex-1">
+                                    <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center flex-shrink-0 border-2 border-black">
+                                      <div className="text-2xl">
+                                        {material.fileType === 'pdf' ? '📄' :
+                                         material.fileType === 'video' ? '🎥' :
+                                         material.fileType === 'link' ? '🔗' :
+                                         material.fileType === 'image' ? '🖼️' : '📚'}
+                                      </div>
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center space-x-2 mb-1">
+                                        {isCompleted && (
+                                          <span className="text-2xl">✅</span>
+                                        )}
+                                        <h4 className={`text-xl font-black truncate ${isCompleted ? 'text-green-700' : 'text-black'}`}>
+                                          {material.title}
+                                        </h4>
+                                      </div>
+                                      <div className="text-black font-bold">
+                                        {material.formattedFileSize || '2.3 MB'} • {material.fileType.toUpperCase()}
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div className="flex items-center space-x-3 flex-shrink-0">
+                                    <Button
+                                      onClick={() => toggleMaterialCompletion(material)}
+                                      className={`px-4 py-2 rounded-full font-black text-sm border-2 border-black transform hover:scale-105 transition-all ${
+                                        isCompleted
+                                          ? 'bg-green-400 text-white hover:bg-green-500'
+                                          : 'bg-yellow-400 text-black hover:bg-yellow-500'
+                                      }`}
+                                    >
+                                      {isCompleted ? '✓ Completed' : 'Mark Complete'}
+                                    </Button>
+
+                                    {material.fileType === 'link' ? (
+                                      <Button
+                                        onClick={() => openLink(material.externalUrl || '')}
+                                        className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-4 py-2 rounded-full font-black text-sm transform hover:scale-105 transition-all border-2 border-black"
+                                      >
+                                        🔗 Open
+                                      </Button>
+                                    ) : (
+                                      <>
+                                        <Button
+                                          onClick={() => viewMaterial(material)}
+                                          className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-4 py-2 rounded-full font-black text-sm transform hover:scale-105 transition-all border-2 border-black"
+                                        >
+                                          👁️ View
+                                        </Button>
+                                        <Button
+                                          onClick={() => downloadMaterial(material)}
+                                          className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-4 py-2 rounded-full font-black text-sm transform hover:scale-105 transition-all border-2 border-black"
+                                        >
+                                          ⬇️ Download
+                                        </Button>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-red-400 via-yellow-400 to-blue-400 p-6">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-          Welcome back, {student.name}!
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400">
-          Track your learning progress and access your study materials
-        </p>
-      </div>
+        {/* Mickey Mouse Header */}
+        <div className="bg-gradient-to-r from-red-500 via-yellow-500 to-blue-500 rounded-3xl shadow-2xl border-4 border-black p-8 mb-8 relative overflow-hidden">
+          {/* Mickey Mouse Ears */}
+          <div className="absolute -top-4 -left-4 w-12 h-12 bg-black rounded-full"></div>
+          <div className="absolute -top-4 -right-4 w-12 h-12 bg-black rounded-full"></div>
 
-      {/* Overall Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <Card>
-          <CardContent className="p-6">
+          <div className="flex items-center space-x-4 relative z-10">
+            <div className="text-6xl">📚</div>
+            <div>
+              <h1 className="text-4xl font-black text-black mb-2 flex items-center">
+                <span>Mickey's</span>
+                <span className="ml-2 text-white font-black text-5xl">Study</span>
+                <span className="ml-2 text-3xl">🎭</span>
+              </h1>
+              <p className="text-black font-bold text-lg">
+                Welcome back, {student.name}! Track your magical learning progress! ✨
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Overall Statistics */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="bg-gradient-to-r from-blue-400 to-cyan-400 rounded-3xl shadow-2xl border-4 border-black p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                <p className="text-sm font-black text-black">
                   Overall Progress
                 </p>
                 <div className="flex items-center space-x-2 mt-2">
-                  <span className="text-2xl font-bold text-gray-900 dark:text-white">
+                  <span className="text-3xl font-black text-black">
                     {Math.round(overallProgress)}%
                   </span>
-                  <Badge className={getProgressColor(overallProgress)}>
+                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-black border-2 border-black ${
+                    overallProgress >= 80 ? 'bg-green-400 text-white' :
+                    overallProgress >= 60 ? 'bg-blue-400 text-white' :
+                    overallProgress >= 40 ? 'bg-yellow-400 text-black' :
+                    'bg-red-400 text-white'
+                  }`}>
                     {getProgressText(overallProgress)}
-                  </Badge>
+                  </span>
                 </div>
               </div>
-              <TrendingUp className="w-8 h-8 text-blue-500" />
+              <div className="text-4xl">📊</div>
             </div>
-            <div className="mt-4 bg-gray-200 rounded-full h-2 dark:bg-gray-700">
-              <div 
-                className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+            <div className="mt-4 bg-black rounded-full h-4 border-2 border-black">
+              <div
+                className="bg-gradient-to-r from-yellow-400 to-orange-400 h-4 rounded-full transition-all duration-300 border-2 border-black"
                 style={{ width: `${overallProgress}%` }}
               ></div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
-        <Card>
-          <CardContent className="p-6">
+          <div className="bg-gradient-to-r from-green-400 to-emerald-400 rounded-3xl shadow-2xl border-4 border-black p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                <p className="text-sm font-black text-black">
                   Required Materials
                 </p>
                 <div className="flex items-center space-x-2 mt-2">
-                  <span className="text-2xl font-bold text-gray-900 dark:text-white">
+                  <span className="text-3xl font-black text-black">
                     {Math.round(requiredProgress)}%
                   </span>
                 </div>
               </div>
-              <Award className="w-8 h-8 text-green-500" />
+              <div className="text-4xl">🏆</div>
             </div>
-            <div className="mt-4 bg-gray-200 rounded-full h-2 dark:bg-gray-700">
-              <div 
-                className="bg-green-600 h-2 rounded-full transition-all duration-300" 
+            <div className="mt-4 bg-black rounded-full h-4 border-2 border-black">
+              <div
+                className="bg-gradient-to-r from-green-400 to-lime-400 h-4 rounded-full transition-all duration-300 border-2 border-black"
                 style={{ width: `${requiredProgress}%` }}
               ></div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
-        <Card>
-          <CardContent className="p-6">
+          <div className="bg-gradient-to-r from-purple-400 to-pink-400 rounded-3xl shadow-2xl border-4 border-black p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                <p className="text-sm font-black text-black">
                   Enrolled Classes
                 </p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2">
+                <p className="text-3xl font-black text-black mt-2">
                   {classes.length}
                 </p>
               </div>
-              <BookOpen className="w-8 h-8 text-purple-500" />
+              <div className="text-4xl">📖</div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
-        <Card>
-          <CardContent className="p-6">
+          <div className="bg-gradient-to-r from-orange-400 to-red-400 rounded-3xl shadow-2xl border-4 border-black p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                <p className="text-sm font-black text-black">
                   New This Week
                 </p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2">
+                <p className="text-3xl font-black text-black mt-2">
                   {classes.reduce((sum, cls) => sum + cls.recentMaterials, 0)}
                 </p>
               </div>
-              <Clock className="w-8 h-8 text-orange-500" />
+              <div className="text-4xl">🕒</div>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </div>
 
       {/* Classes Grid */}
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Your Classes</h2>
+        <h2 className="text-3xl font-black text-black mb-8 flex items-center">
+          <span className="text-4xl mr-3">🏫</span>
+          Your Magical Classes
+          <span className="ml-3 text-2xl">✨</span>
+        </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {classes.map((classItem) => (
-            <Card key={classItem.id} className="hover:shadow-lg transition-shadow cursor-pointer">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">{classItem.name}</CardTitle>
-                  {classItem.recentMaterials > 0 && (
-                    <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">
-                      {classItem.recentMaterials} new
-                    </Badge>
-                  )}
+            <div key={classItem.id} className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 rounded-3xl shadow-2xl border-4 border-black p-6 hover:scale-105 transition-all cursor-pointer">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-2xl font-black text-black">{classItem.name}</h3>
+                {classItem.recentMaterials > 0 && (
+                  <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-black bg-orange-400 text-black border-2 border-black">
+                    {classItem.recentMaterials} New! ✨
+                  </span>
+                )}
+              </div>
+              <p className="text-black font-bold text-lg mb-6">{classItem.subject}</p>
+
+              <div className="space-y-4 mb-6">
+                <div>
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="font-black text-black">Overall Progress</span>
+                    <span className="font-black text-black">{Math.round(classItem.progress)}%</span>
+                  </div>
+                  <div className="bg-black rounded-full h-4 border-2 border-black">
+                    <div
+                      className="bg-gradient-to-r from-blue-400 to-cyan-400 h-4 rounded-full transition-all duration-300 border-2 border-black"
+                      style={{ width: `${classItem.progress}%` }}
+                    ></div>
+                  </div>
                 </div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">{classItem.subject}</p>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between text-sm mb-2">
-                      <span>Overall Progress</span>
-                      <span>{Math.round(classItem.progress)}%</span>
-                    </div>
-                    <div className="bg-gray-200 rounded-full h-2 dark:bg-gray-700">
-                      <div 
-                        className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
-                        style={{ width: `${classItem.progress}%` }}
-                      ></div>
-                    </div>
-                  </div>
 
-                  <div>
-                    <div className="flex justify-between text-sm mb-2">
-                      <span>Required Materials</span>
-                      <span>{classItem.completedRequired}/{classItem.requiredMaterials}</span>
-                    </div>
-                    <div className="bg-gray-200 rounded-full h-2 dark:bg-gray-700">
-                      <div 
-                        className="bg-green-600 h-2 rounded-full transition-all duration-300" 
-                        style={{ width: `${classItem.requiredProgress}%` }}
-                      ></div>
-                    </div>
+                <div>
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="font-black text-black">Required Materials</span>
+                    <span className="font-black text-black">{classItem.completedRequired}/{classItem.requiredMaterials}</span>
                   </div>
-
-                  <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
-                    <span>Total Materials</span>
-                    <span>{classItem.completedMaterials}/{classItem.totalMaterials}</span>
+                  <div className="bg-black rounded-full h-4 border-2 border-black">
+                    <div
+                      className="bg-gradient-to-r from-green-400 to-lime-400 h-4 rounded-full transition-all duration-300 border-2 border-black"
+                      style={{ width: `${classItem.requiredProgress}%` }}
+                    ></div>
                   </div>
-
-                  <Button 
-                    onClick={() => loadClassMaterials(classItem.id)}
-                    className="w-full mt-4"
-                  >
-                    View Materials
-                  </Button>
                 </div>
-              </CardContent>
-            </Card>
+
+                <div className="flex justify-between text-sm text-black font-bold">
+                  <span>Total Materials</span>
+                  <span>{classItem.completedMaterials}/{classItem.totalMaterials}</span>
+                </div>
+              </div>
+
+              <Button
+                onClick={() => loadClassMaterials(classItem.id)}
+                className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black flex items-center justify-center space-x-2"
+              >
+                <BookOpen className="w-5 h-5" />
+                <span>View Magical Materials</span>
+              </Button>
+            </div>
           ))}
         </div>
       </div>
 
       {classes.length === 0 && (
-        <Card className="text-center py-12">
-          <CardContent>
-            <BookOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              No Classes Enrolled
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
-              You haven't enrolled in any classes yet.
-            </p>
-            <Button onClick={() => router.push('/enroll')}>
-              Browse Available Classes
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="bg-gradient-to-r from-yellow-200 via-orange-200 to-red-200 rounded-3xl shadow-2xl border-4 border-black p-12 text-center">
+          <div className="text-6xl mb-6">📚</div>
+          <h3 className="text-2xl font-black text-black mb-4">
+            No Magical Classes Yet
+          </h3>
+          <p className="text-black font-bold text-lg mb-6">
+            You haven't enrolled in any classes yet. Time to start your learning adventure!
+          </p>
+          <Button
+            onClick={() => router.push('/enroll')}
+            className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-8 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black flex items-center space-x-3"
+          >
+            <BookOpen className="w-5 h-5" />
+            <span>Browse Magical Classes</span>
+          </Button>
+        </div>
       )}
-
-      </div>
-   
+    </div>
+    </div>
   );
 }

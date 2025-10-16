@@ -97,8 +97,31 @@ export default function StudentClassesPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+      <div className="min-h-screen bg-gradient-to-br from-red-400 via-yellow-400 to-blue-400 flex items-center justify-center">
+        <div className="bg-white border-4 border-black rounded-3xl p-8 shadow-2xl">
+          {/* Mickey Mouse Loading Animation */}
+          <div className="relative mb-6">
+            <div className="w-24 h-24 bg-black rounded-full flex items-center justify-center relative mx-auto animate-bounce">
+              <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center">
+                <div className="flex space-x-1">
+                  <div className="w-3 h-3 bg-black rounded-full animate-pulse"></div>
+                  <div className="w-3 h-3 bg-black rounded-full animate-pulse delay-300"></div>
+                </div>
+                <div className="absolute bottom-6 w-2 h-2 bg-red-500 rounded-full animate-ping"></div>
+              </div>
+              {/* Mickey ears */}
+              <div className="absolute -top-4 -left-4 w-8 h-8 bg-black rounded-full animate-pulse"></div>
+              <div className="absolute -top-4 -right-4 w-8 h-8 bg-black rounded-full animate-pulse delay-500"></div>
+            </div>
+            <div className="text-center mt-4">
+              <span className="text-black font-bold text-xl">Mickey</span>
+            </div>
+          </div>
+          <div className="text-center">
+            <h2 className="text-2xl font-black text-black mb-2">Loading Magical Classes...</h2>
+            <p className="text-gray-600 font-medium">Getting ready for some fun learning! 🎓✨</p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -113,50 +136,76 @@ export default function StudentClassesPage() {
 
   return (
     <>
-      <div className="p-6 space-y-6">
-        {/* Header */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">My Classes</h1>
-              <p className="text-gray-600 dark:text-gray-300 mt-1">
-                View all your enrolled classes and track your progress
-              </p>
+      <div className="min-h-screen bg-gradient-to-br from-red-400 via-yellow-400 to-blue-400 p-6">
+        {/* Mickey Mouse Header */}
+        <div className="bg-gradient-to-r from-red-500 via-yellow-500 to-blue-500 rounded-3xl shadow-2xl border-4 border-black p-8 mb-6 relative overflow-hidden">
+          {/* Mickey Mouse Ears */}
+          <div className="absolute -top-4 -left-4 w-12 h-12 bg-black rounded-full animate-bounce"></div>
+          <div className="absolute -top-4 -right-4 w-12 h-12 bg-black rounded-full animate-bounce delay-300"></div>
+
+          {/* Magical Sparkles */}
+          <div className="absolute top-4 right-16 text-2xl">✨</div>
+          <div className="absolute bottom-4 left-16 text-2xl">⭐</div>
+
+          <div className="flex items-center justify-between relative z-10">
+            <div className="flex items-center space-x-4">
+              <div className="text-6xl">🎓</div>
+              <div>
+                <h1 className="text-4xl font-black text-black mb-2 flex items-center">
+                  <span>Mickey's</span>
+                  <span className="ml-2 text-white font-black text-5xl">Classroom</span>
+                  <span className="ml-2 text-3xl">🎭</span>
+                </h1>
+                <p className="text-black font-bold text-lg">
+                  Discover magical learning adventures with your favorite Disney friends! 🌟
+                </p>
+              </div>
             </div>
-            <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-300">
-              <BookOpen className="w-5 h-5" />
-              <span className="font-medium">{filteredEnrollments.length} Classes</span>
+            <div className="bg-white border-4 border-black rounded-2xl p-4 shadow-lg">
+              <div className="flex items-center space-x-3">
+                <div className="text-4xl">📚</div>
+                <div className="text-center">
+                  <div className="text-3xl font-black text-black">{filteredEnrollments.length}</div>
+                  <div className="text-sm font-bold text-gray-700">Magical Classes</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Search and Filter */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
-          <div className="flex flex-col sm:flex-row gap-4">
+        {/* Mickey Mouse Search and Filter */}
+        <div className="bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400 rounded-2xl shadow-xl border-4 border-black p-6 mb-6">
+          <div className="flex items-center space-x-3 mb-4">
+            <div className="text-3xl">🔍</div>
+            <h2 className="text-2xl font-black text-black">Mickey's Magical Search</h2>
+            <div className="text-2xl">✨</div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-6">
             <div className="flex-1">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-2xl">🔍</div>
                 <Input
                   type="text"
-                  placeholder="Search classes or subjects..."
+                  placeholder="Search for magical classes or subjects..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className="pl-12 pr-4 py-3 text-lg border-4 border-black rounded-2xl bg-white text-black placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-yellow-400 shadow-lg"
                 />
               </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <Filter className="w-5 h-5 text-gray-400" />
+            <div className="flex items-center space-x-4">
+              <div className="text-2xl">🎭</div>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="border rounded-lg px-3 py-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                className="border-4 border-black rounded-2xl px-6 py-3 bg-white text-black font-bold text-lg focus:outline-none focus:ring-4 focus:ring-yellow-400 shadow-lg hover:bg-gray-50 transition-all"
               >
-                <option value="all">All Status</option>
-                <option value="Active">Active</option>
-                <option value="Completed">Completed</option>
-                <option value="Inactive">Inactive</option>
-                <option value="Dropped">Dropped</option>
+                <option value="all">🌟 All Magical Classes</option>
+                <option value="Active">🎯 Active Adventures</option>
+                <option value="Completed">🏆 Completed Quests</option>
+                <option value="Inactive">😴 Sleeping Classes</option>
+                <option value="Dropped">👋 Dropped Classes</option>
               </select>
             </div>
           </div>
@@ -164,78 +213,83 @@ export default function StudentClassesPage() {
 
         {/* Classes Grid */}
         {filteredEnrollments.length === 0 ? (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-12">
+          <div className="bg-gradient-to-r from-blue-300 via-purple-300 to-pink-300 rounded-3xl shadow-2xl border-4 border-black p-12">
             <div className="text-center">
-              <BookOpen className="mx-auto h-16 w-16 text-gray-300 dark:text-gray-600 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                {searchTerm || statusFilter !== 'all' ? 'No classes found' : 'No enrolled classes'}
+              <div className="text-8xl mb-6">📚</div>
+              <h3 className="text-3xl font-black text-black mb-4">
+                {searchTerm || statusFilter !== 'all' ? 'No Magical Classes Found' : 'No Enchanted Classes Yet'}
               </h3>
-              <p className="text-gray-500 dark:text-gray-400">
+              <p className="text-black font-bold text-lg mb-6">
                 {searchTerm || statusFilter !== 'all' 
-                  ? 'Try adjusting your search or filter criteria' 
-                  : 'Contact your administrator to get enrolled in classes'}
+                  ? 'Try adjusting your magical search or filter criteria ✨' 
+                  : 'Contact your teacher to get enrolled in some fun classes! 🎓'}
               </p>
+              <div className="flex justify-center space-x-4">
+                <div className="text-4xl">🐭</div>
+                <div className="text-4xl animate-pulse delay-300">🎭</div>
+                <div className="text-4xl animate-pulse delay-500">⭐</div>
+              </div>
             </div>
           </div>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
             {filteredEnrollments.map((enrollment) => (
               <div
                 key={enrollment.id}
-                className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md transition-shadow"
+                className="bg-gradient-to-br from-yellow-300 via-pink-300 to-purple-300 rounded-3xl shadow-2xl border-4 border-black p-6 hover:shadow-3xl hover:scale-105 transition-all duration-300 hover:rotate-1"
               >
-                {/* Class Header */}
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
-                      <BookOpen className="w-5 h-5 text-green-600 dark:text-green-400" />
+                {/* Mickey Mouse Class Header */}
+                <div className="flex items-start justify-between mb-6">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-16 h-16 bg-black rounded-full flex items-center justify-center border-4 border-white shadow-lg animate-pulse">
+                      <div className="text-3xl">📚</div>
                     </div>
                     <div>
-                      <h3 className="font-semibold text-gray-900 dark:text-white text-lg">
+                      <h3 className="font-black text-black text-xl mb-1">
                         {enrollment.className}
                       </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                      <p className="text-black font-bold text-sm bg-white rounded-full px-3 py-1 border-2 border-black">
                         {enrollment.subject}
                       </p>
                     </div>
                   </div>
-                  <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                  <span className={`px-4 py-2 text-sm font-black rounded-full border-4 border-black shadow-lg ${
                     enrollment.status === 'Active' 
-                      ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300'
+                      ? 'bg-green-400 text-black'
                       : enrollment.status === 'Completed'
-                      ? 'bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300'
+                      ? 'bg-blue-400 text-black'
                       : enrollment.status === 'Inactive'
-                      ? 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300'
-                      : 'bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-300'
+                      ? 'bg-yellow-400 text-black'
+                      : 'bg-red-400 text-black'
                   }`}>
                     {enrollment.status}
                   </span>
                 </div>
 
-                {/* Class Info */}
-                <div className="space-y-3 mb-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Clock className="w-4 h-4 text-gray-400" />
-                      <span className="text-sm text-gray-600 dark:text-gray-300">Enrolled</span>
+                {/* Magical Class Info */}
+                <div className="bg-white border-4 border-black rounded-2xl p-4 mb-4 shadow-lg">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center space-x-3">
+                      <div className="text-2xl">📅</div>
+                      <span className="text-sm font-bold text-black">Enrolled</span>
                     </div>
-                    <span className="text-sm font-medium text-gray-900 dark:text-white">
+                    <span className="text-sm font-black text-black bg-yellow-300 rounded-full px-3 py-1 border-2 border-black">
                       {enrollment.enrolledAt.toLocaleDateString()}
                     </span>
                   </div>
                   
                   {enrollment.grade !== undefined && (
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <Award className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm text-gray-600 dark:text-gray-300">Grade</span>
+                      <div className="flex items-center space-x-3">
+                        <div className="text-2xl">🏆</div>
+                        <span className="text-sm font-bold text-black">Magical Grade</span>
                       </div>
-                      <span className={`text-sm font-medium ${
+                      <span className={`text-lg font-black px-3 py-1 rounded-full border-2 border-black ${
                         enrollment.grade >= 80 
-                          ? 'text-green-600 dark:text-green-400'
+                          ? 'bg-green-400 text-black'
                           : enrollment.grade >= 60
-                          ? 'text-yellow-600 dark:text-yellow-400'
-                          : 'text-red-600 dark:text-red-400'
+                          ? 'bg-yellow-400 text-black'
+                          : 'bg-red-400 text-black'
                       }`}>
                         {enrollment.grade}%
                       </span>
@@ -243,91 +297,104 @@ export default function StudentClassesPage() {
                   )}
                 </div>
 
-                {/* Progress Bar for Grade */}
+                {/* Magical Progress Bar */}
                 {enrollment.grade !== undefined && (
                   <div className="mb-4">
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div className="bg-white border-4 border-black rounded-full h-6 p-1 shadow-lg">
                       <div 
-                        className={`h-2 rounded-full transition-all duration-300 ${
+                        className={`h-4 rounded-full transition-all duration-1000 border-2 border-black ${
                           enrollment.grade >= 80 
-                            ? 'bg-green-600'
+                            ? 'bg-gradient-to-r from-green-400 to-green-600'
                             : enrollment.grade >= 60
-                            ? 'bg-yellow-600'
-                            : 'bg-red-600'
+                            ? 'bg-gradient-to-r from-yellow-400 to-yellow-600'
+                            : 'bg-gradient-to-r from-red-400 to-red-600'
                         }`}
                         style={{ width: `${enrollment.grade}%` }}
                       ></div>
                     </div>
+                    <div className="text-center mt-2">
+                      <span className="text-sm font-bold text-black">Progress to Excellence! 🌟</span>
+                    </div>
                   </div>
                 )}
 
-                {/* Notes */}
+                {/* Magical Notes */}
                 {enrollment.notes && (
-                  <div className="border-t border-gray-200 dark:border-gray-600 pt-3 mb-3">
-                    <p className="text-sm text-gray-600 dark:text-gray-300">
-                      <span className="font-medium">Notes:</span> {enrollment.notes}
-                    </p>
+                  <div className="border-t-4 border-black pt-4 mb-4">
+                    <div className="bg-white border-4 border-black rounded-2xl p-4 shadow-lg">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <div className="text-2xl">📝</div>
+                        <p className="text-sm font-black text-black">Teacher's Magical Notes:</p>
+                      </div>
+                      <p className="text-black font-medium bg-yellow-100 rounded-lg p-3 border-2 border-black">
+                        {enrollment.notes}
+                      </p>
+                    </div>
                   </div>
                 )}
 
-                {/* Teacher Remark */}
+                {/* Teacher's Magical Remark */}
                 {enrollment.remark && (
-                  <div className="border-t border-gray-200 dark:border-gray-600 pt-3 mb-3">
-                    <div className="flex items-start space-x-3">
-                      <MessageSquare className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Teacher Remark:
-                        </p>
-                        <div className="space-y-2">
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getRemarkColor(enrollment.remark.remarkLevel)}`}>
-                            {enrollment.remark.remarkLevel === 'Custom' ? enrollment.remark.customRemark : enrollment.remark.remarkLevel}
-                          </span>
-                          {enrollment.remark.additionalNotes && (
-                            <p className="text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg">
-                              {enrollment.remark.additionalNotes}
-                            </p>
-                          )}
-                          <p className="text-xs text-gray-400">
-                            Updated: {enrollment.remark.updatedAt.toLocaleDateString()}
+                  <div className="border-t-4 border-black pt-4 mb-4">
+                    <div className="bg-white border-4 border-black rounded-2xl p-4 shadow-lg">
+                      <div className="flex items-start space-x-3">
+                        <div className="text-3xl">🎭</div>
+                        <div className="flex-1">
+                          <p className="text-lg font-black text-black mb-3">
+                            Teacher's Magical Remark:
                           </p>
+                          <div className="space-y-3">
+                            <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-black border-2 border-black shadow-lg ${getRemarkColor(enrollment.remark.remarkLevel)}`}>
+                              {enrollment.remark.remarkLevel === 'Custom' ? enrollment.remark.customRemark : enrollment.remark.remarkLevel}
+                            </span>
+                            {enrollment.remark.additionalNotes && (
+                              <div className="bg-gradient-to-r from-blue-100 to-purple-100 p-4 rounded-xl border-2 border-black">
+                                <p className="text-black font-medium">
+                                  {enrollment.remark.additionalNotes}
+                                </p>
+                              </div>
+                            )}
+                            <p className="text-xs font-bold text-gray-600 bg-white rounded-full px-3 py-1 border border-black">
+                              Updated: {enrollment.remark.updatedAt.toLocaleDateString()}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 )}
 
-                {/* Zoom Meeting Link */}
+                {/* Magical Zoom Meeting Link */}
                 {enrollment.classData?.zoomLink && (
-                  <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
-                    <div className="mb-3">
-                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Meeting Link:
-                      </p>
-                      <div className="space-y-2">
-                        {/* Full Meeting URL */}
-                        <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                          <p className="text-sm text-blue-700 dark:text-blue-300 break-all">
+                  <div className="border-t-4 border-black pt-4 mb-4">
+                    <div className="bg-white border-4 border-black rounded-2xl p-4 shadow-lg">
+                      <div className="mb-4">
+                        <p className="text-lg font-black text-black mb-3 flex items-center">
+                          <span className="text-2xl mr-2">🎥</span>
+                          Meeting Link:
+                        </p>
+                        <div className="p-3 bg-gradient-to-r from-blue-200 to-purple-200 rounded-xl border-2 border-black">
+                          <p className="text-black font-medium break-all text-sm">
                             {enrollment.classData.zoomLink}
                           </p>
                         </div>
-                        {/* Join Button */}
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          onClick={() => handleJoinZoom(enrollment.classData!.zoomLink!)}
-                          className="w-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center space-x-2"
-                        >
-                          <ExternalLink className="w-4 h-4" />
-                          <span>Join Now</span>
-                        </Button>
                       </div>
+                      {/* Join Button */}
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => handleJoinZoom(enrollment.classData!.zoomLink!)}
+                        className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black flex items-center justify-center space-x-3"
+                      >
+                        <ExternalLink className="w-5 h-5" />
+                        <span>Join Magical Meeting! 🎭</span>
+                      </Button>
                     </div>
                   </div>
                 )}
 
-                {/* Actions */}
-                <div className="grid grid-cols-3 gap-2 mt-4">
+                {/* Magical Action Buttons */}
+                <div className="grid grid-cols-3 gap-3 mt-6">
                   <Button
                     variant="outline"
                     size="sm"
@@ -335,8 +402,10 @@ export default function StudentClassesPage() {
                       // Navigate to tests page
                       window.location.href = `/student/test`;
                     }}
+                    className="bg-gradient-to-r from-green-400 to-emerald-400 hover:from-green-500 hover:to-emerald-500 text-black font-black border-4 border-black rounded-2xl transform hover:scale-110 transition-all shadow-lg hover:rotate-3 flex flex-col items-center py-3"
                   >
-                    Tests
+                    <span className="text-2xl mb-1">📝</span>
+                    <span className="text-xs">Tests</span>
                   </Button>
                   <Button
                     variant="outline"
@@ -345,8 +414,10 @@ export default function StudentClassesPage() {
                       // Navigate to study materials page for this class
                       window.location.href = `/student/study?classId=${enrollment.classId}`;
                     }}
+                    className="bg-gradient-to-r from-blue-400 to-cyan-400 hover:from-blue-500 hover:to-cyan-500 text-black font-black border-4 border-black rounded-2xl transform hover:scale-110 transition-all shadow-lg hover:-rotate-3 flex flex-col items-center py-3"
                   >
-                    Study
+                    <span className="text-2xl mb-1">📚</span>
+                    <span className="text-xs">Study</span>
                   </Button>
                   <Button
                     variant="outline"
@@ -355,8 +426,10 @@ export default function StudentClassesPage() {
                       // Navigate to videos page for this class
                       window.location.href = `/student/classes/${enrollment.classId}/videos`;
                     }}
+                    className="bg-gradient-to-r from-purple-400 to-pink-400 hover:from-purple-500 hover:to-pink-500 text-black font-black border-4 border-black rounded-2xl transform hover:scale-110 transition-all shadow-lg hover:rotate-3 flex flex-col items-center py-3"
                   >
-                    Videos
+                    <span className="text-2xl mb-1">🎬</span>
+                    <span className="text-xs">Videos</span>
                   </Button>
                 </div>
               </div>
@@ -364,31 +437,39 @@ export default function StudentClassesPage() {
           </div>
         )}
 
-        {/* Summary Stats */}
+        {/* Mickey Mouse Summary Stats */}
         {filteredEnrollments.length > 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Class Summary</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+          <div className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 rounded-3xl shadow-2xl border-4 border-black p-8 mt-8">
+            <div className="flex items-center justify-center space-x-3 mb-8">
+              <div className="text-4xl">📊</div>
+              <h3 className="text-3xl font-black text-black">Mickey's Magical Summary</h3>
+              <div className="text-4xl">✨</div>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div className="bg-white border-4 border-black rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all">
+                <div className="text-4xl mb-2">🎯</div>
+                <div className="text-3xl font-black text-green-600 mb-1">
                   {filteredEnrollments.filter(e => e.status === 'Active').length}
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-300">Active</div>
+                <div className="text-sm font-bold text-black">Active Adventures</div>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+              <div className="bg-white border-4 border-black rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all">
+                <div className="text-4xl mb-2">🏆</div>
+                <div className="text-3xl font-black text-blue-600 mb-1">
                   {filteredEnrollments.filter(e => e.status === 'Completed').length}
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-300">Completed</div>
+                <div className="text-sm font-bold text-black">Completed Quests</div>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+              <div className="bg-white border-4 border-black rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all">
+                <div className="text-4xl mb-2">📈</div>
+                <div className="text-3xl font-black text-yellow-600 mb-1">
                   {Math.round(filteredEnrollments.reduce((acc, e) => acc + e.attendance, 0) / filteredEnrollments.length) || 0}%
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-300">Avg Attendance</div>
+                <div className="text-sm font-bold text-black">Attendance Magic</div>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+              <div className="bg-white border-4 border-black rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all">
+                <div className="text-4xl mb-2">⭐</div>
+                <div className="text-3xl font-black text-purple-600 mb-1">
                   {filteredEnrollments.filter(e => e.grade !== undefined).length > 0 
                     ? Math.round(filteredEnrollments
                         .filter(e => e.grade !== undefined)
@@ -397,7 +478,7 @@ export default function StudentClassesPage() {
                     : 'N/A'
                   }{filteredEnrollments.filter(e => e.grade !== undefined).length > 0 ? '%' : ''}
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-300">Avg Grade</div>
+                <div className="text-sm font-bold text-black">Average Grade</div>
               </div>
             </div>
           </div>

@@ -127,111 +127,122 @@ export default function StudentVideos() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="w-16 h-16 border-t-4 border-blue-600 border-solid rounded-full animate-spin mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-300 font-medium">Loading classes...</p>
+      <div className="min-h-screen bg-gradient-to-br from-red-400 via-yellow-400 to-blue-400 p-6">
+        <div className="flex items-center justify-center py-12">
+          <div className="bg-gradient-to-r from-blue-400 to-purple-400 rounded-3xl shadow-2xl border-4 border-black p-8">
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 border-4 border-black border-t-transparent rounded-full animate-spin bg-gradient-to-r from-yellow-400 to-orange-400"></div>
+              <span className="text-2xl font-black text-black">Loading your magical videos... ✨</span>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <div className="flex items-center justify-between">
+    <div className="min-h-screen bg-gradient-to-br from-red-400 via-yellow-400 to-blue-400 p-6">
+      {/* Mickey Mouse Header */}
+      <div className="bg-gradient-to-r from-red-500 via-yellow-500 to-blue-500 rounded-3xl shadow-2xl border-4 border-black p-8 mb-8 relative overflow-hidden">
+        {/* Mickey Mouse Ears */}
+        <div className="absolute -top-4 -left-4 w-12 h-12 bg-black rounded-full"></div>
+        <div className="absolute -top-4 -right-4 w-12 h-12 bg-black rounded-full"></div>
+
+        <div className="flex items-center space-x-4 relative z-10">
+          <div className="text-6xl">🎥</div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              Video Library
+            <h1 className="text-4xl font-black text-black mb-2 flex items-center">
+              <span>Mickey's</span>
+              <span className="ml-2 text-white font-black text-5xl">Video</span>
+              <span className="ml-2 text-3xl">Library</span>
+              <span className="ml-2 text-3xl">🎭</span>
             </h1>
-            <p className="text-gray-600 dark:text-gray-300">
-              Select a class to browse and watch educational videos
+            <p className="text-black font-bold text-lg">
+              Welcome back, {student?.name}! Explore your magical educational videos! ✨
             </p>
-          </div>
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center bg-green-50 dark:bg-green-900/20 px-4 py-2 rounded-lg">
-              <Users className="w-5 h-5 text-green-600 dark:text-green-400 mr-2" />
-              <span className="text-green-600 dark:text-green-400 font-medium">
-                {studentClasses.length} Classes
-              </span>
-            </div>
           </div>
         </div>
       </div>
 
       {/* Error Display */}
       {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
-          <div className="flex">
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800 dark:text-red-200">Error</h3>
-              <p className="mt-1 text-sm text-red-700 dark:text-red-300">{error}</p>
+        <div className="bg-gradient-to-r from-red-200 to-orange-200 rounded-3xl shadow-2xl border-4 border-black p-6">
+          <div className="flex items-center space-x-4">
+            <div className="text-4xl">😔</div>
+            <div>
+              <h3 className="text-xl font-black text-black mb-2">Oops! Something went wrong</h3>
+              <p className="text-black font-bold">{error}</p>
             </div>
           </div>
         </div>
       )}
 
       {/* Search */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+      <div className="bg-white rounded-3xl shadow-2xl border-4 border-black p-6 mb-8">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-2xl">🔍</div>
           <input
             type="text"
-            placeholder="Search classes..."
+            placeholder="🔍 Search magical classes..."
             value={searchTerm}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
-            className="pl-10 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+            className="pl-12 w-full px-6 py-3 border-4 border-black rounded-3xl focus:ring-4 focus:ring-yellow-400 focus:border-black bg-white text-black font-bold text-lg placeholder-black/60"
           />
         </div>
       </div>
 
       {/* Teacher Selected Videos Section */}
       {individualVideos.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-white rounded-3xl shadow-2xl border-4 border-black p-6 mb-8">
+          <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                🎯 Teacher Selected Videos for You
+              <h2 className="text-2xl font-black text-black mb-2 flex items-center">
+                <span className="text-3xl mr-3">🎯</span>
+                Teacher Selected Videos for You
+                <span className="ml-3 text-xl">✨</span>
               </h2>
-              <p className="text-gray-600 dark:text-gray-400 text-sm">
+              <p className="text-black font-bold">
                 Special video recommendations from your teachers
               </p>
             </div>
-            <div className="bg-blue-50 dark:bg-blue-900/20 px-3 py-1 rounded-full">
-              <span className="text-blue-600 dark:text-blue-400 font-medium text-sm">
-                {individualVideos.length} video{individualVideos.length > 1 ? 's' : ''}
+            <div className="bg-gradient-to-r from-blue-400 to-purple-400 rounded-full px-4 py-2 border-2 border-black">
+              <span className="text-white font-black text-sm">
+                {individualVideos.length} Magical Video{individualVideos.length > 1 ? 's' : ''} 🎥
               </span>
             </div>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {individualVideos.map((video) => (
-              <div key={video.id} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
-                <div className="flex items-start space-x-3">
-                  <div className="flex-shrink-0">
-                    <div className="w-16 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
-                      <Play className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              <div key={video.id} className="bg-white rounded-2xl shadow-lg border-2 border-gray-300 p-6 overflow-hidden">
+                <div className="flex flex-col h-full">
+                  <div className="flex items-start space-x-4 mb-4">
+                    <div className="flex-shrink-0">
+                      <div className="w-16 h-12 bg-gradient-to-br from-blue-400 to-purple-400 rounded-xl flex items-center justify-center border-2 border-black shadow-md">
+                        <Play className="w-6 h-6 text-white" />
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                      {video.title}
-                    </h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
-                      {video.description}
-                    </p>
-                    <div className="flex items-center justify-between mt-2">
-                      <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg font-bold text-black mb-2 line-clamp-2">
+                        {video.title}
+                      </h3>
+                      <p className="text-gray-700 font-medium text-sm mb-3 line-clamp-3">
+                        {video.description}
+                      </p>
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800 border border-green-300">
                         {video.subjectName}
                       </span>
-                      <Link 
-                        href={`/student/video/${video.id}/watch`}
-                        className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded transition-colors"
-                      >
-                        Watch
-                      </Link>
                     </div>
+                  </div>
+
+                  <div className="mt-auto pt-4 border-t-2 border-gray-300">
+                    <Link
+                      href={`/student/video/${video.id}/watch`}
+                      className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-4 py-2 rounded-full font-bold text-sm transform hover:scale-105 transition-all border-2 border-black flex items-center justify-center space-x-2"
+                    >
+                      <Play className="w-4 h-4" />
+                      <span>Watch Now</span>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -243,20 +254,20 @@ export default function StudentVideos() {
       {/* Classes Grid */}
       <div>
         {getFilteredClasses().length === 0 ? (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-12 text-center">
-            <GraduationCap className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              {searchTerm ? 'No classes found' : 'No classes available'}
+          <div className="bg-gradient-to-r from-yellow-200 via-orange-200 to-red-200 rounded-3xl shadow-2xl border-4 border-black p-12 text-center">
+            <div className="text-6xl mb-6">🎓</div>
+            <h3 className="text-2xl font-black text-black mb-4">
+              {searchTerm ? 'No Magical Classes Found' : 'No Classes Available Yet'}
             </h3>
-            <p className="text-gray-500 dark:text-gray-400">
-              {searchTerm 
-                ? 'Try adjusting your search criteria'
-                : 'You are not enrolled in any classes yet'
+            <p className="text-black font-bold text-lg">
+              {searchTerm
+                ? 'Try adjusting your search to find your magical classes!'
+                : 'You haven\'t enrolled in any classes yet. Time to start your learning adventure!'
               }
             </p>
           </div>
         ) : (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <div className="bg-white rounded-3xl shadow-2xl border-4 border-black p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {getFilteredClasses().map((classInfo) => (
                 <ClassCard
@@ -280,48 +291,48 @@ interface ClassCardProps {
 const ClassCard: React.FC<ClassCardProps> = ({ classInfo }) => {
   return (
     <Link href={`/student/classes/${classInfo.id}/videos`}>
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow cursor-pointer group">
+      <div className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 rounded-3xl shadow-2xl border-4 border-black overflow-hidden hover:scale-105 transition-all cursor-pointer">
         {/* Class Header */}
-        <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white p-4">
+        <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white p-6 border-b-4 border-black">
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <h3 className="text-lg font-semibold truncate mb-1">
+              <h3 className="text-xl font-black truncate mb-2">
                 {classInfo.name}
               </h3>
-              <p className="text-green-100 text-sm">
+              <p className="text-green-100 text-lg font-bold">
                 {classInfo.subject} • Grade {classInfo.grade}
               </p>
             </div>
-            <Video className="w-8 h-8 text-white opacity-80 group-hover:opacity-100 transition-opacity" />
+            <div className="text-4xl">🎥</div>
           </div>
         </div>
 
         {/* Class Info */}
-        <div className="p-4">
-          <div className="space-y-3">
-            <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-              <Users className="w-4 h-4 mr-2 flex-shrink-0" />
+        <div className="bg-white p-6">
+          <div className="space-y-4">
+            <div className="flex items-center text-black font-bold">
+              <span className="text-2xl mr-3">👨‍🏫</span>
               <span className="truncate">{classInfo.teacherName}</span>
             </div>
-            
-            <div className="flex items-start text-sm text-gray-600 dark:text-gray-400">
-              <BookOpen className="w-4 h-4 mr-2 flex-shrink-0 mt-0.5" />
+
+            <div className="flex items-start text-black font-bold">
+              <span className="text-2xl mr-3 mt-1">📚</span>
               <span className="line-clamp-2 break-words overflow-hidden">
-                {classInfo.description && classInfo.description.length > 100 
+                {classInfo.description && classInfo.description.length > 100
                   ? `${classInfo.description.substring(0, 100)}...`
-                  : classInfo.description || 'Explore video content for this class'
+                  : classInfo.description || 'Explore magical video content for this class'
                 }
               </span>
             </div>
-            
-            <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-500 dark:text-gray-400">
-                  Browse Videos
+
+            <div className="pt-4 border-t-4 border-black">
+              <div className="flex items-center justify-between">
+                <span className="text-black font-bold">
+                  Browse Magical Videos
                 </span>
-                <div className="flex items-center space-x-1 text-green-600 dark:text-green-400 group-hover:text-green-700 dark:group-hover:text-green-300 transition-colors">
+                <div className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-2 rounded-full font-black text-sm transform hover:scale-105 transition-all border-2 border-black flex items-center space-x-2">
                   <Play className="w-4 h-4" />
-                  <span className="font-medium">Open</span>
+                  <span>Open</span>
                 </div>
               </div>
             </div>

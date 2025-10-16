@@ -138,12 +138,12 @@ export default function StudentSheetsPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
+      <div className="min-h-screen bg-gradient-to-br from-red-400 via-yellow-400 to-blue-400 p-6">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
-              <div className="w-8 h-8 border-t-2 border-green-600 rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading your sheets...</p>
+              <div className="w-12 h-12 border-4 border-black border-t-transparent rounded-full animate-spin mx-auto mb-6 bg-gradient-to-r from-yellow-400 to-orange-400"></div>
+              <p className="text-black font-black text-xl">Loading your magical sheets... ✨</p>
             </div>
           </div>
         </div>
@@ -152,110 +152,140 @@ export default function StudentSheetsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-red-400 via-yellow-400 to-blue-400 p-6">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="bg-white rounded-lg shadow mb-6 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">My Sheets</h1>
-              <p className="text-gray-500 mt-1">
-                Access your Google Sheets assignments from all classes
-              </p>
-            </div>
-            <div className="flex items-center space-x-3">
-              <FileSpreadsheet className="h-8 w-8 text-green-600" />
-            </div>
-          </div>
+        {/* Mickey Mouse Header */}
+        <div className="bg-gradient-to-r from-red-500 via-yellow-500 to-blue-500 rounded-3xl shadow-2xl border-4 border-black p-8 mb-8 relative overflow-hidden">
+          {/* Mickey Mouse Ears */}
+          <div className="absolute -top-4 -left-4 w-12 h-12 bg-black rounded-full"></div>
+          <div className="absolute -top-4 -right-4 w-12 h-12 bg-black rounded-full"></div>
 
-          {/* Stats */}
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-green-50 p-4 rounded-lg">
-              <div className="flex items-center">
-                <FileSpreadsheet className="h-5 w-5 text-green-600 mr-2" />
-                <span className="text-sm font-medium text-green-600">Total Sheets</span>
-              </div>
-              <p className="text-2xl font-bold text-green-700 mt-1">{totalSheets}</p>
-            </div>
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <div className="flex items-center">
-                <Users className="h-5 w-5 text-blue-600 mr-2" />
-                <span className="text-sm font-medium text-blue-600">Classes</span>
-              </div>
-              <p className="text-2xl font-bold text-blue-700 mt-1">{classes.length}</p>
-            </div>
-            <div className="bg-purple-50 p-4 rounded-lg">
-              <div className="flex items-center">
-                <BookOpen className="h-5 w-5 text-purple-600 mr-2" />
-                <span className="text-sm font-medium text-purple-600">Active</span>
-              </div>
-              <p className="text-2xl font-bold text-purple-700 mt-1">
-                {classes.filter(cls => cls.sheetCount > 0).length}
+          <div className="flex items-center space-x-4 relative z-10">
+            <div className="text-6xl">📊</div>
+            <div>
+              <h1 className="text-4xl font-black text-black mb-2 flex items-center">
+                <span>Mickey's</span>
+                <span className="ml-2 text-white font-black text-5xl">Sheets</span>
+                <span className="ml-2 text-3xl">🎭</span>
+              </h1>
+              <p className="text-black font-bold text-lg">
+                Welcome back, {student?.name}! Access your magical Google Sheets assignments! ✨
               </p>
             </div>
           </div>
         </div>
 
+        {/* Overall Statistics */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-gradient-to-r from-green-400 to-emerald-400 rounded-3xl shadow-2xl border-4 border-black p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-black text-black">
+                  Total Sheets
+                </p>
+                <p className="text-3xl font-black text-black mt-2">
+                  {totalSheets}
+                </p>
+              </div>
+              <div className="text-4xl">📊</div>
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-r from-blue-400 to-cyan-400 rounded-3xl shadow-2xl border-4 border-black p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-black text-black">
+                  Classes
+                </p>
+                <p className="text-3xl font-black text-black mt-2">
+                  {classes.length}
+                </p>
+              </div>
+              <div className="text-4xl">📚</div>
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-r from-purple-400 to-pink-400 rounded-3xl shadow-2xl border-4 border-black p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-black text-black">
+                  Active Classes
+                </p>
+                <p className="text-3xl font-black text-black mt-2">
+                  {classes.filter(cls => cls.sheetCount > 0).length}
+                </p>
+              </div>
+              <div className="text-4xl">🏫</div>
+            </div>
+          </div>
+        </div>
+
         {/* Classes List */}
-        <div className="bg-white rounded-lg shadow">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-lg font-medium text-gray-900">Your Classes</h2>
-            <p className="text-gray-500 text-sm mt-1">
-              Click on a class to view and access your sheets
+        <div className="bg-white rounded-3xl shadow-2xl border-4 border-black overflow-hidden">
+          <div className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 p-6 border-b-4 border-black">
+            <h2 className="text-2xl font-black text-black mb-2 flex items-center">
+              <span className="text-3xl mr-3">🏫</span>
+              Your Magical Classes
+              <span className="ml-3 text-xl">✨</span>
+            </h2>
+            <p className="text-black font-bold">
+              Click on a class to view and access your magical sheets
             </p>
           </div>
 
           {classes.length === 0 ? (
-            <div className="text-center py-12">
-              <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Classes Found</h3>
-              <p className="text-gray-500">
-                You are not enrolled in any classes yet. Contact your teacher to get enrolled.
+            <div className="bg-gradient-to-r from-yellow-200 via-orange-200 to-red-200 p-12 text-center border-t-4 border-black">
+              <div className="text-6xl mb-6">📚</div>
+              <h3 className="text-2xl font-black text-black mb-4">
+                No Magical Classes Yet
+              </h3>
+              <p className="text-black font-bold text-lg">
+                You haven't enrolled in any classes yet. Time to start your learning adventure!
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-200">
+            <div className="divide-y-4 divide-black">
               {classes.map((classData) => (
                 <div
                   key={classData.id}
-                  className="p-6 hover:bg-gray-50 cursor-pointer transition-colors"
+                  className="bg-gradient-to-r from-white to-gray-100 p-6 hover:scale-105 transition-all cursor-pointer border-b-4 border-black last:border-b-0"
                   onClick={() => openClassSheets(classData)}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-start space-x-4">
                       <div className="flex-shrink-0">
-                        <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center">
-                          <BookOpen className="h-6 w-6 text-white" />
+                        <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl flex items-center justify-center border-4 border-black shadow-lg">
+                          <BookOpen className="h-8 w-8 text-white" />
                         </div>
                       </div>
                       <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-gray-900">
+                        <h3 className="text-xl font-black text-black mb-1">
                           {classData.name}
                         </h3>
-                        <p className="text-sm text-gray-500">{classData.subject}</p>
-                        <p className="text-xs text-gray-400">{classData.year}</p>
-                        
-                        <div className="mt-2 flex items-center space-x-4 text-sm text-gray-600">
-                          <div className="flex items-center">
-                            <FileSpreadsheet className="h-4 w-4 mr-1" />
-                            <span>{classData.sheetCount} sheet{classData.sheetCount !== 1 ? 's' : ''}</span>
+                        <p className="text-black font-bold text-lg mb-1">{classData.subject}</p>
+                        <p className="text-black font-bold text-sm mb-3">{classData.year}</p>
+
+                        <div className="flex items-center space-x-6 text-sm text-black font-bold">
+                          <div className="flex items-center space-x-2">
+                            <span className="text-2xl">📊</span>
+                            <span>{classData.sheetCount} magical sheet{classData.sheetCount !== 1 ? 's' : ''}</span>
                           </div>
                           {classData.lastActivity && (
-                            <div className="flex items-center">
-                              <Clock className="h-4 w-4 mr-1" />
+                            <div className="flex items-center space-x-2">
+                              <span className="text-2xl">🕒</span>
                               <span>Last activity: {classData.lastActivity.toLocaleDateString()}</span>
                             </div>
                           )}
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-3">
                       {classData.sheetCount > 0 && (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          {classData.sheetCount} sheet{classData.sheetCount !== 1 ? 's' : ''}
+                        <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-black bg-green-400 text-white border-2 border-black shadow-lg">
+                          {classData.sheetCount} Sheet{classData.sheetCount !== 1 ? 's' : ''} ✨
                         </span>
                       )}
-                      <ChevronRight className="h-5 w-5 text-gray-400" />
+                      <div className="text-3xl transform group-hover:translate-x-1 transition-transform">➡️</div>
                     </div>
                   </div>
                 </div>
