@@ -835,7 +835,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onView, onEdit, onAssign }
       {/* Video Info */}
       <div className="p-6">
         <div className="mb-4">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2 overflow-x-auto whitespace-nowrap scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
             {video.title}
           </h3>
           <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-3">

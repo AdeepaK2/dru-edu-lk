@@ -282,8 +282,7 @@ export default function Mail({
               </div>
               
               <p>Best regards,<br>
-              ${fallbackMode ? 'DRU Education' : actualTeacherName}<br>
-              Dr U Education</p>
+              Dr U Education Team</p>
               
               <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 30px 0;">
               <p style="font-size: 12px; color: #6B7280; text-align: center;">
