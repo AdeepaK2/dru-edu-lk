@@ -322,21 +322,24 @@ export default function StudentDashboard() {
           <div className="flex items-center justify-between relative z-10">
             <div className="flex-1">
               <div className="flex items-center space-x-4 mb-2">
-                <div className="text-6xl animate-bounce">�‍♂️</div>
+                <img 
+                  src="/welcome.png" 
+                  alt="Welcome" 
+                  className="w-24 h-24 shadow-lg"
+                />
                 <div>
                   <h1 className="text-3xl font-bold">
-                    Hey {student?.name}! Ready to transform your learning? 🔄
+                    Hey {student?.name}! Ready to transform your learning?
                   </h1>
                   <p className="text-green-200 text-lg font-semibold mt-2">
-                    Let's make learning heroic with Ben 10's power! ⚡
+                    Let's make learning heroic with Ben 10's power!
                   </p>
                 </div>
               </div>
               <p className="text-green-200 mb-4 text-base">
-                Welcome to your alien learning headquarters! 🚀
+                Welcome to your alien learning headquarters!
               </p>
               <div className="flex items-center space-x-2 text-green-200">
-                <span className="text-2xl">⏰</span>
                 <span className="text-sm font-medium">{getMelbourneDateTime()}</span>
               </div>
             </div>
