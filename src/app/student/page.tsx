@@ -279,22 +279,18 @@ export default function StudentDashboard() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-400 via-black to-green-500 flex items-center justify-center">
-        <div className="text-center bg-white border-4 border-black rounded-2xl p-8 shadow-2xl">
-          {/* Ben 10 Omnitrix loading animation */}
-          <div className="relative mb-6">
-            <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center relative mx-auto animate-spin border-4 border-black">
-              <div className="w-16 h-16 bg-black rounded-full flex items-center justify-center">
-                <div className="text-green-400 text-2xl font-bold animate-pulse">10</div>
-                <div className="absolute inset-0 rounded-full border-2 border-green-400 animate-ping"></div>
-              </div>
-            </div>
-            <div className="text-center mt-4">
-              <span className="text-green-600 font-bold text-lg">Ben 10</span>
-            </div>
-          </div>
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-green-500 border-t-black mx-auto mb-4"></div>
-          <p className="text-green-600 font-bold text-lg">Loading Ben 10's Hero Dashboard... 🦸‍♂️</p>
-          <p className="text-gray-600 font-medium mt-2">Get ready to transform your learning! 🔄</p>
+        <div className="text-center">
+          <img 
+            src="/loading.gif" 
+            alt="Loading..." 
+            className="w-80 h-80 mx-auto mb-4 border-4 border-green-400 rounded-lg"
+          />
+          <p className="text-white font-bold text-3xl">
+            Loading
+            <span className="inline-block animate-bounce delay-0">.</span>
+            <span className="inline-block animate-bounce delay-200">.</span>
+            <span className="inline-block animate-bounce delay-400">.</span>
+          </p>
         </div>
       </div>
     );
@@ -308,16 +304,8 @@ export default function StudentDashboard() {
         <div className="bg-gradient-to-r from-green-500 via-black to-green-600 rounded-2xl text-white p-8 relative overflow-hidden border-4 border-black">
           {/* Ben 10 themed background elements */}
           <div className="absolute top-0 right-0 w-32 h-32 bg-green-300 rounded-full -translate-y-16 translate-x-16 animate-pulse opacity-20"></div>
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-black rounded-full translate-y-12 -translate-x-12 animate-spin opacity-20"></div>
-          {/* Omnitrix symbols */}
-          <div className="absolute top-4 right-4 flex space-x-2">
-            <div className="w-8 h-8 bg-green-400 rounded-full animate-pulse border-2 border-black flex items-center justify-center">
-              <span className="text-black text-xs font-bold">10</span>
-            </div>
-            <div className="w-8 h-8 bg-black rounded-full animate-pulse delay-300 border-2 border-green-400 flex items-center justify-center">
-              <span className="text-green-400 text-xs font-bold">B</span>
-            </div>
-          </div>
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-black rounded-full translate-y-12 -translate-x-12 animate-pluse opacity-20"></div>
+         
 
           <div className="flex items-center justify-between relative z-10">
             <div className="flex-1">
@@ -325,7 +313,7 @@ export default function StudentDashboard() {
                 <img 
                   src="/welcome.png" 
                   alt="Welcome" 
-                  className="w-24 h-24 shadow-lg"
+                  className="w-40 h-40 rounded-full border-4 border-black ring-4 ring-green-400"
                 />
                 <div>
                   <h1 className="text-3xl font-bold">
@@ -343,49 +331,25 @@ export default function StudentDashboard() {
                 <span className="text-sm font-medium">{getMelbourneDateTime()}</span>
               </div>
             </div>
-            <div className="hidden md:block">
-              <div className="relative">
-                {/* Omnitrix device */}
-                <div className="w-24 h-24 bg-green-500 rounded-full flex items-center justify-center relative border-4 border-black">
-                  <div className="w-20 h-20 bg-black rounded-full flex items-center justify-center">
-                    <span className="text-green-400 text-xl font-bold animate-pulse">10</span>
-                    <div className="absolute inset-0 rounded-full border-2 border-green-400 animate-ping"></div>
-                  </div>
-                </div>
-                <div className="text-center mt-2">
-                  <span className="text-green-600 font-bold text-sm">Omnitrix</span>
-                </div>
-              </div>
-            </div>
+            {/* Omnitrix device removed per request */}
           </div>
         </div>
 
         {/* Motivational Message - Ben 10 Theme */}
         {!loading && dashboardStats.currentGrade > 0 && (
-          <div className="bg-gradient-to-r from-green-200 via-black to-green-300 border-4 border-black rounded-xl p-6 animate-fade-in relative overflow-hidden">
-            {/* Ben 10 themed decorations */}
-            <div className="absolute top-2 right-2 text-2xl animate-spin">⚡</div>
-            <div className="absolute bottom-2 left-2 text-xl animate-bounce">🚀</div>
+          <div className="bg-gradient-to-r from-green-400 via-black to-green-400 border-4 border-black rounded-xl p-6 animate-fade-in relative overflow-hidden">
+        
 
             <div className="flex items-start space-x-4 relative z-10">
               <div className="relative">
-                {/* Alien character */}
-                <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center relative border-4 border-black">
-                  <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center">
-                    <span className="text-green-400 text-lg font-bold animate-pulse">👽</span>
-                  </div>
-                </div>
-                <div className="text-center mt-1">
-                  <span className="text-green-600 font-bold text-xs">Alien</span>
-                </div>
               </div>
               <div className="flex-1">
                 <h3 className="text-2xl font-bold text-white mb-2 flex items-center">
                   {getMotivationalMessage().message}
-                  <span className="ml-2 animate-pulse">🔄</span>
+                 
                 </h3>
                 <p className="text-white text-base leading-relaxed font-medium">
-                  Remember, just like Ben 10's transformations, every great achievement starts with a single power-up! ⚡
+                  Remember, just like Ben 10's transformations, every great achievement starts with a single power-up!
                 </p>
                 <div className="mt-4 flex items-center space-x-4 text-sm text-white">
                   <div className="flex items-center space-x-1">
@@ -403,10 +367,10 @@ export default function StudentDashboard() {
                 </div>
                 {/* Interactive encouragement */}
                 <div className="mt-4 flex space-x-2">
-                  <button className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-full text-sm font-bold transform hover:scale-105 transition-all animate-pulse">
+                  <button className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-full text-sm font-bold transform hover:scale-105 transition-all animate-pulse border-2 border-black">
                     Transform! 💪
                   </button>
-                  <button className="bg-black hover:bg-gray-800 text-green-400 px-4 py-2 rounded-full text-sm font-bold transform hover:scale-105 transition-all">
+                  <button className="bg-black hover:bg-gray-800 text-green-400 px-4 py-2 rounded-full text-sm font-bold transform hover:scale-105 transition-all border-2 border-green-400">
                     You're Heroic! 🌟
                   </button>
                 </div>
