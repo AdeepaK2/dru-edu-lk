@@ -97,29 +97,23 @@ export default function StudentClassesPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-400 via-yellow-400 to-blue-400 flex items-center justify-center">
-        <div className="bg-white border-4 border-black rounded-3xl p-8 shadow-2xl">
-          {/* Mickey Mouse Loading Animation */}
+      <div className="min-h-screen bg-gradient-to-br from-green-400 via-black to-green-500 flex items-center justify-center">
+        <div className="bg-white border-4 border-green-500 rounded-3xl p-8 shadow-2xl">
+          {/* Ben 10 Loading Animation */}
           <div className="relative mb-6">
-            <div className="w-24 h-24 bg-black rounded-full flex items-center justify-center relative mx-auto animate-bounce">
-              <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center">
-                <div className="flex space-x-1">
-                  <div className="w-3 h-3 bg-black rounded-full animate-pulse"></div>
-                  <div className="w-3 h-3 bg-black rounded-full animate-pulse delay-300"></div>
-                </div>
-                <div className="absolute bottom-6 w-2 h-2 bg-red-500 rounded-full animate-ping"></div>
+            <div className="w-24 h-24 bg-green-500 rounded-full flex items-center justify-center relative mx-auto animate-spin border-4 border-black">
+              <div className="w-20 h-20 bg-black rounded-full flex items-center justify-center">
+                <span className="text-green-400 text-xl font-bold animate-pulse">10</span>
+                <div className="absolute inset-0 rounded-full border-2 border-green-400 animate-ping"></div>
               </div>
-              {/* Mickey ears */}
-              <div className="absolute -top-4 -left-4 w-8 h-8 bg-black rounded-full animate-pulse"></div>
-              <div className="absolute -top-4 -right-4 w-8 h-8 bg-black rounded-full animate-pulse delay-500"></div>
             </div>
             <div className="text-center mt-4">
-              <span className="text-black font-bold text-xl">Mickey</span>
+              <span className="text-green-600 font-bold text-xl">Ben 10</span>
             </div>
           </div>
           <div className="text-center">
-            <h2 className="text-2xl font-black text-black mb-2">Loading Magical Classes...</h2>
-            <p className="text-gray-600 font-medium">Getting ready for some fun learning! 🎓✨</p>
+            <h2 className="text-2xl font-black text-black mb-2">Loading Hero Classes...</h2>
+            <p className="text-gray-600 font-medium">Get ready to transform your learning! 🔄⚡</p>
           </div>
         </div>
       </div>
@@ -136,49 +130,54 @@ export default function StudentClassesPage() {
 
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-red-400 via-yellow-400 to-blue-400 p-6">
-        {/* Mickey Mouse Header */}
-        <div className="bg-gradient-to-r from-red-500 via-yellow-500 to-blue-500 rounded-3xl shadow-2xl border-4 border-black p-8 mb-6 relative overflow-hidden">
-          {/* Mickey Mouse Ears */}
-          <div className="absolute -top-4 -left-4 w-12 h-12 bg-black rounded-full animate-bounce"></div>
-          <div className="absolute -top-4 -right-4 w-12 h-12 bg-black rounded-full animate-bounce delay-300"></div>
+      <div className="min-h-screen bg-gradient-to-br from-green-400 via-black to-green-500 p-6">
+        {/* Ben 10 Header */}
+        <div className="bg-gradient-to-r from-green-500 via-black to-green-600 rounded-3xl shadow-2xl border-4 border-green-400 p-8 mb-6 relative overflow-hidden">
+          {/* Omnitrix Symbols */}
+          <div className="absolute -top-4 -left-4 w-12 h-12 bg-green-400 rounded-full animate-bounce border-2 border-black flex items-center justify-center">
+            <span className="text-black text-lg font-bold">10</span>
+          </div>
+          <div className="absolute -top-4 -right-4 w-12 h-12 bg-black rounded-full animate-bounce delay-300 border-2 border-green-400 flex items-center justify-center">
+            <span className="text-green-400 text-lg font-bold">B</span>
+          </div>
 
-          {/* Magical Sparkles */}
-          <div className="absolute top-4 right-16 text-2xl">✨</div>
-          <div className="absolute bottom-4 left-16 text-2xl">⭐</div>
+          {/* Hero Sparkles */}
+          <div className="absolute top-4 right-16 text-2xl">⚡</div>
+          <div className="absolute bottom-4 left-16 text-2xl">🚀</div>
 
           <div className="flex items-center justify-between relative z-10">
             <div className="flex items-center space-x-4">
-              <div className="text-6xl">🎓</div>
+              <div className="text-6xl">🦸‍♂️</div>
               <div>
-                <h1 className="text-4xl font-black text-black mb-2 flex items-center">
-                  <span>Mickey's</span>
-                  <span className="ml-2 text-white font-black text-5xl">Classroom</span>
-                  <span className="ml-2 text-3xl">🎭</span>
+                <h1 className="text-4xl font-black text-white mb-2 flex items-center">
+                  <span>Ben 10's</span>
+                  <span className="ml-2 text-green-400 font-black text-5xl">Hero</span>
+                  <span className="ml-2 text-3xl">Classroom</span>
+                  <span className="ml-2 text-2xl">🔄</span>
                 </h1>
-                <p className="text-black font-bold text-lg">
-                  Discover magical learning adventures with your favorite Disney friends! 🌟
+                <p className="text-green-200 font-bold text-lg">
+                  Transform your learning with alien-powered adventures! �
                 </p>
               </div>
             </div>
-            <div className="bg-white border-4 border-black rounded-2xl p-4 shadow-lg">
+            <div className="bg-white border-4 border-green-400 rounded-2xl p-4 shadow-lg">
               <div className="flex items-center space-x-3">
                 <div className="text-4xl">📚</div>
                 <div className="text-center">
                   <div className="text-3xl font-black text-black">{filteredEnrollments.length}</div>
-                  <div className="text-sm font-bold text-gray-700">Magical Classes</div>
+                  <div className="text-sm font-bold text-gray-700">Hero Classes</div>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Mickey Mouse Search and Filter */}
-        <div className="bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400 rounded-2xl shadow-xl border-4 border-black p-6 mb-6">
+        {/* Ben 10 Search and Filter */}
+        <div className="bg-gradient-to-r from-green-400 via-black to-green-500 rounded-2xl shadow-xl border-4 border-green-400 p-6 mb-6">
           <div className="flex items-center space-x-3 mb-4">
             <div className="text-3xl">🔍</div>
-            <h2 className="text-2xl font-black text-black">Mickey's Magical Search</h2>
-            <div className="text-2xl">✨</div>
+            <h2 className="text-2xl font-black text-white">Ben 10's Hero Search</h2>
+            <div className="text-2xl">⚡</div>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-6">
@@ -187,24 +186,24 @@ export default function StudentClassesPage() {
                 <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-2xl">🔍</div>
                 <Input
                   type="text"
-                  placeholder="Search for magical classes or subjects..."
+                  placeholder="Search for hero classes or subjects..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-12 pr-4 py-3 text-lg border-4 border-black rounded-2xl bg-white text-black placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-yellow-400 shadow-lg"
+                  className="pl-12 pr-4 py-3 text-lg border-4 border-green-400 rounded-2xl bg-white text-black placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-green-400 shadow-lg"
                 />
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <div className="text-2xl">🎭</div>
+              <div className="text-2xl">🦸‍♂️</div>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="border-4 border-black rounded-2xl px-6 py-3 bg-white text-black font-bold text-lg focus:outline-none focus:ring-4 focus:ring-yellow-400 shadow-lg hover:bg-gray-50 transition-all"
+                className="border-4 border-green-400 rounded-2xl px-6 py-3 bg-white text-black font-bold text-lg focus:outline-none focus:ring-4 focus:ring-green-400 shadow-lg hover:bg-gray-50 transition-all"
               >
-                <option value="all">🌟 All Magical Classes</option>
-                <option value="Active">🎯 Active Adventures</option>
-                <option value="Completed">🏆 Completed Quests</option>
-                <option value="Inactive">😴 Sleeping Classes</option>
+                <option value="all">⚡ All Hero Classes</option>
+                <option value="Active">🎯 Active Missions</option>
+                <option value="Completed">🏆 Completed Battles</option>
+                <option value="Inactive">😴 Resting Classes</option>
                 <option value="Dropped">👋 Dropped Classes</option>
               </select>
             </div>
@@ -213,21 +212,21 @@ export default function StudentClassesPage() {
 
         {/* Classes Grid */}
         {filteredEnrollments.length === 0 ? (
-          <div className="bg-gradient-to-r from-blue-300 via-purple-300 to-pink-300 rounded-3xl shadow-2xl border-4 border-black p-12">
+          <div className="bg-gradient-to-r from-green-300 via-black to-green-400 rounded-3xl shadow-2xl border-4 border-green-400 p-12">
             <div className="text-center">
-              <div className="text-8xl mb-6">📚</div>
-              <h3 className="text-3xl font-black text-black mb-4">
-                {searchTerm || statusFilter !== 'all' ? 'No Magical Classes Found' : 'No Enchanted Classes Yet'}
+              <div className="text-8xl mb-6">🦸‍♂️</div>
+              <h3 className="text-3xl font-black text-white mb-4">
+                {searchTerm || statusFilter !== 'all' ? 'No Hero Classes Found' : 'No Alien Classes Yet'}
               </h3>
-              <p className="text-black font-bold text-lg mb-6">
+              <p className="text-green-200 font-bold text-lg mb-6">
                 {searchTerm || statusFilter !== 'all' 
-                  ? 'Try adjusting your magical search or filter criteria ✨' 
-                  : 'Contact your teacher to get enrolled in some fun classes! 🎓'}
+                  ? 'Try adjusting your hero search or filter criteria ⚡' 
+                  : 'Contact your teacher to get enrolled in some epic classes! 🦸‍♂️'}
               </p>
               <div className="flex justify-center space-x-4">
-                <div className="text-4xl">🐭</div>
-                <div className="text-4xl animate-pulse delay-300">🎭</div>
-                <div className="text-4xl animate-pulse delay-500">⭐</div>
+                <div className="text-4xl">🦸‍♂️</div>
+                <div className="text-4xl animate-pulse delay-300">🔄</div>
+                <div className="text-4xl animate-pulse delay-500">⚡</div>
               </div>
             </div>
           </div>
@@ -236,44 +235,44 @@ export default function StudentClassesPage() {
             {filteredEnrollments.map((enrollment) => (
               <div
                 key={enrollment.id}
-                className="bg-gradient-to-br from-yellow-300 via-pink-300 to-purple-300 rounded-3xl shadow-2xl border-4 border-black p-6 hover:shadow-3xl hover:scale-105 transition-all duration-300 hover:rotate-1"
+                className="bg-gradient-to-br from-green-300 via-black to-green-400 rounded-3xl shadow-2xl border-4 border-green-400 p-6 hover:shadow-3xl hover:scale-105 transition-all duration-300 hover:rotate-1"
               >
-                {/* Mickey Mouse Class Header */}
+                {/* Ben 10 Class Header */}
                 <div className="flex items-start justify-between mb-6">
                   <div className="flex items-center space-x-4">
-                    <div className="w-16 h-16 bg-black rounded-full flex items-center justify-center border-4 border-white shadow-lg animate-pulse">
-                      <div className="text-3xl">📚</div>
+                    <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center border-4 border-black shadow-lg animate-pulse">
+                      <div className="text-3xl">🦸‍♂️</div>
                     </div>
                     <div>
-                      <h3 className="font-black text-black text-xl mb-1">
+                      <h3 className="font-black text-white text-xl mb-1">
                         {enrollment.className}
                       </h3>
-                      <p className="text-black font-bold text-sm bg-white rounded-full px-3 py-1 border-2 border-black">
+                      <p className="text-black font-bold text-sm bg-green-200 rounded-full px-3 py-1 border-2 border-green-400">
                         {enrollment.subject}
                       </p>
                     </div>
                   </div>
-                  <span className={`px-4 py-2 text-sm font-black rounded-full border-4 border-black shadow-lg ${
+                  <span className={`px-4 py-2 text-sm font-black rounded-full border-4 border-green-400 shadow-lg ${
                     enrollment.status === 'Active' 
                       ? 'bg-green-400 text-black'
                       : enrollment.status === 'Completed'
-                      ? 'bg-blue-400 text-black'
+                      ? 'bg-black text-green-400'
                       : enrollment.status === 'Inactive'
-                      ? 'bg-yellow-400 text-black'
+                      ? 'bg-green-500 text-black'
                       : 'bg-red-400 text-black'
                   }`}>
                     {enrollment.status}
                   </span>
                 </div>
 
-                {/* Magical Class Info */}
-                <div className="bg-white border-4 border-black rounded-2xl p-4 mb-4 shadow-lg">
+                {/* Hero Class Info */}
+                <div className="bg-white border-4 border-green-400 rounded-2xl p-4 mb-4 shadow-lg">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center space-x-3">
                       <div className="text-2xl">📅</div>
                       <span className="text-sm font-bold text-black">Enrolled</span>
                     </div>
-                    <span className="text-sm font-black text-black bg-yellow-300 rounded-full px-3 py-1 border-2 border-black">
+                    <span className="text-sm font-black text-black bg-green-300 rounded-full px-3 py-1 border-2 border-green-400">
                       {enrollment.enrolledAt.toLocaleDateString()}
                     </span>
                   </div>
@@ -282,13 +281,13 @@ export default function StudentClassesPage() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
                         <div className="text-2xl">🏆</div>
-                        <span className="text-sm font-bold text-black">Magical Grade</span>
+                        <span className="text-sm font-bold text-black">Hero Grade</span>
                       </div>
-                      <span className={`text-lg font-black px-3 py-1 rounded-full border-2 border-black ${
+                      <span className={`text-lg font-black px-3 py-1 rounded-full border-2 border-green-400 ${
                         enrollment.grade >= 80 
                           ? 'bg-green-400 text-black'
                           : enrollment.grade >= 60
-                          ? 'bg-yellow-400 text-black'
+                          ? 'bg-green-500 text-black'
                           : 'bg-red-400 text-black'
                       }`}>
                         {enrollment.grade}%
@@ -297,64 +296,64 @@ export default function StudentClassesPage() {
                   )}
                 </div>
 
-                {/* Magical Progress Bar */}
+                {/* Hero Progress Bar */}
                 {enrollment.grade !== undefined && (
                   <div className="mb-4">
-                    <div className="bg-white border-4 border-black rounded-full h-6 p-1 shadow-lg">
+                    <div className="bg-white border-4 border-green-400 rounded-full h-6 p-1 shadow-lg">
                       <div 
-                        className={`h-4 rounded-full transition-all duration-1000 border-2 border-black ${
+                        className={`h-4 rounded-full transition-all duration-1000 border-2 border-green-400 ${
                           enrollment.grade >= 80 
                             ? 'bg-gradient-to-r from-green-400 to-green-600'
                             : enrollment.grade >= 60
-                            ? 'bg-gradient-to-r from-yellow-400 to-yellow-600'
+                            ? 'bg-gradient-to-r from-green-500 to-green-700'
                             : 'bg-gradient-to-r from-red-400 to-red-600'
                         }`}
                         style={{ width: `${enrollment.grade}%` }}
                       ></div>
                     </div>
                     <div className="text-center mt-2">
-                      <span className="text-sm font-bold text-black">Progress to Excellence! 🌟</span>
+                      <span className="text-sm font-bold text-white">Transform to Excellence! ⚡</span>
                     </div>
                   </div>
                 )}
 
-                {/* Magical Notes */}
+                {/* Hero Notes */}
                 {enrollment.notes && (
-                  <div className="border-t-4 border-black pt-4 mb-4">
-                    <div className="bg-white border-4 border-black rounded-2xl p-4 shadow-lg">
+                  <div className="border-t-4 border-green-400 pt-4 mb-4">
+                    <div className="bg-white border-4 border-green-400 rounded-2xl p-4 shadow-lg">
                       <div className="flex items-center space-x-2 mb-2">
                         <div className="text-2xl">📝</div>
-                        <p className="text-sm font-black text-black">Teacher's Magical Notes:</p>
+                        <p className="text-sm font-black text-black">Teacher's Hero Notes:</p>
                       </div>
-                      <p className="text-black font-medium bg-yellow-100 rounded-lg p-3 border-2 border-black">
+                      <p className="text-black font-medium bg-green-100 rounded-lg p-3 border-2 border-green-400">
                         {enrollment.notes}
                       </p>
                     </div>
                   </div>
                 )}
 
-                {/* Teacher's Magical Remark */}
+                {/* Teacher's Hero Remark */}
                 {enrollment.remark && (
-                  <div className="border-t-4 border-black pt-4 mb-4">
-                    <div className="bg-white border-4 border-black rounded-2xl p-4 shadow-lg">
+                  <div className="border-t-4 border-green-400 pt-4 mb-4">
+                    <div className="bg-white border-4 border-green-400 rounded-2xl p-4 shadow-lg">
                       <div className="flex items-start space-x-3">
-                        <div className="text-3xl">🎭</div>
+                        <div className="text-3xl">🦸‍♂️</div>
                         <div className="flex-1">
                           <p className="text-lg font-black text-black mb-3">
-                            Teacher's Magical Remark:
+                            Teacher's Hero Remark:
                           </p>
                           <div className="space-y-3">
-                            <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-black border-2 border-black shadow-lg ${getRemarkColor(enrollment.remark.remarkLevel)}`}>
+                            <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-black border-2 border-green-400 shadow-lg ${getRemarkColor(enrollment.remark.remarkLevel)}`}>
                               {enrollment.remark.remarkLevel === 'Custom' ? enrollment.remark.customRemark : enrollment.remark.remarkLevel}
                             </span>
                             {enrollment.remark.additionalNotes && (
-                              <div className="bg-gradient-to-r from-blue-100 to-purple-100 p-4 rounded-xl border-2 border-black">
-                                <p className="text-black font-medium">
+                              <div className="bg-gradient-to-r from-green-100 to-black p-4 rounded-xl border-2 border-green-400">
+                                <p className="text-white font-medium">
                                   {enrollment.remark.additionalNotes}
                                 </p>
                               </div>
                             )}
-                            <p className="text-xs font-bold text-gray-600 bg-white rounded-full px-3 py-1 border border-black">
+                            <p className="text-xs font-bold text-gray-600 bg-white rounded-full px-3 py-1 border border-green-400">
                               Updated: {enrollment.remark.updatedAt.toLocaleDateString()}
                             </p>
                           </div>
@@ -364,17 +363,17 @@ export default function StudentClassesPage() {
                   </div>
                 )}
 
-                {/* Magical Zoom Meeting Link */}
+                {/* Hero Zoom Meeting Link */}
                 {enrollment.classData?.zoomLink && (
-                  <div className="border-t-4 border-black pt-4 mb-4">
-                    <div className="bg-white border-4 border-black rounded-2xl p-4 shadow-lg">
+                  <div className="border-t-4 border-green-400 pt-4 mb-4">
+                    <div className="bg-white border-4 border-green-400 rounded-2xl p-4 shadow-lg">
                       <div className="mb-4">
                         <p className="text-lg font-black text-black mb-3 flex items-center">
                           <span className="text-2xl mr-2">🎥</span>
                           Meeting Link:
                         </p>
-                        <div className="p-3 bg-gradient-to-r from-blue-200 to-purple-200 rounded-xl border-2 border-black">
-                          <p className="text-black font-medium break-all text-sm">
+                        <div className="p-3 bg-gradient-to-r from-green-200 to-black rounded-xl border-2 border-green-400">
+                          <p className="text-white font-medium break-all text-sm">
                             {enrollment.classData.zoomLink}
                           </p>
                         </div>
@@ -384,16 +383,16 @@ export default function StudentClassesPage() {
                         variant="primary"
                         size="sm"
                         onClick={() => handleJoinZoom(enrollment.classData!.zoomLink!)}
-                        className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black flex items-center justify-center space-x-3"
+                        className="w-full bg-gradient-to-r from-green-500 to-black hover:from-green-600 hover:to-gray-900 text-white px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-green-400 flex items-center justify-center space-x-3"
                       >
                         <ExternalLink className="w-5 h-5" />
-                        <span>Join Magical Meeting! 🎭</span>
+                        <span>Join Hero Meeting! 🦸‍♂️</span>
                       </Button>
                     </div>
                   </div>
                 )}
 
-                {/* Magical Action Buttons */}
+                {/* Hero Action Buttons */}
                 <div className="grid grid-cols-3 gap-3 mt-6">
                   <Button
                     variant="outline"
@@ -402,10 +401,10 @@ export default function StudentClassesPage() {
                       // Navigate to tests page
                       window.location.href = `/student/test`;
                     }}
-                    className="bg-gradient-to-r from-green-400 to-emerald-400 hover:from-green-500 hover:to-emerald-500 text-black font-black border-4 border-black rounded-2xl transform hover:scale-110 transition-all shadow-lg hover:rotate-3 flex flex-col items-center py-3"
+                    className="bg-gradient-to-r from-green-400 to-emerald-400 hover:from-green-500 hover:to-emerald-500 text-black font-black border-4 border-green-400 rounded-2xl transform hover:scale-110 transition-all shadow-lg hover:rotate-3 flex flex-col items-center py-3"
                   >
                     <span className="text-2xl mb-1">📝</span>
-                    <span className="text-xs">Tests</span>
+                    <span className="text-xs">Hero Tests</span>
                   </Button>
                   <Button
                     variant="outline"
@@ -414,10 +413,10 @@ export default function StudentClassesPage() {
                       // Navigate to study materials page for this class
                       window.location.href = `/student/study?classId=${enrollment.classId}`;
                     }}
-                    className="bg-gradient-to-r from-blue-400 to-cyan-400 hover:from-blue-500 hover:to-cyan-500 text-black font-black border-4 border-black rounded-2xl transform hover:scale-110 transition-all shadow-lg hover:-rotate-3 flex flex-col items-center py-3"
+                    className="bg-gradient-to-r from-green-400 to-emerald-400 hover:from-green-500 hover:to-emerald-500 text-black font-black border-4 border-green-400 rounded-2xl transform hover:scale-110 transition-all shadow-lg hover:-rotate-3 flex flex-col items-center py-3"
                   >
                     <span className="text-2xl mb-1">📚</span>
-                    <span className="text-xs">Study</span>
+                    <span className="text-xs">Hero Study</span>
                   </Button>
                   <Button
                     variant="outline"
@@ -426,10 +425,10 @@ export default function StudentClassesPage() {
                       // Navigate to videos page for this class
                       window.location.href = `/student/classes/${enrollment.classId}/videos`;
                     }}
-                    className="bg-gradient-to-r from-purple-400 to-pink-400 hover:from-purple-500 hover:to-pink-500 text-black font-black border-4 border-black rounded-2xl transform hover:scale-110 transition-all shadow-lg hover:rotate-3 flex flex-col items-center py-3"
+                    className="bg-gradient-to-r from-green-400 to-emerald-400 hover:from-green-500 hover:to-emerald-500 text-black font-black border-4 border-green-400 rounded-2xl transform hover:scale-110 transition-all shadow-lg hover:rotate-3 flex flex-col items-center py-3"
                   >
                     <span className="text-2xl mb-1">🎬</span>
-                    <span className="text-xs">Videos</span>
+                    <span className="text-xs">Hero Videos</span>
                   </Button>
                 </div>
               </div>
@@ -437,39 +436,39 @@ export default function StudentClassesPage() {
           </div>
         )}
 
-        {/* Mickey Mouse Summary Stats */}
+        {/* Ben 10 Hero Summary Stats */}
         {filteredEnrollments.length > 0 && (
-          <div className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 rounded-3xl shadow-2xl border-4 border-black p-8 mt-8">
+          <div className="bg-gradient-to-r from-green-400 via-black to-green-400 rounded-3xl shadow-2xl border-4 border-green-400 p-8 mt-8">
             <div className="flex items-center justify-center space-x-3 mb-8">
-              <div className="text-4xl">📊</div>
-              <h3 className="text-3xl font-black text-black">Mickey's Magical Summary</h3>
-              <div className="text-4xl">✨</div>
+              <div className="text-4xl">🦸‍♂️</div>
+              <h3 className="text-3xl font-black text-white">Ben 10 Hero Summary</h3>
+              <div className="text-4xl">⚡</div>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              <div className="bg-white border-4 border-black rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all">
+              <div className="bg-white border-4 border-green-400 rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all">
                 <div className="text-4xl mb-2">🎯</div>
                 <div className="text-3xl font-black text-green-600 mb-1">
                   {filteredEnrollments.filter(e => e.status === 'Active').length}
                 </div>
                 <div className="text-sm font-bold text-black">Active Adventures</div>
               </div>
-              <div className="bg-white border-4 border-black rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all">
+              <div className="bg-white border-4 border-green-400 rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all">
                 <div className="text-4xl mb-2">🏆</div>
-                <div className="text-3xl font-black text-blue-600 mb-1">
+                <div className="text-3xl font-black text-green-600 mb-1">
                   {filteredEnrollments.filter(e => e.status === 'Completed').length}
                 </div>
                 <div className="text-sm font-bold text-black">Completed Quests</div>
               </div>
-              <div className="bg-white border-4 border-black rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all">
+              <div className="bg-white border-4 border-green-400 rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all">
                 <div className="text-4xl mb-2">📈</div>
-                <div className="text-3xl font-black text-yellow-600 mb-1">
+                <div className="text-3xl font-black text-green-600 mb-1">
                   {Math.round(filteredEnrollments.reduce((acc, e) => acc + e.attendance, 0) / filteredEnrollments.length) || 0}%
                 </div>
-                <div className="text-sm font-bold text-black">Attendance Magic</div>
+                <div className="text-sm font-bold text-black">Hero Attendance</div>
               </div>
-              <div className="bg-white border-4 border-black rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all">
+              <div className="bg-white border-4 border-green-400 rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all">
                 <div className="text-4xl mb-2">⭐</div>
-                <div className="text-3xl font-black text-purple-600 mb-1">
+                <div className="text-3xl font-black text-green-600 mb-1">
                   {filteredEnrollments.filter(e => e.grade !== undefined).length > 0 
                     ? Math.round(filteredEnrollments
                         .filter(e => e.grade !== undefined)
@@ -478,7 +477,7 @@ export default function StudentClassesPage() {
                     : 'N/A'
                   }{filteredEnrollments.filter(e => e.grade !== undefined).length > 0 ? '%' : ''}
                 </div>
-                <div className="text-sm font-bold text-black">Average Grade</div>
+                <div className="text-sm font-bold text-black">Hero Grade</div>
               </div>
             </div>
           </div>

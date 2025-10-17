@@ -127,12 +127,12 @@ export default function StudentVideos() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-400 via-yellow-400 to-blue-400 p-6">
+      <div className="min-h-screen bg-gradient-to-br from-green-600 via-green-700 to-black p-6">
         <div className="flex items-center justify-center py-12">
-          <div className="bg-gradient-to-r from-blue-400 to-purple-400 rounded-3xl shadow-2xl border-4 border-black p-8">
+          <div className="bg-gradient-to-r from-green-600 to-black rounded-3xl shadow-2xl border-4 border-black p-8">
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 border-4 border-black border-t-transparent rounded-full animate-spin bg-gradient-to-r from-yellow-400 to-orange-400"></div>
-              <span className="text-2xl font-black text-black">Loading your magical videos... ✨</span>
+              <div className="w-12 h-12 border-4 border-black border-t-transparent rounded-full animate-spin bg-gradient-to-r from-green-400 to-green-600"></div>
+              <span className="text-2xl font-black text-white">Loading your hero videos... ⚡</span>
             </div>
           </div>
         </div>
@@ -141,24 +141,29 @@ export default function StudentVideos() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-400 via-yellow-400 to-blue-400 p-6">
-      {/* Mickey Mouse Header */}
-      <div className="bg-gradient-to-r from-red-500 via-yellow-500 to-blue-500 rounded-3xl shadow-2xl border-4 border-black p-8 mb-8 relative overflow-hidden">
-        {/* Mickey Mouse Ears */}
-        <div className="absolute -top-4 -left-4 w-12 h-12 bg-black rounded-full"></div>
-        <div className="absolute -top-4 -right-4 w-12 h-12 bg-black rounded-full"></div>
+    <div className="min-h-screen bg-gradient-to-br from-green-600 via-green-700 to-black p-6">
+      {/* Ben 10 Hero Header */}
+      <div className="bg-gradient-to-r from-green-600 via-green-700 to-black rounded-3xl shadow-2xl border-4 border-black p-8 mb-8 relative overflow-hidden">
+        {/* Omnitrix Symbols */}
+        <div className="absolute -top-4 -left-4 w-12 h-12 bg-green-400 rounded-full border-2 border-black flex items-center justify-center">
+          <span className="text-black font-black text-lg">Ω</span>
+        </div>
+        <div className="absolute -top-4 -right-4 w-12 h-12 bg-green-400 rounded-full border-2 border-black flex items-center justify-center">
+          <span className="text-black font-black text-lg">Ω</span>
+        </div>
 
         <div className="flex items-center space-x-4 relative z-10">
-          <div className="text-6xl">🎥</div>
+          <div className="text-6xl">⚡</div>
           <div>
-            <h1 className="text-4xl font-black text-black mb-2 flex items-center">
-              <span>Mickey's</span>
-              <span className="ml-2 text-white font-black text-5xl">Video</span>
+            <h1 className="text-4xl font-black text-white mb-2 flex items-center">
+              <span>Ben 10's</span>
+              <span className="ml-2 text-green-300 font-black text-5xl">Hero</span>
+              <span className="ml-2 text-3xl">Video</span>
               <span className="ml-2 text-3xl">Library</span>
-              <span className="ml-2 text-3xl">🎭</span>
+              <span className="ml-2 text-3xl">Ω</span>
             </h1>
-            <p className="text-black font-bold text-lg">
-              Welcome back, {student?.name}! Explore your magical educational videos! ✨
+            <p className="text-green-100 font-bold text-lg">
+              Welcome back, {student?.name}! Transform your learning with hero-powered videos! ⚡
             </p>
           </div>
         </div>
@@ -183,10 +188,10 @@ export default function StudentVideos() {
           <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-2xl">🔍</div>
           <input
             type="text"
-            placeholder="🔍 Search magical classes..."
+            placeholder="🔍 Search hero classes..."
             value={searchTerm}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
-            className="pl-12 w-full px-6 py-3 border-4 border-black rounded-3xl focus:ring-4 focus:ring-yellow-400 focus:border-black bg-white text-black font-bold text-lg placeholder-black/60"
+            className="pl-12 w-full px-6 py-3 border-4 border-black rounded-3xl focus:ring-4 focus:ring-green-400 focus:border-black bg-white text-black font-bold text-lg placeholder-black/60"
           />
         </div>
       </div>
@@ -199,26 +204,26 @@ export default function StudentVideos() {
               <h2 className="text-2xl font-black text-black mb-2 flex items-center">
                 <span className="text-3xl mr-3">🎯</span>
                 Teacher Selected Videos for You
-                <span className="ml-3 text-xl">✨</span>
+                <span className="ml-3 text-xl">⚡</span>
               </h2>
               <p className="text-black font-bold">
                 Special video recommendations from your teachers
               </p>
             </div>
-            <div className="bg-gradient-to-r from-blue-400 to-purple-400 rounded-full px-4 py-2 border-2 border-black">
+            <div className="bg-gradient-to-r from-green-600 to-black rounded-full px-4 py-2 border-2 border-black">
               <span className="text-white font-black text-sm">
-                {individualVideos.length} Magical Video{individualVideos.length > 1 ? 's' : ''} 🎥
+                {individualVideos.length} Hero Video{individualVideos.length > 1 ? 's' : ''} ⚡
               </span>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {individualVideos.map((video) => (
-              <div key={video.id} className="bg-white rounded-2xl shadow-lg border-2 border-gray-300 p-6 overflow-hidden">
+              <div key={video.id} className="bg-white rounded-2xl shadow-lg border-2 border-black p-6 overflow-hidden">
                 <div className="flex flex-col h-full">
                   <div className="flex items-start space-x-4 mb-4">
                     <div className="flex-shrink-0">
-                      <div className="w-16 h-12 bg-gradient-to-br from-blue-400 to-purple-400 rounded-xl flex items-center justify-center border-2 border-black shadow-md">
+                      <div className="w-16 h-12 bg-gradient-to-br from-green-600 to-black rounded-xl flex items-center justify-center border-2 border-black shadow-md">
                         <Play className="w-6 h-6 text-white" />
                       </div>
                     </div>
@@ -235,10 +240,10 @@ export default function StudentVideos() {
                     </div>
                   </div>
 
-                  <div className="mt-auto pt-4 border-t-2 border-gray-300">
+                  <div className="mt-auto pt-4 border-t-2 border-black">
                     <Link
                       href={`/student/video/${video.id}/watch`}
-                      className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-4 py-2 rounded-full font-bold text-sm transform hover:scale-105 transition-all border-2 border-black flex items-center justify-center space-x-2"
+                      className="w-full bg-gradient-to-r from-green-600 to-black hover:from-green-700 hover:to-gray-900 text-white px-4 py-2 rounded-full font-bold text-sm transform hover:scale-105 transition-all border-2 border-black flex items-center justify-center space-x-2"
                     >
                       <Play className="w-4 h-4" />
                       <span>Watch Now</span>
@@ -254,15 +259,15 @@ export default function StudentVideos() {
       {/* Classes Grid */}
       <div>
         {getFilteredClasses().length === 0 ? (
-          <div className="bg-gradient-to-r from-yellow-200 via-orange-200 to-red-200 rounded-3xl shadow-2xl border-4 border-black p-12 text-center">
-            <div className="text-6xl mb-6">🎓</div>
-            <h3 className="text-2xl font-black text-black mb-4">
-              {searchTerm ? 'No Magical Classes Found' : 'No Classes Available Yet'}
+          <div className="bg-gradient-to-r from-green-200 via-green-300 to-black rounded-3xl shadow-2xl border-4 border-black p-12 text-center">
+            <div className="text-6xl mb-6">Ω</div>
+            <h3 className="text-2xl font-black text-white mb-4">
+              {searchTerm ? 'No Hero Classes Found' : 'No Classes Available Yet'}
             </h3>
-            <p className="text-black font-bold text-lg">
+            <p className="text-green-100 font-bold text-lg">
               {searchTerm
-                ? 'Try adjusting your search to find your magical classes!'
-                : 'You haven\'t enrolled in any classes yet. Time to start your learning adventure!'
+                ? 'Try adjusting your search to find your hero classes!'
+                : 'You haven\'t enrolled in any classes yet. Time to start your hero learning journey!'
               }
             </p>
           </div>
@@ -291,9 +296,9 @@ interface ClassCardProps {
 const ClassCard: React.FC<ClassCardProps> = ({ classInfo }) => {
   return (
     <Link href={`/student/classes/${classInfo.id}/videos`}>
-      <div className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 rounded-3xl shadow-2xl border-4 border-black overflow-hidden hover:scale-105 transition-all cursor-pointer">
+      <div className="bg-gradient-to-r from-green-600 via-green-700 to-black rounded-3xl shadow-2xl border-4 border-black overflow-hidden hover:scale-105 transition-all cursor-pointer">
         {/* Class Header */}
-        <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white p-6 border-b-4 border-black">
+        <div className="bg-gradient-to-r from-green-400 to-green-600 text-white p-6 border-b-4 border-black">
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <h3 className="text-xl font-black truncate mb-2">
@@ -303,7 +308,7 @@ const ClassCard: React.FC<ClassCardProps> = ({ classInfo }) => {
                 {classInfo.subject} • Grade {classInfo.grade}
               </p>
             </div>
-            <div className="text-4xl">🎥</div>
+            <div className="text-4xl">⚡</div>
           </div>
         </div>
 
@@ -320,7 +325,7 @@ const ClassCard: React.FC<ClassCardProps> = ({ classInfo }) => {
               <span className="line-clamp-2 break-words overflow-hidden">
                 {classInfo.description && classInfo.description.length > 100
                   ? `${classInfo.description.substring(0, 100)}...`
-                  : classInfo.description || 'Explore magical video content for this class'
+                  : classInfo.description || 'Explore hero video content for this class'
                 }
               </span>
             </div>
@@ -328,9 +333,9 @@ const ClassCard: React.FC<ClassCardProps> = ({ classInfo }) => {
             <div className="pt-4 border-t-4 border-black">
               <div className="flex items-center justify-between">
                 <span className="text-black font-bold">
-                  Browse Magical Videos
+                  Browse Hero Videos
                 </span>
-                <div className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-2 rounded-full font-black text-sm transform hover:scale-105 transition-all border-2 border-black flex items-center space-x-2">
+                <div className="bg-gradient-to-r from-green-600 to-black text-white px-4 py-2 rounded-full font-black text-sm transform hover:scale-105 transition-all border-2 border-black flex items-center space-x-2">
                   <Play className="w-4 h-4" />
                   <span>Open</span>
                 </div>

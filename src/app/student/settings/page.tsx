@@ -37,77 +37,77 @@ interface LoadingState {
   password: boolean;
 }
 
-// Mickey Mouse themed avatars
-const mickeyAvatars = [
+// Ben 10 Hero themed avatars - Omnitrix Animals
+const ben10Avatars = [
   {
-    id: 'mickey-classic',
-    name: 'Classic Mickey',
-    emoji: '🐭',
-    description: 'The original Mickey Mouse!',
-    colors: 'from-black to-gray-800'
+    id: 'heatblast',
+    name: 'Heatblast',
+    emoji: '�',
+    description: 'Pyronite from Pyros - Master of fire!',
+    colors: 'from-red-500 to-orange-500'
   },
   {
-    id: 'mickey-magician',
-    name: 'Magician Mickey',
-    emoji: '🎩',
-    description: 'Mickey the Magician!',
-    colors: 'from-purple-500 to-pink-500'
+    id: 'wildmutt',
+    name: 'Wildmutt',
+    emoji: '🐺',
+    description: 'Vulpimancer from Vulpin - The beast within!',
+    colors: 'from-gray-600 to-gray-800'
   },
   {
-    id: 'mickey-adventurer',
-    name: 'Adventurer Mickey',
-    emoji: '🗺️',
-    description: 'Mickey the Explorer!',
-    colors: 'from-green-500 to-blue-500'
+    id: 'diamondhead',
+    name: 'Diamondhead',
+    emoji: '�',
+    description: 'Petrosapien from Petropia - Crystal warrior!',
+    colors: 'from-cyan-400 to-blue-500'
   },
   {
-    id: 'mickey-sports',
-    name: 'Sports Mickey',
-    emoji: '⚽',
-    description: 'Mickey loves sports!',
-    colors: 'from-orange-500 to-red-500'
+    id: 'xrl8',
+    name: 'XLR8',
+    emoji: '🏃‍♂️',
+    description: 'Kineceleran from Kinet - Speed demon!',
+    colors: 'from-blue-500 to-purple-500'
   },
   {
-    id: 'mickey-music',
-    name: 'Music Mickey',
-    emoji: '🎵',
-    description: 'Mickey the Musician!',
-    colors: 'from-yellow-500 to-orange-500'
+    id: 'upgrade',
+    name: 'Upgrade',
+    emoji: '🤖',
+    description: 'Galvanic Mechamorph from Galvan Prime - Tech master!',
+    colors: 'from-green-400 to-teal-500'
   },
   {
-    id: 'mickey-space',
-    name: 'Space Mickey',
-    emoji: '🚀',
-    description: 'Mickey in Space!',
-    colors: 'from-indigo-500 to-purple-500'
+    id: 'ghostfreak',
+    name: 'Ghostfreak',
+    emoji: '�',
+    description: 'Ectonurite from Anur Phaetos - Spirit walker!',
+    colors: 'from-purple-600 to-indigo-700'
   },
   {
-    id: 'minnie-classic',
-    name: 'Classic Minnie',
-    emoji: '🐰',
-    description: 'Mickey\'s best friend!',
-    colors: 'from-pink-500 to-red-500'
+    id: 'ripjaws',
+    name: 'Ripjaws',
+    emoji: '🦈',
+    description: 'Piscciss Volann from Piscciss - Sea predator!',
+    colors: 'from-blue-600 to-cyan-600'
   },
   {
-    id: 'donald-duck',
-    name: 'Donald Duck',
-    emoji: '🦆',
-    description: 'Mickey\'s funny friend!',
-    colors: 'from-blue-600 to-blue-800'
+    id: 'stinkfly',
+    name: 'Stinkfly',
+    emoji: '�',
+    description: 'Lepidopterran from Lepidopterra - Winged warrior!',
+    colors: 'from-green-600 to-lime-600'
   },
   {
-    id: 'goofy',
-    name: 'Goofy',
-    emoji: '🐶',
-    description: 'Mickey\'s goofy pal!',
-    colors: 'from-orange-400 to-yellow-400'
-  },
-  {
-    id: 'pluto',
-    name: 'Pluto',
-    emoji: '🐕',
-    description: 'Mickey\'s loyal dog!',
+    id: 'benwolf',
+    name: 'Benwolf',
+    emoji: '�',
+    description: 'Anur Transyl\'s werewolf form - Lunar hunter!',
     colors: 'from-yellow-600 to-orange-600'
+  },
+  {
+    id: 'omnitrix',
+    name: 'Omnitrix',
+    emoji: 'Ω',
+    description: 'The Omnitrix itself - Ultimate power!',
+    colors: 'from-green-500 to-black'
   }
 ];
 
@@ -126,11 +126,11 @@ export default function StudentSettingsPage() {
     email: '',
     phone: '',
     countryCode: '+61',
-    avatar: 'mickey-classic' // Default avatar
+    avatar: 'heatblast' // Default avatar
   });
 
   // Avatar selection state
-  const [selectedAvatar, setSelectedAvatar] = useState<string>('mickey-classic');
+  const [selectedAvatar, setSelectedAvatar] = useState<string>('heatblast');
   const [showAvatarSelector, setShowAvatarSelector] = useState<boolean>(false);
 
   // Password form state
@@ -171,9 +171,9 @@ export default function StudentSettingsPage() {
         email: student.email || '',
         phone: student.phone || '',
         countryCode: '+61', // Default to Australia
-        avatar: student.avatar || 'mickey-magician'
+        avatar: student.avatar || 'omnitrix'
       });
-      setSelectedAvatar(student.avatar || 'mickey-magician');
+      setSelectedAvatar(student.avatar || 'omnitrix');
     }
   }, [student]);
 
@@ -187,7 +187,7 @@ export default function StudentSettingsPage() {
   };
 
   const getSelectedAvatarData = () => {
-    return mickeyAvatars.find(avatar => avatar.id === selectedAvatar) || mickeyAvatars[0];
+    return ben10Avatars.find(avatar => avatar.id === selectedAvatar) || ben10Avatars[0];
   };
 
   const handleProfileInputChange = (field: keyof StudentProfileData, value: string) => {
@@ -237,7 +237,7 @@ export default function StudentSettingsPage() {
       alert('Profile updated successfully!');
       // Refresh student data
       await refreshStudent();
-      setMessage({ type: 'success', text: 'Your magical profile has been updated! 🎉' });
+      setMessage({ type: 'success', text: 'Your heroic profile has been updated! 🎉' });
     } catch (error) {
       console.error('Error updating profile:', error);
       setMessage({ type: 'error', text: 'Oops! Failed to update your profile. Please try again. 😅' });
@@ -271,7 +271,7 @@ export default function StudentSettingsPage() {
         confirmPassword: ''
       });
       
-      setMessage({ type: 'success', text: 'Your magical password has been changed! 🔐✨' });
+      setMessage({ type: 'success', text: 'Your hero password has been changed! 🔐⚡' });
     } catch (error) {
       console.error('Error updating password:', error);
       
@@ -288,29 +288,33 @@ export default function StudentSettingsPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-400 to-blue-400 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-green-600 via-green-700 to-black flex items-center justify-center">
         <div className="text-center bg-white border-4 border-black rounded-2xl p-8 shadow-2xl">
-          {/* Mickey Mouse loading animation */}
+          {/* Ben 10 Omnitrix loading animation */}
           <div className="relative mb-6">
-            <div className="w-20 h-20 bg-black rounded-full flex items-center justify-center relative mx-auto animate-bounce">
-              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center">
+            <div className="w-20 h-20 bg-green-400 rounded-full flex items-center justify-center relative mx-auto animate-bounce border-4 border-black">
+              <div className="w-16 h-16 bg-black rounded-full flex items-center justify-center">
                 <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-black rounded-full animate-pulse"></div>
-                  <div className="w-2 h-2 bg-black rounded-full animate-pulse delay-300"></div>
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse delay-300"></div>
                 </div>
-                <div className="absolute bottom-4 w-1 h-1 bg-red-500 rounded-full animate-ping"></div>
+                <div className="absolute bottom-4 w-1 h-1 bg-green-500 rounded-full animate-ping"></div>
               </div>
-              {/* Mickey ears */}
-              <div className="absolute -top-3 -left-3 w-6 h-6 bg-black rounded-full animate-pulse"></div>
-              <div className="absolute -top-3 -right-3 w-6 h-6 bg-black rounded-full animate-pulse delay-500"></div>
+              {/* Omnitrix symbols */}
+              <div className="absolute -top-3 -left-3 w-6 h-6 bg-green-400 rounded-full border-2 border-black flex items-center justify-center animate-pulse">
+                <span className="text-black font-black text-xs">Ω</span>
+              </div>
+              <div className="absolute -top-3 -right-3 w-6 h-6 bg-green-400 rounded-full border-2 border-black flex items-center justify-center animate-pulse delay-500">
+                <span className="text-black font-black text-xs">Ω</span>
+              </div>
             </div>
             <div className="text-center mt-4">
-              <span className="text-black font-bold text-lg">Mickey</span>
+              <span className="text-black font-bold text-lg">Ben 10</span>
             </div>
           </div>
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-black border-t-yellow-400 mx-auto mb-4"></div>
-          <p className="text-black font-bold text-lg">Loading Mickey's Settings... 🎩✨</p>
-          <p className="text-gray-600 font-medium mt-2">Get ready to customize your magical profile! 🎨</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-black border-t-green-400 mx-auto mb-4"></div>
+          <p className="text-black font-bold text-lg">Loading Ben 10's Settings... ⚡</p>
+          <p className="text-gray-600 font-medium mt-2">Get ready to customize your heroic profile! Ω</p>
         </div>
       </div>
     );
@@ -328,27 +332,31 @@ export default function StudentSettingsPage() {
 
   return (
     <div className="space-y-8">
-      {/* Page Header - Mickey Mouse Theme */}
-      <div className="bg-gradient-to-r from-red-500 via-yellow-400 to-blue-500 rounded-2xl text-white p-8 relative overflow-hidden">
-        {/* Mickey Mouse themed background elements */}
-        <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-300 rounded-full -translate-y-16 translate-x-16 animate-bounce opacity-20"></div>
-        <div className="absolute bottom-0 left-0 w-24 h-24 bg-red-400 rounded-full translate-y-12 -translate-x-12 animate-pulse opacity-20"></div>
-        {/* Mickey Mouse ears */}
+      {/* Page Header - Ben 10 Hero Theme */}
+      <div className="bg-gradient-to-r from-green-600 via-green-700 to-black rounded-2xl text-white p-8 relative overflow-hidden">
+        {/* Ben 10 themed background elements */}
+        <div className="absolute top-0 right-0 w-32 h-32 bg-green-400 rounded-full -translate-y-16 translate-x-16 animate-bounce opacity-20"></div>
+        <div className="absolute bottom-0 left-0 w-24 h-24 bg-green-500 rounded-full translate-y-12 -translate-x-12 animate-pulse opacity-20"></div>
+        {/* Omnitrix symbols */}
         <div className="absolute top-4 right-4 flex space-x-2">
-          <div className="w-8 h-8 bg-black rounded-full animate-pulse"></div>
-          <div className="w-8 h-8 bg-black rounded-full animate-pulse delay-300"></div>
+          <div className="w-8 h-8 bg-green-400 rounded-full border-2 border-black flex items-center justify-center animate-pulse">
+            <span className="text-black font-black text-sm">Ω</span>
+          </div>
+          <div className="w-8 h-8 bg-green-400 rounded-full border-2 border-black flex items-center justify-center animate-pulse delay-300">
+            <span className="text-black font-black text-sm">Ω</span>
+          </div>
         </div>
 
         <div className="flex items-center justify-between relative z-10">
           <div className="flex-1">
             <div className="flex items-center space-x-4 mb-2">
-              <div className="text-6xl">🎭</div>
+              <div className="text-6xl">⚡</div>
               <div>
                 <h1 className="text-3xl font-bold">
-                  Mickey's Magic Settings! 🎩✨
+                  Ben 10's Hero Settings! Ω
                 </h1>
-                <p className="text-black text-lg font-semibold mt-2">
-                  Customize your magical learning profile!
+                <p className="text-green-100 text-lg font-semibold mt-2">
+                  Customize your heroic learning profile!
                 </p>
               </div>
             </div>
@@ -370,7 +378,7 @@ export default function StudentSettingsPage() {
         </div>
       </div>
 
-      {/* Success/Error Messages - Mickey Mouse Theme */}
+      {/* Success/Error Messages - Ben 10 Hero Theme */}
       {message && (
         <div className={`rounded-xl border-4 border-black p-4 shadow-lg ${
           message.type === 'success' 
@@ -383,7 +391,7 @@ export default function StudentSettingsPage() {
             </div>
             <div>
               <p className="font-bold text-black text-lg">
-                {message.type === 'success' ? 'Mickey Says: Magic Success!' : 'Oops! Mickey Says: Try Again!'}
+                {message.type === 'success' ? 'Ben 10 Says: Hero Success!' : 'Oops! Ben 10 Says: Try Again!'}
               </p>
               <p className="text-black font-medium">{message.text}</p>
             </div>
@@ -391,11 +399,11 @@ export default function StudentSettingsPage() {
         </div>
       )}
 
-      {/* Profile Settings - Mickey Mouse Theme */}
-      <div className="bg-gradient-to-r from-yellow-300 via-pink-300 to-purple-300 rounded-xl shadow-lg border-4 border-black p-6">
+      {/* Profile Settings - Ben 10 Hero Theme */}
+      <div className="bg-gradient-to-r from-green-300 via-green-400 to-black rounded-xl shadow-lg border-4 border-black p-6">
         <div className="flex items-center space-x-3 mb-6">
           <div className="text-3xl">🎨</div>
-          <h2 className="text-2xl font-black text-black">Mickey's Profile Studio</h2>
+          <h2 className="text-2xl font-black text-black">Ben 10's Hero Profile Studio</h2>
         </div>
 
         <form onSubmit={handleProfileSubmit} className="space-y-6">
@@ -407,12 +415,12 @@ export default function StudentSettingsPage() {
                 <div className="flex items-center justify-between mb-4">
                   <label className="text-lg font-bold text-black flex items-center">
                     <Camera className="w-5 h-5 mr-2" />
-                    Choose Your Character! 🎭
+                    Choose Your Hero Avatar! Ω
                   </label>
                   <button
                     type="button"
                     onClick={() => setShowAvatarSelector(!showAvatarSelector)}
-                    className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-full text-sm font-bold transform hover:scale-105 transition-all"
+                    className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-full text-sm font-bold transform hover:scale-105 transition-all"
                   >
                     {showAvatarSelector ? 'Hide' : 'Change'} Avatar
                   </button>
@@ -434,18 +442,18 @@ export default function StudentSettingsPage() {
                   <div className="border-t-4 border-black pt-4">
                     <h4 className="text-lg font-bold text-black mb-4 flex items-center">
                       <Star className="w-5 h-5 mr-2 text-yellow-500" />
-                      Pick Your Favorite Character! 🌟
+                      Choose Your Ben 10 Hero Avatar! ⚡
                     </h4>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                      {mickeyAvatars.map((avatar) => (
+                      {ben10Avatars.map((avatar) => (
                         <button
                           key={avatar.id}
                           type="button"
                           onClick={() => handleAvatarSelect(avatar.id)}
                           className={`p-4 rounded-xl border-4 transition-all transform hover:scale-105 ${
                             selectedAvatar === avatar.id
-                              ? 'border-yellow-400 bg-yellow-50 shadow-lg'
-                              : 'border-black bg-white hover:border-red-400'
+                              ? 'border-green-400 bg-green-50 shadow-lg'
+                              : 'border-black bg-white hover:border-green-400'
                           }`}
                         >
                           <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2 bg-gradient-to-br ${avatar.colors}`}>
@@ -464,13 +472,13 @@ export default function StudentSettingsPage() {
               <div className="bg-white border-4 border-black rounded-xl p-4">
                 <label className="text-sm font-bold text-black mb-2 flex items-center">
                   <User className="w-4 h-4 mr-2" />
-                  Your Magical Name! ✨
+                  Your Hero Name! ⚡
                 </label>
                 <Input
                   type="text"
                   value={profileData.name}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleProfileInputChange('name', e.target.value)}
-                  placeholder="Enter your magical name"
+                  placeholder="Enter your hero name"
                   disabled={loading.profile}
                   required
                   className="border-2 border-black rounded-lg"
@@ -481,7 +489,7 @@ export default function StudentSettingsPage() {
               <div className="bg-white border-4 border-black rounded-xl p-4">
                 <label className="text-sm font-bold text-black mb-2 flex items-center">
                   <Mail className="w-4 h-4 mr-2" />
-                  Email Address (Magically Protected) 🔒
+                  Email Address (Heroically Protected) 🔒
                 </label>
                 <Input
                   type="email"
@@ -504,7 +512,7 @@ export default function StudentSettingsPage() {
                     value={profileData.countryCode}
                     onChange={(e) => handleProfileInputChange('countryCode', e.target.value)}
                     disabled={loading.profile}
-                    className="border-2 border-black rounded-lg px-3 py-2 bg-white text-black focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                    className="border-2 border-black rounded-lg px-3 py-2 bg-white text-black focus:outline-none focus:ring-2 focus:ring-green-400"
                   >
                     <option value="+61">🇦🇺 +61</option>
                     <option value="+1">🇺🇸 +1</option>
@@ -534,28 +542,28 @@ export default function StudentSettingsPage() {
               <div className="bg-white border-4 border-black rounded-xl p-6 shadow-lg">
                 <h4 className="text-lg font-bold text-black mb-4 flex items-center">
                   <Sparkles className="w-5 h-5 mr-2 text-yellow-500" />
-                  Your Magical Stats! 📊
+                  Your Hero Stats! 📊
                 </h4>
                 <div className="space-y-3 text-sm">
-                  <div className="flex justify-between items-center p-3 bg-yellow-50 border-2 border-yellow-300 rounded-lg">
+                  <div className="flex justify-between items-center p-3 bg-green-50 border-2 border-green-300 rounded-lg">
                     <span className="text-black font-bold">🏷️ Status:</span>
                     <span className={`font-black px-3 py-1 rounded-full border-2 border-black ${
                       student.status === 'Active'
                         ? 'bg-green-300 text-black'
                         : 'bg-red-300 text-black'
                     }`}>
-                      {student.status} ✨
+                      {student.status} ⚡
                     </span>
                   </div>
-                  <div className="flex justify-between items-center p-3 bg-blue-50 border-2 border-blue-300 rounded-lg">
+                  <div className="flex justify-between items-center p-3 bg-green-50 border-2 border-green-300 rounded-lg">
                     <span className="text-black font-bold">📅 Enrolled Since:</span>
-                    <span className="text-black font-bold bg-blue-300 px-2 py-1 rounded border border-black">
+                    <span className="text-black font-bold bg-green-300 px-2 py-1 rounded border border-black">
                       {student.enrollmentDate ? new Date(student.enrollmentDate).toLocaleDateString() : 'N/A'}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center p-3 bg-purple-50 border-2 border-purple-300 rounded-lg">
-                    <span className="text-black font-bold">🎓 Student ID:</span>
-                    <span className="text-black font-bold bg-purple-300 px-2 py-1 rounded border border-black">
+                  <div className="flex justify-between items-center p-3 bg-black border-2 border-green-400 rounded-lg">
+                    <span className="text-white font-bold">🎓 Student ID:</span>
+                    <span className="text-black font-bold bg-green-300 px-2 py-1 rounded border border-black">
                       {student.id}
                     </span>
                   </div>
@@ -563,14 +571,14 @@ export default function StudentSettingsPage() {
               </div>
 
               {/* Fun Fact */}
-              <div className="bg-gradient-to-r from-pink-300 to-purple-300 border-4 border-black rounded-xl p-6 shadow-lg">
-                <h4 className="text-lg font-bold text-black mb-3 flex items-center">
-                  <span className="text-2xl mr-2">🎪</span>
+              <div className="bg-gradient-to-r from-green-300 to-black border-4 border-black rounded-xl p-6 shadow-lg">
+                <h4 className="text-lg font-bold text-white mb-3 flex items-center">
+                  <span className="text-2xl mr-2">Ω</span>
                   Did You Know?
                 </h4>
-                <p className="text-black font-medium text-sm leading-relaxed">
-                  Mickey Mouse made his first appearance in 1928 in the cartoon "Steamboat Willie"!
-                  Your avatar choice makes you part of Disney's magical legacy! 🌟
+                <p className="text-white font-medium text-sm leading-relaxed">
+                  Ben 10 first appeared in 2005 and has transformed into over 70 different alien heroes!
+                  Your avatar choice makes you part of the ultimate hero legacy! ⚡
                 </p>
               </div>
             </div>
@@ -581,19 +589,19 @@ export default function StudentSettingsPage() {
             <Button
               type="submit"
               disabled={loading.profile}
-              className="bg-gradient-to-r from-red-500 to-yellow-500 hover:from-red-600 hover:to-yellow-600 text-white px-8 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black disabled:opacity-50 animate-pulse"
+              className="bg-gradient-to-r from-green-500 to-black hover:from-green-600 hover:to-gray-800 text-white px-8 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black disabled:opacity-50 animate-pulse"
             >
-              {loading.profile ? 'Saving Magic...' : 'Save Your Magical Profile! ✨'}
+              {loading.profile ? 'Saving Hero...' : 'Save Your Hero Profile! ⚡'}
             </Button>
           </div>
         </form>
       </div>
 
-      {/* Password Settings - Mickey Mouse Theme */}
-      <div className="bg-gradient-to-r from-blue-300 via-purple-300 to-indigo-300 rounded-xl shadow-lg border-4 border-black p-6">
+      {/* Password Settings - Ben 10 Hero Theme */}
+      <div className="bg-gradient-to-r from-green-400 via-green-500 to-black rounded-xl shadow-lg border-4 border-black p-6">
         <div className="flex items-center space-x-3 mb-6">
           <div className="text-3xl">🔐</div>
-          <h2 className="text-2xl font-black text-black">Mickey's Secret Password Chamber</h2>
+          <h2 className="text-2xl font-black text-black">Ben 10's Hero Password Chamber</h2>
         </div>
 
         <form onSubmit={handlePasswordSubmit} className="space-y-6">
@@ -608,7 +616,7 @@ export default function StudentSettingsPage() {
                   type="password"
                   value={passwordData.currentPassword}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => handlePasswordInputChange('currentPassword', e.target.value)}
-                  placeholder="Enter your current magical password"
+                  placeholder="Enter your current hero password"
                   disabled={loading.password}
                   required
                   className="border-2 border-black rounded-lg"
@@ -617,13 +625,13 @@ export default function StudentSettingsPage() {
 
               <div className="bg-white border-4 border-black rounded-xl p-4">
                 <label className="text-sm font-bold text-black mb-2 flex items-center">
-                  ✨ New Password *
+                  ⚡ New Password *
                 </label>
                 <Input
                   type="password"
                   value={passwordData.newPassword}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => handlePasswordInputChange('newPassword', e.target.value)}
-                  placeholder="Create a super magical password"
+                  placeholder="Create a super hero password"
                   disabled={loading.password}
                   required
                   className="border-2 border-black rounded-lg"
@@ -638,7 +646,7 @@ export default function StudentSettingsPage() {
                   type="password"
                   value={passwordData.confirmPassword}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => handlePasswordInputChange('confirmPassword', e.target.value)}
-                  placeholder="Confirm your magical password"
+                  placeholder="Confirm your hero password"
                   disabled={loading.password}
                   required
                   className="border-2 border-black rounded-lg"
@@ -650,7 +658,7 @@ export default function StudentSettingsPage() {
             <div className="bg-white border-4 border-black rounded-xl p-6 shadow-lg">
               <h3 className="text-lg font-bold text-black mb-4 flex items-center">
                 <span className="text-2xl mr-2">🛡️</span>
-                Magical Password Rules!
+                Hero Password Rules!
               </h3>
               <ul className="space-y-3">
                 <li className="flex items-center text-sm">
@@ -659,7 +667,7 @@ export default function StudentSettingsPage() {
                   }`}>
                     {passwordValidation.minLength ? '✓' : '·'}
                   </span>
-                  <span className="text-black font-medium">At least 8 magical characters 🪄</span>
+                  <span className="text-black font-medium">At least 8 heroic characters Ω</span>
                 </li>
                 <li className="flex items-center text-sm">
                   <span className={`w-6 h-6 mr-3 flex items-center justify-center rounded-full border-2 border-black ${
@@ -691,7 +699,7 @@ export default function StudentSettingsPage() {
                   }`}>
                     {passwordValidation.hasSpecialChar ? '✓' : '·'}
                   </span>
-                  <span className="text-black font-medium">At least 1 special character ✨</span>
+                  <span className="text-black font-medium">At least 1 special character ⚡</span>
                 </li>
                 <li className="flex items-center text-sm">
                   <span className={`w-6 h-6 mr-3 flex items-center justify-center rounded-full border-2 border-black ${
@@ -710,9 +718,9 @@ export default function StudentSettingsPage() {
             <Button
               type="submit"
               disabled={loading.password || !Object.values(passwordValidation).every(v => v)}
-              className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white px-8 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black disabled:opacity-50 animate-pulse"
+              className="bg-gradient-to-r from-green-500 to-black hover:from-green-600 hover:to-gray-800 text-white px-8 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black disabled:opacity-50 animate-pulse"
             >
-              {loading.password ? 'Casting Magic...' : 'Change Password Magic! 🔮'}
+              {loading.password ? 'Transforming Hero...' : 'Change Password Power! Ω'}
             </Button>
           </div>
         </form>

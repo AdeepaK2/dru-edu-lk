@@ -265,19 +265,20 @@ export default function StudentStudyPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-400 via-yellow-400 to-blue-400 flex items-center justify-center">
-        <div className="bg-gradient-to-r from-red-500 via-yellow-500 to-blue-500 rounded-3xl shadow-2xl border-4 border-black p-12 text-center">
-          {/* Mickey Mouse Ears */}
-          <div className="absolute -top-4 -left-4 w-12 h-12 bg-black rounded-full"></div>
-          <div className="absolute -top-4 -right-4 w-12 h-12 bg-black rounded-full"></div>
+      <div className="min-h-screen bg-gradient-to-br from-green-600 via-green-700 to-black flex items-center justify-center">
+        <div className="bg-gradient-to-r from-green-500 via-green-600 to-black rounded-3xl shadow-2xl border-4 border-green-400 p-12 text-center">
+          {/* Omnitrix Symbol */}
+          <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-16 h-16 bg-green-400 rounded-full border-4 border-black flex items-center justify-center">
+            <div className="text-black font-black text-2xl">Ω</div>
+          </div>
 
-          <div className="text-8xl mb-6">📚</div>
-          <div className="w-12 h-12 border-t-4 border-black border-solid rounded-full animate-spin mx-auto mb-6"></div>
-          <h2 className="text-3xl font-black text-black mb-4">
-            Loading Magical Study Materials
+          <div className="text-8xl mb-6">🦸‍♂️</div>
+          <div className="w-12 h-12 border-t-4 border-green-400 border-solid rounded-full animate-spin mx-auto mb-6"></div>
+          <h2 className="text-3xl font-black text-white mb-4">
+            Loading Hero Study Materials
           </h2>
-          <p className="text-black font-bold text-lg">
-            Getting your learning adventures ready! ✨
+          <p className="text-green-200 font-bold text-lg">
+            Preparing your hero training session! ⚡
           </p>
         </div>
       </div>
@@ -299,94 +300,95 @@ export default function StudentStudyPage() {
     const currentClass = classes.find(c => c.id === selectedClass);
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-400 via-yellow-400 to-blue-400 p-6">
+      <div className="min-h-screen bg-gradient-to-br from-green-600 via-green-700 to-black p-6">
         <div className="mb-6">
           <Button
             onClick={() => setSelectedClass(null)}
-            className="mb-4 bg-gradient-to-r from-gray-500 to-slate-500 hover:from-gray-600 hover:to-slate-600 text-white px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black flex items-center space-x-2"
+            className="mb-4 bg-gradient-to-r from-green-700 to-black hover:from-green-600 hover:to-green-700 text-white px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-green-400 flex items-center space-x-2"
           >
-            <span>← Back to Magical Dashboard</span>
+            <span>← Back to Hero Dashboard</span>
           </Button>
 
           {/* Class Header */}
-          <div className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-3xl shadow-2xl border-4 border-black p-8 mb-6 relative overflow-hidden">
-            {/* Mickey Mouse Ears */}
-            <div className="absolute -top-4 -left-4 w-12 h-12 bg-black rounded-full"></div>
-            <div className="absolute -top-4 -right-4 w-12 h-12 bg-black rounded-full"></div>
+          <div className="bg-gradient-to-r from-green-500 via-green-600 to-black rounded-3xl shadow-2xl border-4 border-green-400 p-8 mb-6 relative overflow-hidden">
+            {/* Omnitrix Symbol */}
+            <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-16 h-16 bg-green-400 rounded-full border-4 border-black flex items-center justify-center">
+              <div className="text-black font-black text-2xl">Ω</div>
+            </div>
 
             <div className="flex justify-between items-center relative z-10">
               <div>
-                <h1 className="text-4xl font-black text-black mb-2 flex items-center">
-                  <span className="text-5xl mr-2">🏫</span>
+                <h1 className="text-4xl font-black text-white mb-2 flex items-center">
+                  <span className="text-5xl mr-2">🦸‍♂️</span>
                   {currentClass?.name}
                 </h1>
-                <p className="text-black font-bold text-lg">{currentClass?.subject}</p>
+                <p className="text-green-200 font-bold text-lg">{currentClass?.subject}</p>
               </div>
               <div className="text-right">
-                <div className="text-4xl font-black text-black">
+                <div className="text-4xl font-black text-white">
                   {currentClass?.completedMaterials}/{currentClass?.totalMaterials}
                 </div>
-                <div className="text-lg text-black font-bold">Magical Materials Completed</div>
+                <div className="text-lg text-green-200 font-bold">Hero Materials Completed</div>
               </div>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            <div className="bg-gradient-to-r from-blue-400 to-cyan-400 rounded-3xl shadow-2xl border-4 border-black p-6">
+            <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-3xl shadow-2xl border-4 border-green-400 p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-black text-black mb-2">
-                    Overall Progress
+                  <p className="text-sm font-black text-white mb-2">
+                    Hero Progress
                   </p>
-                  <p className="text-3xl font-black text-black">{Math.round(currentClass?.progress || 0)}%</p>
+                  <p className="text-3xl font-black text-white">{Math.round(currentClass?.progress || 0)}%</p>
                 </div>
                 <div className="text-4xl">📊</div>
               </div>
-              <div className="mt-4 bg-black rounded-full h-4 border-2 border-black">
+              <div className="mt-4 bg-black rounded-full h-4 border-2 border-green-400">
                 <div
-                  className="bg-gradient-to-r from-blue-400 to-cyan-400 h-4 rounded-full transition-all duration-300 border-2 border-black"
+                  className="bg-gradient-to-r from-green-400 to-green-500 h-4 rounded-full transition-all duration-300 border-2 border-green-400"
                   style={{ width: `${currentClass?.progress || 0}%` }}
                 ></div>
               </div>
             </div>
 
-            <div className="bg-gradient-to-r from-green-400 to-emerald-400 rounded-3xl shadow-2xl border-4 border-black p-6">
+            <div className="bg-gradient-to-r from-green-600 to-green-700 rounded-3xl shadow-2xl border-4 border-green-400 p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-black text-black mb-2">
-                    Required Materials
+                  <p className="text-sm font-black text-white mb-2">
+                    Required Missions
                   </p>
-                  <p className="text-3xl font-black text-black">{Math.round(currentClass?.requiredProgress || 0)}%</p>
+                  <p className="text-3xl font-black text-white">{Math.round(currentClass?.requiredProgress || 0)}%</p>
                 </div>
                 <div className="text-4xl">🏆</div>
               </div>
-              <div className="mt-4 bg-black rounded-full h-4 border-2 border-black">
+              <div className="mt-4 bg-black rounded-full h-4 border-2 border-green-400">
                 <div
-                  className="bg-gradient-to-r from-green-400 to-lime-400 h-4 rounded-full transition-all duration-300 border-2 border-black"
+                  className="bg-gradient-to-r from-green-500 to-green-600 h-4 rounded-full transition-all duration-300 border-2 border-green-400"
                   style={{ width: `${currentClass?.requiredProgress || 0}%` }}
                 ></div>
               </div>
             </div>
 
-            <div className="bg-gradient-to-r from-orange-400 to-red-400 rounded-3xl shadow-2xl border-4 border-black p-6">
+            <div className="bg-gradient-to-r from-black to-green-800 rounded-3xl shadow-2xl border-4 border-green-400 p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-black text-black mb-2">
+                  <p className="text-sm font-black text-white mb-2">
                     New This Week
                   </p>
-                  <p className="text-3xl font-black text-black">{currentClass?.recentMaterials || 0}</p>
+                  <p className="text-3xl font-black text-white">{currentClass?.recentMaterials || 0}</p>
                 </div>
-                <div className="text-4xl">🕒</div>
+                <div className="text-4xl">⚡</div>
               </div>
             </div>
           </div>
 
           {/* Materials Section */}
           <div className="mb-6">
-            <h2 className="text-3xl font-black text-black mb-6 flex items-center">
-              <span className="text-4xl mr-3">📖</span>
-              Magical Study Materials
-              <span className="ml-3 text-2xl">✨</span>
+            <h2 className="text-3xl font-black text-white mb-6 flex items-center">
+              <span className="text-4xl mr-3">🦸‍♂️</span>
+              Hero Study Materials
+              <span className="ml-3 text-2xl">⚡</span>
             </h2>
 
             {/* Search and Filter */}
@@ -394,19 +396,19 @@ export default function StudentStudyPage() {
               <div className="flex-1">
                 <input
                   type="text"
-                  placeholder="🔍 Search magical materials..."
+                  placeholder="🔍 Search hero materials..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full px-6 py-3 border-4 border-black rounded-3xl focus:ring-4 focus:ring-yellow-400 focus:border-black bg-white text-black font-bold text-lg placeholder-black/60"
+                  className="w-full px-6 py-3 border-4 border-green-400 rounded-3xl focus:ring-4 focus:ring-green-400 focus:border-green-400 bg-black text-white font-bold text-lg placeholder-green-300"
                 />
               </div>
               <div>
                 <select
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value)}
-                  className="px-6 py-3 border-4 border-black rounded-3xl focus:ring-4 focus:ring-yellow-400 focus:border-black bg-white text-black font-bold text-lg"
+                  className="px-6 py-3 border-4 border-green-400 rounded-3xl focus:ring-4 focus:ring-green-400 focus:border-green-400 bg-black text-white font-bold text-lg"
                 >
-                  <option value="all">All Materials ✨</option>
+                  <option value="all">All Materials ⚡</option>
                   <option value="required">Required Only 🏆</option>
                   <option value="completed">Completed 🎉</option>
                   <option value="pending">Pending 📝</option>
@@ -420,21 +422,21 @@ export default function StudentStudyPage() {
 
             {materialLoading ? (
               <div className="flex items-center justify-center py-12">
-                <div className="bg-gradient-to-r from-blue-400 to-purple-400 rounded-3xl shadow-2xl border-4 border-black p-8">
+                <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-3xl shadow-2xl border-4 border-green-400 p-8">
                   <div className="flex items-center space-x-4">
-                    <div className="w-8 h-8 border-4 border-black border-t-transparent rounded-full animate-spin"></div>
-                    <span className="text-2xl font-black text-black">Loading Magical Materials...</span>
+                    <div className="w-8 h-8 border-4 border-green-400 border-t-transparent rounded-full animate-spin"></div>
+                    <span className="text-2xl font-black text-white">Loading Hero Materials...</span>
                   </div>
                 </div>
               </div>
             ) : groupedMaterials.length === 0 ? (
-              <div className="bg-gradient-to-r from-yellow-200 via-orange-200 to-red-200 rounded-3xl shadow-2xl border-4 border-black p-12 text-center">
-                <div className="text-6xl mb-6">📚</div>
-                <h3 className="text-2xl font-black text-black mb-4">
+              <div className="bg-gradient-to-r from-green-700 via-green-800 to-black rounded-3xl shadow-2xl border-4 border-green-400 p-12 text-center">
+                <div className="text-6xl mb-6">🦸‍♂️</div>
+                <h3 className="text-2xl font-black text-white mb-4">
                   No Materials Found
                 </h3>
-                <p className="text-black font-bold text-lg">
-                  No study materials match your search. Try adjusting your filters!
+                <p className="text-green-200 font-bold text-lg">
+                  No hero materials match your search. Try adjusting your filters!
                 </p>
               </div>
             ) : (
@@ -446,16 +448,16 @@ export default function StudentStudyPage() {
                   const isGroupCompleted = completedCount === totalCount;
 
                   return (
-                    <div key={group.id} className={`bg-gradient-to-r ${isGroupCompleted ? 'from-green-400 to-emerald-400' : 'from-indigo-400 via-purple-400 to-pink-400'} rounded-3xl shadow-2xl border-4 border-black overflow-hidden hover:scale-105 transition-all`}>
+                    <div key={group.id} className={`bg-gradient-to-r ${isGroupCompleted ? 'from-green-500 to-green-600' : 'from-green-600 via-green-700 to-black'} rounded-3xl shadow-2xl border-4 border-green-400 overflow-hidden hover:scale-105 transition-all`}>
                       <div
-                        className="p-6 cursor-pointer hover:bg-black/10 transition-all"
+                        className="p-6 cursor-pointer hover:bg-green-900/20 transition-all"
                         onClick={() => toggleGroupExpansion(group.id)}
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex items-start space-x-4 flex-1">
-                            <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center flex-shrink-0 border-4 border-black">
+                            <div className="w-16 h-16 bg-black rounded-2xl flex items-center justify-center flex-shrink-0 border-4 border-green-400">
                               {group.isGroup ? (
-                                <div className="text-black font-black text-xl">
+                                <div className="text-green-400 font-black text-xl">
                                   {group.totalFiles}
                                 </div>
                               ) : (
@@ -463,12 +465,12 @@ export default function StudentStudyPage() {
                                   {group.materials[0]?.fileType === 'pdf' ? '📄' :
                                    group.materials[0]?.fileType === 'video' ? '🎥' :
                                    group.materials[0]?.fileType === 'link' ? '🔗' :
-                                   group.materials[0]?.fileType === 'image' ? '🖼️' : '📚'}
+                                   group.materials[0]?.fileType === 'image' ? '🖼️' : '🦸‍♂️'}
                                 </div>
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h3 className="text-2xl font-black text-black mb-2 flex items-center">
+                              <h3 className="text-2xl font-black text-white mb-2 flex items-center">
                                 <span className="truncate">{group.groupTitle || group.materials[0]?.title}</span>
                                 {isGroupCompleted && (
                                   <span className="ml-2 text-2xl">🎉</span>
@@ -479,47 +481,47 @@ export default function StudentStudyPage() {
                               </h3>
 
                               {group.materials[0]?.description && (
-                                <p className="text-black font-bold text-lg mb-3">
+                                <p className="text-green-200 font-bold text-lg mb-3">
                                   {group.materials[0].description}
                                 </p>
                               )}
 
                               <div className="flex items-center space-x-3 mb-3">
                                 {group.isGroup && (
-                                  <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-black bg-white text-black border-2 border-black">
+                                  <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-black bg-green-600 text-white border-2 border-green-400">
                                     {group.totalFiles} files 📁
                                   </span>
                                 )}
                                 {group.fileTypes.map((fileType: string) => (
-                                  <span key={fileType} className="inline-flex items-center px-4 py-2 rounded-full text-sm font-black bg-white text-black border-2 border-black">
+                                  <span key={fileType} className="inline-flex items-center px-4 py-2 rounded-full text-sm font-black bg-green-700 text-white border-2 border-green-400">
                                     {fileType.toUpperCase()}
                                   </span>
                                 ))}
                                 {group.isRequired && (
-                                  <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-black bg-red-400 text-white border-2 border-black">
+                                  <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-black bg-green-500 text-black border-2 border-green-400">
                                     Required 🏆
                                   </span>
                                 )}
                                 {group.lessonName && (
-                                  <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-black bg-blue-400 text-white border-2 border-black">
+                                  <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-black bg-green-600 text-white border-2 border-green-400">
                                     {group.lessonName}
                                   </span>
                                 )}
                               </div>
 
-                              <div className="text-black font-bold text-lg mb-3">
+                              <div className="text-green-200 font-bold text-lg mb-3">
                                 📅 {new Date(group.uploadedAt?.toDate ? group.uploadedAt.toDate() : group.uploadedAt).toLocaleDateString()}
                               </div>
 
                               {group.isGroup && (
                                 <div className="mt-4">
                                   <div className="flex justify-between text-lg mb-2">
-                                    <span className="font-black text-black">Progress</span>
-                                    <span className="font-black text-black">{completedCount}/{totalCount}</span>
+                                    <span className="font-black text-white">Progress</span>
+                                    <span className="font-black text-white">{completedCount}/{totalCount}</span>
                                   </div>
-                                  <div className="bg-black rounded-full h-6 border-2 border-black">
+                                  <div className="bg-black rounded-full h-6 border-2 border-green-400">
                                     <div
-                                      className="bg-gradient-to-r from-yellow-400 to-orange-400 h-6 rounded-full transition-all duration-300 border-2 border-black"
+                                      className="bg-gradient-to-r from-green-400 to-green-500 h-6 rounded-full transition-all duration-300 border-2 border-green-400"
                                       style={{ width: `${(completedCount / totalCount) * 100}%` }}
                                     ></div>
                                   </div>
@@ -536,10 +538,10 @@ export default function StudentStudyPage() {
                                     e.stopPropagation();
                                     toggleMaterialCompletion(group.materials[0]);
                                   }}
-                                  className={`px-4 py-2 rounded-full font-black text-sm border-2 border-black transform hover:scale-105 transition-all ${
+                                  className={`px-4 py-2 rounded-full font-black text-sm border-2 border-green-400 transform hover:scale-105 transition-all ${
                                     group.materials[0].completedBy?.includes(student?.id || '')
-                                      ? 'bg-green-400 text-white hover:bg-green-500'
-                                      : 'bg-yellow-400 text-black hover:bg-yellow-500'
+                                      ? 'bg-green-500 text-white hover:bg-green-600'
+                                      : 'bg-green-600 text-white hover:bg-green-700'
                                   }`}
                                 >
                                   {group.materials[0].completedBy?.includes(student?.id || '') ? '✓ Completed' : 'Mark Complete'}
@@ -551,7 +553,7 @@ export default function StudentStudyPage() {
                                       e.stopPropagation();
                                       openLink(group.materials[0].externalUrl || '');
                                     }}
-                                    className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-4 py-2 rounded-full font-black text-sm transform hover:scale-105 transition-all border-2 border-black"
+                                    className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 text-white px-4 py-2 rounded-full font-black text-sm transform hover:scale-105 transition-all border-2 border-green-400"
                                   >
                                     🔗 Open Link
                                   </Button>
@@ -562,7 +564,7 @@ export default function StudentStudyPage() {
                                         e.stopPropagation();
                                         viewMaterial(group.materials[0]);
                                       }}
-                                      className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-4 py-2 rounded-full font-black text-sm transform hover:scale-105 transition-all border-2 border-black"
+                                      className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 text-white px-4 py-2 rounded-full font-black text-sm transform hover:scale-105 transition-all border-2 border-green-400"
                                     >
                                       👁️ View
                                     </Button>
@@ -571,7 +573,7 @@ export default function StudentStudyPage() {
                                         e.stopPropagation();
                                         downloadMaterial(group.materials[0]);
                                       }}
-                                      className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-4 py-2 rounded-full font-black text-sm transform hover:scale-105 transition-all border-2 border-black"
+                                      className="bg-gradient-to-r from-green-700 to-black hover:from-green-600 hover:to-green-700 text-white px-4 py-2 rounded-full font-black text-sm transform hover:scale-105 transition-all border-2 border-green-400"
                                     >
                                       ⬇️ Download
                                     </Button>
@@ -580,10 +582,10 @@ export default function StudentStudyPage() {
                               </div>
                             ) : (
                               <div className="text-center">
-                                <div className="text-3xl font-black text-black">
+                                <div className="text-3xl font-black text-white">
                                   {completedCount}/{totalCount}
                                 </div>
-                                <div className="text-lg text-black font-bold">completed</div>
+                                <div className="text-lg text-green-200 font-bold">completed</div>
                               </div>
                             )}
                           </div>
@@ -591,20 +593,20 @@ export default function StudentStudyPage() {
                       </div>
 
                       {isExpanded && (
-                        <div className="border-t-4 border-black bg-white/90 p-6">
+                        <div className="border-t-4 border-green-400 bg-black/50 p-6">
                           <div className="space-y-4">
                             {group.materials.map((material: any) => {
                               const isCompleted = material.completedBy?.includes(student?.id || '') || false;
 
                               return (
-                                <div key={material.id} className={`flex items-center justify-between p-4 border-4 ${isCompleted ? 'border-green-400 bg-green-100' : 'border-gray-400 bg-white'} rounded-2xl transition-all hover:scale-105`}>
+                                <div key={material.id} className={`flex items-center justify-between p-4 border-4 ${isCompleted ? 'border-green-400 bg-green-900/30' : 'border-green-500 bg-black/50'} rounded-2xl transition-all hover:scale-105`}>
                                   <div className="flex items-center space-x-4 flex-1">
-                                    <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center flex-shrink-0 border-2 border-black">
+                                    <div className="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center flex-shrink-0 border-2 border-green-400">
                                       <div className="text-2xl">
                                         {material.fileType === 'pdf' ? '📄' :
                                          material.fileType === 'video' ? '🎥' :
                                          material.fileType === 'link' ? '🔗' :
-                                         material.fileType === 'image' ? '🖼️' : '📚'}
+                                         material.fileType === 'image' ? '🖼️' : '🦸‍♂️'}
                                       </div>
                                     </div>
                                     <div className="flex-1 min-w-0">
@@ -612,11 +614,11 @@ export default function StudentStudyPage() {
                                         {isCompleted && (
                                           <span className="text-2xl">✅</span>
                                         )}
-                                        <h4 className={`text-xl font-black truncate ${isCompleted ? 'text-green-700' : 'text-black'}`}>
+                                        <h4 className={`text-xl font-black truncate ${isCompleted ? 'text-green-300' : 'text-white'}`}>
                                           {material.title}
                                         </h4>
                                       </div>
-                                      <div className="text-black font-bold">
+                                      <div className="text-green-200 font-bold">
                                         {material.formattedFileSize || '2.3 MB'} • {material.fileType.toUpperCase()}
                                       </div>
                                     </div>
@@ -625,10 +627,10 @@ export default function StudentStudyPage() {
                                   <div className="flex items-center space-x-3 flex-shrink-0">
                                     <Button
                                       onClick={() => toggleMaterialCompletion(material)}
-                                      className={`px-4 py-2 rounded-full font-black text-sm border-2 border-black transform hover:scale-105 transition-all ${
+                                      className={`px-4 py-2 rounded-full font-black text-sm border-2 border-green-400 transform hover:scale-105 transition-all ${
                                         isCompleted
-                                          ? 'bg-green-400 text-white hover:bg-green-500'
-                                          : 'bg-yellow-400 text-black hover:bg-yellow-500'
+                                          ? 'bg-green-500 text-white hover:bg-green-600'
+                                          : 'bg-green-600 text-white hover:bg-green-700'
                                       }`}
                                     >
                                       {isCompleted ? '✓ Completed' : 'Mark Complete'}
@@ -637,7 +639,7 @@ export default function StudentStudyPage() {
                                     {material.fileType === 'link' ? (
                                       <Button
                                         onClick={() => openLink(material.externalUrl || '')}
-                                        className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-4 py-2 rounded-full font-black text-sm transform hover:scale-105 transition-all border-2 border-black"
+                                        className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 text-white px-4 py-2 rounded-full font-black text-sm transform hover:scale-105 transition-all border-2 border-green-400"
                                       >
                                         🔗 Open
                                       </Button>
@@ -645,13 +647,13 @@ export default function StudentStudyPage() {
                                       <>
                                         <Button
                                           onClick={() => viewMaterial(material)}
-                                          className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-4 py-2 rounded-full font-black text-sm transform hover:scale-105 transition-all border-2 border-black"
+                                          className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 text-white px-4 py-2 rounded-full font-black text-sm transform hover:scale-105 transition-all border-2 border-green-400"
                                         >
                                           👁️ View
                                         </Button>
                                         <Button
                                           onClick={() => downloadMaterial(material)}
-                                          className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-4 py-2 rounded-full font-black text-sm transform hover:scale-105 transition-all border-2 border-black"
+                                          className="bg-gradient-to-r from-green-700 to-black hover:from-green-600 hover:to-green-700 text-white px-4 py-2 rounded-full font-black text-sm transform hover:scale-105 transition-all border-2 border-green-400"
                                         >
                                           ⬇️ Download
                                         </Button>
@@ -676,24 +678,25 @@ export default function StudentStudyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-400 via-yellow-400 to-blue-400 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-green-600 via-green-700 to-black p-6">
       <div className="mb-8">
-        {/* Mickey Mouse Header */}
-        <div className="bg-gradient-to-r from-red-500 via-yellow-500 to-blue-500 rounded-3xl shadow-2xl border-4 border-black p-8 mb-8 relative overflow-hidden">
-          {/* Mickey Mouse Ears */}
-          <div className="absolute -top-4 -left-4 w-12 h-12 bg-black rounded-full"></div>
-          <div className="absolute -top-4 -right-4 w-12 h-12 bg-black rounded-full"></div>
+        {/* Ben 10 Hero Header */}
+        <div className="bg-gradient-to-r from-green-500 via-green-600 to-black rounded-3xl shadow-2xl border-4 border-green-400 p-8 mb-8 relative overflow-hidden">
+          {/* Omnitrix Symbol */}
+          <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-16 h-16 bg-green-400 rounded-full border-4 border-black flex items-center justify-center">
+            <div className="text-black font-black text-2xl">Ω</div>
+          </div>
 
           <div className="flex items-center space-x-4 relative z-10">
-            <div className="text-6xl">📚</div>
+            <div className="text-6xl">🦸‍♂️</div>
             <div>
-              <h1 className="text-4xl font-black text-black mb-2 flex items-center">
-                <span>Mickey's</span>
-                <span className="ml-2 text-white font-black text-5xl">Study</span>
-                <span className="ml-2 text-3xl">🎭</span>
+              <h1 className="text-4xl font-black text-white mb-2 flex items-center">
+                <span>Ben 10</span>
+                <span className="ml-2 text-green-400 font-black text-5xl">Hero</span>
+                <span className="ml-2 text-3xl">⚡</span>
               </h1>
-              <p className="text-black font-bold text-lg">
-                Welcome back, {student.name}! Track your magical learning progress! ✨
+              <p className="text-green-200 font-bold text-lg">
+                Welcome back, {student.name}! Master your hero training progress! 🦸‍♂️
               </p>
             </div>
           </div>
@@ -701,17 +704,17 @@ export default function StudentStudyPage() {
 
         {/* Overall Statistics */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-gradient-to-r from-blue-400 to-cyan-400 rounded-3xl shadow-2xl border-4 border-black p-6">
+          <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-3xl shadow-2xl border-4 border-green-400 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-black text-black">
-                  Overall Progress
+                <p className="text-sm font-black text-white">
+                  Hero Progress
                 </p>
                 <div className="flex items-center space-x-2 mt-2">
-                  <span className="text-3xl font-black text-black">
+                  <span className="text-3xl font-black text-white">
                     {Math.round(overallProgress)}%
                   </span>
-                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-black border-2 border-black ${
+                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-black border-2 border-green-400 ${
                     overallProgress >= 80 ? 'bg-green-400 text-white' :
                     overallProgress >= 60 ? 'bg-blue-400 text-white' :
                     overallProgress >= 40 ? 'bg-yellow-400 text-black' :
@@ -723,94 +726,94 @@ export default function StudentStudyPage() {
               </div>
               <div className="text-4xl">📊</div>
             </div>
-            <div className="mt-4 bg-black rounded-full h-4 border-2 border-black">
+            <div className="mt-4 bg-black rounded-full h-4 border-2 border-green-400">
               <div
-                className="bg-gradient-to-r from-yellow-400 to-orange-400 h-4 rounded-full transition-all duration-300 border-2 border-black"
+                className="bg-gradient-to-r from-green-400 to-green-500 h-4 rounded-full transition-all duration-300 border-2 border-green-400"
                 style={{ width: `${overallProgress}%` }}
               ></div>
             </div>
           </div>
 
-          <div className="bg-gradient-to-r from-green-400 to-emerald-400 rounded-3xl shadow-2xl border-4 border-black p-6">
+          <div className="bg-gradient-to-r from-green-600 to-green-700 rounded-3xl shadow-2xl border-4 border-green-400 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-black text-black">
-                  Required Materials
+                <p className="text-sm font-black text-white">
+                  Required Missions
                 </p>
                 <div className="flex items-center space-x-2 mt-2">
-                  <span className="text-3xl font-black text-black">
+                  <span className="text-3xl font-black text-white">
                     {Math.round(requiredProgress)}%
                   </span>
                 </div>
               </div>
               <div className="text-4xl">🏆</div>
             </div>
-            <div className="mt-4 bg-black rounded-full h-4 border-2 border-black">
+            <div className="mt-4 bg-black rounded-full h-4 border-2 border-green-400">
               <div
-                className="bg-gradient-to-r from-green-400 to-lime-400 h-4 rounded-full transition-all duration-300 border-2 border-black"
+                className="bg-gradient-to-r from-green-500 to-green-600 h-4 rounded-full transition-all duration-300 border-2 border-green-400"
                 style={{ width: `${requiredProgress}%` }}
               ></div>
             </div>
           </div>
 
-          <div className="bg-gradient-to-r from-purple-400 to-pink-400 rounded-3xl shadow-2xl border-4 border-black p-6">
+          <div className="bg-gradient-to-r from-green-700 to-black rounded-3xl shadow-2xl border-4 border-green-400 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-black text-black">
-                  Enrolled Classes
+                <p className="text-sm font-black text-white">
+                  Hero Classes
                 </p>
-                <p className="text-3xl font-black text-black mt-2">
+                <p className="text-3xl font-black text-white mt-2">
                   {classes.length}
                 </p>
               </div>
-              <div className="text-4xl">📖</div>
+              <div className="text-4xl">🦸‍♂️</div>
             </div>
           </div>
 
-          <div className="bg-gradient-to-r from-orange-400 to-red-400 rounded-3xl shadow-2xl border-4 border-black p-6">
+          <div className="bg-gradient-to-r from-black to-green-800 rounded-3xl shadow-2xl border-4 border-green-400 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-black text-black">
+                <p className="text-sm font-black text-white">
                   New This Week
                 </p>
-                <p className="text-3xl font-black text-black mt-2">
+                <p className="text-3xl font-black text-white mt-2">
                   {classes.reduce((sum, cls) => sum + cls.recentMaterials, 0)}
                 </p>
               </div>
-              <div className="text-4xl">🕒</div>
+              <div className="text-4xl">⚡</div>
             </div>
           </div>
         </div>
 
       {/* Classes Grid */}
       <div className="mb-8">
-        <h2 className="text-3xl font-black text-black mb-8 flex items-center">
-          <span className="text-4xl mr-3">🏫</span>
-          Your Magical Classes
-          <span className="ml-3 text-2xl">✨</span>
+        <h2 className="text-3xl font-black text-white mb-8 flex items-center">
+          <span className="text-4xl mr-3">🦸‍♂️</span>
+          Your Hero Classes
+          <span className="ml-3 text-2xl">⚡</span>
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {classes.map((classItem) => (
-            <div key={classItem.id} className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 rounded-3xl shadow-2xl border-4 border-black p-6 hover:scale-105 transition-all cursor-pointer">
+            <div key={classItem.id} className="bg-gradient-to-r from-green-500 via-green-600 to-black rounded-3xl shadow-2xl border-4 border-green-400 p-6 hover:scale-105 transition-all cursor-pointer">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-2xl font-black text-black">{classItem.name}</h3>
+                <h3 className="text-2xl font-black text-white">{classItem.name}</h3>
                 {classItem.recentMaterials > 0 && (
-                  <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-black bg-orange-400 text-black border-2 border-black">
-                    {classItem.recentMaterials} New! ✨
+                  <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-black bg-green-400 text-black border-2 border-green-400">
+                    {classItem.recentMaterials} New! ⚡
                   </span>
                 )}
               </div>
-              <p className="text-black font-bold text-lg mb-6">{classItem.subject}</p>
+              <p className="text-green-200 font-bold text-lg mb-6">{classItem.subject}</p>
 
               <div className="space-y-4 mb-6">
                 <div>
                   <div className="flex justify-between text-sm mb-2">
-                    <span className="font-black text-black">Overall Progress</span>
-                    <span className="font-black text-black">{Math.round(classItem.progress)}%</span>
+                    <span className="font-black text-white">Hero Progress</span>
+                    <span className="font-black text-white">{Math.round(classItem.progress)}%</span>
                   </div>
-                  <div className="bg-black rounded-full h-4 border-2 border-black">
+                  <div className="bg-black rounded-full h-4 border-2 border-green-400">
                     <div
-                      className="bg-gradient-to-r from-blue-400 to-cyan-400 h-4 rounded-full transition-all duration-300 border-2 border-black"
+                      className="bg-gradient-to-r from-green-400 to-green-500 h-4 rounded-full transition-all duration-300 border-2 border-green-400"
                       style={{ width: `${classItem.progress}%` }}
                     ></div>
                   </div>
@@ -818,18 +821,18 @@ export default function StudentStudyPage() {
 
                 <div>
                   <div className="flex justify-between text-sm mb-2">
-                    <span className="font-black text-black">Required Materials</span>
-                    <span className="font-black text-black">{classItem.completedRequired}/{classItem.requiredMaterials}</span>
+                    <span className="font-black text-white">Required Missions</span>
+                    <span className="font-black text-white">{classItem.completedRequired}/{classItem.requiredMaterials}</span>
                   </div>
-                  <div className="bg-black rounded-full h-4 border-2 border-black">
+                  <div className="bg-black rounded-full h-4 border-2 border-green-400">
                     <div
-                      className="bg-gradient-to-r from-green-400 to-lime-400 h-4 rounded-full transition-all duration-300 border-2 border-black"
+                      className="bg-gradient-to-r from-green-500 to-green-600 h-4 rounded-full transition-all duration-300 border-2 border-green-400"
                       style={{ width: `${classItem.requiredProgress}%` }}
                     ></div>
                   </div>
                 </div>
 
-                <div className="flex justify-between text-sm text-black font-bold">
+                <div className="flex justify-between text-sm text-green-200 font-bold">
                   <span>Total Materials</span>
                   <span>{classItem.completedMaterials}/{classItem.totalMaterials}</span>
                 </div>
@@ -837,10 +840,10 @@ export default function StudentStudyPage() {
 
               <Button
                 onClick={() => loadClassMaterials(classItem.id)}
-                className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black flex items-center justify-center space-x-2"
+                className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 text-white px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-green-400 flex items-center justify-center space-x-2"
               >
                 <BookOpen className="w-5 h-5" />
-                <span>View Magical Materials</span>
+                <span>View Hero Materials</span>
               </Button>
             </div>
           ))}
@@ -848,20 +851,20 @@ export default function StudentStudyPage() {
       </div>
 
       {classes.length === 0 && (
-        <div className="bg-gradient-to-r from-yellow-200 via-orange-200 to-red-200 rounded-3xl shadow-2xl border-4 border-black p-12 text-center">
-          <div className="text-6xl mb-6">📚</div>
-          <h3 className="text-2xl font-black text-black mb-4">
-            No Magical Classes Yet
+        <div className="bg-gradient-to-r from-green-600 via-green-700 to-black rounded-3xl shadow-2xl border-4 border-green-400 p-12 text-center">
+          <div className="text-6xl mb-6">🦸‍♂️</div>
+          <h3 className="text-2xl font-black text-white mb-4">
+            No Hero Classes Yet
           </h3>
-          <p className="text-black font-bold text-lg mb-6">
-            You haven't enrolled in any classes yet. Time to start your learning adventure!
+          <p className="text-green-200 font-bold text-lg mb-6">
+            You haven't enrolled in any classes yet. Time to start your hero training!
           </p>
           <Button
             onClick={() => router.push('/enroll')}
-            className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-8 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black flex items-center space-x-3"
+            className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 text-white px-8 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-green-400 flex items-center space-x-3"
           >
             <BookOpen className="w-5 h-5" />
-            <span>Browse Magical Classes</span>
+            <span>Browse Hero Classes</span>
           </Button>
         </div>
       )}

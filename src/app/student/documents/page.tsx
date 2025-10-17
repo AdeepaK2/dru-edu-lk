@@ -140,42 +140,48 @@ export default function StudentDocumentsPage() {
 
   if (!student) {
     return (
-      <div className="bg-gradient-to-r from-red-400 via-yellow-400 to-blue-400 rounded-3xl shadow-2xl border-4 border-black p-8 text-center">
+      <div className="bg-gradient-to-r from-green-600 to-black rounded-3xl shadow-2xl border-4 border-black p-8 text-center">
         <div className="text-6xl mb-4">🚫</div>
-        <h2 className="text-2xl font-black text-black mb-2">Access Denied</h2>
-        <p className="text-black font-bold">
-          You need to be logged in to access this magical page! ✨
+        <h2 className="text-2xl font-black text-white mb-2">Access Denied</h2>
+        <p className="text-green-100 font-bold">
+          You need to be logged in to access this hero page! ⚡
         </p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-400 via-yellow-400 to-blue-400 p-8">
+    <div className="min-h-screen bg-gradient-to-br from-green-600 via-green-700 to-black p-8">
       <div className="max-w-7xl mx-auto">
-        {/* Mickey Mouse Ears Header */}
+        {/* Ben 10 Hero Header */}
         <div className="text-center mb-8">
           <div className="flex justify-center items-center space-x-8 mb-4">
-            <div className="w-20 h-20 bg-black rounded-full border-4 border-black shadow-lg"></div>
-            <div className="w-32 h-32 bg-black rounded-full border-4 border-black shadow-lg"></div>
-            <div className="w-20 h-20 bg-black rounded-full border-4 border-black shadow-lg"></div>
+            <div className="w-20 h-20 bg-green-400 rounded-full border-4 border-black shadow-lg flex items-center justify-center">
+              <span className="text-black font-black text-2xl">Ω</span>
+            </div>
+            <div className="w-32 h-32 bg-green-400 rounded-full border-4 border-black shadow-lg flex items-center justify-center">
+              <span className="text-black font-black text-4xl">Ω</span>
+            </div>
+            <div className="w-20 h-20 bg-green-400 rounded-full border-4 border-black shadow-lg flex items-center justify-center">
+              <span className="text-black font-black text-2xl">Ω</span>
+            </div>
           </div>
           <h1 className="text-5xl font-black text-white mb-2 drop-shadow-lg">
-            📄 Student Documents
+            📄 Hero Documents
           </h1>
-          <p className="text-xl text-black font-bold">
-            Upload your magical documents here! ✨
+          <p className="text-xl text-green-100 font-bold">
+            Upload your heroic documents here! ⚡
           </p>
         </div>
 
         {/* Document Upload Section */}
         <div className="bg-white rounded-3xl shadow-2xl border-4 border-black overflow-hidden">
-          <div className="bg-gradient-to-r from-red-500 to-yellow-500 text-white p-6 pb-8 border-b-4 border-black">
+          <div className="bg-gradient-to-r from-green-600 to-black text-white p-6 pb-8 border-b-4 border-black">
             <div className="flex items-center space-x-4">
-              <span className="text-4xl">📋</span>
+              <span className="text-4xl">⚡</span>
               <div>
                 <h2 className="text-3xl font-black">Required Documents</h2>
-                <p className="text-red-100 font-bold text-lg">Complete your enrollment with these magical papers!</p>
+                <p className="text-green-100 font-bold text-lg">Complete your enrollment with these heroic papers!</p>
               </div>
             </div>
           </div>
@@ -238,14 +244,14 @@ export default function StudentDocumentsPage() {
 
           {/* Success Message */}
           {allDocumentsVerified() && (
-            <div className="bg-gradient-to-r from-green-400 to-emerald-500 rounded-2xl border-4 border-black p-6 shadow-lg">
+            <div className="bg-gradient-to-r from-green-600 to-black rounded-2xl border-4 border-black p-6 shadow-lg">
               <div className="flex items-start">
                 <span className="text-4xl mr-4">✅</span>
                 <div>
                   <h4 className="text-xl font-black text-white mb-2">🎉 Documents Verified!</h4>
                   <p className="text-green-100 font-bold text-lg">
-                    All your required documents have been verified and approved by our magical admin team! 
-                    You can download them using the download buttons above. ✨
+                    All your required documents have been verified and approved by our hero admin team!
+                    You can download them using the download buttons above. ⚡
                   </p>
                 </div>
               </div>
@@ -253,14 +259,14 @@ export default function StudentDocumentsPage() {
           )}
           
           {/* Important Information */}
-          <div className="bg-gradient-to-r from-blue-400 to-purple-500 rounded-2xl border-4 border-black p-6 shadow-lg">
+          <div className="bg-gradient-to-r from-green-600 to-black rounded-2xl border-4 border-black p-6 shadow-lg">
             <div className="flex items-start">
               <span className="text-4xl mr-4">🛡️</span>
               <div>
-                <h4 className="text-xl font-black text-white mb-2">Important Magical Information</h4>
-                <p className="text-blue-100 font-bold text-lg">
-                  These documents are required for your enrollment. Please upload clear, legible copies in PDF, DOC, or image format. 
-                  Our magical admin team will verify your documents within 1-2 business days! 🪄
+                <h4 className="text-xl font-black text-white mb-2">Important Hero Information</h4>
+                <p className="text-green-100 font-bold text-lg">
+                  These documents are required for your enrollment. Please upload clear, legible copies in PDF, DOC, or image format.
+                  Our hero admin team will verify your documents within 1-2 business days! Ω
                 </p>
               </div>
             </div>

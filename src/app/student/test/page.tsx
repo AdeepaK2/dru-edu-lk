@@ -974,43 +974,43 @@ export default function StudentTests() {
   if (!authLoading && !loading && (!enrollments || enrollments.length === 0)) {
     return (
       <StudentLayout>
-        <div className="min-h-screen bg-gradient-to-br from-red-400 via-yellow-400 to-blue-400 p-6">
-          {/* Mickey Mouse Header */}
-          <div className="bg-gradient-to-r from-red-500 via-yellow-500 to-blue-500 rounded-3xl shadow-2xl border-4 border-black p-8 mb-6 relative overflow-hidden">
-            {/* Mickey Mouse Ears */}
-            <div className="absolute -top-4 -left-4 w-12 h-12 bg-black rounded-full"></div>
-            <div className="absolute -top-4 -right-4 w-12 h-12 bg-black rounded-full"></div>
+        <div className="min-h-screen bg-gradient-to-br from-green-400 via-black to-green-400 p-6">
+          {/* Ben 10 Hero Header */}
+          <div className="bg-gradient-to-r from-green-500 via-black to-green-500 rounded-3xl shadow-2xl border-4 border-green-400 p-8 mb-6 relative overflow-hidden">
+            {/* Omnitrix Symbol */}
+            <div className="absolute -top-4 -left-4 w-12 h-12 bg-green-400 rounded-full border-4 border-green-400"></div>
+            <div className="absolute -top-4 -right-4 w-12 h-12 bg-green-400 rounded-full border-4 border-green-400"></div>
 
             <div className="flex items-center space-x-4 relative z-10">
               <div className="text-6xl">📝</div>
               <div>
-                <h1 className="text-4xl font-black text-black mb-2 flex items-center">
-                  <span>Mickey's</span>
-                  <span className="ml-2 text-white font-black text-5xl">Test</span>
-                  <span className="ml-2 text-3xl">🎭</span>
+                <h1 className="text-4xl font-black text-white mb-2 flex items-center">
+                  <span>Ben 10</span>
+                  <span className="ml-2 text-green-400 font-black text-5xl">Hero</span>
+                  <span className="ml-2 text-3xl">Tests</span>
                 </h1>
-                <p className="text-black font-bold text-lg">
-                  Discover magical tests and quizzes with your favorite Disney friends! 🌟
+                <p className="text-white font-bold text-lg">
+                  Transform into a hero with epic tests and challenges! 🦸‍♂️⚡
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Mickey Mouse No Classes Message */}
-          <div className="bg-gradient-to-r from-blue-300 via-purple-300 to-pink-300 rounded-3xl shadow-2xl border-4 border-black p-12 text-center">
+          {/* Ben 10 Hero No Classes Message */}
+          <div className="bg-gradient-to-r from-green-300 via-black to-green-300 rounded-3xl shadow-2xl border-4 border-green-400 p-12 text-center">
             <div className="text-8xl mb-6">📚</div>
-            <h2 className="text-3xl font-black text-black mb-4">
-              No Magical Classes Yet
+            <h2 className="text-3xl font-black text-white mb-4">
+              No Hero Classes Yet
             </h2>
-            <p className="text-black font-bold text-lg mb-6">
-              You haven't enrolled in any classes yet. Contact your teacher to join some fun learning adventures! 🎓✨
+            <p className="text-white font-bold text-lg mb-6">
+              You haven't enrolled in any classes yet. Contact your teacher to join some epic hero training! 🎓⚡
             </p>
             <Button
               onClick={() => router.push('/student/dashboard')}
-              className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-8 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black flex items-center space-x-3"
+              className="bg-gradient-to-r from-green-500 to-black hover:from-green-600 hover:to-gray-900 text-white px-8 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-green-400 flex items-center space-x-3"
             >
               <BookOpen className="w-5 h-5" />
-              <span>Return to Magical Dashboard</span>
+              <span>Return to Hero Dashboard</span>
             </Button>
           </div>
         </div>
@@ -1022,29 +1022,29 @@ export default function StudentTests() {
   if (authLoading || loading) {
     return (
       <StudentLayout>
-        <div className="min-h-screen bg-gradient-to-br from-red-400 via-yellow-400 to-blue-400 flex items-center justify-center">
-          <div className="bg-white border-4 border-black rounded-3xl p-8 shadow-2xl">
-            {/* Mickey Mouse Loading Animation */}
+        <div className="min-h-screen bg-gradient-to-br from-green-400 via-black to-green-400 flex items-center justify-center">
+          <div className="bg-white border-4 border-green-400 rounded-3xl p-8 shadow-2xl">
+            {/* Ben 10 Hero Loading Animation */}
             <div className="relative mb-6">
-              <div className="w-24 h-24 bg-black rounded-full flex items-center justify-center relative mx-auto">
+              <div className="w-24 h-24 bg-green-400 rounded-full flex items-center justify-center relative mx-auto border-4 border-green-400">
                 <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center">
                   <div className="flex space-x-1">
-                    <div className="w-3 h-3 bg-black rounded-full"></div>
-                    <div className="w-3 h-3 bg-black rounded-full delay-300"></div>
+                    <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+                    <div className="w-3 h-3 bg-green-400 rounded-full delay-300"></div>
                   </div>
-                  <div className="absolute bottom-6 w-2 h-2 bg-red-500 rounded-full"></div>
+                  <div className="absolute bottom-6 w-2 h-2 bg-black rounded-full"></div>
                 </div>
-                {/* Mickey ears */}
-                <div className="absolute -top-4 -left-4 w-8 h-8 bg-black rounded-full"></div>
-                <div className="absolute -top-4 -right-4 w-8 h-8 bg-black rounded-full delay-500"></div>
+                {/* Omnitrix symbols */}
+                <div className="absolute -top-4 -left-4 w-8 h-8 bg-green-400 rounded-full border-2 border-green-400"></div>
+                <div className="absolute -top-4 -right-4 w-8 h-8 bg-green-400 rounded-full border-2 border-green-400 delay-500"></div>
               </div>
               <div className="text-center mt-4">
-                <span className="text-black font-bold text-xl">Mickey</span>
+                <span className="text-black font-bold text-xl">Ben 10</span>
               </div>
             </div>
             <div className="text-center">
-              <h2 className="text-2xl font-black text-black mb-2">Loading Magical Tests...</h2>
-              <p className="text-gray-600 font-medium">Getting ready for some fun learning! 📝✨</p>
+              <h2 className="text-2xl font-black text-black mb-2">Loading Hero Tests...</h2>
+              <p className="text-gray-600 font-medium">Transforming into a hero! 📝⚡</p>
             </div>
           </div>
         </div>
@@ -1054,51 +1054,51 @@ export default function StudentTests() {
 
   return (
     <StudentLayout>
-      <div className="min-h-screen bg-gradient-to-br from-red-400 via-yellow-400 to-blue-400 p-6">
-        {/* Mickey Mouse Header */}
-        <div className="bg-gradient-to-r from-red-500 via-yellow-500 to-blue-500 rounded-3xl shadow-2xl border-4 border-black p-8 mb-6 relative overflow-hidden">
-          {/* Mickey Mouse Ears */}
-          <div className="absolute -top-4 -left-4 w-12 h-12 bg-black rounded-full"></div>
-          <div className="absolute -top-4 -right-4 w-12 h-12 bg-black rounded-full"></div>
+      <div className="min-h-screen bg-gradient-to-br from-green-400 via-black to-green-400 p-6">
+        {/* Ben 10 Hero Header */}
+        <div className="bg-gradient-to-r from-green-500 via-black to-green-500 rounded-3xl shadow-2xl border-4 border-green-400 p-8 mb-6 relative overflow-hidden">
+          {/* Omnitrix Symbol */}
+          <div className="absolute -top-4 -left-4 w-12 h-12 bg-green-400 rounded-full border-4 border-green-400"></div>
+          <div className="absolute -top-4 -right-4 w-12 h-12 bg-green-400 rounded-full border-4 border-green-400"></div>
 
-          {/* Magical Sparkles */}
-          <div className="absolute top-4 right-16 text-2xl">✨</div>
-          <div className="absolute bottom-4 left-16 text-2xl">⭐</div>
+          {/* Hero Energy */}
+          <div className="absolute top-4 right-16 text-2xl">⚡</div>
+          <div className="absolute bottom-4 left-16 text-2xl">🦸‍♂️</div>
 
           <div className="flex items-center justify-between relative z-10">
             <div className="flex items-center space-x-4">
               <div className="text-6xl">📝</div>
               <div>
-                <h1 className="text-4xl font-black text-black mb-2 flex items-center">
-                  <span>Mickey's</span>
-                  <span className="ml-2 text-white font-black text-5xl">Test</span>
-                  <span className="ml-2 text-3xl">🎭</span>
+                <h1 className="text-4xl font-black text-white mb-2 flex items-center">
+                  <span>Ben 10</span>
+                  <span className="ml-2 text-green-400 font-black text-5xl">Hero</span>
+                  <span className="ml-2 text-3xl">Tests</span>
                 </h1>
-                <p className="text-black font-bold text-lg">
-                  Discover magical tests and quizzes with your favorite Disney friends! 🌟
+                <p className="text-white font-bold text-lg">
+                  Transform into a hero with epic tests and challenges! 🦸‍♂️⚡
                 </p>
               </div>
             </div>
-            <div className="bg-white border-4 border-black rounded-2xl p-4 shadow-lg">
+            <div className="bg-white border-4 border-green-400 rounded-2xl p-4 shadow-lg">
               <div className="flex items-center space-x-3">
                 <div className="text-4xl">📚</div>
                 <div className="text-center">
                   <div className="text-3xl font-black text-black">{enrollments?.length || 0}</div>
-                  <div className="text-sm font-bold text-gray-700">Magical Classes</div>
+                  <div className="text-sm font-bold text-gray-700">Hero Classes</div>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Mickey Mouse Error Display */}
+        {/* Ben 10 Hero Error Display */}
         {error && (
-          <div className="bg-gradient-to-r from-red-300 to-pink-300 rounded-xl border-4 border-black p-4 shadow-lg">
+          <div className="bg-gradient-to-r from-red-300 to-pink-300 rounded-xl border-4 border-green-400 p-4 shadow-lg">
             <div className="flex items-center space-x-3">
-              <div className="text-2xl">😅</div>
+              <div className="text-2xl">🦸‍♂️</div>
               <div>
                 <p className="font-bold text-black text-lg">
-                  Oops! Mickey Says: Something went wrong!
+                  Ben 10 Says: Something went wrong!
                 </p>
                 <p className="text-black font-medium">{error}</p>
               </div>
@@ -1106,12 +1106,12 @@ export default function StudentTests() {
           </div>
         )}
 
-        {/* Mickey Mouse Controls */}
-        <div className="bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400 rounded-2xl shadow-xl border-4 border-black p-6 mb-6">
+        {/* Ben 10 Hero Controls */}
+        <div className="bg-gradient-to-r from-green-400 via-black to-green-400 rounded-2xl shadow-xl border-4 border-green-400 p-6 mb-6">
           <div className="flex items-center space-x-3 mb-4">
             <div className="text-3xl">🔍</div>
-            <h2 className="text-2xl font-black text-black">Mickey's Magical Search</h2>
-            <div className="text-2xl">✨</div>
+            <h2 className="text-2xl font-black text-white">Ben 10 Hero Search</h2>
+            <div className="text-2xl">⚡</div>
           </div>
 
           <div className="flex flex-col lg:flex-row gap-6">
@@ -1121,10 +1121,10 @@ export default function StudentTests() {
                 <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-2xl">🔍</div>
                 <Input
                   type="text"
-                  placeholder="Search for magical tests..."
+                  placeholder="Search for hero tests..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-12 pr-4 py-3 text-lg border-4 border-black rounded-2xl bg-white text-black placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-yellow-400 shadow-lg"
+                  className="pl-12 pr-4 py-3 text-lg border-4 border-green-400 rounded-2xl bg-white text-black placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-green-400 shadow-lg"
                 />
               </div>
             </div>
@@ -1134,9 +1134,9 @@ export default function StudentTests() {
               <select
                 value={selectedSubjectId}
                 onChange={(e) => setSelectedSubjectId(e.target.value)}
-                className="border-4 border-black rounded-2xl px-6 py-3 bg-white text-black font-bold text-lg focus:outline-none focus:ring-4 focus:ring-yellow-400 shadow-lg hover:bg-gray-50 transition-all w-full"
+                className="border-4 border-green-400 rounded-2xl px-6 py-3 bg-white text-black font-bold text-lg focus:outline-none focus:ring-4 focus:ring-green-400 shadow-lg hover:bg-gray-50 transition-all w-full"
               >
-                <option value="all">🌟 All Magical Subjects</option>
+                <option value="all">🦸‍♂️ All Hero Subjects</option>
                 {subjects.map((subject) => (
                   <option key={subject.id} value={subject.id}>
                     📚 {subject.name}
@@ -1146,30 +1146,30 @@ export default function StudentTests() {
             </div>
           </div>
 
-          {/* Mickey Mouse Test Stats */}
+          {/* Ben 10 Hero Test Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-6">
-            <div className="bg-white border-4 border-black rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all">
+            <div className="bg-white border-4 border-green-400 rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all">
               <div className="text-4xl mb-2">📚</div>
               <div className="text-3xl font-black text-black mb-1">
                 {Object.keys(testsByClass).length}
               </div>
-              <div className="text-sm font-bold text-black">Magical Classes</div>
+              <div className="text-sm font-bold text-black">Hero Classes</div>
             </div>
-            <div className="bg-white border-4 border-black rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all">
+            <div className="bg-white border-4 border-green-400 rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all">
               <div className="text-4xl mb-2">🎯</div>
               <div className="text-3xl font-black text-black mb-1">
                 {Object.values(testsByClass).reduce((acc, classData) => acc + classData.groupedTests.live.length, 0) + groupedCustomTests.live.length}
               </div>
-              <div className="text-sm font-bold text-black">Live Adventures</div>
+              <div className="text-sm font-bold text-black">Live Missions</div>
             </div>
-            <div className="bg-white border-4 border-black rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all">
+            <div className="bg-white border-4 border-green-400 rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all">
               <div className="text-4xl mb-2">⏰</div>
               <div className="text-3xl font-black text-black mb-1">
                 {Object.values(testsByClass).reduce((acc, classData) => acc + classData.groupedTests.upcoming.length, 0) + groupedCustomTests.upcoming.length}
               </div>
               <div className="text-sm font-bold text-black">Upcoming Quests</div>
             </div>
-            <div className="bg-white border-4 border-black rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all">
+            <div className="bg-white border-4 border-green-400 rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all">
               <div className="text-4xl mb-2">📝</div>
               <div className="text-3xl font-black text-black mb-1">
                 {filteredTests.length}
@@ -1179,12 +1179,12 @@ export default function StudentTests() {
           </div>
         </div>
 
-        {/* Mickey Mouse Custom Tests Section */}
+        {/* Ben 10 Hero Custom Tests Section */}
         {customTests.length > 0 && (
-          <div className="bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 rounded-3xl shadow-2xl border-4 border-black overflow-hidden">
+          <div className="bg-gradient-to-r from-green-400 via-black to-green-400 rounded-3xl shadow-2xl border-4 border-green-400 overflow-hidden">
             {/* Custom Tests Header */}
             <div
-              className="p-6 border-b-4 border-black cursor-pointer hover:bg-green-300 transition-all bg-green-300"
+              className="p-6 border-b-4 border-green-400 cursor-pointer hover:bg-green-300 transition-all bg-green-300"
               onClick={toggleCustomTests}
             >
               <div className="flex items-center justify-between">
@@ -1196,16 +1196,16 @@ export default function StudentTests() {
                   )}
                   <div>
                     <h2 className="text-2xl font-black text-black flex items-center">
-                      <span className="text-3xl mr-2">🎭</span>
-                      Mickey's Custom Tests
+                      <span className="text-3xl mr-2">🦸‍♂️</span>
+                      Ben 10 Custom Tests
                       {(groupedCustomTests.live.length > 0 || groupedCustomTests.upcoming.length > 0 || groupedCustomTests.available.length > 0) && (
-                        <span className="ml-3 inline-flex items-center px-3 py-1 rounded-full text-sm font-black bg-yellow-400 text-black border-2 border-black">
-                          New Magic!
+                        <span className="ml-3 inline-flex items-center px-3 py-1 rounded-full text-sm font-black bg-yellow-400 text-black border-2 border-green-400">
+                          New Hero Power!
                         </span>
                       )}
                     </h2>
                     <p className="text-black font-bold text-lg">
-                      Tests assigned specifically to you by your magical teacher! ✨
+                      Tests assigned specifically to you by your hero teacher! ⚡
                     </p>
                   </div>
                 </div>
@@ -1213,21 +1213,21 @@ export default function StudentTests() {
                 <div className="flex items-center space-x-3">
                   {/* Custom Test count badges */}
                   {groupedCustomTests.live.length > 0 && (
-                    <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-black bg-green-500 text-white border-2 border-black">
+                    <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-black bg-green-500 text-white border-2 border-green-400">
                       {groupedCustomTests.live.length} Live Now
                     </span>
                   )}
                   {groupedCustomTests.upcoming.length > 0 && (
-                    <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-black bg-purple-500 text-white border-2 border-black">
+                    <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-black bg-purple-500 text-white border-2 border-green-400">
                       {groupedCustomTests.upcoming.length} Upcoming
                     </span>
                   )}
                   {groupedCustomTests.available.length > 0 && (
-                    <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-black bg-blue-500 text-white border-2 border-black">
+                    <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-black bg-blue-500 text-white border-2 border-green-400">
                       {groupedCustomTests.available.length} Available
                     </span>
                   )}
-                  <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-black bg-green-600 text-white border-2 border-black">
+                  <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-black bg-green-600 text-white border-2 border-green-400">
                     {customTests.length} Total
                   </span>
                 </div>
@@ -1240,7 +1240,7 @@ export default function StudentTests() {
                 {/* Live Custom Tests */}
                 {groupedCustomTests.live.length > 0 && (
                   <>
-                    <div className="px-6 py-4 bg-gradient-to-r from-green-300 to-emerald-300 border-b-4 border-black">
+                    <div className="px-6 py-4 bg-gradient-to-r from-green-300 to-emerald-300 border-b-4 border-green-400">
                       <div className="flex items-center">
                         <div className="text-2xl mr-3">🎯</div>
                         <span className="text-lg font-black text-black">
@@ -1254,7 +1254,7 @@ export default function StudentTests() {
                       const ButtonIcon = buttonConfig.icon;
 
                       return (
-                        <div key={test.id} className="p-6 hover:bg-yellow-100 transition-all border-b-2 border-black last:border-b-0">
+                        <div key={test.id} className="p-6 hover:bg-yellow-100 transition-all border-b-2 border-green-400 last:border-b-0">
                           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                             <div className="mb-4 md:mb-0">
                               <div className="flex items-center space-x-3">
@@ -1262,10 +1262,10 @@ export default function StudentTests() {
                                 <h3 className="text-xl font-black text-black">
                                   {test.title}
                                 </h3>
-                                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-black bg-green-500 text-white border-2 border-black">
+                                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-black bg-green-500 text-white border-2 border-green-400">
                                   Custom Assignment
                                 </span>
-                                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-black bg-green-500 text-white border-2 border-black">
+                                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-black bg-green-500 text-white border-2 border-green-400">
                                   Live Now
                                 </span>
                                 {renderLateSubmissionBadge(test)}
@@ -1289,7 +1289,7 @@ export default function StudentTests() {
                               <Button
                                 onClick={buttonConfig.action}
                                 disabled={buttonConfig.disabled}
-                                className={`inline-flex items-center px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black ${
+                                className={`inline-flex items-center px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-green-400 ${
                                   buttonConfig.variant === 'primary' && !buttonConfig.disabled
                                     ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white'
                                     : 'bg-gradient-to-r from-gray-400 to-gray-500 text-white'
@@ -1309,7 +1309,7 @@ export default function StudentTests() {
                 {/* Upcoming Custom Tests */}
                 {groupedCustomTests.upcoming.length > 0 && (
                   <>
-                    <div className="px-6 py-4 bg-gradient-to-r from-purple-300 to-pink-300 border-b-4 border-black">
+                    <div className="px-6 py-4 bg-gradient-to-r from-purple-300 to-pink-300 border-b-4 border-green-400">
                       <div className="flex items-center">
                         <div className="text-2xl mr-3">⏰</div>
                         <span className="text-lg font-black text-black">
@@ -1323,7 +1323,7 @@ export default function StudentTests() {
                         : (test as FlexibleTest).availableFrom;
 
                       return (
-                        <div key={test.id} className="p-6 hover:bg-yellow-100 transition-all border-b-2 border-black last:border-b-0">
+                        <div key={test.id} className="p-6 hover:bg-yellow-100 transition-all border-b-2 border-green-400 last:border-b-0">
                           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                             <div>
                               <div className="flex items-center space-x-3">
@@ -1331,10 +1331,10 @@ export default function StudentTests() {
                                 <h3 className="text-xl font-black text-black">
                                   {test.title}
                                 </h3>
-                                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-black bg-green-500 text-white border-2 border-black">
+                                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-black bg-green-500 text-white border-2 border-green-400">
                                   Custom Assignment
                                 </span>
-                                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-black bg-purple-500 text-white border-2 border-black">
+                                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-black bg-purple-500 text-white border-2 border-green-400">
                                   Upcoming
                                 </span>
                                 {renderLateSubmissionBadge(test)}
@@ -1344,7 +1344,7 @@ export default function StudentTests() {
                               </p>
                               {/* Show deadline for flexible tests */}
                               {test.type === 'flexible' && (
-                                <div className="mt-4 p-4 bg-gradient-to-r from-blue-200 to-cyan-200 border-4 border-black rounded-2xl">
+                                <div className="mt-4 p-4 bg-gradient-to-r from-blue-200 to-cyan-200 border-4 border-green-400 rounded-2xl">
                                   <div className="flex items-center justify-between">
                                     <div className="flex items-center space-x-2">
                                       <div className="text-2xl">📅</div>
@@ -1352,7 +1352,7 @@ export default function StudentTests() {
                                         Deadline
                                       </span>
                                       {(test as FlexibleTest).isExtended && (
-                                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-black bg-orange-400 text-white border-2 border-black">
+                                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-black bg-orange-400 text-white border-2 border-green-400">
                                           Extended
                                         </span>
                                       )}
@@ -1393,7 +1393,7 @@ export default function StudentTests() {
                 {/* Available Custom Tests */}
                 {groupedCustomTests.available.length > 0 && (
                   <>
-                    <div className="px-6 py-4 bg-gradient-to-r from-blue-300 to-cyan-300 border-b-4 border-black">
+                    <div className="px-6 py-4 bg-gradient-to-r from-blue-300 to-cyan-300 border-b-4 border-green-400">
                       <div className="flex items-center">
                         <div className="text-2xl mr-3">🎯</div>
                         <span className="text-lg font-black text-black">
@@ -1407,7 +1407,7 @@ export default function StudentTests() {
                       const ButtonIcon = buttonConfig.icon;
 
                       return (
-                        <div key={test.id} className="p-6 hover:bg-yellow-100 transition-all border-b-2 border-black last:border-b-0">
+                        <div key={test.id} className="p-6 hover:bg-yellow-100 transition-all border-b-2 border-green-400 last:border-b-0">
                           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                             <div className="mb-4 md:mb-0">
                               <div className="flex items-center space-x-3">
@@ -1415,10 +1415,10 @@ export default function StudentTests() {
                                 <h3 className="text-xl font-black text-black">
                                   {test.title}
                                 </h3>
-                                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-black bg-green-500 text-white border-2 border-black">
+                                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-black bg-green-500 text-white border-2 border-green-400">
                                   Custom Assignment
                                 </span>
-                                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-black bg-blue-500 text-white border-2 border-black">
+                                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-black bg-blue-500 text-white border-2 border-green-400">
                                   Available
                                 </span>
                                 {renderLateSubmissionBadge(test)}
@@ -1427,7 +1427,7 @@ export default function StudentTests() {
                                 Duration: {flexTest.duration || 'No time limit'} minutes
                               </p>
                               {/* Current Deadline */}
-                              <div className="mt-4 p-4 bg-gradient-to-r from-blue-200 to-cyan-200 border-4 border-black rounded-2xl">
+                              <div className="mt-4 p-4 bg-gradient-to-r from-blue-200 to-cyan-200 border-4 border-green-400 rounded-2xl">
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center space-x-2">
                                     <div className="text-2xl">📅</div>
@@ -1435,7 +1435,7 @@ export default function StudentTests() {
                                       Deadline
                                     </span>
                                     {flexTest.isExtended && (
-                                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-black bg-orange-400 text-white border-2 border-black">
+                                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-black bg-orange-400 text-white border-2 border-green-400">
                                         Extended
                                       </span>
                                     )}
@@ -1477,9 +1477,9 @@ export default function StudentTests() {
                               <Button
                                 onClick={buttonConfig.action}
                                 disabled={buttonConfig.disabled}
-                                className={`inline-flex items-center px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black ${
+                                className={`inline-flex items-center px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-green-400 ${
                                   buttonConfig.variant === 'primary' && !buttonConfig.disabled
-                                    ? 'bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white'
+                                    ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white'
                                     : 'bg-gradient-to-r from-gray-400 to-gray-500 text-white'
                                 }`}
                               >
@@ -1497,7 +1497,7 @@ export default function StudentTests() {
                 {/* Completed Custom Tests */}
                 {groupedCustomTests.completed.length > 0 && (
                   <>
-                    <div className="px-6 py-4 bg-gradient-to-r from-gray-300 to-slate-300 border-b-4 border-black">
+                    <div className="px-6 py-4 bg-gradient-to-r from-gray-300 to-slate-300 border-b-4 border-green-400">
                       <div className="flex items-center">
                         <div className="text-2xl mr-3">✅</div>
                         <span className="text-lg font-black text-black">
@@ -1512,7 +1512,7 @@ export default function StudentTests() {
                       const hasAttempted = attempts && attempts.attempts && attempts.attempts.length > 0;
 
                       return (
-                        <div key={test.id} className="p-6 hover:bg-yellow-100 transition-all border-b-2 border-black last:border-b-0">
+                        <div key={test.id} className="p-6 hover:bg-yellow-100 transition-all border-b-2 border-green-400 last:border-b-0">
                           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                             <div>
                               <div className="flex items-center space-x-3">
@@ -1520,15 +1520,15 @@ export default function StudentTests() {
                                 <h3 className="text-xl font-black text-black">
                                   {test.title}
                                 </h3>
-                                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-black bg-green-500 text-white border-2 border-black">
+                                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-black bg-green-500 text-white border-2 border-green-400">
                                   Custom Assignment
                                 </span>
                                 {hasAttempted ? (
-                                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-black bg-green-500 text-white border-2 border-black">
+                                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-black bg-green-500 text-white border-2 border-green-400">
                                     Attempted
                                   </span>
                                 ) : (
-                                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-black bg-orange-400 text-white border-2 border-black">
+                                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-black bg-orange-400 text-white border-2 border-green-400">
                                     Not Attempted
                                   </span>
                                 )}
@@ -1556,7 +1556,7 @@ export default function StudentTests() {
                               <Button
                                 onClick={buttonConfig.action}
                                 disabled={buttonConfig.disabled}
-                                className={`inline-flex items-center px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black ${
+                                className={`inline-flex items-center px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-green-400 ${
                                   buttonConfig.variant === 'primary' && !buttonConfig.disabled
                                     ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white'
                                     : 'bg-gradient-to-r from-gray-400 to-gray-500 text-white'
@@ -1588,10 +1588,10 @@ export default function StudentTests() {
           const completedCount = classData.groupedTests.completed.length;
 
           return (
-            <div key={classId} className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 rounded-3xl shadow-2xl border-4 border-black overflow-hidden">
+            <div key={classId} className="bg-gradient-to-r from-green-400 via-black to-green-400 rounded-3xl shadow-2xl border-4 border-green-400 overflow-hidden">
               {/* Class Header */}
               <div
-                className="p-6 border-b-4 border-black cursor-pointer hover:bg-indigo-300 transition-all bg-indigo-300"
+                className="p-6 border-b-4 border-green-400 cursor-pointer hover:bg-green-300 transition-all bg-green-300"
                 onClick={() => toggleClass(classId)}
               >
                 <div className="flex items-center justify-between">
@@ -1607,7 +1607,7 @@ export default function StudentTests() {
                         {classData.enrollment.className}
                       </h2>
                       <p className="text-black font-bold text-lg">
-                        {classData.enrollment.subject} • Magical Learning Adventures! ✨
+                        {classData.enrollment.subject} • Hero Learning Adventures! ⚡
                       </p>
                     </div>
                   </div>
@@ -1615,21 +1615,21 @@ export default function StudentTests() {
                   <div className="flex items-center space-x-3">
                     {/* Test count badges */}
                     {liveCount > 0 && (
-                      <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-black bg-green-500 text-white border-2 border-black">
+                      <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-black bg-green-500 text-white border-2 border-green-400">
                         {liveCount} Live Now
                       </span>
                     )}
                     {upcomingCount > 0 && (
-                      <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-black bg-purple-500 text-white border-2 border-black">
+                      <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-black bg-purple-500 text-white border-2 border-green-400">
                         {upcomingCount} Upcoming
                       </span>
                     )}
                     {availableCount > 0 && (
-                      <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-black bg-blue-500 text-white border-2 border-black">
+                      <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-black bg-blue-500 text-white border-2 border-green-400">
                         {availableCount} Available
                       </span>
                     )}
-                    <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-black bg-indigo-600 text-white border-2 border-black">
+                    <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-black bg-indigo-600 text-white border-2 border-green-400">
                       {totalTests} Total Tests
                     </span>
                   </div>
@@ -1640,13 +1640,13 @@ export default function StudentTests() {
               {isExpanded && (
                 <div className="divide-y divide-gray-200 dark:divide-gray-700">
                   {!hasTests ? (
-                    <div className="p-8 text-center bg-gradient-to-r from-yellow-200 via-orange-200 to-red-200 rounded-2xl border-4 border-black m-4">
+                    <div className="p-8 text-center bg-gradient-to-r from-green-200 via-black to-green-200 rounded-2xl border-4 border-green-400 m-4">
                       <div className="text-6xl mb-4">📚</div>
-                      <h3 className="text-2xl font-black text-black mb-2">
+                      <h3 className="text-2xl font-black text-white mb-2">
                         No Tests Yet
                       </h3>
-                      <p className="text-black font-bold">
-                        Your teacher hasn't created any tests for this class yet. Stay tuned for magical learning! 🌟
+                      <p className="text-white font-bold">
+                        Your teacher hasn't created any tests for this class yet. Stay tuned for hero training! 🦸‍♂️
                       </p>
                     </div>
                   ) : (
@@ -1654,7 +1654,7 @@ export default function StudentTests() {
                       {/* Live Tests */}
                       {classData.groupedTests.live.length > 0 && (
                         <>
-                          <div className="px-6 py-4 bg-gradient-to-r from-green-300 to-emerald-300 border-b-4 border-black">
+                          <div className="px-6 py-4 bg-gradient-to-r from-green-300 to-emerald-300 border-b-4 border-green-400">
                             <div className="flex items-center">
                               <div className="text-2xl mr-3">🎯</div>
                               <span className="text-lg font-black text-black">
@@ -1668,7 +1668,7 @@ export default function StudentTests() {
                             const ButtonIcon = buttonConfig.icon;
 
                             return (
-                              <div key={test.id} className="p-6 hover:bg-yellow-100 transition-all border-b-2 border-black last:border-b-0">
+                              <div key={test.id} className="p-6 hover:bg-yellow-100 transition-all border-b-2 border-green-400 last:border-b-0">
                                 <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                                   <div className="mb-4 md:mb-0">
                                     <div className="flex items-center space-x-3">
@@ -1677,7 +1677,7 @@ export default function StudentTests() {
                                         {test.title}
                                       </h3>
                                       {/* Test Type Badge */}
-                                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-black border-2 border-black ${
+                                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-black border-2 border-green-400 ${
                                         test.questions?.some(q => q.type === 'essay' || q.questionType === 'essay')
                                           ? 'bg-purple-400 text-white'
                                           : 'bg-blue-400 text-white'
@@ -1689,7 +1689,7 @@ export default function StudentTests() {
                                           : '📊 MCQ'
                                         }
                                       </span>
-                                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-black bg-green-500 text-white border-2 border-black">
+                                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-black bg-green-500 text-white border-2 border-green-400">
                                         Live Now
                                       </span>
                                       {renderLateSubmissionBadge(test)}
@@ -1708,7 +1708,7 @@ export default function StudentTests() {
                                     <Button
                                       onClick={buttonConfig.action}
                                       disabled={buttonConfig.disabled}
-                                      className={`inline-flex items-center px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black ${
+                                      className={`inline-flex items-center px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-green-400 ${
                                         buttonConfig.variant === 'primary' && !buttonConfig.disabled
                                           ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white'
                                           : 'bg-gradient-to-r from-gray-400 to-gray-500 text-white'
@@ -1728,7 +1728,7 @@ export default function StudentTests() {
                       {/* Upcoming Tests */}
                       {classData.groupedTests.upcoming.length > 0 && (
                         <>
-                          <div className="px-6 py-4 bg-gradient-to-r from-purple-300 to-pink-300 border-b-4 border-black">
+                          <div className="px-6 py-4 bg-gradient-to-r from-purple-300 to-pink-300 border-b-4 border-green-400">
                             <div className="flex items-center">
                               <div className="text-2xl mr-3">⏰</div>
                               <span className="text-lg font-black text-black">
@@ -1742,7 +1742,7 @@ export default function StudentTests() {
                               : (test as FlexibleTest).availableFrom;
 
                             return (
-                              <div key={test.id} className="p-6 hover:bg-yellow-100 transition-all border-b-2 border-black last:border-b-0">
+                              <div key={test.id} className="p-6 hover:bg-yellow-100 transition-all border-b-2 border-green-400 last:border-b-0">
                                 <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                                   <div>
                                     <div className="flex items-center space-x-3">
@@ -1751,7 +1751,7 @@ export default function StudentTests() {
                                         {test.title}
                                       </h3>
                                       {/* Test Type Badge */}
-                                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-black border-2 border-black ${
+                                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-black border-2 border-green-400 ${
                                         test.questions?.some(q => q.type === 'essay' || q.questionType === 'essay')
                                           ? 'bg-purple-400 text-white'
                                           : 'bg-blue-400 text-white'
@@ -1763,7 +1763,7 @@ export default function StudentTests() {
                                           : '📊 MCQ'
                                         }
                                       </span>
-                                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-black bg-purple-500 text-white border-2 border-black">
+                                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-black bg-purple-500 text-white border-2 border-green-400">
                                         Upcoming
                                       </span>
                                     </div>
@@ -1772,7 +1772,7 @@ export default function StudentTests() {
                                     </p>
                                     {/* Show deadline for flexible tests */}
                                     {test.type === 'flexible' && (
-                                      <div className="mt-4 p-4 bg-gradient-to-r from-blue-200 to-cyan-200 border-4 border-black rounded-2xl">
+                                      <div className="mt-4 p-4 bg-gradient-to-r from-blue-200 to-cyan-200 border-4 border-green-400 rounded-2xl">
                                         <div className="flex items-center justify-between">
                                           <div className="flex items-center space-x-2">
                                             <div className="text-2xl">📅</div>
@@ -1780,7 +1780,7 @@ export default function StudentTests() {
                                               Deadline
                                             </span>
                                             {(test as FlexibleTest).isExtended && (
-                                              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-black bg-orange-400 text-white border-2 border-black">
+                                              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-black bg-orange-400 text-white border-2 border-green-400">
                                                 Extended
                                               </span>
                                             )}
@@ -1816,7 +1816,7 @@ export default function StudentTests() {
                       {/* Available Tests */}
                       {classData.groupedTests.available.length > 0 && (
                         <>
-                          <div className="px-6 py-4 bg-gradient-to-r from-blue-300 to-cyan-300 border-b-4 border-black">
+                          <div className="px-6 py-4 bg-gradient-to-r from-blue-300 to-cyan-300 border-b-4 border-green-400">
                             <div className="flex items-center">
                               <div className="text-2xl mr-3">🎯</div>
                               <span className="text-lg font-black text-black">
@@ -1830,7 +1830,7 @@ export default function StudentTests() {
                             const ButtonIcon = buttonConfig.icon;
 
                             return (
-                              <div key={test.id} className="p-6 hover:bg-yellow-100 transition-all border-b-2 border-black last:border-b-0">
+                              <div key={test.id} className="p-6 hover:bg-yellow-100 transition-all border-b-2 border-green-400 last:border-b-0">
                                 <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                                   <div className="mb-4 md:mb-0">
                                     <div className="flex items-center space-x-3">
@@ -1839,7 +1839,7 @@ export default function StudentTests() {
                                         {test.title}
                                       </h3>
                                       {/* Test Type Badge */}
-                                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-black border-2 border-black ${
+                                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-black border-2 border-green-400 ${
                                         test.questions?.some(q => q.type === 'essay' || q.questionType === 'essay')
                                           ? 'bg-purple-400 text-white'
                                           : 'bg-blue-400 text-white'
@@ -1851,7 +1851,7 @@ export default function StudentTests() {
                                           : '📊 MCQ'
                                         }
                                       </span>
-                                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-black bg-blue-500 text-white border-2 border-black">
+                                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-black bg-blue-500 text-white border-2 border-green-400">
                                         Available
                                       </span>
                                     </div>
@@ -1859,7 +1859,7 @@ export default function StudentTests() {
                                       Duration: {flexTest.duration || 'No time limit'} minutes
                                     </p>
                                     {/* Current Deadline */}
-                                    <div className="mt-4 p-4 bg-gradient-to-r from-blue-200 to-cyan-200 border-4 border-black rounded-2xl">
+                                    <div className="mt-4 p-4 bg-gradient-to-r from-blue-200 to-cyan-200 border-4 border-green-400 rounded-2xl">
                                       <div className="flex items-center justify-between">
                                         <div className="flex items-center space-x-2">
                                           <div className="text-2xl">📅</div>
@@ -1867,7 +1867,7 @@ export default function StudentTests() {
                                             Deadline
                                           </span>
                                           {flexTest.isExtended && (
-                                            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-black bg-orange-400 text-white border-2 border-black">
+                                            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-black bg-orange-400 text-white border-2 border-green-400">
                                               Extended
                                             </span>
                                           )}
@@ -1904,9 +1904,9 @@ export default function StudentTests() {
                                     <Button
                                       onClick={buttonConfig.action}
                                       disabled={buttonConfig.disabled}
-                                      className={`inline-flex items-center px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black ${
+                                      className={`inline-flex items-center px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-green-400 ${
                                         buttonConfig.variant === 'primary' && !buttonConfig.disabled
-                                          ? 'bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white'
+                                          ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white'
                                           : 'bg-gradient-to-r from-gray-400 to-gray-500 text-white'
                                       }`}
                                     >
@@ -1924,7 +1924,7 @@ export default function StudentTests() {
                       {/* Completed Tests */}
                       {classData.groupedTests.completed.length > 0 && (
                         <>
-                          <div className="px-6 py-4 bg-gradient-to-r from-gray-300 to-slate-300 border-b-4 border-black">
+                          <div className="px-6 py-4 bg-gradient-to-r from-gray-300 to-slate-300 border-b-4 border-green-400">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center">
                                 <div className="text-2xl mr-3">✅</div>
@@ -1935,7 +1935,7 @@ export default function StudentTests() {
                               {classData.groupedTests.completed.length > 3 && (
                                 <button
                                   onClick={() => toggleCompletedSection(classId)}
-                                  className="text-lg text-black font-black hover:text-gray-700 flex items-center px-4 py-2 rounded-full bg-white border-2 border-black transform hover:scale-105 transition-all"
+                                  className="text-lg text-black font-black hover:text-gray-700 flex items-center px-4 py-2 rounded-full bg-white border-2 border-green-400 transform hover:scale-105 transition-all"
                                 >
                                   {expandedCompletedSections.has(classId) ? (
                                     <>
@@ -1964,7 +1964,7 @@ export default function StudentTests() {
                             const hasAttempted = attempts && attempts.attempts && attempts.attempts.length > 0;
 
                             return (
-                              <div key={test.id} className="p-6 hover:bg-yellow-100 transition-all border-b-2 border-black last:border-b-0">
+                              <div key={test.id} className="p-6 hover:bg-yellow-100 transition-all border-b-2 border-green-400 last:border-b-0">
                                 <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                                   <div>
                                     <div className="flex items-center space-x-3">
@@ -1973,7 +1973,7 @@ export default function StudentTests() {
                                         {test.title}
                                       </h3>
                                       {/* Test Type Badge */}
-                                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-black border-2 border-black ${
+                                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-black border-2 border-green-400 ${
                                         test.questions?.some(q => q.type === 'essay' || q.questionType === 'essay')
                                           ? 'bg-purple-400 text-white'
                                           : 'bg-blue-400 text-white'
@@ -1986,11 +1986,11 @@ export default function StudentTests() {
                                         }
                                       </span>
                                       {hasAttempted ? (
-                                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-black bg-green-500 text-white border-2 border-black">
+                                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-black bg-green-500 text-white border-2 border-green-400">
                                           Attempted
                                         </span>
                                       ) : (
-                                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-black bg-orange-400 text-white border-2 border-black">
+                                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-black bg-orange-400 text-white border-2 border-green-400">
                                           Not Attempted
                                         </span>
                                       )}
@@ -2014,7 +2014,7 @@ export default function StudentTests() {
                                     <Button
                                       onClick={buttonConfig.action}
                                       disabled={buttonConfig.disabled}
-                                      className={`inline-flex items-center px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black ${
+                                      className={`inline-flex items-center px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-green-400 ${
                                         buttonConfig.variant === 'primary' && !buttonConfig.disabled
                                           ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white'
                                           : 'bg-gradient-to-r from-gray-400 to-gray-500 text-white'

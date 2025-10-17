@@ -283,12 +283,12 @@ export default function StudentResults() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-400 via-yellow-400 to-blue-400 p-6">
+      <div className="min-h-screen bg-gradient-to-br from-green-600 via-green-700 to-black p-6">
         <div className="flex items-center justify-center py-12">
-          <div className="bg-gradient-to-r from-blue-400 to-purple-400 rounded-3xl shadow-2xl border-4 border-black p-8">
+          <div className="bg-gradient-to-r from-green-600 to-black rounded-3xl shadow-2xl border-4 border-black p-8">
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 border-4 border-black border-t-transparent rounded-full animate-spin bg-gradient-to-r from-yellow-400 to-orange-400"></div>
-              <span className="text-2xl font-black text-black">Loading your magical results... ✨</span>
+              <div className="w-12 h-12 border-4 border-black border-t-transparent rounded-full animate-spin bg-gradient-to-r from-green-400 to-green-600"></div>
+              <span className="text-2xl font-black text-white">Loading your hero results... ⚡</span>
             </div>
           </div>
         </div>
@@ -297,26 +297,31 @@ export default function StudentResults() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-400 via-yellow-400 to-blue-400 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-green-600 via-green-700 to-black p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Mickey Mouse Header */}
-        <div className="bg-gradient-to-r from-red-500 via-yellow-500 to-blue-500 rounded-3xl shadow-2xl border-4 border-black p-8 relative overflow-hidden">
-          {/* Mickey Mouse Ears */}
-          <div className="absolute -top-4 -left-4 w-12 h-12 bg-black rounded-full"></div>
-          <div className="absolute -top-4 -right-4 w-12 h-12 bg-black rounded-full"></div>
+        {/* Ben 10 Hero Header */}
+        <div className="bg-gradient-to-r from-green-600 via-green-700 to-black rounded-3xl shadow-2xl border-4 border-black p-8 relative overflow-hidden">
+          {/* Omnitrix Symbols */}
+          <div className="absolute -top-4 -left-4 w-12 h-12 bg-green-400 rounded-full border-2 border-black flex items-center justify-center">
+            <span className="text-black font-black text-lg">Ω</span>
+          </div>
+          <div className="absolute -top-4 -right-4 w-12 h-12 bg-green-400 rounded-full border-2 border-black flex items-center justify-center">
+            <span className="text-black font-black text-lg">Ω</span>
+          </div>
 
           <div className="flex items-center space-x-4 relative z-10">
-            <div className="text-6xl">📊</div>
+            <div className="text-6xl">⚡</div>
             <div>
-              <h1 className="text-4xl font-black text-black mb-2 flex items-center">
-                <span>Mickey's</span>
-                <span className="ml-2 text-white font-black text-5xl">Results</span>
+              <h1 className="text-4xl font-black text-white mb-2 flex items-center">
+                <span>Ben 10's</span>
+                <span className="ml-2 text-green-300 font-black text-5xl">Hero</span>
+                <span className="ml-2 text-3xl">Results</span>
                 <span className="ml-2 text-3xl">&</span>
                 <span className="ml-2 text-3xl">Progress</span>
-                <span className="ml-2 text-3xl">🎭</span>
+                <span className="ml-2 text-3xl">Ω</span>
               </h1>
-              <p className="text-black font-bold text-lg">
-                Welcome back, {student?.name}! Let's see how magical your learning journey has been! ✨
+              <p className="text-green-100 font-bold text-lg">
+                Welcome back, {student?.name}! Let's see how heroic your learning journey has been! ⚡
               </p>
             </div>
           </div>
@@ -328,20 +333,20 @@ export default function StudentResults() {
             <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-2xl">🔍</div>
             <input
               type="text"
-              placeholder="🔍 Search magical classes..."
+              placeholder="🔍 Search hero classes..."
               value={searchTerm}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
-              className="pl-12 w-full px-6 py-3 border-4 border-black rounded-3xl focus:ring-4 focus:ring-yellow-400 focus:border-black bg-white text-black font-bold text-lg placeholder-black/60"
+              className="pl-12 w-full px-6 py-3 border-4 border-black rounded-3xl focus:ring-4 focus:ring-green-400 focus:border-black bg-white text-black font-bold text-lg placeholder-black/60"
             />
           </div>
         </div>
 
         {/* Overall Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="bg-gradient-to-r from-blue-400 to-indigo-500 rounded-3xl shadow-2xl border-4 border-black p-6 hover:scale-105 transition-all">
+          <div className="bg-gradient-to-r from-green-600 to-black rounded-3xl shadow-2xl border-4 border-black p-6 hover:scale-105 transition-all">
             <div className="flex items-center space-x-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-yellow-400 to-orange-400 rounded-2xl flex items-center justify-center border-4 border-black shadow-lg">
-                <BookOpen className="w-8 h-8 text-black" />
+              <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl flex items-center justify-center border-4 border-black shadow-lg">
+                <BookOpen className="w-8 h-8 text-white" />
               </div>
               <div>
                 <p className="text-white font-black text-sm mb-1">Tests Completed</p>
@@ -352,10 +357,10 @@ export default function StudentResults() {
             </div>
           </div>
 
-          <div className="bg-gradient-to-r from-green-400 to-emerald-500 rounded-3xl shadow-2xl border-4 border-black p-6 hover:scale-105 transition-all">
+          <div className="bg-gradient-to-r from-green-600 to-black rounded-3xl shadow-2xl border-4 border-black p-6 hover:scale-105 transition-all">
             <div className="flex items-center space-x-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-yellow-400 to-orange-400 rounded-2xl flex items-center justify-center border-4 border-black shadow-lg">
-                <Target className="w-8 h-8 text-black" />
+              <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl flex items-center justify-center border-4 border-black shadow-lg">
+                <Target className="w-8 h-8 text-white" />
               </div>
               <div>
                 <p className="text-white font-black text-sm mb-1">Average Score</p>
@@ -366,10 +371,10 @@ export default function StudentResults() {
             </div>
           </div>
 
-          <div className="bg-gradient-to-r from-purple-400 to-pink-500 rounded-3xl shadow-2xl border-4 border-black p-6 hover:scale-105 transition-all">
+          <div className="bg-gradient-to-r from-green-600 to-black rounded-3xl shadow-2xl border-4 border-black p-6 hover:scale-105 transition-all">
             <div className="flex items-center space-x-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-yellow-400 to-orange-400 rounded-2xl flex items-center justify-center border-4 border-black shadow-lg">
-                <TrendingUp className="w-8 h-8 text-black" />
+              <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl flex items-center justify-center border-4 border-black shadow-lg">
+                <TrendingUp className="w-8 h-8 text-white" />
               </div>
               <div>
                 <p className="text-white font-black text-sm mb-1">Improving Classes</p>
@@ -380,10 +385,10 @@ export default function StudentResults() {
             </div>
           </div>
 
-          <div className="bg-gradient-to-r from-yellow-400 to-orange-500 rounded-3xl shadow-2xl border-4 border-black p-6 hover:scale-105 transition-all">
+          <div className="bg-gradient-to-r from-green-600 to-black rounded-3xl shadow-2xl border-4 border-black p-6 hover:scale-105 transition-all">
             <div className="flex items-center space-x-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-red-400 to-pink-400 rounded-2xl flex items-center justify-center border-4 border-black shadow-lg">
-                <AlertCircle className="w-8 h-8 text-black" />
+              <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl flex items-center justify-center border-4 border-black shadow-lg">
+                <AlertCircle className="w-8 h-8 text-white" />
               </div>
               <div>
                 <p className="text-white font-black text-sm mb-1">Topics to Improve</p>
@@ -400,13 +405,13 @@ export default function StudentResults() {
           {/* Class List */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-3xl shadow-2xl border-4 border-black overflow-hidden">
-              <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white p-6 border-b-4 border-black">
+              <div className="bg-gradient-to-r from-green-600 to-black text-white p-6 border-b-4 border-black">
                 <h2 className="text-xl font-black flex items-center">
-                  <span className="text-2xl mr-3">🎓</span>
-                  My Magical Classes
+                  <span className="text-2xl mr-3">Ω</span>
+                  My Hero Classes
                 </h2>
                 <p className="text-green-100 font-bold text-sm">
-                  Select a class to view your enchanted results! ✨
+                  Select a class to view your heroic results! ⚡
                 </p>
               </div>
               
@@ -417,7 +422,7 @@ export default function StudentResults() {
                     onClick={() => loadClassResults(classInfo.id)}
                     className={`p-4 rounded-2xl border-2 cursor-pointer transition-all hover:scale-105 ${
                       selectedClass === classInfo.id
-                        ? 'border-yellow-400 bg-gradient-to-r from-yellow-100 to-orange-100'
+                        ? 'border-green-400 bg-gradient-to-r from-green-100 to-green-200'
                         : 'border-gray-300 hover:border-black bg-white'
                     }`}
                   >
@@ -463,14 +468,14 @@ export default function StudentResults() {
                 
                 {filteredClasses.length === 0 && (
                   <div className="text-center py-8">
-                    <div className="text-4xl mb-4">🎓</div>
+                    <div className="text-4xl mb-4">Ω</div>
                     <h3 className="text-xl font-black text-black mb-2">
-                      {searchTerm ? 'No Magical Classes Found' : 'No Classes Available Yet'}
+                      {searchTerm ? 'No Hero Classes Found' : 'No Classes Available Yet'}
                     </h3>
                     <p className="text-gray-600 font-bold">
                       {searchTerm
-                        ? 'Try adjusting your search to find your magical classes! 🔍'
-                        : 'You haven\'t enrolled in any classes yet. Time to start your learning adventure! ✨'
+                        ? 'Try adjusting your search to find your hero classes! 🔍'
+                        : 'You haven\'t enrolled in any classes yet. Time to start your hero learning journey! ⚡'
                       }
                     </p>
                   </div>
@@ -485,13 +490,13 @@ export default function StudentResults() {
               <div className="space-y-6">
                 {/* Test Results */}
                 <div className="bg-white rounded-3xl shadow-2xl border-4 border-black overflow-hidden">
-                  <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-6 border-b-4 border-black">
+                  <div className="bg-gradient-to-r from-green-600 to-black text-white p-6 border-b-4 border-black">
                     <h2 className="text-xl font-black flex items-center">
-                      <span className="text-2xl mr-3">📝</span>
+                      <span className="text-2xl mr-3">⚡</span>
                       Test Results
                     </h2>
-                    <p className="text-blue-100 font-bold text-sm">
-                      Your best magical performance for each test ✨
+                    <p className="text-green-100 font-bold text-sm">
+                      Your best heroic performance for each test Ω
                     </p>
                   </div>
                   
@@ -518,7 +523,7 @@ export default function StudentResults() {
                                   <h3 className="font-black text-black text-base">
                                     {result.testTitle}
                                   </h3>
-                                  <span className="px-3 py-1 text-xs font-black bg-gradient-to-r from-yellow-400 to-orange-400 text-black rounded-full border-2 border-black">
+                                  <span className="px-3 py-1 text-xs font-black bg-gradient-to-r from-green-400 to-green-600 text-white rounded-full border-2 border-black">
                                     Best Attempt 🏆
                                   </span>
                                 </div>
@@ -566,12 +571,12 @@ export default function StudentResults() {
                       </div>
                     ) : (
                       <div className="text-center py-8">
-                        <div className="text-4xl mb-4">📊</div>
+                        <div className="text-4xl mb-4">⚡</div>
                         <h3 className="text-xl font-black text-black mb-2">
                           No Test Results Yet
                         </h3>
                         <p className="text-gray-600 font-bold">
-                          Complete some magical tests to see your results here! ✨
+                          Complete some hero tests to see your results here! Ω
                         </p>
                       </div>
                     )}
@@ -581,13 +586,13 @@ export default function StudentResults() {
                 {/* Difficulty Analysis */}
                 {difficultyAnalysis.length > 0 && (
                   <div className="bg-white rounded-3xl shadow-2xl border-4 border-black overflow-hidden">
-                    <div className="bg-gradient-to-r from-red-500 to-pink-600 text-white p-6 border-b-4 border-black">
+                    <div className="bg-gradient-to-r from-green-600 to-black text-white p-6 border-b-4 border-black">
                       <h2 className="text-xl font-black flex items-center">
                         <span className="text-2xl mr-3">🎯</span>
                         Topics to Improve
                       </h2>
-                      <p className="text-red-100 font-bold text-sm">
-                        Areas where you need more magical practice ✨
+                      <p className="text-green-100 font-bold text-sm">
+                        Areas where you need more heroic practice ⚡
                       </p>
                     </div>
                     
@@ -629,7 +634,7 @@ export default function StudentResults() {
                             {analysis.improvementNeeded && (
                               <div className="mt-3 p-3 bg-gradient-to-r from-red-100 to-pink-100 rounded-xl border-2 border-red-300">
                                 <p className="text-red-700 font-black text-sm">
-                                  💡 Focus on this topic - accuracy below 60%! Let's make it magical! ✨
+                                  💡 Focus on this topic - accuracy below 60%! Let's make it heroic! ⚡
                                 </p>
                               </div>
                             )}
@@ -642,12 +647,12 @@ export default function StudentResults() {
               </div>
             ) : (
               <div className="bg-gradient-to-r from-yellow-200 via-orange-200 to-red-200 rounded-3xl shadow-2xl border-4 border-black p-12 text-center">
-                <div className="text-6xl mb-6">🎓</div>
+                <div className="text-6xl mb-6">Ω</div>
                 <h3 className="text-2xl font-black text-black mb-4">
-                  Select a Magical Class
+                  Select a Hero Class
                 </h3>
                 <p className="text-black font-bold text-lg">
-                  Choose a class from the left to view your detailed test results and progress analysis! ✨
+                  Choose a class from the left to view your detailed test results and progress analysis! ⚡
                 </p>
               </div>
             )}
@@ -656,10 +661,10 @@ export default function StudentResults() {
 
         {/* Growth Insights */}
         {studentClasses.length > 0 && (
-          <div className="bg-gradient-to-r from-green-400 via-blue-400 to-purple-400 rounded-3xl shadow-2xl border-4 border-black p-8">
+          <div className="bg-gradient-to-r from-green-600 via-green-700 to-black rounded-3xl shadow-2xl border-4 border-black p-8">
             <div className="flex items-start space-x-6">
-              <div className="w-20 h-20 bg-gradient-to-br from-yellow-400 to-orange-400 rounded-3xl flex items-center justify-center border-4 border-black shadow-lg flex-shrink-0">
-                <Award className="w-10 h-10 text-black" />
+              <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-green-600 rounded-3xl flex items-center justify-center border-4 border-black shadow-lg flex-shrink-0">
+                <Award className="w-10 h-10 text-white" />
               </div>
               <div className="flex-1">
                 <h3 className="text-2xl font-black text-white mb-3 flex items-center">
@@ -667,7 +672,7 @@ export default function StudentResults() {
                   <span className="ml-3 text-3xl">🚀</span>
                 </h3>
                 <p className="text-white font-bold text-lg mb-6">
-                  Keep up the great work! Here's what we noticed about your magical progress:
+                  Keep up the great work! Here's what we noticed about your heroic progress:
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                   <div className="flex items-center bg-white/20 rounded-2xl p-4 border-2 border-white/30">

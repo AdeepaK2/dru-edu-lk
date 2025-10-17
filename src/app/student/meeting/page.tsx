@@ -472,12 +472,12 @@ export default function StudentMeetingPage() {
   // Show loading spinner while authenticating or loading data
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-400 via-yellow-400 to-blue-400 p-6">
+      <div className="min-h-screen bg-gradient-to-br from-green-600 via-green-700 to-black p-6">
         <div className="flex items-center justify-center py-12">
-          <div className="bg-gradient-to-r from-blue-400 to-purple-400 rounded-3xl shadow-2xl border-4 border-black p-8">
+          <div className="bg-gradient-to-r from-green-600 to-black rounded-3xl shadow-2xl border-4 border-black p-8">
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 border-4 border-black border-t-transparent rounded-full animate-spin bg-gradient-to-r from-yellow-400 to-orange-400"></div>
-              <span className="text-2xl font-black text-black">Loading your magical meetings... ✨</span>
+              <div className="w-12 h-12 border-4 border-black border-t-transparent rounded-full animate-spin bg-gradient-to-r from-green-400 to-green-600"></div>
+              <span className="text-2xl font-black text-white">Loading your hero meetings... ⚡</span>
             </div>
           </div>
         </div>
@@ -488,13 +488,13 @@ export default function StudentMeetingPage() {
   // Show error if not authenticated
   if (!student) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-400 via-yellow-400 to-blue-400 p-6">
+      <div className="min-h-screen bg-gradient-to-br from-green-600 via-green-700 to-black p-6">
         <div className="flex items-center justify-center py-12">
           <div className="bg-gradient-to-r from-red-200 to-pink-200 rounded-3xl shadow-2xl border-4 border-black p-8">
             <div className="text-center">
               <div className="text-4xl mb-4">😔</div>
               <h3 className="text-xl font-black text-black mb-2">Please Log In</h3>
-              <p className="text-black font-bold">Please log in as a student to access your magical meetings! ✨</p>
+              <p className="text-black font-bold">Please log in as a student to access your hero meetings! ⚡</p>
             </div>
           </div>
         </div>
@@ -503,26 +503,31 @@ export default function StudentMeetingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-400 via-yellow-400 to-blue-400 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-green-600 via-green-700 to-black p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Mickey Mouse Header */}
-        <div className="bg-gradient-to-r from-red-500 via-yellow-500 to-blue-500 rounded-3xl shadow-2xl border-4 border-black p-8 relative overflow-hidden">
-          {/* Mickey Mouse Ears */}
-          <div className="absolute -top-4 -left-4 w-12 h-12 bg-black rounded-full"></div>
-          <div className="absolute -top-4 -right-4 w-12 h-12 bg-black rounded-full"></div>
+        {/* Ben 10 Hero Header */}
+        <div className="bg-gradient-to-r from-green-600 via-green-700 to-black rounded-3xl shadow-2xl border-4 border-black p-8 relative overflow-hidden">
+          {/* Omnitrix Symbols */}
+          <div className="absolute -top-4 -left-4 w-12 h-12 bg-green-400 rounded-full border-2 border-black flex items-center justify-center">
+            <span className="text-black font-black text-lg">Ω</span>
+          </div>
+          <div className="absolute -top-4 -right-4 w-12 h-12 bg-green-400 rounded-full border-2 border-black flex items-center justify-center">
+            <span className="text-black font-black text-lg">Ω</span>
+          </div>
 
           <div className="flex items-center justify-between relative z-10">
             <div className="flex items-center space-x-4">
-              <div className="text-6xl">📅</div>
+              <div className="text-6xl">⚡</div>
               <div>
-                <h1 className="text-4xl font-black text-black mb-2 flex items-center">
-                  <span>Mickey's</span>
-                  <span className="ml-2 text-white font-black text-5xl">Meeting</span>
+                <h1 className="text-4xl font-black text-white mb-2 flex items-center">
+                  <span>Ben 10's</span>
+                  <span className="ml-2 text-green-300 font-black text-5xl">Hero</span>
+                  <span className="ml-2 text-3xl">Meeting</span>
                   <span className="ml-2 text-3xl">Scheduler</span>
-                  <span className="ml-2 text-3xl">🎭</span>
+                  <span className="ml-2 text-3xl">Ω</span>
                 </h1>
-                <p className="text-black font-bold text-lg">
-                  Welcome back, {student?.name}! Schedule magical one-on-one sessions with your teachers! ✨
+                <p className="text-green-100 font-bold text-lg">
+                  Welcome back, {student?.name}! Schedule heroic one-on-one sessions with your teachers! ⚡
                 </p>
               </div>
             </div>
@@ -570,7 +575,7 @@ export default function StudentMeetingPage() {
               onClick={() => setActiveTab('select')}
               className={`py-3 px-6 rounded-full font-black text-lg transition-all ${
                 activeTab === 'select'
-                  ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white border-2 border-black'
+                  ? 'bg-gradient-to-r from-green-600 to-black text-white border-2 border-black'
                   : 'bg-gray-100 hover:bg-gray-200 text-black border-2 border-gray-300'
               }`}
             >
@@ -580,7 +585,7 @@ export default function StudentMeetingPage() {
               onClick={() => setActiveTab('booked')}
               className={`py-3 px-6 rounded-full font-black text-lg transition-all ${
                 activeTab === 'booked'
-                  ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white border-2 border-black'
+                  ? 'bg-gradient-to-r from-green-600 to-black text-white border-2 border-black'
                   : 'bg-gray-100 hover:bg-gray-200 text-black border-2 border-gray-300'
               }`}
             >
@@ -594,10 +599,10 @@ export default function StudentMeetingPage() {
             {/* Class Selection */}
             <div className="bg-white rounded-3xl shadow-2xl border-4 border-black p-6">
               <div className="flex items-center space-x-4 mb-6">
-                <div className="text-4xl">🎓</div>
+                <div className="text-4xl">Ω</div>
                 <div>
                   <h3 className="text-xl font-black text-black">Select Class (Optional)</h3>
-                  <p className="text-gray-600 font-bold">Filter teachers by your enrolled classes ✨</p>
+                  <p className="text-gray-600 font-bold">Filter teachers by your enrolled classes ⚡</p>
                 </div>
               </div>
               
@@ -612,7 +617,7 @@ export default function StudentMeetingPage() {
                       setSelectedClass(e.target.value);
                       setExpandedTeacher(''); // Reset expanded teacher when class changes
                     }}
-                    className="w-full p-4 border-4 border-black rounded-3xl bg-white text-black font-bold text-lg focus:ring-4 focus:ring-yellow-400 focus:border-black"
+                    className="w-full p-4 border-4 border-black rounded-3xl bg-white text-black font-bold text-lg focus:ring-4 focus:ring-green-400 focus:border-black"
                   >
                     <option value="">All Classes</option>
                     {classes.map(cls => (
@@ -627,13 +632,13 @@ export default function StudentMeetingPage() {
 
             {/* Teachers List with Collapsible Slots */}
             <div className="bg-white rounded-3xl shadow-2xl border-4 border-black overflow-hidden">
-              <div className="bg-gradient-to-r from-purple-500 to-pink-600 text-white p-6 border-b-4 border-black">
+              <div className="bg-gradient-to-r from-green-600 to-black text-white p-6 border-b-4 border-black">
                 <h2 className="text-2xl font-black flex items-center">
                   <span className="text-3xl mr-3">👨‍🏫</span>
-                  Available Magical Teachers
+                  Available Hero Teachers
                 </h2>
-                <p className="text-purple-100 font-bold text-lg">
-                  Click on a teacher to see their enchanted time slots ✨
+                <p className="text-green-100 font-bold text-lg">
+                  Click on a teacher to see their heroic time slots ⚡
                 </p>
               </div>
 
@@ -645,7 +650,7 @@ export default function StudentMeetingPage() {
                       No Teachers Available Yet
                     </h3>
                     <p className="text-gray-600 font-bold text-lg">
-                      Magical teachers will appear here once they set up their schedules! ✨
+                      Hero teachers will appear here once they set up their schedules! ⚡
                     </p>
                   </div>
                 ) : (
@@ -657,7 +662,7 @@ export default function StudentMeetingPage() {
                       return (
                         <div
                           key={teacher.id}
-                          className="bg-gradient-to-r from-indigo-400 to-purple-500 rounded-3xl shadow-2xl border-4 border-black overflow-hidden hover:scale-105 transition-all"
+                          className="bg-gradient-to-r from-green-600 to-black rounded-3xl shadow-2xl border-4 border-black overflow-hidden hover:scale-105 transition-all"
                         >
                           {/* Teacher Header */}
                           <div
@@ -682,7 +687,7 @@ export default function StudentMeetingPage() {
                               </div>
                               <div className="flex items-center space-x-4">
                                 <span className="bg-white text-black px-4 py-2 rounded-full font-black text-sm border-2 border-black">
-                                  {teacherSlots.length} Magical Slots 🎯
+                                  {teacherSlots.length} Hero Slots ⚡
                                 </span>
                                 <ChevronRight 
                                   className={`w-8 h-8 text-white transition-transform ${
@@ -758,7 +763,7 @@ export default function StudentMeetingPage() {
 
         {activeTab === 'booked' && (
           <div className="bg-white rounded-3xl shadow-2xl border-4 border-black overflow-hidden">
-            <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white p-6 border-b-4 border-black">
+            <div className="bg-gradient-to-r from-green-600 to-black text-white p-6 border-b-4 border-black">
               <h2 className="text-2xl font-black flex items-center">
                 <span className="text-3xl mr-3">📅</span>
                 My Scheduled Meetings
@@ -768,12 +773,12 @@ export default function StudentMeetingPage() {
             <div className="p-6">
               {bookedMeetings.length === 0 ? (
                 <div className="text-center py-12">
-                  <div className="text-6xl mb-6">📅</div>
+                  <div className="text-6xl mb-6">Ω</div>
                   <h3 className="text-2xl font-black text-black mb-4">
                     No Meetings Scheduled Yet
                   </h3>
                   <p className="text-gray-600 font-bold text-lg">
-                    Book your first magical meeting with a teacher! ✨
+                    Book your first heroic one-on-one session with a teacher! ⚡
                   </p>
                 </div>
               ) : (
@@ -827,7 +832,7 @@ export default function StudentMeetingPage() {
                               variant="outline"
                               size="sm"
                               onClick={() => window.open(meeting.meetingLink, '_blank')}
-                              className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-6 py-3 rounded-full font-black text-sm border-2 border-black transform hover:scale-105 transition-all"
+                              className="bg-gradient-to-r from-green-600 to-black hover:from-green-700 hover:to-gray-900 text-white px-6 py-3 rounded-full font-black text-sm border-2 border-black transform hover:scale-105 transition-all"
                             >
                               <Video className="w-5 h-5 mr-2" />
                               🎥 Join Meeting
@@ -854,7 +859,7 @@ export default function StudentMeetingPage() {
                 </div>
                 
                 <h3 className="text-2xl font-black text-black text-center mb-6">
-                  🎯 Confirm Your Magical Booking
+                  🎯 Confirm Your Hero Booking
                 </h3>
                 
                 <div className="space-y-4 mb-8">
@@ -896,7 +901,7 @@ export default function StudentMeetingPage() {
                     ❌ Cancel
                   </Button>
                   <Button
-                    className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-black border-2 border-black rounded-full py-3 transform hover:scale-105 transition-all"
+                    className="flex-1 bg-gradient-to-r from-green-600 to-black hover:from-green-700 hover:to-gray-900 text-white font-black border-2 border-black rounded-full py-3 transform hover:scale-105 transition-all"
                     onClick={confirmBooking}
                   >
                     🎯 Confirm Booking

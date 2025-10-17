@@ -780,95 +780,106 @@ export default function TestPage() {
 
   return (
     <StudentLayout>
-      <div className="space-y-6">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <button 
-            onClick={handleBack}
-            className="flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-4"
-          >
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            Back to Tests
-          </button>
-          
-          <div className="flex items-center space-x-3 mb-2">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              {test.title}
-            </h1>
-            {/* Test Type Badge */}
-            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-              test.questions?.some(q => q.type === 'essay' || q.questionType === 'essay')
-                ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
-                : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
-            }`}>
-              {test.questions?.some(q => q.type === 'essay' || q.questionType === 'essay')
-                ? test.questions?.every(q => q.type === 'essay' || q.questionType === 'essay')
-                  ? '📝 Essay Test'
-                  : '📝📊 Mixed Test'
-                : '📊 MCQ Test'
-              }
-            </span>
-            {/* Late Submission Badge */}
-            {lateSubmissionInfo && lateSubmissionInfo.status === 'approved' && (
-              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                isLateSubmissionActive
-                  ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300'
-                  : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
-              }`}>
-                <Clock className="h-3 w-3 mr-1" />
-                {isLateSubmissionActive ? 'Late Submission Available' : 'Late Submission Expired'}
-              </span>
-            )}
+      <div className="min-h-screen bg-gradient-to-br from-green-400 via-black to-green-400 p-6">
+        {/* Ben 10 Hero Header */}
+        <div className="bg-gradient-to-r from-green-500 via-black to-green-500 rounded-3xl shadow-2xl border-4 border-green-400 p-8 mb-6 relative overflow-hidden">
+          {/* Omnitrix Symbol */}
+          <div className="absolute -top-4 -left-4 w-12 h-12 bg-green-400 rounded-full border-4 border-green-400"></div>
+          <div className="absolute -top-4 -right-4 w-12 h-12 bg-green-400 rounded-full border-4 border-green-400"></div>
+
+          <div className="flex items-center space-x-4 relative z-10">
+            <div className="text-6xl">📝</div>
+            <div>
+              <h1 className="text-4xl font-black text-white mb-2 flex items-center">
+                <span>Ben 10</span>
+                <span className="ml-2 text-green-400 font-black text-5xl">Hero</span>
+                <span className="ml-2 text-3xl">Test</span>
+              </h1>
+              <p className="text-green-200 text-lg mb-4">Ready to prove your hero skills? ⚡🦸‍♂️</p>
+              
+              {/* Test Title and Badges */}
+              <div className="flex items-center space-x-3 mb-2">
+                <h2 className="text-2xl font-bold text-white">
+                  {test.title}
+                </h2>
+                {/* Test Type Badge */}
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border-2 border-green-400 ${
+                  test.questions?.some(q => q.type === 'essay' || q.questionType === 'essay')
+                    ? 'bg-purple-500 text-white'
+                    : 'bg-blue-500 text-white'
+                }`}>
+                  {test.questions?.some(q => q.type === 'essay' || q.questionType === 'essay')
+                    ? test.questions?.every(q => q.type === 'essay' || q.questionType === 'essay')
+                      ? '📝 Essay Test'
+                      : '📝📊 Mixed Test'
+                    : '📊 MCQ Test'
+                  }
+                </span>
+                {/* Late Submission Badge */}
+                {lateSubmissionInfo && lateSubmissionInfo.status === 'approved' && (
+                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border-2 border-green-400 ${
+                    isLateSubmissionActive
+                      ? 'bg-orange-500 text-white'
+                      : 'bg-red-500 text-white'
+                  }`}>
+                    <Clock className="h-3 w-3 mr-1" />
+                    {isLateSubmissionActive ? 'Late Submission Available' : 'Late Submission Expired'}
+                  </span>
+                )}
+              </div>
+              <p className="text-green-200">
+                {test.description || 'No description provided.'}
+              </p>
+            </div>
           </div>
-          <p className="text-gray-600 dark:text-gray-300">
-            {test.description || 'No description provided.'}
-          </p>
         </div>
         
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-            Test Information
+        <div className="bg-gradient-to-r from-green-500 via-black to-green-500 rounded-3xl shadow-2xl border-4 border-green-400 p-8 mb-6">
+          <h2 className="text-2xl font-black text-white mb-6 flex items-center">
+            <div className="text-4xl mr-3">📊</div>
+            Hero Test Information
           </h2>
           
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Subject</p>
-                <p className="mt-1 text-gray-900 dark:text-white">{test.subjectName || 'Unknown Subject'}</p>
+              <div className="bg-white/10 rounded-xl p-4 border-2 border-green-400">
+                <p className="text-sm font-medium text-green-200">Subject</p>
+                <p className="mt-1 text-white font-bold text-lg">{test.subjectName || 'Unknown Subject'}</p>
               </div>
-              <div>
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Teacher</p>
-                <p className="mt-1 text-gray-900 dark:text-white">{test.teacherName || 'Unknown Teacher'}</p>
+              <div className="bg-white/10 rounded-xl p-4 border-2 border-green-400">
+                <p className="text-sm font-medium text-green-200">Teacher</p>
+                <p className="mt-1 text-white font-bold text-lg">{test.teacherName || 'Unknown Teacher'}</p>
               </div>
-              <div>
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Test Type</p>
-                <p className="mt-1 text-gray-900 dark:text-white capitalize">{test.type}</p>
+              <div className="bg-white/10 rounded-xl p-4 border-2 border-green-400">
+                <p className="text-sm font-medium text-green-200">Test Type</p>
+                <p className="mt-1 text-white font-bold text-lg capitalize">{test.type}</p>
               </div>
-              <div>
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Questions</p>
-                <p className="mt-1 text-gray-900 dark:text-white">{test.questions.length}</p>
+              <div className="bg-white/10 rounded-xl p-4 border-2 border-green-400">
+                <p className="text-sm font-medium text-green-200">Total Questions</p>
+                <p className="mt-1 text-white font-bold text-lg">{test.questions.length}</p>
               </div>
-              <div>
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Marks</p>
-                <p className="mt-1 text-gray-900 dark:text-white">{test.totalMarks}</p>
+              <div className="bg-white/10 rounded-xl p-4 border-2 border-green-400">
+                <p className="text-sm font-medium text-green-200">Total Marks</p>
+                <p className="mt-1 text-white font-bold text-lg">{test.totalMarks}</p>
               </div>
               {test.type === 'live' ? (
-                <div>
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Scheduled Time</p>
-                  <p className="mt-1 text-gray-900 dark:text-white">
+                <div className="bg-white/10 rounded-xl p-4 border-2 border-green-400">
+                  <p className="text-sm font-medium text-green-200">Scheduled Time</p>
+                  <p className="mt-1 text-white font-bold text-lg">
                     {formatDateTime((test as LiveTest).scheduledStartTime)}
                   </p>
                 </div>
               ) : (
-                <div>
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Available Until</p>
-                  <p className="mt-1 text-gray-900 dark:text-white">
+                <div className="bg-white/10 rounded-xl p-4 border-2 border-green-400">
+                  <p className="text-sm font-medium text-green-200">Available Until</p>
+                  <p className="mt-1 text-white font-bold text-lg">
                     {formatDateTime((test as FlexibleTest).availableTo)}
                   </p>
                 </div>
               )}
-              <div>
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Duration</p>
-                <p className="mt-1 text-gray-900 dark:text-white">
+              <div className="bg-white/10 rounded-xl p-4 border-2 border-green-400">
+                <p className="text-sm font-medium text-green-200">Duration</p>
+                <p className="mt-1 text-white font-bold text-lg">
                   {test.type === 'live' 
                     ? `${(test as LiveTest).duration} minutes` 
                     : `${(test as FlexibleTest).duration || 'No time limit'} minutes`}
@@ -877,9 +888,12 @@ export default function TestPage() {
             </div>
             
             {test.instructions && (
-              <div className="mt-6">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Instructions</h3>
-                <div className="bg-gray-50 dark:bg-gray-700 rounded-md p-4 text-gray-700 dark:text-gray-300">
+              <div className="mt-6 bg-white/10 rounded-xl p-6 border-2 border-green-400">
+                <h3 className="text-lg font-bold text-white mb-3 flex items-center">
+                  <div className="text-2xl mr-2">📋</div>
+                  Hero Instructions
+                </h3>
+                <div className="bg-black/30 rounded-lg p-4 text-green-100 border border-green-400">
                   {test.instructions}
                 </div>
               </div>
@@ -943,43 +957,43 @@ export default function TestPage() {
 
               {/* Attempt Information */}
               {attemptInfo && (
-                <div className="mb-6">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center">
-                    <Target className="h-5 w-5 mr-2" />
-                    Attempt Information
+                <div className="mb-6 bg-white/10 rounded-xl p-6 border-2 border-green-400">
+                  <h3 className="text-lg font-bold text-white mb-4 flex items-center">
+                    <div className="text-2xl mr-2">🎯</div>
+                    Hero Attempt Information
                   </h3>
                   
-                  <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                  <div className="bg-black/30 rounded-lg p-4 border border-green-400">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>
-                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Attempts Allowed</p>
-                        <p className="mt-1 text-lg font-semibold text-gray-900 dark:text-white">
+                      <div className="bg-white/10 rounded-lg p-3 border border-green-400">
+                        <p className="text-sm font-medium text-green-200">Attempts Allowed</p>
+                        <p className="mt-1 text-lg font-bold text-white">
                           {attemptInfo.attemptsAllowed}
                           {isLateSubmissionActive && (
-                            <span className="text-sm text-orange-600 dark:text-orange-400 ml-1">
+                            <span className="text-sm text-orange-400 ml-1">
                               + Late Submission
                             </span>
                           )}
                         </p>
                       </div>
                       
-                      <div>
-                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Completed Attempts</p>
-                        <p className="mt-1 text-lg font-semibold text-gray-900 dark:text-white">
+                      <div className="bg-white/10 rounded-lg p-3 border border-green-400">
+                        <p className="text-sm font-medium text-green-200">Completed Attempts</p>
+                        <p className="mt-1 text-lg font-bold text-white">
                           {attemptInfo.totalAttempts}
                         </p>
                       </div>
                       
-                      <div>
-                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Status</p>
+                      <div className="bg-white/10 rounded-lg p-3 border border-green-400">
+                        <p className="text-sm font-medium text-green-200">Status</p>
                         <p className={`mt-1 text-sm font-medium ${
                           (attemptInfo as any).hasActiveAttempt
-                            ? 'text-blue-600 dark:text-blue-400'
+                            ? 'text-blue-400'
                             : isLateSubmissionActive
-                              ? 'text-orange-600 dark:text-orange-400'
+                              ? 'text-orange-400'
                               : attemptInfo.canCreateNewAttempt 
-                              ? 'text-green-600 dark:text-green-400'
-                              : 'text-red-600 dark:text-red-400'
+                              ? 'text-green-400'
+                              : 'text-red-400'
                         }`}>
                           {(attemptInfo as any).hasActiveAttempt 
                             ? 'Resume Available' 
@@ -995,16 +1009,16 @@ export default function TestPage() {
                     
                     {/* Active attempts indicator */}
                     {(attemptInfo as any).activeAttempts > 0 && (
-                      <div className="mt-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md p-3">
+                      <div className="mt-4 bg-green-500/20 border-2 border-green-400 rounded-xl p-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center">
-                            <Clock className="h-4 w-4 text-blue-500 mr-2" />
-                            <p className="text-sm text-blue-700 dark:text-blue-300">
-                              You have an active test in progress. Click "Resume Test" to continue.
+                            <Clock className="h-5 w-5 text-green-400 mr-3" />
+                            <p className="text-sm text-green-200 font-medium">
+                              You have an active hero test in progress. Click "Resume Test" to continue your hero journey! ⚡
                             </p>
                           </div>
                           {(attemptInfo as any).activeAttemptRemainingMinutes !== undefined && (
-                            <div className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                            <div className="text-sm font-bold text-green-300">
                               {(attemptInfo as any).activeAttemptRemainingMinutes > 0 
                                 ? `${(attemptInfo as any).activeAttemptRemainingMinutes} min left`
                                 : 'Time expired'
@@ -1016,8 +1030,8 @@ export default function TestPage() {
                     )}
                     
                     {attemptInfo.totalAttempts > 0 && (
-                      <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                      <div className="mt-4 pt-4 border-t border-green-500/30">
+                        <p className="text-sm text-green-200">
                           You have completed {attemptInfo.totalAttempts} regular attempt{attemptInfo.totalAttempts !== 1 ? 's' : ''} for this test.
                           {isLateSubmissionActive ? (
                             ' You can use your late submission opportunity to attempt this test.'
@@ -1031,7 +1045,7 @@ export default function TestPage() {
                         {attemptInfo.totalAttempts > 0 && (
                           <button
                             onClick={() => router.push(`/student/test/${testId}/result`)}
-                            className="mt-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
+                            className="mt-2 text-sm text-green-400 hover:text-green-300 transition-colors duration-200"
                           >
                             View Previous Results →
                           </button>
@@ -1044,16 +1058,16 @@ export default function TestPage() {
               
               <div className={`p-4 rounded-md flex items-center mb-6 ${
                 isLateSubmissionActive 
-                  ? 'bg-orange-50 dark:bg-orange-900/20' 
-                  : 'bg-blue-50 dark:bg-blue-900/20'
+                  ? 'bg-gradient-to-r from-green-900/40 to-black/60 border border-green-500/30' 
+                  : 'bg-gradient-to-r from-green-900/30 to-black/50 border border-green-500/20'
               }`}>
                 <Clock className={`h-5 w-5 mr-3 ${
-                  isLateSubmissionActive ? 'text-orange-500' : 'text-blue-500'
+                  isLateSubmissionActive ? 'text-green-400' : 'text-green-300'
                 }`} />
                 <p className={`${
                   isLateSubmissionActive 
-                    ? 'text-orange-700 dark:text-orange-300' 
-                    : 'text-blue-700 dark:text-blue-300'
+                    ? 'text-green-200 font-semibold' 
+                    : 'text-green-100'
                 }`}>
                   {testStatus}
                 </p>
@@ -1063,14 +1077,15 @@ export default function TestPage() {
                 <Button
                   onClick={handleBack}
                   variant="outline"
+                  className="border-green-500/50 text-green-300 hover:bg-green-900/30 hover:border-green-400 transition-all duration-200"
                 >
                   Return to Tests
                 </Button>
                 
                 <Button
                   onClick={handleStartTest}
-                  className={`inline-flex items-center ${
-                    isLateSubmissionActive ? 'bg-orange-600 hover:bg-orange-700' : ''
+                  className={`inline-flex items-center bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 border border-green-500/50 shadow-lg hover:shadow-green-500/25 transition-all duration-200 ${
+                    isLateSubmissionActive ? 'from-orange-600 to-orange-700 hover:from-orange-500 hover:to-orange-600 border-orange-500/50' : ''
                   }`}
                   variant={isLateSubmissionActive ? 'warning' : 'primary'}
                   disabled={!canStart || (!(attemptInfo as any)?.hasActiveAttempt && !attemptInfo?.canCreateNewAttempt && !isLateSubmissionActive) || startingTest}

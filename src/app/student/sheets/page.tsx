@@ -138,12 +138,12 @@ export default function StudentSheetsPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-400 via-yellow-400 to-blue-400 p-6">
+      <div className="min-h-screen bg-gradient-to-br from-green-600 via-green-700 to-black p-6">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
-              <div className="w-12 h-12 border-4 border-black border-t-transparent rounded-full animate-spin mx-auto mb-6 bg-gradient-to-r from-yellow-400 to-orange-400"></div>
-              <p className="text-black font-black text-xl">Loading your magical sheets... ✨</p>
+              <div className="w-12 h-12 border-4 border-green-400 border-t-transparent rounded-full animate-spin mx-auto mb-6 bg-gradient-to-r from-green-400 to-green-500"></div>
+              <p className="text-white font-black text-xl">Loading your hero sheets... ⚡</p>
             </div>
           </div>
         </div>
@@ -152,24 +152,25 @@ export default function StudentSheetsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-400 via-yellow-400 to-blue-400 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-green-600 via-green-700 to-black p-6">
       <div className="max-w-4xl mx-auto">
-        {/* Mickey Mouse Header */}
-        <div className="bg-gradient-to-r from-red-500 via-yellow-500 to-blue-500 rounded-3xl shadow-2xl border-4 border-black p-8 mb-8 relative overflow-hidden">
-          {/* Mickey Mouse Ears */}
-          <div className="absolute -top-4 -left-4 w-12 h-12 bg-black rounded-full"></div>
-          <div className="absolute -top-4 -right-4 w-12 h-12 bg-black rounded-full"></div>
+        {/* Ben 10 Hero Header */}
+        <div className="bg-gradient-to-r from-green-500 via-green-600 to-black rounded-3xl shadow-2xl border-4 border-black p-8 mb-8 relative overflow-hidden">
+          {/* Omnitrix Symbol */}
+          <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-16 h-16 bg-green-400 rounded-full border-4 border-black flex items-center justify-center">
+            <div className="text-black font-black text-2xl">Ω</div>
+          </div>
 
           <div className="flex items-center space-x-4 relative z-10">
-            <div className="text-6xl">📊</div>
+            <div className="text-6xl">🦸‍♂️</div>
             <div>
-              <h1 className="text-4xl font-black text-black mb-2 flex items-center">
-                <span>Mickey's</span>
-                <span className="ml-2 text-white font-black text-5xl">Sheets</span>
-                <span className="ml-2 text-3xl">🎭</span>
+              <h1 className="text-4xl font-black text-white mb-2 flex items-center">
+                <span>Ben 10</span>
+                <span className="ml-2 text-green-400 font-black text-5xl">Sheets</span>
+                <span className="ml-2 text-3xl">⚡</span>
               </h1>
-              <p className="text-black font-bold text-lg">
-                Welcome back, {student?.name}! Access your magical Google Sheets assignments! ✨
+              <p className="text-green-200 font-bold text-lg">
+                Welcome back, {student?.name}! Access your hero Google Sheets assignments! 🦸‍♂️
               </p>
             </div>
           </div>
@@ -177,13 +178,13 @@ export default function StudentSheetsPage() {
 
         {/* Overall Statistics */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-gradient-to-r from-green-400 to-emerald-400 rounded-3xl shadow-2xl border-4 border-black p-6">
+          <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-3xl shadow-2xl border-4 border-black p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-black text-black">
-                  Total Sheets
+                <p className="text-sm font-black text-white">
+                  Hero Sheets
                 </p>
-                <p className="text-3xl font-black text-black mt-2">
+                <p className="text-3xl font-black text-white mt-2">
                   {totalSheets}
                 </p>
               </div>
@@ -191,56 +192,56 @@ export default function StudentSheetsPage() {
             </div>
           </div>
 
-          <div className="bg-gradient-to-r from-blue-400 to-cyan-400 rounded-3xl shadow-2xl border-4 border-black p-6">
+          <div className="bg-gradient-to-r from-green-600 to-green-700 rounded-3xl shadow-2xl border-4 border-black p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-black text-black">
-                  Classes
+                <p className="text-sm font-black text-white">
+                  Hero Classes
                 </p>
-                <p className="text-3xl font-black text-black mt-2">
+                <p className="text-3xl font-black text-white mt-2">
                   {classes.length}
                 </p>
               </div>
-              <div className="text-4xl">📚</div>
+              <div className="text-4xl">🦸‍♂️</div>
             </div>
           </div>
 
-          <div className="bg-gradient-to-r from-purple-400 to-pink-400 rounded-3xl shadow-2xl border-4 border-black p-6">
+          <div className="bg-gradient-to-r from-green-700 to-black rounded-3xl shadow-2xl border-4 border-black p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-black text-black">
+                <p className="text-sm font-black text-white">
                   Active Classes
                 </p>
-                <p className="text-3xl font-black text-black mt-2">
+                <p className="text-3xl font-black text-white mt-2">
                   {classes.filter(cls => cls.sheetCount > 0).length}
                 </p>
               </div>
-              <div className="text-4xl">🏫</div>
+              <div className="text-4xl">⚡</div>
             </div>
           </div>
         </div>
 
         {/* Classes List */}
         <div className="bg-white rounded-3xl shadow-2xl border-4 border-black overflow-hidden">
-          <div className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 p-6 border-b-4 border-black">
-            <h2 className="text-2xl font-black text-black mb-2 flex items-center">
-              <span className="text-3xl mr-3">🏫</span>
-              Your Magical Classes
-              <span className="ml-3 text-xl">✨</span>
+          <div className="bg-gradient-to-r from-green-500 via-green-600 to-black p-6 border-b-4 border-black">
+            <h2 className="text-2xl font-black text-white mb-2 flex items-center">
+              <span className="text-3xl mr-3">🦸‍♂️</span>
+              Your Hero Classes
+              <span className="ml-3 text-xl">⚡</span>
             </h2>
-            <p className="text-black font-bold">
-              Click on a class to view and access your magical sheets
+            <p className="text-green-200 font-bold">
+              Click on a class to view and access your hero sheets
             </p>
           </div>
 
           {classes.length === 0 ? (
-            <div className="bg-gradient-to-r from-yellow-200 via-orange-200 to-red-200 p-12 text-center border-t-4 border-black">
-              <div className="text-6xl mb-6">📚</div>
-              <h3 className="text-2xl font-black text-black mb-4">
-                No Magical Classes Yet
+            <div className="bg-gradient-to-r from-green-700 via-green-800 to-black p-12 text-center border-t-4 border-black">
+              <div className="text-6xl mb-6">🦸‍♂️</div>
+              <h3 className="text-2xl font-black text-white mb-4">
+                No Hero Classes Yet
               </h3>
-              <p className="text-black font-bold text-lg">
-                You haven't enrolled in any classes yet. Time to start your learning adventure!
+              <p className="text-green-200 font-bold text-lg">
+                You haven't enrolled in any classes yet. Time to start your hero training!
               </p>
             </div>
           ) : (
@@ -248,7 +249,7 @@ export default function StudentSheetsPage() {
               {classes.map((classData) => (
                 <div
                   key={classData.id}
-                  className="bg-gradient-to-r from-white to-gray-100 p-6 hover:scale-105 transition-all cursor-pointer border-b-4 border-black last:border-b-0"
+                  className="bg-gradient-to-r from-green-600 via-green-700 to-black p-6 hover:scale-105 transition-all cursor-pointer border-b-4 border-black last:border-b-0"
                   onClick={() => openClassSheets(classData)}
                 >
                   <div className="flex items-center justify-between">
@@ -259,16 +260,16 @@ export default function StudentSheetsPage() {
                         </div>
                       </div>
                       <div className="flex-1">
-                        <h3 className="text-xl font-black text-black mb-1">
+                        <h3 className="text-xl font-black text-white mb-1">
                           {classData.name}
                         </h3>
-                        <p className="text-black font-bold text-lg mb-1">{classData.subject}</p>
-                        <p className="text-black font-bold text-sm mb-3">{classData.year}</p>
+                        <p className="text-green-200 font-bold text-lg mb-1">{classData.subject}</p>
+                        <p className="text-green-300 font-bold text-sm mb-3">{classData.year}</p>
 
-                        <div className="flex items-center space-x-6 text-sm text-black font-bold">
+                        <div className="flex items-center space-x-6 text-sm text-green-200 font-bold">
                           <div className="flex items-center space-x-2">
                             <span className="text-2xl">📊</span>
-                            <span>{classData.sheetCount} magical sheet{classData.sheetCount !== 1 ? 's' : ''}</span>
+                            <span>{classData.sheetCount} hero sheet{classData.sheetCount !== 1 ? 's' : ''}</span>
                           </div>
                           {classData.lastActivity && (
                             <div className="flex items-center space-x-2">
@@ -281,11 +282,11 @@ export default function StudentSheetsPage() {
                     </div>
                     <div className="flex items-center space-x-3">
                       {classData.sheetCount > 0 && (
-                        <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-black bg-green-400 text-white border-2 border-black shadow-lg">
-                          {classData.sheetCount} Sheet{classData.sheetCount !== 1 ? 's' : ''} ✨
+                        <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-black bg-green-500 text-white border-2 border-black shadow-lg">
+                          {classData.sheetCount} Sheet{classData.sheetCount !== 1 ? 's' : ''} ⚡
                         </span>
                       )}
-                      <div className="text-3xl transform group-hover:translate-x-1 transition-transform">➡️</div>
+                      <div className="text-3xl transform group-hover:translate-x-1 transition-transform text-white">➡️</div>
                     </div>
                   </div>
                 </div>
