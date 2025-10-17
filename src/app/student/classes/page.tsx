@@ -98,13 +98,13 @@ export default function StudentClassesPage() {
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-400 via-black to-green-500 flex items-center justify-center">
-        <div className="bg-white border-4 border-green-500 rounded-3xl p-8 shadow-2xl">
+        <div className="bg-white border-4 border-black rounded-3xl p-8 shadow-2xl">
           {/* Ben 10 Loading Animation */}
           <div className="relative mb-6">
             <div className="w-24 h-24 bg-green-500 rounded-full flex items-center justify-center relative mx-auto animate-spin border-4 border-black">
               <div className="w-20 h-20 bg-black rounded-full flex items-center justify-center">
                 <span className="text-green-400 text-xl font-bold animate-pulse">10</span>
-                <div className="absolute inset-0 rounded-full border-2 border-green-400 animate-ping"></div>
+                <div className="absolute inset-0 rounded-full border-2 border-black animate-ping"></div>
               </div>
             </div>
             <div className="text-center mt-4">
@@ -132,12 +132,12 @@ export default function StudentClassesPage() {
     <>
       <div className="min-h-screen bg-gradient-to-br from-green-400 via-black to-green-500 p-6">
         {/* Ben 10 Header */}
-        <div className="bg-gradient-to-r from-green-500 via-black to-green-600 rounded-3xl shadow-2xl border-4 border-green-400 p-8 mb-6 relative overflow-hidden">
+        <div className="bg-gradient-to-r from-green-500 via-black to-green-600 rounded-3xl shadow-2xl border-4 border-black p-8 mb-6 relative overflow-hidden">
           {/* Omnitrix Symbols */}
           <div className="absolute -top-4 -left-4 w-12 h-12 bg-green-400 rounded-full animate-bounce border-2 border-black flex items-center justify-center">
             <span className="text-black text-lg font-bold">10</span>
           </div>
-          <div className="absolute -top-4 -right-4 w-12 h-12 bg-black rounded-full animate-bounce delay-300 border-2 border-green-400 flex items-center justify-center">
+          <div className="absolute -top-4 -right-4 w-12 h-12 bg-black rounded-full animate-bounce delay-300 border-2 border-black flex items-center justify-center">
             <span className="text-green-400 text-lg font-bold">B</span>
           </div>
 
@@ -160,7 +160,7 @@ export default function StudentClassesPage() {
                 </p>
               </div>
             </div>
-            <div className="bg-white border-4 border-green-400 rounded-2xl p-4 shadow-lg">
+            <div className="bg-white border-4 border-black rounded-2xl p-4 shadow-lg">
               <div className="flex items-center space-x-3">
                 <div className="text-4xl">📚</div>
                 <div className="text-center">
@@ -173,7 +173,7 @@ export default function StudentClassesPage() {
         </div>
 
         {/* Ben 10 Search and Filter */}
-        <div className="bg-gradient-to-r from-green-400 via-black to-green-500 rounded-2xl shadow-xl border-4 border-green-400 p-6 mb-6">
+        <div className="bg-gradient-to-r from-green-400 via-black to-green-500 rounded-2xl shadow-xl border-4 border-black p-6 mb-6">
           <div className="flex items-center space-x-3 mb-4">
             <div className="text-3xl">🔍</div>
             <h2 className="text-2xl font-black text-white">Ben 10's Hero Search</h2>
@@ -189,7 +189,7 @@ export default function StudentClassesPage() {
                   placeholder="Search for hero classes or subjects..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-12 pr-4 py-3 text-lg border-4 border-green-400 rounded-2xl bg-white text-black placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-green-400 shadow-lg"
+                  className="pl-12 pr-4 py-3 text-lg border-4 border-black rounded-2xl bg-white text-black placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-green-400 shadow-lg"
                 />
               </div>
             </div>
@@ -198,7 +198,7 @@ export default function StudentClassesPage() {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="border-4 border-green-400 rounded-2xl px-6 py-3 bg-white text-black font-bold text-lg focus:outline-none focus:ring-4 focus:ring-green-400 shadow-lg hover:bg-gray-50 transition-all"
+                className="border-4 border-black rounded-2xl px-6 py-3 bg-white text-black font-bold text-lg focus:outline-none focus:ring-4 focus:ring-green-400 shadow-lg hover:bg-gray-50 transition-all"
               >
                 <option value="all">⚡ All Hero Classes</option>
                 <option value="Active">🎯 Active Missions</option>
@@ -212,7 +212,7 @@ export default function StudentClassesPage() {
 
         {/* Classes Grid */}
         {filteredEnrollments.length === 0 ? (
-          <div className="bg-gradient-to-r from-green-300 via-black to-green-400 rounded-3xl shadow-2xl border-4 border-green-400 p-12">
+          <div className="bg-gradient-to-r from-green-300 via-black to-green-400 rounded-3xl shadow-2xl border-4 border-black p-12">
             <div className="text-center">
               <div className="text-8xl mb-6">🦸‍♂️</div>
               <h3 className="text-3xl font-black text-white mb-4">
@@ -235,7 +235,7 @@ export default function StudentClassesPage() {
             {filteredEnrollments.map((enrollment) => (
               <div
                 key={enrollment.id}
-                className="bg-gradient-to-br from-green-300 via-black to-green-400 rounded-3xl shadow-2xl border-4 border-green-400 p-6 hover:shadow-3xl hover:scale-105 transition-all duration-300 hover:rotate-1"
+                className="bg-gradient-to-br from-green-300 via-black to-green-400 rounded-3xl shadow-2xl border-4 border-black p-6 hover:shadow-3xl hover:scale-105 transition-all duration-300 hover:rotate-1"
               >
                 {/* Ben 10 Class Header */}
                 <div className="flex items-start justify-between mb-6">
@@ -247,12 +247,12 @@ export default function StudentClassesPage() {
                       <h3 className="font-black text-white text-xl mb-1">
                         {enrollment.className}
                       </h3>
-                      <p className="text-black font-bold text-sm bg-green-200 rounded-full px-3 py-1 border-2 border-green-400">
+                      <p className="text-black font-bold text-sm bg-green-200 rounded-full px-3 py-1 border-2 border-black">
                         {enrollment.subject}
                       </p>
                     </div>
                   </div>
-                  <span className={`px-4 py-2 text-sm font-black rounded-full border-4 border-green-400 shadow-lg ${
+                  <span className={`px-4 py-2 text-sm font-black rounded-full border-4 border-black shadow-lg ${
                     enrollment.status === 'Active' 
                       ? 'bg-green-400 text-black'
                       : enrollment.status === 'Completed'
@@ -266,13 +266,13 @@ export default function StudentClassesPage() {
                 </div>
 
                 {/* Hero Class Info */}
-                <div className="bg-white border-4 border-green-400 rounded-2xl p-4 mb-4 shadow-lg">
+                <div className="bg-white border-4 border-black rounded-2xl p-4 mb-4 shadow-lg">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center space-x-3">
                       <div className="text-2xl">📅</div>
                       <span className="text-sm font-bold text-black">Enrolled</span>
                     </div>
-                    <span className="text-sm font-black text-black bg-green-300 rounded-full px-3 py-1 border-2 border-green-400">
+                    <span className="text-sm font-black text-black bg-green-300 rounded-full px-3 py-1 border-2 border-black">
                       {enrollment.enrolledAt.toLocaleDateString()}
                     </span>
                   </div>
@@ -283,7 +283,7 @@ export default function StudentClassesPage() {
                         <div className="text-2xl">🏆</div>
                         <span className="text-sm font-bold text-black">Hero Grade</span>
                       </div>
-                      <span className={`text-lg font-black px-3 py-1 rounded-full border-2 border-green-400 ${
+                      <span className={`text-lg font-black px-3 py-1 rounded-full border-2 border-black ${
                         enrollment.grade >= 80 
                           ? 'bg-green-400 text-black'
                           : enrollment.grade >= 60
@@ -299,9 +299,9 @@ export default function StudentClassesPage() {
                 {/* Hero Progress Bar */}
                 {enrollment.grade !== undefined && (
                   <div className="mb-4">
-                    <div className="bg-white border-4 border-green-400 rounded-full h-6 p-1 shadow-lg">
+                    <div className="bg-white border-4 border-black rounded-full h-6 p-1 shadow-lg">
                       <div 
-                        className={`h-4 rounded-full transition-all duration-1000 border-2 border-green-400 ${
+                        className={`h-4 rounded-full transition-all duration-1000 border-2 border-black ${
                           enrollment.grade >= 80 
                             ? 'bg-gradient-to-r from-green-400 to-green-600'
                             : enrollment.grade >= 60
@@ -319,13 +319,13 @@ export default function StudentClassesPage() {
 
                 {/* Hero Notes */}
                 {enrollment.notes && (
-                  <div className="border-t-4 border-green-400 pt-4 mb-4">
-                    <div className="bg-white border-4 border-green-400 rounded-2xl p-4 shadow-lg">
+                  <div className="border-t-4 border-black pt-4 mb-4">
+                    <div className="bg-white border-4 border-black rounded-2xl p-4 shadow-lg">
                       <div className="flex items-center space-x-2 mb-2">
                         <div className="text-2xl">📝</div>
                         <p className="text-sm font-black text-black">Teacher's Hero Notes:</p>
                       </div>
-                      <p className="text-black font-medium bg-green-100 rounded-lg p-3 border-2 border-green-400">
+                      <p className="text-black font-medium bg-green-100 rounded-lg p-3 border-2 border-black">
                         {enrollment.notes}
                       </p>
                     </div>
@@ -334,8 +334,8 @@ export default function StudentClassesPage() {
 
                 {/* Teacher's Hero Remark */}
                 {enrollment.remark && (
-                  <div className="border-t-4 border-green-400 pt-4 mb-4">
-                    <div className="bg-white border-4 border-green-400 rounded-2xl p-4 shadow-lg">
+                  <div className="border-t-4 border-black pt-4 mb-4">
+                    <div className="bg-white border-4 border-black rounded-2xl p-4 shadow-lg">
                       <div className="flex items-start space-x-3">
                         <div className="text-3xl">🦸‍♂️</div>
                         <div className="flex-1">
@@ -343,17 +343,17 @@ export default function StudentClassesPage() {
                             Teacher's Hero Remark:
                           </p>
                           <div className="space-y-3">
-                            <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-black border-2 border-green-400 shadow-lg ${getRemarkColor(enrollment.remark.remarkLevel)}`}>
+                            <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-black border-2 border-black shadow-lg ${getRemarkColor(enrollment.remark.remarkLevel)}`}>
                               {enrollment.remark.remarkLevel === 'Custom' ? enrollment.remark.customRemark : enrollment.remark.remarkLevel}
                             </span>
                             {enrollment.remark.additionalNotes && (
-                              <div className="bg-gradient-to-r from-green-100 to-black p-4 rounded-xl border-2 border-green-400">
+                              <div className="bg-gradient-to-r from-green-100 to-black p-4 rounded-xl border-2 border-black">
                                 <p className="text-white font-medium">
                                   {enrollment.remark.additionalNotes}
                                 </p>
                               </div>
                             )}
-                            <p className="text-xs font-bold text-gray-600 bg-white rounded-full px-3 py-1 border border-green-400">
+                            <p className="text-xs font-bold text-gray-600 bg-white rounded-full px-3 py-1 border border-black">
                               Updated: {enrollment.remark.updatedAt.toLocaleDateString()}
                             </p>
                           </div>
@@ -365,14 +365,14 @@ export default function StudentClassesPage() {
 
                 {/* Hero Zoom Meeting Link */}
                 {enrollment.classData?.zoomLink && (
-                  <div className="border-t-4 border-green-400 pt-4 mb-4">
-                    <div className="bg-white border-4 border-green-400 rounded-2xl p-4 shadow-lg">
+                  <div className="border-t-4 border-black pt-4 mb-4">
+                    <div className="bg-white border-4 border-black rounded-2xl p-4 shadow-lg">
                       <div className="mb-4">
                         <p className="text-lg font-black text-black mb-3 flex items-center">
                           <span className="text-2xl mr-2">🎥</span>
                           Meeting Link:
                         </p>
-                        <div className="p-3 bg-gradient-to-r from-green-200 to-black rounded-xl border-2 border-green-400">
+                        <div className="p-3 bg-gradient-to-r from-green-200 to-black rounded-xl border-2 border-black">
                           <p className="text-white font-medium break-all text-sm">
                             {enrollment.classData.zoomLink}
                           </p>
@@ -383,7 +383,7 @@ export default function StudentClassesPage() {
                         variant="primary"
                         size="sm"
                         onClick={() => handleJoinZoom(enrollment.classData!.zoomLink!)}
-                        className="w-full bg-gradient-to-r from-green-500 to-black hover:from-green-600 hover:to-gray-900 text-white px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-green-400 flex items-center justify-center space-x-3"
+                        className="w-full bg-gradient-to-r from-green-500 to-black hover:from-green-600 hover:to-gray-900 text-white px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black flex items-center justify-center space-x-3"
                       >
                         <ExternalLink className="w-5 h-5" />
                         <span>Join Hero Meeting! 🦸‍♂️</span>
@@ -401,7 +401,7 @@ export default function StudentClassesPage() {
                       // Navigate to tests page
                       window.location.href = `/student/test`;
                     }}
-                    className="bg-gradient-to-r from-green-400 to-emerald-400 hover:from-green-500 hover:to-emerald-500 text-black font-black border-4 border-green-400 rounded-2xl transform hover:scale-110 transition-all shadow-lg hover:rotate-3 flex flex-col items-center py-3"
+                    className="bg-gradient-to-r from-green-400 to-emerald-400 hover:from-green-500 hover:to-emerald-500 text-black font-black border-4 border-black rounded-2xl transform hover:scale-110 transition-all shadow-lg hover:rotate-3 flex flex-col items-center py-3"
                   >
                     <span className="text-2xl mb-1">📝</span>
                     <span className="text-xs">Hero Tests</span>
@@ -413,7 +413,7 @@ export default function StudentClassesPage() {
                       // Navigate to study materials page for this class
                       window.location.href = `/student/study?classId=${enrollment.classId}`;
                     }}
-                    className="bg-gradient-to-r from-green-400 to-emerald-400 hover:from-green-500 hover:to-emerald-500 text-black font-black border-4 border-green-400 rounded-2xl transform hover:scale-110 transition-all shadow-lg hover:-rotate-3 flex flex-col items-center py-3"
+                    className="bg-gradient-to-r from-green-400 to-emerald-400 hover:from-green-500 hover:to-emerald-500 text-black font-black border-4 border-black rounded-2xl transform hover:scale-110 transition-all shadow-lg hover:-rotate-3 flex flex-col items-center py-3"
                   >
                     <span className="text-2xl mb-1">📚</span>
                     <span className="text-xs">Hero Study</span>
@@ -425,7 +425,7 @@ export default function StudentClassesPage() {
                       // Navigate to videos page for this class
                       window.location.href = `/student/classes/${enrollment.classId}/videos`;
                     }}
-                    className="bg-gradient-to-r from-green-400 to-emerald-400 hover:from-green-500 hover:to-emerald-500 text-black font-black border-4 border-green-400 rounded-2xl transform hover:scale-110 transition-all shadow-lg hover:rotate-3 flex flex-col items-center py-3"
+                    className="bg-gradient-to-r from-green-400 to-emerald-400 hover:from-green-500 hover:to-emerald-500 text-black font-black border-4 border-black rounded-2xl transform hover:scale-110 transition-all shadow-lg hover:rotate-3 flex flex-col items-center py-3"
                   >
                     <span className="text-2xl mb-1">🎬</span>
                     <span className="text-xs">Hero Videos</span>
@@ -438,35 +438,35 @@ export default function StudentClassesPage() {
 
         {/* Ben 10 Hero Summary Stats */}
         {filteredEnrollments.length > 0 && (
-          <div className="bg-gradient-to-r from-green-400 via-black to-green-400 rounded-3xl shadow-2xl border-4 border-green-400 p-8 mt-8">
+          <div className="bg-gradient-to-r from-green-400 via-black to-green-400 rounded-3xl shadow-2xl border-4 border-black p-8 mt-8">
             <div className="flex items-center justify-center space-x-3 mb-8">
               <div className="text-4xl">🦸‍♂️</div>
               <h3 className="text-3xl font-black text-white">Ben 10 Hero Summary</h3>
               <div className="text-4xl">⚡</div>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              <div className="bg-white border-4 border-green-400 rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all">
+              <div className="bg-white border-4 border-black rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all">
                 <div className="text-4xl mb-2">🎯</div>
                 <div className="text-3xl font-black text-green-600 mb-1">
                   {filteredEnrollments.filter(e => e.status === 'Active').length}
                 </div>
                 <div className="text-sm font-bold text-black">Active Adventures</div>
               </div>
-              <div className="bg-white border-4 border-green-400 rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all">
+              <div className="bg-white border-4 border-black rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all">
                 <div className="text-4xl mb-2">🏆</div>
                 <div className="text-3xl font-black text-green-600 mb-1">
                   {filteredEnrollments.filter(e => e.status === 'Completed').length}
                 </div>
                 <div className="text-sm font-bold text-black">Completed Quests</div>
               </div>
-              <div className="bg-white border-4 border-green-400 rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all">
+              <div className="bg-white border-4 border-black rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all">
                 <div className="text-4xl mb-2">📈</div>
                 <div className="text-3xl font-black text-green-600 mb-1">
                   {Math.round(filteredEnrollments.reduce((acc, e) => acc + e.attendance, 0) / filteredEnrollments.length) || 0}%
                 </div>
                 <div className="text-sm font-bold text-black">Hero Attendance</div>
               </div>
-              <div className="bg-white border-4 border-green-400 rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all">
+              <div className="bg-white border-4 border-black rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all">
                 <div className="text-4xl mb-2">⭐</div>
                 <div className="text-3xl font-black text-green-600 mb-1">
                   {filteredEnrollments.filter(e => e.grade !== undefined).length > 0 

@@ -279,7 +279,7 @@ export default function StudentDashboard() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-400 via-black to-green-500 flex items-center justify-center">
-        <div className="text-center bg-white border-4 border-green-500 rounded-2xl p-8 shadow-2xl">
+        <div className="text-center bg-white border-4 border-black rounded-2xl p-8 shadow-2xl">
           {/* Ben 10 Omnitrix loading animation */}
           <div className="relative mb-6">
             <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center relative mx-auto animate-spin border-4 border-black">
@@ -302,9 +302,10 @@ export default function StudentDashboard() {
 
   return (
     <>
-      <div className="space-y-6">
+      <div className="min-h-screen bg-gradient-to-br from-green-400 via-black to-green-400 p-6">
+        <div className="space-y-6">
         {/* Welcome Header - Ben 10 Theme */}
-        <div className="bg-gradient-to-r from-green-500 via-black to-green-600 rounded-2xl text-white p-8 relative overflow-hidden">
+        <div className="bg-gradient-to-r from-green-500 via-black to-green-600 rounded-2xl text-white p-8 relative overflow-hidden border-4 border-black">
           {/* Ben 10 themed background elements */}
           <div className="absolute top-0 right-0 w-32 h-32 bg-green-300 rounded-full -translate-y-16 translate-x-16 animate-pulse opacity-20"></div>
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-black rounded-full translate-y-12 -translate-x-12 animate-spin opacity-20"></div>
@@ -358,7 +359,7 @@ export default function StudentDashboard() {
 
         {/* Motivational Message - Ben 10 Theme */}
         {!loading && dashboardStats.currentGrade > 0 && (
-          <div className="bg-gradient-to-r from-green-200 via-black to-green-300 border-4 border-green-500 rounded-xl p-6 animate-fade-in relative overflow-hidden">
+          <div className="bg-gradient-to-r from-green-200 via-black to-green-300 border-4 border-black rounded-xl p-6 animate-fade-in relative overflow-hidden">
             {/* Ben 10 themed decorations */}
             <div className="absolute top-2 right-2 text-2xl animate-spin">⚡</div>
             <div className="absolute bottom-2 left-2 text-xl animate-bounce">🚀</div>
@@ -437,7 +438,7 @@ export default function StudentDashboard() {
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-black to-gray-800 rounded-xl shadow-lg border-4 border-green-400 p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105">
+          <div className="bg-gradient-to-br from-black to-gray-800 rounded-xl shadow-lg border-4 border-black p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105">
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <p className="text-green-400 text-sm font-bold mb-2">Tests Completed</p>
@@ -461,7 +462,7 @@ export default function StudentDashboard() {
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-green-500 to-black rounded-xl shadow-lg border-4 border-green-400 p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105">
+          <div className="bg-gradient-to-br from-green-500 to-black rounded-xl shadow-lg border-4 border-black p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105">
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <p className="text-white text-sm font-bold mb-2">Study Materials</p>
@@ -485,7 +486,7 @@ export default function StudentDashboard() {
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-green-600 to-black rounded-xl shadow-lg border-4 border-green-400 p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105">
+          <div className="bg-gradient-to-br from-green-600 to-black rounded-xl shadow-lg border-4 border-black p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105">
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <p className="text-white text-sm font-bold mb-2">Current Grade</p>
@@ -518,14 +519,14 @@ export default function StudentDashboard() {
         {/* Recent Activity & Updates */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Recent Activity - Ben 10 Theme */}
-          <div className="bg-gradient-to-br from-green-300 via-black to-green-400 rounded-xl shadow-lg border-4 border-green-500 p-6">
+          <div className="bg-gradient-to-br from-green-300 via-black to-green-400 rounded-xl shadow-lg border-4 border-black p-6">
             <h3 className="text-xl font-black text-white mb-6 flex items-center">
               <span className="text-3xl mr-2 animate-pulse">🚀</span>
               Ben 10's Hero Activity
             </h3>
             <div className="space-y-4">
               {dashboardStats.completedTests > 0 && (
-                <div className="flex items-start space-x-3 p-4 bg-white border-2 border-green-500 rounded-lg animate-fade-in shadow-lg">
+                <div className="flex items-start space-x-3 p-4 bg-white border-2 border-black rounded-lg animate-fade-in shadow-lg">
                   <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center border-2 border-black">
                     <FileText className="w-5 h-5 text-white" />
                   </div>
@@ -541,7 +542,7 @@ export default function StudentDashboard() {
               )}
 
               {dashboardStats.totalClasses > 0 && (
-                <div className="flex items-start space-x-3 p-4 bg-white border-2 border-green-500 rounded-lg animate-fade-in shadow-lg" style={{ animationDelay: '0.2s' }}>
+                <div className="flex items-start space-x-3 p-4 bg-white border-2 border-black rounded-lg animate-fade-in shadow-lg" style={{ animationDelay: '0.2s' }}>
                   <div className="w-10 h-10 bg-black rounded-full flex items-center justify-center border-2 border-green-400">
                     <Users className="w-5 h-5 text-green-400" />
                   </div>
@@ -557,7 +558,7 @@ export default function StudentDashboard() {
               )}
 
               {dashboardStats.studyMaterials > 0 && (
-                <div className="flex items-start space-x-3 p-4 bg-white border-2 border-green-500 rounded-lg animate-fade-in shadow-lg" style={{ animationDelay: '0.4s' }}>
+                <div className="flex items-start space-x-3 p-4 bg-white border-2 border-black rounded-lg animate-fade-in shadow-lg" style={{ animationDelay: '0.4s' }}>
                   <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center border-2 border-black">
                     <BookOpenCheck className="w-5 h-5 text-black" />
                   </div>
@@ -584,7 +585,7 @@ export default function StudentDashboard() {
           </div>
 
           {/* Achievement Goals - Ben 10 Theme */}
-          <div className="bg-gradient-to-br from-black via-green-500 to-black rounded-xl shadow-lg border-4 border-green-400 p-6">
+          <div className="bg-gradient-to-br from-black via-green-500 to-black rounded-xl shadow-lg border-4 border-black p-6">
             <h3 className="text-xl font-black text-green-400 mb-6 flex items-center">
               <span className="text-3xl mr-2 animate-bounce">⚡</span>
               Ben 10's Power Goals
@@ -597,7 +598,7 @@ export default function StudentDashboard() {
                     {dashboardStats.completedTests}/20
                   </span>
                 </div>
-                <div className="bg-green-400/20 rounded-full h-4 border-2 border-green-500">
+                <div className="bg-green-400/20 rounded-full h-4 border-2 border-black">
                   <div
                     className="bg-green-500 h-4 rounded-full transition-all duration-1000 ease-out border border-black"
                     style={{ width: `${getProgressPercentage(dashboardStats.completedTests, 20)}%` }}
@@ -629,7 +630,7 @@ export default function StudentDashboard() {
                     {dashboardStats.studyMaterials}/50
                   </span>
                 </div>
-                <div className="bg-green-400/20 rounded-full h-4 border-2 border-green-500">
+                <div className="bg-green-400/20 rounded-full h-4 border-2 border-black">
                   <div
                     className="bg-black h-4 rounded-full transition-all duration-1000 ease-out border border-green-400"
                     style={{ width: `${getProgressPercentage(dashboardStats.studyMaterials, 50)}%` }}
@@ -637,7 +638,7 @@ export default function StudentDashboard() {
                 </div>
               </div>
 
-              <div className="mt-6 p-4 bg-gradient-to-r from-green-300 to-black border-2 border-green-500 rounded-lg shadow-lg">
+              <div className="mt-6 p-4 bg-gradient-to-r from-green-300 to-black border-2 border-black rounded-lg shadow-lg">
                 <div className="flex items-center space-x-2">
                   <span className="text-2xl animate-spin">🔄</span>
                   <span className="text-green-400 font-black text-sm">
@@ -654,7 +655,7 @@ export default function StudentDashboard() {
 
         <div className="grid grid-cols-1 gap-6">
           {/* Quick Actions - Ben 10 Theme */}
-          <div className="bg-gradient-to-r from-green-400 via-black to-green-500 rounded-xl shadow-lg border-4 border-green-500 p-6">
+          <div className="bg-gradient-to-r from-green-400 via-black to-green-500 rounded-xl shadow-lg border-4 border-black p-6">
             <h3 className="text-2xl font-black text-white mb-6 flex items-center">
               <span className="text-4xl mr-2 animate-bounce">🔄</span>
               Ben 10's Hero Actions
@@ -666,7 +667,7 @@ export default function StudentDashboard() {
                   <Link
                     key={action.id}
                     href={action.href}
-                    className={`group bg-white border-4 border-green-500 rounded-xl p-4 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105 animate-fade-in`}
+                    className={`group bg-white border-4 border-black rounded-xl p-4 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105 animate-fade-in`}
                     style={{ animationDelay: `${index * 0.1}s` }}
                   >
                     <div className="flex items-start space-x-3">
@@ -697,25 +698,25 @@ export default function StudentDashboard() {
 
         {/* Account Information - Ben 10 Theme */}
         {student && (
-          <div className="bg-gradient-to-r from-green-400 via-black to-green-500 rounded-xl shadow-lg border-4 border-green-500 p-6">
+          <div className="bg-gradient-to-r from-green-400 via-black to-green-500 rounded-xl shadow-lg border-4 border-black p-6">
             <h3 className="text-xl font-black text-white mb-6 flex items-center">
               <span className="text-3xl mr-2 animate-pulse">🦸‍♂️</span>
               Ben 10's Student Profile
             </h3>
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 bg-white border-2 border-green-500 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-white border-2 border-black rounded-lg">
                 <span className="text-sm text-black font-bold">🎫 Student ID:</span>
                 <span className="text-sm font-black text-black bg-green-300 px-2 py-1 rounded border border-black">
                   {student.id || 'N/A'}
                 </span>
               </div>
-              <div className="flex items-center justify-between p-3 bg-white border-2 border-green-500 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-white border-2 border-black rounded-lg">
                 <span className="text-sm text-black font-bold">📅 Enrollment Date:</span>
                 <span className="text-sm font-black text-green-400 bg-black px-2 py-1 rounded border border-green-400">
                   {student.enrollmentDate ? new Date(student.enrollmentDate).toLocaleDateString() : 'N/A'}
                 </span>
               </div>
-              <div className="flex items-center justify-between p-3 bg-white border-2 border-green-500 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-white border-2 border-black rounded-lg">
                 <span className="text-sm text-black font-bold">🏷️ Status:</span>
                 <span className={`text-sm font-black px-3 py-1 rounded-full border-2 border-black ${
                   student.status === 'Active' 
@@ -727,7 +728,7 @@ export default function StudentDashboard() {
                   {student.status || 'Active'} 🔄
                 </span>
               </div>
-              <div className="flex items-center justify-between p-3 bg-white border-2 border-green-500 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-white border-2 border-black rounded-lg">
                 <span className="text-sm text-black font-bold">📚 Courses Enrolled:</span>
                 <span className="text-sm font-black text-black bg-green-500 px-2 py-1 rounded border border-black">
                   {enrollments.length} ⚡
@@ -736,6 +737,7 @@ export default function StudentDashboard() {
             </div>
           </div>
         )}
+        </div>
       </div>
     </>
   );
