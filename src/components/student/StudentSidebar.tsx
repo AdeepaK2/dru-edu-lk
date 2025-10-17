@@ -172,21 +172,22 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
 
       {/* Sidebar */}
       <div className={`
-        fixed inset-y-0 left-0 z-50 w-64 bg-gradient-to-b from-green-500 via-black to-green-600 shadow-2xl transform transition-transform duration-300 ease-in-out border-r-4 border-green-400
+        fixed inset-y-0 left-0 z-50 w-64 bg-gradient-to-b from-green-500 via-black to-green-600 shadow-2xl transform transition-transform duration-300 ease-in-out border-r-4 border-black
         lg:translate-x-0 lg:static lg:inset-0 lg:w-64
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         {/* Header */}
           <div className="flex items-center justify-between px-6 py-3 bg-gradient-to-r from-green-600 to-black">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-black rounded-2xl flex items-center justify-center border-2 border-green-400 shadow-lg">
-                <span className="text-green-400 text-xl font-bold">10</span>
-              </div>
+              <img 
+                src="/Logo.png" 
+                alt="Ben 10 Academy Logo" 
+                className="w-10 h-10 rounded-2xl border-2 border-black shadow-lg"
+              />
               <div className="hidden lg:block">
                 <h1 className="text-lg font-black text-white drop-shadow-lg">
-                  🦸‍♂️ Ben 10 Academy
+                  Dr. U Education
                 </h1>
-                <p className="text-xs text-green-200 font-bold">Heroic Student Portal ⚡</p>
               </div>
             </div>
             <button
@@ -199,9 +200,9 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
 
         {/* Student Profile */}
         {student && (
-          <div className="p-4 border-b-4 border-green-400 bg-gradient-to-r from-black to-green-600">
+          <div className="p-4 border-b-4 border-black bg-gradient-to-r from-black to-green-600">
             <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-black rounded-2xl flex items-center justify-center border-2 border-green-400 shadow-lg">
+              <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-black rounded-2xl flex items-center justify-center border-2 border-black shadow-lg">
                 <span className="text-2xl font-black text-green-400">
                   🦸‍♂️
                 </span>
@@ -230,8 +231,8 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
                 className={`
                   flex items-center justify-between px-4 py-3 text-sm font-black rounded-2xl transition-all transform hover:scale-105 border-2
                   ${isActive 
-                    ? 'bg-gradient-to-r from-green-500 to-black text-white border-green-400 shadow-lg' 
-                    : 'bg-white text-black hover:bg-gradient-to-r hover:from-green-400 hover:to-black hover:text-white border-gray-300 hover:border-green-400'
+                    ? 'bg-gradient-to-r from-green-500 to-black text-white border-black shadow-lg' 
+                    : 'bg-white text-black hover:bg-gradient-to-r hover:from-green-400 hover:to-black hover:text-white border-gray-300 hover:border-black'
                   }
                 `}
                 onClick={() => {
@@ -246,7 +247,7 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
                   <span>{item.label}</span>
                 </div>
                 {item.badge && (
-                  <span className="inline-flex items-center px-3 py-1 text-sm font-black bg-gradient-to-r from-green-500 to-black text-white rounded-full border-2 border-green-400">
+                  <span className="inline-flex items-center px-3 py-1 text-sm font-black bg-gradient-to-r from-green-500 to-black text-white rounded-full border-2 border-black">
                     {item.badge}
                   </span>
                 )}
@@ -259,11 +260,11 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
         </nav>
 
         {/* Logout Button */}
-        <div className="p-6 border-t-4 border-green-400 bg-gradient-to-r from-black to-green-600">
+        <div className="p-6 border-t-4 border-black bg-gradient-to-r from-black to-green-600">
           <Button
             onClick={handleLogout}
             variant="outline"
-            className="w-full flex items-center justify-center space-x-3 text-white font-black border-2 border-green-400 rounded-full py-3 bg-gradient-to-r from-green-500 to-black hover:from-green-600 hover:to-gray-900 transform hover:scale-105 transition-all shadow-lg"
+            className="w-full flex items-center justify-center space-x-3 text-white font-black border-2 border-black rounded-full py-3 bg-gradient-to-r from-green-500 to-black hover:from-green-600 hover:to-gray-900 transform hover:scale-105 transition-all shadow-lg"
           >
             <LogOut className="w-5 h-5" />
             <span>🚪 Logout</span>
