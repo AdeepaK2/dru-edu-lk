@@ -264,7 +264,9 @@ export default function Mail({
       }
 
       // Create mail documents for Firebase Mail Extension
+      console.log('📧 Creating mail documents for', emailAddresses.length, 'recipients');
       for (const recipient of emailAddresses) {
+        console.log('📧 Preparing email for:', recipient.email);
         const mailPromise = MailService.createMailDocument({
           to: recipient.email,
           subject: subject.trim(),
@@ -295,7 +297,9 @@ export default function Mail({
       }
 
       // Wait for all emails to be queued for sending
-      await Promise.all(emailPromises);
+      console.log('📧 Sending', emailPromises.length, 'email promises...');
+      const results = await Promise.all(emailPromises);
+      console.log('📧 Email results:', results);
       
       console.log(`✅ Email queued for sending to ${emailAddresses.length} recipients via Firebase Mail Extension`);
       
