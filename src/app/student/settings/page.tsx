@@ -1,13 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { User, Mail, Phone, KeyRound, Camera, Star, Sparkles } from 'lucide-react';
+import { User, Mail, Phone, KeyRound, Camera, Star, Sparkles, Palette } from 'lucide-react';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 import Input from '@/components/ui/form/Input';
 import Button from '@/components/ui/Button';
 import { updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 import { doc, updateDoc } from 'firebase/firestore';
 import { firestore, auth } from '@/utils/firebase-client';
+import { useTheme, type ThemeType } from '@/contexts/ThemeContext';
+import { THEMES } from '@/utils/themeConfig';
 
 interface StudentProfileData {
   name: string;
@@ -153,6 +155,10 @@ export default function StudentSettingsPage() {
   // Message state for success/error notifications
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
+  // Theme state
+  const { theme, setTheme } = useTheme();
+  const [selectedTheme, setSelectedTheme] = useState<ThemeType>(theme);
+
   // Clear message after 5 seconds
   useEffect(() => {
     if (message) {
@@ -177,6 +183,11 @@ export default function StudentSettingsPage() {
     }
   }, [student]);
 
+  // Initialize theme state
+  useEffect(() => {
+    setSelectedTheme(theme);
+  }, [theme]);
+
   const handleAvatarSelect = (avatarId: string) => {
     setSelectedAvatar(avatarId);
     setProfileData(prev => ({
@@ -188,6 +199,12 @@ export default function StudentSettingsPage() {
 
   const getSelectedAvatarData = () => {
     return ben10Avatars.find(avatar => avatar.id === selectedAvatar) || ben10Avatars[0];
+  };
+
+  const handleThemeChange = (newTheme: ThemeType) => {
+    setSelectedTheme(newTheme);
+    setTheme(newTheme);
+    setMessage({ type: 'success', text: `Theme changed to ${THEMES[newTheme].name}! 🎨` });
   };
 
   const handleProfileInputChange = (field: keyof StudentProfileData, value: string) => {
@@ -398,6 +415,87 @@ export default function StudentSettingsPage() {
           </div>
         </div>
       )}
+
+      {/* Theme Selector Section */}
+      <div className="bg-gradient-to-r from-purple-300 via-pink-300 to-purple-500 rounded-xl shadow-lg border-4 border-black p-6">
+        <div className="flex items-center space-x-3 mb-6">
+          <div className="text-3xl">🎨</div>
+          <h2 className="text-2xl font-black text-black">Choose Your Learning Theme! ✨</h2>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-6">
+          {/* Ben10 Theme Card */}
+          <button
+            type="button"
+            onClick={() => handleThemeChange('ben10')}
+            className={`p-6 rounded-xl border-4 transition-all transform hover:scale-105 ${
+              selectedTheme === 'ben10'
+                ? 'border-green-600 bg-green-100 shadow-lg scale-105'
+                : 'border-black bg-white hover:border-green-400'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="text-5xl">⚡</div>
+              <div className="text-3xl">🟢</div>
+            </div>
+            <h3 className="text-2xl font-bold text-black mb-2">Ben 10 Hero</h3>
+            <p className="text-black font-semibold mb-3">Green & Black Theme</p>
+            <p className="text-sm text-gray-700 mb-4">
+              Transform with the Omnitrix power! Green and black colors inspired by Ben 10's heroic transformations.
+            </p>
+            <div className="flex items-center justify-center space-x-2">
+              <div className="w-8 h-8 bg-green-400 rounded-full border-2 border-black"></div>
+              <div className="w-8 h-8 bg-green-600 rounded-full border-2 border-black"></div>
+              <div className="w-8 h-8 bg-black rounded-full border-2 border-black"></div>
+              <div className="w-8 h-8 bg-lime-400 rounded-full border-2 border-black"></div>
+            </div>
+            {selectedTheme === 'ben10' && (
+              <div className="mt-4 flex items-center justify-center">
+                <span className="text-lg font-bold text-green-600">✓ Selected</span>
+              </div>
+            )}
+          </button>
+
+          {/* Tinkerbell Theme Card */}
+          <button
+            type="button"
+            onClick={() => handleThemeChange('tinkerbell')}
+            className={`p-6 rounded-xl border-4 transition-all transform hover:scale-105 ${
+              selectedTheme === 'tinkerbell'
+                ? 'border-pink-600 bg-pink-100 shadow-lg scale-105'
+                : 'border-black bg-white hover:border-pink-400'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="text-5xl">✨</div>
+              <div className="text-3xl">🩷</div>
+            </div>
+            <h3 className="text-2xl font-bold text-black mb-2">Tinkerbell Magic</h3>
+            <p className="text-black font-semibold mb-3">Pink & Purple Theme</p>
+            <p className="text-sm text-gray-700 mb-4">
+              Sprinkle some fairy dust magic! Pink and purple colors inspired by Tinkerbell's enchanted world.
+            </p>
+            <div className="flex items-center justify-center space-x-2">
+              <div className="w-8 h-8 bg-pink-300 rounded-full border-2 border-black"></div>
+              <div className="w-8 h-8 bg-pink-500 rounded-full border-2 border-black"></div>
+              <div className="w-8 h-8 bg-purple-500 rounded-full border-2 border-black"></div>
+              <div className="w-8 h-8 bg-purple-700 rounded-full border-2 border-black"></div>
+            </div>
+            {selectedTheme === 'tinkerbell' && (
+              <div className="mt-4 flex items-center justify-center">
+                <span className="text-lg font-bold text-pink-600">✓ Selected</span>
+              </div>
+            )}
+          </button>
+        </div>
+
+        <div className="mt-6 p-4 bg-white border-2 border-black rounded-lg">
+          <p className="text-sm text-black">
+            <strong>💡 Tip:</strong> Your chosen theme will be applied instantly across the learning dashboard and study pages. 
+            The theme selection is saved automatically!
+          </p>
+        </div>
+      </div>
 
       {/* Profile Settings - Ben 10 Hero Theme */}
       <div className="bg-gradient-to-r from-green-300 via-green-400 to-black rounded-xl shadow-lg border-4 border-black p-6">

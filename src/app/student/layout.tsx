@@ -2,6 +2,7 @@
 
 import React from 'react';
 import StudentLayout from '@/components/student/StudentLayout';
+import { ThemeProvider } from '@/contexts/ThemeContext';
 
 export default function StudentRootLayout({
   children,
@@ -9,8 +10,10 @@ export default function StudentRootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <StudentLayout>
-      {children}
-    </StudentLayout>
+    <ThemeProvider>
+      <StudentLayout>
+        {children}
+      </StudentLayout>
+    </ThemeProvider>
   );
 }

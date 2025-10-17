@@ -25,6 +25,15 @@
   --color-accent-100: #d1fae5;
   --color-accent-500: #10b981;
   --color-accent-700: #047857;
+
+  /* Theme Colors - Default Ben10 */
+  --theme-primary-light: #4ade80;
+  --theme-primary: #22c55e;
+  --theme-primary-dark: #16a34a;
+  --theme-secondary: #000000;
+  --theme-accent: #84cc16;
+  --theme-bg-light: #f0fdf4;
+  --theme-bg-dark: #1b4332;
 }
 
 @media (prefers-color-scheme: dark) {

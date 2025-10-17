@@ -19,10 +19,14 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
+import { useTheme } from '@/contexts/ThemeContext';
+import { THEMES } from '@/utils/themeConfig';
 import Link from 'next/link';
 
 export default function StudentDashboard() {
   const { student } = useStudentAuth();
+  const { theme } = useTheme();
+  const themeConfig = THEMES[theme];
 
   // State for real data
   const [dashboardStats, setDashboardStats] = useState({
@@ -298,13 +302,23 @@ export default function StudentDashboard() {
 
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-green-400 via-black to-green-400 p-6">
+      <div className="min-h-screen p-6" style={{
+        background: theme === 'ben10'
+          ? 'linear-gradient(to bottom right, rgb(74, 222, 128), rgb(0, 0, 0), rgb(74, 222, 128))'
+          : 'linear-gradient(to bottom right, rgb(244, 114, 182), rgb(109, 40, 217), rgb(244, 114, 182))'
+      }}>
         <div className="space-y-6">
-        {/* Welcome Header - Ben 10 Theme */}
-        <div className="bg-gradient-to-r from-green-500 via-black to-green-600 rounded-2xl text-white p-8 relative overflow-hidden border-4 border-black">
-          {/* Ben 10 themed background elements */}
-          <div className="absolute top-0 right-0 w-32 h-32 bg-green-300 rounded-full -translate-y-16 translate-x-16 animate-pulse opacity-20"></div>
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-black rounded-full translate-y-12 -translate-x-12 animate-pluse opacity-20"></div>
+        {/* Welcome Header - Dynamic Theme */}
+        <div className={`rounded-2xl text-white p-8 relative overflow-hidden border-4 border-black ${
+          theme === 'ben10'
+            ? 'bg-gradient-to-r from-green-500 via-black to-green-600'
+            : 'bg-gradient-to-r from-pink-500 via-purple-600 to-pink-600'
+        }`}>
+          {/* Themed background elements */}
+          <div className="absolute top-0 right-0 w-32 h-32 rounded-full -translate-y-16 translate-x-16 animate-pulse opacity-20" style={{
+            backgroundColor: theme === 'ben10' ? 'rgb(134, 239, 172)' : 'rgb(244, 114, 182)'
+          }}></div>
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-black rounded-full translate-y-12 -translate-x-12 animate-pulse opacity-20"></div>
          
 
           <div className="flex items-center justify-between relative z-10">
@@ -313,21 +327,33 @@ export default function StudentDashboard() {
                 <img 
                   src="/welcome.png" 
                   alt="Welcome" 
-                  className="w-40 h-40 rounded-full border-4 border-black ring-4 ring-green-400"
+                  className={`w-40 h-40 rounded-full border-4 border-black ring-4 ${
+                    theme === 'ben10' ? 'ring-green-400' : 'ring-pink-400'
+                  }`}
                 />
                 <div>
                   <h1 className="text-3xl font-bold">
-                    Hey {student?.name}! Ready to transform your learning?
+                    Hey {student?.name}! Ready to {theme === 'ben10' ? 'transform' : 'enchant'} your learning?
                   </h1>
-                  <p className="text-green-200 text-lg font-semibold mt-2">
-                    Let's make learning heroic with Ben 10's power!
+                  <p className="text-lg font-semibold mt-2" style={{
+                    color: theme === 'ben10' ? 'rgb(187, 247, 208)' : 'rgb(251, 207, 232)'
+                  }}>
+                    {theme === 'ben10' 
+                      ? "Let's make learning heroic with Ben 10's power!" 
+                      : "Let's sprinkle some fairy magic into learning!"}
                   </p>
                 </div>
               </div>
-              <p className="text-green-200 mb-4 text-base">
-                Welcome to your alien learning headquarters!
+              <p className="mb-4 text-base" style={{
+                color: theme === 'ben10' ? 'rgb(187, 247, 208)' : 'rgb(251, 207, 232)'
+              }}>
+                {theme === 'ben10' 
+                  ? 'Welcome to your alien learning headquarters!' 
+                  : 'Welcome to your enchanted learning sanctuary!'}
               </p>
-              <div className="flex items-center space-x-2 text-green-200">
+              <div className="flex items-center space-x-2" style={{
+                color: theme === 'ben10' ? 'rgb(187, 247, 208)' : 'rgb(251, 207, 232)'
+              }}>
                 <span className="text-sm font-medium">{getMelbourneDateTime()}</span>
               </div>
             </div>
@@ -335,9 +361,13 @@ export default function StudentDashboard() {
           </div>
         </div>
 
-        {/* Motivational Message - Ben 10 Theme */}
+        {/* Motivational Message - Dynamic Theme */}
         {!loading && dashboardStats.currentGrade > 0 && (
-          <div className="bg-gradient-to-r from-green-400 via-black to-green-400 border-4 border-black rounded-xl p-6 animate-fade-in relative overflow-hidden">
+          <div className={`border-4 border-black rounded-xl p-6 animate-fade-in relative overflow-hidden ${
+            theme === 'ben10'
+              ? 'bg-gradient-to-r from-green-400 via-black to-green-400'
+              : 'bg-gradient-to-r from-pink-400 via-purple-600 to-pink-400'
+          }`}>
         
 
             <div className="flex items-start space-x-4 relative z-10">
@@ -349,29 +379,43 @@ export default function StudentDashboard() {
                  
                 </h3>
                 <p className="text-white text-base leading-relaxed font-medium">
-                  Remember, just like Ben 10's transformations, every great achievement starts with a single power-up!
+                  {theme === 'ben10'
+                    ? "Remember, just like Ben 10's transformations, every great achievement starts with a single power-up!"
+                    : "Remember, like Tinkerbell's magic, every learning moment sparkles with possibility!"}
                 </p>
                 <div className="mt-4 flex items-center space-x-4 text-sm text-white">
                   <div className="flex items-center space-x-1">
-                    <span className="text-lg">📊</span>
-                    <span>Grade: <strong className="text-green-400">{dashboardStats.currentGrade}%</strong></span>
+                    <span className="text-lg">{theme === 'ben10' ? '📊' : '📈'}</span>
+                    <span>Grade: <strong style={{
+                      color: theme === 'ben10' ? 'rgb(132, 204, 22)' : 'rgb(244, 114, 182)'
+                    }}>{dashboardStats.currentGrade}%</strong></span>
                   </div>
                   <div className="flex items-center space-x-1">
                     <span className="text-lg">📝</span>
                     <span>Tests: <strong className="text-white">{dashboardStats.completedTests}</strong></span>
                   </div>
                   <div className="flex items-center space-x-1">
-                    <span className="text-lg">👥</span>
-                    <span>Classes: <strong className="text-green-400">{dashboardStats.totalClasses}</strong></span>
+                    <span className="text-lg">{theme === 'ben10' ? '👥' : '✨'}</span>
+                    <span>Classes: <strong style={{
+                      color: theme === 'ben10' ? 'rgb(132, 204, 22)' : 'rgb(244, 114, 182)'
+                    }}>{dashboardStats.totalClasses}</strong></span>
                   </div>
                 </div>
                 {/* Interactive encouragement */}
                 <div className="mt-4 flex space-x-2">
-                  <button className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-full text-sm font-bold transform hover:scale-105 transition-all animate-pulse border-2 border-black">
-                    Transform! 💪
+                  <button className={`text-white px-4 py-2 rounded-full text-sm font-bold transform hover:scale-105 transition-all animate-pulse border-2 border-black ${
+                    theme === 'ben10'
+                      ? 'bg-green-500 hover:bg-green-600'
+                      : 'bg-pink-500 hover:bg-pink-600'
+                  }`}>
+                    {theme === 'ben10' ? 'Transform!' : 'Enchant!'} 💪
                   </button>
-                  <button className="bg-black hover:bg-gray-800 text-green-400 px-4 py-2 rounded-full text-sm font-bold transform hover:scale-105 transition-all border-2 border-green-400">
-                    You're Heroic! 🌟
+                  <button className={`px-4 py-2 rounded-full text-sm font-bold transform hover:scale-105 transition-all border-2 ${
+                    theme === 'ben10'
+                      ? 'bg-black hover:bg-gray-800 text-green-400 border-green-400'
+                      : 'bg-black hover:bg-gray-800 text-pink-400 border-pink-400'
+                  }`}>
+                    {theme === 'ben10' ? "You're Heroic!" : "You're Magical!"} 🌟
                   </button>
                 </div>
               </div>
@@ -379,9 +423,13 @@ export default function StudentDashboard() {
           </div>
         )}
 
-        {/* Stats Cards - Ben 10 Theme */}
+        {/* Stats Cards - Dynamic Theme */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-gradient-to-br from-green-400 to-green-600 rounded-xl shadow-lg border-4 border-black p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105">
+          <div className={`rounded-xl shadow-lg border-4 border-black p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105 ${
+            theme === 'ben10'
+              ? 'bg-gradient-to-br from-green-400 to-green-600'
+              : 'bg-gradient-to-br from-pink-400 to-pink-600'
+          }`}>
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <p className="text-white text-sm font-bold mb-2">My Classes</p>
@@ -396,7 +444,7 @@ export default function StudentDashboard() {
                   ></div>
                 </div>
                 <p className="text-white text-xs mt-1 font-bold">
-                  {dashboardStats.totalClasses}/10 goal 🦸‍♂️
+                  {dashboardStats.totalClasses}/10 goal {theme === 'ben10' ? '🦸‍♂️' : '🧚‍♀️'}
                 </p>
               </div>
               <div className="w-16 h-16 bg-black rounded-full flex items-center justify-center border-4 border-white transform hover:rotate-12 transition-transform">
@@ -405,78 +453,128 @@ export default function StudentDashboard() {
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-black to-gray-800 rounded-xl shadow-lg border-4 border-black p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105">
+          <div className={`rounded-xl shadow-lg border-4 border-black p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105 ${
+            theme === 'ben10'
+              ? 'bg-gradient-to-br from-black to-gray-800'
+              : 'bg-gradient-to-br from-purple-800 to-purple-900'
+          }`}>
             <div className="flex items-center justify-between">
               <div className="flex-1">
-                <p className="text-green-400 text-sm font-bold mb-2">Tests Completed</p>
-                <p className="text-4xl font-black text-green-400 mt-2 animate-pulse">
+                <p className="text-sm font-bold mb-2" style={{
+                  color: theme === 'ben10' ? 'rgb(132, 204, 22)' : 'rgb(244, 114, 182)'
+                }}>Tests Completed</p>
+                <p className="text-4xl font-black mt-2 animate-pulse" style={{
+                  color: theme === 'ben10' ? 'rgb(132, 204, 22)' : 'rgb(244, 114, 182)'
+                }}>
                   {dashboardStats.completedTests}
                 </p>
-                <p className="text-green-400 mt-1 font-semibold">This semester</p>
-                <div className="mt-3 bg-green-400/30 rounded-full h-3">
+                <p className="mt-1 font-semibold" style={{
+                  color: theme === 'ben10' ? 'rgb(132, 204, 22)' : 'rgb(244, 114, 182)'
+                }}>This semester</p>
+                <div className="mt-3 rounded-full h-3" style={{
+                  backgroundColor: theme === 'ben10' ? 'rgba(132, 204, 22, 0.3)' : 'rgba(244, 114, 182, 0.3)'
+                }}>
                   <div
-                    className="bg-green-400 h-3 rounded-full transition-all duration-1000 ease-out shadow-lg"
-                    style={{ width: `${getProgressPercentage(dashboardStats.completedTests, 20)}%` }}
+                    className="h-3 rounded-full transition-all duration-1000 ease-out shadow-lg"
+                    style={{
+                      backgroundColor: theme === 'ben10' ? 'rgb(132, 204, 22)' : 'rgb(244, 114, 182)',
+                      width: `${getProgressPercentage(dashboardStats.completedTests, 20)}%`
+                    }}
                   ></div>
                 </div>
-                <p className="text-green-400 text-xs mt-1 font-bold">
+                <p className="text-xs mt-1 font-bold" style={{
+                  color: theme === 'ben10' ? 'rgb(132, 204, 22)' : 'rgb(244, 114, 182)'
+                }}>
                   {dashboardStats.completedTests}/20 goal 🎯
                 </p>
               </div>
-              <div className="w-16 h-16 bg-green-400 rounded-full flex items-center justify-center border-4 border-black transform hover:rotate-12 transition-transform">
+              <div className="w-16 h-16 rounded-full flex items-center justify-center border-4 border-black transform hover:rotate-12 transition-transform" style={{
+                backgroundColor: theme === 'ben10' ? 'rgb(132, 204, 22)' : 'rgb(244, 114, 182)'
+              }}>
                 <FileText className="w-8 h-8 text-black" />
               </div>
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-green-500 to-black rounded-xl shadow-lg border-4 border-black p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105">
+          <div className={`rounded-xl shadow-lg border-4 border-black p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105 ${
+            theme === 'ben10'
+              ? 'bg-gradient-to-br from-green-500 to-black'
+              : 'bg-gradient-to-br from-purple-500 to-black'
+          }`}>
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <p className="text-white text-sm font-bold mb-2">Study Materials</p>
-                <p className="text-4xl font-black text-green-400 mt-2 animate-pulse">
+                <p className="text-4xl font-black mt-2 animate-pulse" style={{
+                  color: theme === 'ben10' ? 'rgb(132, 204, 22)' : 'rgb(244, 114, 182)'
+                }}>
                   {dashboardStats.studyMaterials}
                 </p>
-                <p className="text-green-400 mt-1 font-semibold">Resources</p>
-                <div className="mt-3 bg-green-400/30 rounded-full h-3">
+                <p className="mt-1 font-semibold" style={{
+                  color: theme === 'ben10' ? 'rgb(132, 204, 22)' : 'rgb(244, 114, 182)'
+                }}>Resources</p>
+                <div className="mt-3 rounded-full h-3" style={{
+                  backgroundColor: theme === 'ben10' ? 'rgba(132, 204, 22, 0.3)' : 'rgba(244, 114, 182, 0.3)'
+                }}>
                   <div
-                    className="bg-green-400 h-3 rounded-full transition-all duration-1000 ease-out shadow-lg"
-                    style={{ width: `${getProgressPercentage(dashboardStats.studyMaterials, 50)}%` }}
+                    className="h-3 rounded-full transition-all duration-1000 ease-out shadow-lg"
+                    style={{
+                      backgroundColor: theme === 'ben10' ? 'rgb(132, 204, 22)' : 'rgb(244, 114, 182)',
+                      width: `${getProgressPercentage(dashboardStats.studyMaterials, 50)}%`
+                    }}
                   ></div>
                 </div>
-                <p className="text-green-400 text-xs mt-1 font-bold">
+                <p className="text-xs mt-1 font-bold" style={{
+                  color: theme === 'ben10' ? 'rgb(132, 204, 22)' : 'rgb(244, 114, 182)'
+                }}>
                   {dashboardStats.studyMaterials}/50 goal 📚
                 </p>
               </div>
-              <div className="w-16 h-16 bg-green-400 rounded-full flex items-center justify-center border-4 border-black transform hover:rotate-12 transition-transform">
+              <div className="w-16 h-16 rounded-full flex items-center justify-center border-4 border-black transform hover:rotate-12 transition-transform" style={{
+                backgroundColor: theme === 'ben10' ? 'rgb(132, 204, 22)' : 'rgb(244, 114, 182)'
+              }}>
                 <BookOpenCheck className="w-8 h-8 text-black" />
               </div>
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-green-600 to-black rounded-xl shadow-lg border-4 border-black p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105">
+          <div className={`rounded-xl shadow-lg border-4 border-black p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105 ${
+            theme === 'ben10'
+              ? 'bg-gradient-to-br from-green-600 to-black'
+              : 'bg-gradient-to-br from-purple-600 to-black'
+          }`}>
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <p className="text-white text-sm font-bold mb-2">Current Grade</p>
-                <p className="text-4xl font-black text-green-400 mt-2 animate-pulse">
+                <p className="text-4xl font-black mt-2 animate-pulse" style={{
+                  color: theme === 'ben10' ? 'rgb(132, 204, 22)' : 'rgb(244, 114, 182)'
+                }}>
                   {dashboardStats.currentGrade}%
                 </p>
-                <p className="text-green-400 mt-1 font-semibold">Average</p>
+                <p className="mt-1 font-semibold" style={{
+                  color: theme === 'ben10' ? 'rgb(132, 204, 22)' : 'rgb(244, 114, 182)'
+                }}>Average</p>
                 <div className="mt-3 bg-black/30 rounded-full h-3">
                   <div
-                    className={`h-3 rounded-full transition-all duration-1000 ease-out shadow-lg ${
-                      dashboardStats.currentGrade >= 90 ? 'bg-green-400' :
-                      dashboardStats.currentGrade >= 80 ? 'bg-green-500' :
-                      dashboardStats.currentGrade >= 70 ? 'bg-green-600' :
-                      dashboardStats.currentGrade >= 60 ? 'bg-yellow-400' : 'bg-red-400'
-                    }`}
-                    style={{ width: `${dashboardStats.currentGrade}%` }}
+                    className="h-3 rounded-full transition-all duration-1000 ease-out shadow-lg"
+                    style={{
+                      backgroundColor: 
+                        dashboardStats.currentGrade >= 90 ? (theme === 'ben10' ? 'rgb(132, 204, 22)' : 'rgb(244, 114, 182)') :
+                        dashboardStats.currentGrade >= 80 ? (theme === 'ben10' ? 'rgb(74, 222, 128)' : 'rgb(244, 114, 182)') :
+                        dashboardStats.currentGrade >= 70 ? (theme === 'ben10' ? 'rgb(34, 197, 94)' : 'rgb(244, 114, 182)') :
+                        dashboardStats.currentGrade >= 60 ? 'rgb(234, 179, 8)' : 'rgb(239, 68, 68)',
+                      width: `${dashboardStats.currentGrade}%`
+                    }}
                   ></div>
                 </div>
-                <p className="text-green-400 text-xs mt-1 font-bold">
+                <p className="text-xs mt-1 font-bold" style={{
+                  color: theme === 'ben10' ? 'rgb(132, 204, 22)' : 'rgb(244, 114, 182)'
+                }}>
                   Target: 85% 🎓
                 </p>
               </div>
-              <div className="w-16 h-16 bg-green-400 rounded-full flex items-center justify-center border-4 border-black transform hover:rotate-12 transition-transform">
+              <div className="w-16 h-16 rounded-full flex items-center justify-center border-4 border-black transform hover:rotate-12 transition-transform" style={{
+                backgroundColor: theme === 'ben10' ? 'rgb(132, 204, 22)' : 'rgb(244, 114, 182)'
+              }}>
                 <BarChart3 className="w-8 h-8 text-black" />
               </div>
             </div>
@@ -485,24 +583,30 @@ export default function StudentDashboard() {
 
         {/* Recent Activity & Updates */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Recent Activity - Ben 10 Theme */}
-          <div className="bg-gradient-to-br from-green-300 via-black to-green-400 rounded-xl shadow-lg border-4 border-black p-6">
+          {/* Recent Activity - Dynamic Theme */}
+          <div className={`rounded-xl shadow-lg border-4 border-black p-6 ${
+            theme === 'ben10'
+              ? 'bg-gradient-to-br from-green-300 via-black to-green-400'
+              : 'bg-gradient-to-br from-pink-300 via-purple-600 to-pink-400'
+          }`}>
             <h3 className="text-xl font-black text-white mb-6 flex items-center">
-              <span className="text-3xl mr-2 animate-pulse">🚀</span>
-              Ben 10's Hero Activity
+              <span className="text-3xl mr-2 animate-pulse">{theme === 'ben10' ? '🚀' : '✨'}</span>
+              {theme === 'ben10' ? "Ben 10's Hero Activity" : "Tinkerbell's Magic Activity"}
             </h3>
             <div className="space-y-4">
               {dashboardStats.completedTests > 0 && (
                 <div className="flex items-start space-x-3 p-4 bg-white border-2 border-black rounded-lg animate-fade-in shadow-lg">
-                  <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center border-2 border-black">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center border-2 border-black" style={{
+                    backgroundColor: theme === 'ben10' ? 'rgb(34, 197, 94)' : 'rgb(236, 72, 153)'
+                  }}>
                     <FileText className="w-5 h-5 text-white" />
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-bold text-black">
-                      🦸‍♂️ Test Hero!
+                      {theme === 'ben10' ? '🦸‍♂️' : '🧚‍♀️'} {theme === 'ben10' ? 'Test Hero' : 'Quiz Enchanter'}!
                     </p>
                     <p className="text-xs text-gray-700 font-medium">
-                      You completed {dashboardStats.completedTests} test{dashboardStats.completedTests !== 1 ? 's' : ''} this semester - Ben 10 is proud! 🏆
+                      You completed {dashboardStats.completedTests} test{dashboardStats.completedTests !== 1 ? 's' : ''} this semester - {theme === 'ben10' ? "Ben 10 is proud! 🏆" : "Tinkerbell sprinkles magic! ✨"}
                     </p>
                   </div>
                 </div>
@@ -510,15 +614,19 @@ export default function StudentDashboard() {
 
               {dashboardStats.totalClasses > 0 && (
                 <div className="flex items-start space-x-3 p-4 bg-white border-2 border-black rounded-lg animate-fade-in shadow-lg" style={{ animationDelay: '0.2s' }}>
-                  <div className="w-10 h-10 bg-black rounded-full flex items-center justify-center border-2 border-green-400">
-                    <Users className="w-5 h-5 text-green-400" />
+                  <div className="w-10 h-10 bg-black rounded-full flex items-center justify-center border-2" style={{
+                    borderColor: theme === 'ben10' ? 'rgb(132, 204, 22)' : 'rgb(244, 114, 182)'
+                  }}>
+                    <Users className="w-5 h-5" style={{
+                      color: theme === 'ben10' ? 'rgb(132, 204, 22)' : 'rgb(244, 114, 182)'
+                    }} />
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-bold text-black">
-                      🔄 Class Transformer!
+                      {theme === 'ben10' ? '🔄' : '🌙'} {theme === 'ben10' ? 'Class Transformer' : 'Learning Dreamer'}!
                     </p>
                     <p className="text-xs text-gray-700 font-medium">
-                      You're enrolled in {dashboardStats.totalClasses} class{dashboardStats.totalClasses !== 1 ? 'es' : ''} - What an alien adventure! �
+                      You're enrolled in {dashboardStats.totalClasses} class{dashboardStats.totalClasses !== 1 ? 'es' : ''} - {theme === 'ben10' ? "What an alien adventure! 👽" : "Welcome to the enchanted realm! 🏰"}
                     </p>
                   </div>
                 </div>
@@ -526,15 +634,17 @@ export default function StudentDashboard() {
 
               {dashboardStats.studyMaterials > 0 && (
                 <div className="flex items-start space-x-3 p-4 bg-white border-2 border-black rounded-lg animate-fade-in shadow-lg" style={{ animationDelay: '0.4s' }}>
-                  <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center border-2 border-black">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center border-2 border-black" style={{
+                    backgroundColor: theme === 'ben10' ? 'rgb(34, 197, 94)' : 'rgb(236, 72, 153)'
+                  }}>
                     <BookOpenCheck className="w-5 h-5 text-black" />
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-bold text-black">
-                      ⚡ Study Champion!
+                      {theme === 'ben10' ? '⚡' : '💫'} {theme === 'ben10' ? 'Study Champion' : 'Knowledge Seeker'}!
                     </p>
                     <p className="text-xs text-gray-700 font-medium">
-                      {dashboardStats.studyMaterials} resource{dashboardStats.studyMaterials !== 1 ? 's' : ''} ready for your heroic learning journey! 🚀
+                      {dashboardStats.studyMaterials} resource{dashboardStats.studyMaterials !== 1 ? 's' : ''} ready for your {theme === 'ben10' ? 'heroic learning journey! 🚀' : 'magical adventure! 🌟'}
                     </p>
                   </div>
                 </div>
@@ -542,72 +652,114 @@ export default function StudentDashboard() {
 
               {(!dashboardStats.completedTests && !dashboardStats.totalClasses && !dashboardStats.studyMaterials) && (
                 <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-10 w-10 border-4 border-green-500 border-t-black mx-auto mb-4"></div>
+                  <div className="animate-spin rounded-full h-10 w-10 border-4 border-t-black mx-auto mb-4" style={{
+                    borderColor: theme === 'ben10' ? 'rgb(74, 222, 128)' : 'rgb(244, 114, 182)',
+                    borderTopColor: 'black'
+                  }}></div>
                   <p className="text-black font-bold text-sm">
-                    Loading Ben 10's power... ⚡
+                    Loading {theme === 'ben10' ? "Ben 10's power... ⚡" : "Tinkerbell's magic... ✨"}
                   </p>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Achievement Goals - Ben 10 Theme */}
-          <div className="bg-gradient-to-br from-black via-green-500 to-black rounded-xl shadow-lg border-4 border-black p-6">
-            <h3 className="text-xl font-black text-green-400 mb-6 flex items-center">
-              <span className="text-3xl mr-2 animate-bounce">⚡</span>
-              Ben 10's Power Goals
+          {/* Achievement Goals - Dynamic Theme */}
+          <div className={`rounded-xl shadow-lg border-4 border-black p-6 ${
+            theme === 'ben10'
+              ? 'bg-gradient-to-br from-black via-green-500 to-black'
+              : 'bg-gradient-to-br from-black via-purple-500 to-black'
+          }`}>
+            <h3 className="mb-6 flex items-center text-xl font-black" style={{
+              color: theme === 'ben10' ? 'rgb(132, 204, 22)' : 'rgb(244, 114, 182)'
+            }}>
+              <span className="text-3xl mr-2 animate-bounce">{theme === 'ben10' ? '⚡' : '✨'}</span>
+              {theme === 'ben10' ? "Ben 10's Power Goals" : "Tinkerbell's Magic Goals"}
             </h3>
             <div className="space-y-4">
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-green-400 font-bold">🎯 Complete 20 Tests</span>
-                  <span className="text-green-400 font-black">
+                  <span className="font-bold" style={{
+                    color: theme === 'ben10' ? 'rgb(132, 204, 22)' : 'rgb(244, 114, 182)'
+                  }}>{theme === 'ben10' ? '🎯' : '🌟'} {theme === 'ben10' ? 'Complete 20 Tests' : 'Complete 20 Quizzes'}</span>
+                  <span className="font-black" style={{
+                    color: theme === 'ben10' ? 'rgb(132, 204, 22)' : 'rgb(244, 114, 182)'
+                  }}>
                     {dashboardStats.completedTests}/20
                   </span>
                 </div>
-                <div className="bg-green-400/20 rounded-full h-4 border-2 border-black">
+                <div className="rounded-full h-4 border-2 border-black" style={{
+                  backgroundColor: theme === 'ben10' ? 'rgba(132, 204, 22, 0.2)' : 'rgba(244, 114, 182, 0.2)'
+                }}>
                   <div
-                    className="bg-green-500 h-4 rounded-full transition-all duration-1000 ease-out border border-black"
-                    style={{ width: `${getProgressPercentage(dashboardStats.completedTests, 20)}%` }}
+                    className="h-4 rounded-full transition-all duration-1000 ease-out border border-black"
+                    style={{
+                      backgroundColor: theme === 'ben10' ? 'rgb(34, 197, 94)' : 'rgb(236, 72, 153)',
+                      width: `${getProgressPercentage(dashboardStats.completedTests, 20)}%`
+                    }}
                   ></div>
                 </div>
               </div>
 
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-green-400 font-bold">🎓 Reach 85% Average</span>
-                  <span className="text-green-400 font-black">
+                  <span className="font-bold" style={{
+                    color: theme === 'ben10' ? 'rgb(132, 204, 22)' : 'rgb(244, 114, 182)'
+                  }}>{theme === 'ben10' ? '🎓' : '📚'} {theme === 'ben10' ? 'Reach 85% Average' : 'Reach 85% Average'}</span>
+                  <span className="font-black" style={{
+                    color: theme === 'ben10' ? 'rgb(132, 204, 22)' : 'rgb(244, 114, 182)'
+                  }}>
                     {dashboardStats.currentGrade}%
                   </span>
                 </div>
-                <div className="bg-green-400/20 rounded-full h-4 border-2 border-green-500">
+                <div className="rounded-full h-4 border-2" style={{
+                  backgroundColor: theme === 'ben10' ? 'rgba(132, 204, 22, 0.2)' : 'rgba(244, 114, 182, 0.2)',
+                  borderColor: theme === 'ben10' ? 'rgb(34, 197, 94)' : 'rgb(236, 72, 153)'
+                }}>
                   <div
-                    className={`h-4 rounded-full transition-all duration-1000 ease-out border border-black ${
-                      dashboardStats.currentGrade >= 85 ? 'bg-green-500' : 'bg-green-400'
-                    }`}
-                    style={{ width: `${Math.min(dashboardStats.currentGrade, 85)}%` }}
+                    className="h-4 rounded-full transition-all duration-1000 ease-out border border-black"
+                    style={{
+                      backgroundColor: dashboardStats.currentGrade >= 85 
+                        ? (theme === 'ben10' ? 'rgb(34, 197, 94)' : 'rgb(236, 72, 153)')
+                        : (theme === 'ben10' ? 'rgb(132, 204, 22)' : 'rgb(244, 114, 182)'),
+                      width: `${dashboardStats.currentGrade}%`
+                    }}
                   ></div>
                 </div>
               </div>
 
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-green-400 font-bold">📚 Study 50 Materials</span>
-                  <span className="text-green-400 font-black">
+                  <span className="font-bold" style={{
+                    color: theme === 'ben10' ? 'rgb(132, 204, 22)' : 'rgb(244, 114, 182)'
+                  }}>📚 {theme === 'ben10' ? 'Study 50 Materials' : 'Explore 50 Resources'}</span>
+                  <span className="font-black" style={{
+                    color: theme === 'ben10' ? 'rgb(132, 204, 22)' : 'rgb(244, 114, 182)'
+                  }}>
                     {dashboardStats.studyMaterials}/50
                   </span>
                 </div>
-                <div className="bg-green-400/20 rounded-full h-4 border-2 border-black">
+                <div className="rounded-full h-4 border-2 border-black" style={{
+                  backgroundColor: theme === 'ben10' ? 'rgba(132, 204, 22, 0.2)' : 'rgba(244, 114, 182, 0.2)'
+                }}>
                   <div
-                    className="bg-black h-4 rounded-full transition-all duration-1000 ease-out border border-green-400"
-                    style={{ width: `${getProgressPercentage(dashboardStats.studyMaterials, 50)}%` }}
+                    className="h-4 rounded-full transition-all duration-1000 ease-out border"
+                    style={{
+                      backgroundColor: theme === 'ben10' ? 'black' : 'rgb(236, 72, 153)',
+                      borderColor: theme === 'ben10' ? 'rgb(132, 204, 22)' : 'rgb(244, 114, 182)',
+                      width: `${getProgressPercentage(dashboardStats.studyMaterials, 50)}%`
+                    }}
                   ></div>
                 </div>
               </div>
 
-              <div className="mt-6 p-4 bg-gradient-to-r from-green-300 to-black border-2 border-black rounded-lg shadow-lg">
+              <div className="mt-6 p-4 rounded-lg shadow-lg border-2 border-black" style={{
+                background: theme === 'ben10'
+                  ? 'linear-gradient(to right, rgb(132, 204, 22), black)'
+                  : 'linear-gradient(to right, rgb(244, 114, 182), rgb(109, 40, 217))'
+              }}>
                 <div className="flex items-center space-x-2">
-                  <span className="text-2xl animate-spin">🔄</span>
+                  <span className="text-2xl animate-spin">{theme === 'ben10' ? '🔄' : '✨'}</span>
                   <span className="text-green-400 font-black text-sm">
                     Next Transformation Unlocked Soon!
                   </span>

@@ -6,6 +6,8 @@ import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Button from '@/components/ui/Button';
 import { Badge } from '@/components/ui/badge';
+import { useTheme } from '@/contexts/ThemeContext';
+import { THEMES } from '@/utils/themeConfig';
 import { 
   BookOpen, 
   Users, 
@@ -677,26 +679,47 @@ export default function StudentStudyPage() {
     );
   }
 
+  const { theme } = useTheme();
+  const themeConfig = THEMES[theme];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-600 via-green-700 to-black p-6">
+    <div className="min-h-screen p-6" style={{
+      background: theme === 'ben10' 
+        ? 'linear-gradient(to bottom right, rgb(22, 163, 74), rgb(20, 110, 56), rgb(0, 0, 0))'
+        : 'linear-gradient(to bottom right, rgb(236, 72, 153), rgb(190, 24, 93), rgb(109, 40, 217))'
+    }}>
       <div className="mb-8">
-        {/* Ben 10 Hero Header */}
-        <div className="bg-gradient-to-r from-green-500 via-green-600 to-black rounded-3xl shadow-2xl border-4 border-black p-8 mb-8 relative overflow-hidden">
-          {/* Omnitrix Symbol */}
-          <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-16 h-16 bg-green-400 rounded-full border-4 border-black flex items-center justify-center">
-            <div className="text-black font-black text-2xl">Ω</div>
+        {/* Themed Hero Header */}
+        <div className={`rounded-3xl shadow-2xl border-4 border-black p-8 mb-8 relative overflow-hidden ${
+          theme === 'ben10'
+            ? 'bg-gradient-to-r from-green-500 via-green-600 to-black'
+            : 'bg-gradient-to-r from-pink-500 via-pink-600 to-purple-700'
+        }`}>
+          {/* Omnitrix/Fairy Symbol */}
+          <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-16 h-16 bg-opacity-80 rounded-full border-4 border-black flex items-center justify-center" style={{
+            backgroundColor: theme === 'ben10' ? 'rgb(74, 222, 128)' : 'rgb(244, 114, 182)'
+          }}>
+            <div className="text-black font-black text-2xl">
+              {theme === 'ben10' ? 'Ω' : '✨'}
+            </div>
           </div>
 
           <div className="flex items-center space-x-4 relative z-10">
-            <div className="text-6xl">🦸‍♂️</div>
+            <div className="text-6xl">{theme === 'ben10' ? '🦸‍♂️' : '🧚‍♀️'}</div>
             <div>
               <h1 className="text-4xl font-black text-white mb-2 flex items-center">
-                <span>Ben 10</span>
-                <span className="ml-2 text-green-400 font-black text-5xl">Hero</span>
-                <span className="ml-2 text-3xl">⚡</span>
+                <span>{theme === 'ben10' ? 'Ben 10' : 'Tinkerbell'}</span>
+                <span className="ml-2 font-black text-5xl" style={{
+                  color: theme === 'ben10' ? 'rgb(132, 204, 22)' : 'rgb(244, 114, 182)'
+                }}>
+                  {theme === 'ben10' ? 'Hero' : 'Magic'}
+                </span>
+                <span className="ml-2 text-3xl">{theme === 'ben10' ? '⚡' : '✨'}</span>
               </h1>
-              <p className="text-green-200 font-bold text-lg">
-                Welcome back, {student.name}! Master your hero training progress! 🦸‍♂️
+              <p className="font-bold text-lg" style={{
+                color: theme === 'ben10' ? 'rgb(187, 247, 208)' : 'rgb(251, 207, 232)'
+              }}>
+                Welcome back, {student?.name}! {theme === 'ben10' ? 'Master your hero training progress!' : 'Let\'s sprinkle some magic into learning!'} {theme === 'ben10' ? '🦸‍♂️' : '🧚‍♀️'}
               </p>
             </div>
           </div>
@@ -704,18 +727,22 @@ export default function StudentStudyPage() {
 
         {/* Overall Statistics */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-3xl shadow-2xl border-4 border-black p-6">
+          <div className={`rounded-3xl shadow-2xl border-4 border-black p-6 ${
+            theme === 'ben10'
+              ? 'bg-gradient-to-r from-green-500 to-green-600'
+              : 'bg-gradient-to-r from-pink-500 to-pink-600'
+          }`}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-black text-white">
-                  Hero Progress
+                  {theme === 'ben10' ? 'Hero Progress' : 'Magic Progress'}
                 </p>
                 <div className="flex items-center space-x-2 mt-2">
                   <span className="text-3xl font-black text-white">
                     {Math.round(overallProgress)}%
                   </span>
                   <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-black border-2 border-black ${
-                    overallProgress >= 80 ? 'bg-green-400 text-white' :
+                    overallProgress >= 80 ? (theme === 'ben10' ? 'bg-green-400' : 'bg-pink-400') + ' text-white' :
                     overallProgress >= 60 ? 'bg-blue-400 text-white' :
                     overallProgress >= 40 ? 'bg-yellow-400 text-black' :
                     'bg-red-400 text-white'
@@ -724,21 +751,29 @@ export default function StudentStudyPage() {
                   </span>
                 </div>
               </div>
-              <div className="text-4xl">📊</div>
+              <div className="text-4xl">{theme === 'ben10' ? '📊' : '📈'}</div>
             </div>
             <div className="mt-4 bg-black rounded-full h-4 border-2 border-black">
               <div
-                className="bg-gradient-to-r from-green-400 to-green-500 h-4 rounded-full transition-all duration-300 border-2 border-black"
+                className={`h-4 rounded-full transition-all duration-300 border-2 border-black ${
+                  theme === 'ben10'
+                    ? 'bg-gradient-to-r from-green-400 to-green-500'
+                    : 'bg-gradient-to-r from-pink-400 to-pink-500'
+                }`}
                 style={{ width: `${overallProgress}%` }}
               ></div>
             </div>
           </div>
 
-          <div className="bg-gradient-to-r from-green-600 to-green-700 rounded-3xl shadow-2xl border-4 border-black p-6">
+          <div className={`rounded-3xl shadow-2xl border-4 border-black p-6 ${
+            theme === 'ben10'
+              ? 'bg-gradient-to-r from-green-600 to-green-700'
+              : 'bg-gradient-to-r from-pink-600 to-pink-700'
+          }`}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-black text-white">
-                  Required Missions
+                  {theme === 'ben10' ? 'Required Missions' : 'Fairy Tasks'}
                 </p>
                 <div className="flex items-center space-x-2 mt-2">
                   <span className="text-3xl font-black text-white">
@@ -750,17 +785,25 @@ export default function StudentStudyPage() {
             </div>
             <div className="mt-4 bg-black rounded-full h-4 border-2 border-black">
               <div
-                className="bg-gradient-to-r from-green-500 to-green-600 h-4 rounded-full transition-all duration-300 border-2 border-black"
+                className={`h-4 rounded-full transition-all duration-300 border-2 border-black ${
+                  theme === 'ben10'
+                    ? 'bg-gradient-to-r from-green-500 to-green-600'
+                    : 'bg-gradient-to-r from-pink-500 to-pink-600'
+                }`}
                 style={{ width: `${requiredProgress}%` }}
               ></div>
             </div>
           </div>
 
-          <div className="bg-gradient-to-r from-green-700 to-black rounded-3xl shadow-2xl border-4 border-black p-6">
+          <div className={`rounded-3xl shadow-2xl border-4 border-black p-6 ${
+            theme === 'ben10'
+              ? 'bg-gradient-to-r from-green-700 to-black'
+              : 'bg-gradient-to-r from-purple-700 to-black'
+          }`}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-black text-white">
-                  Hero Classes
+                  {theme === 'ben10' ? 'Hero Classes' : 'Magic Classes'}
                 </p>
                 <p className="text-3xl font-black text-white mt-2">
                   {classes.length}
