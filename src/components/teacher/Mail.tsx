@@ -218,49 +218,58 @@ export default function Mail({
       // Get actual email addresses based on recipient type and selection
       let emailAddresses: { email: string, name: string }[] = [];
       
+      // Fetch full student data with parent info
+      const { StudentFirestoreService } = await import('@/apiservices/studentFirestoreService');
+      
       if (selectedStudents.length === 0) {
         // Send to all students/parents
-        enrollments.forEach((student: any) => {
+        for (const enrollment of enrollments) {
+          // Fetch full student data to get parent info
+          const fullStudentData = await StudentFirestoreService.getStudentById(enrollment.studentId);
+          
           if (recipientType === 'students' || recipientType === 'both') {
-            if (student.studentEmail) {
+            if (enrollment.studentEmail) {
               emailAddresses.push({ 
-                email: student.studentEmail, 
-                name: student.studentName 
+                email: enrollment.studentEmail, 
+                name: enrollment.studentName 
               });
             }
           }
           if (recipientType === 'parents' || recipientType === 'both') {
-            if (student.parent?.email) {
+            if (fullStudentData?.parent?.email) {
               emailAddresses.push({ 
-                email: student.parent.email, 
-                name: student.parent.name || 'Parent' 
+                email: fullStudentData.parent.email, 
+                name: fullStudentData.parent.name || 'Parent' 
               });
             }
           }
-        });
+        }
       } else {
         // Send to selected students/parents only
-        selectedStudents.forEach(studentId => {
-          const student = enrollments.find((s: any) => (s.studentId || s.id) === studentId);
-          if (student) {
+        for (const studentId of selectedStudents) {
+          const enrollment = enrollments.find((s: any) => (s.studentId || s.id) === studentId);
+          if (enrollment) {
+            // Fetch full student data to get parent info
+            const fullStudentData = await StudentFirestoreService.getStudentById(enrollment.studentId);
+            
             if (recipientType === 'students' || recipientType === 'both') {
-              if (student.studentEmail) {
+              if (enrollment.studentEmail) {
                 emailAddresses.push({ 
-                  email: student.studentEmail, 
-                  name: student.studentName 
+                  email: enrollment.studentEmail, 
+                  name: enrollment.studentName 
                 });
               }
             }
             if (recipientType === 'parents' || recipientType === 'both') {
-              if (student.parent?.email) {
+              if (fullStudentData?.parent?.email) {
                 emailAddresses.push({ 
-                  email: student.parent.email, 
-                  name: student.parent.name || 'Parent' 
+                  email: fullStudentData.parent.email, 
+                  name: fullStudentData.parent.name || 'Parent' 
                 });
               }
             }
           }
-        });
+        }
       }
 
       // Create mail documents for Firebase Mail Extension
