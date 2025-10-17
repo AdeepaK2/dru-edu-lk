@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import PQueue from 'p-queue';
 
 export interface PDFSummary {
   summary: string;
@@ -8,9 +9,43 @@ export interface PDFSummary {
   estimatedReadingTime: number;
 }
 
+// Retry function with exponential backoff
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelay: number = 1000
+): Promise<T> {
+  let lastError: Error;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      lastError = error;
+
+      // Check if it's a rate limit error (429) or other retryable error
+      const isRetryable = error?.status === 429 || error?.code === 'RESOURCE_EXHAUSTED' || error?.message?.includes('rate limit');
+
+      if (!isRetryable || attempt === maxRetries) {
+        throw error;
+      }
+
+      // Exponential backoff: baseDelay * 2^attempt
+      const delay = baseDelay * Math.pow(2, attempt);
+      console.log(`Attempt ${attempt + 1} failed, retrying in ${delay}ms...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+
+  throw lastError!;
+}
+
 // Initialize Gemini AI with server-side environment variable
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_KEY || '');
 const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+
+// Queue to process AI requests sequentially
+const aiQueue = new PQueue({ concurrency: 1 });
 
 export async function POST(request: NextRequest) {
   try {
@@ -55,7 +90,10 @@ Return ONLY a valid JSON object with the following exact structure, no markdown 
 {"summary": "your summary here", "keyPoints": ["point 1", "point 2", "point 3"], "wordCount": 1234, "estimatedReadingTime": 5}
 `;
 
-    const result = await model.generateContent(prompt);
+    const result = await aiQueue.add(async () => retryWithBackoff(async () => {
+      const res = await model.generateContent(prompt);
+      return res;
+    }));
     const response = await result.response;
     let responseText = response.text();
 
