@@ -282,12 +282,31 @@ export default function StudentDashboard() {
   // Show loading state while data is being fetched
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-400 via-black to-green-500 flex items-center justify-center">
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: theme === 'ben10'
+          ? 'linear-gradient(to bottom right, rgb(74, 222, 128), rgb(0, 0, 0), rgb(74, 222, 128))'
+          : 'linear-gradient(to bottom right, rgb(244, 114, 182), rgb(109, 40, 217), rgb(244, 114, 182))'
+      }}>
         <div className="text-center">
           <img 
-            src="/loading.gif" 
+            src={theme === 'ben10' ? '/ben10-loading.gif' : '/tinkerbell-loading.gif'} 
             alt="Loading..." 
-            className="w-80 h-80 mx-auto mb-4 border-4 border-green-400 rounded-lg"
+            style={{
+              width: '320px',
+              height: '320px',
+              margin: '0 auto 16px auto',
+              border: '4px solid',
+              borderColor: theme === 'ben10' ? 'rgb(132, 204, 22)' : 'rgb(244, 114, 182)',
+              borderRadius: '8px'
+            }}
+            onError={(e) => {
+              // Fallback to generic loading if theme image not found
+              (e.target as HTMLImageElement).src = '/loading.gif';
+            }}
           />
           <p className="text-white font-bold text-3xl">
             Loading
@@ -325,11 +344,15 @@ export default function StudentDashboard() {
             <div className="flex-1">
               <div className="flex items-center space-x-4 mb-2">
                 <img 
-                  src="/welcome.png" 
+                  src={theme === 'ben10' ? '/ben10-welcome.png' : '/tinkerbell-welcome.png'} 
                   alt="Welcome" 
                   className={`w-40 h-40 rounded-full border-4 border-black ring-4 ${
                     theme === 'ben10' ? 'ring-green-400' : 'ring-pink-400'
                   }`}
+                  onError={(e) => {
+                    // Fallback to generic welcome image if theme image not found
+                    (e.target as HTMLImageElement).src = '/welcome.png';
+                  }}
                 />
                 <div>
                   <h1 className="text-3xl font-bold">
