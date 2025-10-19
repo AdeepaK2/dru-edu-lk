@@ -63,97 +63,157 @@ export class ExamPDFService {
 
     // Function to add header with logo and border to each page
     const addPageHeader = (isFirstPage: boolean = false) => {
-      // Add paper-like background
-      pdf.setFillColor(252, 252, 248); // Slightly off-white paper color
-      pdf.rect(0, 0, pageWidth, pageHeight, 'F');
+    
 
-      // Add subtle paper texture (light grid pattern)
-      pdf.setDrawColor(245, 245, 240);
-      pdf.setLineWidth(0.1);
-
-      // Add very subtle horizontal lines to simulate paper texture
-      for (let y = 10; y < pageHeight; y += 15) {
-        pdf.line(5, y, pageWidth - 5, y);
-      }
-
-      // Add main content border with rounded corners effect
-      pdf.setDrawColor(0, 0, 0); // Black border
-      pdf.setLineWidth(0.8);
-      pdf.setFillColor(255, 255, 255); // White fill for content area
-      pdf.roundedRect(margin - 8, margin - 8, pageWidth - (margin * 2) + 16, pageHeight - (margin * 2) + 16, 3, 3, 'FD');
-
-      // Add logo at the top - centered on first page, left on others
-      if (logoData) {
-        try {
-          const logoSize = 20; // Square size for circular logo
-          let logoX;
-
-          if (isFirstPage) {
-            // Center logo on first page
-            logoX = (pageWidth - logoSize) / 2;
-          } else {
-            // Left align logo on other pages
-            logoX = margin - 5;
-          }
-
-          const logoY = margin - 2;
-
-          // Add the circular logo directly (no background needed since logo has transparent background)
-          pdf.addImage(logoData, 'PNG', logoX, logoY, logoSize, logoSize);
-          currentY = margin + logoSize + 8;
-        } catch (error) {
-          console.warn('⚠️ Failed to add logo to page:', error);
-          currentY = margin + 5;
-        }
-      } else {
-        currentY = margin + 5;
-      }
+  // Add border to all pages
+  pdf.setDrawColor(41, 84, 141); // Blue color
+  pdf.setLineWidth(0.8); // reduced thickness
+  pdf.rect(margin - 8, margin - 15, pageWidth - (margin * 2) + 16, pageHeight - (margin * 2) + 30);
 
       if (isFirstPage) {
-        // Add title page content only on first page - more compact layout
-        pdf.setFontSize(20); // Reduced from 24
+        // ===== HEADER FORMAT - ONLY ON FIRST PAGE =====
+        const headerHeight = 35;
+        const headerTop = margin - 15;
+
+        // Top blue border line (already drawn by page border)
+        // pdf.setDrawColor(41, 84, 141); // Blue color
+        // pdf.setLineWidth(1.2);
+        // pdf.line(margin - 8, headerTop, pageWidth - margin + 8, headerTop);
+
+       
+
+        // LEFT SECTION: Subject title and subject code + class name
+        const leftStartX = margin;
+        const leftStartY = headerTop + 6; // slightly lower to center with logo
+
+    // Place date on the left top of the header (moved down, black)
+    const dateText = `Date: ${date}`;
+    const dateX = leftStartX;
+    const dateY = headerTop + 4; // slightly below top border
+    pdf.setFontSize(13);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(0, 0, 0);
+    pdf.text(dateText, dateX, dateY);
+
+    // Test number (styled like heading)
+    pdf.setFontSize(13);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(0, 0, 0);
+    const testNumberText = `Test No: ${testNumber}`;
+    pdf.text(testNumberText, leftStartX, headerTop + 10);
+
+    // Subject code (subtitle)
+    pdf.setFontSize(14);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(0, 0, 0); // Black for subject code
+    pdf.text(className, leftStartX, headerTop + 21);
+
+  // CENTER SECTION: Logo (vertically centered within header)
+  const logoSize = 28;
+  const centerX = (pageWidth - logoSize) / 2;
+  const logoY = headerTop + (headerHeight - logoSize) / 2 + 1;
+
+        if (logoData) {
+          try {
+            pdf.addImage(logoData, 'PNG', centerX, logoY, logoSize, logoSize);
+          } catch (error) {
+            console.warn('⚠️ Failed to add logo to page:', error);
+          }
+        }
+
+        // RIGHT SECTION: Organization info
+  const rightStartX = pageWidth - margin - 4; // move slightly left so text fits inside border
+  let rightY = headerTop + 5;
+
+        // Organization name
+        pdf.setFontSize(12);
         pdf.setFont('helvetica', 'bold');
-        pdf.setTextColor(51, 51, 51); // Dark gray text
-        const titleText = 'Dru Education';
-        const titleWidth = pdf.getTextWidth(titleText);
-        pdf.text(titleText, (pageWidth - titleWidth) / 2, currentY);
+        pdf.setTextColor(160, 160, 160); // Gray for organization name
+        const orgName = 'Dr. U Education';
+        const orgWidth = pdf.getTextWidth(orgName);
+        pdf.text(orgName, rightStartX - orgWidth, rightY);
 
-        currentY += 12; // Reduced from 15
+  rightY += 5;
 
-        // Add test number
-        pdf.setFontSize(14); // Reduced from 16
-        pdf.setFont('helvetica', 'normal');
-        pdf.setTextColor(102, 102, 102); // Medium gray text
-        const testNumberText = `Test No: ${testNumber}`;
-        const testNumberWidth = pdf.getTextWidth(testNumberText);
-        pdf.text(testNumberText, (pageWidth - testNumberWidth) / 2, currentY);
+  // Campuses
+  pdf.setFontSize(9);
+  pdf.setFont('helvetica', 'normal');
+  pdf.setTextColor(120, 120, 120);
+  const campusesText = 'Campuses: Glen Waverley';
+  const campusWidth = pdf.getTextWidth(campusesText);
+  pdf.text(campusesText, rightStartX - campusWidth, rightY);
 
-        currentY += 8; // Reduced from 10
+  rightY += 4;
 
-        // Add class and date
-        pdf.setFontSize(11); // Reduced from 12
-        pdf.setTextColor(102, 102, 102);
-        const classDateText = `${className} - ${date}`;
-        const classDateWidth = pdf.getTextWidth(classDateText);
-        pdf.text(classDateText, (pageWidth - classDateWidth) / 2, currentY);
+  const cranbourneText = 'Cranbourne';
+  const cranbourneWidth = pdf.getTextWidth(cranbourneText);
+  pdf.text(cranbourneText, rightStartX - cranbourneWidth, rightY);
 
-        currentY += 15; // Reduced from 25
+  rightY += 4;
 
-        // Add student name section - more compact
-        pdf.setFontSize(11); // Reduced from 12
+  // Website, Email, Phone (use navy blue for emphasis)
+  // Tailwind-like 'blue-800' ~ hex #1E40AF -> rgb(30,64,175)
+  pdf.setTextColor(30, 64, 175);
+
+  const websiteText = 'Website: www.drueducation.com.au';
+  const websiteWidth = pdf.getTextWidth(websiteText);
+  pdf.text(websiteText, rightStartX - websiteWidth, rightY);
+
+  rightY += 4;
+
+  const emailText = 'Email: info@drueducation.com.au';
+  const emailWidth = pdf.getTextWidth(emailText);
+  pdf.text(emailText, rightStartX - emailWidth, rightY);
+
+  rightY += 4;
+
+  const phoneText = 'Phone: 0478 716 402';
+  const phoneWidth = pdf.getTextWidth(phoneText);
+  pdf.text(phoneText, rightStartX - phoneWidth, rightY);
+
+  // Restore organization gray color for any following org text
+  pdf.setTextColor(160, 160, 160);
+
+        // Bottom blue border line (already drawn by page border)
+        // pdf.setDrawColor(41, 84, 141); // Blue color
+        // pdf.setLineWidth(1.2);
+        // pdf.line(margin - 8, headerTop + headerHeight + 1, pageWidth - margin + 8, headerTop + headerHeight + 1);
+
+        // Set Y position after header
+        currentY = headerTop + headerHeight + 10;
+
+        // Add test info section INSIDE the border
+        pdf.setFontSize(12);
         pdf.setFont('helvetica', 'normal');
         pdf.setTextColor(51, 51, 51);
-        const nameLabel = 'Student Name:';
-        pdf.text(nameLabel, margin, currentY);
+
+       
+  currentY += 10;
+
+  // Add horizontal separator line above student name (same blue as border)
+  pdf.setDrawColor(41, 84, 141);
+  pdf.setLineWidth(0.8);
+  const sepY = currentY - 12;
+  pdf.line(margin - 4, sepY, pageWidth - margin + 4, sepY);
+
+  // Add student name section
+  pdf.setFontSize(11);
+  pdf.setFont('helvetica', 'normal');
+  pdf.setTextColor(51, 51, 51);
+  const nameLabel = 'Student Name:';
+  pdf.text(nameLabel, margin, currentY);
 
         // Add underline for student to write name
         const nameStartX = margin + pdf.getTextWidth(nameLabel) + 5;
-        const underlineLength = 60; // Reduced from 80
+        const underlineLength = 80;
         pdf.setDrawColor(0, 0, 0);
         pdf.setLineWidth(0.5);
         pdf.line(nameStartX, currentY + 2, nameStartX + underlineLength, currentY + 2);
 
-        currentY += 12; // Reduced from 20
+        currentY += 15;
+      } else {
+        // For non-first pages, set up content area
+        currentY = margin;
       }
     };
 
