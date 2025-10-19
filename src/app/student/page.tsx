@@ -608,11 +608,11 @@ export default function StudentDashboard() {
 
               {dashboardStats.totalClasses > 0 && (
                 <div className="flex items-start space-x-3 p-4 bg-white border-2 border-black rounded-lg animate-fade-in shadow-lg" style={{ animationDelay: '0.2s' }}>
-                  <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center border-2" style={{
-                    borderColor: theme === 'ben10' ? 'rgb(132, 204, 22)' : 'rgb(0, 0, 0)'
+                  <div className="w-10 h-10  rounded-full flex items-center justify-center border-2" style={{
+                    borderColor: theme === 'ben10' ? 'rgb(0,0,0)' : 'rgb(0, 0, 0)', backgroundColor: theme === 'ben10' ? 'rgb(34, 197, 94)' : 'rgb(255, 255, 255)'
                   }}>
                     <Users className="w-5 h-5" style={{
-                      color: theme === 'ben10' ? 'rgb(132, 204, 22)' : 'rgb(0,0,0)'
+                      color: theme === 'ben10' ? 'rgb(0,0,0)' : 'rgb(0,0,0)'
                     }} />
                   </div>
                   <div className="flex-1">
@@ -661,23 +661,23 @@ export default function StudentDashboard() {
           {/* Achievement Goals - Dynamic Theme */}
           <div className={`rounded-xl shadow-lg border-4 border-black p-6 ${
             theme === 'ben10'
-              ? 'bg-gradient-to-br from-black via-green-500 to-black'
+              ? 'bg-gradient-to-br from-green-300 via-black to-green-400'
               : 'bg-gradient-to-br from-green-400 to-yellow-600'
           }`}>
             <h3 className="mb-6 flex items-center text-xl font-black" style={{
-              color: theme === 'ben10' ? 'rgb(132, 204, 22)' : 'rgb(0,0,0)'
+              color: theme === 'ben10' ? 'rgb(0,0,0)' : 'rgb(0,0,0)'
             }}>
-              <span className="text-3xl mr-2 ">{theme === 'ben10' ? '⚡' : '✨'}</span>
+              
               {theme === 'ben10' ? "Your Goals" : "Your Goals"}
             </h3>
             <div className="space-y-4">
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="font-bold" style={{
-                    color: theme === 'ben10' ? 'rgb(132, 204, 22)' : 'rgb(255,255,255)'
+                    color: theme === 'ben10' ? 'rgb(255,255,255)' : 'rgb(255,255,255)'
                   }}> {theme === 'ben10' ? 'Complete 20 Tests' : 'Complete 20 Quizzes'}</span>
                   <span className="font-black" style={{
-                    color: theme === 'ben10' ? 'rgb(132, 204, 22)' : 'rgb(255, 255, 255)'
+                    color: theme === 'ben10' ? 'rgb(255,255,255)' : 'rgb(255, 255, 255)'
                   }}>
                     {dashboardStats.completedTests}/20
                   </span>
@@ -698,17 +698,17 @@ export default function StudentDashboard() {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="font-bold" style={{
-                    color: theme === 'ben10' ? 'rgb(132, 204, 22)' : 'rgb(255,255,255)'
+                    color: theme === 'ben10' ? 'rgb(255,255,255)' : 'rgb(255,255,255)'
                   }}> {theme === 'ben10' ? 'Reach 85% Average' : 'Reach 85% Average'}</span>
                   <span className="font-black" style={{
-                    color: theme === 'ben10' ? 'rgb(132, 204, 22)' : 'rgb(255, 255, 255)'
+                    color: theme === 'ben10' ? 'rgb(255,255,255)' : 'rgb(255, 255, 255)'
                   }}>
                     {dashboardStats.currentGrade}%
                   </span>
                 </div>
                 <div className="rounded-full h-4 border-2" style={{
                   backgroundColor: theme === 'ben10' ? 'rgba(132, 204, 22, 0.2)' : 'rgba(202, 138, 4, 0.2)',
-                  borderColor: theme === 'ben10' ? 'rgb(34, 197, 94)' : 'rgb(0,0,0)'
+                  borderColor: theme === 'ben10' ? 'rgb(0,0,0)' : 'rgb(0,0,0)'
                 }}>
                   <div
                     className="h-4 rounded-full transition-all duration-1000 ease-out border border-black"
@@ -725,10 +725,10 @@ export default function StudentDashboard() {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="font-bold" style={{
-                    color: theme === 'ben10' ? 'rgb(132, 204, 22)' : 'rgb(255, 255, 255)'
+                    color: theme === 'ben10' ? 'rgb(255,255,255)' : 'rgb(255, 255, 255)'
                   }}>{theme === 'ben10' ? 'Study 50 Materials' : 'Explore 50 Resources'}</span>
                   <span className="font-black" style={{
-                    color: theme === 'ben10' ? 'rgb(132, 204, 22)' : 'rgb(255, 255, 255)'
+                    color: theme === 'ben10' ? 'rgb(255,255,255)' : 'rgb(255, 255, 255)'
                   }}>
                     {dashboardStats.studyMaterials}/50
                   </span>
@@ -749,7 +749,7 @@ export default function StudentDashboard() {
 
               <div className="mt-6 p-4 rounded-lg shadow-lg border-2 border-black" style={{
                 background: theme === 'ben10'
-                  ? 'linear-gradient(to right, rgb(132, 204, 22), black)'
+                  ? 'bg-gradient-to-br from-green-300 via-black to-green-400'
                   : 'bg-gradient-to-br from-green-400 to-yellow-600'
               }}>
                 <div className="flex items-center space-x-2">
@@ -760,7 +760,7 @@ export default function StudentDashboard() {
                 </div>
                 <p className="text-white font-bold text-xs mt-1">
                   {theme === 'ben10' 
-                    ? "Keep up the heroic work to unlock Ben 10's powers! ⚡" 
+                    ? "Keep up the heroic work to unlock Ben 10's powers! " 
                     : "Keep up the magical work to unlock Tinkerbell's spells! ✨"}
                 </p>
               </div>
