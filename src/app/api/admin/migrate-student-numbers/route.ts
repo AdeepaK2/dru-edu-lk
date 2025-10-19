@@ -78,39 +78,58 @@ export async function POST(req: NextRequest) {
 
     // Assign student number to specific student
     if (action === 'assign' && studentId) {
-      // Get current counter
-      const counterDoc = await firebaseAdmin.firestore.getDoc('counters', 'studentNumber');
-      
-      let nextNumber = 1;
-      if (counterDoc && counterDoc.count !== undefined) {
-        nextNumber = counterDoc.count + 1;
+      try {
+        // Use transaction to ensure atomicity
+        const db = admin.firestore();
+        const counterRef = db.collection('counters').doc('studentNumber');
+        const studentRef = db.collection('students').doc(studentId);
+
+        const result = await db.runTransaction(async (transaction) => {
+          // Get current counter
+          const counterDoc = await transaction.get(counterRef);
+          
+          let nextNumber = 1;
+          if (counterDoc.exists) {
+            const data = counterDoc.data();
+            nextNumber = (data?.count || 0) + 1;
+          }
+
+          // Format student number
+          const studentNumber = `ST${nextNumber.toString().padStart(4, '0')}`;
+
+          // Check if student exists
+          const studentDoc = await transaction.get(studentRef);
+          if (!studentDoc.exists) {
+            throw new Error('Student not found');
+          }
+
+          // Update counter
+          transaction.set(counterRef, {
+            count: nextNumber,
+            lastUpdated: admin.firestore.Timestamp.now()
+          }, { merge: true });
+
+          // Update student
+          transaction.update(studentRef, {
+            studentNumber: studentNumber,
+            updatedAt: admin.firestore.Timestamp.now()
+          });
+
+          return studentNumber;
+        });
+
+        return NextResponse.json({
+          message: 'Student number assigned',
+          studentNumber: result,
+          studentId: studentId
+        });
+      } catch (error) {
+        console.error('Error assigning student number:', error);
+        return NextResponse.json({
+          error: 'Failed to assign student number',
+          details: error instanceof Error ? error.message : 'Unknown error'
+        }, { status: 500 });
       }
-
-      // Update counter
-      await firebaseAdmin.firestore.setDoc('counters', 'studentNumber', {
-        count: nextNumber,
-        lastUpdated: admin.firestore.Timestamp.now()
-      });
-
-      // Format student number
-      const studentNumber = `ST${nextNumber.toString().padStart(4, '0')}`;
-
-      // Update student document
-      const student = await firebaseAdmin.firestore.getDoc('students', studentId);
-      if (!student) {
-        return NextResponse.json({ error: 'Student not found' }, { status: 404 });
-      }
-
-      await firebaseAdmin.firestore.updateDoc('students', studentId, {
-        studentNumber: studentNumber,
-        updatedAt: admin.firestore.Timestamp.now()
-      });
-
-      return NextResponse.json({
-        message: 'Student number assigned',
-        studentNumber: studentNumber,
-        studentId: studentId
-      });
     }
 
     return NextResponse.json({ error: 'Invalid action or missing parameters' }, { status: 400 });
