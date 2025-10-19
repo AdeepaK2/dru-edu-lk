@@ -1,0 +1,18 @@
+<svg width="300" height="300" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="tinkerbellLoadingGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f472b6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7c3aed;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="300" height="300" fill="url(#tinkerbellLoadingGradient)"/>
+  <g transform="translate(150,150)">
+    <circle cx="0" cy="0" r="70" fill="none" stroke="#a855f7" stroke-width="6" stroke-dasharray="25 15">
+      <animateTransform attributeName="transform" attributeType="XML" type="rotate" from="0 0 0" to="360 0 0" dur="2s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="0" cy="0" r="50" fill="none" stroke="#ec4899" stroke-width="4" stroke-dasharray="20 10">
+      <animateTransform attributeName="transform" attributeType="XML" type="rotate" from="360 0 0" to="0 0 0" dur="1.5s" repeatCount="indefinite"/>
+    </circle>
+    <text x="0" y="20" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="16" font-weight="bold">✨ LOADING ✨</text>
+  </g>
+</svg>

@@ -18,9 +18,10 @@ interface PDFViewerProps {
   url: string;
   title: string;
   onClose: () => void;
+  inline?: boolean;
 }
 
-export default function PDFViewer({ url, title, onClose }: PDFViewerProps) {
+export default function PDFViewer({ url, title, onClose, inline = false }: PDFViewerProps) {
   const [numPages, setNumPages] = useState<number | null>(null);
   const [pageNumber, setPageNumber] = useState(1);
   const [scale, setScale] = useState(1.0);
@@ -152,8 +153,8 @@ export default function PDFViewer({ url, title, onClose }: PDFViewerProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] flex flex-col">
+    <div className={inline ? "h-full w-full flex flex-col bg-white dark:bg-gray-800" : "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"}>
+      <div className={inline ? "h-full w-full flex flex-col" : "bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] flex flex-col"}>
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
@@ -169,13 +170,15 @@ export default function PDFViewer({ url, title, onClose }: PDFViewerProps) {
               <Download className="w-4 h-4" />
               <span>Download</span>
             </Button>
-            <Button
-              onClick={onClose}
-              variant="outline"
-              size="sm"
-            >
-              <X className="w-4 h-4" />
-            </Button>
+            {!inline && (
+              <Button
+                onClick={onClose}
+                variant="outline"
+                size="sm"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            )}
           </div>
         </div>
 
