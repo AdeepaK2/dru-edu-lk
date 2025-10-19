@@ -24,7 +24,11 @@ import {
   Eye, 
   Download, 
   ChevronDown, 
-  ChevronUp
+  ChevronUp,
+  Link,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw
 } from 'lucide-react';
 import { getEnrollmentsByStudent } from '@/services/studentEnrollmentService';
 import { getStudyMaterialsByClass, getStudyMaterialsByClassGrouped, markMaterialCompleted, unmarkMaterialCompleted } from '@/apiservices/studyMaterialFirestoreService';
@@ -71,9 +75,12 @@ export default function StudentStudyPage() {
   const [materialLoading, setMaterialLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
-  const { openPDFViewer } = usePDFViewer();
-  const [isViewingPdf, setIsViewingPdf] = useState(false);
-  const [selectedPdfMaterial, setSelectedPdfMaterial] = useState<StudyMaterial | null>(null);
+  const [isViewingMaterial, setIsViewingMaterial] = useState(false);
+  const [activeMaterial, setActiveMaterial] = useState<StudyMaterial | null>(null);
+  const [imageZoom, setImageZoom] = useState(1);
+  const [imagePan, setImagePan] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
   // Memoize PDFViewer to prevent re-mounting
   const PDFViewer = useMemo(() => dynamic(() => import('@/components/PDFViewer'), {
@@ -221,10 +228,68 @@ export default function StudentStudyPage() {
     window.open(url, '_blank');
   };
 
-  const exitPdfView = () => {
-    setIsViewingPdf(false);
-    setSelectedPdfMaterial(null);
+  const exitMaterialView = () => {
+    setIsViewingMaterial(false);
+    setActiveMaterial(null);
     setHideSidebar(false);
+    // Reset zoom state
+    setImageZoom(1);
+    setImagePan({ x: 0, y: 0 });
+    setIsDragging(false);
+  };
+
+  const handleZoomIn = () => {
+    setImageZoom(prev => Math.min(prev * 1.2, 5)); // Max zoom 5x
+  };
+
+  const handleZoomOut = () => {
+    setImageZoom(prev => Math.max(prev / 1.2, 0.1)); // Min zoom 0.1x
+  };
+
+  const handleZoomReset = () => {
+    setImageZoom(1);
+    setImagePan({ x: 0, y: 0 });
+  };
+
+  // Keyboard shortcuts for zoom
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!isViewingMaterial || !activeMaterial || activeMaterial.fileType?.toLowerCase() !== 'image') return;
+
+      if (e.key === '+' || e.key === '=') {
+        e.preventDefault();
+        handleZoomIn();
+      } else if (e.key === '-' || e.key === '_') {
+        e.preventDefault();
+        handleZoomOut();
+      } else if (e.key === '0') {
+        e.preventDefault();
+        handleZoomReset();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isViewingMaterial, activeMaterial]);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (imageZoom > 1) {
+      setIsDragging(true);
+      setDragStart({ x: e.clientX - imagePan.x, y: e.clientY - imagePan.y });
+    }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (isDragging && imageZoom > 1) {
+      setImagePan({
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y
+      });
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
   };
 
   const toggleGroupExpansion = (groupId: string) => {
@@ -245,17 +310,10 @@ export default function StudentStudyPage() {
       hasFileUrl: !!material.fileUrl
     });
 
-    if (material.fileType?.toLowerCase() === 'pdf' && material.fileUrl) {
-      console.log('Setting PDF viewer for:', material.title);
-      setSelectedPdfMaterial(material);
-      setIsViewingPdf(true);
-      setHideSidebar(true);
-    } else if (material.fileUrl) {
-      console.log('Opening external link for:', material.title);
-      window.open(material.fileUrl, '_blank');
-    } else {
-      console.log('No fileUrl found for material:', material.title);
-    }
+    // Set the active material for viewing
+    setActiveMaterial(material);
+    setIsViewingMaterial(true);
+    setHideSidebar(true);
   };
 
   const downloadMaterial = (material: StudyMaterial) => {
@@ -318,14 +376,14 @@ export default function StudentStudyPage() {
   if (selectedClass) {
     const currentClass = classes.find(c => c.id === selectedClass);
 
-    if (isViewingPdf && selectedPdfMaterial) {
+    if (isViewingMaterial && activeMaterial) {
       // PDF Viewing Layout - Full screen without top space
       return (
         <div className="fixed inset-0 bg-gray-50 dark:bg-gray-900 z-50">
           {/* Minimal Back Button - positioned absolutely */}
           <div className="absolute top-4 left-4 z-10">
             <Button 
-              onClick={exitPdfView}
+              onClick={exitMaterialView}
               variant="outline"
               size="sm"
               className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm shadow-lg"
@@ -351,7 +409,7 @@ export default function StudentStudyPage() {
                   const isExpanded = expandedGroups.has(group.id);
                   
                   return (
-                    <Card key={group.id} className={`transition-all ${group.materials.some((m: any) => m.id === selectedPdfMaterial.id) ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : ''}`}>
+                    <Card key={group.id} className={`transition-all ${group.materials.some((m: any) => m.id === activeMaterial.id) ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : ''}`}>
                       <CardHeader 
                         className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 pb-3 px-3"
                         onClick={() => toggleGroupExpansion(group.id)}
@@ -400,16 +458,17 @@ export default function StudentStudyPage() {
                         <CardContent className="pt-0 px-3 pb-3">
                           <div className="space-y-2 border-t border-gray-100 dark:border-gray-700 pt-3">
                             {group.materials.map((material: any) => {
-                              const isSelected = material.id === selectedPdfMaterial?.id;
+                              const isSelected = material.id === activeMaterial?.id;
                               
                               return (
                                 <div 
                                   key={material.id} 
-                                  className={`flex items-center justify-between p-2 border rounded-lg text-sm pointer-events-none ${
+                                  className={`flex items-center justify-between p-2 border rounded-lg text-sm ${material.fileUrl ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700' : ''} ${
                                     isSelected 
                                       ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
                                       : 'border-gray-200'
                                   }`}
+                                  onClick={() => material.fileUrl && viewMaterial(material)}
                                 >
                                   <div className="flex items-center space-x-2 flex-1">
                                     <div className="w-5 h-5 bg-white dark:bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0 border">
@@ -429,7 +488,7 @@ export default function StudentStudyPage() {
                                     </div>
                                   </div>
                                   
-                                  {material.fileType === 'pdf' && (
+                                  {material.fileUrl && (
                                     <Eye 
                                       className={`w-3 h-3 flex-shrink-0 cursor-pointer hover:text-blue-600 transition-colors pointer-events-auto ${
                                         isSelected ? 'text-blue-600' : 'text-gray-400'
@@ -449,16 +508,131 @@ export default function StudentStudyPage() {
               </div>
             </div>
 
-            {/* PDF Viewer - takes remaining space */}
+            {/* Material Viewer - takes remaining space */}
             <div className="flex-1 bg-white dark:bg-gray-900 overflow-hidden">
               <div className="h-full w-full">
-                <PDFViewer
-                  key={selectedPdfMaterial.id}
-                  url={selectedPdfMaterial.fileUrl || ''}
-                  title={selectedPdfMaterial.title}
-                  onClose={exitPdfView}
-                  inline={true}
-                />
+                {activeMaterial.fileType?.toLowerCase() === 'pdf' && activeMaterial.fileUrl && (
+                  <PDFViewer
+                    key={activeMaterial.id}
+                    url={activeMaterial.fileUrl}
+                    title={activeMaterial.title}
+                    onClose={exitMaterialView}
+                    inline={true}
+                  />
+                )}
+                {activeMaterial.fileType?.toLowerCase() === 'image' && activeMaterial.fileUrl && (
+                  <div className="h-full flex flex-col">
+                    <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{activeMaterial.title}</h3>
+                        <div className="flex items-center space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleZoomOut}
+                            disabled={imageZoom <= 0.1}
+                            className="p-2"
+                            title="Zoom Out (-)"
+                          >
+                            <ZoomOut className="h-4 w-4" />
+                          </Button>
+                          <span className="text-sm text-gray-600 dark:text-gray-400 min-w-[60px] text-center">
+                            {Math.round(imageZoom * 100)}%
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleZoomIn}
+                            disabled={imageZoom >= 5}
+                            className="p-2"
+                            title="Zoom In (+)"
+                          >
+                            <ZoomIn className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleZoomReset}
+                            className="p-2"
+                            title="Reset Zoom (0)"
+                          >
+                            <RotateCcw className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                        Use mouse to drag when zoomed • Keyboard: + zoom in, - zoom out, 0 reset
+                      </div>
+                    </div>
+                    <div 
+                      className="flex-1 flex items-center justify-center p-4 bg-gray-50 dark:bg-gray-900 overflow-hidden relative"
+                      onMouseDown={handleMouseDown}
+                      onMouseMove={handleMouseMove}
+                      onMouseUp={handleMouseUp}
+                      onMouseLeave={handleMouseUp}
+                      style={{ cursor: imageZoom > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default' }}
+                    >
+                      <img
+                        src={activeMaterial.fileUrl}
+                        alt={activeMaterial.title}
+                        className="rounded-lg shadow-lg select-none"
+                        style={{
+                          transform: `scale(${imageZoom}) translate(${imagePan.x / imageZoom}px, ${imagePan.y / imageZoom}px)`,
+                          transformOrigin: 'center center',
+                          transition: isDragging ? 'none' : 'transform 0.1s ease-out',
+                          maxWidth: imageZoom > 1 ? 'none' : '100%',
+                          maxHeight: imageZoom > 1 ? 'none' : '100%',
+                          width: imageZoom > 1 ? 'auto' : 'auto',
+                          height: imageZoom > 1 ? 'auto' : 'auto'
+                        }}
+                        draggable={false}
+                      />
+                    </div>
+                  </div>
+                )}
+                {activeMaterial.fileType?.toLowerCase() === 'video' && activeMaterial.fileUrl && (
+                  <div className="h-full flex flex-col">
+                    <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{activeMaterial.title}</h3>
+                    </div>
+                    <div className="flex-1 flex items-center justify-center p-4 bg-gray-50 dark:bg-gray-900">
+                      <video
+                        src={activeMaterial.fileUrl}
+                        controls
+                        className="max-w-full max-h-full rounded-lg shadow-lg"
+                        preload="metadata"
+                      >
+                        Your browser does not support the video tag.
+                      </video>
+                    </div>
+                  </div>
+                )}
+                {activeMaterial.fileType?.toLowerCase() === 'link' && activeMaterial.fileUrl && (
+                  <div className="h-full flex flex-col">
+                    <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{activeMaterial.title}</h3>
+                    </div>
+                    <div className="flex-1 flex items-center justify-center p-4 bg-gray-50 dark:bg-gray-900">
+                      <div className="text-center space-y-6 max-w-md">
+                        <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center mx-auto">
+                          <Link className="h-8 w-8 text-blue-600" />
+                        </div>
+                        <div>
+                          <h4 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">External Link</h4>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 break-all">{activeMaterial.fileUrl}</p>
+                        </div>
+                        <Button
+                          onClick={() => window.open(activeMaterial.fileUrl, '_blank')}
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2"
+                          size="lg"
+                        >
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          Open Link
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
