@@ -27,6 +27,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui';
 import { TestService } from '@/apiservices/testService';
 import { getEnrollmentsByStudent } from '@/services/studentEnrollmentService';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface SidebarItem {
   id: string;
@@ -137,6 +138,7 @@ interface StudentSidebarProps {
 export default function StudentSidebar({ student, isOpen, onToggle }: StudentSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const { theme } = useTheme();
   const [upcomingQuizCount, setUpcomingQuizCount] = useState(0);
 
   useEffect(() => {
@@ -165,19 +167,30 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
       {/* Mobile overlay */}
       {isOpen && (
         <div 
-          className="fixed inset-0 z-40 bg-gradient-to-br from-green-400/80 via-black/80 to-green-500/80 backdrop-blur-sm lg:hidden" 
+          className={`fixed inset-0 z-40 backdrop-blur-sm lg:hidden ${
+            theme === 'ben10'
+              ? 'bg-gradient-to-br from-green-400/80 via-black/80 to-green-500/80'
+              : 'bg-gradient-to-br from-green-400/80 via-yellow-400/80 to-yellow-600/80'
+          }`}
           onClick={onToggle}
         />
       )}
 
       {/* Sidebar */}
       <div className={`
-        fixed inset-y-0 left-0 z-50 w-64 bg-gradient-to-b from-green-500 via-black to-green-600 shadow-2xl transform transition-transform duration-300 ease-in-out border-r-4 border-black
+        fixed inset-y-0 left-0 z-50 w-64 shadow-2xl transform transition-transform duration-300 ease-in-out border-r-4 border-black
         lg:translate-x-0 lg:static lg:inset-0 lg:w-64
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+        ${theme === 'ben10' 
+          ? 'bg-gradient-to-b from-green-500 via-black to-green-600' 
+          : 'bg-gradient-to-br from-green-400 to-yellow-600'}
       `}>
         {/* Header */}
-          <div className="flex items-center justify-between px-6 py-3 bg-gradient-to-r from-green-600 to-black">
+          <div className={`flex items-center justify-between px-6 py-3 ${
+            theme === 'ben10' 
+              ? 'bg-gradient-to-r from-green-600 to-black' 
+              : 'bg-gradient-to-r from-yellow-500 to-green-600'
+          }`}>
             <div className="flex items-center space-x-3">
               <img 
                 src="/Logo.png" 
@@ -192,7 +205,11 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
             </div>
             <button
               onClick={onToggle}
-              className="lg:hidden p-2 rounded-full text-white hover:text-green-400 hover:bg-black border-2 border-white font-black transition-all"
+              className={`lg:hidden p-2 rounded-full text-white border-2 border-white font-black transition-all ${
+                theme === 'ben10'
+                  ? 'hover:text-green-400 hover:bg-black'
+                  : 'hover:text-yellow-400 hover:bg-black'
+              }`}
             >
               <X className="w-5 h-5" />
             </button>
@@ -200,19 +217,34 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
 
         {/* Student Profile */}
         {student && (
-          <div className="p-4 border-b-4 border-black bg-gradient-to-r from-black to-green-600">
+          <div className={`p-4 border-b-4 border-black ${
+            theme === 'ben10'
+              ? 'bg-gradient-to-r from-black to-green-600'
+              : 'bg-gradient-to-r from-yellow-500 to-green-600'
+          }`}>
             <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-black rounded-2xl flex items-center justify-center border-2 border-black shadow-lg">
-                <span className="text-2xl font-black text-green-400">
-                  🦸‍♂️
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border-2 border-black shadow-lg ${
+                theme === 'ben10'
+                  ? 'bg-gradient-to-br from-green-500 to-black'
+                  : 'bg-gradient-to-br from-yellow-400 to-green-500'
+              }`}>
+                <span className="text-2xl font-black" style={{
+                  color: theme === 'ben10' ? 'rgb(74, 222, 128)' : 'rgb(202, 138, 4)'
+                }}>
+                  {theme === 'ben10' ? '🦸‍♂️' : '🧚‍♀️'}
                 </span>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-base font-black text-white">
                   {student.name}
                 </p>
-                <p className="text-xs text-green-200 font-bold">
-                  {student.status === 'Active' ? '🦸‍♂️ Active Hero Student' : student.status || 'Student'}
+                <p className="text-xs font-bold" style={{
+                  color: theme === 'ben10' ? 'rgb(187, 247, 208)' : 'rgb(234, 179, 8)'
+                }}>
+                  {student.status === 'Active' 
+                    ? (theme === 'ben10' ? '🦸‍♂️ Active Hero Student' : '🧚‍♀️ Active Fairy Student') 
+                    : student.status || 'Student'
+                  }
                 </p>
               </div>
             </div>
@@ -231,8 +263,14 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
                 className={`
                   flex items-center justify-between px-4 py-3 text-sm font-black rounded-2xl transition-all transform hover:scale-105 border-2
                   ${isActive 
-                    ? 'bg-gradient-to-r from-green-500 to-black text-white border-black shadow-lg' 
-                    : 'bg-white text-black hover:bg-gradient-to-r hover:from-green-400 hover:to-black hover:text-white border-gray-300 hover:border-black'
+                    ? (theme === 'ben10'
+                        ? 'bg-gradient-to-r from-green-500 to-black text-white border-black shadow-lg'
+                        : 'bg-gradient-to-r from-yellow-400 to-green-500 text-white border-black shadow-lg')
+                    : `bg-white text-black hover:bg-gradient-to-r border-gray-300 hover:border-black ${
+                        theme === 'ben10'
+                          ? 'hover:from-green-400 hover:to-black hover:text-white'
+                          : 'hover:from-yellow-300 hover:to-green-400 hover:text-white'
+                      }`
                   }
                 `}
                 onClick={() => {
@@ -247,7 +285,11 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
                   <span>{item.label}</span>
                 </div>
                 {item.badge && (
-                  <span className="inline-flex items-center px-3 py-1 text-sm font-black bg-gradient-to-r from-green-500 to-black text-white rounded-full border-2 border-black">
+                  <span className={`inline-flex items-center px-3 py-1 text-sm font-black text-white rounded-full border-2 border-black ${
+                    theme === 'ben10'
+                      ? 'bg-gradient-to-r from-green-500 to-black'
+                      : 'bg-gradient-to-r from-yellow-400 to-green-500'
+                  }`}>
                     {item.badge}
                   </span>
                 )}
@@ -260,11 +302,19 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
         </nav>
 
         {/* Logout Button */}
-        <div className="p-6 border-t-4 border-black bg-gradient-to-r from-black to-green-600">
+        <div className={`p-6 border-t-4 border-black ${
+          theme === 'ben10'
+            ? 'bg-gradient-to-r from-black to-green-600'
+            : 'bg-gradient-to-r from-yellow-500 to-green-600'
+        }`}>
           <Button
             onClick={handleLogout}
             variant="outline"
-            className="w-full flex items-center justify-center space-x-3 text-white font-black border-2 border-black rounded-full py-3 bg-gradient-to-r from-green-500 to-black hover:from-green-600 hover:to-gray-900 transform hover:scale-105 transition-all shadow-lg"
+            className={`w-full flex items-center justify-center space-x-3 text-white font-black border-2 border-black rounded-full py-3 transform hover:scale-105 transition-all shadow-lg ${
+              theme === 'ben10'
+                ? 'bg-gradient-to-r from-green-500 to-black hover:from-green-600 hover:to-gray-900'
+                : 'bg-gradient-to-r from-yellow-400 to-green-500 hover:from-yellow-500 hover:to-green-600'
+            }`}
           >
             <LogOut className="w-5 h-5" />
             <span>🚪 Logout</span>
