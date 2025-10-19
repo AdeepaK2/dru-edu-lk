@@ -16,6 +16,7 @@ import { StudentEnrollmentFirestoreService } from '@/apiservices/studentEnrollme
 import { ClassFirestoreService } from '@/apiservices/classFirestoreService';
 import { firestore } from '@/utils/firebase-client';
 import { collection, query, where, getDocs } from 'firebase/firestore';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface ClassWithSheets {
   id: string;
@@ -41,6 +42,7 @@ interface StudentSheet {
 export default function StudentSheetsPage() {
   const router = useRouter();
   const { user, student, loading: authLoading } = useStudentAuth();
+  const { theme } = useTheme();
   
   const [classes, setClasses] = useState<ClassWithSheets[]>([]);
   const [loading, setLoading] = useState(true);
@@ -138,12 +140,12 @@ export default function StudentSheetsPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-600 via-green-700 to-black p-6">
+      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-green-600 via-green-700 to-black' : 'from-green-500 via-yellow-500 to-green-600'} p-6`}>
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
-              <div className="w-12 h-12 border-4 border-green-400 border-t-transparent rounded-full animate-spin mx-auto mb-6 bg-gradient-to-r from-green-400 to-green-500"></div>
-              <p className="text-white font-black text-xl">Loading your hero sheets... ⚡</p>
+              <div className={`w-12 h-12 border-4 border-t-transparent rounded-full animate-spin mx-auto mb-6 ${theme === 'ben10' ? 'bg-gradient-to-r from-green-400 to-green-500 border-green-400' : 'bg-gradient-to-r from-yellow-400 to-green-500 border-yellow-400'}`}></div>
+              <p className="text-white font-black text-xl">Loading your {theme === 'ben10' ? 'hero' : 'magical'} sheets... {theme === 'ben10' ? '⚡' : '✨'}</p>
             </div>
           </div>
         </div>
@@ -152,25 +154,25 @@ export default function StudentSheetsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-600 via-green-700 to-black p-6">
+    <div key={`sheets-${theme}`} className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-green-600 via-green-700 to-black' : 'from-green-500 via-yellow-500 to-green-600'} p-6`}>
       <div className="max-w-4xl mx-auto">
-        {/* Ben 10 Hero Header */}
-        <div className="bg-gradient-to-r from-green-500 via-green-600 to-black rounded-3xl shadow-2xl border-4 border-black p-8 mb-8 relative overflow-hidden">
-          {/* Omnitrix Symbol */}
-          <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-16 h-16 bg-green-400 rounded-full border-4 border-black flex items-center justify-center">
-            <div className="text-black font-black text-2xl">Ω</div>
+        {/* Theme-aware Header */}
+        <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-500 via-green-600 to-black' : 'from-green-400 via-yellow-500 to-green-600'} rounded-3xl shadow-2xl border-4 border-black p-8 mb-8 relative overflow-hidden`}>
+          {/* Theme Symbol */}
+          <div className={`absolute -top-4 left-1/2 transform -translate-x-1/2 w-16 h-16 ${theme === 'ben10' ? 'bg-green-400' : 'bg-yellow-400'} rounded-full border-4 border-black flex items-center justify-center`}>
+            <div className="text-black font-black text-2xl">{theme === 'ben10' ? 'Ω' : '✨'}</div>
           </div>
 
           <div className="flex items-center space-x-4 relative z-10">
-            <div className="text-6xl">🦸‍♂️</div>
+            <div className="text-6xl">{theme === 'ben10' ? '🦸‍♂️' : '🧚‍♀️'}</div>
             <div>
               <h1 className="text-4xl font-black text-white mb-2 flex items-center">
-                <span>Ben 10</span>
-                <span className="ml-2 text-green-400 font-black text-5xl">Sheets</span>
-                <span className="ml-2 text-3xl">⚡</span>
+                <span>{theme === 'ben10' ? 'Ben 10' : 'Tinkerbell'}</span>
+                <span className={`ml-2 font-black text-5xl ${theme === 'ben10' ? 'text-green-400' : 'text-yellow-400'}`}>Sheets</span>
+                <span className="ml-2 text-3xl">{theme === 'ben10' ? '⚡' : '✨'}</span>
               </h1>
-              <p className="text-green-200 font-bold text-lg">
-                Welcome back, {student?.name}! Access your hero Google Sheets assignments! 🦸‍♂️
+              <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-green-200' : 'text-yellow-200'}`}>
+                Welcome back, {student?.name}! Access your {theme === 'ben10' ? 'hero' : 'magical'} Google Sheets assignments! {theme === 'ben10' ? '🦸‍♂️' : '🧚‍♀️'}
               </p>
             </div>
           </div>
@@ -178,11 +180,11 @@ export default function StudentSheetsPage() {
 
         {/* Overall Statistics */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-3xl shadow-2xl border-4 border-black p-6">
+          <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-500 to-green-600' : 'from-green-400 to-yellow-500'} rounded-3xl shadow-2xl border-4 border-black p-6`}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-black text-white">
-                  Hero Sheets
+                  {theme === 'ben10' ? 'Hero' : 'Magical'} Sheets
                 </p>
                 <p className="text-3xl font-black text-white mt-2">
                   {totalSheets}
@@ -192,21 +194,21 @@ export default function StudentSheetsPage() {
             </div>
           </div>
 
-          <div className="bg-gradient-to-r from-green-600 to-green-700 rounded-3xl shadow-2xl border-4 border-black p-6">
+          <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-600 to-green-700' : 'from-yellow-500 to-green-600'} rounded-3xl shadow-2xl border-4 border-black p-6`}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-black text-white">
-                  Hero Classes
+                  {theme === 'ben10' ? 'Hero' : 'Magical'} Classes
                 </p>
                 <p className="text-3xl font-black text-white mt-2">
                   {classes.length}
                 </p>
               </div>
-              <div className="text-4xl">🦸‍♂️</div>
+              <div className="text-4xl">{theme === 'ben10' ? '🦸‍♂️' : '🧚‍♀️'}</div>
             </div>
           </div>
 
-          <div className="bg-gradient-to-r from-green-700 to-black rounded-3xl shadow-2xl border-4 border-black p-6">
+          <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-700 to-black' : 'from-green-600 to-yellow-600'} rounded-3xl shadow-2xl border-4 border-black p-6`}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-black text-white">
@@ -216,32 +218,32 @@ export default function StudentSheetsPage() {
                   {classes.filter(cls => cls.sheetCount > 0).length}
                 </p>
               </div>
-              <div className="text-4xl">⚡</div>
+              <div className="text-4xl">{theme === 'ben10' ? '⚡' : '✨'}</div>
             </div>
           </div>
         </div>
 
         {/* Classes List */}
         <div className="bg-white rounded-3xl shadow-2xl border-4 border-black overflow-hidden">
-          <div className="bg-gradient-to-r from-green-500 via-green-600 to-black p-6 border-b-4 border-black">
+          <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-500 via-green-600 to-black' : 'from-green-400 via-yellow-500 to-green-600'} p-6 border-b-4 border-black`}>
             <h2 className="text-2xl font-black text-white mb-2 flex items-center">
-              <span className="text-3xl mr-3">🦸‍♂️</span>
-              Your Hero Classes
-              <span className="ml-3 text-xl">⚡</span>
+              <span className="text-3xl mr-3">{theme === 'ben10' ? '🦸‍♂️' : '🧚‍♀️'}</span>
+              Your {theme === 'ben10' ? 'Hero' : 'Magical'} Classes
+              <span className="ml-3 text-xl">{theme === 'ben10' ? '⚡' : '✨'}</span>
             </h2>
-            <p className="text-green-200 font-bold">
-              Click on a class to view and access your hero sheets
+            <p className={`font-bold ${theme === 'ben10' ? 'text-green-200' : 'text-yellow-200'}`}>
+              Click on a class to view and access your {theme === 'ben10' ? 'hero' : 'magical'} sheets
             </p>
           </div>
 
           {classes.length === 0 ? (
-            <div className="bg-gradient-to-r from-green-700 via-green-800 to-black p-12 text-center border-t-4 border-black">
-              <div className="text-6xl mb-6">🦸‍♂️</div>
+            <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-700 via-green-800 to-black' : 'from-yellow-600 via-green-700 to-yellow-700'} p-12 text-center border-t-4 border-black`}>
+              <div className="text-6xl mb-6">{theme === 'ben10' ? '🦸‍♂️' : '🧚‍♀️'}</div>
               <h3 className="text-2xl font-black text-white mb-4">
-                No Hero Classes Yet
+                No {theme === 'ben10' ? 'Hero' : 'Magical'} Classes Yet
               </h3>
-              <p className="text-green-200 font-bold text-lg">
-                You haven't enrolled in any classes yet. Time to start your hero training!
+              <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-green-200' : 'text-yellow-200'}`}>
+                You haven't enrolled in any classes yet. Time to start your {theme === 'ben10' ? 'hero' : 'magical'} training!
               </p>
             </div>
           ) : (
@@ -249,13 +251,13 @@ export default function StudentSheetsPage() {
               {classes.map((classData) => (
                 <div
                   key={classData.id}
-                  className="bg-gradient-to-r from-green-600 via-green-700 to-black p-6 hover:scale-105 transition-all cursor-pointer border-b-4 border-black last:border-b-0"
+                  className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-600 via-green-700 to-black' : 'from-green-500 via-yellow-500 to-green-600'} p-6 hover:scale-105 transition-all cursor-pointer border-b-4 border-black last:border-b-0`}
                   onClick={() => openClassSheets(classData)}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-start space-x-4">
                       <div className="flex-shrink-0">
-                        <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl flex items-center justify-center border-4 border-black shadow-lg">
+                        <div className={`w-16 h-16 bg-gradient-to-br ${theme === 'ben10' ? 'from-green-400 to-green-600' : 'from-yellow-400 to-green-500'} rounded-2xl flex items-center justify-center border-4 border-black shadow-lg`}>
                           <BookOpen className="h-8 w-8 text-white" />
                         </div>
                       </div>
@@ -263,13 +265,13 @@ export default function StudentSheetsPage() {
                         <h3 className="text-xl font-black text-white mb-1">
                           {classData.name}
                         </h3>
-                        <p className="text-green-200 font-bold text-lg mb-1">{classData.subject}</p>
-                        <p className="text-green-300 font-bold text-sm mb-3">{classData.year}</p>
+                        <p className={`font-bold text-lg mb-1 ${theme === 'ben10' ? 'text-green-200' : 'text-yellow-200'}`}>{classData.subject}</p>
+                        <p className={`font-bold text-sm mb-3 ${theme === 'ben10' ? 'text-green-300' : 'text-yellow-300'}`}>{classData.year}</p>
 
-                        <div className="flex items-center space-x-6 text-sm text-green-200 font-bold">
+                        <div className={`flex items-center space-x-6 text-sm font-bold ${theme === 'ben10' ? 'text-green-200' : 'text-yellow-200'}`}>
                           <div className="flex items-center space-x-2">
                             <span className="text-2xl">📊</span>
-                            <span>{classData.sheetCount} hero sheet{classData.sheetCount !== 1 ? 's' : ''}</span>
+                            <span>{classData.sheetCount} {theme === 'ben10' ? 'hero' : 'magical'} sheet{classData.sheetCount !== 1 ? 's' : ''}</span>
                           </div>
                           {classData.lastActivity && (
                             <div className="flex items-center space-x-2">
@@ -282,8 +284,8 @@ export default function StudentSheetsPage() {
                     </div>
                     <div className="flex items-center space-x-3">
                       {classData.sheetCount > 0 && (
-                        <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-black bg-green-500 text-white border-2 border-black shadow-lg">
-                          {classData.sheetCount} Sheet{classData.sheetCount !== 1 ? 's' : ''} ⚡
+                        <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-black border-2 border-black shadow-lg ${theme === 'ben10' ? 'bg-green-500 text-white' : 'bg-yellow-500 text-white'}`}>
+                          {classData.sheetCount} Sheet{classData.sheetCount !== 1 ? 's' : ''} {theme === 'ben10' ? '⚡' : '✨'}
                         </span>
                       )}
                       <div className="text-3xl transform group-hover:translate-x-1 transition-transform text-white">➡️</div>

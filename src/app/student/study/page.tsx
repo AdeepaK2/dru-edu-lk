@@ -355,12 +355,24 @@ export default function StudentStudyPage() {
 
   if (loading) {
     return (
-      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-green-600 via-green-700 to-black' : 'from-green-500 via-yellow-500 to-green-600'} p-6`}>
+      <div className={`min-h-screen bg-gradient-to-br p-6 ${
+        theme === 'ben10'
+          ? 'from-green-600 via-green-700 to-black'
+          : 'from-green-500 via-yellow-500 to-green-600'
+      }`}>
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
-              <div className={`w-12 h-12 border-4 ${theme === 'ben10' ? 'border-green-400' : 'border-yellow-400'} border-t-transparent rounded-full animate-spin mx-auto mb-6 bg-gradient-to-r ${theme === 'ben10' ? 'from-green-400 to-green-500' : 'from-yellow-400 to-green-500'}`}></div>
-              <p className="text-white font-black text-xl">Loading your hero study materials... ⚡</p>
+              <div className={`w-12 h-12 border-4 border-t-transparent rounded-full animate-spin mx-auto mb-6 bg-gradient-to-r ${
+                theme === 'ben10'
+                  ? 'border-green-400 from-green-400 to-green-500'
+                  : 'border-yellow-400 from-yellow-400 to-green-500'
+              }`}></div>
+              <p className="text-white font-black text-xl">
+                {theme === 'ben10'
+                  ? 'Loading your hero study materials...'
+                  : 'Loading your magical study materials...'}
+              </p>
             </div>
           </div>
         </div>
@@ -392,7 +404,7 @@ export default function StudentStudyPage() {
               onClick={exitMaterialView}
               className="bg-black text-white font-black py-2 px-4 rounded-2xl border-2 border-white hover:bg-white hover:text-black transition-all duration-300 shadow-lg"
             >
-              <span>← Back to Hero Classes</span>
+              <span>← Back to {theme === 'ben10' ? 'Hero' : 'Magical'} Classes</span>
             </button>
           </div>
 
@@ -401,7 +413,7 @@ export default function StudentStudyPage() {
             <div className={`w-72 bg-gradient-to-b ${theme === 'ben10' ? 'from-green-500 to-green-600' : 'from-green-400 to-yellow-500'} border-r-4 border-black overflow-y-auto shadow-2xl pt-16`}>
               <div className="p-4 border-b-4 border-black">
                 <h2 className="text-lg font-black text-white text-center">
-                  🦸‍♂️ Study Materials 🦸‍♂️
+                  🦸‍♂️ Study Materials 
                 </h2>
                 <p className="text-sm font-black text-white/90 text-center">
                   {currentClass?.name}
@@ -598,7 +610,7 @@ export default function StudentStudyPage() {
                 )}
                 {activeMaterial.fileType?.toLowerCase() === 'video' && activeMaterial.fileUrl && (
                   <div className="h-full flex flex-col">
-                    <div className="p-6 border-b-4 border-black bg-gradient-to-r from-green-500 to-green-600">
+                    <div className={`p-6 border-b-4 border-black bg-gradient-to-r ${theme === 'ben10' ? 'from-green-500 to-green-600' : 'from-green-400 to-yellow-500'}`}>
                       <h3 className="text-xl font-black text-white flex items-center">
                         🎥 {activeMaterial.title}
                       </h3>
@@ -617,26 +629,26 @@ export default function StudentStudyPage() {
                 )}
                 {activeMaterial.fileType?.toLowerCase() === 'link' && activeMaterial.fileUrl && (
                   <div className="h-full flex flex-col">
-                    <div className="p-6 border-b-4 border-black bg-gradient-to-r from-green-500 to-green-600">
+                    <div className={`p-6 border-b-4 border-black bg-gradient-to-r ${theme === 'ben10' ? 'from-green-500 to-green-600' : 'from-green-400 to-yellow-500'}`}>
                       <h3 className="text-xl font-black text-white flex items-center">
                         🔗 {activeMaterial.title}
                       </h3>
                     </div>
                     <div className="flex-1 flex items-center justify-center p-6 bg-gradient-to-br from-green-50 to-white">
                       <div className="text-center space-y-8 max-w-md">
-                        <div className="w-20 h-20 bg-gradient-to-r from-green-500 to-green-600 rounded-3xl flex items-center justify-center mx-auto border-4 border-black shadow-2xl">
+                        <div className={`w-20 h-20 bg-gradient-to-r ${theme === 'ben10' ? 'from-green-500 to-green-600' : 'from-yellow-400 to-green-500'} rounded-3xl flex items-center justify-center mx-auto border-4 border-black shadow-2xl`}>
                           <Link className="h-10 w-10 text-white font-black" />
                         </div>
                         <div>
-                          <h4 className="text-2xl font-black text-gray-900 mb-4">🚀 External Link 🚀</h4>
+                          <h4 className="text-2xl font-black text-gray-900 mb-4"> External Link </h4>
                           <p className="text-sm font-bold text-gray-700 mb-6 break-all bg-white p-4 rounded-2xl border-2 border-black shadow-lg">{activeMaterial.fileUrl}</p>
                         </div>
                         <button
                           onClick={() => window.open(activeMaterial.fileUrl, '_blank')}
-                          className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-black px-8 py-4 rounded-2xl border-4 border-black shadow-2xl hover:shadow-3xl transition-all duration-300 text-lg"
+                          className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-500 to-green-600 hover:from-green-600 hover:to-green-700' : 'from-yellow-400 to-green-500 hover:from-green-500 hover:to-yellow-500'} text-white font-black px-8 py-4 rounded-2xl border-4 border-black shadow-2xl hover:shadow-3xl transition-all duration-300 text-lg`}
                         >
                           <ExternalLink className="h-5 w-5 mr-2 inline" />
-                          🚀 Open Link 🚀
+                          Open Link 
                         </button>
                       </div>
                     </div>
@@ -651,7 +663,7 @@ export default function StudentStudyPage() {
 
     // Normal Materials View
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-600 via-green-700 to-black p-6">
+      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-green-600 via-green-700 to-black' : 'from-green-500 via-yellow-500 to-green-600'} p-6`}>
         <div className="max-w-6xl mx-auto">
           <div className="mb-8">
             <button
@@ -661,14 +673,14 @@ export default function StudentStudyPage() {
               }}
               className="bg-black text-white font-black py-3 px-6 rounded-2xl border-2 border-white hover:bg-white hover:text-black transition-all duration-300 shadow-lg mb-6"
             >
-              ← Back to Hero Dashboard
+              ← Back to {theme === 'ben10' ? 'Hero' : 'Magical'} Dashboard
             </button>
 
-            <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-3xl shadow-2xl border-4 border-black p-8 mb-8">
+            <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-500 to-green-600' : 'from-green-400 to-yellow-500'} rounded-3xl shadow-2xl border-4 border-black p-8 mb-8`}>
               <div className="flex justify-between items-center mb-6">
                 <div>
                   <h1 className="text-4xl font-black text-white flex items-center">
-                    🦸‍♂️ {currentClass?.name} 🦸‍♂️
+                    🦸‍♂️ {currentClass?.name} 
                   </h1>
                   <p className="text-green-200 font-bold text-lg">{currentClass?.subject}</p>
                 </div>
@@ -676,12 +688,12 @@ export default function StudentStudyPage() {
                   <div className="text-4xl font-black text-white">
                     {currentClass?.completedMaterials}/{currentClass?.totalMaterials}
                   </div>
-                  <div className="text-sm font-black text-white/90">Materials Completed ⚡</div>
+                  <div className="text-sm font-black text-white/90">Materials Completed </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-gradient-to-r from-green-600 to-green-700 rounded-3xl shadow-2xl border-4 border-black p-6">
+                <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-600 to-green-700' : 'from-green-400 to-yellow-500'} rounded-3xl shadow-2xl border-4 border-black p-6`}>
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-black text-white">Overall Progress</p>
@@ -697,7 +709,7 @@ export default function StudentStudyPage() {
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-r from-green-700 to-black rounded-3xl shadow-2xl border-4 border-black p-6">
+                <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-700 to-black' : 'from-yellow-500 to-green-600'} rounded-3xl shadow-2xl border-4 border-black p-6`}>
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-black text-white">Required Materials</p>
@@ -713,7 +725,7 @@ export default function StudentStudyPage() {
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-r from-black to-green-800 rounded-3xl shadow-2xl border-4 border-black p-6">
+                <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-black to-green-800' : 'from-green-600 to-yellow-600'} rounded-3xl shadow-2xl border-4 border-black p-6`}>
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-black text-white">New This Week</p>
@@ -731,7 +743,7 @@ export default function StudentStudyPage() {
                 <div className="flex-1">
                   <input
                     type="text"
-                    placeholder="🔍 Search hero materials..."
+                    placeholder={`🔍 Search ${theme === 'ben10' ? 'hero' : 'magical'} materials...`}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full px-6 py-4 border-2 border-black rounded-2xl focus:ring-4 focus:ring-green-500 focus:border-green-500 font-bold text-lg bg-gradient-to-r from-green-50 to-white shadow-lg"
@@ -760,8 +772,16 @@ export default function StudentStudyPage() {
         {materialLoading ? (
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
-              <div className="w-12 h-12 border-4 border-green-400 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
-              <p className="text-white font-black text-xl">Loading hero materials... ⚡</p>
+              <div className={`w-12 h-12 border-4 border-t-transparent rounded-full animate-spin mx-auto mb-6 bg-gradient-to-r ${
+                theme === 'ben10'
+                  ? 'border-green-400 from-green-400 to-green-500'
+                  : 'border-yellow-400 from-yellow-400 to-green-500'
+              }`}></div>
+              <p className="text-white font-black text-xl">
+                {theme === 'ben10'
+                  ? `Loading ${theme === 'ben10' ? 'hero' : 'magical'} materials...`
+                  : 'Loading magical materials...'}
+              </p>
             </div>
           </div>
         ) : (
@@ -782,7 +802,11 @@ export default function StudentStudyPage() {
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-start space-x-4 flex-1">
-                        <div className="w-14 h-14 bg-gradient-to-r from-green-500 to-green-600 rounded-2xl flex items-center justify-center flex-shrink-0 border-2 border-black">
+                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 border-2 border-black ${
+                          theme === 'ben10'
+                            ? 'bg-gradient-to-r from-green-500 to-green-600'
+                            : 'bg-gradient-to-r from-yellow-400 to-green-500'
+                        }`}>
                           {group.isGroup ? (
                             <div className="text-white font-black text-lg">
                               {group.totalFiles}
@@ -818,7 +842,7 @@ export default function StudentStudyPage() {
                               </span>
                             )}
                             {group.fileTypes.map((fileType: string) => (
-                              <span key={fileType} className="bg-green-600 text-white font-black text-sm px-3 py-1 rounded-lg border border-black">
+                              <span key={fileType} className={`bg-${theme === 'ben10' ? 'green' : 'yellow'}-600 text-white font-black text-sm px-3 py-1 rounded-lg border border-black`}>
                                 {fileType.toUpperCase()}
                               </span>
                             ))}
@@ -847,7 +871,7 @@ export default function StudentStudyPage() {
                               </div>
                               <div className="bg-gray-200 rounded-full h-3 border-2 border-black">
                                 <div
-                                  className="bg-gradient-to-r from-green-500 to-green-600 h-3 rounded-full transition-all duration-300"
+                                  className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-500 to-green-600' : 'from-yellow-400 to-green-500'} h-3 rounded-full transition-all duration-300`}
                                   style={{ width: `${totalCount > 0 ? (completedCount / totalCount) * 100 : 0}%` }}
                                 ></div>
                               </div>
@@ -1024,25 +1048,36 @@ export default function StudentStudyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-600 via-green-700 to-black p-6">
+    <div key={`study-${theme}`} className={`min-h-screen bg-gradient-to-br p-6 ${
+      theme === 'ben10'
+        ? 'from-green-600 via-green-700 to-black'
+        : 'from-green-500 via-yellow-500 to-green-600'
+    }`}>
       <div className="max-w-6xl mx-auto">
-        {/* Ben 10 Hero Header */}
-        <div className="bg-gradient-to-r from-green-500 via-green-600 to-black rounded-3xl shadow-2xl border-4 border-black p-8 mb-8 relative overflow-hidden">
-          {/* Omnitrix Symbol */}
-          <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-16 h-16 bg-green-400 rounded-full border-4 border-black flex items-center justify-center">
-            <div className="text-black font-black text-2xl">Ω</div>
-          </div>
+        {/* Theme-aware Hero Header */}
+        <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 border-black p-8 mb-8 relative overflow-hidden ${
+          theme === 'ben10'
+            ? 'from-green-500 via-green-600 to-black'
+            : 'from-yellow-400 via-green-500 to-yellow-500'
+        }`}>
+         
 
           <div className="flex items-center space-x-4 relative z-10">
-            <div className="text-6xl">🦸‍♂️</div>
+            <div className="text-6xl">{theme === 'ben10' ? '🦸‍♂️' : '🧚‍♀️'}</div>
             <div>
               <h1 className="text-4xl font-black text-white mb-2 flex items-center">
-                <span>Ben 10</span>
-                <span className="ml-2 text-green-400 font-black text-5xl">Study</span>
-                <span className="ml-2 text-3xl">⚡</span>
+                <span>{theme === 'ben10' ? 'Ben 10' : 'Tinkerbell'}</span>
+                <span className={`ml-2 font-black text-5xl ${
+                  theme === 'ben10' ? 'text-green-400' : 'text-yellow-400'
+                }`}>Study</span>
+               
               </h1>
-              <p className="text-green-200 font-bold text-lg">
-                Welcome back, {student.name}! Access your hero study materials! 🦸‍♂️
+              <p className={`font-bold text-lg ${
+                theme === 'ben10' ? 'text-green-200' : 'text-yellow-200'
+              }`}>
+                {theme === 'ben10'
+                  ? `Welcome back, ${student.name}! Access your ${theme === 'ben10' ? 'hero' : 'magical'} study materials!`
+                  : `Welcome back, ${student.name}! Access your magical study materials!`}
               </p>
             </div>
           </div>
@@ -1050,7 +1085,11 @@ export default function StudentStudyPage() {
 
       {/* Overall Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-3xl shadow-2xl border-4 border-black p-6">
+        <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 border-black p-6 ${
+          theme === 'ben10'
+            ? 'from-green-500 to-green-600'
+            : 'from-green-400 to-yellow-500'
+        }`}>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-black text-white">
@@ -1069,7 +1108,7 @@ export default function StudentStudyPage() {
                 </Badge>
               </div>
             </div>
-            <div className="text-4xl">📈</div>
+            <div className="text-4xl">{theme === 'ben10' ? '📈' : '📊'}</div>
           </div>
           <div className="mt-4 bg-white/20 rounded-full h-2 border-2 border-black">
             <div 
@@ -1079,7 +1118,11 @@ export default function StudentStudyPage() {
           </div>
         </div>
 
-        <div className="bg-gradient-to-r from-green-600 to-green-700 rounded-3xl shadow-2xl border-4 border-black p-6">
+        <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 border-black p-6 ${
+          theme === 'ben10'
+            ? 'from-green-600 to-green-700'
+            : 'from-yellow-500 to-green-600'
+        }`}>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-black text-white">
@@ -1101,21 +1144,29 @@ export default function StudentStudyPage() {
           </div>
         </div>
 
-        <div className="bg-gradient-to-r from-green-700 to-black rounded-3xl shadow-2xl border-4 border-black p-6">
+        <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 border-black p-6 ${
+          theme === 'ben10'
+            ? 'from-green-700 to-black'
+            : 'from-yellow-600 to-green-700'
+        }`}>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-black text-white">
-                Hero Classes
+                {theme === 'ben10' ? 'Hero Classes' : 'Magical Classes'}
               </p>
               <p className="text-3xl font-black text-white mt-2">
                 {classes.length}
               </p>
             </div>
-            <div className="text-4xl">🦸‍♂️</div>
+            <div className="text-4xl">{theme === 'ben10' ? '🦸‍♂️' : '🧚‍♀️'}</div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-r from-black to-green-800 rounded-3xl shadow-2xl border-4 border-black p-6">
+        <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 border-black p-6 ${
+          theme === 'ben10'
+            ? 'from-black to-green-800'
+            : 'from-yellow-700 to-green-600'
+        }`}>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-black text-white">
@@ -1125,25 +1176,35 @@ export default function StudentStudyPage() {
                 {classes.reduce((sum, cls) => sum + cls.recentMaterials, 0)}
               </p>
             </div>
-            <div className="text-4xl">⚡</div>
+            <div className="text-4xl">{theme === 'ben10' ? '⚡' : '✨'}</div>
           </div>
         </div>
       </div>
 
       {/* Classes Grid */}
       <div className="mb-8">
-        <h2 className="text-3xl font-black text-white mb-6 text-center bg-gradient-to-r from-green-500 to-green-600 rounded-3xl p-4 border-4 border-black shadow-2xl">
-          🦸‍♂️ Your Hero Classes 🦸‍♂️
+        <h2 className={`text-3xl font-black text-white mb-6 text-center rounded-3xl p-4 border-4 border-black shadow-2xl ${
+          theme === 'ben10'
+            ? 'bg-gradient-to-r from-green-500 to-green-600'
+            : 'bg-gradient-to-r from-yellow-400 to-green-500'
+        }`}>
+          {theme === 'ben10' ? '🦸‍♂️ Your Hero Classes 🦸‍♂️' : '🧚‍♀️ Your Magical Classes 🧚‍♀️'}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {classes.map((classItem) => (
-            <div key={classItem.id} className="bg-gradient-to-r from-green-500 to-green-600 rounded-3xl shadow-2xl border-4 border-black hover:shadow-3xl transition-all duration-300 cursor-pointer hover:scale-105">
+            <div key={classItem.id} className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 border-black hover:shadow-3xl transition-all duration-300 cursor-pointer hover:scale-105 ${
+              theme === 'ben10'
+                ? 'from-green-500 to-green-600'
+                : 'from-green-400 to-yellow-500'
+            }`}>
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-xl font-black text-white">{classItem.name}</h3>
                   {classItem.recentMaterials > 0 && (
-                    <Badge className="bg-yellow-400 text-black font-black border-2 border-black">
-                      ⚡ {classItem.recentMaterials} new
+                    <Badge className={`font-black border-2 border-black ${
+                      theme === 'ben10' ? 'bg-yellow-400 text-black' : 'bg-green-400 text-black'
+                    }`}>
+                      {theme === 'ben10' ? '⚡' : '✨'} {classItem.recentMaterials} new
                     </Badge>
                   )}
                 </div>
@@ -1185,7 +1246,7 @@ export default function StudentStudyPage() {
                     onClick={() => loadClassMaterials(classItem.id)}
                     className="w-full mt-4 bg-black text-white font-black py-3 px-6 rounded-2xl border-2 border-white hover:bg-white hover:text-black transition-all duration-300 shadow-lg"
                   >
-                    🚀 View Materials 🚀
+                    {theme === 'ben10' ? '🚀 View Materials 🚀' : '✨ View Materials ✨'}
                   </button>
                 </div>
               </div>
@@ -1195,20 +1256,26 @@ export default function StudentStudyPage() {
       </div>
 
       {classes.length === 0 && (
-        <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-3xl shadow-2xl border-4 border-black text-center py-12">
+        <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 border-black text-center py-12 ${
+          theme === 'ben10'
+            ? 'from-green-500 to-green-600'
+            : 'from-yellow-400 to-green-500'
+        }`}>
           <div className="p-8">
-            <div className="text-6xl mb-4">🦸‍♂️</div>
+            <div className="text-6xl mb-4">{theme === 'ben10' ? '🦸‍♂️' : '🧚‍♀️'}</div>
             <h3 className="text-2xl font-black text-white mb-4">
-              No Hero Classes Yet!
+              {theme === 'ben10' ? 'No Hero Classes Yet!' : 'No Magical Classes Yet!'}
             </h3>
             <p className="text-white/90 font-black mb-6">
-              Ready to become a learning hero? Enroll in your first class and start your adventure!
+              {theme === 'ben10'
+                ? `Ready to become a ${theme === 'ben10' ? 'learning hero' : 'magical learner'}? Enroll in your first class and start your adventure!`
+                : 'Ready to become a learning fairy? Enroll in your first class and start your magical journey!'}
             </p>
             <button
               onClick={() => router.push('/enroll')}
               className="bg-black text-white font-black py-4 px-8 rounded-2xl border-2 border-white hover:bg-white hover:text-black transition-all duration-300 shadow-lg text-lg"
             >
-              🚀 Browse Hero Classes 🚀
+              {theme === 'ben10' ? '🚀 Browse Hero Classes 🚀' : '✨ Browse Magical Classes ✨'}
             </button>
           </div>
         </div>

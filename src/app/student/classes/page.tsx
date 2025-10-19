@@ -99,7 +99,7 @@ export default function StudentClassesPage() {
 
   if (authLoading || loading) {
     return (
-      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-green-400 via-black to-green-500' : 'from-yellow-300 via-green-400 to-yellow-400'} flex items-center justify-center`}>
+      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-green-400 to-black' : 'from-yellow-300 via-green-400 to-yellow-400'} flex items-center justify-center`}>
         <div className="bg-white border-4 border-black rounded-3xl p-8 shadow-2xl">
           {/* Ben 10 Loading Animation */}
           <div className="relative mb-6">
@@ -132,33 +132,22 @@ export default function StudentClassesPage() {
 
   return (
     <>
-      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-green-400 via-black to-green-500' : 'from-yellow-300 via-green-400 to-yellow-400'} p-6`}>
+      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-green-400  to-black' : 'from-yellow-300 via-green-400 to-yellow-400'} p-6`}>
         {/* Header */}
-        <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-500 via-black to-green-600' : 'from-yellow-400 via-green-500 to-yellow-500'} rounded-3xl shadow-2xl border-4 border-black p-8 mb-6 relative overflow-hidden`}>
-          {/* Omnitrix Symbols */}
-          <div className={`absolute -top-4 -left-4 w-12 h-12 ${theme === 'ben10' ? 'bg-green-400' : 'bg-yellow-400'} rounded-full animate-bounce border-2 border-black flex items-center justify-center`}>
-            <span className="text-black text-lg font-bold">10</span>
-          </div>
-          <div className="absolute -top-4 -right-4 w-12 h-12 bg-black rounded-full animate-bounce delay-300 border-2 border-black flex items-center justify-center">
-            <span className={`text-lg font-bold ${theme === 'ben10' ? 'text-green-400' : 'text-yellow-400'}`}>B</span>
-          </div>
-
-          {/* Hero Sparkles */}
-          <div className="absolute top-4 right-16 text-2xl">⚡</div>
-          <div className="absolute bottom-4 left-16 text-2xl">🚀</div>
-
+        <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-400  to-black' : 'from-yellow-400 via-green-500 to-yellow-500'} rounded-3xl shadow-2xl border-4 border-black p-8 mb-6 relative overflow-hidden`}>
+      
           <div className="flex items-center justify-between relative z-10">
             <div className="flex items-center space-x-4">
-              <div className="text-6xl">🦸‍♂️</div>
+             
               <div>
-                <h1 className="text-4xl font-black text-white mb-2 flex items-center">
+                <h1 className="text-4xl font-black text-black mb-2 flex items-center">
                   <span>My</span>
-                  <span className={`ml-2 font-black text-5xl ${theme === 'ben10' ? 'text-green-400' : 'text-yellow-300'}`}>Classes</span>
+                  <span className={`ml-2 font-black text-4xl ${theme === 'ben10' ? 'text-black' : 'text-yellow-300'}`}>Classes</span>
                   <span className="ml-2 text-3xl">Classroom</span>
-                  <span className="ml-2 text-2xl">🔄</span>
+                
                 </h1>
                 <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-green-200' : 'text-yellow-100'}`}>
-                  Transform your learning with amazing adventures! 📖
+                  Transform your learning with amazing adventures! 
                 </p>
               </div>
             </div>
@@ -167,7 +156,7 @@ export default function StudentClassesPage() {
                 <div className="text-4xl">📚</div>
                 <div className="text-center">
                   <div className="text-3xl font-black text-black">{filteredEnrollments.length}</div>
-                  <div className="text-sm font-bold text-gray-700">Hero Classes</div>
+                  <div className="text-sm font-bold text-gray-700">Classes</div>
                 </div>
               </div>
             </div>
@@ -175,11 +164,11 @@ export default function StudentClassesPage() {
         </div>
 
         {/* Search and Filter */}
-        <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-400 via-black to-green-500' : 'from-yellow-300 via-green-400 to-yellow-400'} rounded-2xl shadow-xl border-4 border-black p-6 mb-6`}>
+        <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-400  to-black' : 'from-yellow-300 via-green-400 to-yellow-400'} rounded-2xl shadow-xl border-4 border-black p-6 mb-6`}>
           <div className="flex items-center space-x-3 mb-4">
             <div className="text-3xl">🔍</div>
             <h2 className="text-2xl font-black text-white">Search Classes</h2>
-            <div className="text-2xl">⚡</div>
+            
           </div>
 
           <div className="flex flex-col sm:flex-row gap-6">
@@ -196,17 +185,17 @@ export default function StudentClassesPage() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <div className="text-2xl">🎓</div>
+             
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className={`border-4 border-black rounded-2xl px-6 py-3 bg-white text-black font-bold text-lg focus:outline-none shadow-lg hover:bg-gray-50 transition-all ${theme === 'ben10' ? 'focus:ring-4 focus:ring-green-400' : 'focus:ring-4 focus:ring-yellow-400'}`}
               >
-                <option value="all">⚡ All Classes</option>
-                <option value="Active">🎯 Active Classes</option>
-                <option value="Completed">🏆 Completed Classes</option>
-                <option value="Inactive">😴 Inactive Classes</option>
-                <option value="Dropped">👋 Dropped Classes</option>
+                <option value="all"> All Classes</option>
+                <option value="Active">Active Classes</option>
+                <option value="Completed"> Completed Classes</option>
+                <option value="Inactive">Inactive Classes</option>
+                <option value="Dropped"> Dropped Classes</option>
               </select>
             </div>
           </div>
@@ -222,14 +211,10 @@ export default function StudentClassesPage() {
               </h3>
               <p className={`font-bold text-lg mb-6 ${theme === 'ben10' ? 'text-green-200' : 'text-yellow-100'}`}>
                 {searchTerm || statusFilter !== 'all' 
-                  ? 'Try adjusting your search or filter criteria ⚡' 
-                  : 'Contact your teacher to get enrolled in some epic classes! 📖'}
+                  ? 'Try adjusting your search or filter criteria ' 
+                  : 'Contact your teacher to get enrolled in some epic classes! '}
               </p>
-              <div className="flex justify-center space-x-4">
-                <div className="text-4xl">🦸‍♂️</div>
-                <div className="text-4xl animate-pulse delay-300">🔄</div>
-                <div className="text-4xl animate-pulse delay-500">⚡</div>
-              </div>
+             
             </div>
           </div>
         ) : (
@@ -406,7 +391,7 @@ export default function StudentClassesPage() {
                     className={`text-black font-black border-4 border-black rounded-2xl transform hover:scale-110 transition-all shadow-lg hover:rotate-3 flex flex-col items-center py-3 ${theme === 'ben10' ? 'bg-gradient-to-r from-green-400 to-emerald-400 hover:from-green-500 hover:to-emerald-500' : 'bg-gradient-to-r from-yellow-400 to-amber-400 hover:from-yellow-500 hover:to-amber-500'}`}
                   >
                     <span className="text-2xl mb-1">📝</span>
-                    <span className="text-xs">Tests</span>
+                    <span className="text-xs text-black">Tests</span>
                   </Button>
                   <Button
                     variant="outline"
@@ -418,7 +403,7 @@ export default function StudentClassesPage() {
                     className={`text-black font-black border-4 border-black rounded-2xl transform hover:scale-110 transition-all shadow-lg hover:-rotate-3 flex flex-col items-center py-3 ${theme === 'ben10' ? 'bg-gradient-to-r from-green-400 to-emerald-400 hover:from-green-500 hover:to-emerald-500' : 'bg-gradient-to-r from-yellow-400 to-amber-400 hover:from-yellow-500 hover:to-amber-500'}`}
                   >
                     <span className="text-2xl mb-1">📚</span>
-                    <span className="text-xs">Study</span>
+                    <span className="text-xs text-black">Study</span>
                   </Button>
                   <Button
                     variant="outline"
@@ -430,7 +415,7 @@ export default function StudentClassesPage() {
                     className={`text-black font-black border-4 border-black rounded-2xl transform hover:scale-110 transition-all shadow-lg hover:rotate-3 flex flex-col items-center py-3 ${theme === 'ben10' ? 'bg-gradient-to-r from-green-400 to-emerald-400 hover:from-green-500 hover:to-emerald-500' : 'bg-gradient-to-r from-yellow-400 to-amber-400 hover:from-yellow-500 hover:to-amber-500'}`}
                   >
                     <span className="text-2xl mb-1">🎬</span>
-                    <span className="text-xs">Videos</span>
+                    <span className="text-xs text-black">Videos</span>
                   </Button>
                 </div>
               </div>
@@ -444,7 +429,7 @@ export default function StudentClassesPage() {
             <div className="flex items-center justify-center space-x-3 mb-8">
               <div className="text-4xl">📊</div>
               <h3 className="text-3xl font-black text-white">Classes Summary</h3>
-              <div className="text-4xl">⚡</div>
+         
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               <div className="bg-white border-4 border-black rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all">

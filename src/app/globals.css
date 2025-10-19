@@ -7,7 +7,7 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #0fec33;
   
   /* Primary Colors */
   --color-primary-50: #f0f9ff;
@@ -38,7 +38,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0f172a;
+    --background: #0b773c;
     --foreground: #f8fafc;
     --color-primary-100: #1e293b;
     --color-primary-500: #38bdf8;

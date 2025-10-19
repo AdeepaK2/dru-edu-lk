@@ -979,9 +979,7 @@ export default function StudentTests() {
         <div className="min-h-screen bg-gradient-to-br from-green-400 via-black to-green-400 p-6">
         {/* Tests Header */}
         <div className="bg-gradient-to-r from-green-500 via-black to-green-500 rounded-3xl shadow-2xl border-4 border-black p-8 mb-6 relative overflow-hidden">
-            {/* Omnitrix Symbol */}
-            <div className="absolute -top-4 -left-4 w-12 h-12 bg-green-400 rounded-full border-4 border-black"></div>
-            <div className="absolute -top-4 -right-4 w-12 h-12 bg-green-400 rounded-full border-4 border-black"></div>
+           
 
             <div className="flex items-center space-x-4 relative z-10">
               <div className="text-6xl">📝</div>
@@ -991,7 +989,7 @@ export default function StudentTests() {
                   <span className="ml-2 text-green-400 font-black text-5xl">Tests</span>
                 </h1>
                 <p className="text-white font-bold text-lg">
-                  Challenge yourself with epic tests and grow! 📝⚡
+                  Challenge yourself with epic tests and grow! 
                 </p>
               </div>
             </div>
@@ -1057,13 +1055,9 @@ export default function StudentTests() {
       <div className={`min-h-screen p-6 ${theme === 'ben10' ? 'bg-gradient-to-br from-green-400 via-black to-green-400' : 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-300'}`}>
         {/* Tests Header */}
         <div className={`rounded-3xl shadow-2xl border-4 border-black p-8 mb-6 relative overflow-hidden ${theme === 'ben10' ? 'bg-gradient-to-r from-green-500 via-black to-green-500' : 'bg-gradient-to-r from-yellow-500 via-green-500 to-yellow-500'}`}>
-          {/* Decorative Symbols */}
-          <div className={`absolute -top-4 -left-4 w-12 h-12 rounded-full border-4 border-black ${theme === 'ben10' ? 'bg-green-400' : 'bg-yellow-400'}`}></div>
-          <div className={`absolute -top-4 -right-4 w-12 h-12 rounded-full border-4 border-black ${theme === 'ben10' ? 'bg-green-400' : 'bg-yellow-400'}`}></div>
-
-          {/* Energy Icons */}
-          <div className="absolute top-4 right-16 text-2xl">⚡</div>
-          <div className="absolute bottom-4 left-16 text-2xl">✨</div>
+       
+         
+         
 
           <div className="flex items-center justify-between relative z-10">
             <div className="flex items-center space-x-4">
@@ -1074,7 +1068,7 @@ export default function StudentTests() {
                   <span className={`ml-2 font-black text-5xl ${theme === 'ben10' ? 'text-green-400' : 'text-yellow-400'}`}>Tests</span>
                 </h1>
                 <p className="text-white font-bold text-lg">
-                  Challenge yourself with epic tests and grow! 📝⚡
+                  Challenge yourself with epic tests and grow! 
                 </p>
               </div>
             </div>
@@ -1110,7 +1104,7 @@ export default function StudentTests() {
           <div className="flex items-center space-x-3 mb-4">
             <div className="text-3xl">🔍</div>
             <h2 className="text-2xl font-black text-white">Search Tests</h2>
-            <div className="text-2xl">⚡</div>
+          
           </div>
 
           <div className="flex flex-col lg:flex-row gap-6">
@@ -1135,10 +1129,10 @@ export default function StudentTests() {
                 onChange={(e) => setSelectedSubjectId(e.target.value)}
                 className={`border-4 border-black rounded-2xl px-6 py-3 bg-white text-black font-bold text-lg focus:outline-none shadow-lg hover:bg-gray-50 transition-all w-full ${theme === 'ben10' ? 'focus:ring-4 focus:ring-green-400' : 'focus:ring-4 focus:ring-yellow-400'}`}
               >
-                <option value="all">📚 All Subjects</option>
+                <option value="all"> All Subjects</option>
                 {subjects.map((subject) => (
                   <option key={subject.id} value={subject.id}>
-                    📚 {subject.name}
+                     {subject.name}
                   </option>
                 ))}
               </select>
@@ -1204,7 +1198,7 @@ export default function StudentTests() {
                       )}
                     </h2>
                     <p className="text-black font-bold text-lg">
-                      Tests assigned specifically to you by your teacher! ⚡
+                      Tests assigned specifically to you by your teacher! 
                     </p>
                   </div>
                 </div>
@@ -1253,7 +1247,7 @@ export default function StudentTests() {
                       const ButtonIcon = buttonConfig.icon;
 
                       return (
-                        <div key={test.id} className="p-6 hover:bg-yellow-100 transition-all border-b-2 border-black last:border-b-0">
+                        <div key={test.id} className="p-6 hover:bg-green-100 transition-all border-b-2 border-black last:border-b-0">
                           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                             <div className="mb-4 md:mb-0">
                               <div className="flex items-center space-x-3">
@@ -1322,7 +1316,7 @@ export default function StudentTests() {
                         : (test as FlexibleTest).availableFrom;
 
                       return (
-                        <div key={test.id} className="p-6 hover:bg-yellow-100 transition-all border-b-2 border-black last:border-b-0">
+                        <div key={test.id} className="p-6 hover:bg-green-100 transition-all border-b-2 border-black last:border-b-0">
                           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                             <div>
                               <div className="flex items-center space-x-3">
@@ -1394,7 +1388,7 @@ export default function StudentTests() {
                   <>
                     <div className="px-6 py-4 bg-gradient-to-r from-blue-300 to-cyan-300 border-b-4 border-black">
                       <div className="flex items-center">
-                        <div className="text-2xl mr-3">🎯</div>
+                       
                         <span className="text-lg font-black text-black">
                           Available ({groupedCustomTests.available.length})
                         </span>
@@ -1406,7 +1400,7 @@ export default function StudentTests() {
                       const ButtonIcon = buttonConfig.icon;
 
                       return (
-                        <div key={test.id} className="p-6 hover:bg-yellow-100 transition-all border-b-2 border-black last:border-b-0">
+                        <div key={test.id} className="p-6 hover:bg-green-100 transition-all border-b-2 border-black last:border-b-0">
                           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                             <div className="mb-4 md:mb-0">
                               <div className="flex items-center space-x-3">
@@ -1667,7 +1661,7 @@ export default function StudentTests() {
                             const ButtonIcon = buttonConfig.icon;
 
                             return (
-                              <div key={test.id} className="p-6 hover:bg-yellow-100 transition-all border-b-2 border-black last:border-b-0">
+                              <div key={test.id} className="p-6 hover:bg-green-100 transition-all border-b-2 border-black last:border-b-0">
                                 <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                                   <div className="mb-4 md:mb-0">
                                     <div className="flex items-center space-x-3">
@@ -1741,7 +1735,7 @@ export default function StudentTests() {
                               : (test as FlexibleTest).availableFrom;
 
                             return (
-                              <div key={test.id} className="p-6 hover:bg-yellow-100 transition-all border-b-2 border-black last:border-b-0">
+                              <div key={test.id} className="p-6 hover:bg-green-100 transition-all border-b-2 border-black last:border-b-0">
                                 <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                                   <div>
                                     <div className="flex items-center space-x-3">
@@ -1817,7 +1811,7 @@ export default function StudentTests() {
                         <>
                           <div className="px-6 py-4 bg-gradient-to-r from-blue-300 to-cyan-300 border-b-4 border-black">
                             <div className="flex items-center">
-                              <div className="text-2xl mr-3">🎯</div>
+                             
                               <span className="text-lg font-black text-black">
                                 Available ({classData.groupedTests.available.length})
                               </span>
@@ -1829,7 +1823,7 @@ export default function StudentTests() {
                             const ButtonIcon = buttonConfig.icon;
 
                             return (
-                              <div key={test.id} className="p-6 hover:bg-yellow-100 transition-all border-b-2 border-black last:border-b-0">
+                              <div key={test.id} className="p-6 hover:bg-green-100 transition-all border-b-2 border-black last:border-b-0">
                                 <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                                   <div className="mb-4 md:mb-0">
                                     <div className="flex items-center space-x-3">
@@ -1963,7 +1957,7 @@ export default function StudentTests() {
                             const hasAttempted = attempts && attempts.attempts && attempts.attempts.length > 0;
 
                             return (
-                              <div key={test.id} className="p-6 hover:bg-yellow-100 transition-all border-b-2 border-black last:border-b-0">
+                              <div key={test.id} className="p-6 hover:bg-green-100 transition-all border-b-2 border-black last:border-b-0">
                                 <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                                   <div>
                                     <div className="flex items-center space-x-3">

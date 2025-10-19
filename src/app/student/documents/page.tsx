@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Shield, Check, FileCheck } from 'lucide-react';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
+import { useTheme } from '@/contexts/ThemeContext';
 import { DocumentInfo, DocumentType } from '@/models/studentSchema';
 import { StudentDocumentService } from '@/apiservices/studentDocumentService';
 import DocumentUploadGrid from '@/components/student/DocumentUploadGrid';
@@ -19,6 +20,7 @@ interface DocumentStates {
 
 export default function StudentDocumentsPage() {
   const { student, loading: authLoading, refreshStudent } = useStudentAuth();
+  const { theme } = useTheme();
 
   // Loading states
   const [loading, setLoading] = useState<LoadingState>({
@@ -132,56 +134,54 @@ export default function StudentDocumentsPage() {
 
   if (authLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="w-16 h-16 border-t-4 border-black rounded-full animate-spin"></div>
+      <div className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-green-600 via-green-700 to-black' : 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400'} p-8`}>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className={`w-16 h-16 border-t-4 border-black rounded-full animate-spin ${theme === 'ben10' ? 'bg-gradient-to-r from-green-400 to-green-600' : 'bg-gradient-to-r from-yellow-400 to-yellow-600'}`}></div>
+        </div>
       </div>
     );
   }
 
   if (!student) {
     return (
-      <div className="bg-gradient-to-r from-green-600 to-black rounded-3xl shadow-2xl border-4 border-black p-8 text-center">
-        <div className="text-6xl mb-4">🚫</div>
-        <h2 className="text-2xl font-black text-white mb-2">Access Denied</h2>
-        <p className="text-green-100 font-bold">
-          You need to be logged in to access this hero page! ⚡
-        </p>
+      <div className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-green-600 via-green-700 to-black' : 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400'} p-8`}>
+        <div className="flex items-center justify-center py-12">
+          <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-green-600 to-black' : 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500'} rounded-3xl shadow-2xl border-4 border-black p-8 text-center`}>
+            <div className="text-6xl mb-4">🚫</div>
+            <h2 className="text-2xl font-black text-white mb-2">Access Denied</h2>
+            <p className={`font-bold ${theme === 'ben10' ? 'text-green-100' : 'text-yellow-100'}`}>
+              You need to be logged in to access this page! {theme === 'ben10' ? '⚡' : '✨'}
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-600 via-green-700 to-black p-8">
+    <div key={`documents-${theme}`} className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-green-600 via-green-700 to-black' : 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400'} p-8`}>
       <div className="max-w-7xl mx-auto">
-        {/* Ben 10 Hero Header */}
+        {/* Theme-aware Header */}
         <div className="text-center mb-8">
           <div className="flex justify-center items-center space-x-8 mb-4">
-            <div className="w-20 h-20 bg-green-400 rounded-full border-4 border-black shadow-lg flex items-center justify-center">
-              <span className="text-black font-black text-2xl">Ω</span>
-            </div>
-            <div className="w-32 h-32 bg-green-400 rounded-full border-4 border-black shadow-lg flex items-center justify-center">
-              <span className="text-black font-black text-4xl">Ω</span>
-            </div>
-            <div className="w-20 h-20 bg-green-400 rounded-full border-4 border-black shadow-lg flex items-center justify-center">
-              <span className="text-black font-black text-2xl">Ω</span>
-            </div>
+            
           </div>
           <h1 className="text-5xl font-black text-white mb-2 drop-shadow-lg">
-            📄 Hero Documents
+            📄 Documents
           </h1>
           <p className="text-xl text-green-100 font-bold">
-            Upload your heroic documents here! ⚡
+            Upload your documents here! 
           </p>
         </div>
 
-        {/* Document Upload Section */}
+        {/* Theme-aware Document Upload Section */}
         <div className="bg-white rounded-3xl shadow-2xl border-4 border-black overflow-hidden">
-          <div className="bg-gradient-to-r from-green-600 to-black text-white p-6 pb-8 border-b-4 border-black">
+          <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-green-600 to-black' : 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500'} text-white p-6 pb-8 border-b-4 border-black`}>
             <div className="flex items-center space-x-4">
-              <span className="text-4xl">⚡</span>
+              
               <div>
                 <h2 className="text-3xl font-black">Required Documents</h2>
-                <p className="text-green-100 font-bold text-lg">Complete your enrollment with these heroic papers!</p>
+                <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-green-100' : 'text-yellow-100'}`}>Complete your enrollment with these documents!</p>
               </div>
             </div>
           </div>
@@ -242,31 +242,31 @@ export default function StudentDocumentsPage() {
           />
           </div>
 
-          {/* Success Message */}
+          {/* Theme-aware Success Message */}
           {allDocumentsVerified() && (
-            <div className="bg-gradient-to-r from-green-600 to-black rounded-2xl border-4 border-black p-6 shadow-lg">
+            <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-green-600 to-black' : 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500'} rounded-2xl border-4 border-black p-6 shadow-lg`}>
               <div className="flex items-start">
                 <span className="text-4xl mr-4">✅</span>
                 <div>
-                  <h4 className="text-xl font-black text-white mb-2">🎉 Documents Verified!</h4>
-                  <p className="text-green-100 font-bold text-lg">
-                    All your required documents have been verified and approved by our hero admin team!
-                    You can download them using the download buttons above. ⚡
+                  <h4 className="text-xl font-black text-white mb-2"> Documents Verified!</h4>
+                  <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-green-100' : 'text-yellow-100'}`}>
+                    All your required documents have been verified and approved by our admin team!
+                    You can download them using the download buttons above. 
                   </p>
                 </div>
               </div>
             </div>
           )}
           
-          {/* Important Information */}
-          <div className="bg-gradient-to-r from-green-600 to-black rounded-2xl border-4 border-black p-6 shadow-lg">
+          {/* Theme-aware Important Information */}
+          <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-green-600 to-black' : 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500'} rounded-2xl border-4 border-black p-6 shadow-lg`}>
             <div className="flex items-start">
               <span className="text-4xl mr-4">🛡️</span>
               <div>
-                <h4 className="text-xl font-black text-white mb-2">Important Hero Information</h4>
-                <p className="text-green-100 font-bold text-lg">
+                <h4 className="text-xl font-black text-white mb-2">Important Information</h4>
+                <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-green-100' : 'text-yellow-100'}`}>
                   These documents are required for your enrollment. Please upload clear, legible copies in PDF, DOC, or image format.
-                  Our hero admin team will verify your documents within 1-2 business days! Ω
+                  Our admin team will verify your documents within 1-2 business days! 
                 </p>
               </div>
             </div>
