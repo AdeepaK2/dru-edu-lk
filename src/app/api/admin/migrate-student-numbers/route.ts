@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import firebaseAdmin from '@/utils/firebase-server';
 import * as admin from 'firebase-admin';
 
+// Use the properly configured Firestore instance
+const db = firebaseAdmin.db;
+
 /**
  * API endpoint for student number migration
  * 
@@ -16,8 +19,7 @@ export async function GET(req: NextRequest) {
     const action = searchParams.get('action');
 
     if (action === 'list') {
-      // Get all students using the native Firebase Admin SDK
-      const db = admin.firestore();
+      // Get all students using the properly configured Firestore instance
       const studentsSnapshot = await db.collection('students').get();
       
       const students = studentsSnapshot.docs.map(doc => ({
@@ -47,8 +49,7 @@ export async function POST(req: NextRequest) {
 
     // Initialize counter
     if (action === 'initialize') {
-      // Get the highest existing student number using native Firebase Admin SDK
-      const db = admin.firestore();
+      // Get the highest existing student number
       const studentsSnapshot = await db.collection('students').get();
       
       let maxNumber = 0;
@@ -80,7 +81,6 @@ export async function POST(req: NextRequest) {
     if (action === 'assign' && studentId) {
       try {
         // Use transaction to ensure atomicity
-        const db = admin.firestore();
         const counterRef = db.collection('counters').doc('studentNumber');
         const studentRef = db.collection('students').doc(studentId);
 
