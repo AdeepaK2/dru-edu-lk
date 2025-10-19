@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
       });
 
       // Set counter to max number (next will be max + 1)
-      await firebaseAdmin.firestore.setDoc('counters', 'studentNumber', {
+      await db.collection('counters').doc('studentNumber').set({
         count: maxNumber,
         lastUpdated: admin.firestore.Timestamp.now(),
         initialized: true
