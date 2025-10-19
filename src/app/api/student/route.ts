@@ -266,6 +266,31 @@ export async function POST(req: NextRequest) {
       studentData.name
     );
     
+    // Generate student number using server-side counter
+    let studentNumber: string | undefined;
+    try {
+      // Get current counter value
+      const counterDoc = await firebaseAdmin.firestore.getDoc('counters', 'studentNumber');
+      
+      let nextNumber = 1;
+      if (counterDoc && counterDoc.count) {
+        nextNumber = counterDoc.count + 1;
+      }
+      
+      // Update counter
+      await firebaseAdmin.firestore.setDoc('counters', 'studentNumber', {
+        count: nextNumber,
+        lastUpdated: admin.firestore.Timestamp.now()
+      });
+      
+      // Format student number (e.g., ST0001)
+      studentNumber = `ST${nextNumber.toString().padStart(4, '0')}`;
+      console.log('✅ Generated student number:', studentNumber);
+    } catch (error) {
+      console.warn('⚠️ Failed to generate student number, continuing without it:', error);
+      // Don't fail the entire operation if student number generation fails
+    }
+    
     // Prepare student document data
     const studentDocument: Omit<StudentDocument, 'id'> = {
       name: studentData.name,
@@ -278,6 +303,7 @@ export async function POST(req: NextRequest) {
       status: studentData.status,
       coursesEnrolled: studentData.coursesEnrolled,
       avatar: initials,
+      studentNumber: studentNumber, // Add the generated student number
       parent: studentData.parent,
       payment: studentData.payment || {
         status: 'Pending',

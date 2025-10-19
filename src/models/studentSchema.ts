@@ -59,6 +59,7 @@ export const studentSchema = z.object({
   status: z.enum(['Active', 'Suspended', 'Inactive']).default('Active'),
   coursesEnrolled: z.number().default(0),
   enrollmentDate: z.string().optional(),
+  studentNumber: z.string().optional(), // Short ID like ST001, ST002 (optional for backward compatibility)
   parent: parentInfoSchema,
   payment: paymentInfoSchema.optional(),
   documents: z.array(documentSchema).optional(),
@@ -109,6 +110,7 @@ export interface Student {
   status: 'Active' | 'Suspended' | 'Inactive';
   coursesEnrolled: number;
   avatar: string;
+  studentNumber?: string; // Short ID like ST001, ST002 (optional for backward compatibility)
   parent: ParentInfo;
   payment: PaymentInfo;
   documents?: DocumentInfo[];
@@ -127,6 +129,7 @@ export interface StudentDocument {
   status: 'Active' | 'Suspended' | 'Inactive';
   coursesEnrolled: number;
   avatar: string;
+  studentNumber?: string; // Short ID like ST001, ST002 (optional for backward compatibility)
   parent: ParentInfo;
   payment: PaymentInfo;
   documents?: DocumentInfo[];
