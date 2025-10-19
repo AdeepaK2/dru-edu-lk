@@ -10,6 +10,7 @@ import {
   GraduationCap
 } from 'lucide-react';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
+import { useTheme } from '@/contexts/ThemeContext';
 import Link from 'next/link';
 
 // Import services and types
@@ -20,6 +21,7 @@ import { getEnrollmentsByStudent } from '@/services/studentEnrollmentService';
 
 export default function StudentVideos() {
   const { student } = useStudentAuth();
+  const { theme } = useTheme();
   const [studentClasses, setStudentClasses] = useState<any[]>([]);
   const [individualVideos, setIndividualVideos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -127,11 +129,11 @@ export default function StudentVideos() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-600 via-green-700 to-black p-6">
+      <div className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-green-600 via-green-700 to-black' : 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400'} p-6`}>
         <div className="flex items-center justify-center py-12">
-          <div className="bg-gradient-to-r from-green-600 to-black rounded-3xl shadow-2xl border-4 border-black p-8">
+          <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-green-600 to-black' : 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500'} rounded-3xl shadow-2xl border-4 border-black p-8`}>
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 border-4 border-black border-t-transparent rounded-full animate-spin bg-gradient-to-r from-green-400 to-green-600"></div>
+              <div className={`w-12 h-12 border-4 border-black border-t-transparent rounded-full animate-spin ${theme === 'ben10' ? 'bg-gradient-to-r from-green-400 to-green-600' : 'bg-gradient-to-r from-yellow-400 to-yellow-600'}`}></div>
               <span className="text-2xl font-black text-white">Loading your hero videos... ⚡</span>
             </div>
           </div>
@@ -141,9 +143,9 @@ export default function StudentVideos() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-600 via-green-700 to-black p-6">
+    <div className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-green-600 via-green-700 to-black' : 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400'} p-6`}>
       {/* Ben 10 Hero Header */}
-      <div className="bg-gradient-to-r from-green-600 via-green-700 to-black rounded-3xl shadow-2xl border-4 border-black p-8 mb-8 relative overflow-hidden">
+      <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-green-600 via-green-700 to-black' : 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500'} rounded-3xl shadow-2xl border-4 border-black p-8 mb-8 relative overflow-hidden`}>
         {/* Omnitrix Symbols */}
         <div className="absolute -top-4 -left-4 w-12 h-12 bg-green-400 rounded-full border-2 border-black flex items-center justify-center">
           <span className="text-black font-black text-lg">Ω</span>
@@ -210,7 +212,7 @@ export default function StudentVideos() {
                 Special video recommendations from your teachers
               </p>
             </div>
-            <div className="bg-gradient-to-r from-green-600 to-black rounded-full px-4 py-2 border-2 border-black">
+            <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-green-600 to-black' : 'bg-gradient-to-r from-yellow-400 to-yellow-600'} rounded-full px-4 py-2 border-2 border-black`}>
               <span className="text-white font-black text-sm">
                 {individualVideos.length} Hero Video{individualVideos.length > 1 ? 's' : ''} ⚡
               </span>
@@ -223,7 +225,7 @@ export default function StudentVideos() {
                 <div className="flex flex-col h-full">
                   <div className="flex items-start space-x-4 mb-4">
                     <div className="flex-shrink-0">
-                      <div className="w-16 h-12 bg-gradient-to-br from-green-600 to-black rounded-xl flex items-center justify-center border-2 border-black shadow-md">
+                      <div className={`w-16 h-12 ${theme === 'ben10' ? 'bg-gradient-to-br from-green-600 to-black' : 'bg-gradient-to-br from-yellow-400 to-green-500'} rounded-xl flex items-center justify-center border-2 border-black shadow-md`}>
                         <Play className="w-6 h-6 text-white" />
                       </div>
                     </div>
@@ -243,7 +245,7 @@ export default function StudentVideos() {
                   <div className="mt-auto pt-4 border-t-2 border-black">
                     <Link
                       href={`/student/video/${video.id}/watch`}
-                      className="w-full bg-gradient-to-r from-green-600 to-black hover:from-green-700 hover:to-gray-900 text-white px-4 py-2 rounded-full font-bold text-sm transform hover:scale-105 transition-all border-2 border-black flex items-center justify-center space-x-2"
+                      className={`w-full ${theme === 'ben10' ? 'bg-gradient-to-r from-green-600 to-black hover:from-green-700 hover:to-gray-900' : 'bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700'} text-white px-4 py-2 rounded-full font-bold text-sm transform hover:scale-105 transition-all border-2 border-black flex items-center justify-center space-x-2`}
                     >
                       <Play className="w-4 h-4" />
                       <span>Watch Now</span>
@@ -259,7 +261,7 @@ export default function StudentVideos() {
       {/* Classes Grid */}
       <div>
         {getFilteredClasses().length === 0 ? (
-          <div className="bg-gradient-to-r from-green-200 via-green-300 to-black rounded-3xl shadow-2xl border-4 border-black p-12 text-center">
+          <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-green-200 via-green-300 to-black' : 'bg-gradient-to-r from-yellow-200 via-green-400 to-yellow-300'} rounded-3xl shadow-2xl border-4 border-black p-12 text-center`}>
             <div className="text-6xl mb-6">Ω</div>
             <h3 className="text-2xl font-black text-white mb-4">
               {searchTerm ? 'No Hero Classes Found' : 'No Classes Available Yet'}
@@ -278,6 +280,7 @@ export default function StudentVideos() {
                 <ClassCard
                   key={classInfo.id}
                   classInfo={classInfo}
+                  theme={theme}
                 />
               ))}
             </div>
@@ -291,14 +294,15 @@ export default function StudentVideos() {
 // Class Card Component
 interface ClassCardProps {
   classInfo: any;
+  theme: 'ben10' | 'tinkerbell';
 }
 
-const ClassCard: React.FC<ClassCardProps> = ({ classInfo }) => {
+const ClassCard: React.FC<ClassCardProps> = ({ classInfo, theme }) => {
   return (
     <Link href={`/student/classes/${classInfo.id}/videos`}>
-      <div className="bg-gradient-to-r from-green-600 via-green-700 to-black rounded-3xl shadow-2xl border-4 border-black overflow-hidden hover:scale-105 transition-all cursor-pointer">
+      <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-green-600 via-green-700 to-black' : 'bg-gradient-to-r from-yellow-300 via-green-400 to-yellow-400'} rounded-3xl shadow-2xl border-4 border-black overflow-hidden hover:scale-105 transition-all cursor-pointer`}>
         {/* Class Header */}
-        <div className="bg-gradient-to-r from-green-400 to-green-600 text-white p-6 border-b-4 border-black">
+        <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-green-400 to-green-600' : 'bg-gradient-to-r from-yellow-400 to-yellow-600'} text-white p-6 border-b-4 border-black`}>
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <h3 className="text-xl font-black truncate mb-2">
@@ -333,9 +337,9 @@ const ClassCard: React.FC<ClassCardProps> = ({ classInfo }) => {
             <div className="pt-4 border-t-4 border-black">
               <div className="flex items-center justify-between">
                 <span className="text-black font-bold">
-                  Browse Hero Videos
+                  Browse Videos
                 </span>
-                <div className="bg-gradient-to-r from-green-600 to-black text-white px-4 py-2 rounded-full font-black text-sm transform hover:scale-105 transition-all border-2 border-black flex items-center space-x-2">
+                <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-green-600 to-black' : 'bg-gradient-to-r from-yellow-400 to-yellow-600'} text-white px-4 py-2 rounded-full font-black text-sm transform hover:scale-105 transition-all border-2 border-black flex items-center space-x-2`}>
                   <Play className="w-4 h-4" />
                   <span>Open</span>
                 </div>

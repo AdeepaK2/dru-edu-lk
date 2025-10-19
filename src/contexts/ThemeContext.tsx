@@ -46,14 +46,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.style.setProperty('--theme-bg-light', '#f0fdf4');
       root.style.setProperty('--theme-bg-dark', '#1b4332');
     } else if (selectedTheme === 'tinkerbell') {
-      // Tinkerbell Theme - Pink and Purple
-      root.style.setProperty('--theme-primary-light', '#f472b6');
-      root.style.setProperty('--theme-primary', '#ec4899');
-      root.style.setProperty('--theme-primary-dark', '#be185d');
-      root.style.setProperty('--theme-secondary', '#7c3aed');
-      root.style.setProperty('--theme-accent', '#a855f7');
-      root.style.setProperty('--theme-bg-light', '#fef2f8');
-      root.style.setProperty('--theme-bg-dark', '#500724');
+      // Tinkerbell Theme - Green and Gold (lighter than Ben10)
+      root.style.setProperty('--theme-primary-light', '#86efac');
+      root.style.setProperty('--theme-primary', '#4ade80');
+      root.style.setProperty('--theme-primary-dark', '#22c55e');
+      root.style.setProperty('--theme-secondary', '#eab308');
+      root.style.setProperty('--theme-accent', '#facc15');
+      root.style.setProperty('--theme-bg-light', '#f7fdee');
+      root.style.setProperty('--theme-bg-dark', '#365314');
     }
   };
 

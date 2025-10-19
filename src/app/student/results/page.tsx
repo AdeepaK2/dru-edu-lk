@@ -19,6 +19,7 @@ import {
   Clock
 } from 'lucide-react';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Button, Input } from '@/components/ui';
 import Link from 'next/link';
 
@@ -70,6 +71,7 @@ interface DifficultyAnalysis {
 
 export default function StudentResults() {
   const { student } = useStudentAuth();
+  const { theme } = useTheme();
   const [studentClasses, setStudentClasses] = useState<ClassProgress[]>([]);
   const [selectedClass, setSelectedClass] = useState<string | null>(null);
   const [testResults, setTestResults] = useState<TestResult[]>([]);
@@ -283,11 +285,11 @@ export default function StudentResults() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-600 via-green-700 to-black p-6">
+      <div className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-green-600 via-green-700 to-black' : 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400'} p-6`}>
         <div className="flex items-center justify-center py-12">
-          <div className="bg-gradient-to-r from-green-600 to-black rounded-3xl shadow-2xl border-4 border-black p-8">
+          <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-green-600 to-black' : 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500'} rounded-3xl shadow-2xl border-4 border-black p-8`}>
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 border-4 border-black border-t-transparent rounded-full animate-spin bg-gradient-to-r from-green-400 to-green-600"></div>
+              <div className={`w-12 h-12 border-4 border-black border-t-transparent rounded-full animate-spin ${theme === 'ben10' ? 'bg-gradient-to-r from-green-400 to-green-600' : 'bg-gradient-to-r from-yellow-400 to-yellow-600'}`}></div>
               <span className="text-2xl font-black text-white">Loading your hero results... ⚡</span>
             </div>
           </div>
@@ -297,10 +299,10 @@ export default function StudentResults() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-600 via-green-700 to-black p-6">
+    <div className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-green-600 via-green-700 to-black' : 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400'} p-6`}>
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Ben 10 Hero Header */}
-        <div className="bg-gradient-to-r from-green-600 via-green-700 to-black rounded-3xl shadow-2xl border-4 border-black p-8 relative overflow-hidden">
+        <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-green-600 via-green-700 to-black' : 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500'} rounded-3xl shadow-2xl border-4 border-black p-8 relative overflow-hidden`}>
           {/* Omnitrix Symbols */}
           <div className="absolute -top-4 -left-4 w-12 h-12 bg-green-400 rounded-full border-2 border-black flex items-center justify-center">
             <span className="text-black font-black text-lg">Ω</span>

@@ -349,17 +349,17 @@ export default function StudentSettingsPage() {
 
   return (
     <div className="space-y-8">
-      {/* Page Header - Ben 10 Hero Theme */}
-      <div className="bg-gradient-to-r from-green-600 via-green-700 to-black rounded-2xl text-white p-8 relative overflow-hidden">
+      {/* Page Header - Theme Aware */}
+      <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-600 via-green-700 to-black' : 'from-green-500 via-yellow-500 to-green-600'} rounded-2xl text-white p-8 relative overflow-hidden`}>
         {/* Ben 10 themed background elements */}
-        <div className="absolute top-0 right-0 w-32 h-32 bg-green-400 rounded-full -translate-y-16 translate-x-16 animate-bounce opacity-20"></div>
-        <div className="absolute bottom-0 left-0 w-24 h-24 bg-green-500 rounded-full translate-y-12 -translate-x-12 animate-pulse opacity-20"></div>
+        <div className={`absolute top-0 right-0 w-32 h-32 ${theme === 'ben10' ? 'bg-green-400' : 'bg-yellow-400'} rounded-full -translate-y-16 translate-x-16 animate-bounce opacity-20`}></div>
+        <div className={`absolute bottom-0 left-0 w-24 h-24 ${theme === 'ben10' ? 'bg-green-500' : 'bg-yellow-500'} rounded-full translate-y-12 -translate-x-12 animate-pulse opacity-20`}></div>
         {/* Omnitrix symbols */}
         <div className="absolute top-4 right-4 flex space-x-2">
-          <div className="w-8 h-8 bg-green-400 rounded-full border-2 border-black flex items-center justify-center animate-pulse">
+          <div className={`w-8 h-8 ${theme === 'ben10' ? 'bg-green-400' : 'bg-yellow-400'} rounded-full border-2 border-black flex items-center justify-center animate-pulse`}>
             <span className="text-black font-black text-sm">Ω</span>
           </div>
-          <div className="w-8 h-8 bg-green-400 rounded-full border-2 border-black flex items-center justify-center animate-pulse delay-300">
+          <div className={`w-8 h-8 ${theme === 'ben10' ? 'bg-green-400' : 'bg-yellow-400'} rounded-full border-2 border-black flex items-center justify-center animate-pulse delay-300`}>
             <span className="text-black font-black text-sm">Ω</span>
           </div>
         </div>
@@ -395,11 +395,11 @@ export default function StudentSettingsPage() {
         </div>
       </div>
 
-      {/* Success/Error Messages - Ben 10 Hero Theme */}
+      {/* Success/Error Messages - Theme Aware */}
       {message && (
         <div className={`rounded-xl border-4 border-black p-4 shadow-lg ${
           message.type === 'success' 
-            ? 'bg-gradient-to-r from-green-300 to-emerald-300' 
+            ? `${theme === 'ben10' ? 'bg-gradient-to-r from-green-300 to-emerald-300' : 'bg-gradient-to-r from-yellow-300 to-green-300'}` 
             : 'bg-gradient-to-r from-red-300 to-pink-300'
         }`}>
           <div className="flex items-center space-x-3">
@@ -417,7 +417,7 @@ export default function StudentSettingsPage() {
       )}
 
       {/* Theme Selector Section */}
-      <div className="bg-gradient-to-r from-purple-300 via-pink-300 to-purple-500 rounded-xl shadow-lg border-4 border-black p-6">
+      <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-purple-300 via-pink-300 to-purple-500' : 'from-yellow-200 via-green-200 to-yellow-300'} rounded-xl shadow-lg border-4 border-black p-6`}>
         <div className="flex items-center space-x-3 mb-6">
           <div className="text-3xl">🎨</div>
           <h2 className="text-2xl font-black text-black">Choose Your Learning Theme! ✨</h2>
@@ -462,28 +462,28 @@ export default function StudentSettingsPage() {
             onClick={() => handleThemeChange('tinkerbell')}
             className={`p-6 rounded-xl border-4 transition-all transform hover:scale-105 ${
               selectedTheme === 'tinkerbell'
-                ? 'border-pink-600 bg-pink-100 shadow-lg scale-105'
-                : 'border-black bg-white hover:border-pink-400'
+                ? 'border-yellow-600 bg-yellow-100 shadow-lg scale-105'
+                : 'border-black bg-white hover:border-yellow-400'
             }`}
           >
             <div className="flex items-center justify-between mb-4">
               <div className="text-5xl">✨</div>
-              <div className="text-3xl">🩷</div>
+              <div className="text-3xl">🟡</div>
             </div>
             <h3 className="text-2xl font-bold text-black mb-2">Tinkerbell Magic</h3>
-            <p className="text-black font-semibold mb-3">Pink & Purple Theme</p>
+            <p className="text-black font-semibold mb-3">Green & Gold Theme</p>
             <p className="text-sm text-gray-700 mb-4">
-              Sprinkle some fairy dust magic! Pink and purple colors inspired by Tinkerbell's enchanted world.
+              Sprinkle some fairy dust magic! Green and gold colors inspired by Tinkerbell's enchanted world.
             </p>
             <div className="flex items-center justify-center space-x-2">
-              <div className="w-8 h-8 bg-pink-300 rounded-full border-2 border-black"></div>
-              <div className="w-8 h-8 bg-pink-500 rounded-full border-2 border-black"></div>
-              <div className="w-8 h-8 bg-purple-500 rounded-full border-2 border-black"></div>
-              <div className="w-8 h-8 bg-purple-700 rounded-full border-2 border-black"></div>
+              <div className="w-8 h-8 bg-green-400 rounded-full border-2 border-black"></div>
+              <div className="w-8 h-8 bg-green-500 rounded-full border-2 border-black"></div>
+              <div className="w-8 h-8 bg-yellow-500 rounded-full border-2 border-black"></div>
+              <div className="w-8 h-8 bg-yellow-600 rounded-full border-2 border-black"></div>
             </div>
             {selectedTheme === 'tinkerbell' && (
               <div className="mt-4 flex items-center justify-center">
-                <span className="text-lg font-bold text-pink-600">✓ Selected</span>
+                <span className="text-lg font-bold text-yellow-600">✓ Selected</span>
               </div>
             )}
           </button>
@@ -497,8 +497,8 @@ export default function StudentSettingsPage() {
         </div>
       </div>
 
-      {/* Profile Settings - Ben 10 Hero Theme */}
-      <div className="bg-gradient-to-r from-green-300 via-green-400 to-black rounded-xl shadow-lg border-4 border-black p-6">
+      {/* Profile Settings - Theme Aware */}
+      <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-300 via-green-400 to-black' : 'from-yellow-300 via-green-400 to-yellow-500'} rounded-xl shadow-lg border-4 border-black p-6`}>
         <div className="flex items-center space-x-3 mb-6">
           <div className="text-3xl">🎨</div>
           <h2 className="text-2xl font-black text-black">Ben 10's Hero Profile Studio</h2>
@@ -518,7 +518,7 @@ export default function StudentSettingsPage() {
                   <button
                     type="button"
                     onClick={() => setShowAvatarSelector(!showAvatarSelector)}
-                    className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-full text-sm font-bold transform hover:scale-105 transition-all"
+                    className={`${theme === 'ben10' ? 'bg-green-500 hover:bg-green-600' : 'bg-yellow-500 hover:bg-yellow-600'} text-white px-4 py-2 rounded-full text-sm font-bold transform hover:scale-105 transition-all`}
                   >
                     {showAvatarSelector ? 'Hide' : 'Change'} Avatar
                   </button>
@@ -653,15 +653,15 @@ export default function StudentSettingsPage() {
                       {student.status} ⚡
                     </span>
                   </div>
-                  <div className="flex justify-between items-center p-3 bg-green-50 border-2 border-green-300 rounded-lg">
+                  <div className={`flex justify-between items-center p-3 ${theme === 'ben10' ? 'bg-green-50 border-green-300' : 'bg-yellow-50 border-yellow-300'} border-2 rounded-lg`}>
                     <span className="text-black font-bold">📅 Enrolled Since:</span>
-                    <span className="text-black font-bold bg-green-300 px-2 py-1 rounded border border-black">
+                    <span className={`text-black font-bold ${theme === 'ben10' ? 'bg-green-300' : 'bg-yellow-300'} px-2 py-1 rounded border border-black`}>
                       {student.enrollmentDate ? new Date(student.enrollmentDate).toLocaleDateString() : 'N/A'}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center p-3 bg-black border-2 border-green-400 rounded-lg">
+                  <div className={`flex justify-between items-center p-3 bg-black border-2 ${theme === 'ben10' ? 'border-green-400' : 'border-yellow-400'} rounded-lg`}>
                     <span className="text-white font-bold">🎓 Student ID:</span>
-                    <span className="text-black font-bold bg-green-300 px-2 py-1 rounded border border-black">
+                    <span className={`text-black font-bold ${theme === 'ben10' ? 'bg-green-300' : 'bg-yellow-300'} px-2 py-1 rounded border border-black`}>
                       {student.id}
                     </span>
                   </div>
@@ -669,7 +669,7 @@ export default function StudentSettingsPage() {
               </div>
 
               {/* Fun Fact */}
-              <div className="bg-gradient-to-r from-green-300 to-black border-4 border-black rounded-xl p-6 shadow-lg">
+              <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-300 to-black' : 'from-yellow-300 to-green-500'} border-4 border-black rounded-xl p-6 shadow-lg`}>
                 <h4 className="text-lg font-bold text-white mb-3 flex items-center">
                   <span className="text-2xl mr-2">Ω</span>
                   Did You Know?
@@ -687,7 +687,7 @@ export default function StudentSettingsPage() {
             <Button
               type="submit"
               disabled={loading.profile}
-              className="bg-gradient-to-r from-green-500 to-black hover:from-green-600 hover:to-gray-800 text-white px-8 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black disabled:opacity-50 animate-pulse"
+              className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-500 to-black hover:from-green-600 hover:to-gray-800' : 'from-yellow-500 to-green-600 hover:from-yellow-600 hover:to-green-700'} text-white px-8 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black disabled:opacity-50 animate-pulse`}
             >
               {loading.profile ? 'Saving Hero...' : 'Save Your Hero Profile! ⚡'}
             </Button>
@@ -695,8 +695,8 @@ export default function StudentSettingsPage() {
         </form>
       </div>
 
-      {/* Password Settings - Ben 10 Hero Theme */}
-      <div className="bg-gradient-to-r from-green-400 via-green-500 to-black rounded-xl shadow-lg border-4 border-black p-6">
+      {/* Password Settings - Theme Aware */}
+      <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-400 via-green-500 to-black' : 'from-green-400 via-yellow-500 to-green-600'} rounded-xl shadow-lg border-4 border-black p-6`}>
         <div className="flex items-center space-x-3 mb-6">
           <div className="text-3xl">🔐</div>
           <h2 className="text-2xl font-black text-black">Ben 10's Hero Password Chamber</h2>
@@ -761,7 +761,7 @@ export default function StudentSettingsPage() {
               <ul className="space-y-3">
                 <li className="flex items-center text-sm">
                   <span className={`w-6 h-6 mr-3 flex items-center justify-center rounded-full border-2 border-black ${
-                    passwordValidation.minLength ? 'bg-green-300 text-black' : 'bg-white text-gray-400'
+                    passwordValidation.minLength ? `${theme === 'ben10' ? 'bg-green-300' : 'bg-yellow-300'} text-black` : 'bg-white text-gray-400'
                   }`}>
                     {passwordValidation.minLength ? '✓' : '·'}
                   </span>
@@ -769,7 +769,7 @@ export default function StudentSettingsPage() {
                 </li>
                 <li className="flex items-center text-sm">
                   <span className={`w-6 h-6 mr-3 flex items-center justify-center rounded-full border-2 border-black ${
-                    passwordValidation.hasUppercase ? 'bg-green-300 text-black' : 'bg-white text-gray-400'
+                    passwordValidation.hasUppercase ? `${theme === 'ben10' ? 'bg-green-300' : 'bg-yellow-300'} text-black` : 'bg-white text-gray-400'
                   }`}>
                     {passwordValidation.hasUppercase ? '✓' : '·'}
                   </span>
@@ -777,7 +777,7 @@ export default function StudentSettingsPage() {
                 </li>
                 <li className="flex items-center text-sm">
                   <span className={`w-6 h-6 mr-3 flex items-center justify-center rounded-full border-2 border-black ${
-                    passwordValidation.hasLowercase ? 'bg-green-300 text-black' : 'bg-white text-gray-400'
+                    passwordValidation.hasLowercase ? `${theme === 'ben10' ? 'bg-green-300' : 'bg-yellow-300'} text-black` : 'bg-white text-gray-400'
                   }`}>
                     {passwordValidation.hasLowercase ? '✓' : '·'}
                   </span>
@@ -785,7 +785,7 @@ export default function StudentSettingsPage() {
                 </li>
                 <li className="flex items-center text-sm">
                   <span className={`w-6 h-6 mr-3 flex items-center justify-center rounded-full border-2 border-black ${
-                    passwordValidation.hasNumber ? 'bg-green-300 text-black' : 'bg-white text-gray-400'
+                    passwordValidation.hasNumber ? `${theme === 'ben10' ? 'bg-green-300' : 'bg-yellow-300'} text-black` : 'bg-white text-gray-400'
                   }`}>
                     {passwordValidation.hasNumber ? '✓' : '·'}
                   </span>
@@ -793,7 +793,7 @@ export default function StudentSettingsPage() {
                 </li>
                 <li className="flex items-center text-sm">
                   <span className={`w-6 h-6 mr-3 flex items-center justify-center rounded-full border-2 border-black ${
-                    passwordValidation.hasSpecialChar ? 'bg-green-300 text-black' : 'bg-white text-gray-400'
+                    passwordValidation.hasSpecialChar ? `${theme === 'ben10' ? 'bg-green-300' : 'bg-yellow-300'} text-black` : 'bg-white text-gray-400'
                   }`}>
                     {passwordValidation.hasSpecialChar ? '✓' : '·'}
                   </span>
@@ -801,7 +801,7 @@ export default function StudentSettingsPage() {
                 </li>
                 <li className="flex items-center text-sm">
                   <span className={`w-6 h-6 mr-3 flex items-center justify-center rounded-full border-2 border-black ${
-                    passwordValidation.match ? 'bg-green-300 text-black' : 'bg-white text-gray-400'
+                    passwordValidation.match ? `${theme === 'ben10' ? 'bg-green-300' : 'bg-yellow-300'} text-black` : 'bg-white text-gray-400'
                   }`}>
                     {passwordValidation.match ? '✓' : '·'}
                   </span>
@@ -816,7 +816,7 @@ export default function StudentSettingsPage() {
             <Button
               type="submit"
               disabled={loading.password || !Object.values(passwordValidation).every(v => v)}
-              className="bg-gradient-to-r from-green-500 to-black hover:from-green-600 hover:to-gray-800 text-white px-8 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black disabled:opacity-50 animate-pulse"
+              className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-500 to-black hover:from-green-600 hover:to-gray-800' : 'from-yellow-500 to-green-600 hover:from-yellow-600 hover:to-green-700'} text-white px-8 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black disabled:opacity-50 animate-pulse`}
             >
               {loading.password ? 'Transforming Hero...' : 'Change Password Power! Ω'}
             </Button>

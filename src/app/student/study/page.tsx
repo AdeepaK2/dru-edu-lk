@@ -194,9 +194,9 @@ export default function StudentStudyPage() {
   };
 
   const getProgressColor = (progress: number) => {
-    if (progress >= 80) return theme === 'ben10' ? 'bg-green-500' : 'bg-pink-500';
-    if (progress >= 60) return theme === 'ben10' ? 'bg-blue-500' : 'bg-purple-500';
-    if (progress >= 40) return theme === 'ben10' ? 'bg-yellow-500' : 'bg-pink-400';
+    if (progress >= 80) return theme === 'ben10' ? 'bg-green-500' : 'bg-green-400';
+    if (progress >= 60) return theme === 'ben10' ? 'bg-blue-500' : 'bg-yellow-500';
+    if (progress >= 40) return theme === 'ben10' ? 'bg-yellow-500' : 'bg-green-300';
     return theme === 'ben10' ? 'bg-red-500' : 'bg-red-400';
   };
 
@@ -355,11 +355,11 @@ export default function StudentStudyPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-600 via-green-700 to-black p-6">
+      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-green-600 via-green-700 to-black' : 'from-green-500 via-yellow-500 to-green-600'} p-6`}>
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
-              <div className="w-12 h-12 border-4 border-green-400 border-t-transparent rounded-full animate-spin mx-auto mb-6 bg-gradient-to-r from-green-400 to-green-500"></div>
+              <div className={`w-12 h-12 border-4 ${theme === 'ben10' ? 'border-green-400' : 'border-yellow-400'} border-t-transparent rounded-full animate-spin mx-auto mb-6 bg-gradient-to-r ${theme === 'ben10' ? 'from-green-400 to-green-500' : 'from-yellow-400 to-green-500'}`}></div>
               <p className="text-white font-black text-xl">Loading your hero study materials... ⚡</p>
             </div>
           </div>
@@ -385,7 +385,7 @@ export default function StudentStudyPage() {
     if (isViewingMaterial && activeMaterial) {
       // PDF Viewing Layout - Full screen without top space
       return (
-        <div className="fixed inset-0 bg-gradient-to-br from-green-600 via-green-700 to-black z-50">
+        <div className={`fixed inset-0 bg-gradient-to-br ${theme === 'ben10' ? 'from-green-600 via-green-700 to-black' : 'from-green-500 via-yellow-500 to-green-600'} z-50`}>
           {/* Minimal Back Button - positioned absolutely */}
           <div className="absolute top-4 left-4 z-10">
             <button
@@ -398,7 +398,7 @@ export default function StudentStudyPage() {
 
           <div className="flex h-full">
             {/* Materials Sidebar - narrower */}
-            <div className="w-72 bg-gradient-to-b from-green-500 to-green-600 border-r-4 border-black overflow-y-auto shadow-2xl pt-16">
+            <div className={`w-72 bg-gradient-to-b ${theme === 'ben10' ? 'from-green-500 to-green-600' : 'from-green-400 to-yellow-500'} border-r-4 border-black overflow-y-auto shadow-2xl pt-16`}>
               <div className="p-4 border-b-4 border-black">
                 <h2 className="text-lg font-black text-white text-center">
                   🦸‍♂️ Study Materials 🦸‍♂️
@@ -415,7 +415,7 @@ export default function StudentStudyPage() {
                   return (
                     <div key={group.id} className={`bg-white rounded-2xl shadow-lg border-2 transition-all hover:scale-105 ${
                       group.materials.some((m: any) => m.id === activeMaterial.id)
-                        ? 'border-green-500 bg-green-50 shadow-green-200'
+                        ? `border-${theme === 'ben10' ? 'green' : 'yellow'}-500 bg-${theme === 'ben10' ? 'green' : 'yellow'}-50 shadow-${theme === 'ben10' ? 'green' : 'yellow'}-200`
                         : 'border-black'
                     }`}>
                       <div
@@ -424,7 +424,7 @@ export default function StudentStudyPage() {
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex items-start space-x-3 flex-1">
-                            <div className="w-8 h-8 bg-green-500 rounded-xl flex items-center justify-center flex-shrink-0 border-2 border-black">
+                            <div className={`w-8 h-8 ${theme === 'ben10' ? 'bg-green-500' : 'bg-yellow-500'} rounded-xl flex items-center justify-center flex-shrink-0 border-2 border-black`}>
                               {group.isGroup ? (
                                 <div className="text-white font-black text-sm">
                                   {group.totalFiles}
@@ -437,9 +437,9 @@ export default function StudentStudyPage() {
                               <div className="flex items-center space-x-2 mb-2">
                                 <span className="font-black text-gray-900 text-sm truncate">{group.groupTitle || group.materials[0]?.title}</span>
                                 {isExpanded ? (
-                                  <ChevronUp className="w-4 h-4 text-green-600 flex-shrink-0 font-black" />
+                                  <ChevronUp className={`w-4 h-4 ${theme === 'ben10' ? 'text-green-600' : 'text-yellow-600'} flex-shrink-0 font-black`} />
                                 ) : (
-                                  <ChevronDown className="w-4 h-4 text-green-600 flex-shrink-0 font-black" />
+                                  <ChevronDown className={`w-4 h-4 ${theme === 'ben10' ? 'text-green-600' : 'text-yellow-600'} flex-shrink-0 font-black`} />
                                 )}
                               </div>
 
@@ -451,7 +451,7 @@ export default function StudentStudyPage() {
 
                               <div className="flex items-center space-x-2 mb-2">
                                 {group.fileTypes.map((fileType: string) => (
-                                  <span key={fileType} className="bg-green-500 text-white font-black text-xs px-2 py-1 rounded-lg border border-black">
+                                  <span key={fileType} className={`bg-${theme === 'ben10' ? 'green' : 'yellow'}-500 text-white font-black text-xs px-2 py-1 rounded-lg border border-black`}>
                                     {fileType.toUpperCase()}
                                   </span>
                                 ))}
@@ -475,24 +475,24 @@ export default function StudentStudyPage() {
                                     material.fileUrl ? 'cursor-pointer hover:bg-green-50' : ''
                                   } ${
                                     isSelected
-                                      ? 'border-green-500 bg-green-100 shadow-lg'
+                                      ? `border-${theme === 'ben10' ? 'green' : 'yellow'}-500 bg-${theme === 'ben10' ? 'green' : 'yellow'}-100 shadow-lg`
                                       : 'border-gray-300 bg-white'
                                   }`}
                                   onClick={() => material.fileUrl && viewMaterial(material)}
                                 >
                                   <div className="flex items-center space-x-3 flex-1">
-                                    <div className="w-6 h-6 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0 border-2 border-black">
+                                    <div className={`w-6 h-6 ${theme === 'ben10' ? 'bg-green-500' : 'bg-yellow-500'} rounded-lg flex items-center justify-center flex-shrink-0 border-2 border-black`}>
                                       {getFileIcon(material.fileType)}
                                     </div>
                                     <div className="flex-1 min-w-0">
                                       <h4 className={`font-black truncate text-sm ${
                                         isSelected
-                                          ? 'text-green-700'
+                                          ? `text-${theme === 'ben10' ? 'green' : 'yellow'}-700`
                                           : 'text-gray-900'
                                       }`}>
                                         {material.title}
                                       </h4>
-                                      <div className="text-xs font-bold text-green-600">
+                                      <div className={`text-xs font-bold text-${theme === 'ben10' ? 'green' : 'yellow'}-600`}>
                                         {material.fileType.toUpperCase()}
                                       </div>
                                     </div>
@@ -500,8 +500,8 @@ export default function StudentStudyPage() {
 
                                   {material.fileUrl && (
                                     <Eye
-                                      className={`w-4 h-4 flex-shrink-0 cursor-pointer hover:text-green-600 transition-colors pointer-events-auto font-black ${
-                                        isSelected ? 'text-green-600' : 'text-gray-500'
+                                      className={`w-4 h-4 flex-shrink-0 cursor-pointer hover:text-${theme === 'ben10' ? 'green' : 'yellow'}-600 transition-colors pointer-events-auto font-black ${
+                                        isSelected ? `text-${theme === 'ben10' ? 'green' : 'yellow'}-600` : 'text-gray-500'
                                       }`}
                                       onClick={() => viewMaterial(material)}
                                     />
@@ -519,7 +519,7 @@ export default function StudentStudyPage() {
             </div>
 
             {/* Material Viewer - takes remaining space */}
-            <div className="flex-1 bg-gradient-to-br from-white to-green-50 overflow-hidden">
+            <div className={`flex-1 bg-gradient-to-br from-white ${theme === 'ben10' ? 'to-green-50' : 'to-yellow-50'} overflow-hidden`}>
               <div className="h-full w-full">
                 {activeMaterial.fileType?.toLowerCase() === 'pdf' && activeMaterial.fileUrl && (
                   <PDFViewer
@@ -532,7 +532,7 @@ export default function StudentStudyPage() {
                 )}
                 {activeMaterial.fileType?.toLowerCase() === 'image' && activeMaterial.fileUrl && (
                   <div className="h-full flex flex-col">
-                    <div className="p-6 border-b-4 border-black bg-gradient-to-r from-green-500 to-green-600">
+                    <div className={`p-6 border-b-4 border-black bg-gradient-to-r ${theme === 'ben10' ? 'from-green-500 to-green-600' : 'from-green-400 to-yellow-500'}`}>
                       <div className="flex items-center justify-between">
                         <h3 className="text-xl font-black text-white flex items-center">
                           🖼️ {activeMaterial.title}
@@ -571,7 +571,7 @@ export default function StudentStudyPage() {
                       </div>
                     </div>
                     <div
-                      className="flex-1 flex items-center justify-center p-6 bg-gradient-to-br from-green-50 to-white overflow-hidden relative"
+                      className={`flex-1 flex items-center justify-center p-6 bg-gradient-to-br ${theme === 'ben10' ? 'from-green-50 to-white' : 'from-yellow-50 to-green-50'} overflow-hidden relative`}
                       onMouseDown={handleMouseDown}
                       onMouseMove={handleMouseMove}
                       onMouseUp={handleMouseUp}
