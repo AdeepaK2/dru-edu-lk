@@ -18,11 +18,11 @@ interface PDFViewerProps {
   url: string;
   title: string;
   onClose: () => void;
+  inline?: boolean;
 }
 
-export default function PDFViewer({ url, title, onClose }: PDFViewerProps) {
+export default function PDFViewer({ url, title, onClose, inline = false }: PDFViewerProps) {
   const [numPages, setNumPages] = useState<number | null>(null);
-  const [pageNumber, setPageNumber] = useState(1);
   const [scale, setScale] = useState(1.0);
   const [rotation, setRotation] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -143,17 +143,9 @@ export default function PDFViewer({ url, title, onClose }: PDFViewerProps) {
     setSummaryError(null);
   };
 
-  const goToPrevPage = () => {
-    setPageNumber(prev => Math.max(prev - 1, 1));
-  };
-
-  const goToNextPage = () => {
-    setPageNumber(prev => Math.min(prev + 1, numPages || 1));
-  };
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] flex flex-col">
+    <div className={inline ? "h-full flex flex-col" : "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"}>
+      <div className={inline ? "flex flex-col h-full" : "bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] flex flex-col"}>
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
@@ -182,25 +174,9 @@ export default function PDFViewer({ url, title, onClose }: PDFViewerProps) {
         {/* Toolbar */}
         <div className="flex items-center justify-between p-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
           <div className="flex items-center space-x-2">
-            <Button
-              onClick={goToPrevPage}
-              disabled={pageNumber <= 1}
-              variant="outline"
-              size="sm"
-            >
-              Previous
-            </Button>
             <span className="text-sm text-gray-600 dark:text-gray-400">
-              Page {pageNumber} of {numPages || '?'}
+              {numPages ? `${numPages} pages` : 'Loading...'}
             </span>
-            <Button
-              onClick={goToNextPage}
-              disabled={pageNumber >= (numPages || 1)}
-              variant="outline"
-              size="sm"
-            >
-              Next
-            </Button>
           </div>
 
           <div className="flex items-center space-x-2">
@@ -282,21 +258,25 @@ export default function PDFViewer({ url, title, onClose }: PDFViewerProps) {
                   </div>
                 }
               >
-                <Page
-                  pageNumber={pageNumber}
-                  scale={scale}
-                  rotate={rotation}
-                  loading={
-                    <div className="flex items-center justify-center py-8">
-                      <div className="w-6 h-6 border-t-2 border-blue-600 border-solid rounded-full animate-spin"></div>
-                    </div>
-                  }
-                  error={
-                    <div className="text-center py-8">
-                      <p className="text-red-600 dark:text-red-400">Failed to load page {pageNumber}</p>
-                    </div>
-                  }
-                />
+                {Array.from(new Array(numPages), (el, index) => (
+                  <div key={`page_${index + 1}`} className="mb-4">
+                    <Page
+                      pageNumber={index + 1}
+                      scale={scale}
+                      rotate={rotation}
+                      loading={
+                        <div className="flex items-center justify-center py-8">
+                          <div className="w-6 h-6 border-t-2 border-blue-600 border-solid rounded-full animate-spin"></div>
+                        </div>
+                      }
+                      error={
+                        <div className="text-center py-8">
+                          <p className="text-red-600 dark:text-red-400">Failed to load page {index + 1}</p>
+                        </div>
+                      }
+                    />
+                  </div>
+                ))}
               </Document>
             </div>
           )}

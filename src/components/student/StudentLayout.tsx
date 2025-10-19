@@ -40,9 +40,10 @@ export const usePDFViewer = () => {
 
 interface StudentLayoutProps {
   children: React.ReactNode;
+  hideSidebar?: boolean;
 }
 
-export default function StudentLayout({ children }: StudentLayoutProps) {
+export default function StudentLayout({ children, hideSidebar = false }: StudentLayoutProps) {
   const { user, student, loading, error, isAuthenticated } = useStudentAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
@@ -105,32 +106,36 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
     <PDFViewerContext.Provider value={{ openPDFViewer }}>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <div className="flex">
-          {/* Sidebar */}
-          <StudentSidebar 
-            student={student} 
-            isOpen={sidebarOpen} 
-            onToggle={toggleSidebar} 
-          />
+          {/* Sidebar - conditionally rendered */}
+          {!hideSidebar && (
+            <StudentSidebar 
+              student={student} 
+              isOpen={sidebarOpen} 
+              onToggle={toggleSidebar} 
+            />
+          )}
 
           {/* Main Content */}
-          <div className="flex-1 lg:ml-0">
-            {/* Mobile Header */}
-            <div className="lg:hidden bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
-              <div className="flex items-center justify-between h-16 px-4">
-                <Button
-                  onClick={toggleSidebar}
-                  variant="outline"
-                  size="sm"
-                  className="p-2"
-                >
-                  <Menu className="w-5 h-5" />
-                </Button>
-                <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Student Portal
-                </h1>
-                <div className="w-9" /> {/* Spacer for centering */}
+          <div className={`flex-1 ${!hideSidebar ? 'lg:ml-0' : ''}`}>
+            {/* Mobile Header - only show when sidebar is not hidden */}
+            {!hideSidebar && (
+              <div className="lg:hidden bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-between h-16 px-4">
+                  <Button
+                    onClick={toggleSidebar}
+                    variant="outline"
+                    size="sm"
+                    className="p-2"
+                  >
+                    <Menu className="w-5 h-5" />
+                  </Button>
+                  <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Student Portal
+                  </h1>
+                  <div className="w-9" /> {/* Spacer for centering */}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Page Content */}
             <main className="p-6">

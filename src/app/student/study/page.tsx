@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
+import { useSidebar } from '../layout';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Button from '@/components/ui/Button';
 import { Badge } from '@/components/ui/badge';
@@ -60,6 +62,7 @@ interface StudyMaterial {
 export default function StudentStudyPage() {
   const router = useRouter();
   const { student, loading } = useStudentAuth();
+  const { setHideSidebar } = useSidebar();
   const [classes, setClasses] = useState<ClassWithProgress[]>([]);
   const [selectedClass, setSelectedClass] = useState<string | null>(null);
   const [materials, setMaterials] = useState<StudyMaterial[]>([]);
@@ -69,6 +72,18 @@ export default function StudentStudyPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
   const { openPDFViewer } = usePDFViewer();
+  const [isViewingPdf, setIsViewingPdf] = useState(false);
+  const [selectedPdfMaterial, setSelectedPdfMaterial] = useState<StudyMaterial | null>(null);
+
+  // Memoize PDFViewer to prevent re-mounting
+  const PDFViewer = useMemo(() => dynamic(() => import('@/components/PDFViewer'), {
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center h-full">
+        <div className="w-8 h-8 border-t-2 border-blue-600 border-solid rounded-full animate-spin"></div>
+      </div>
+    )
+  }), []);
 
   useEffect(() => {
     if (!loading && !student) {
@@ -80,6 +95,13 @@ export default function StudentStudyPage() {
       loadStudentClasses();
     }
   }, [student, loading, router]);
+
+  // Reset sidebar visibility when component unmounts
+  useEffect(() => {
+    return () => {
+      setHideSidebar(false);
+    };
+  }, [setHideSidebar]);
 
   const loadStudentClasses = async () => {
     if (!student) return;
@@ -199,6 +221,12 @@ export default function StudentStudyPage() {
     window.open(url, '_blank');
   };
 
+  const exitPdfView = () => {
+    setIsViewingPdf(false);
+    setSelectedPdfMaterial(null);
+    setHideSidebar(false);
+  };
+
   const toggleGroupExpansion = (groupId: string) => {
     const newExpanded = new Set(expandedGroups);
     if (newExpanded.has(groupId)) {
@@ -218,8 +246,10 @@ export default function StudentStudyPage() {
     });
 
     if (material.fileType?.toLowerCase() === 'pdf' && material.fileUrl) {
-      console.log('Opening PDF viewer for:', material.title);
-      openPDFViewer({ title: material.title, fileUrl: material.fileUrl });
+      console.log('Setting PDF viewer for:', material.title);
+      setSelectedPdfMaterial(material);
+      setIsViewingPdf(true);
+      setHideSidebar(true);
     } else if (material.fileUrl) {
       console.log('Opening external link for:', material.title);
       window.open(material.fileUrl, '_blank');
@@ -288,11 +318,163 @@ export default function StudentStudyPage() {
   if (selectedClass) {
     const currentClass = classes.find(c => c.id === selectedClass);
 
+    if (isViewingPdf && selectedPdfMaterial) {
+      // PDF Viewing Layout - Full screen without top space
+      return (
+        <div className="fixed inset-0 bg-gray-50 dark:bg-gray-900 z-50">
+          {/* Minimal Back Button - positioned absolutely */}
+          <div className="absolute top-4 left-4 z-10">
+            <Button 
+              onClick={exitPdfView}
+              variant="outline"
+              size="sm"
+              className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm shadow-lg"
+            >
+              <span>← Back to Materials</span>
+            </Button>
+          </div>
+
+          <div className="flex h-full">
+            {/* Materials Sidebar - narrower */}
+            <div className="w-72 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-y-auto shadow-lg pt-16">
+              <div className="p-3 border-b border-gray-200 dark:border-gray-700">
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">
+                  Study Materials
+                </h2>
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  {currentClass?.name}
+                </p>
+              </div>
+
+              <div className="p-3 space-y-2">
+                {groupedMaterials.map((group: any) => {
+                  const isExpanded = expandedGroups.has(group.id);
+                  
+                  return (
+                    <Card key={group.id} className={`transition-all ${group.materials.some((m: any) => m.id === selectedPdfMaterial.id) ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : ''}`}>
+                      <CardHeader 
+                        className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 pb-3 px-3"
+                        onClick={() => toggleGroupExpansion(group.id)}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start space-x-3 flex-1">
+                            <div className="w-6 h-6 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                              {group.isGroup ? (
+                                <div className="text-blue-600 font-bold text-xs">
+                                  {group.totalFiles}
+                                </div>
+                              ) : (
+                                getFileIcon(group.materials[0]?.fileType || 'other')
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <CardTitle className="flex items-center space-x-2 mb-1 text-sm">
+                                <span className="truncate">{group.groupTitle || group.materials[0]?.title}</span>
+                                {isExpanded ? (
+                                  <ChevronUp className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                                ) : (
+                                  <ChevronDown className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                                )}
+                              </CardTitle>
+                              
+                              {group.materials[0]?.description && (
+                                <p className="text-xs text-gray-600 dark:text-gray-400 mb-1 line-clamp-2">
+                                  {group.materials[0].description}
+                                </p>
+                              )}
+                              
+                              <div className="flex items-center space-x-1 mb-1">
+                                {group.fileTypes.map((fileType: string) => (
+                                  <Badge key={fileType} variant="secondary" className="text-xs px-1 py-0">
+                                    {fileType.toUpperCase()}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      
+                      {/* Collapsible content */}
+                      {isExpanded && (
+                        <CardContent className="pt-0 px-3 pb-3">
+                          <div className="space-y-2 border-t border-gray-100 dark:border-gray-700 pt-3">
+                            {group.materials.map((material: any) => {
+                              const isSelected = material.id === selectedPdfMaterial?.id;
+                              
+                              return (
+                                <div 
+                                  key={material.id} 
+                                  className={`flex items-center justify-between p-2 border rounded-lg text-sm pointer-events-none ${
+                                    isSelected 
+                                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
+                                      : 'border-gray-200'
+                                  }`}
+                                >
+                                  <div className="flex items-center space-x-2 flex-1">
+                                    <div className="w-5 h-5 bg-white dark:bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0 border">
+                                      {getFileIcon(material.fileType)}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <h4 className={`font-medium truncate text-xs ${
+                                        isSelected 
+                                          ? 'text-blue-700 dark:text-blue-400' 
+                                          : 'text-gray-900 dark:text-white'
+                                      }`}>
+                                        {material.title}
+                                      </h4>
+                                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                                        {material.fileType.toUpperCase()}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  
+                                  {material.fileType === 'pdf' && (
+                                    <Eye 
+                                      className={`w-3 h-3 flex-shrink-0 cursor-pointer hover:text-blue-600 transition-colors pointer-events-auto ${
+                                        isSelected ? 'text-blue-600' : 'text-gray-400'
+                                      }`}
+                                      onClick={() => viewMaterial(material)}
+                                    />
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </CardContent>
+                      )}
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* PDF Viewer - takes remaining space */}
+            <div className="flex-1 bg-white dark:bg-gray-900 overflow-hidden">
+              <div className="h-full w-full">
+                <PDFViewer
+                  key={selectedPdfMaterial.id}
+                  url={selectedPdfMaterial.fileUrl || ''}
+                  title={selectedPdfMaterial.title}
+                  onClose={exitPdfView}
+                  inline={true}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Normal Materials View
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="mb-6">
           <Button 
-            onClick={() => setSelectedClass(null)}
+            onClick={() => {
+              setSelectedClass(null);
+              setHideSidebar(false);
+            }}
             variant="outline"
             className="mb-4"
           >
