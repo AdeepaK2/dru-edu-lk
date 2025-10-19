@@ -365,12 +365,14 @@ export default function StudentDashboard() {
               Account Information
             </h3>
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600 dark:text-gray-300">Student ID:</span>
-                <span className="text-sm font-medium text-gray-900 dark:text-white">
-                  {student.id || 'N/A'}
-                </span>
-              </div>
+              {student.studentNumber && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600 dark:text-gray-300">Student ID:</span>
+                  <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400 px-3 py-1 bg-indigo-50 dark:bg-indigo-900/20 rounded-md">
+                    {student.studentNumber}
+                  </span>
+                </div>
+              )}
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600 dark:text-gray-300">Enrollment Date:</span>
                 <span className="text-sm font-medium text-gray-900 dark:text-white">

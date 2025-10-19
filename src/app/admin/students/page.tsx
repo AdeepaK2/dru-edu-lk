@@ -679,7 +679,8 @@ export default function StudentsManagement() {
         student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         student.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         student.phone.includes(searchTerm) ||
-        student.id.toLowerCase().includes(searchTerm.toLowerCase());
+        student.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (student.studentNumber && student.studentNumber.toLowerCase().includes(searchTerm.toLowerCase()));
       
       return matchesSearch;
     });
@@ -1536,7 +1537,13 @@ export default function StudentsManagement() {
                             {student.name}
                           </div>
                           <div className="text-sm text-gray-500 dark:text-gray-400">
-                            ID: {student.id}
+                            {student.studentNumber ? (
+                              <span className="font-semibold text-indigo-600 dark:text-indigo-400">
+                                {student.studentNumber}
+                              </span>
+                            ) : (
+                              <span className="text-xs italic">ID: {student.id.substring(0, 8)}...</span>
+                            )}
                           </div>
                         </div>
                       </div>
