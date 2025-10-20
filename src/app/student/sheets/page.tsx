@@ -140,7 +140,7 @@ export default function StudentSheetsPage() {
 
   if (authLoading || loading) {
     return (
-      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-green-400 to-black' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : 'from-blue-400 to-indigo-600'} flex items-center justify-center`}>
+      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-green-400 to-black' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : 'from-blue-400 to-indigo-600'} flex items-center justify-center`}>
         <div className="bg-white border-4 border-black rounded-3xl p-8 shadow-2xl">
           {/* Theme-Specific Loading Animation */}
           <div className="relative mb-6 flex flex-col items-center">
@@ -186,24 +186,21 @@ export default function StudentSheetsPage() {
   }
 
   return (
-    <div key={`sheets-${theme}`} className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-green-600 via-green-700 to-black' : theme === 'tinkerbell' ? 'from-green-500 via-yellow-500 to-green-600' : 'from-blue-600 via-indigo-700 to-slate-900'} p-6`}>
+    <div key={`sheets-${theme}`} className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-green-600 via-green-700 to-black' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : 'from-blue-600 via-indigo-700 to-slate-900'} p-6`}>
       <div className="max-w-4xl mx-auto">
         {/* Theme-aware Header */}
-        <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-500 via-green-600 to-black' : theme === 'tinkerbell' ? 'from-green-400 via-yellow-500 to-green-600' : 'from-blue-500 via-indigo-600 to-slate-800'} rounded-3xl shadow-2xl border-4 border-black p-8 mb-8 relative overflow-hidden`}>
-          {/* Theme Symbol */}
-          <div className={`absolute -top-4 left-1/2 transform -translate-x-1/2 w-16 h-16 ${theme === 'ben10' ? 'bg-green-400' : theme === 'tinkerbell' ? 'bg-yellow-400' : 'bg-blue-400'} rounded-full border-4 border-black flex items-center justify-center`}>
-            <div className="text-black font-black text-2xl">{theme === 'ben10' ? 'Ω' : theme === 'tinkerbell' ? '✨' : '📚'}</div>
-          </div>
+        <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-500 via-green-600 to-black' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : 'from-blue-500 via-indigo-600 to-slate-800'} rounded-3xl shadow-2xl border-4 border-black p-8 mb-8 relative overflow-hidden`}>
+         
 
           <div className="flex items-center space-x-4 relative z-10">
             <div className="text-6xl">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : '📖'}</div>
             <div>
-              <h1 className="text-4xl font-black text-white mb-2 flex items-center">
-                <span>{theme === 'ben10' ? 'Ben 10' : theme === 'tinkerbell' ? 'Tinkerbell' : 'My Learning'}</span>
-                <span className={`ml-2 font-black text-5xl ${theme === 'ben10' ? 'text-green-400' : theme === 'tinkerbell' ? 'text-yellow-400' : 'text-blue-400'}`}>Sheets</span>
-                <span className="ml-2 text-3xl">{theme === 'ben10' ? '⚡' : theme === 'tinkerbell' ? '✨' : '📚'}</span>
+              <h1 className="text-4xl font-black text-black mb-2 flex items-center">
+
+                <span className={`ml-2 font-black text-5xl`}> My Sheets</span>
+       
               </h1>
-              <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-green-200' : theme === 'tinkerbell' ? 'text-yellow-200' : 'text-blue-200'}`}>
+              <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-white' : theme === 'tinkerbell' ? 'text-white' : 'text-blue-200'}`}>
                 Welcome back, {student?.name}! Access your {theme === 'ben10' ? 'hero' : theme === 'tinkerbell' ? 'magical' : 'learning'} Google Sheets assignments! {theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : '📖'}
               </p>
             </div>
@@ -215,52 +212,52 @@ export default function StudentSheetsPage() {
           <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-500 to-green-600' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : 'from-blue-500 to-indigo-600'} rounded-3xl shadow-2xl border-4 border-black p-6`}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-black text-white">
-                  {theme === 'ben10' ? 'Hero' : theme === 'tinkerbell' ? 'Magical' : 'Active'} Sheets
+                <p className="text-2xl font-black text-black">
+                  Sheets
                 </p>
                 <p className="text-3xl font-black text-white mt-2">
                   {totalSheets}
                 </p>
               </div>
-              <div className="text-4xl">📊</div>
+          
             </div>
           </div>
 
-          <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-600 to-green-700' : theme === 'tinkerbell' ? 'from-yellow-500 to-green-600' : 'from-indigo-600 to-blue-700'} rounded-3xl shadow-2xl border-4 border-black p-6`}>
+          <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-600 to-green-700' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : 'from-indigo-600 to-blue-700'} rounded-3xl shadow-2xl border-4 border-black p-6`}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-black text-white">
-                  {theme === 'ben10' ? 'Hero' : theme === 'tinkerbell' ? 'Magical' : 'Learning'} Classes
+                <p className="text-2xl font-black text-black">
+                   Classes
                 </p>
                 <p className="text-3xl font-black text-white mt-2">
                   {classes.length}
                 </p>
               </div>
-              <div className="text-4xl">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : '📖'}</div>
+              
             </div>
           </div>
 
-          <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-700 to-black' : theme === 'tinkerbell' ? 'from-green-600 to-yellow-600' : 'from-slate-700 to-indigo-800'} rounded-3xl shadow-2xl border-4 border-black p-6`}>
+          <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-700 to-black' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-600' : 'from-slate-700 to-indigo-800'} rounded-3xl shadow-2xl border-4 border-black p-6`}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-black text-white">
+                <p className="text-2xl font-black text-black">
                   Active Classes
                 </p>
                 <p className="text-3xl font-black text-white mt-2">
                   {classes.filter(cls => cls.sheetCount > 0).length}
                 </p>
               </div>
-              <div className="text-4xl">{theme === 'ben10' ? '⚡' : theme === 'tinkerbell' ? '✨' : '📚'}</div>
+        
             </div>
           </div>
         </div>
 
         {/* Classes List */}
         <div className="bg-white rounded-3xl shadow-2xl border-4 border-black overflow-hidden">
-          <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-500 via-green-600 to-black' : theme === 'tinkerbell' ? 'from-green-400 via-yellow-500 to-green-600' : 'from-blue-500 via-indigo-600 to-slate-800'} p-6 border-b-4 border-black`}>
-            <h2 className="text-2xl font-black text-white mb-2 flex items-center">
+          <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-500 via-green-600 to-black' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : 'from-blue-500 via-indigo-600 to-slate-800'} p-6 border-b-4 border-black`}>
+            <h2 className="text-2xl font-black text-black mb-2 flex items-center">
               <span className="text-3xl mr-3">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : '📖'}</span>
-              Your {theme === 'ben10' ? 'Hero' : theme === 'tinkerbell' ? 'Magical' : 'Learning'} Classes
+              Your  Classes
               <span className="ml-3 text-xl">{theme === 'ben10' ? '⚡' : theme === 'tinkerbell' ? '✨' : '📚'}</span>
             </h2>
             <p className={`font-bold ${theme === 'ben10' ? 'text-green-200' : theme === 'tinkerbell' ? 'text-yellow-200' : 'text-blue-200'}`}>
@@ -269,7 +266,7 @@ export default function StudentSheetsPage() {
           </div>
 
           {classes.length === 0 ? (
-            <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-700 via-green-800 to-black' : theme === 'tinkerbell' ? 'from-yellow-600 via-green-700 to-yellow-700' : 'from-slate-700 via-indigo-800 to-blue-900'} p-12 text-center border-t-4 border-black`}>
+            <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-700 via-green-800 to-black' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : 'from-slate-700 via-indigo-800 to-blue-900'} p-12 text-center border-t-4 border-black`}>
               <div className="text-6xl mb-6">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : '📖'}</div>
               <h3 className="text-2xl font-black text-white mb-4">
                 No {theme === 'ben10' ? 'Hero' : theme === 'tinkerbell' ? 'Magical' : 'Learning'} Classes Yet
@@ -283,7 +280,7 @@ export default function StudentSheetsPage() {
               {classes.map((classData) => (
                 <div
                   key={classData.id}
-                  className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-600 via-green-700 to-black' : theme === 'tinkerbell' ? 'from-green-500 via-yellow-500 to-green-600' : 'from-blue-600 via-indigo-700 to-slate-800'} p-6 hover:scale-105 transition-all cursor-pointer border-b-4 border-black last:border-b-0`}
+                  className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-600 via-green-700 to-black' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600': 'from-blue-600 via-indigo-700 to-slate-800'} p-6 hover:scale-105 transition-all cursor-pointer border-b-4 border-black last:border-b-0`}
                   onClick={() => openClassSheets(classData)}
                 >
                   <div className="flex items-center justify-between">
@@ -294,13 +291,13 @@ export default function StudentSheetsPage() {
                         </div>
                       </div>
                       <div className="flex-1">
-                        <h3 className="text-xl font-black text-white mb-1">
+                        <h3 className="text-xl font-black text-black mb-1">
                           {classData.name}
                         </h3>
-                        <p className={`font-bold text-lg mb-1 ${theme === 'ben10' ? 'text-green-200' : theme === 'tinkerbell' ? 'text-yellow-200' : 'text-blue-200'}`}>{classData.subject}</p>
-                        <p className={`font-bold text-sm mb-3 ${theme === 'ben10' ? 'text-green-300' : theme === 'tinkerbell' ? 'text-yellow-300' : 'text-blue-300'}`}>{classData.year}</p>
+                        <p className={`font-bold text-lg mb-1 ${theme === 'ben10' ? 'text-green-200' : theme === 'tinkerbell' ? 'text-white' : 'text-blue-200'}`}>{classData.subject}</p>
+                        <p className={`font-bold text-sm mb-3 ${theme === 'ben10' ? 'text-green-300' : theme === 'tinkerbell' ? 'text-white' : 'text-blue-300'}`}>{classData.year}</p>
 
-                        <div className={`flex items-center space-x-6 text-sm font-bold ${theme === 'ben10' ? 'text-green-200' : theme === 'tinkerbell' ? 'text-yellow-200' : 'text-blue-200'}`}>
+                        <div className={`flex items-center space-x-6 text-sm font-bold ${theme === 'ben10' ? 'text-black' : theme === 'tinkerbell' ? 'text-black' : 'text-blue-200'}`}>
                           <div className="flex items-center space-x-2">
                             <span className="text-2xl">📊</span>
                             <span>{classData.sheetCount} {theme === 'ben10' ? 'hero' : theme === 'tinkerbell' ? 'magical' : 'active'} sheet{classData.sheetCount !== 1 ? 's' : ''}</span>

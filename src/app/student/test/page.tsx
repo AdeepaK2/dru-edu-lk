@@ -1079,9 +1079,9 @@ export default function StudentTests() {
             <div className="flex items-center space-x-4">
               <div className="text-6xl">📝</div>
               <div>
-                <h1 className="text-4xl font-black text-white mb-2 flex items-center">
+                <h1 className="text-5xl font-black text-black mb-2 flex items-center">
                   <span>My</span>
-                  <span className={`ml-2 font-black text-5xl ${theme === 'ben10' ? 'text-green-400' : theme === 'tinkerbell' ? 'text-yellow-400' : 'text-blue-300'}`}>Tests</span>
+                  <span className={`ml-2 font-black text-5xl `}>Tests</span>
                 </h1>
                 <p className="text-white font-bold text-lg">
                   Challenge yourself with epic tests and grow! 
@@ -1119,7 +1119,7 @@ export default function StudentTests() {
         <div className={`rounded-2xl shadow-xl border-4 border-black p-6 mb-6 ${theme === 'ben10' ? 'bg-gradient-to-r from-green-400 via-black to-green-400' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 via-green-400 to-yellow-300' : 'bg-gradient-to-r from-blue-300 via-indigo-400 to-blue-300'}`}>
           <div className="flex items-center space-x-3 mb-4">
             <div className="text-3xl">🔍</div>
-            <h2 className="text-2xl font-black text-white">Search Tests</h2>
+            <h2 className="text-2xl font-black text-black">Search Tests</h2>
           
           </div>
 
@@ -1628,7 +1628,7 @@ export default function StudentTests() {
                         {classData.enrollment.className}
                       </h2>
                       <p className="text-black font-bold text-lg">
-                        {classData.enrollment.subject} • Learning Adventures! ⚡
+                        {classData.enrollment.subject} • Learning Adventures! 
                       </p>
                     </div>
                   </div>

@@ -156,7 +156,7 @@ export default function StudentClassesPage() {
     <>
       <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-green-400  to-black' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : 'from-blue-400 via-indigo-500 to-indigo-600'} p-6`}>
         {/* Header */}
-        <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-400  to-black' : theme === 'tinkerbell' ? 'from-yellow-400 via-green-500 to-yellow-500' : 'from-blue-400 to-indigo-600'} rounded-3xl shadow-2xl border-4 border-black p-8 mb-6 relative overflow-hidden`}>
+        <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-400  to-black' : theme === 'tinkerbell' ? 'from-green-300 via-green-500 to-yellow-400' : 'from-blue-400 to-indigo-600'} rounded-3xl shadow-2xl border-4 border-black p-8 mb-6 relative overflow-hidden`}>
       
           <div className="flex items-center justify-between relative z-10">
             <div className="flex items-center space-x-4">
@@ -164,11 +164,10 @@ export default function StudentClassesPage() {
               <div>
                 <h1 className="text-4xl font-black text-black mb-2 flex items-center">
                   <span>My</span>
-                  <span className={`ml-2 font-black text-4xl ${theme === 'ben10' ? 'text-black' : theme === 'tinkerbell' ? 'text-yellow-300' : 'text-white'}`}>Classes</span>
                   <span className="ml-2 text-3xl">Classroom</span>
                 
                 </h1>
-                <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-green-200' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-100'}`}>
+                <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-green-100' : theme === 'tinkerbell' ? 'text-white' : 'text-blue-100'}`}>
                   Transform your learning with amazing adventures! 
                 </p>
               </div>
@@ -186,10 +185,10 @@ export default function StudentClassesPage() {
         </div>
 
         {/* Search and Filter */}
-        <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-400  to-black' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : 'from-blue-300 via-indigo-400 to-indigo-500'} rounded-2xl shadow-xl border-4 border-black p-6 mb-6`}>
+        <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-400  to-black' : theme === 'tinkerbell' ? 'from-green-300 via-green-400 to-yellow-400' : 'from-blue-300 via-indigo-400 to-indigo-500'} rounded-2xl shadow-xl border-4 border-black p-6 mb-6`}>
           <div className="flex items-center space-x-3 mb-4">
             <div className="text-3xl">🔍</div>
-            <h2 className="text-2xl font-black text-white">Search Classes</h2>
+            <h2 className="text-2xl font-bold text-black">Search Classes</h2>
             
           </div>
 
@@ -249,11 +248,11 @@ export default function StudentClassesPage() {
                 {/* Class Header */}
                 <div className="flex items-start justify-between mb-6">
                   <div className="flex items-center space-x-4">
-                    <div className={`w-16 h-16 rounded-full flex items-center justify-center border-4 border-black shadow-lg animate-pulse ${theme === 'ben10' ? 'bg-green-500' : theme === 'tinkerbell' ? 'bg-yellow-500' : 'bg-blue-500'}`}>
+                    <div className={`w-16 h-16 rounded-full flex items-center justify-center border-4 border-black shadow-lg  ${theme === 'ben10' ? 'bg-green-500' : theme === 'tinkerbell' ? 'bg-yellow-500' : 'bg-blue-500'}`}>
                       <div className="text-3xl">📚</div>
                     </div>
                     <div>
-                      <h3 className="font-black text-white text-xl mb-1">
+                      <h3 className="font-black text-black text-xl mb-1">
                         {enrollment.className}
                       </h3>
                       <p className={`text-black font-bold text-sm rounded-full px-3 py-1 border-2 border-black ${theme === 'ben10' ? 'bg-green-200' : theme === 'tinkerbell' ? 'bg-yellow-200' : 'bg-blue-200'}`}>
@@ -281,7 +280,7 @@ export default function StudentClassesPage() {
                       <div className="text-2xl">📅</div>
                       <span className="text-sm font-bold text-black">Enrolled</span>
                     </div>
-                    <span className={`text-sm font-black rounded-full px-3 py-1 border-2 border-black ${theme === 'ben10' ? 'bg-green-300' : theme === 'tinkerbell' ? 'bg-yellow-200' : 'bg-blue-200'}`}>
+                    <span className={`text-sm font-black rounded-full px-3 py-1 border-2 text-black border-black ${theme === 'ben10' ? 'bg-green-300' : theme === 'tinkerbell' ? 'bg-yellow-200' : 'bg-blue-200'}`}>
                       {enrollment.enrolledAt.toLocaleDateString()}
                     </span>
                   </div>
@@ -321,7 +320,7 @@ export default function StudentClassesPage() {
                       ></div>
                     </div>
                     <div className="text-center mt-2">
-                      <span className="text-sm font-bold text-white">Transform to Excellence! ⚡</span>
+                      <span className="text-sm font-bold text-white">Transform to Excellence! </span>
                     </div>
                   </div>
                 )}
@@ -450,7 +449,7 @@ export default function StudentClassesPage() {
           <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-400 via-black to-green-400' : 'from-yellow-300 via-green-400 to-yellow-400'} rounded-3xl shadow-2xl border-4 border-black p-8 mt-8`}>
             <div className="flex items-center justify-center space-x-3 mb-8">
               <div className="text-4xl">📊</div>
-              <h3 className="text-3xl font-black text-white">Classes Summary</h3>
+              <h3 className="text-3xl font-black text-black">Classes Summary</h3>
          
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">

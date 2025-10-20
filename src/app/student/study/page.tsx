@@ -726,16 +726,16 @@ export default function StudentStudyPage() {
             <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-500 to-green-600' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : 'from-blue-500 to-indigo-600'} rounded-3xl shadow-2xl border-4 border-black p-8 mb-8`}>
               <div className="flex justify-between items-center mb-6">
                 <div>
-                  <h1 className="text-4xl font-black text-white flex items-center">
-                    🦸‍♂️ {currentClass?.name} 
+                  <h1 className="text-4xl font-black text-black flex items-center">
+                     {currentClass?.name} 
                   </h1>
-                  <p className="text-green-200 font-bold text-lg">{currentClass?.subject}</p>
+                  <p className="text-white font-bold text-2xl">{currentClass?.subject}</p>
                 </div>
                 <div className="text-right">
-                  <div className="text-4xl font-black text-white">
+                  <div className="text-4xl font-black text-black">
                     {currentClass?.completedMaterials}/{currentClass?.totalMaterials}
                   </div>
-                  <div className="text-sm font-black text-white/90">Materials Completed </div>
+                  <div className="text-sm font-black text-black">Materials Completed </div>
                 </div>
               </div>
 
@@ -786,7 +786,7 @@ export default function StudentStudyPage() {
 
             {/* Search and Filter */}
             <div className="bg-white rounded-3xl shadow-2xl border-4 border-black p-6 mb-8">
-              <div className="flex flex-col md:flex-row gap-6">
+              <div className="flex flex-col md:flex-row gap-6 text-black">
                 <div className="flex-1">
                   <input
                     type="text"
@@ -1121,7 +1121,7 @@ export default function StudentStudyPage() {
                
               </h1>
               <p className={`font-bold text-lg ${
-                theme === 'ben10' ? 'text-green-200' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-100'
+                theme === 'ben10' ? 'text-green-200' : theme === 'tinkerbell' ? 'text-white' : 'text-blue-100'
               }`}>
                 {theme === 'ben10'
                   ? `Welcome back, ${student.name}! Access your study materials!`
@@ -1234,7 +1234,7 @@ export default function StudentStudyPage() {
         <h2 className={`text-3xl font-black text-black mb-6 text-center rounded-3xl p-4 border-4 border-black shadow-2xl ${
           theme === 'ben10'
             ? 'bg-gradient-to-r from-green-500 to-green-600'
-            : 'bg-gradient-to-r from-green-400 to-yellow-500'
+            : 'bg-gradient-to-r from-green-400 to-green-300'
         }`}>
           {theme === 'ben10' ? ' Your Classes ' : ' Your Classes '}
         </h2>
@@ -1247,7 +1247,7 @@ export default function StudentStudyPage() {
             }`}>
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xl font-black text-white">{classItem.name}</h3>
+                  <h3 className="text-xl font-black text-black">{classItem.name}</h3>
                   {classItem.recentMaterials > 0 && (
                     <Badge className={`font-black border-2 border-black ${
                       theme === 'ben10' ? 'bg-yellow-400 text-black' : theme === 'tinkerbell' ? 'bg-green-400 text-black' : 'bg-blue-300 text-white'
@@ -1256,36 +1256,36 @@ export default function StudentStudyPage() {
                     </Badge>
                   )}
                 </div>
-                <p className="text-sm font-black text-white/90 mb-4">{classItem.subject}</p>
+                <p className="text-3xl font-black text-white/90 mb-4">{classItem.subject}</p>
 
                 <div className="space-y-4">
                   <div>
-                    <div className="flex justify-between text-sm font-black text-white mb-2">
+                    <div className="flex justify-between text-sm font-black text-black mb-2">
                       <span>Overall Progress</span>
                       <span>{Math.round(classItem.progress)}%</span>
                     </div>
                     <div className="bg-white/20 rounded-full h-3 border-2 border-black">
                       <div
-                        className="bg-white h-3 rounded-full transition-all duration-300"
+                        className="bg-black h-3 rounded-full transition-all duration-300"
                         style={{ width: `${classItem.progress}%` }}
                       ></div>
                     </div>
                   </div>
 
                   <div>
-                    <div className="flex justify-between text-sm font-black text-white mb-2">
+                    <div className="flex justify-between text-sm font-black text-black mb-2">
                       <span>Required Materials</span>
                       <span>{classItem.completedRequired}/{classItem.requiredMaterials}</span>
                     </div>
                     <div className="bg-white/20 rounded-full h-3 border-2 border-black">
                       <div
-                        className="bg-white h-3 rounded-full transition-all duration-300"
+                        className="bg-black h-3 rounded-full transition-all duration-300"
                         style={{ width: `${classItem.requiredProgress}%` }}
                       ></div>
                     </div>
                   </div>
 
-                  <div className="flex justify-between text-sm font-black text-white">
+                  <div className="flex justify-between text-sm font-black text-black">
                     <span>Total Materials</span>
                     <span>{classItem.completedMaterials}/{classItem.totalMaterials}</span>
                   </div>
