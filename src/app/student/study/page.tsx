@@ -419,7 +419,7 @@ export default function StudentStudyPage() {
             <div className={`w-72 bg-gradient-to-b ${theme === 'ben10' ? 'from-green-500 to-green-600' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : 'from-blue-500 to-indigo-600'} border-r-4 border-black overflow-y-auto shadow-2xl pt-16`}>
               <div className="p-4 border-b-4 border-black">
                 <h2 className="text-lg font-black text-white text-center">
-                  🦸‍♂️ Study Materials 
+                  {theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : '📚'} Study Materials 
                 </h2>
                 <p className="text-sm font-black text-white/90 text-center">
                   {currentClass?.name}
@@ -1085,7 +1085,7 @@ export default function StudentStudyPage() {
          
 
           <div className="flex items-center space-x-4 relative z-10">
-            <div className="text-6xl">{theme === 'ben10' ? '🦸‍♂️' : '🧚‍♀️'}</div>
+            <div className="text-6xl">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : '📚'}</div>
             <div>
               <h1 className="text-4xl font-black text-black mb-2 flex items-center">
                 <span>Your</span>
@@ -1283,14 +1283,16 @@ export default function StudentStudyPage() {
             : 'from-yellow-400 to-green-500'
         }`}>
           <div className="p-8">
-            <div className="text-6xl mb-4">{theme === 'ben10' ? '🦸‍♂️' : '🧚‍♀️'}</div>
+            <div className="text-6xl mb-4">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : '📚'}</div>
             <h3 className="text-2xl font-black text-white mb-4">
               {theme === 'ben10' ? 'No Classes Yet!' : 'No Classes Yet!'}
             </h3>
             <p className="text-white/90 font-black mb-6">
               {theme === 'ben10'
-                ? `Ready to become a ${theme === 'ben10' ? 'learning hero' : 'magical learner'}? Enroll in your first class and start your adventure!`
-                : 'Ready to become a learning fairy? Enroll in your first class and start your magical journey!'}
+                ? 'Ready to become a learning hero? Enroll in your first class and start your adventure!'
+                : theme === 'tinkerbell'
+                ? 'Ready to become a magical learner? Enroll in your first class and start your magical journey!'
+                : 'Ready to become an enriching learner? Enroll in your first class and start your learning journey!'}
             </p>
             <button
               onClick={() => router.push('/enroll')}

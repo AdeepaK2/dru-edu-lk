@@ -601,10 +601,10 @@ export default function StudentMeetingPage() {
             {/* Theme-aware Class Selection */}
             <div className="bg-white rounded-3xl shadow-2xl border-4 border-black p-6">
               <div className="flex items-center space-x-4 mb-6">
-                <div className="text-4xl">{theme === 'ben10' ? 'Ω' : '✨'}</div>
+                <div className="text-4xl">{theme === 'ben10' ? 'Ω' : theme === 'tinkerbell' ? '✨' : '📚'}</div>
                 <div>
                   <h3 className="text-xl font-black text-black">Select Class (Optional)</h3>
-                  <p className="text-gray-600 font-bold">Filter teachers by your enrolled classes {theme === 'ben10' ? '⚡' : '✨'}</p>
+                  <p className="text-gray-600 font-bold">Filter teachers by your enrolled classes {theme === 'ben10' ? '⚡' : theme === 'tinkerbell' ? '✨' : '📚'}</p>
                 </div>
               </div>
               
@@ -861,7 +861,7 @@ export default function StudentMeetingPage() {
                 </div>
                 
                 <h3 className="text-2xl font-black text-black text-center mb-6">
-                  🎯 Confirm Your {theme === 'ben10' ? 'Hero' : 'Magical'} Booking
+                  🎯 Confirm Your {theme === 'ben10' ? 'Hero' : theme === 'tinkerbell' ? 'Magical' : 'Learning'} Booking
                 </h3>
                 
                 <div className="space-y-4 mb-8">

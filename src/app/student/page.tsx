@@ -456,7 +456,7 @@ export default function StudentDashboard() {
                   ></div>
                 </div>
                 <p className="text-black text-xs mt-1 font-bold">
-                  {dashboardStats.totalClasses}/10 goal {theme === 'ben10' ? '🦸‍♂️' : '🧚‍♀️'}
+                  {dashboardStats.totalClasses}/10 goal {theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : '📚'}
                 </p>
               </div>
               <div className="w-16 h-16 bg-black rounded-full flex items-center justify-center border-4 border-white transform hover:rotate-12 transition-transform">
@@ -621,10 +621,10 @@ export default function StudentDashboard() {
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-bold text-black">
-                      {theme === 'ben10' ? '🦸‍♂️' : '🧚‍♀️'} {theme === 'ben10' ? 'Test Hero' : 'Quiz Enchanter'}!
+                      {theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : '📚'} {theme === 'ben10' ? 'Test Hero' : theme === 'tinkerbell' ? 'Quiz Enchanter' : 'Quiz Champion'}!
                     </p>
                     <p className="text-xs text-gray-700 font-medium">
-                      You completed {dashboardStats.completedTests} test{dashboardStats.completedTests !== 1 ? 's' : ''} this semester - {theme === 'ben10' ? "Ben 10 is proud! 🏆" : "Tinkerbell sprinkles magic! ✨"}
+                      You completed {dashboardStats.completedTests} test{dashboardStats.completedTests !== 1 ? 's' : ''} this semester - {theme === 'ben10' ? "Ben 10 is proud! 🏆" : theme === 'tinkerbell' ? "Tinkerbell sprinkles magic! ✨" : "Great progress! 🎯"}
                     </p>
                   </div>
                 </div>
@@ -641,10 +641,10 @@ export default function StudentDashboard() {
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-bold text-black">
-                      {theme === 'ben10' ? '🔄' : '🌙'} {theme === 'ben10' ? 'Class Transformer' : 'Learning Dreamer'}!
+                      {theme === 'ben10' ? '🔄' : theme === 'tinkerbell' ? '🌙' : '📚'} {theme === 'ben10' ? 'Class Transformer' : theme === 'tinkerbell' ? 'Learning Dreamer' : 'Academic Achiever'}!
                     </p>
                     <p className="text-xs text-gray-700 font-medium">
-                      You're enrolled in {dashboardStats.totalClasses} class{dashboardStats.totalClasses !== 1 ? 'es' : ''} - {theme === 'ben10' ? "What an alien adventure! 👽" : "Welcome to the enchanted realm! 🏰"}
+                      You're enrolled in {dashboardStats.totalClasses} class{dashboardStats.totalClasses !== 1 ? 'es' : ''} - {theme === 'ben10' ? "What an alien adventure! 👽" : theme === 'tinkerbell' ? "Welcome to the enchanted realm! 🏰" : "Your learning community! 🎓"}
                     </p>
                   </div>
                 </div>
@@ -659,10 +659,10 @@ export default function StudentDashboard() {
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-bold text-black">
-                      {theme === 'ben10' ? '⚡' : '💫'} {theme === 'ben10' ? 'Study Champion' : 'Knowledge Seeker'}!
+                      {theme === 'ben10' ? '⚡' : theme === 'tinkerbell' ? '💫' : '📚'} {theme === 'ben10' ? 'Study Champion' : theme === 'tinkerbell' ? 'Knowledge Seeker' : 'Learning Guide'}!
                     </p>
                     <p className="text-xs text-gray-700 font-medium">
-                      {dashboardStats.studyMaterials} resource{dashboardStats.studyMaterials !== 1 ? 's' : ''} ready for your {theme === 'ben10' ? 'heroic learning journey! 🚀' : 'magical adventure! 🌟'}
+                      {dashboardStats.studyMaterials} resource{dashboardStats.studyMaterials !== 1 ? 's' : ''} ready for your {theme === 'ben10' ? 'heroic learning journey! 🚀' : theme === 'tinkerbell' ? 'magical adventure! 🌟' : 'educational journey! 📚'}
                     </p>
                   </div>
                 </div>
@@ -675,7 +675,7 @@ export default function StudentDashboard() {
                     borderTopColor: 'black'
                   }}></div>
                   <p className="text-black font-bold text-sm">
-                    Loading {theme === 'ben10' ? "Ben 10's power... ⚡" : "Tinkerbell's magic... ✨"}
+                    Loading {theme === 'ben10' ? "Ben 10's power... ⚡" : theme === 'tinkerbell' ? "Tinkerbell's magic... ✨" : "your data... 📚"}
                   </p>
                 </div>
               )}
@@ -699,7 +699,7 @@ export default function StudentDashboard() {
                 <div className="flex justify-between text-sm">
                   <span className="font-bold" style={{
                     color: theme === 'ben10' ? 'rgb(255,255,255)' : 'rgb(255,255,255)'
-                  }}> {theme === 'ben10' ? 'Complete 20 Tests' : 'Complete 20 Quizzes'}</span>
+                  }}> {theme === 'ben10' ? 'Complete 20 Tests' : theme === 'tinkerbell' ? 'Complete 20 Quizzes' : 'Complete 20 Assessments'}</span>
                   <span className="font-black" style={{
                     color: theme === 'ben10' ? 'rgb(255,255,255)' : 'rgb(255, 255, 255)'
                   }}>
