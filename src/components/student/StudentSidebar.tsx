@@ -251,10 +251,10 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
                   {student.name}
                 </p>
                 <p className="text-xs font-bold" style={{
-                  color: theme === 'ben10' ? 'rgb(187, 247, 208)' : theme === 'tinkerbell' ? 'rgb(234, 179, 8)' : 'rgb(219, 234, 254)'
+                  color: theme === 'ben10' ? 'rgb(0, 0, 0)' : theme === 'tinkerbell' ? 'rgb(0, 0, 0)' : 'rgb(0, 0, 0)'
                 }}>
                   {student.status === 'Active' 
-                    ? (theme === 'ben10' ? '🦸‍♂️ Active Hero Student' : theme === 'tinkerbell' ? '🧚‍♀️ Active Fairy Student' : '📚 Active Learner') 
+                    ? (theme === 'ben10' ? 'Active' : theme === 'tinkerbell' ? ' Active ' : 'Active Learner') 
                     : student.status || 'Student'
                   }
                 </p>
@@ -328,14 +328,14 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
           <Button
             onClick={handleLogout}
             variant="outline"
-            className={`w-full flex items-center justify-center space-x-3 text-white font-black border-2 border-black rounded-full py-3 transform hover:scale-105 transition-all shadow-lg ${
+            className={`w-full flex items-center justify-center space-x-3 text-black font-black border-2 border-black rounded-full py-3 transform hover:scale-105 transition-all shadow-lg ${
               theme === 'ben10'
                 ? 'bg-gradient-to-r from-green-500 to-black hover:from-green-600 hover:to-gray-900'
                 : 'bg-gradient-to-r from-yellow-400 to-green-500 hover:from-yellow-500 hover:to-green-600'
             }`}
           >
-            <LogOut className="w-5 h-5" />
-            <span>🚪 Logout</span>
+            <LogOut className="text-black w-5 h-5" />
+            <span className="text-black"> Logout</span>
           </Button>
         </div>
       </div>
