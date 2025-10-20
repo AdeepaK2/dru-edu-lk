@@ -170,7 +170,9 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
           className={`fixed inset-0 z-40 backdrop-blur-sm lg:hidden ${
             theme === 'ben10'
               ? 'bg-gradient-to-br from-green-400/80 via-black/80 to-green-500/80'
-              : 'bg-gradient-to-br from-green-400/80 via-yellow-400/80 to-yellow-600/80'
+              : theme === 'tinkerbell'
+              ? 'bg-gradient-to-br from-green-400/80 via-yellow-400/80 to-yellow-600/80'
+              : 'bg-gradient-to-br from-blue-400/80 via-indigo-400/80 to-indigo-600/80'
           }`}
           onClick={onToggle}
         />
@@ -183,13 +185,17 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         ${theme === 'ben10' 
           ? 'bg-gradient-to-b from-green-500 via-black to-green-600' 
-          : 'bg-gradient-to-br from-green-400 to-yellow-600'}
+          : theme === 'tinkerbell'
+          ? 'bg-gradient-to-br from-green-400 to-yellow-600'
+          : 'bg-gradient-to-b from-blue-500 via-indigo-500 to-indigo-600'}
       `}>
         {/* Header */}
           <div className={`flex items-center justify-between px-6 py-3 ${
             theme === 'ben10' 
               ? 'bg-gradient-to-r from-green-600 to-black' 
-              : 'bg-gradient-to-r from-yellow-500 to-green-600'
+              : theme === 'tinkerbell'
+              ? 'bg-gradient-to-r from-yellow-500 to-green-600'
+              : 'bg-gradient-to-r from-blue-600 to-indigo-700'
           }`}>
             <div className="flex items-center space-x-3">
               <img 
@@ -208,7 +214,9 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
               className={`lg:hidden p-2 rounded-full text-white border-2 border-white font-black transition-all ${
                 theme === 'ben10'
                   ? 'hover:text-green-400 hover:bg-black'
-                  : 'hover:text-yellow-400 hover:bg-black'
+                  : theme === 'tinkerbell'
+                  ? 'hover:text-yellow-400 hover:bg-black'
+                  : 'hover:text-blue-400 hover:bg-indigo-700'
               }`}
             >
               <X className="w-5 h-5" />
@@ -220,18 +228,22 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
           <div className={`p-4 border-b-4 border-black ${
             theme === 'ben10'
               ? 'bg-gradient-to-r from-black to-green-600'
-              : 'bg-gradient-to-r from-yellow-500 to-green-600'
+              : theme === 'tinkerbell'
+              ? 'bg-gradient-to-r from-yellow-500 to-green-600'
+              : 'bg-gradient-to-r from-indigo-600 to-blue-500'
           }`}>
             <div className="flex items-center space-x-3">
               <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border-2 border-black shadow-lg ${
                 theme === 'ben10'
                   ? 'bg-gradient-to-br from-green-500 to-black'
-                  : 'bg-gradient-to-br from-yellow-400 to-green-500'
+                  : theme === 'tinkerbell'
+                  ? 'bg-gradient-to-br from-yellow-400 to-green-500'
+                  : 'bg-gradient-to-br from-blue-400 to-indigo-500'
               }`}>
                 <span className="text-2xl font-black" style={{
-                  color: theme === 'ben10' ? 'rgb(74, 222, 128)' : 'rgb(202, 138, 4)'
+                  color: theme === 'ben10' ? 'rgb(74, 222, 128)' : theme === 'tinkerbell' ? 'rgb(202, 138, 4)' : 'rgb(147, 197, 253)'
                 }}>
-                  {theme === 'ben10' ? '🦸‍♂️' : '🧚‍♀️'}
+                  {theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : '📚'}
                 </span>
               </div>
               <div className="flex-1 min-w-0">
@@ -239,10 +251,10 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
                   {student.name}
                 </p>
                 <p className="text-xs font-bold" style={{
-                  color: theme === 'ben10' ? 'rgb(187, 247, 208)' : 'rgb(234, 179, 8)'
+                  color: theme === 'ben10' ? 'rgb(187, 247, 208)' : theme === 'tinkerbell' ? 'rgb(234, 179, 8)' : 'rgb(219, 234, 254)'
                 }}>
                   {student.status === 'Active' 
-                    ? (theme === 'ben10' ? '🦸‍♂️ Active Hero Student' : '🧚‍♀️ Active Fairy Student') 
+                    ? (theme === 'ben10' ? '🦸‍♂️ Active Hero Student' : theme === 'tinkerbell' ? '🧚‍♀️ Active Fairy Student' : '📚 Active Learner') 
                     : student.status || 'Student'
                   }
                 </p>
@@ -265,11 +277,15 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
                   ${isActive 
                     ? (theme === 'ben10'
                         ? 'bg-gradient-to-r from-green-500 to-black text-white border-black shadow-lg'
-                        : 'bg-gradient-to-r from-yellow-400 to-green-500 text-white border-black shadow-lg')
+                        : theme === 'tinkerbell'
+                        ? 'bg-gradient-to-r from-yellow-400 to-green-500 text-white border-black shadow-lg'
+                        : 'bg-gradient-to-r from-blue-400 to-indigo-600 text-white border-indigo-700 shadow-lg')
                     : `bg-white text-black hover:bg-gradient-to-r border-gray-300 hover:border-black ${
                         theme === 'ben10'
                           ? 'hover:from-green-400 hover:to-black hover:text-white'
-                          : 'hover:from-yellow-300 hover:to-green-400 hover:text-white'
+                          : theme === 'tinkerbell'
+                          ? 'hover:from-yellow-300 hover:to-green-400 hover:text-white'
+                          : 'hover:from-blue-300 hover:to-indigo-500 hover:text-white'
                       }`
                   }
                 `}
@@ -288,7 +304,9 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
                   <span className={`inline-flex items-center px-3 py-1 text-sm font-black text-white rounded-full border-2 border-black ${
                     theme === 'ben10'
                       ? 'bg-gradient-to-r from-green-500 to-black'
-                      : 'bg-gradient-to-r from-yellow-400 to-green-500'
+                      : theme === 'tinkerbell'
+                      ? 'bg-gradient-to-r from-yellow-400 to-green-500'
+                      : 'bg-gradient-to-r from-blue-400 to-indigo-600'
                   }`}>
                     {item.badge}
                   </span>
