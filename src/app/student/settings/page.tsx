@@ -317,21 +317,13 @@ export default function StudentSettingsPage() {
                 </div>
                 <div className="absolute bottom-4 w-1 h-1 bg-green-500 rounded-full animate-ping"></div>
               </div>
-              {/* Omnitrix symbols */}
-              <div className="absolute -top-3 -left-3 w-6 h-6 bg-green-400 rounded-full border-2 border-black flex items-center justify-center animate-pulse">
-                <span className="text-black font-black text-xs">Ω</span>
-              </div>
-              <div className="absolute -top-3 -right-3 w-6 h-6 bg-green-400 rounded-full border-2 border-black flex items-center justify-center animate-pulse delay-500">
-                <span className="text-black font-black text-xs">Ω</span>
-              </div>
+            
             </div>
-            <div className="text-center mt-4">
-              <span className="text-black font-bold text-lg">Ben 10</span>
-            </div>
+            
           </div>
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-black border-t-green-400 mx-auto mb-4"></div>
-          <p className="text-black font-bold text-lg">Loading Ben 10's Settings... ⚡</p>
-          <p className="text-gray-600 font-medium mt-2">Get ready to customize your heroic profile! Ω</p>
+          <p className="text-black font-bold text-lg">Loading Settings...</p>
+          <p className="text-gray-600 font-medium mt-2">Get ready to customize your heroic profile! </p>
         </div>
       </div>
     );
@@ -350,27 +342,18 @@ export default function StudentSettingsPage() {
   return (
     <div className="space-y-8">
       {/* Page Header - Theme Aware */}
-      <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-600 via-green-700 to-black' : 'from-green-500 via-yellow-500 to-green-600'} rounded-2xl text-white p-8 relative overflow-hidden`}>
+      <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-600 via-green-700 to-black' : theme === 'tinkerbell' ? 'from-green-500 via-yellow-500 to-green-600' : 'from-blue-600 via-indigo-700 to-indigo-900'} rounded-2xl text-white p-8 relative overflow-hidden`}>
         {/* Ben 10 themed background elements */}
-        <div className={`absolute top-0 right-0 w-32 h-32 ${theme === 'ben10' ? 'bg-green-400' : 'bg-yellow-400'} rounded-full -translate-y-16 translate-x-16 animate-bounce opacity-20`}></div>
-        <div className={`absolute bottom-0 left-0 w-24 h-24 ${theme === 'ben10' ? 'bg-green-500' : 'bg-yellow-500'} rounded-full translate-y-12 -translate-x-12 animate-pulse opacity-20`}></div>
-        {/* Omnitrix symbols */}
-        <div className="absolute top-4 right-4 flex space-x-2">
-          <div className={`w-8 h-8 ${theme === 'ben10' ? 'bg-green-400' : 'bg-yellow-400'} rounded-full border-2 border-black flex items-center justify-center animate-pulse`}>
-            <span className="text-black font-black text-sm">Ω</span>
-          </div>
-          <div className={`w-8 h-8 ${theme === 'ben10' ? 'bg-green-400' : 'bg-yellow-400'} rounded-full border-2 border-black flex items-center justify-center animate-pulse delay-300`}>
-            <span className="text-black font-black text-sm">Ω</span>
-          </div>
-        </div>
-
+        
+   
+        
         <div className="flex items-center justify-between relative z-10">
           <div className="flex-1">
             <div className="flex items-center space-x-4 mb-2">
-              <div className="text-6xl">⚡</div>
+              
               <div>
                 <h1 className="text-3xl font-bold">
-                  Ben 10's Hero Settings! Ω
+               Setting Page 
                 </h1>
                 <p className="text-green-100 text-lg font-semibold mt-2">
                   Customize your heroic learning profile!
@@ -378,7 +361,7 @@ export default function StudentSettingsPage() {
               </div>
             </div>
             <p className="text-black mb-4 text-base">
-              Choose your favorite Disney character and make learning more fun! 🌟
+              Choose your favorite Disney character and make learning more fun! 
             </p>
           </div>
           <div className="hidden md:block">
@@ -399,7 +382,7 @@ export default function StudentSettingsPage() {
       {message && (
         <div className={`rounded-xl border-4 border-black p-4 shadow-lg ${
           message.type === 'success' 
-            ? `${theme === 'ben10' ? 'bg-gradient-to-r from-green-300 to-emerald-300' : 'bg-gradient-to-r from-yellow-300 to-green-300'}` 
+            ? `${theme === 'ben10' ? 'bg-gradient-to-r from-green-300 to-emerald-300' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 to-green-300' : 'bg-gradient-to-r from-blue-300 to-indigo-300'}` 
             : 'bg-gradient-to-r from-red-300 to-pink-300'
         }`}>
           <div className="flex items-center space-x-3">
@@ -417,13 +400,13 @@ export default function StudentSettingsPage() {
       )}
 
       {/* Theme Selector Section */}
-      <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-purple-300 via-pink-300 to-purple-500' : 'from-yellow-200 via-green-200 to-yellow-300'} rounded-xl shadow-lg border-4 border-black p-6`}>
+      <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-purple-300 via-pink-300 to-purple-500' : theme === 'tinkerbell' ? 'from-yellow-200 via-green-200 to-yellow-300' : 'from-blue-200 via-indigo-200 to-purple-300'} rounded-xl shadow-lg border-4 border-black p-6`}>
         <div className="flex items-center space-x-3 mb-6">
           <div className="text-3xl">🎨</div>
           <h2 className="text-2xl font-black text-black">Choose Your Learning Theme! ✨</h2>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-3 gap-6">
           {/* Ben10 Theme Card */}
           <button
             type="button"
@@ -435,8 +418,7 @@ export default function StudentSettingsPage() {
             }`}
           >
             <div className="flex items-center justify-between mb-4">
-              <div className="text-5xl">⚡</div>
-              <div className="text-3xl">🟢</div>
+              
             </div>
             <h3 className="text-2xl font-bold text-black mb-2">Ben 10 Hero</h3>
             <p className="text-black font-semibold mb-3">Green & Black Theme</p>
@@ -467,8 +449,7 @@ export default function StudentSettingsPage() {
             }`}
           >
             <div className="flex items-center justify-between mb-4">
-              <div className="text-5xl">✨</div>
-              <div className="text-3xl">🟡</div>
+            
             </div>
             <h3 className="text-2xl font-bold text-black mb-2">Tinkerbell Magic</h3>
             <p className="text-black font-semibold mb-3">Green & Gold Theme</p>
@@ -487,6 +468,37 @@ export default function StudentSettingsPage() {
               </div>
             )}
           </button>
+
+          {/* Professional/Normal Theme Card */}
+          <button
+            type="button"
+            onClick={() => handleThemeChange('normal')}
+            className={`p-6 rounded-xl border-4 transition-all transform hover:scale-105 ${
+              selectedTheme === 'normal'
+                ? 'border-blue-600 bg-blue-100 shadow-lg scale-105'
+                : 'border-black bg-white hover:border-blue-400'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-4">
+             
+            </div>
+            <h3 className="text-2xl font-bold text-black mb-2">Professional</h3>
+            <p className="text-black font-semibold mb-3">Blue & Clean Theme</p>
+            <p className="text-sm text-gray-700 mb-4">
+              Focus on your studies with a clean, professional interface. Blue and white colors for a classic learning experience.
+            </p>
+            <div className="flex items-center justify-center space-x-2">
+              <div className="w-8 h-8 bg-blue-400 rounded-full border-2 border-black"></div>
+              <div className="w-8 h-8 bg-blue-500 rounded-full border-2 border-black"></div>
+              <div className="w-8 h-8 bg-indigo-600 rounded-full border-2 border-black"></div>
+              <div className="w-8 h-8 bg-white rounded-full border-2 border-black"></div>
+            </div>
+            {selectedTheme === 'normal' && (
+              <div className="mt-4 flex items-center justify-center">
+                <span className="text-lg font-bold text-blue-600">✓ Selected</span>
+              </div>
+            )}
+          </button>
         </div>
 
         <div className="mt-6 p-4 bg-white border-2 border-black rounded-lg">
@@ -498,10 +510,10 @@ export default function StudentSettingsPage() {
       </div>
 
       {/* Profile Settings - Theme Aware */}
-      <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-300 via-green-400 to-black' : 'from-yellow-300 via-green-400 to-yellow-500'} rounded-xl shadow-lg border-4 border-black p-6`}>
+      <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-300 via-green-400 to-black' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-500' : 'from-blue-300 via-indigo-400 to-indigo-600'} rounded-xl shadow-lg border-4 border-black p-6`}>
         <div className="flex items-center space-x-3 mb-6">
           <div className="text-3xl">🎨</div>
-          <h2 className="text-2xl font-black text-black">Ben 10's Hero Profile Studio</h2>
+          <h2 className="text-2xl font-black text-black">Profile Studio</h2>
         </div>
 
         <form onSubmit={handleProfileSubmit} className="space-y-6">
@@ -513,12 +525,12 @@ export default function StudentSettingsPage() {
                 <div className="flex items-center justify-between mb-4">
                   <label className="text-lg font-bold text-black flex items-center">
                     <Camera className="w-5 h-5 mr-2" />
-                    Choose Your Hero Avatar! Ω
+                    Choose Your Avatar! 
                   </label>
                   <button
                     type="button"
                     onClick={() => setShowAvatarSelector(!showAvatarSelector)}
-                    className={`${theme === 'ben10' ? 'bg-green-500 hover:bg-green-600' : 'bg-yellow-500 hover:bg-yellow-600'} text-white px-4 py-2 rounded-full text-sm font-bold transform hover:scale-105 transition-all`}
+                    className={`${theme === 'ben10' ? 'bg-green-500 hover:bg-green-600' : theme === 'tinkerbell' ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-blue-500 hover:bg-blue-600'} text-white px-4 py-2 rounded-full text-sm font-bold transform hover:scale-105 transition-all`}
                   >
                     {showAvatarSelector ? 'Hide' : 'Change'} Avatar
                   </button>
@@ -570,7 +582,7 @@ export default function StudentSettingsPage() {
               <div className="bg-white border-4 border-black rounded-xl p-4">
                 <label className="text-sm font-bold text-black mb-2 flex items-center">
                   <User className="w-4 h-4 mr-2" />
-                  Your Hero Name! ⚡
+                  Your Hero Name!
                 </label>
                 <Input
                   type="text"
@@ -603,7 +615,7 @@ export default function StudentSettingsPage() {
               <div className="bg-white border-4 border-black rounded-xl p-4">
                 <label className="text-sm font-bold text-black mb-2 flex items-center">
                   <Phone className="w-4 h-4 mr-2" />
-                  Phone Number 📞
+                  Phone Number 
                 </label>
                 <div className="flex space-x-2">
                   <select
@@ -650,18 +662,18 @@ export default function StudentSettingsPage() {
                         ? 'bg-green-300 text-black'
                         : 'bg-red-300 text-black'
                     }`}>
-                      {student.status} ⚡
+                      {student.status} 
                     </span>
                   </div>
-                  <div className={`flex justify-between items-center p-3 ${theme === 'ben10' ? 'bg-green-50 border-green-300' : 'bg-yellow-50 border-yellow-300'} border-2 rounded-lg`}>
+                  <div className={`flex justify-between items-center p-3 ${theme === 'ben10' ? 'bg-green-50 border-green-300' : theme === 'tinkerbell' ? 'bg-yellow-50 border-yellow-300' : 'bg-blue-50 border-blue-300'} border-2 rounded-lg`}>
                     <span className="text-black font-bold">📅 Enrolled Since:</span>
-                    <span className={`text-black font-bold ${theme === 'ben10' ? 'bg-green-300' : 'bg-yellow-300'} px-2 py-1 rounded border border-black`}>
+                    <span className={`text-black font-bold ${theme === 'ben10' ? 'bg-green-300' : theme === 'tinkerbell' ? 'bg-yellow-300' : 'bg-blue-300'} px-2 py-1 rounded border border-black`}>
                       {student.enrollmentDate ? new Date(student.enrollmentDate).toLocaleDateString() : 'N/A'}
                     </span>
                   </div>
-                  <div className={`flex justify-between items-center p-3 bg-black border-2 ${theme === 'ben10' ? 'border-green-400' : 'border-yellow-400'} rounded-lg`}>
+                  <div className={`flex justify-between items-center p-3 bg-black border-2 ${theme === 'ben10' ? 'border-green-400' : theme === 'tinkerbell' ? 'border-yellow-400' : 'border-blue-400'} rounded-lg`}>
                     <span className="text-white font-bold">🎓 Student ID:</span>
-                    <span className={`text-black font-bold ${theme === 'ben10' ? 'bg-green-300' : 'bg-yellow-300'} px-2 py-1 rounded border border-black`}>
+                    <span className={`text-black font-bold ${theme === 'ben10' ? 'bg-green-300' : theme === 'tinkerbell' ? 'bg-yellow-300' : 'bg-blue-300'} px-2 py-1 rounded border border-black`}>
                       {student.id}
                     </span>
                   </div>
@@ -669,14 +681,14 @@ export default function StudentSettingsPage() {
               </div>
 
               {/* Fun Fact */}
-              <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-300 to-black' : 'from-yellow-300 to-green-500'} border-4 border-black rounded-xl p-6 shadow-lg`}>
+              <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-300 to-black' : theme === 'tinkerbell' ? 'from-yellow-300 to-green-500' : 'from-blue-300 to-indigo-600'} border-4 border-black rounded-xl p-6 shadow-lg`}>
                 <h4 className="text-lg font-bold text-white mb-3 flex items-center">
-                  <span className="text-2xl mr-2">Ω</span>
+                 
                   Did You Know?
                 </h4>
                 <p className="text-white font-medium text-sm leading-relaxed">
                   Ben 10 first appeared in 2005 and has transformed into over 70 different alien heroes!
-                  Your avatar choice makes you part of the ultimate hero legacy! ⚡
+                  Your avatar choice makes you part of the ultimate hero legacy! 
                 </p>
               </div>
             </div>
@@ -687,9 +699,9 @@ export default function StudentSettingsPage() {
             <Button
               type="submit"
               disabled={loading.profile}
-              className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-500 to-black hover:from-green-600 hover:to-gray-800' : 'from-yellow-500 to-green-600 hover:from-yellow-600 hover:to-green-700'} text-white px-8 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black disabled:opacity-50 animate-pulse`}
+              className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-500 to-black hover:from-green-600 hover:to-gray-800' : theme === 'tinkerbell' ? 'from-yellow-500 to-green-600 hover:from-yellow-600 hover:to-green-700' : 'from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700'} text-white px-8 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black disabled:opacity-50 animate-pulse`}
             >
-              {loading.profile ? 'Saving Hero...' : 'Save Your Hero Profile! ⚡'}
+              {loading.profile ? 'Saving Hero...' : 'Save Your Hero Profile! '}
             </Button>
           </div>
         </form>
@@ -723,7 +735,7 @@ export default function StudentSettingsPage() {
 
               <div className="bg-white border-4 border-black rounded-xl p-4">
                 <label className="text-sm font-bold text-black mb-2 flex items-center">
-                  ⚡ New Password *
+                   New Password *
                 </label>
                 <Input
                   type="password"
@@ -738,7 +750,7 @@ export default function StudentSettingsPage() {
 
               <div className="bg-white border-4 border-black rounded-xl p-4">
                 <label className="text-sm font-bold text-black mb-2 flex items-center">
-                  🔄 Confirm New Password *
+                   Confirm New Password *
                 </label>
                 <Input
                   type="password"
@@ -765,7 +777,7 @@ export default function StudentSettingsPage() {
                   }`}>
                     {passwordValidation.minLength ? '✓' : '·'}
                   </span>
-                  <span className="text-black font-medium">At least 8 heroic characters Ω</span>
+                  <span className="text-black font-medium">At least 8 heroic characters </span>
                 </li>
                 <li className="flex items-center text-sm">
                   <span className={`w-6 h-6 mr-3 flex items-center justify-center rounded-full border-2 border-black ${
@@ -773,7 +785,7 @@ export default function StudentSettingsPage() {
                   }`}>
                     {passwordValidation.hasUppercase ? '✓' : '·'}
                   </span>
-                  <span className="text-black font-medium">At least 1 uppercase letter 🔤</span>
+                  <span className="text-black font-medium">At least 1 uppercase letter </span>
                 </li>
                 <li className="flex items-center text-sm">
                   <span className={`w-6 h-6 mr-3 flex items-center justify-center rounded-full border-2 border-black ${
@@ -781,7 +793,7 @@ export default function StudentSettingsPage() {
                   }`}>
                     {passwordValidation.hasLowercase ? '✓' : '·'}
                   </span>
-                  <span className="text-black font-medium">At least 1 lowercase letter 🔡</span>
+                  <span className="text-black font-medium">At least 1 lowercase letter </span>
                 </li>
                 <li className="flex items-center text-sm">
                   <span className={`w-6 h-6 mr-3 flex items-center justify-center rounded-full border-2 border-black ${
@@ -789,7 +801,7 @@ export default function StudentSettingsPage() {
                   }`}>
                     {passwordValidation.hasNumber ? '✓' : '·'}
                   </span>
-                  <span className="text-black font-medium">At least 1 number 🔢</span>
+                  <span className="text-black font-medium">At least 1 number </span>
                 </li>
                 <li className="flex items-center text-sm">
                   <span className={`w-6 h-6 mr-3 flex items-center justify-center rounded-full border-2 border-black ${
@@ -797,7 +809,7 @@ export default function StudentSettingsPage() {
                   }`}>
                     {passwordValidation.hasSpecialChar ? '✓' : '·'}
                   </span>
-                  <span className="text-black font-medium">At least 1 special character ⚡</span>
+                  <span className="text-black font-medium">At least 1 special character </span>
                 </li>
                 <li className="flex items-center text-sm">
                   <span className={`w-6 h-6 mr-3 flex items-center justify-center rounded-full border-2 border-black ${
@@ -805,7 +817,7 @@ export default function StudentSettingsPage() {
                   }`}>
                     {passwordValidation.match ? '✓' : '·'}
                   </span>
-                  <span className="text-black font-medium">Passwords match perfectly 🎯</span>
+                  <span className="text-black font-medium">Passwords match perfectly </span>
                 </li>
               </ul>
             </div>
@@ -818,7 +830,7 @@ export default function StudentSettingsPage() {
               disabled={loading.password || !Object.values(passwordValidation).every(v => v)}
               className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-500 to-black hover:from-green-600 hover:to-gray-800' : 'from-yellow-500 to-green-600 hover:from-yellow-600 hover:to-green-700'} text-white px-8 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black disabled:opacity-50 animate-pulse`}
             >
-              {loading.password ? 'Transforming Hero...' : 'Change Password Power! Ω'}
+              {loading.password ? 'Transforming Hero...' : 'Change Password Power!'}
             </Button>
           </div>
         </form>

@@ -134,9 +134,9 @@ export default function StudentDocumentsPage() {
 
   if (authLoading) {
     return (
-      <div className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-green-600 via-green-700 to-black' : 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400'} p-8`}>
+      <div className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-green-600 via-green-700 to-black' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : 'bg-gradient-to-br from-blue-600 via-indigo-700 to-blue-400'} p-8`}>
         <div className="flex items-center justify-center min-h-[400px]">
-          <div className={`w-16 h-16 border-t-4 border-black rounded-full animate-spin ${theme === 'ben10' ? 'bg-gradient-to-r from-green-400 to-green-600' : 'bg-gradient-to-r from-yellow-400 to-yellow-600'}`}></div>
+          <div className={`w-16 h-16 border-t-4 border-black rounded-full animate-spin ${theme === 'ben10' ? 'bg-gradient-to-r from-green-400 to-green-600' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 to-yellow-600' : 'bg-gradient-to-r from-blue-400 to-indigo-600'}`}></div>
         </div>
       </div>
     );
@@ -144,13 +144,13 @@ export default function StudentDocumentsPage() {
 
   if (!student) {
     return (
-      <div className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-green-600 via-green-700 to-black' : 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400'} p-8`}>
+      <div className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-green-600 via-green-700 to-black' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : 'bg-gradient-to-br from-blue-600 via-indigo-700 to-blue-400'} p-8`}>
         <div className="flex items-center justify-center py-12">
-          <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-green-600 to-black' : 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500'} rounded-3xl shadow-2xl border-4 border-black p-8 text-center`}>
+          <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-green-600 to-black' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-600 to-indigo-600'} rounded-3xl shadow-2xl border-4 border-black p-8 text-center`}>
             <div className="text-6xl mb-4">🚫</div>
             <h2 className="text-2xl font-black text-white mb-2">Access Denied</h2>
-            <p className={`font-bold ${theme === 'ben10' ? 'text-green-100' : 'text-yellow-100'}`}>
-              You need to be logged in to access this page! {theme === 'ben10' ? '⚡' : '✨'}
+            <p className={`font-bold ${theme === 'ben10' ? 'text-green-100' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-100'}`}>
+              You need to be logged in to access this page! {theme === 'ben10' ? '⚡' : theme === 'tinkerbell' ? '✨' : '📚'}
             </p>
           </div>
         </div>
@@ -159,7 +159,7 @@ export default function StudentDocumentsPage() {
   }
 
   return (
-    <div key={`documents-${theme}`} className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-green-600 via-green-700 to-black' : 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400'} p-8`}>
+    <div key={`documents-${theme}`} className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-green-600 via-green-700 to-black' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : 'bg-gradient-to-br from-blue-600 via-indigo-700 to-blue-400'} p-8`}>
       <div className="max-w-7xl mx-auto">
         {/* Theme-aware Header */}
         <div className="text-center mb-8">
@@ -169,19 +169,19 @@ export default function StudentDocumentsPage() {
           <h1 className="text-5xl font-black text-white mb-2 drop-shadow-lg">
             📄 Documents
           </h1>
-          <p className="text-xl text-green-100 font-bold">
+          <p className={`text-xl font-bold ${theme === 'ben10' ? 'text-green-100' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-100'}`}>
             Upload your documents here! 
           </p>
         </div>
 
         {/* Theme-aware Document Upload Section */}
         <div className="bg-white rounded-3xl shadow-2xl border-4 border-black overflow-hidden">
-          <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-green-600 to-black' : 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500'} text-white p-6 pb-8 border-b-4 border-black`}>
+          <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-green-600 to-black' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-600 to-indigo-600'} text-white p-6 pb-8 border-b-4 border-black`}>
             <div className="flex items-center space-x-4">
               
               <div>
                 <h2 className="text-3xl font-black">Required Documents</h2>
-                <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-green-100' : 'text-yellow-100'}`}>Complete your enrollment with these documents!</p>
+                <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-green-100' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-100'}`}>Complete your enrollment with these documents!</p>
               </div>
             </div>
           </div>
@@ -244,12 +244,12 @@ export default function StudentDocumentsPage() {
 
           {/* Theme-aware Success Message */}
           {allDocumentsVerified() && (
-            <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-green-600 to-black' : 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500'} rounded-2xl border-4 border-black p-6 shadow-lg`}>
+            <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-green-600 to-black' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-600 to-indigo-600'} rounded-2xl border-4 border-black p-6 shadow-lg`}>
               <div className="flex items-start">
                 <span className="text-4xl mr-4">✅</span>
                 <div>
                   <h4 className="text-xl font-black text-white mb-2"> Documents Verified!</h4>
-                  <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-green-100' : 'text-yellow-100'}`}>
+                  <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-green-100' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-100'}`}>
                     All your required documents have been verified and approved by our admin team!
                     You can download them using the download buttons above. 
                   </p>
@@ -259,12 +259,12 @@ export default function StudentDocumentsPage() {
           )}
           
           {/* Theme-aware Important Information */}
-          <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-green-600 to-black' : 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500'} rounded-2xl border-4 border-black p-6 shadow-lg`}>
+          <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-green-600 to-black' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-600 to-indigo-600'} rounded-2xl border-4 border-black p-6 shadow-lg`}>
             <div className="flex items-start">
               <span className="text-4xl mr-4">🛡️</span>
               <div>
                 <h4 className="text-xl font-black text-white mb-2">Important Information</h4>
-                <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-green-100' : 'text-yellow-100'}`}>
+                <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-green-100' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-100'}`}>
                   These documents are required for your enrollment. Please upload clear, legible copies in PDF, DOC, or image format.
                   Our admin team will verify your documents within 1-2 business days! 
                 </p>

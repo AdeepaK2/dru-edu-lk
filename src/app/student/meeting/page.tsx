@@ -474,12 +474,12 @@ export default function StudentMeetingPage() {
   // Show loading spinner while authenticating or loading data
   if (authLoading || loading) {
     return (
-      <div className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-green-600 via-green-700 to-black' : 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400'} p-6`}>
+      <div className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-green-600 via-green-700 to-black' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : 'bg-gradient-to-br from-blue-600 via-indigo-700 to-slate-900'} p-6`}>
         <div className="flex items-center justify-center py-12">
-          <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-green-600 to-black' : 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500'} rounded-3xl shadow-2xl border-4 border-black p-8`}>
+          <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-green-600 to-black' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-600 to-indigo-700'} rounded-3xl shadow-2xl border-4 border-black p-8`}>
             <div className="flex items-center space-x-4">
-              <div className={`w-12 h-12 border-4 border-black border-t-transparent rounded-full animate-spin ${theme === 'ben10' ? 'bg-gradient-to-r from-green-400 to-green-600' : 'bg-gradient-to-r from-yellow-400 to-yellow-600'}`}></div>
-              <span className="text-2xl font-black text-white">Loading your {theme === 'ben10' ? 'hero' : 'magical'} meetings... {theme === 'ben10' ? '⚡' : '✨'}</span>
+              <div className={`w-12 h-12 border-4 border-black border-t-transparent rounded-full animate-spin ${theme === 'ben10' ? 'bg-gradient-to-r from-green-400 to-green-600' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 to-yellow-600' : 'bg-gradient-to-r from-blue-400 to-indigo-600'}`}></div>
+              <span className="text-2xl font-black text-white">Loading your {theme === 'ben10' ? 'hero' : theme === 'tinkerbell' ? 'magical' : 'learning'} meetings... {theme === 'ben10' ? '⚡' : theme === 'tinkerbell' ? '✨' : '📚'}</span>
             </div>
           </div>
         </div>
@@ -490,13 +490,13 @@ export default function StudentMeetingPage() {
   // Show error if not authenticated
   if (!student) {
     return (
-      <div className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-green-600 via-green-700 to-black' : 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400'} p-6`}>
+      <div className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-green-600 via-green-700 to-black' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : 'bg-gradient-to-br from-blue-600 via-indigo-700 to-slate-900'} p-6`}>
         <div className="flex items-center justify-center py-12">
           <div className="bg-gradient-to-r from-red-200 to-pink-200 rounded-3xl shadow-2xl border-4 border-black p-8">
             <div className="text-center">
               <div className="text-4xl mb-4">😔</div>
               <h3 className="text-xl font-black text-black mb-2">Please Log In</h3>
-              <p className="text-black font-bold">Please log in as a student to access your {theme === 'ben10' ? 'hero' : 'magical'} meetings! {theme === 'ben10' ? '⚡' : '✨'}</p>
+              <p className="text-black font-bold">Please log in as a student to access your {theme === 'ben10' ? 'hero' : theme === 'tinkerbell' ? 'magical' : 'learning'} meetings! {theme === 'ben10' ? '⚡' : theme === 'tinkerbell' ? '✨' : '📚'}</p>
             </div>
           </div>
         </div>
@@ -505,31 +505,31 @@ export default function StudentMeetingPage() {
   }
 
   return (
-    <div key={`meeting-${theme}`} className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-green-600 via-green-700 to-black' : 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400'} p-6`}>
+    <div key={`meeting-${theme}`} className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-green-600 via-green-700 to-black' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : 'bg-gradient-to-br from-blue-600 via-indigo-700 to-slate-900'} p-6`}>
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Theme-aware Header */}
-        <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-green-600 via-green-700 to-black' : 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500'} rounded-3xl shadow-2xl border-4 border-black p-8 relative overflow-hidden`}>
+        <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-green-600 via-green-700 to-black' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-600 via-indigo-700 to-slate-800'} rounded-3xl shadow-2xl border-4 border-black p-8 relative overflow-hidden`}>
           {/* Theme Symbols */}
-          <div className={`absolute -top-4 -left-4 w-12 h-12 ${theme === 'ben10' ? 'bg-green-400' : 'bg-yellow-400'} rounded-full border-2 border-black flex items-center justify-center`}>
-            <span className="text-black font-black text-lg">{theme === 'ben10' ? 'Ω' : '✨'}</span>
+          <div className={`absolute -top-4 -left-4 w-12 h-12 ${theme === 'ben10' ? 'bg-green-400' : theme === 'tinkerbell' ? 'bg-yellow-400' : 'bg-blue-400'} rounded-full border-2 border-black flex items-center justify-center`}>
+            <span className="text-black font-black text-lg">{theme === 'ben10' ? 'Ω' : theme === 'tinkerbell' ? '✨' : '📚'}</span>
           </div>
-          <div className={`absolute -top-4 -right-4 w-12 h-12 ${theme === 'ben10' ? 'bg-green-400' : 'bg-yellow-400'} rounded-full border-2 border-black flex items-center justify-center`}>
-            <span className="text-black font-black text-lg">{theme === 'ben10' ? 'Ω' : '✨'}</span>
+          <div className={`absolute -top-4 -right-4 w-12 h-12 ${theme === 'ben10' ? 'bg-green-400' : theme === 'tinkerbell' ? 'bg-yellow-400' : 'bg-blue-400'} rounded-full border-2 border-black flex items-center justify-center`}>
+            <span className="text-black font-black text-lg">{theme === 'ben10' ? 'Ω' : theme === 'tinkerbell' ? '✨' : '📚'}</span>
           </div>
 
           <div className="flex items-center justify-between relative z-10">
             <div className="flex items-center space-x-4">
-              <div className="text-6xl">{theme === 'ben10' ? '⚡' : '✨'}</div>
+              <div className="text-6xl">{theme === 'ben10' ? '⚡' : theme === 'tinkerbell' ? '✨' : '📚'}</div>
               <div>
                 <h1 className="text-4xl font-black text-white mb-2 flex items-center">
-                  <span>{theme === 'ben10' ? 'Ben 10\'s' : 'Tinkerbell\'s'}</span>
-                  <span className={`ml-2 font-black text-5xl ${theme === 'ben10' ? 'text-green-300' : 'text-yellow-300'}`}>{theme === 'ben10' ? 'Hero' : 'Magical'}</span>
+                  <span>{theme === 'ben10' ? 'Ben 10\'s' : theme === 'tinkerbell' ? 'Tinkerbell\'s' : 'My'}</span>
+                  <span className={`ml-2 font-black text-5xl ${theme === 'ben10' ? 'text-green-300' : theme === 'tinkerbell' ? 'text-yellow-300' : 'text-blue-300'}`}>{theme === 'ben10' ? 'Hero' : theme === 'tinkerbell' ? 'Magical' : 'Learning'}</span>
                   <span className="ml-2 text-3xl">Meeting</span>
                   <span className="ml-2 text-3xl">Scheduler</span>
-                  <span className="ml-2 text-3xl">{theme === 'ben10' ? 'Ω' : '✨'}</span>
+                  <span className="ml-2 text-3xl">{theme === 'ben10' ? 'Ω' : theme === 'tinkerbell' ? '✨' : '📚'}</span>
                 </h1>
-                <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-green-100' : 'text-yellow-100'}`}>
-                  Welcome back, {student?.name}! Schedule {theme === 'ben10' ? 'heroic' : 'magical'} one-on-one sessions with your teachers! {theme === 'ben10' ? '⚡' : '✨'}
+                <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-green-100' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-100'}`}>
+                  Welcome back, {student?.name}! Schedule {theme === 'ben10' ? 'heroic' : theme === 'tinkerbell' ? 'magical' : 'enriching'} one-on-one sessions with your teachers! {theme === 'ben10' ? '⚡' : theme === 'tinkerbell' ? '✨' : '📚'}
                 </p>
               </div>
             </div>
@@ -634,13 +634,13 @@ export default function StudentMeetingPage() {
 
             {/* Theme-aware Teachers List */}
             <div className="bg-white rounded-3xl shadow-2xl border-4 border-black overflow-hidden">
-              <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-green-600 to-black' : 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500'} text-white p-6 border-b-4 border-black`}>
+              <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-green-600 to-black' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-600 to-indigo-600'} text-white p-6 border-b-4 border-black`}>
                 <h2 className="text-2xl font-black flex items-center">
                   <span className="text-3xl mr-3">👨‍🏫</span>
-                  Available {theme === 'ben10' ? 'Hero' : 'Magical'} Teachers
+                  Available {theme === 'ben10' ? 'Hero' : theme === 'tinkerbell' ? 'Magical' : 'Learning'} Teachers
                 </h2>
-                <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-green-100' : 'text-yellow-100'}`}>
-                  Click on a teacher to see their {theme === 'ben10' ? 'heroic' : 'magical'} time slots {theme === 'ben10' ? '⚡' : '✨'}
+                <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-green-100' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-100'}`}>
+                  Click on a teacher to see their {theme === 'ben10' ? 'heroic' : theme === 'tinkerbell' ? 'magical' : 'enriching'} time slots {theme === 'ben10' ? '⚡' : theme === 'tinkerbell' ? '✨' : '📚'}
                 </p>
               </div>
 
@@ -652,7 +652,7 @@ export default function StudentMeetingPage() {
                       No Teachers Available Yet
                     </h3>
                     <p className="text-gray-600 font-bold text-lg">
-                      {theme === 'ben10' ? 'Hero' : 'Magical'} teachers will appear here once they set up their schedules! {theme === 'ben10' ? '⚡' : '✨'}
+                      {theme === 'ben10' ? 'Hero' : theme === 'tinkerbell' ? 'Magical' : 'Learning'} teachers will appear here once they set up their schedules! {theme === 'ben10' ? '⚡' : theme === 'tinkerbell' ? '✨' : '📚'}
                     </p>
                   </div>
                 ) : (
@@ -664,7 +664,7 @@ export default function StudentMeetingPage() {
                       return (
                         <div
                           key={teacher.id}
-                          className={`${theme === 'ben10' ? 'bg-gradient-to-r from-green-600 to-black' : 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500'} rounded-3xl shadow-2xl border-4 border-black overflow-hidden hover:scale-105 transition-all`}
+                          className={`${theme === 'ben10' ? 'bg-gradient-to-r from-green-600 to-black' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-600 to-indigo-700'} rounded-3xl shadow-2xl border-4 border-black overflow-hidden hover:scale-105 transition-all`}
                         >
                           {/* Teacher Header */}
                           <div
@@ -689,7 +689,7 @@ export default function StudentMeetingPage() {
                               </div>
                               <div className="flex items-center space-x-4">
                                 <span className="bg-white text-black px-4 py-2 rounded-full font-black text-sm border-2 border-black">
-                                  {teacherSlots.length} {theme === 'ben10' ? 'Hero' : 'Magical'} Slots {theme === 'ben10' ? '⚡' : '✨'}
+                                  {teacherSlots.length} {theme === 'ben10' ? 'Hero' : theme === 'tinkerbell' ? 'Magical' : 'Learning'} Slots {theme === 'ben10' ? '⚡' : theme === 'tinkerbell' ? '✨' : '📚'}
                                 </span>
                                 <ChevronRight 
                                   className={`w-8 h-8 text-white transition-transform ${
@@ -765,7 +765,7 @@ export default function StudentMeetingPage() {
 
         {activeTab === 'booked' && (
           <div className="bg-white rounded-3xl shadow-2xl border-4 border-black overflow-hidden">
-            <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-green-600 to-black' : 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500'} text-white p-6 border-b-4 border-black`}>
+            <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-green-600 to-black' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-600 to-indigo-600'} text-white p-6 border-b-4 border-black`}>
               <h2 className="text-2xl font-black flex items-center">
                 <span className="text-3xl mr-3">📅</span>
                 My Scheduled Meetings
@@ -775,12 +775,12 @@ export default function StudentMeetingPage() {
             <div className="p-6">
               {bookedMeetings.length === 0 ? (
                 <div className="text-center py-12">
-                  <div className="text-6xl mb-6">{theme === 'ben10' ? 'Ω' : '✨'}</div>
+                  <div className="text-6xl mb-6">{theme === 'ben10' ? 'Ω' : theme === 'tinkerbell' ? '✨' : '📚'}</div>
                   <h3 className="text-2xl font-black text-black mb-4">
                     No Meetings Scheduled Yet
                   </h3>
                   <p className="text-gray-600 font-bold text-lg">
-                    Book your first {theme === 'ben10' ? 'heroic' : 'magical'} one-on-one session with a teacher! {theme === 'ben10' ? '⚡' : '✨'}
+                    Book your first {theme === 'ben10' ? 'heroic' : theme === 'tinkerbell' ? 'magical' : 'enriching'} one-on-one session with a teacher! {theme === 'ben10' ? '⚡' : theme === 'tinkerbell' ? '✨' : '📚'}
                   </p>
                 </div>
               ) : (

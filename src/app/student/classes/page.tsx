@@ -99,18 +99,18 @@ export default function StudentClassesPage() {
 
   if (authLoading || loading) {
     return (
-      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-green-400 to-black' : 'from-yellow-300 via-green-400 to-yellow-400'} flex items-center justify-center`}>
+      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-green-400 to-black' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : 'from-blue-400 to-indigo-600'} flex items-center justify-center`}>
         <div className="bg-white border-4 border-black rounded-3xl p-8 shadow-2xl">
           {/* Ben 10 Loading Animation */}
           <div className="relative mb-6">
-            <div className={`w-24 h-24 ${theme === 'ben10' ? 'bg-green-500' : 'bg-yellow-500'} rounded-full flex items-center justify-center relative mx-auto animate-spin border-4 border-black`}>
+            <div className={`w-24 h-24 ${theme === 'ben10' ? 'bg-green-500' : theme === 'tinkerbell' ? 'bg-yellow-500' : 'bg-blue-500'} rounded-full flex items-center justify-center relative mx-auto animate-spin border-4 border-black`}>
               <div className="w-20 h-20 bg-black rounded-full flex items-center justify-center">
-                <span className={`text-xl font-bold animate-pulse ${theme === 'ben10' ? 'text-green-400' : 'text-yellow-400'}`}>10</span>
+                <span className={`text-xl font-bold animate-pulse ${theme === 'ben10' ? 'text-green-400' : theme === 'tinkerbell' ? 'text-yellow-400' : 'text-blue-400'}`}>10</span>
                 <div className="absolute inset-0 rounded-full border-2 border-black animate-ping"></div>
               </div>
             </div>
             <div className="text-center mt-4">
-              <span className={`font-bold text-xl ${theme === 'ben10' ? 'text-green-600' : 'text-yellow-600'}`}>Ben 10</span>
+              <span className={`font-bold text-xl ${theme === 'ben10' ? 'text-green-600' : theme === 'tinkerbell' ? 'text-yellow-600' : 'text-blue-600'}`}>Ben 10</span>
             </div>
           </div>
           <div className="text-center">
@@ -132,9 +132,9 @@ export default function StudentClassesPage() {
 
   return (
     <>
-      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-green-400  to-black' : 'from-yellow-300 via-green-400 to-yellow-400'} p-6`}>
+      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-green-400  to-black' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : 'from-blue-400 via-indigo-500 to-indigo-600'} p-6`}>
         {/* Header */}
-        <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-400  to-black' : 'from-yellow-400 via-green-500 to-yellow-500'} rounded-3xl shadow-2xl border-4 border-black p-8 mb-6 relative overflow-hidden`}>
+        <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-400  to-black' : theme === 'tinkerbell' ? 'from-yellow-400 via-green-500 to-yellow-500' : 'from-blue-400 to-indigo-600'} rounded-3xl shadow-2xl border-4 border-black p-8 mb-6 relative overflow-hidden`}>
       
           <div className="flex items-center justify-between relative z-10">
             <div className="flex items-center space-x-4">
@@ -142,11 +142,11 @@ export default function StudentClassesPage() {
               <div>
                 <h1 className="text-4xl font-black text-black mb-2 flex items-center">
                   <span>My</span>
-                  <span className={`ml-2 font-black text-4xl ${theme === 'ben10' ? 'text-black' : 'text-yellow-300'}`}>Classes</span>
+                  <span className={`ml-2 font-black text-4xl ${theme === 'ben10' ? 'text-black' : theme === 'tinkerbell' ? 'text-yellow-300' : 'text-white'}`}>Classes</span>
                   <span className="ml-2 text-3xl">Classroom</span>
                 
                 </h1>
-                <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-green-200' : 'text-yellow-100'}`}>
+                <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-green-200' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-100'}`}>
                   Transform your learning with amazing adventures! 
                 </p>
               </div>
@@ -164,7 +164,7 @@ export default function StudentClassesPage() {
         </div>
 
         {/* Search and Filter */}
-        <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-400  to-black' : 'from-yellow-300 via-green-400 to-yellow-400'} rounded-2xl shadow-xl border-4 border-black p-6 mb-6`}>
+        <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-400  to-black' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : 'from-blue-300 via-indigo-400 to-indigo-500'} rounded-2xl shadow-xl border-4 border-black p-6 mb-6`}>
           <div className="flex items-center space-x-3 mb-4">
             <div className="text-3xl">🔍</div>
             <h2 className="text-2xl font-black text-white">Search Classes</h2>
@@ -180,7 +180,7 @@ export default function StudentClassesPage() {
                   placeholder="Search for classes or subjects..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className={`pl-12 pr-4 py-3 text-lg border-4 border-black rounded-2xl bg-white text-black placeholder-gray-500 focus:outline-none shadow-lg ${theme === 'ben10' ? 'focus:ring-4 focus:ring-green-400' : 'focus:ring-4 focus:ring-yellow-400'}`}
+                  className={`pl-12 pr-4 py-3 text-lg border-4 border-black rounded-2xl bg-white text-black placeholder-gray-500 focus:outline-none shadow-lg ${theme === 'ben10' ? 'focus:ring-4 focus:ring-green-400' : theme === 'tinkerbell' ? 'focus:ring-4 focus:ring-yellow-400' : 'focus:ring-4 focus:ring-blue-400'}`}
                 />
               </div>
             </div>
@@ -189,7 +189,7 @@ export default function StudentClassesPage() {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className={`border-4 border-black rounded-2xl px-6 py-3 bg-white text-black font-bold text-lg focus:outline-none shadow-lg hover:bg-gray-50 transition-all ${theme === 'ben10' ? 'focus:ring-4 focus:ring-green-400' : 'focus:ring-4 focus:ring-yellow-400'}`}
+                className={`border-4 border-black rounded-2xl px-6 py-3 bg-white text-black font-bold text-lg focus:outline-none shadow-lg hover:bg-gray-50 transition-all ${theme === 'ben10' ? 'focus:ring-4 focus:ring-green-400' : theme === 'tinkerbell' ? 'focus:ring-4 focus:ring-yellow-400' : 'focus:ring-4 focus:ring-blue-400'}`}
               >
                 <option value="all"> All Classes</option>
                 <option value="Active">Active Classes</option>
@@ -203,13 +203,13 @@ export default function StudentClassesPage() {
 
         {/* Classes Grid */}
         {filteredEnrollments.length === 0 ? (
-          <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-300 via-black to-green-400' : 'from-yellow-200 via-green-400 to-yellow-300'} rounded-3xl shadow-2xl border-4 border-black p-12`}>
+          <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-300 via-black to-green-400' : theme === 'tinkerbell' ? 'from-yellow-200 via-green-400 to-yellow-300' : 'from-blue-300 via-indigo-400 to-blue-400'} rounded-3xl shadow-2xl border-4 border-black p-12`}>
             <div className="text-center">
               <div className="text-8xl mb-6">📚</div>
               <h3 className="text-3xl font-black text-white mb-4">
                 {searchTerm || statusFilter !== 'all' ? 'No Classes Found' : 'No Classes Yet'}
               </h3>
-              <p className={`font-bold text-lg mb-6 ${theme === 'ben10' ? 'text-green-200' : 'text-yellow-100'}`}>
+              <p className={`font-bold text-lg mb-6 ${theme === 'ben10' ? 'text-green-200' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-100'}`}>
                 {searchTerm || statusFilter !== 'all' 
                   ? 'Try adjusting your search or filter criteria ' 
                   : 'Contact your teacher to get enrolled in some epic classes! '}
@@ -222,30 +222,30 @@ export default function StudentClassesPage() {
             {filteredEnrollments.map((enrollment) => (
               <div
                 key={enrollment.id}
-                className={`rounded-3xl shadow-2xl border-4 border-black p-6 hover:shadow-3xl hover:scale-105 transition-all duration-300 hover:rotate-1 ${theme === 'ben10' ? 'bg-gradient-to-br from-green-300 via-black to-green-400' : 'bg-gradient-to-br from-yellow-200 via-green-400 to-yellow-300'}`}
+                className={`rounded-3xl shadow-2xl border-4 border-black p-6 hover:shadow-3xl hover:scale-105 transition-all duration-300 hover:rotate-1 ${theme === 'ben10' ? 'bg-gradient-to-br from-green-300 via-black to-green-400' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-200 via-green-400 to-yellow-300' : 'bg-gradient-to-br from-blue-300 via-indigo-400 to-blue-400'}`}
               >
                 {/* Class Header */}
                 <div className="flex items-start justify-between mb-6">
                   <div className="flex items-center space-x-4">
-                    <div className={`w-16 h-16 rounded-full flex items-center justify-center border-4 border-black shadow-lg animate-pulse ${theme === 'ben10' ? 'bg-green-500' : 'bg-yellow-500'}`}>
+                    <div className={`w-16 h-16 rounded-full flex items-center justify-center border-4 border-black shadow-lg animate-pulse ${theme === 'ben10' ? 'bg-green-500' : theme === 'tinkerbell' ? 'bg-yellow-500' : 'bg-blue-500'}`}>
                       <div className="text-3xl">📚</div>
                     </div>
                     <div>
                       <h3 className="font-black text-white text-xl mb-1">
                         {enrollment.className}
                       </h3>
-                      <p className={`text-black font-bold text-sm rounded-full px-3 py-1 border-2 border-black ${theme === 'ben10' ? 'bg-green-200' : 'bg-yellow-200'}`}>
+                      <p className={`text-black font-bold text-sm rounded-full px-3 py-1 border-2 border-black ${theme === 'ben10' ? 'bg-green-200' : theme === 'tinkerbell' ? 'bg-yellow-200' : 'bg-blue-200'}`}>
                         {enrollment.subject}
                       </p>
                     </div>
                   </div>
                   <span className={`px-4 py-2 text-sm font-black rounded-full border-4 border-black shadow-lg ${
                     enrollment.status === 'Active' 
-                      ? `${theme === 'ben10' ? 'bg-green-400 text-black' : 'bg-yellow-400 text-black'}`
+                      ? `${theme === 'ben10' ? 'bg-green-400 text-black' : theme === 'tinkerbell' ? 'bg-yellow-400 text-black' : 'bg-blue-400 text-black'}`
                       : enrollment.status === 'Completed'
-                      ? `${theme === 'ben10' ? 'bg-black text-green-400' : 'bg-black text-yellow-400'}`
+                      ? `${theme === 'ben10' ? 'bg-black text-green-400' : theme === 'tinkerbell' ? 'bg-black text-yellow-400' : 'bg-black text-blue-400'}`
                       : enrollment.status === 'Inactive'
-                      ? `${theme === 'ben10' ? 'bg-green-500 text-black' : 'bg-yellow-500 text-black'}`
+                      ? `${theme === 'ben10' ? 'bg-green-500 text-black' : theme === 'tinkerbell' ? 'bg-yellow-500 text-black' : 'bg-blue-500 text-black'}`
                       : 'bg-red-400 text-black'
                   }`}>
                     {enrollment.status}
@@ -259,7 +259,7 @@ export default function StudentClassesPage() {
                       <div className="text-2xl">📅</div>
                       <span className="text-sm font-bold text-black">Enrolled</span>
                     </div>
-                    <span className={`text-sm font-black rounded-full px-3 py-1 border-2 border-black ${theme === 'ben10' ? 'bg-green-300' : 'bg-yellow-200'}`}>
+                    <span className={`text-sm font-black rounded-full px-3 py-1 border-2 border-black ${theme === 'ben10' ? 'bg-green-300' : theme === 'tinkerbell' ? 'bg-yellow-200' : 'bg-blue-200'}`}>
                       {enrollment.enrolledAt.toLocaleDateString()}
                     </span>
                   </div>
@@ -272,9 +272,9 @@ export default function StudentClassesPage() {
                       </div>
                       <span className={`text-lg font-black px-3 py-1 rounded-full border-2 border-black ${
                         enrollment.grade >= 80 
-                          ? `${theme === 'ben10' ? 'bg-green-400 text-black' : 'bg-yellow-400 text-black'}`
+                          ? `${theme === 'ben10' ? 'bg-green-400 text-black' : theme === 'tinkerbell' ? 'bg-yellow-400 text-black' : 'bg-blue-400 text-black'}`
                           : enrollment.grade >= 60
-                          ? `${theme === 'ben10' ? 'bg-green-500 text-black' : 'bg-yellow-500 text-black'}`
+                          ? `${theme === 'ben10' ? 'bg-green-500 text-black' : theme === 'tinkerbell' ? 'bg-yellow-500 text-black' : 'bg-blue-500 text-black'}`
                           : 'bg-red-400 text-black'
                       }`}>
                         {enrollment.grade}%

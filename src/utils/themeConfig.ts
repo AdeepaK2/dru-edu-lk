@@ -1,4 +1,4 @@
-export type ThemeType = 'ben10' | 'tinkerbell';
+export type ThemeType = 'ben10' | 'tinkerbell' | 'normal';
 
 export interface ThemeConfig {
   id: ThemeType;
@@ -56,34 +56,58 @@ export const THEMES: Record<ThemeType, ThemeConfig> = {
     characterName: 'Tinkerbell - Fairy',
     characterDescription: 'Sprinkle some magic into your learning! ✨',
   },
+  normal: {
+    id: 'normal',
+    name: 'Professional',
+    description: 'Clean and professional blue theme without characters',
+    icon: '🎓',
+    emoji: '💼',
+    colors: {
+      primary: '#3b82f6',
+      primaryLight: '#60a5fa',
+      primaryDark: '#1e40af',
+      secondary: '#ffffff',
+      accent: '#6366f1',
+      bgLight: '#f8fafc',
+      bgDark: '#1e293b',
+    },
+    characterName: 'Professional Mode',
+    characterDescription: 'Focus on learning with a clean, professional interface! 🎓',
+  },
 };
 
 export const THEME_GRADIENT_MAP: Record<ThemeType, string> = {
   ben10: 'from-green-400 to-black',
   tinkerbell: 'from-pink-400 to-purple-600',
+  normal: 'from-blue-400 to-indigo-600',
 };
 
 export const THEME_HEADER_MAP: Record<ThemeType, string> = {
   ben10: 'from-green-600 via-green-700 to-black',
   tinkerbell: 'from-pink-500 via-pink-600 to-purple-700',
+  normal: 'from-blue-500 to-indigo-600',
 };
 
 export const THEME_BORDER_MAP: Record<ThemeType, string> = {
   ben10: 'border-green-400',
   tinkerbell: 'border-pink-400',
+  normal: 'border-blue-400',
 };
 
 export const THEME_BG_MAP: Record<ThemeType, string> = {
   ben10: 'from-green-300 via-green-400 to-black',
   tinkerbell: 'from-pink-300 via-pink-400 to-purple-600',
+  normal: 'from-blue-300 via-indigo-400 to-indigo-600',
 };
 
 export const THEME_BUTTON_MAP: Record<ThemeType, string> = {
   ben10: 'bg-green-500 hover:bg-green-600',
   tinkerbell: 'bg-pink-500 hover:bg-pink-600',
+  normal: 'bg-blue-500 hover:bg-blue-600',
 };
 
 export const THEME_SUCCESS_MAP: Record<ThemeType, string> = {
   ben10: 'from-green-300 to-emerald-300',
   tinkerbell: 'from-pink-300 to-purple-300',
+  normal: 'from-blue-300 to-indigo-300',
 };

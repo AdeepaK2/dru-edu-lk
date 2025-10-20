@@ -194,10 +194,10 @@ export default function StudentStudyPage() {
   };
 
   const getProgressColor = (progress: number) => {
-    if (progress >= 80) return theme === 'ben10' ? 'bg-green-500' : 'bg-green-400';
-    if (progress >= 60) return theme === 'ben10' ? 'bg-blue-500' : 'bg-yellow-500';
-    if (progress >= 40) return theme === 'ben10' ? 'bg-yellow-500' : 'bg-green-300';
-    return theme === 'ben10' ? 'bg-red-500' : 'bg-red-400';
+    if (progress >= 80) return theme === 'ben10' ? 'bg-green-500' : theme === 'tinkerbell' ? 'bg-green-400' : 'bg-blue-500';
+    if (progress >= 60) return theme === 'ben10' ? 'bg-blue-500' : theme === 'tinkerbell' ? 'bg-yellow-500' : 'bg-indigo-500';
+    if (progress >= 40) return theme === 'ben10' ? 'bg-yellow-500' : theme === 'tinkerbell' ? 'bg-green-300' : 'bg-yellow-500';
+    return theme === 'ben10' ? 'bg-red-500' : theme === 'tinkerbell' ? 'bg-red-400' : 'bg-red-500';
   };
 
   const getProgressText = (progress: number) => {
@@ -358,7 +358,9 @@ export default function StudentStudyPage() {
       <div className={`min-h-screen bg-gradient-to-br p-6 ${
         theme === 'ben10'
           ? 'from-green-600 via-green-700 to-black'
-          : 'from-green-500 via-yellow-500 to-green-600'
+          : theme === 'tinkerbell'
+          ? 'bg-gradient-to-r from-green-300 via-yellow-500 to-green-300'
+          : 'from-blue-600 via-indigo-700 to-blue-400'
       }`}>
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-center py-12">
@@ -366,12 +368,16 @@ export default function StudentStudyPage() {
               <div className={`w-12 h-12 border-4 border-t-transparent rounded-full animate-spin mx-auto mb-6 bg-gradient-to-r ${
                 theme === 'ben10'
                   ? 'border-green-400 from-green-400 to-green-500'
-                  : 'border-yellow-400 from-yellow-400 to-green-500'
+                  : theme === 'tinkerbell'
+                  ? 'bg-gradient-to-br from-green-400 to-yellow-600'
+                  : 'border-blue-400 from-blue-400 to-indigo-500'
               }`}></div>
               <p className="text-white font-black text-xl">
                 {theme === 'ben10'
-                  ? 'Loading your hero study materials...'
-                  : 'Loading your magical study materials...'}
+                  ? 'Loading your study materials...'
+                  : theme === 'tinkerbell'
+                  ? 'Loading your study materials...'
+                  : 'Loading your study materials...'}
               </p>
             </div>
           </div>
@@ -397,20 +403,20 @@ export default function StudentStudyPage() {
     if (isViewingMaterial && activeMaterial) {
       // PDF Viewing Layout - Full screen without top space
       return (
-        <div className={`fixed inset-0 bg-gradient-to-br ${theme === 'ben10' ? 'from-green-600 via-green-700 to-black' : 'from-green-500 via-yellow-500 to-green-600'} z-50`}>
+        <div className={`fixed inset-0 bg-gradient-to-br ${theme === 'ben10' ? 'from-green-600 via-green-700 to-black' : theme === 'tinkerbell' ? 'from-green-500 via-yellow-500 to-green-600' : 'from-blue-600 via-indigo-700 to-blue-400'} z-50`}>
           {/* Minimal Back Button - positioned absolutely */}
           <div className="absolute top-4 left-4 z-10">
             <button
               onClick={exitMaterialView}
               className="bg-black text-white font-black py-2 px-4 rounded-2xl border-2 border-white hover:bg-white hover:text-black transition-all duration-300 shadow-lg"
             >
-              <span>← Back to {theme === 'ben10' ? 'Hero' : 'Magical'} Classes</span>
+              <span>← Back to Classes</span>
             </button>
           </div>
 
           <div className="flex h-full">
             {/* Materials Sidebar - narrower */}
-            <div className={`w-72 bg-gradient-to-b ${theme === 'ben10' ? 'from-green-500 to-green-600' : 'from-green-400 to-yellow-500'} border-r-4 border-black overflow-y-auto shadow-2xl pt-16`}>
+            <div className={`w-72 bg-gradient-to-b ${theme === 'ben10' ? 'from-green-500 to-green-600' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : 'from-blue-500 to-indigo-600'} border-r-4 border-black overflow-y-auto shadow-2xl pt-16`}>
               <div className="p-4 border-b-4 border-black">
                 <h2 className="text-lg font-black text-white text-center">
                   🦸‍♂️ Study Materials 
@@ -427,7 +433,11 @@ export default function StudentStudyPage() {
                   return (
                     <div key={group.id} className={`bg-white rounded-2xl shadow-lg border-2 transition-all hover:scale-105 ${
                       group.materials.some((m: any) => m.id === activeMaterial.id)
-                        ? `border-${theme === 'ben10' ? 'green' : 'yellow'}-500 bg-${theme === 'ben10' ? 'green' : 'yellow'}-50 shadow-${theme === 'ben10' ? 'green' : 'yellow'}-200`
+                        ? theme === 'ben10'
+                          ? 'border-green-500 bg-green-50 shadow-green-200'
+                          : theme === 'tinkerbell'
+                          ? 'border-yellow-500 bg-yellow-50 shadow-yellow-200'
+                          : 'border-blue-500 bg-blue-50 shadow-blue-200'
                         : 'border-black'
                     }`}>
                       <div
@@ -436,7 +446,7 @@ export default function StudentStudyPage() {
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex items-start space-x-3 flex-1">
-                            <div className={`w-8 h-8 ${theme === 'ben10' ? 'bg-green-500' : 'bg-yellow-500'} rounded-xl flex items-center justify-center flex-shrink-0 border-2 border-black`}>
+                            <div className={`w-8 h-8 ${theme === 'ben10' ? 'bg-green-500' : theme === 'tinkerbell' ? 'bg-yellow-500' : 'bg-blue-500'} rounded-xl flex items-center justify-center flex-shrink-0 border-2 border-black`}>
                               {group.isGroup ? (
                                 <div className="text-white font-black text-sm">
                                   {group.totalFiles}
@@ -449,9 +459,9 @@ export default function StudentStudyPage() {
                               <div className="flex items-center space-x-2 mb-2">
                                 <span className="font-black text-gray-900 text-sm truncate">{group.groupTitle || group.materials[0]?.title}</span>
                                 {isExpanded ? (
-                                  <ChevronUp className={`w-4 h-4 ${theme === 'ben10' ? 'text-green-600' : 'text-yellow-600'} flex-shrink-0 font-black`} />
+                                  <ChevronUp className={`w-4 h-4 ${theme === 'ben10' ? 'text-green-600' : theme === 'tinkerbell' ? 'text-yellow-600' : 'text-blue-600'} flex-shrink-0 font-black`} />
                                 ) : (
-                                  <ChevronDown className={`w-4 h-4 ${theme === 'ben10' ? 'text-green-600' : 'text-yellow-600'} flex-shrink-0 font-black`} />
+                                  <ChevronDown className={`w-4 h-4 ${theme === 'ben10' ? 'text-green-600' : theme === 'tinkerbell' ? 'text-yellow-600' : 'text-blue-600'} flex-shrink-0 font-black`} />
                                 )}
                               </div>
 
@@ -463,7 +473,9 @@ export default function StudentStudyPage() {
 
                               <div className="flex items-center space-x-2 mb-2">
                                 {group.fileTypes.map((fileType: string) => (
-                                  <span key={fileType} className={`bg-${theme === 'ben10' ? 'green' : 'yellow'}-500 text-white font-black text-xs px-2 py-1 rounded-lg border border-black`}>
+                                  <span key={fileType} className={`text-white font-black text-xs px-2 py-1 rounded-lg border border-black ${
+                                    theme === 'ben10' ? 'bg-green-500' : theme === 'tinkerbell' ? 'bg-yellow-500' : 'bg-blue-500'
+                                  }`}>
                                     {fileType.toUpperCase()}
                                   </span>
                                 ))}
@@ -487,24 +499,34 @@ export default function StudentStudyPage() {
                                     material.fileUrl ? 'cursor-pointer hover:bg-green-50' : ''
                                   } ${
                                     isSelected
-                                      ? `border-${theme === 'ben10' ? 'green' : 'yellow'}-500 bg-${theme === 'ben10' ? 'green' : 'yellow'}-100 shadow-lg`
+                                      ? theme === 'ben10'
+                                        ? 'border-green-500 bg-green-100 shadow-lg'
+                                        : theme === 'tinkerbell'
+                                        ? 'border-yellow-500 bg-yellow-100 shadow-lg'
+                                        : 'border-blue-500 bg-blue-100 shadow-lg'
                                       : 'border-gray-300 bg-white'
                                   }`}
                                   onClick={() => material.fileUrl && viewMaterial(material)}
                                 >
                                   <div className="flex items-center space-x-3 flex-1">
-                                    <div className={`w-6 h-6 ${theme === 'ben10' ? 'bg-green-500' : 'bg-yellow-500'} rounded-lg flex items-center justify-center flex-shrink-0 border-2 border-black`}>
+                                    <div className={`w-6 h-6 ${theme === 'ben10' ? 'bg-green-500' : theme === 'tinkerbell' ? 'bg-yellow-500' : 'bg-blue-500'} rounded-lg flex items-center justify-center flex-shrink-0 border-2 border-black`}>
                                       {getFileIcon(material.fileType)}
                                     </div>
                                     <div className="flex-1 min-w-0">
                                       <h4 className={`font-black truncate text-sm ${
                                         isSelected
-                                          ? `text-${theme === 'ben10' ? 'green' : 'yellow'}-700`
+                                          ? theme === 'ben10'
+                                            ? 'text-green-700'
+                                            : theme === 'tinkerbell'
+                                            ? 'text-yellow-700'
+                                            : 'text-blue-700'
                                           : 'text-gray-900'
                                       }`}>
                                         {material.title}
                                       </h4>
-                                      <div className={`text-xs font-bold text-${theme === 'ben10' ? 'green' : 'yellow'}-600`}>
+                                      <div className={`text-xs font-bold ${
+                                        theme === 'ben10' ? 'text-green-600' : theme === 'tinkerbell' ? 'text-yellow-600' : 'text-blue-600'
+                                      }`}>
                                         {material.fileType.toUpperCase()}
                                       </div>
                                     </div>
@@ -544,7 +566,7 @@ export default function StudentStudyPage() {
                 )}
                 {activeMaterial.fileType?.toLowerCase() === 'image' && activeMaterial.fileUrl && (
                   <div className="h-full flex flex-col">
-                    <div className={`p-6 border-b-4 border-black bg-gradient-to-r ${theme === 'ben10' ? 'from-green-500 to-green-600' : 'from-green-400 to-yellow-500'}`}>
+                    <div className={`p-6 border-b-4 border-black bg-gradient-to-r ${theme === 'ben10' ? 'from-green-500 to-green-600' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : 'from-blue-500 to-indigo-600'}`}>
                       <div className="flex items-center justify-between">
                         <h3 className="text-xl font-black text-white flex items-center">
                           🖼️ {activeMaterial.title}
@@ -583,7 +605,7 @@ export default function StudentStudyPage() {
                       </div>
                     </div>
                     <div
-                      className={`flex-1 flex items-center justify-center p-6 bg-gradient-to-br ${theme === 'ben10' ? 'from-green-50 to-white' : 'from-yellow-50 to-green-50'} overflow-hidden relative`}
+                      className={`flex-1 flex items-center justify-center p-6 bg-gradient-to-br ${theme === 'ben10' ? 'from-green-50 to-white' : theme === 'tinkerbell' ? 'from-yellow-50 to-green-50' : 'from-blue-50 to-indigo-50'} overflow-hidden relative`}
                       onMouseDown={handleMouseDown}
                       onMouseMove={handleMouseMove}
                       onMouseUp={handleMouseUp}
@@ -673,7 +695,7 @@ export default function StudentStudyPage() {
               }}
               className="bg-black text-white font-black py-3 px-6 rounded-2xl border-2 border-white hover:bg-white hover:text-black transition-all duration-300 shadow-lg mb-6"
             >
-              ← Back to {theme === 'ben10' ? 'Hero' : 'Magical'} Dashboard
+              ← Back to Dashboard
             </button>
 
             <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-500 to-green-600' : 'from-green-400 to-yellow-500'} rounded-3xl shadow-2xl border-4 border-black p-8 mb-8`}>
@@ -731,7 +753,7 @@ export default function StudentStudyPage() {
                       <p className="text-sm font-black text-white">New This Week</p>
                       <p className="text-3xl font-black text-white">{currentClass?.recentMaterials || 0}</p>
                     </div>
-                    <div className="text-4xl">⚡</div>
+                    
                   </div>
                 </div>
               </div>
@@ -743,7 +765,7 @@ export default function StudentStudyPage() {
                 <div className="flex-1">
                   <input
                     type="text"
-                    placeholder={`🔍 Search ${theme === 'ben10' ? 'hero' : 'magical'} materials...`}
+                    placeholder={`🔍 Search materials...`}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full px-6 py-4 border-2 border-black rounded-2xl focus:ring-4 focus:ring-green-500 focus:border-green-500 font-bold text-lg bg-gradient-to-r from-green-50 to-white shadow-lg"
@@ -779,8 +801,8 @@ export default function StudentStudyPage() {
               }`}></div>
               <p className="text-white font-black text-xl">
                 {theme === 'ben10'
-                  ? `Loading ${theme === 'ben10' ? 'hero' : 'magical'} materials...`
-                  : 'Loading magical materials...'}
+                  ? `Loading  materials...`
+                  : 'Loading  materials...'}
               </p>
             </div>
           </div>
@@ -1051,33 +1073,32 @@ export default function StudentStudyPage() {
     <div key={`study-${theme}`} className={`min-h-screen bg-gradient-to-br p-6 ${
       theme === 'ben10'
         ? 'from-green-600 via-green-700 to-black'
-        : 'from-green-500 via-yellow-500 to-green-600'
+        : 'from-green-400 via-green-400 to-yellow-500'
     }`}>
       <div className="max-w-6xl mx-auto">
         {/* Theme-aware Hero Header */}
         <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 border-black p-8 mb-8 relative overflow-hidden ${
           theme === 'ben10'
             ? 'from-green-500 via-green-600 to-black'
-            : 'from-yellow-400 via-green-500 to-yellow-500'
+            : 'bg-gradient-to-r from-green-400 via-green-500 to-yellow-500'
         }`}>
          
 
           <div className="flex items-center space-x-4 relative z-10">
             <div className="text-6xl">{theme === 'ben10' ? '🦸‍♂️' : '🧚‍♀️'}</div>
             <div>
-              <h1 className="text-4xl font-black text-white mb-2 flex items-center">
-                <span>{theme === 'ben10' ? 'Ben 10' : 'Tinkerbell'}</span>
-                <span className={`ml-2 font-black text-5xl ${
-                  theme === 'ben10' ? 'text-green-400' : 'text-yellow-400'
+              <h1 className="text-4xl font-black text-black mb-2 flex items-center">
+                <span>Your</span>
+                <span className={`ml-2 font-black text-4xl text-black
                 }`}>Study</span>
                
               </h1>
               <p className={`font-bold text-lg ${
-                theme === 'ben10' ? 'text-green-200' : 'text-yellow-200'
+                theme === 'ben10' ? 'text-green-200' : 'text-white'
               }`}>
                 {theme === 'ben10'
-                  ? `Welcome back, ${student.name}! Access your ${theme === 'ben10' ? 'hero' : 'magical'} study materials!`
-                  : `Welcome back, ${student.name}! Access your magical study materials!`}
+                  ? `Welcome back, ${student.name}! Access your study materials!`
+                  : `Welcome back, ${student.name}! Access your study materials!`}
               </p>
             </div>
           </div>
@@ -1121,7 +1142,7 @@ export default function StudentStudyPage() {
         <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 border-black p-6 ${
           theme === 'ben10'
             ? 'from-green-600 to-green-700'
-            : 'from-yellow-500 to-green-600'
+            : 'from-green-400 to-yellow-500'
         }`}>
           <div className="flex items-center justify-between">
             <div>
@@ -1147,25 +1168,25 @@ export default function StudentStudyPage() {
         <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 border-black p-6 ${
           theme === 'ben10'
             ? 'from-green-700 to-black'
-            : 'from-yellow-600 to-green-700'
+            : 'from-green-400 to-yellow-500'
         }`}>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-black text-white">
-                {theme === 'ben10' ? 'Hero Classes' : 'Magical Classes'}
+                {theme === 'ben10' ? 'Your Classes' : 'Your Classes'}
               </p>
               <p className="text-3xl font-black text-white mt-2">
                 {classes.length}
               </p>
             </div>
-            <div className="text-4xl">{theme === 'ben10' ? '🦸‍♂️' : '🧚‍♀️'}</div>
+           
           </div>
         </div>
 
         <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 border-black p-6 ${
           theme === 'ben10'
             ? 'from-black to-green-800'
-            : 'from-yellow-700 to-green-600'
+            : 'from-green-400 to-yellow-500'
         }`}>
           <div className="flex items-center justify-between">
             <div>
@@ -1176,19 +1197,19 @@ export default function StudentStudyPage() {
                 {classes.reduce((sum, cls) => sum + cls.recentMaterials, 0)}
               </p>
             </div>
-            <div className="text-4xl">{theme === 'ben10' ? '⚡' : '✨'}</div>
+          
           </div>
         </div>
       </div>
 
       {/* Classes Grid */}
       <div className="mb-8">
-        <h2 className={`text-3xl font-black text-white mb-6 text-center rounded-3xl p-4 border-4 border-black shadow-2xl ${
+        <h2 className={`text-3xl font-black text-black mb-6 text-center rounded-3xl p-4 border-4 border-black shadow-2xl ${
           theme === 'ben10'
             ? 'bg-gradient-to-r from-green-500 to-green-600'
-            : 'bg-gradient-to-r from-yellow-400 to-green-500'
+            : 'bg-gradient-to-r from-green-400 to-yellow-500'
         }`}>
-          {theme === 'ben10' ? '🦸‍♂️ Your Hero Classes 🦸‍♂️' : '🧚‍♀️ Your Magical Classes 🧚‍♀️'}
+          {theme === 'ben10' ? ' Your Classes ' : ' Your Classes '}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {classes.map((classItem) => (
@@ -1204,7 +1225,7 @@ export default function StudentStudyPage() {
                     <Badge className={`font-black border-2 border-black ${
                       theme === 'ben10' ? 'bg-yellow-400 text-black' : 'bg-green-400 text-black'
                     }`}>
-                      {theme === 'ben10' ? '⚡' : '✨'} {classItem.recentMaterials} new
+                       {classItem.recentMaterials} new
                     </Badge>
                   )}
                 </div>
@@ -1246,7 +1267,7 @@ export default function StudentStudyPage() {
                     onClick={() => loadClassMaterials(classItem.id)}
                     className="w-full mt-4 bg-black text-white font-black py-3 px-6 rounded-2xl border-2 border-white hover:bg-white hover:text-black transition-all duration-300 shadow-lg"
                   >
-                    {theme === 'ben10' ? '🚀 View Materials 🚀' : '✨ View Materials ✨'}
+                    {theme === 'ben10' ? ' View Materials ' : ' View Materials '}
                   </button>
                 </div>
               </div>
@@ -1264,7 +1285,7 @@ export default function StudentStudyPage() {
           <div className="p-8">
             <div className="text-6xl mb-4">{theme === 'ben10' ? '🦸‍♂️' : '🧚‍♀️'}</div>
             <h3 className="text-2xl font-black text-white mb-4">
-              {theme === 'ben10' ? 'No Hero Classes Yet!' : 'No Magical Classes Yet!'}
+              {theme === 'ben10' ? 'No Classes Yet!' : 'No Classes Yet!'}
             </h3>
             <p className="text-white/90 font-black mb-6">
               {theme === 'ben10'
@@ -1275,7 +1296,7 @@ export default function StudentStudyPage() {
               onClick={() => router.push('/enroll')}
               className="bg-black text-white font-black py-4 px-8 rounded-2xl border-2 border-white hover:bg-white hover:text-black transition-all duration-300 shadow-lg text-lg"
             >
-              {theme === 'ben10' ? '🚀 Browse Hero Classes 🚀' : '✨ Browse Magical Classes ✨'}
+              {theme === 'ben10' ? ' Browse Classes ' : ' Browse Classes '}
             </button>
           </div>
         </div>

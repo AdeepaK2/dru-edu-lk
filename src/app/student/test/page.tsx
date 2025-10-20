@@ -995,7 +995,7 @@ export default function StudentTests() {
             </div>
           </div>
           {/* No Tests Message */}
-          <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 border-black p-12 text-center ${theme === 'ben10' ? 'from-green-300 via-black to-green-300' : 'from-green-300 via-black to-green-300'}`}>
+          <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 border-black p-12 text-center ${theme === 'ben10' ? 'from-green-300 via-black to-green-300' : theme === 'tinkerbell' ? 'from-green-300 via-black to-green-300' : 'from-blue-300 via-indigo-500 to-blue-300'}`}>
             <div className="text-8xl mb-6">📚</div>
             <h2 className="text-3xl font-black text-white mb-4">
               No Tests Yet
@@ -1005,7 +1005,7 @@ export default function StudentTests() {
             </p>
             <Button
               onClick={() => router.push('/student/dashboard')}
-              className={`text-white px-8 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black flex items-center space-x-3 ${theme === 'ben10' ? 'bg-gradient-to-r from-green-500 to-black hover:from-green-600 hover:to-gray-900' : 'bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700'}`}
+              className={`text-white px-8 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black flex items-center space-x-3 ${theme === 'ben10' ? 'bg-gradient-to-r from-green-500 to-black hover:from-green-600 hover:to-gray-900' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700' : 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700'}`}
             >
               <BookOpen className="w-5 h-5" />
               <span>Return to Dashboard</span>
@@ -1020,21 +1020,21 @@ export default function StudentTests() {
   if (authLoading || loading) {
     return (
       <StudentLayout>
-        <div className={`min-h-screen flex items-center justify-center ${theme === 'ben10' ? 'bg-gradient-to-br from-green-400 via-black to-green-400' : 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-300'}`}>
+        <div className={`min-h-screen flex items-center justify-center ${theme === 'ben10' ? 'bg-gradient-to-br from-green-400 via-black to-green-400' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-300' : 'bg-gradient-to-br from-blue-400 via-indigo-500 to-blue-400'}`}>
           <div className="bg-white border-4 border-black rounded-3xl p-8 shadow-2xl">
             {/* Loading Animation */}
             <div className="relative mb-6">
-              <div className={`w-24 h-24 rounded-full flex items-center justify-center relative mx-auto border-4 border-black ${theme === 'ben10' ? 'bg-green-400' : 'bg-yellow-400'}`}>
+              <div className={`w-24 h-24 rounded-full flex items-center justify-center relative mx-auto border-4 border-black ${theme === 'ben10' ? 'bg-green-400' : theme === 'tinkerbell' ? 'bg-yellow-400' : 'bg-blue-400'}`}>
                 <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center">
                   <div className="flex space-x-1">
-                    <div className={`w-3 h-3 rounded-full ${theme === 'ben10' ? 'bg-green-400' : 'bg-yellow-400'}`}></div>
-                    <div className={`w-3 h-3 rounded-full delay-300 ${theme === 'ben10' ? 'bg-green-400' : 'bg-yellow-400'}`}></div>
+                    <div className={`w-3 h-3 rounded-full ${theme === 'ben10' ? 'bg-green-400' : theme === 'tinkerbell' ? 'bg-yellow-400' : 'bg-blue-400'}`}></div>
+                    <div className={`w-3 h-3 rounded-full delay-300 ${theme === 'ben10' ? 'bg-green-400' : theme === 'tinkerbell' ? 'bg-yellow-400' : 'bg-blue-400'}`}></div>
                   </div>
                   <div className="absolute bottom-6 w-2 h-2 bg-black rounded-full"></div>
                 </div>
                 {/* Loading symbols */}
-                <div className={`absolute -top-4 -left-4 w-8 h-8 rounded-full border-2 border-black ${theme === 'ben10' ? 'bg-green-400' : 'bg-yellow-400'}`}></div>
-                <div className={`absolute -top-4 -right-4 w-8 h-8 rounded-full border-2 border-black delay-500 ${theme === 'ben10' ? 'bg-green-400' : 'bg-yellow-400'}`}></div>
+                <div className={`absolute -top-4 -left-4 w-8 h-8 rounded-full border-2 border-black ${theme === 'ben10' ? 'bg-green-400' : theme === 'tinkerbell' ? 'bg-yellow-400' : 'bg-blue-400'}`}></div>
+                <div className={`absolute -top-4 -right-4 w-8 h-8 rounded-full border-2 border-black delay-500 ${theme === 'ben10' ? 'bg-green-400' : theme === 'tinkerbell' ? 'bg-yellow-400' : 'bg-blue-400'}`}></div>
               </div>
               <div className="text-center mt-4">
                 <span className="text-black font-bold text-xl">Loading</span>
@@ -1052,9 +1052,9 @@ export default function StudentTests() {
 
   return (
     <StudentLayout>
-      <div className={`min-h-screen p-6 ${theme === 'ben10' ? 'bg-gradient-to-br from-green-400 via-black to-green-400' : 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-300'}`}>
+      <div className={`min-h-screen p-6 ${theme === 'ben10' ? 'bg-gradient-to-br from-green-400 via-black to-green-400' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-300' : 'bg-gradient-to-br from-blue-400 via-indigo-500 to-blue-400'}`}>
         {/* Tests Header */}
-        <div className={`rounded-3xl shadow-2xl border-4 border-black p-8 mb-6 relative overflow-hidden ${theme === 'ben10' ? 'bg-gradient-to-r from-green-500 via-black to-green-500' : 'bg-gradient-to-r from-yellow-500 via-green-500 to-yellow-500'}`}>
+        <div className={`rounded-3xl shadow-2xl border-4 border-black p-8 mb-6 relative overflow-hidden ${theme === 'ben10' ? 'bg-gradient-to-r from-green-500 via-black to-green-500' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-500 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-500 via-indigo-600 to-blue-500'}`}>
        
          
          
@@ -1065,7 +1065,7 @@ export default function StudentTests() {
               <div>
                 <h1 className="text-4xl font-black text-white mb-2 flex items-center">
                   <span>My</span>
-                  <span className={`ml-2 font-black text-5xl ${theme === 'ben10' ? 'text-green-400' : 'text-yellow-400'}`}>Tests</span>
+                  <span className={`ml-2 font-black text-5xl ${theme === 'ben10' ? 'text-green-400' : theme === 'tinkerbell' ? 'text-yellow-400' : 'text-blue-300'}`}>Tests</span>
                 </h1>
                 <p className="text-white font-bold text-lg">
                   Challenge yourself with epic tests and grow! 
@@ -1086,7 +1086,7 @@ export default function StudentTests() {
 
         {/* Error Display */}
         {error && (
-          <div className={`rounded-xl border-4 border-black p-4 shadow-lg ${theme === 'ben10' ? 'bg-gradient-to-r from-red-400 to-red-600' : 'bg-gradient-to-r from-red-300 to-pink-300'}`}>
+          <div className={`rounded-xl border-4 border-black p-4 shadow-lg ${theme === 'ben10' ? 'bg-gradient-to-r from-red-400 to-red-600' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-red-300 to-pink-300' : 'bg-gradient-to-r from-red-400 to-red-500'}`}>
             <div className="flex items-center space-x-3">
               <div className="text-2xl">⚠️</div>
               <div>
@@ -1100,7 +1100,7 @@ export default function StudentTests() {
         )}
 
         {/* Search Controls */}
-        <div className={`rounded-2xl shadow-xl border-4 border-black p-6 mb-6 ${theme === 'ben10' ? 'bg-gradient-to-r from-green-400 via-black to-green-400' : 'bg-gradient-to-r from-yellow-300 via-green-400 to-yellow-300'}`}>
+        <div className={`rounded-2xl shadow-xl border-4 border-black p-6 mb-6 ${theme === 'ben10' ? 'bg-gradient-to-r from-green-400 via-black to-green-400' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 via-green-400 to-yellow-300' : 'bg-gradient-to-r from-blue-300 via-indigo-400 to-blue-300'}`}>
           <div className="flex items-center space-x-3 mb-4">
             <div className="text-3xl">🔍</div>
             <h2 className="text-2xl font-black text-white">Search Tests</h2>
@@ -1117,7 +1117,7 @@ export default function StudentTests() {
                   placeholder="Search for tests..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className={`pl-12 pr-4 py-3 text-lg border-4 border-black rounded-2xl bg-white text-black placeholder-gray-500 focus:outline-none shadow-lg ${theme === 'ben10' ? 'focus:ring-4 focus:ring-green-400' : 'focus:ring-4 focus:ring-yellow-400'}`}
+                  className={`pl-12 pr-4 py-3 text-lg border-4 border-black rounded-2xl bg-white text-black placeholder-gray-500 focus:outline-none shadow-lg ${theme === 'ben10' ? 'focus:ring-4 focus:ring-green-400' : theme === 'tinkerbell' ? 'focus:ring-4 focus:ring-yellow-400' : 'focus:ring-4 focus:ring-blue-400'}`}
                 />
               </div>
             </div>
@@ -1127,7 +1127,7 @@ export default function StudentTests() {
               <select
                 value={selectedSubjectId}
                 onChange={(e) => setSelectedSubjectId(e.target.value)}
-                className={`border-4 border-black rounded-2xl px-6 py-3 bg-white text-black font-bold text-lg focus:outline-none shadow-lg hover:bg-gray-50 transition-all w-full ${theme === 'ben10' ? 'focus:ring-4 focus:ring-green-400' : 'focus:ring-4 focus:ring-yellow-400'}`}
+                className={`border-4 border-black rounded-2xl px-6 py-3 bg-white text-black font-bold text-lg focus:outline-none shadow-lg hover:bg-gray-50 transition-all w-full ${theme === 'ben10' ? 'focus:ring-4 focus:ring-green-400' : theme === 'tinkerbell' ? 'focus:ring-4 focus:ring-yellow-400' : 'focus:ring-4 focus:ring-blue-400'}`}
               >
                 <option value="all"> All Subjects</option>
                 {subjects.map((subject) => (
@@ -1174,10 +1174,10 @@ export default function StudentTests() {
 
         {/* Custom Tests Section */}
         {customTests.length > 0 && (
-          <div className={`rounded-3xl shadow-2xl border-4 border-black overflow-hidden ${theme === 'ben10' ? 'bg-gradient-to-r from-green-400 via-black to-green-400' : 'bg-gradient-to-r from-yellow-300 via-green-400 to-yellow-300'}`}>
+          <div className={`rounded-3xl shadow-2xl border-4 border-black overflow-hidden ${theme === 'ben10' ? 'bg-gradient-to-r from-green-400 via-black to-green-400' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 via-green-400 to-yellow-300' : 'bg-gradient-to-r from-blue-300 via-indigo-400 to-blue-300'}`}>
             {/* Custom Tests Header */}
             <div
-              className={`p-6 border-b-4 border-black cursor-pointer transition-all ${theme === 'ben10' ? 'bg-green-300 hover:bg-green-300' : 'bg-yellow-200 hover:bg-yellow-200'}`}
+              className={`p-6 border-b-4 border-black cursor-pointer transition-all ${theme === 'ben10' ? 'bg-green-300 hover:bg-green-300' : theme === 'tinkerbell' ? 'bg-yellow-200 hover:bg-yellow-200' : 'bg-blue-200 hover:bg-blue-200'}`}
               onClick={toggleCustomTests}
             >
               <div className="flex items-center justify-between">
@@ -1192,7 +1192,7 @@ export default function StudentTests() {
                       <span className="text-3xl mr-2">📝</span>
                       My Custom Tests
                       {(groupedCustomTests.live.length > 0 || groupedCustomTests.upcoming.length > 0 || groupedCustomTests.available.length > 0) && (
-                        <span className={`ml-3 inline-flex items-center px-3 py-1 rounded-full text-sm font-black text-black border-2 border-black ${theme === 'ben10' ? 'bg-green-400' : 'bg-yellow-400'}`}>
+                        <span className={`ml-3 inline-flex items-center px-3 py-1 rounded-full text-sm font-black text-black border-2 border-black ${theme === 'ben10' ? 'bg-green-400' : theme === 'tinkerbell' ? 'bg-yellow-400' : 'bg-blue-400'}`}>
                           New!
                         </span>
                       )}
@@ -1206,7 +1206,7 @@ export default function StudentTests() {
                 <div className="flex items-center space-x-3">
                   {/* Custom Test count badges */}
                   {groupedCustomTests.live.length > 0 && (
-                    <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-black text-white border-2 border-black ${theme === 'ben10' ? 'bg-green-500' : 'bg-yellow-500'}`}>
+                    <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-black text-white border-2 border-black ${theme === 'ben10' ? 'bg-green-500' : theme === 'tinkerbell' ? 'bg-yellow-500' : 'bg-blue-500'}`}>
                       {groupedCustomTests.live.length} Live Now
                     </span>
                   )}
@@ -1220,7 +1220,7 @@ export default function StudentTests() {
                       {groupedCustomTests.available.length} Available
                     </span>
                   )}
-                  <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-black text-white border-2 border-black ${theme === 'ben10' ? 'bg-green-600' : 'bg-yellow-600'}`}>
+                  <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-black text-white border-2 border-black ${theme === 'ben10' ? 'bg-green-600' : theme === 'tinkerbell' ? 'bg-yellow-600' : 'bg-blue-600'}`}>
                     {customTests.length} Total
                   </span>
                 </div>
@@ -1233,7 +1233,7 @@ export default function StudentTests() {
                 {/* Live Custom Tests */}
                 {groupedCustomTests.live.length > 0 && (
                   <>
-                    <div className={`px-6 py-4 border-b-4 border-black ${theme === 'ben10' ? 'bg-gradient-to-r from-green-300 via-black to-emerald-300' : 'bg-gradient-to-r from-yellow-300 via-green-400 to-yellow-400'}`}>
+                    <div className={`px-6 py-4 border-b-4 border-black ${theme === 'ben10' ? 'bg-gradient-to-r from-green-300 via-black to-emerald-300' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 via-green-400 to-yellow-400' : 'bg-gradient-to-r from-blue-300 via-indigo-400 to-blue-300'}`}>
                       <div className="flex items-center">
                         <div className="text-2xl mr-3">🎯</div>
                         <span className="text-lg font-black text-black">
@@ -1255,10 +1255,10 @@ export default function StudentTests() {
                                 <h3 className="text-xl font-black text-black">
                                   {test.title}
                                 </h3>
-                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-black text-white border-2 border-black ${theme === 'ben10' ? 'bg-green-500' : 'bg-yellow-500'}`}>
+                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-black text-white border-2 border-black ${theme === 'ben10' ? 'bg-green-500' : theme === 'tinkerbell' ? 'bg-yellow-500' : 'bg-blue-500'}`}>
                                   Custom Assignment
                                 </span>
-                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-black text-white border-2 border-black ${theme === 'ben10' ? 'bg-green-500' : 'bg-yellow-500'}`}>
+                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-black text-white border-2 border-black ${theme === 'ben10' ? 'bg-green-500' : theme === 'tinkerbell' ? 'bg-yellow-500' : 'bg-blue-500'}`}>
                                   Live Now
                                 </span>
                                 {renderLateSubmissionBadge(test)}
@@ -1284,7 +1284,11 @@ export default function StudentTests() {
                                 disabled={buttonConfig.disabled}
                                 className={`inline-flex items-center px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black ${
                                   buttonConfig.variant === 'primary' && !buttonConfig.disabled
-                                    ? `${theme === 'ben10' ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600' : 'bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600'} text-white`
+                                    ? theme === 'ben10'
+                                      ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white'
+                                      : theme === 'tinkerbell'
+                                      ? 'bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 text-white'
+                                      : 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white'
                                     : 'bg-gradient-to-r from-gray-400 to-gray-500 text-white'
                                 }`}
                               >
@@ -1408,7 +1412,7 @@ export default function StudentTests() {
                                 <h3 className="text-xl font-black text-black">
                                   {test.title}
                                 </h3>
-                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-black text-white border-2 border-black ${theme === 'ben10' ? 'bg-green-500' : 'bg-yellow-500'}`}>
+                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-black text-white border-2 border-black ${theme === 'ben10' ? 'bg-green-500' : theme === 'tinkerbell' ? 'bg-yellow-500' : 'bg-blue-500'}`}>
                                   Custom Assignment
                                 </span>
                                 <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-black bg-blue-500 text-white border-2 border-black">
@@ -1472,7 +1476,11 @@ export default function StudentTests() {
                                 disabled={buttonConfig.disabled}
                                 className={`inline-flex items-center px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black ${
                                   buttonConfig.variant === 'primary' && !buttonConfig.disabled
-                                    ? `${theme === 'ben10' ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600' : 'bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600'} text-white`
+                                    ? theme === 'ben10'
+                                      ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white'
+                                      : theme === 'tinkerbell'
+                                      ? 'bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 text-white'
+                                      : 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white'
                                     : 'bg-gradient-to-r from-gray-400 to-gray-500 text-white'
                                 }`}
                               >
@@ -1513,11 +1521,11 @@ export default function StudentTests() {
                                 <h3 className="text-xl font-black text-black">
                                   {test.title}
                                 </h3>
-                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-black text-white border-2 border-black ${theme === 'ben10' ? 'bg-green-500' : 'bg-yellow-500'}`}>
+                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-black text-white border-2 border-black ${theme === 'ben10' ? 'bg-green-500' : theme === 'tinkerbell' ? 'bg-yellow-500' : 'bg-blue-500'}`}>
                                   Custom Assignment
                                 </span>
                                 {hasAttempted ? (
-                                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-black text-white border-2 border-black ${theme === 'ben10' ? 'bg-green-500' : 'bg-yellow-500'}`}>
+                                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-black text-white border-2 border-black ${theme === 'ben10' ? 'bg-green-500' : theme === 'tinkerbell' ? 'bg-yellow-500' : 'bg-blue-500'}`}>
                                     Attempted
                                   </span>
                                 ) : (
@@ -1551,7 +1559,11 @@ export default function StudentTests() {
                                 disabled={buttonConfig.disabled}
                                 className={`inline-flex items-center px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black ${
                                   buttonConfig.variant === 'primary' && !buttonConfig.disabled
-                                    ? `${theme === 'ben10' ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600' : 'bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600'} text-white`
+                                    ? theme === 'ben10'
+                                      ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white'
+                                      : theme === 'tinkerbell'
+                                      ? 'bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 text-white'
+                                      : 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white'
                                     : 'bg-gradient-to-r from-gray-400 to-gray-500 text-white'
                                 }`}
                               >
