@@ -129,13 +129,45 @@ export default function StudentVideos() {
 
   if (loading) {
     return (
-      <div className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-green-600 via-green-700 to-black' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : 'bg-gradient-to-br from-blue-600 via-indigo-700 to-slate-900'} p-6`}>
-        <div className="flex items-center justify-center py-12">
-          <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-green-600 to-black' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-600 to-indigo-700'} rounded-3xl shadow-2xl border-4 border-black p-8`}>
-            <div className="flex items-center space-x-4">
-              <div className={`w-12 h-12 border-4 border-black border-t-transparent rounded-full animate-spin ${theme === 'ben10' ? 'bg-gradient-to-r from-green-400 to-green-600' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 to-yellow-600' : 'bg-gradient-to-r from-blue-400 to-indigo-600'}`}></div>
-              <span className="text-2xl font-black text-white">Loading your {theme === 'ben10' ? 'hero' : theme === 'tinkerbell' ? 'magical' : 'learning'} videos... {theme === 'ben10' ? '⚡' : theme === 'tinkerbell' ? '✨' : '📚'}</span>
-            </div>
+      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-green-400 to-black' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : 'from-blue-400 to-indigo-600'} flex items-center justify-center`}>
+        <div className="bg-white border-4 border-black rounded-3xl p-8 shadow-2xl">
+          {/* Theme-Specific Loading Animation */}
+          <div className="relative mb-6 flex flex-col items-center">
+            {/* Tinkerbell Loading GIF */}
+            {theme === 'tinkerbell' && (
+              <div className="flex flex-col items-center">
+                <img 
+                  src="/tinkerbell-loading.gif" 
+                  alt="Tinkerbell Loading" 
+                  className="w-32 h-32 object-contain"
+                />
+                <span className="text-2xl font-bold text-yellow-600 mt-4">Loading</span>
+              </div>
+            )}
+            
+            {/* Ben 10 Loading GIF */}
+            {theme === 'ben10' && (
+              <div className="flex flex-col items-center">
+                <img 
+                  src="/ben10-loading.gif" 
+                  alt="Ben 10 Loading" 
+                  className="w-32 h-32 object-contain"
+                />
+                <span className="text-2xl font-bold text-green-600 mt-4">Loading</span>
+              </div>
+            )}
+            
+            {/* Default Theme Spinner with Loading Text */}
+            {theme !== 'tinkerbell' && theme !== 'ben10' && (
+              <div className="flex flex-col items-center">
+                <div className="w-24 h-24 border-4 border-blue-400 border-t-blue-600 rounded-full animate-spin"></div>
+                <span className="text-2xl font-bold text-blue-600 mt-4">Loading</span>
+              </div>
+            )}
+          </div>
+          <div className="text-center">
+            <h2 className="text-2xl font-black text-black mb-2">Loading Videos...</h2>
+            <p className="text-gray-600 font-medium">Get ready to transform your learning! 🔄⚡</p>
           </div>
         </div>
       </div>

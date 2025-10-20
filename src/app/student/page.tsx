@@ -282,26 +282,46 @@ export default function StudentDashboard() {
   // Show loading state while data is being fetched
   if (loading) {
     return (
-      <div style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: theme === 'ben10'
-          ? 'linear-gradient(to bottom right, rgb(74, 222, 128), rgb(0, 0, 0), rgb(74, 222, 128))'
-          : theme === 'tinkerbell'
-          ? 'linear-gradient(to bottom right, rgb(134, 239, 172), rgb(202, 138, 4), rgb(134, 239, 172))'
-          : 'linear-gradient(to bottom right, rgb(96, 165, 250), rgb(79, 70, 229), rgb(96, 165, 250))'
-      }}>
-        <div className="text-center">
-          <p className="text-white font-bold text-4xl mb-4">
-            {theme === 'ben10' ? 'Loading' : theme === 'tinkerbell' ? 'Loading' : 'Loading'}
-          </p>
-          <p className="text-white font-bold text-2xl">
-            <span className="inline-block animate-bounce" style={{animationDelay: '0s'}}>.</span>
-            <span className="inline-block animate-bounce" style={{animationDelay: '0.2s'}}>.</span>
-            <span className="inline-block animate-bounce" style={{animationDelay: '0.4s'}}>.</span>
-          </p>
+      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-green-400 to-black' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : 'from-blue-400 to-indigo-600'} flex items-center justify-center`}>
+        <div className="bg-white border-4 border-black rounded-3xl p-8 shadow-2xl">
+          {/* Theme-Specific Loading Animation */}
+          <div className="relative mb-6 flex flex-col items-center">
+            {/* Tinkerbell Loading GIF */}
+            {theme === 'tinkerbell' && (
+              <div className="flex flex-col items-center">
+                <img 
+                  src="/tinkerbell-loading.gif" 
+                  alt="Tinkerbell Loading" 
+                  className="w-32 h-32 object-contain"
+                />
+                <span className="text-2xl font-bold text-yellow-600 mt-4">Loading</span>
+              </div>
+            )}
+            
+            {/* Ben 10 Loading GIF */}
+            {theme === 'ben10' && (
+              <div className="flex flex-col items-center">
+                <img 
+                  src="/ben10-loading.gif" 
+                  alt="Ben 10 Loading" 
+                  className="w-32 h-32 object-contain"
+                />
+                <span className="text-2xl font-bold text-green-600 mt-4">Loading</span>
+              </div>
+            )}
+            
+            {/* Default Theme Spinner with Loading Text */}
+            {theme !== 'tinkerbell' && theme !== 'ben10' && (
+              <div className="flex flex-col items-center">
+                <div className="w-24 h-24 border-4 border-blue-400 border-t-blue-600 rounded-full animate-spin"></div>
+                <span className="text-2xl font-bold text-blue-600 mt-4">Loading</span>
+              </div>
+            )}
+          </div>
+          <div className="text-center">
+            <h2 className="text-2xl font-black text-black mb-2">Loading Dashboard...</h2>
+            <p className="text-gray-600 font-medium">Get ready to transform your learning! 🔄⚡</p>
+          </div>
         </div>
       </div>
     );

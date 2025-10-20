@@ -101,20 +101,42 @@ export default function StudentClassesPage() {
     return (
       <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-green-400 to-black' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : 'from-blue-400 to-indigo-600'} flex items-center justify-center`}>
         <div className="bg-white border-4 border-black rounded-3xl p-8 shadow-2xl">
-          {/* Ben 10 Loading Animation */}
-          <div className="relative mb-6">
-            <div className={`w-24 h-24 ${theme === 'ben10' ? 'bg-green-500' : theme === 'tinkerbell' ? 'bg-yellow-500' : 'bg-blue-500'} rounded-full flex items-center justify-center relative mx-auto animate-spin border-4 border-black`}>
-              <div className="w-20 h-20 bg-black rounded-full flex items-center justify-center">
-                <span className={`text-xl font-bold animate-pulse ${theme === 'ben10' ? 'text-green-400' : theme === 'tinkerbell' ? 'text-yellow-400' : 'text-blue-400'}`}>10</span>
-                <div className="absolute inset-0 rounded-full border-2 border-black animate-ping"></div>
+          {/* Theme-Specific Loading Animation */}
+          <div className="relative mb-6 flex flex-col items-center">
+            {/* Tinkerbell Loading GIF */}
+            {theme === 'tinkerbell' && (
+              <div className="flex flex-col items-center">
+                <img 
+                  src="/tinkerbell-loading.gif" 
+                  alt="Tinkerbell Loading" 
+                  className="w-32 h-32 object-contain"
+                />
+                <span className="text-2xl font-bold text-yellow-600 mt-4">Loading</span>
               </div>
-            </div>
-            <div className="text-center mt-4">
-              <span className={`font-bold text-xl ${theme === 'ben10' ? 'text-green-600' : theme === 'tinkerbell' ? 'text-yellow-600' : 'text-blue-600'}`}>Ben 10</span>
-            </div>
+            )}
+            
+            {/* Ben 10 Loading GIF */}
+            {theme === 'ben10' && (
+              <div className="flex flex-col items-center">
+                <img 
+                  src="/ben10-loading.gif" 
+                  alt="Ben 10 Loading" 
+                  className="w-32 h-32 object-contain"
+                />
+                <span className="text-2xl font-bold text-green-600 mt-4">Loading</span>
+              </div>
+            )}
+            
+            {/* Default Theme Spinner with Loading Text */}
+            {theme !== 'tinkerbell' && theme !== 'ben10' && (
+              <div className="flex flex-col items-center">
+                <div className="w-24 h-24 border-4 border-blue-400 border-t-blue-600 rounded-full animate-spin"></div>
+                <span className="text-2xl font-bold text-blue-600 mt-4">Loading</span>
+              </div>
+            )}
           </div>
           <div className="text-center">
-            <h2 className="text-2xl font-black text-black mb-2">Loading Hero Classes...</h2>
+            <h2 className="text-2xl font-black text-black mb-2">Loading Your Classes...</h2>
             <p className="text-gray-600 font-medium">Get ready to transform your learning! 🔄⚡</p>
           </div>
         </div>
