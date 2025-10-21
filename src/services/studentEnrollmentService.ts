@@ -188,17 +188,17 @@ export const updateStudentEnrollment = async (
     const docRef = doc(getEnrollmentsCollection(), enrollmentId);
     
     // Prepare update data
-    const updateDoc: any = {
+    const updatePayload: any = {
       ...updateData,
       updatedAt: Timestamp.now(),
     };
 
     // Convert enrolledAt to Timestamp if provided
     if (updateData.enrolledAt) {
-      updateDoc.enrolledAt = convertDateToTimestamp(updateData.enrolledAt);
+      updatePayload.enrolledAt = convertDateToTimestamp(updateData.enrolledAt);
     }
 
-    await updateDoc(docRef, updateDoc);
+    await updateDoc(docRef, updatePayload);
     
     // Get the updated document
     const updatedDocSnapshot = await getDoc(docRef);
@@ -320,6 +320,51 @@ export const getStudentEnrollmentStats = async (studentId: string) => {
     return stats;
   } catch (error) {
     console.error('Error getting student enrollment stats:', error);
+    throw error;
+  }
+};
+
+/**
+ * Update class name and subject for all enrollments of a specific class
+ * This is used to sync denormalized data when class details are updated
+ */
+export const updateClassDetailsInEnrollments = async (
+  classId: string,
+  className?: string,
+  subject?: string
+): Promise<number> => {
+  try {
+    const enrollments = await getEnrollmentsByClass(classId);
+    
+    if (enrollments.length === 0) {
+      console.log('No enrollments to update for class:', classId);
+      return 0;
+    }
+
+    const updateData: any = {
+      updatedAt: Timestamp.now()
+    };
+
+    if (className !== undefined) {
+      updateData.className = className;
+    }
+
+    if (subject !== undefined) {
+      updateData.subject = subject;
+    }
+
+    // Update all enrollments
+    const updatePromises = enrollments.map(enrollment => {
+      const docRef = doc(getEnrollmentsCollection(), enrollment.id);
+      return updateDoc(docRef, updateData);
+    });
+
+    await Promise.all(updatePromises);
+
+    console.log(`✅ Updated ${enrollments.length} enrollment records for class ${classId}`);
+    return enrollments.length;
+  } catch (error) {
+    console.error('Error updating class details in enrollments:', error);
     throw error;
   }
 };

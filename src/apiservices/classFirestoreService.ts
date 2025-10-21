@@ -165,9 +165,61 @@ export class ClassFirestoreService {
 
       await updateDoc(docRef, cleanUpdateData);
       console.log('Class updated successfully');
+
+      // If class name or subject is updated, sync to enrollment records
+      if (cleanUpdateData.name || cleanUpdateData.subject) {
+        await this.syncEnrollmentData(classId, cleanUpdateData.name, cleanUpdateData.subject);
+      }
     } catch (error) {
       console.error('Error updating class:', error);
       throw new Error(`Failed to update class: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Sync enrollment data when class name or subject changes
+   * This ensures denormalized data stays consistent across collections
+   */
+  private static async syncEnrollmentData(
+    classId: string,
+    newClassName?: string,
+    newSubject?: string
+  ): Promise<void> {
+    try {
+      // Get all enrollments for this class
+      const enrollmentsRef = collection(firestore, 'studentEnrollments');
+      const q = query(enrollmentsRef, where('classId', '==', classId));
+      const enrollmentSnapshot = await getDocs(q);
+
+      if (enrollmentSnapshot.empty) {
+        console.log('No enrollments to sync for class:', classId);
+        return;
+      }
+
+      // Update each enrollment document
+      const updatePromises = enrollmentSnapshot.docs.map(async (enrollmentDoc) => {
+        const updateData: any = {
+          updatedAt: Timestamp.now()
+        };
+
+        if (newClassName) {
+          updateData.className = newClassName;
+        }
+
+        if (newSubject) {
+          updateData.subject = newSubject;
+        }
+
+        const enrollmentDocRef = doc(firestore, 'studentEnrollments', enrollmentDoc.id);
+        return updateDoc(enrollmentDocRef, updateData);
+      });
+
+      await Promise.all(updatePromises);
+      console.log(`✅ Synced ${enrollmentSnapshot.docs.length} enrollment records for class ${classId}`);
+    } catch (error) {
+      console.error('Error syncing enrollment data:', error);
+      // Log error but don't throw - we don't want to fail the class update if enrollment sync fails
+      console.warn('Class updated successfully but enrollment sync failed:', error);
     }
   }
 
