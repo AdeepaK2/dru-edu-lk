@@ -818,6 +818,12 @@ export default function TestPage() {
                 {isLateSubmissionActive ? 'Late Submission Available' : 'Late Submission Expired'}
               </span>
             )}
+            {/* Untimed Badge */}
+            {test.type === 'flexible' && (test as any).isUntimed && (
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300">
+                ⏱️ Untimed Quiz
+              </span>
+            )}
           </div>
           <p className="text-gray-600 dark:text-gray-300">
             {test.description || 'No description provided.'}
@@ -871,7 +877,9 @@ export default function TestPage() {
                 <p className="mt-1 text-gray-900 dark:text-white">
                   {test.type === 'live' 
                     ? `${(test as LiveTest).duration} minutes` 
-                    : `${(test as FlexibleTest).duration || 'No time limit'} minutes`}
+                    : (test as any).isUntimed
+                      ? 'No time limit - work at your own pace'
+                      : `${(test as FlexibleTest).duration} minutes`}
                 </p>
               </div>
             </div>

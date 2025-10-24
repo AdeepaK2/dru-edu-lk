@@ -956,6 +956,11 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
                                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400">
                                     {test.type === 'live' ? 'Live Test' : 'Flexible'}
                                   </span>
+                                  {test.type === 'flexible' && (test as any).isUntimed && (
+                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-400">
+                                      ⏱️ Untimed
+                                    </span>
+                                  )}
                                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
                                     Custom
                                   </span>
@@ -977,7 +982,9 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
                                     <span>
                                       {test.type === 'live' 
                                         ? `${(test as LiveTest).duration} min`
-                                        : `${(test as FlexibleTest).duration} min`
+                                        : (test as any).isUntimed 
+                                          ? 'No time limit'
+                                          : `${(test as FlexibleTest).duration} min`
                                       }
                                     </span>
                                   </div>
@@ -1255,6 +1262,11 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
                                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400">
                                         {test.type === 'live' ? 'Live Test' : 'Flexible'}
                                       </span>
+                                      {test.type === 'flexible' && (test as any).isUntimed && (
+                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-400">
+                                          ⏱️ Untimed
+                                        </span>
+                                      )}
                                     </div>
 
                                     {test.description && (
@@ -1273,7 +1285,9 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
                                         <span>
                                           {test.type === 'live' 
                                             ? `${(test as LiveTest).duration} min`
-                                            : `${(test as FlexibleTest).duration} min`
+                                            : (test as any).isUntimed
+                                              ? 'No time limit'
+                                              : `${(test as FlexibleTest).duration} min`
                                           }
                                         </span>
                                       </div>

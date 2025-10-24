@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { 
   AlertCircle, Clock, Flag, CheckCircle, ChevronLeft, ChevronRight,
   Save, Send, List, EyeOff, Eye, AlertTriangle, ArrowLeft, Maximize,
-  X, Plus, Minus, ZoomIn
+  X, Plus, Minus, ZoomIn, Calendar
 } from 'lucide-react';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { Button, Input, TextArea } from '@/components/ui';
@@ -305,7 +305,34 @@ export default function TestTakePage() {
 
   // Timer effect with attempt management integration and auto-submit
   useEffect(() => {
-    if (!test || !attemptId || remainingTime <= 0) return;
+    if (!test || !attemptId) return;
+    
+    // NEW: Skip timer for untimed tests
+    if ((test as any).isUntimed) {
+      console.log('⏱️ Untimed test detected - no countdown timer, only deadline check');
+      
+      // For untimed tests, just check deadline periodically
+      const checkDeadline = setInterval(async () => {
+        try {
+          const { AttemptManagementService } = await import('@/apiservices/attemptManagementService');
+          const timeCalc = await AttemptManagementService.updateAttemptTime(attemptId);
+          
+          if (timeCalc.isExpired) {
+            clearInterval(checkDeadline);
+            setTimeExpired(true);
+            console.log('⏰ Untimed test deadline expired, auto-submitting...');
+            await handleAutoSubmit();
+          }
+        } catch (error) {
+          console.error('Error checking deadline:', error);
+        }
+      }, 60000); // Check every minute for untimed tests
+      
+      return () => clearInterval(checkDeadline);
+    }
+    
+    // EXISTING: Timer logic for timed tests
+    if (remainingTime <= 0) return;
     
     let serverSyncCounter = 0;
     let lastServerSync = Date.now();
@@ -2167,14 +2194,32 @@ export default function TestTakePage() {
             </div>
             
             <div className="flex items-center mt-4 md:mt-0">
-              <div className={`flex items-center p-2 rounded-md ${
-                remainingTime < 300 
-                  ? 'bg-red-50 text-red-800 dark:bg-red-900/30 dark:text-red-300' 
-                  : 'bg-blue-50 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
-              }`}>
-                <Clock className="h-5 w-5 mr-2" />
-                <span className="font-mono font-medium">{formatTime(remainingTime)}</span>
-              </div>
+              {/* NEW: Show deadline for untimed tests, timer for timed tests */}
+              {(test as any).isUntimed ? (
+                <div className="flex items-center p-2 rounded-md bg-indigo-50 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300">
+                  <Calendar className="h-5 w-5 mr-2" />
+                  <div className="flex flex-col">
+                    <span className="text-xs font-medium">Due by:</span>
+                    <span className="font-mono text-sm font-medium">
+                      {new Date((test as any).availableTo?.seconds * 1000).toLocaleDateString('en-AU', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div className={`flex items-center p-2 rounded-md ${
+                  remainingTime < 300 
+                    ? 'bg-red-50 text-red-800 dark:bg-red-900/30 dark:text-red-300' 
+                    : 'bg-blue-50 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+                }`}>
+                  <Clock className="h-5 w-5 mr-2" />
+                  <span className="font-mono font-medium">{formatTime(remainingTime)}</span>
+                </div>
+              )}
               
               <button 
                 onClick={() => setShowNavPanel(true)}

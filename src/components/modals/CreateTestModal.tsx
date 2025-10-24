@@ -49,6 +49,7 @@ interface TestFormData {
   availableTo: string;
   duration: number;
   attemptsAllowed: number;
+  isUntimed: boolean; // NEW: Untimed quiz option
   
   // For live tests
   scheduledStartTime: string;
@@ -89,6 +90,7 @@ const INITIAL_FORM_DATA: TestFormData = {
   availableTo: '',
   duration: 60,
   attemptsAllowed: 1,
+  isUntimed: false, // NEW: Default to timed tests
   
   scheduledStartTime: '',
   bufferTime: 5,
@@ -729,6 +731,7 @@ export default function CreateTestModal({
           availableTo: Timestamp.fromDate(new Date(formData.availableTo)),
           duration: formData.duration,
           attemptsAllowed: formData.attemptsAllowed,
+          isUntimed: formData.isUntimed, // NEW: Include untimed flag
         };
       } else {
         // Live test
@@ -1582,28 +1585,57 @@ export default function CreateTestModal({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Test Duration (minutes) <span className="text-red-500">*</span>
-                      </label>
+                  {/* NEW: Untimed Quiz Option */}
+                  <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
+                    <div className="flex items-start space-x-3">
                       <input
-                        type="number"
-                        min="1"
-                        max="300"
-                        value={formData.duration}
-                        onChange={(e) => updateFormData({ duration: parseInt(e.target.value) || 0 })}
-                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
-                          errors.duration ? 'border-red-500' : 'border-gray-300'
-                        }`}
-                        placeholder="60"
+                        type="checkbox"
+                        id="isUntimed"
+                        checked={formData.isUntimed}
+                        onChange={(e) => {
+                          updateFormData({ 
+                            isUntimed: e.target.checked,
+                            duration: e.target.checked ? 0 : 60 // Reset duration if untimed
+                          });
+                        }}
+                        className="mt-1 w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
                       />
-                      {errors.duration && (
-                        <p className="mt-1 text-sm text-red-500">{errors.duration}</p>
-                      )}
+                      <label htmlFor="isUntimed" className="flex-1 cursor-pointer">
+                        <div className="text-sm font-medium text-purple-900 dark:text-purple-100 mb-1">
+                          ⏱️ Make this an untimed quiz
+                        </div>
+                        <div className="text-xs text-purple-700 dark:text-purple-300">
+                          Students can work at their own pace without a countdown timer. They can pause, close their browser, and resume anytime before the deadline.
+                        </div>
+                      </label>
                     </div>
+                  </div>
 
-                    <div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Only show duration for timed tests */}
+                    {!formData.isUntimed && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Test Duration (minutes) <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          max="300"
+                          value={formData.duration}
+                          onChange={(e) => updateFormData({ duration: parseInt(e.target.value) || 0 })}
+                          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
+                            errors.duration ? 'border-red-500' : 'border-gray-300'
+                          }`}
+                          placeholder="60"
+                        />
+                        {errors.duration && (
+                          <p className="mt-1 text-sm text-red-500">{errors.duration}</p>
+                        )}
+                      </div>
+                    )}
+
+                    <div className={!formData.isUntimed ? '' : 'md:col-span-2'}>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Attempts Allowed
                       </label>
@@ -1619,6 +1651,25 @@ export default function CreateTestModal({
                       </select>
                     </div>
                   </div>
+
+                  {/* Help text for untimed */}
+                  {formData.isUntimed && (
+                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                      <div className="flex items-start space-x-3">
+                        <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                        <div className="text-sm text-blue-800 dark:text-blue-200">
+                          <p className="font-medium mb-1">Untimed Quiz Benefits:</p>
+                          <ul className="space-y-1 text-xs">
+                            <li>• Students can take as long as they need per session</li>
+                            <li>• No countdown timer pressure</li>
+                            <li>• Can close browser and resume later</li>
+                            <li>• Only deadline is "Available Until" date above</li>
+                            <li>• Total time spent is tracked for analytics</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
