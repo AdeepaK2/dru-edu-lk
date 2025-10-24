@@ -535,7 +535,10 @@ export default function CreateTestModal({
         if (formData.type === 'flexible') {
           if (!formData.availableFrom) newErrors.availableFrom = 'Start date is required';
           if (!formData.availableTo) newErrors.availableTo = 'End date is required';
-          if (formData.duration <= 0) newErrors.duration = 'Duration must be greater than 0';
+          // Only validate duration for timed tests (not untimed)
+          if (!formData.isUntimed && formData.duration <= 0) {
+            newErrors.duration = 'Duration must be greater than 0';
+          }
           
           // Validate date logic
           if (formData.availableFrom && formData.availableTo) {
