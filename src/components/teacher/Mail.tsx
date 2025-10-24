@@ -11,7 +11,9 @@ import {
   User,
   Search,
   Filter,
-  X
+  X,
+  Eye,
+  XCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { ComMailFirestoreService } from '@/apiservices/comMailFirestoreService';
@@ -44,6 +46,11 @@ export default function Mail({
   const [searchTerm, setSearchTerm] = useState('');
   const [priority, setPriority] = useState<'low' | 'normal' | 'high'>('normal');
   const [teacherData, setTeacherData] = useState<any>(null);
+  
+  // New state for viewing recipients
+  const [showRecipientsModal, setShowRecipientsModal] = useState(false);
+  const [selectedEmail, setSelectedEmail] = useState<ComMail | null>(null);
+  const [emailRecipients, setEmailRecipients] = useState<any[]>([]);
   
   // Alert states for success/failure feedback
   const [alertState, setAlertState] = useState<{
@@ -361,6 +368,20 @@ export default function Mail({
         ? prev.filter(id => id !== studentId)
         : [...prev, studentId]
     );
+  };
+
+  const handleViewRecipients = async (email: ComMail) => {
+    setSelectedEmail(email);
+    setShowRecipientsModal(true);
+    
+    try {
+      // Load recipients for this email
+      const recipients = await ComMailFirestoreService.getComMailRecipients(email.id);
+      setEmailRecipients(recipients);
+    } catch (error) {
+      console.error('Failed to load recipients:', error);
+      setEmailRecipients([]);
+    }
   };
 
   const filteredStudents = enrollments.filter(student =>
@@ -734,7 +755,11 @@ export default function Mail({
             </div>
           ) : (
             emailHistory.map((email) => (
-              <div key={email.id} className="p-6">
+              <div 
+                key={email.id} 
+                className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer"
+                onClick={() => handleViewRecipients(email)}
+              >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center space-x-2 mb-2">
@@ -777,12 +802,175 @@ export default function Mail({
                       </span>
                     </div>
                   </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleViewRecipients(email);
+                    }}
+                    className="ml-4 p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                    title="View Recipients"
+                  >
+                    <Eye className="w-5 h-5" />
+                  </button>
                 </div>
               </div>
             ))
           )}
         </div>
       </div>
+
+      {/* Recipients Modal */}
+      {showRecipientsModal && selectedEmail && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-white">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h2 className="text-2xl font-bold mb-2">{selectedEmail.subject}</h2>
+                  <p className="text-blue-100 text-sm">
+                    Sent on {selectedEmail.sentAt.toLocaleString('en-AU', {
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowRecipientsModal(false)}
+                  className="text-white hover:bg-white/20 p-2 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Stats */}
+              <div className="grid grid-cols-3 gap-4 mt-6">
+                <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3">
+                  <div className="text-xs text-blue-100 mb-1">Total Recipients</div>
+                  <div className="text-2xl font-bold">{emailRecipients.length}</div>
+                </div>
+                <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3">
+                  <div className="text-xs text-green-100 mb-1">Delivered</div>
+                  <div className="text-2xl font-bold text-green-300">
+                    {emailRecipients.filter(r => ['delivered', 'read'].includes(r.deliveryStatus)).length}
+                  </div>
+                </div>
+                <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3">
+                  <div className="text-xs text-red-100 mb-1">Failed</div>
+                  <div className="text-2xl font-bold text-red-300">
+                    {emailRecipients.filter(r => ['failed', 'bounced'].includes(r.deliveryStatus)).length}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 overflow-y-auto max-h-[60vh]">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recipients</h3>
+              
+              {emailRecipients.length === 0 ? (
+                <div className="text-center py-8">
+                  <MailIcon className="mx-auto h-12 w-12 text-gray-400 mb-3" />
+                  <p className="text-gray-500 dark:text-gray-400">No recipient details available</p>
+                  <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">
+                    Recipients were notified, but detailed tracking is not available for this email.
+                  </p>
+                </div>
+              ) : (
+                <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 dark:bg-gray-900">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Recipient</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Type</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                      {emailRecipients.map((recipient, index) => (
+                        <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                          <td className="px-4 py-3">
+                            <div>
+                              <div className="text-sm font-medium text-gray-900 dark:text-white">
+                                {recipient.recipientName}
+                              </div>
+                              <div className="text-xs text-gray-500 dark:text-gray-400">
+                                {recipient.recipientEmail}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                              recipient.recipientType === 'student' 
+                                ? 'bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                                : 'bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300'
+                            }`}>
+                              {recipient.recipientType}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center space-x-2">
+                              {['delivered', 'read'].includes(recipient.deliveryStatus) ? (
+                                <>
+                                  <CheckCircle className="w-4 h-4 text-green-500" />
+                                  <span className="text-sm text-green-600 dark:text-green-400">
+                                    {recipient.deliveryStatus === 'read' ? 'Read' : 'Delivered'}
+                                  </span>
+                                </>
+                              ) : ['failed', 'bounced'].includes(recipient.deliveryStatus) ? (
+                                <>
+                                  <XCircle className="w-4 h-4 text-red-500" />
+                                  <span className="text-sm text-red-600 dark:text-red-400">
+                                    {recipient.deliveryStatus === 'bounced' ? 'Bounced' : 'Failed'}
+                                  </span>
+                                </>
+                              ) : (
+                                <>
+                                  <Clock className="w-4 h-4 text-yellow-500" />
+                                  <span className="text-sm text-yellow-600 dark:text-yellow-400">
+                                    Pending
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                            {(recipient.failureReason || recipient.bounceReason) && (
+                              <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                                {recipient.failureReason || recipient.bounceReason}
+                              </p>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* Email Body Preview */}
+              <div className="mt-6 bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
+                <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">Message</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-wrap">
+                  {selectedEmail.body}
+                </p>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="bg-gray-50 dark:bg-gray-900/50 px-6 py-4 flex justify-end">
+              <button
+                onClick={() => setShowRecipientsModal(false)}
+                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-lg font-medium transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
