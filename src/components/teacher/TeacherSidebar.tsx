@@ -17,7 +17,8 @@ import {
   X,
   Book,
   DollarSign,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Mail
 } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/utils/firebase-client';
@@ -87,6 +88,12 @@ const sidebarItems: SidebarItem[] = [
     label: 'Meetings',
     href: '/teacher/meeting',
     icon: Video,
+  },
+  {
+    id: 'email-batches',
+    label: 'Email History',
+    href: '/teacher/email-batches',
+    icon: Mail,
   },
   {
     id: 'transactions',
