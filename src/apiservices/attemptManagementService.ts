@@ -125,10 +125,22 @@ export class AttemptManagementService {
       // Generate attempt ID
       const attemptId = this.generateAttemptId();
       
+      // NEW: Check if this is an untimed test
+      const isUntimed = test.type === 'flexible' && (test as any).isUntimed === true;
+      
       // Calculate time allowed
-      const timeAllowed = this.getTestDuration(test) * 60; // Convert to seconds
+      const timeAllowed = isUntimed 
+        ? Number.MAX_SAFE_INTEGER // Essentially infinite time per session for untimed tests
+        : this.getTestDuration(test) * 60; // Convert to seconds for timed tests
+      
       const startTime = Timestamp.now();
-      const endTime = new Timestamp(startTime.seconds + timeAllowed, startTime.nanoseconds);
+      
+      // For untimed tests, endTime is the test deadline, not duration-based
+      const endTime = isUntimed && test.type === 'flexible'
+        ? (test as any).availableTo
+        : new Timestamp(startTime.seconds + timeAllowed, startTime.nanoseconds);
+
+      console.log(`⏱️ Test type: ${isUntimed ? 'UNTIMED' : 'TIMED'}, timeAllowed: ${timeAllowed}`);
 
       // Handle question shuffling if enabled
       let questionOrderMapping: QuestionOrderMapping[] | undefined;
@@ -187,6 +199,11 @@ export class AttemptManagementService {
         questionOrderMapping,
         isShuffled,
         shuffledQuestionIds,
+        
+        // NEW: Untimed test tracking
+        isUntimedTest: isUntimed,
+        totalTimeSpentAcrossSessions: isUntimed ? 0 : undefined,
+        sessionHistory: isUntimed ? [] : undefined,
         
         // Progress
         questionsAttempted: 0,
@@ -327,6 +344,81 @@ export class AttemptManagementService {
       const finalSnapshot = snapshot.exists() ? snapshot : await get(stateRef);
       const state = finalSnapshot.val() as RealtimeAttemptState;
       
+      // Get attempt from Firestore to check if untimed
+      const attemptDoc = await getDoc(doc(firestore, this.COLLECTIONS.ATTEMPTS, attemptId));
+      if (!attemptDoc.exists()) {
+        throw new Error('Attempt not found in Firestore');
+      }
+      const attempt = attemptDoc.data() as any;
+      
+      // NEW: Handle untimed tests differently
+      if (attempt.isUntimedTest === true) {
+        console.log('⏱️ Processing untimed test - only checking deadline');
+        
+        // Get test to check deadline
+        const test = await this.getTest(attempt.testId);
+        if (!test || test.type !== 'flexible') {
+          throw new Error('Test not found or invalid type for untimed test');
+        }
+        
+        const now = Timestamp.now();
+        const deadline = (test as any).availableTo;
+        
+        // Check if past deadline
+        const isExpired = now.seconds >= deadline.seconds;
+        
+        // Calculate session time for tracking purposes only
+        let sessionTime = 0;
+        if (state.isOnline && state.sessionStartTime) {
+          sessionTime = Math.floor((now.toMillis() - state.sessionStartTime) / 1000);
+        }
+        
+        // Update cumulative time spent
+        const currentTotalTimeSpent = attempt.totalTimeSpentAcrossSessions || 0;
+        const newTotalTimeSpent = currentTotalTimeSpent + sessionTime;
+        
+        // Update states
+        const updates: any = {
+          totalTimeSpent: newTotalTimeSpent,
+          timeRemaining: isExpired ? 0 : Number.MAX_SAFE_INTEGER,
+          lastHeartbeat: now.toMillis()
+        };
+        
+        if (state.isOnline) {
+          updates.sessionStartTime = now.toMillis(); // Reset for next calculation
+        }
+        
+        await update(stateRef, updates);
+        
+        // Periodic Firestore update
+        if (now.toMillis() % 30000 < 1000) {
+          await updateDoc(doc(firestore, this.COLLECTIONS.ATTEMPTS, attemptId), {
+            totalTimeSpentAcrossSessions: newTotalTimeSpent,
+            timeSpent: newTotalTimeSpent,
+            lastActiveAt: now,
+            updatedAt: now
+          });
+        }
+        
+        const timeCalc: TimeCalculation = {
+          totalTimeAllowed: Number.MAX_SAFE_INTEGER,
+          timeSpent: newTotalTimeSpent,
+          timeRemaining: isExpired ? 0 : Number.MAX_SAFE_INTEGER,
+          offlineTime: 0,
+          isExpired: isExpired,
+          canContinue: !isExpired,
+          timeUntilExpiry: isExpired ? 0 : (deadline.seconds - now.seconds)
+        };
+        
+        if (isExpired) {
+          console.log('⏰ Untimed test deadline expired');
+          await this.markAttemptAsExpired(attemptId);
+        }
+        
+        return timeCalc;
+      }
+      
+      // EXISTING: Handle timed tests
       // Calculate time spent in current session (only if online)
       let sessionTime = 0;
       if (state.isOnline && state.sessionStartTime) {
@@ -554,6 +646,104 @@ export class AttemptManagementService {
       console.log('✅ Attempt submitted successfully');
     } catch (error) {
       console.error('Error submitting attempt:', error);
+      throw error;
+    }
+  }
+
+  // NEW: Pause untimed test session (when student closes browser/navigates away)
+  static async pauseUntimedSession(attemptId: string): Promise<void> {
+    try {
+      console.log('⏸️ Pausing untimed test session:', attemptId);
+      
+      const db = getDatabase();
+      const now = Date.now();
+      
+      // Get current state
+      const stateRef = ref(db, `${this.REALTIME_PATHS.ATTEMPTS}/${attemptId}`);
+      const snapshot = await get(stateRef);
+      
+      if (!snapshot.exists()) {
+        console.warn('⚠️ Attempt state not found, skipping pause');
+        return;
+      }
+      
+      const state = snapshot.val() as RealtimeAttemptState;
+      
+      // Calculate time spent in this session
+      const sessionStart = state.sessionStartTime || now;
+      const sessionTime = Math.floor((now - sessionStart) / 1000);
+      
+      // Get attempt from Firestore
+      const attemptDoc = await getDoc(doc(firestore, this.COLLECTIONS.ATTEMPTS, attemptId));
+      if (!attemptDoc.exists()) {
+        console.warn('⚠️ Attempt not found in Firestore');
+        return;
+      }
+      
+      const attempt = attemptDoc.data() as any;
+      
+      // Create session record
+      const newSession = {
+        sessionId: `session_${Date.now()}`,
+        startTime: Timestamp.fromMillis(sessionStart),
+        endTime: Timestamp.now(),
+        timeSpent: sessionTime,
+        isPaused: true
+      };
+      
+      // Update Firestore with session info
+      const sessionHistory = attempt.sessionHistory || [];
+      const totalTimeSpent = (attempt.totalTimeSpentAcrossSessions || 0) + sessionTime;
+      
+      await updateDoc(doc(firestore, this.COLLECTIONS.ATTEMPTS, attemptId), {
+        status: 'paused',
+        totalTimeSpentAcrossSessions: totalTimeSpent,
+        sessionHistory: [...sessionHistory, newSession],
+        lastActiveAt: Timestamp.now(),
+        updatedAt: Timestamp.now()
+      });
+      
+      // Update realtime state
+      await update(stateRef, {
+        status: 'paused',
+        isOnline: false,
+        disconnectedAt: now
+      });
+      
+      console.log('✅ Untimed session paused. Time spent in session:', sessionTime, 'seconds');
+    } catch (error) {
+      console.error('Error pausing untimed session:', error);
+    }
+  }
+
+  // NEW: Resume untimed test session
+  static async resumeUntimedSession(attemptId: string): Promise<void> {
+    try {
+      console.log('▶️ Resuming untimed test session:', attemptId);
+      
+      const db = getDatabase();
+      const now = Date.now();
+      
+      // Update realtime state
+      const stateRef = ref(db, `${this.REALTIME_PATHS.ATTEMPTS}/${attemptId}`);
+      await update(stateRef, {
+        status: 'in_progress',
+        sessionStartTime: now,
+        isOnline: true,
+        disconnectedAt: null,
+        lastHeartbeat: now
+      });
+      
+      // Update Firestore
+      await updateDoc(doc(firestore, this.COLLECTIONS.ATTEMPTS, attemptId), {
+        status: 'in_progress',
+        lastActiveAt: Timestamp.now(),
+        updatedAt: Timestamp.now()
+      });
+      
+      console.log('✅ Untimed session resumed');
+    } catch (error) {
+      console.error('Error resuming untimed session:', error);
       throw error;
     }
   }

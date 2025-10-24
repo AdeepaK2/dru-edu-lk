@@ -159,8 +159,11 @@ export interface FlexibleTest extends BaseTest {
   isExtended?: boolean; // Flag to quickly identify extended tests
   
   // Test duration
-  duration: number; // in minutes
+  duration: number; // in minutes (0 for untimed tests)
   attemptsAllowed: number; // usually 1
+  
+  // NEW: Untimed mode - students can pause and resume without per-session time limit
+  isUntimed?: boolean; // If true, no per-session countdown timer, only deadline matters
 }
 
 // Test extension record

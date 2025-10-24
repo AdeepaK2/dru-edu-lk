@@ -135,12 +135,26 @@ export interface QuestionOrderMapping {
   questionId: string; // Question ID for reference
 }
 
+// Session tracking for untimed tests
+export interface TestSession {
+  sessionId: string;
+  startTime: Timestamp;
+  endTime?: Timestamp;
+  timeSpent: number; // seconds spent in this session
+  isPaused: boolean; // true if session was paused/closed
+}
+
 // Test attempt with question shuffling support
 export interface TestAttemptWithShuffling extends TestAttempt {
   // Question order mapping (only present if test has shuffleQuestions enabled)
   questionOrderMapping?: QuestionOrderMapping[];
   isShuffled: boolean; // Quick flag to check if questions were shuffled
   shuffledQuestionIds?: string[]; // Ordered list of question IDs in shuffled order
+  
+  // NEW: Untimed test tracking
+  isUntimedTest?: boolean; // Flag to identify untimed test attempts
+  totalTimeSpentAcrossSessions?: number; // Cumulative time across all sessions (seconds)
+  sessionHistory?: TestSession[]; // Track each session for analytics
 }
 
 // Time calculation utilities
