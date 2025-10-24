@@ -35,6 +35,7 @@ import {
 } from '@/models/testSchema';
 import { Question, MCQQuestion, EssayQuestion } from '@/models/questionBankSchema';
 import { MailService } from './mailService';
+import { MailBatchService } from './mailBatchService';
 import { StudentFirestoreService } from './studentFirestoreService';
 import { StudentTestAssignmentService } from './studentTestAssignmentService';
 import { getEnrollmentsByClass } from '@/services/studentEnrollmentService';
@@ -1289,65 +1290,132 @@ export class TestService {
         }
       }
       
-      // Send notifications to all students and parents
+      // Send notifications to all students and parents with batch tracking
       console.log(`📧 Preparing to send emails to ${studentsToNotify.size} students and their parents`);
       
       if (studentsToNotify.size === 0) {
         console.log('ℹ️ No students to notify, skipping email notifications');
         return;
       }
+
+      // Create email batch for tracking
+      const batchDate = new Date().toISOString().split('T')[0];
+      const batchName = `Test Assignment - ${testData.title} - ${batchDate}`;
       
-      const emailPromises = Array.from(studentsToNotify).map(async (student) => {
-        try {
-          console.log(`📤 Sending notifications for student: ${student.studentName} (${student.studentEmail}) and parent: ${student.parentName} (${student.parentEmail})`);
-          
-          await MailService.sendTestNotificationEmails(
-            student.studentName,
-            student.studentEmail,
-            student.parentName,
-            student.parentEmail,
-            testData.title,
-            testData.description || '',
-            testData.teacherName,
-            testData.subjectName,
-            student.className,
-            testType,
-            testDate,
-            testTime || undefined,
-            testData.duration || (testType === 'live' ? testData.duration : testData.duration),
-            availableFrom || undefined,
-            availableTo || undefined,
-            testData.totalMarks,
-            testData.instructions || undefined
-          );
-          
-          console.log(`✅ Successfully sent notifications to ${student.studentName} and parent ${student.parentName}`);
-          return { success: true, student: student.studentName };
-        } catch (emailError) {
-          console.error(`❌ Failed to send notifications for ${student.studentName}:`, emailError);
-          return { success: false, student: student.studentName, error: emailError };
+      const recipients = Array.from(studentsToNotify).flatMap(student => [
+        {
+          recipientEmail: student.studentEmail,
+          recipientName: student.studentName,
+          recipientType: 'student' as const,
+          studentName: student.studentName
+        },
+        {
+          recipientEmail: student.parentEmail,
+          recipientName: student.parentName,
+          recipientType: 'parent' as const,
+          studentName: student.studentName
+        }
+      ]);
+
+      const batchId = await MailBatchService.createBatch({
+        batchName,
+        subject: `📝 New ${testType === 'live' ? 'Live Test' : 'Flexible Test'}: ${testData.title}`,
+        batchType: 'test_notification',
+        createdBy: testData.teacherId,
+        createdByName: testData.teacherName,
+        recipients,
+        metadata: {
+          testId: testId,
+          testTitle: testData.title,
+          testType: testType,
+          classIds: testData.classIds
         }
       });
+
+      console.log(`📦 Created email batch: ${batchId} with ${recipients.length} recipients`);
       
-      // Wait for all emails to be sent (with timeout)
+      // Send emails with batch tracking
+      const emailPromises = Array.from(studentsToNotify).flatMap(student => [
+        // Student email
+        MailBatchService.sendWithBatchTracking(
+          batchId,
+          student.studentEmail,
+          async () => {
+            const studentMail = MailService.generateStudentTestNotificationEmail(
+              student.studentName,
+              student.studentEmail,
+              testData.title,
+              testData.description || '',
+              testData.teacherName,
+              testData.subjectName,
+              student.className,
+              testType,
+              testDate,
+              testTime || undefined,
+              testData.duration || (testType === 'live' ? testData.duration : testData.duration),
+              availableFrom || undefined,
+              availableTo || undefined,
+              testData.totalMarks,
+              testData.instructions || undefined
+            );
+            return await MailService.createMailDocument(studentMail);
+          }
+        ).catch(err => {
+          console.error(`❌ Failed to send to student ${student.studentName}:`, err);
+        }),
+        // Parent email
+        MailBatchService.sendWithBatchTracking(
+          batchId,
+          student.parentEmail,
+          async () => {
+            const parentMail = MailService.generateParentTestNotificationEmail(
+              student.parentName,
+              student.parentEmail,
+              student.studentName,
+              testData.title,
+              testData.description || '',
+              testData.teacherName,
+              testData.subjectName,
+              student.className,
+              testType,
+              testDate,
+              testTime || undefined,
+              testData.duration || (testType === 'live' ? testData.duration : testData.duration),
+              availableFrom || undefined,
+              availableTo || undefined,
+              testData.totalMarks,
+              testData.instructions || undefined
+            );
+            return await MailService.createMailDocument(parentMail);
+          }
+        ).catch(err => {
+          console.error(`❌ Failed to send to parent ${student.parentName}:`, err);
+        })
+      ]);
+      
+      // Wait for all emails to be sent
       console.log(`⏳ Waiting for all ${emailPromises.length} email promises to complete...`);
-      const results = await Promise.allSettled(emailPromises);
-      const successful = results.filter(r => r.status === 'fulfilled').length;
-      const failed = results.filter(r => r.status === 'rejected').length;
+      await Promise.allSettled(emailPromises);
       
-      console.log(`📊 Final email notification results:`, {
-        successful,
-        failed,
-        total: studentsToNotify.size,
-        results: results.map(r => r.status === 'fulfilled' ? r.value : { error: r.reason })
-      });
-      
-      if (successful > 0) {
-        console.log(`🎉 Successfully sent ${successful} email notifications!`);
-      }
-      
-      if (failed > 0) {
-        console.warn(`⚠️ Failed to send ${failed} email notifications`);
+      // Get final batch status
+      const finalBatch = await MailBatchService.getBatchById(batchId);
+      if (finalBatch) {
+        console.log(`📊 Final email batch results:`, {
+          batchId,
+          batchName: finalBatch.batchName,
+          total: finalBatch.totalRecipients,
+          successful: finalBatch.successCount,
+          failed: finalBatch.failedCount,
+          status: finalBatch.status
+        });
+        
+        if (finalBatch.successCount > 0) {
+          console.log(`🎉 Successfully sent ${finalBatch.successCount} email notifications!`);
+        }
+        
+        if (finalBatch.failedCount > 0) {
+          console.warn(`⚠️ Failed to send ${finalBatch.failedCount} email notifications`);
+        }
       }
       
     } catch (error) {
