@@ -47,6 +47,13 @@ export default function Mail({
   const [priority, setPriority] = useState<'low' | 'normal' | 'high'>('normal');
   const [teacherData, setTeacherData] = useState<any>(null);
   
+  // Sending progress state
+  const [sendingProgress, setSendingProgress] = useState<{
+    current: number;
+    total: number;
+    currentEmail: string;
+  }>({ current: 0, total: 0, currentEmail: '' });
+  
   // New state for viewing recipients
   const [showRecipientsModal, setShowRecipientsModal] = useState(false);
   const [selectedEmail, setSelectedEmail] = useState<ComMail | null>(null);
@@ -282,6 +289,9 @@ export default function Mail({
       // Create mail documents for Firebase Mail Extension with rate limiting
       console.log('📧 Creating mail documents for', emailAddresses.length, 'recipients');
       
+      // Initialize progress
+      setSendingProgress({ current: 0, total: emailAddresses.length, currentEmail: '' });
+      
       // Helper function to delay execution
       const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
       
@@ -297,6 +307,13 @@ export default function Mail({
       for (let i = 0; i < emailAddresses.length; i++) {
         const recipient = emailAddresses[i];
         console.log(`📧 Sending email ${i + 1}/${emailAddresses.length} to:`, recipient.email);
+        
+        // Update progress
+        setSendingProgress({ 
+          current: i + 1, 
+          total: emailAddresses.length, 
+          currentEmail: recipient.email 
+        });
         
         try {
           const result = await MailService.createMailDocument({
@@ -442,6 +459,66 @@ export default function Mail({
 
   return (
     <div className="space-y-6">
+      {/* Sending Progress Modal */}
+      {isSending && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full p-8">
+            <div className="text-center">
+              {/* Spinner */}
+              <div className="mx-auto w-16 h-16 mb-6">
+                <div className="w-16 h-16 border-4 border-blue-200 dark:border-blue-900 border-t-blue-600 dark:border-t-blue-400 rounded-full animate-spin"></div>
+              </div>
+              
+              {/* Title */}
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                Sending Emails
+              </h3>
+              
+              {/* Progress Text */}
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
+                Please wait while we send your emails...
+              </p>
+              
+              {/* Progress Bar */}
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 mb-3 overflow-hidden">
+                <div 
+                  className="bg-gradient-to-r from-blue-500 to-purple-600 h-3 rounded-full transition-all duration-300 ease-out"
+                  style={{ width: `${sendingProgress.total > 0 ? (sendingProgress.current / sendingProgress.total) * 100 : 0}%` }}
+                ></div>
+              </div>
+              
+              {/* Progress Counter */}
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-600 dark:text-gray-400">
+                  {sendingProgress.current} of {sendingProgress.total}
+                </span>
+                <span className="text-blue-600 dark:text-blue-400 font-medium">
+                  {sendingProgress.total > 0 ? Math.round((sendingProgress.current / sendingProgress.total) * 100) : 0}%
+                </span>
+              </div>
+              
+              {/* Current Email */}
+              {sendingProgress.currentEmail && (
+                <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Sending to:</p>
+                  <p className="text-sm text-blue-700 dark:text-blue-300 font-medium truncate">
+                    {sendingProgress.currentEmail}
+                  </p>
+                </div>
+              )}
+              
+              {/* Info Message */}
+              <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  <AlertCircle className="w-4 h-4 inline mr-1" />
+                  Emails are being sent with delays to ensure reliable delivery. This may take a few moments.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Success/Error Alert */}
       {alertState.show && (
         <div className={`fixed top-4 right-4 max-w-md w-full z-50 ${
