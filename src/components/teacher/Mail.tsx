@@ -279,53 +279,96 @@ export default function Mail({
         }
       }
 
-      // Create mail documents for Firebase Mail Extension
+      // Create mail documents for Firebase Mail Extension with rate limiting
       console.log('📧 Creating mail documents for', emailAddresses.length, 'recipients');
-      for (const recipient of emailAddresses) {
-        console.log('📧 Preparing email for:', recipient.email);
-        const mailPromise = MailService.createMailDocument({
-          to: recipient.email,
-          subject: subject.trim(),
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-              <h2 style="color: #4F46E5; text-align: center;">${fallbackMode ? 'Message from DRU Education' : `Message from ${actualTeacherName}`}</h2>
-              
-              <p>Hello ${recipient.name},</p>
-              
-              <div style="background-color: #F3F4F6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <h3 style="color: #374151; margin-top: 0;">Subject: ${subject.trim()}</h3>
-                <div style="color: #4B5563; line-height: 1.6;">
-                  ${emailBody.trim().replace(/\n/g, '<br>')}
+      
+      // Helper function to delay execution
+      const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+      
+      // Send emails in batches with delays to avoid Gmail rate limits
+      const BATCH_SIZE = 5; // Send 5 emails at a time
+      const DELAY_BETWEEN_BATCHES = 2000; // 2 seconds between batches
+      const DELAY_BETWEEN_EMAILS = 500; // 0.5 seconds between individual emails
+      
+      const results = [];
+      let successCount = 0;
+      let failCount = 0;
+      
+      for (let i = 0; i < emailAddresses.length; i++) {
+        const recipient = emailAddresses[i];
+        console.log(`📧 Sending email ${i + 1}/${emailAddresses.length} to:`, recipient.email);
+        
+        try {
+          const result = await MailService.createMailDocument({
+            to: recipient.email,
+            subject: subject.trim(),
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                <h2 style="color: #4F46E5; text-align: center;">${fallbackMode ? 'Message from DRU Education' : `Message from ${actualTeacherName}`}</h2>
+                
+                <p>Hello ${recipient.name},</p>
+                
+                <div style="background-color: #F3F4F6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                  <h3 style="color: #374151; margin-top: 0;">Subject: ${subject.trim()}</h3>
+                  <div style="color: #4B5563; line-height: 1.6;">
+                    ${emailBody.trim().replace(/\n/g, '<br>')}
+                  </div>
                 </div>
+                
+                <p>Best regards,<br>
+                Dr U Education Team</p>
+                
+                <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 30px 0;">
+                <p style="font-size: 12px; color: #6B7280; text-align: center;">
+                  This message was sent through Dr U Education platform.
+                </p>
               </div>
-              
-              <p>Best regards,<br>
-              Dr U Education Team</p>
-              
-              <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 30px 0;">
-              <p style="font-size: 12px; color: #6B7280; text-align: center;">
-                This message was sent through Dr U Education platform.
-              </p>
-            </div>
-          `
-        });
-        emailPromises.push(mailPromise);
+            `
+          });
+          
+          results.push(result);
+          successCount++;
+          console.log(`✅ Email ${i + 1} queued successfully`);
+        } catch (error) {
+          console.error(`❌ Failed to queue email ${i + 1}:`, error);
+          failCount++;
+          results.push({ error: error instanceof Error ? error.message : 'Unknown error' });
+        }
+        
+        // Add delay between individual emails
+        if (i < emailAddresses.length - 1) {
+          await delay(DELAY_BETWEEN_EMAILS);
+        }
+        
+        // Add longer delay after each batch
+        if ((i + 1) % BATCH_SIZE === 0 && i < emailAddresses.length - 1) {
+          console.log(`⏳ Batch completed. Waiting ${DELAY_BETWEEN_BATCHES}ms before next batch...`);
+          await delay(DELAY_BETWEEN_BATCHES);
+        }
       }
-
-      // Wait for all emails to be queued for sending
-      console.log('📧 Sending', emailPromises.length, 'email promises...');
-      const results = await Promise.all(emailPromises);
-      console.log('📧 Email results:', results);
       
-      console.log(`✅ Email queued for sending to ${emailAddresses.length} recipients via Firebase Mail Extension`);
+      console.log('📧 Email sending completed:', { total: emailAddresses.length, success: successCount, failed: failCount });
       
-      // Show success alert
+      console.log('📧 Email sending completed:', { total: emailAddresses.length, success: successCount, failed: failCount });
+      
+      // Show success/warning alert based on results
       const recipientCount = emailAddresses.length;
-      const recipientText = recipientCount === 1 ? 'recipient' : 'recipients';
-      showSuccessAlert(
-        'Email Sent Successfully!',
-        `Your email "${subject.trim()}" has been sent to ${recipientCount} ${recipientText}. Recipients will receive it shortly.`
-      );
+      if (failCount === 0) {
+        showSuccessAlert(
+          'All Emails Sent Successfully!',
+          `Your email "${subject.trim()}" has been queued for ${recipientCount} recipient${recipientCount === 1 ? '' : 's'}. They will receive it shortly.`
+        );
+      } else if (successCount > 0) {
+        showSuccessAlert(
+          'Emails Partially Sent',
+          `${successCount} of ${recipientCount} emails were queued successfully. ${failCount} failed and may need to be resent.`
+        );
+      } else {
+        showErrorAlert(
+          'Failed to Send Emails',
+          `All ${recipientCount} emails failed to send. Please check your internet connection and try again.`
+        );
+      }
       
       // TODO: Handle file uploads to Firebase Storage and update attachmentUrls
       
