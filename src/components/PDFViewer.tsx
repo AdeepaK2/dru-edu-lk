@@ -185,25 +185,34 @@ export default function PDFViewer({ url, title, onClose, inline = false }: PDFVi
         {/* Toolbar */}
         <div className="flex items-center justify-between p-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
           <div className="flex items-center space-x-2">
-            <Button
-              onClick={goToPrevPage}
-              disabled={pageNumber <= 1}
-              variant="outline"
-              size="sm"
-            >
-              Previous
-            </Button>
-            <span className="text-sm text-gray-600 dark:text-gray-400">
-              Page {pageNumber} of {numPages || '?'}
-            </span>
-            <Button
-              onClick={goToNextPage}
-              disabled={pageNumber >= (numPages || 1)}
-              variant="outline"
-              size="sm"
-            >
-              Next
-            </Button>
+            {!inline && (
+              <>
+                <Button
+                  onClick={goToPrevPage}
+                  disabled={pageNumber <= 1}
+                  variant="outline"
+                  size="sm"
+                >
+                  Previous
+                </Button>
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  Page {pageNumber} of {numPages || '?'}
+                </span>
+                <Button
+                  onClick={goToNextPage}
+                  disabled={pageNumber >= (numPages || 1)}
+                  variant="outline"
+                  size="sm"
+                >
+                  Next
+                </Button>
+              </>
+            )}
+            {inline && numPages && (
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                {numPages} pages - Scroll to view all
+              </span>
+            )}
           </div>
 
           <div className="flex items-center space-x-2">
@@ -285,21 +294,46 @@ export default function PDFViewer({ url, title, onClose, inline = false }: PDFVi
                   </div>
                 }
               >
-                <Page
-                  pageNumber={pageNumber}
-                  scale={scale}
-                  rotate={rotation}
-                  loading={
-                    <div className="flex items-center justify-center py-8">
-                      <div className="w-6 h-6 border-t-2 border-blue-600 border-solid rounded-full animate-spin"></div>
-                    </div>
-                  }
-                  error={
-                    <div className="text-center py-8">
-                      <p className="text-red-600 dark:text-red-400">Failed to load page {pageNumber}</p>
-                    </div>
-                  }
-                />
+                {inline ? (
+                  // Render all pages for continuous scrolling
+                  <div className="space-y-4">
+                    {Array.from(new Array(numPages), (el, index) => (
+                      <Page
+                        key={`page_${index + 1}`}
+                        pageNumber={index + 1}
+                        scale={scale}
+                        rotate={rotation}
+                        loading={
+                          <div className="flex items-center justify-center py-8">
+                            <div className="w-6 h-6 border-t-2 border-blue-600 border-solid rounded-full animate-spin"></div>
+                          </div>
+                        }
+                        error={
+                          <div className="text-center py-8">
+                            <p className="text-red-600 dark:text-red-400">Failed to load page {index + 1}</p>
+                          </div>
+                        }
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  // Single page view for modal
+                  <Page
+                    pageNumber={pageNumber}
+                    scale={scale}
+                    rotate={rotation}
+                    loading={
+                      <div className="flex items-center justify-center py-8">
+                        <div className="w-6 h-6 border-t-2 border-blue-600 border-solid rounded-full animate-spin"></div>
+                      </div>
+                    }
+                    error={
+                      <div className="text-center py-8">
+                        <p className="text-red-600 dark:text-red-400">Failed to load page {pageNumber}</p>
+                      </div>
+                    }
+                  />
+                )}
               </Document>
             </div>
           )}
