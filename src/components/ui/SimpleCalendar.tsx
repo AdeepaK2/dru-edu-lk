@@ -157,7 +157,7 @@ export default function SimpleCalendar({
                 ${isSelected 
                   ? 'bg-blue-600 text-white font-semibold' 
                   : hasEvent 
-                    ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 font-medium border-2 border-green-500 hover:bg-green-200' 
+                    ? 'bg-[#b2e05b] dark:bg-[#b2e05b]/30 text-[#222222] dark:text-[#222222] font-medium border-2 border-[#64cc4f] hover:bg-[#64cc4f]' 
                     : 'hover:bg-gray-100 dark:hover:bg-gray-700'
                 }
                 ${disabled 
@@ -170,7 +170,7 @@ export default function SimpleCalendar({
               
               {/* Event indicator - small green dot for scheduled dates */}
               {hasEvent && !isSelected && (
-                <div className="absolute top-1 right-1 w-2 h-2 bg-green-600 rounded-full"></div>
+                <div className="absolute top-1 right-1 w-2 h-2 bg-[#64cc4f] rounded-full"></div>
               )}
             </button>
           );
@@ -189,7 +189,7 @@ export default function SimpleCalendar({
         </div>
         <div className="flex items-center space-x-2">
           <div className="w-3 h-3 bg-gray-200 dark:bg-gray-700 rounded relative">
-            <div className="absolute bottom-0.5 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-green-500 rounded-full"></div>
+            <div className="absolute bottom-0.5 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-[#64cc4f] rounded-full"></div>
           </div>
           <span className="text-xs text-gray-600 dark:text-gray-400">Scheduled</span>
         </div>

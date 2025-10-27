@@ -281,7 +281,7 @@ export default function DocumentUploadGrid({
                           size="sm"
                           variant="outline"
                           onClick={() => onDownload(existingDoc)}
-                          className="flex items-center space-x-2 text-sm bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-black border-2 border-black rounded-full px-4 py-2 transform hover:scale-105 transition-all"
+                          className="flex items-center space-x-2 text-sm bg-gradient-to-r from-[#64cc4f] to-[#b2e05b] hover:from-[#b2e05b] hover:to-[#64cc4f] text-white font-black border-2 border-black rounded-full px-4 py-2 transform hover:scale-105 transition-all"
                         >
                           <Download className="w-4 h-4" />
                           <span>📥 Download</span>
@@ -395,7 +395,7 @@ export default function DocumentUploadGrid({
           <Button
             onClick={handleUploadAll}
             disabled={loading}
-            className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-8 py-4 rounded-full font-black text-lg flex items-center space-x-3 transform hover:scale-105 transition-all border-4 border-black shadow-2xl"
+            className="bg-gradient-to-r from-[#64cc4f] to-[#b2e05b] hover:from-[#b2e05b] hover:to-[#64cc4f] text-white px-8 py-4 rounded-full font-black text-lg flex items-center space-x-3 transform hover:scale-105 transition-all border-4 border-black shadow-2xl"
           >
             {loading ? (
               <>

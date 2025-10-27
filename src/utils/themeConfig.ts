@@ -23,17 +23,17 @@ export const THEMES: Record<ThemeType, ThemeConfig> = {
   ben10: {
     id: 'ben10',
     name: 'Ben 10 Hero',
-    description: 'Green and black theme inspired by Ben 10\'s Omnitrix',
+    description: 'Omnitrix-inspired theme with bright greens and dark accents',
     icon: '⚡',
     emoji: '🟢',
     colors: {
-      primary: '#22c55e',
-      primaryLight: '#4ade80',
-      primaryDark: '#16a34a',
-      secondary: '#000000',
-      accent: '#84cc16',
-      bgLight: '#f0fdf4',
-      bgDark: '#1b4332',
+      primary: '#64cc4f',      // Bright green from Omnitrix
+      primaryLight: '#b2e05b', // Light lime green
+      primaryDark: '#222222',  // Dark gray/near black
+      secondary: '#222222',    // Dark gray for text/accents
+      accent: '#b2e05b',       // Light lime green for highlights
+      bgLight: '#f0fdf4',      // Very light green background
+      bgDark: '#222222',       // Dark gray/near black background
     },
     characterName: 'Ben 10 - Hero Mode',
     characterDescription: 'Transform and learn with the power of the Omnitrix! ⚡',
@@ -77,37 +77,37 @@ export const THEMES: Record<ThemeType, ThemeConfig> = {
 };
 
 export const THEME_GRADIENT_MAP: Record<ThemeType, string> = {
-  ben10: 'from-green-400 to-black',
+  ben10: 'from-[#64cc4f] to-[#222222]',
   tinkerbell: 'from-pink-400 to-purple-600',
   normal: 'from-blue-400 to-indigo-600',
 };
 
 export const THEME_HEADER_MAP: Record<ThemeType, string> = {
-  ben10: 'from-green-600 via-green-700 to-black',
+  ben10: 'from-[#64cc4f] via-[#b2e05b] to-[#222222]',
   tinkerbell: 'from-pink-500 via-pink-600 to-purple-700',
   normal: 'from-blue-500 to-indigo-600',
 };
 
 export const THEME_BORDER_MAP: Record<ThemeType, string> = {
-  ben10: 'border-green-400',
+  ben10: 'border-[#64cc4f]',
   tinkerbell: 'border-pink-400',
   normal: 'border-blue-400',
 };
 
 export const THEME_BG_MAP: Record<ThemeType, string> = {
-  ben10: 'from-green-300 via-green-400 to-black',
+  ben10: 'from-[#b2e05b] via-[#64cc4f] to-[#222222]',
   tinkerbell: 'from-pink-300 via-pink-400 to-purple-600',
   normal: 'from-blue-300 via-indigo-400 to-indigo-600',
 };
 
 export const THEME_BUTTON_MAP: Record<ThemeType, string> = {
-  ben10: 'bg-green-500 hover:bg-green-600',
+  ben10: 'bg-[#64cc4f] hover:bg-[#b2e05b]',
   tinkerbell: 'bg-pink-500 hover:bg-pink-600',
   normal: 'bg-blue-500 hover:bg-blue-600',
 };
 
 export const THEME_SUCCESS_MAP: Record<ThemeType, string> = {
-  ben10: 'from-green-300 to-emerald-300',
+  ben10: 'from-[#64cc4f] to-[#b2e05b]',
   tinkerbell: 'from-pink-300 to-purple-300',
   normal: 'from-blue-300 to-indigo-300',
 };

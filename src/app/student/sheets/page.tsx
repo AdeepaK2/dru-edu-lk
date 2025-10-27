@@ -140,7 +140,7 @@ export default function StudentSheetsPage() {
 
   if (authLoading || loading) {
     return (
-      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-green-400 to-black' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : 'from-blue-400 to-indigo-600'} flex items-center justify-center`}>
+      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : 'from-blue-400 to-indigo-600'} flex items-center justify-center`}>
         <div className="bg-white border-4 border-black rounded-3xl p-8 shadow-2xl">
           {/* Theme-Specific Loading Animation */}
           <div className="relative mb-6 flex flex-col items-center">
@@ -164,7 +164,7 @@ export default function StudentSheetsPage() {
                   alt="Ben 10 Loading" 
                   className="w-32 h-32 object-contain"
                 />
-                <span className="text-2xl font-bold text-green-600 mt-4">Loading</span>
+                <span className="text-2xl font-bold text-[#64cc4f] mt-4">Loading</span>
               </div>
             )}
             
@@ -186,10 +186,10 @@ export default function StudentSheetsPage() {
   }
 
   return (
-    <div key={`sheets-${theme}`} className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-green-600 via-green-700 to-black' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : 'from-blue-600 via-indigo-700 to-slate-900'} p-6`}>
+    <div key={`sheets-${theme}`} className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : 'from-blue-600 via-indigo-700 to-slate-900'} p-6`}>
       <div className="max-w-4xl mx-auto">
         {/* Theme-aware Header */}
-        <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-500 via-green-600 to-black' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : 'from-blue-500 via-indigo-600 to-slate-800'} rounded-3xl shadow-2xl border-4 border-black p-8 mb-8 relative overflow-hidden`}>
+        <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : 'from-blue-500 via-indigo-600 to-slate-800'} rounded-3xl shadow-2xl border-4 border-black p-8 mb-8 relative overflow-hidden`}>
          
 
           <div className="flex items-center space-x-4 relative z-10">
@@ -209,7 +209,7 @@ export default function StudentSheetsPage() {
 
         {/* Overall Statistics */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-500 to-green-600' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : 'from-blue-500 to-indigo-600'} rounded-3xl shadow-2xl border-4 border-black p-6`}>
+          <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : 'from-blue-500 to-indigo-600'} rounded-3xl shadow-2xl border-4 border-black p-6`}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-2xl font-black text-black">
@@ -223,7 +223,7 @@ export default function StudentSheetsPage() {
             </div>
           </div>
 
-          <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-600 to-green-700' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : 'from-indigo-600 to-blue-700'} rounded-3xl shadow-2xl border-4 border-black p-6`}>
+          <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : 'from-indigo-600 to-blue-700'} rounded-3xl shadow-2xl border-4 border-black p-6`}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-2xl font-black text-black">
@@ -237,7 +237,7 @@ export default function StudentSheetsPage() {
             </div>
           </div>
 
-          <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-700 to-black' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-600' : 'from-slate-700 to-indigo-800'} rounded-3xl shadow-2xl border-4 border-black p-6`}>
+          <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#222222] to-[#64cc4f]' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-600' : 'from-slate-700 to-indigo-800'} rounded-3xl shadow-2xl border-4 border-black p-6`}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-2xl font-black text-black">
@@ -254,24 +254,24 @@ export default function StudentSheetsPage() {
 
         {/* Classes List */}
         <div className="bg-white rounded-3xl shadow-2xl border-4 border-black overflow-hidden">
-          <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-500 via-green-600 to-black' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : 'from-blue-500 via-indigo-600 to-slate-800'} p-6 border-b-4 border-black`}>
+          <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : 'from-blue-500 via-indigo-600 to-slate-800'} p-6 border-b-4 border-black`}>
             <h2 className="text-2xl font-black text-black mb-2 flex items-center">
               <span className="text-3xl mr-3">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : '📖'}</span>
               Your  Classes
               <span className="ml-3 text-xl">{theme === 'ben10' ? '⚡' : theme === 'tinkerbell' ? '✨' : '📚'}</span>
             </h2>
-            <p className={`font-bold ${theme === 'ben10' ? 'text-green-200' : theme === 'tinkerbell' ? 'text-yellow-200' : 'text-blue-200'}`}>
+            <p className={`font-bold ${theme === 'ben10' ? 'text-[#b2e05b]' : theme === 'tinkerbell' ? 'text-yellow-200' : 'text-blue-200'}`}>
               Click on a class to view and access your {theme === 'ben10' ? 'hero' : theme === 'tinkerbell' ? 'magical' : 'learning'} sheets
             </p>
           </div>
 
           {classes.length === 0 ? (
-            <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-700 via-green-800 to-black' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : 'from-slate-700 via-indigo-800 to-blue-900'} p-12 text-center border-t-4 border-black`}>
+            <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#222222] via-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : 'from-slate-700 via-indigo-800 to-blue-900'} p-12 text-center border-t-4 border-black`}>
               <div className="text-6xl mb-6">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : '📖'}</div>
               <h3 className="text-2xl font-black text-white mb-4">
                 No {theme === 'ben10' ? 'Hero' : theme === 'tinkerbell' ? 'Magical' : 'Learning'} Classes Yet
               </h3>
-              <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-green-200' : theme === 'tinkerbell' ? 'text-yellow-200' : 'text-blue-200'}`}>
+              <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-[#b2e05b]' : theme === 'tinkerbell' ? 'text-yellow-200' : 'text-blue-200'}`}>
                 You haven't enrolled in any classes yet. Time to start your {theme === 'ben10' ? 'hero' : theme === 'tinkerbell' ? 'magical' : 'learning'} training!
               </p>
             </div>
@@ -280,13 +280,13 @@ export default function StudentSheetsPage() {
               {classes.map((classData) => (
                 <div
                   key={classData.id}
-                  className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-600 via-green-700 to-black' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600': 'from-blue-600 via-indigo-700 to-slate-800'} p-6 hover:scale-105 transition-all cursor-pointer border-b-4 border-black last:border-b-0`}
+                  className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600': 'from-blue-600 via-indigo-700 to-slate-800'} p-6 hover:scale-105 transition-all cursor-pointer border-b-4 border-black last:border-b-0`}
                   onClick={() => openClassSheets(classData)}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-start space-x-4">
                       <div className="flex-shrink-0">
-                        <div className={`w-16 h-16 bg-gradient-to-br ${theme === 'ben10' ? 'from-green-400 to-green-600' : theme === 'tinkerbell' ? 'from-yellow-400 to-green-500' : 'from-blue-400 to-indigo-600'} rounded-2xl flex items-center justify-center border-4 border-black shadow-lg`}>
+                        <div className={`w-16 h-16 bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-yellow-400 to-green-500' : 'from-blue-400 to-indigo-600'} rounded-2xl flex items-center justify-center border-4 border-black shadow-lg`}>
                           <BookOpen className="h-8 w-8 text-white" />
                         </div>
                       </div>
@@ -294,8 +294,8 @@ export default function StudentSheetsPage() {
                         <h3 className="text-xl font-black text-black mb-1">
                           {classData.name}
                         </h3>
-                        <p className={`font-bold text-lg mb-1 ${theme === 'ben10' ? 'text-green-200' : theme === 'tinkerbell' ? 'text-white' : 'text-blue-200'}`}>{classData.subject}</p>
-                        <p className={`font-bold text-sm mb-3 ${theme === 'ben10' ? 'text-green-300' : theme === 'tinkerbell' ? 'text-white' : 'text-blue-300'}`}>{classData.year}</p>
+                        <p className={`font-bold text-lg mb-1 ${theme === 'ben10' ? 'text-[#b2e05b]' : theme === 'tinkerbell' ? 'text-white' : 'text-blue-200'}`}>{classData.subject}</p>
+                        <p className={`font-bold text-sm mb-3 ${theme === 'ben10' ? 'text-[#64cc4f]' : theme === 'tinkerbell' ? 'text-white' : 'text-blue-300'}`}>{classData.year}</p>
 
                         <div className={`flex items-center space-x-6 text-sm font-bold ${theme === 'ben10' ? 'text-black' : theme === 'tinkerbell' ? 'text-black' : 'text-blue-200'}`}>
                           <div className="flex items-center space-x-2">
@@ -313,7 +313,7 @@ export default function StudentSheetsPage() {
                     </div>
                     <div className="flex items-center space-x-3">
                       {classData.sheetCount > 0 && (
-                        <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-black border-2 border-black shadow-lg ${theme === 'ben10' ? 'bg-green-500 text-white' : theme === 'tinkerbell' ? 'bg-yellow-500 text-white' : 'bg-blue-500 text-white'}`}>
+                        <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-black border-2 border-black shadow-lg ${theme === 'ben10' ? 'bg-[#64cc4f] text-white' : theme === 'tinkerbell' ? 'bg-yellow-500 text-white' : 'bg-blue-500 text-white'}`}>
                           {classData.sheetCount} Sheet{classData.sheetCount !== 1 ? 's' : ''} {theme === 'ben10' ? '⚡' : theme === 'tinkerbell' ? '✨' : '📚'}
                         </span>
                       )}

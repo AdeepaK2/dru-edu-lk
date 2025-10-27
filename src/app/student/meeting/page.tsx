@@ -474,7 +474,7 @@ export default function StudentMeetingPage() {
   // Show loading spinner while authenticating or loading data
   if (authLoading || loading) {
     return (
-      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-green-400 to-black' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : 'from-blue-400 to-indigo-600'} flex items-center justify-center`}>
+      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : 'from-blue-400 to-indigo-600'} flex items-center justify-center`}>
         <div className="bg-white border-4 border-black rounded-3xl p-8 shadow-2xl">
           {/* Theme-Specific Loading Animation */}
           <div className="relative mb-6 flex flex-col items-center">
@@ -498,7 +498,7 @@ export default function StudentMeetingPage() {
                   alt="Ben 10 Loading" 
                   className="w-32 h-32 object-contain"
                 />
-                <span className="text-2xl font-bold text-green-600 mt-4">Loading</span>
+                <span className="text-2xl font-bold text-[#64cc4f] mt-4">Loading</span>
               </div>
             )}
             
@@ -522,7 +522,7 @@ export default function StudentMeetingPage() {
   // Show error if not authenticated
   if (!student) {
     return (
-      <div className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-green-600 via-green-700 to-black' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : 'bg-gradient-to-br from-blue-600 via-indigo-700 to-slate-900'} p-6`}>
+      <div className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : 'bg-gradient-to-br from-blue-600 via-indigo-700 to-slate-900'} p-6`}>
         <div className="flex items-center justify-center py-12">
           <div className="bg-gradient-to-r from-red-200 to-pink-200 rounded-3xl shadow-2xl border-4 border-black p-8">
             <div className="text-center">
@@ -537,15 +537,15 @@ export default function StudentMeetingPage() {
   }
 
   return (
-    <div key={`meeting-${theme}`} className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-green-600 via-green-700 to-black' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : 'bg-gradient-to-br from-blue-600 via-indigo-700 to-slate-900'} p-6`}>
+    <div key={`meeting-${theme}`} className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : 'bg-gradient-to-br from-blue-600 via-indigo-700 to-slate-900'} p-6`}>
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Theme-aware Header */}
-        <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-green-600 via-green-700 to-black' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-600 via-indigo-700 to-slate-800'} rounded-3xl shadow-2xl border-4 border-black p-8 relative overflow-hidden`}>
+        <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-600 via-indigo-700 to-slate-800'} rounded-3xl shadow-2xl border-4 border-black p-8 relative overflow-hidden`}>
           {/* Theme Symbols */}
-          <div className={`absolute -top-4 -left-4 w-12 h-12 ${theme === 'ben10' ? 'bg-green-400' : theme === 'tinkerbell' ? 'bg-yellow-400' : 'bg-blue-400'} rounded-full border-2 border-black flex items-center justify-center`}>
+          <div className={`absolute -top-4 -left-4 w-12 h-12 ${theme === 'ben10' ? 'bg-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-yellow-400' : 'bg-blue-400'} rounded-full border-2 border-black flex items-center justify-center`}>
             <span className="text-black font-black text-lg">{theme === 'ben10' ? 'Ω' : theme === 'tinkerbell' ? '✨' : '📚'}</span>
           </div>
-          <div className={`absolute -top-4 -right-4 w-12 h-12 ${theme === 'ben10' ? 'bg-green-400' : theme === 'tinkerbell' ? 'bg-yellow-400' : 'bg-blue-400'} rounded-full border-2 border-black flex items-center justify-center`}>
+          <div className={`absolute -top-4 -right-4 w-12 h-12 ${theme === 'ben10' ? 'bg-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-yellow-400' : 'bg-blue-400'} rounded-full border-2 border-black flex items-center justify-center`}>
             <span className="text-black font-black text-lg">{theme === 'ben10' ? 'Ω' : theme === 'tinkerbell' ? '✨' : '📚'}</span>
           </div>
 
@@ -555,12 +555,12 @@ export default function StudentMeetingPage() {
               <div>
                 <h1 className="text-4xl font-black text-white mb-2 flex items-center">
                   <span>{theme === 'ben10' ? 'Ben 10\'s' : theme === 'tinkerbell' ? 'Tinkerbell\'s' : 'My'}</span>
-                  <span className={`ml-2 font-black text-5xl ${theme === 'ben10' ? 'text-green-300' : theme === 'tinkerbell' ? 'text-yellow-300' : 'text-blue-300'}`}>{theme === 'ben10' ? 'Hero' : theme === 'tinkerbell' ? 'Magical' : 'Learning'}</span>
+                  <span className={`ml-2 font-black text-5xl ${theme === 'ben10' ? 'text-[#b2e05b]' : theme === 'tinkerbell' ? 'text-yellow-300' : 'text-blue-300'}`}>{theme === 'ben10' ? 'Hero' : theme === 'tinkerbell' ? 'Magical' : 'Learning'}</span>
                   <span className="ml-2 text-3xl">Meeting</span>
                   <span className="ml-2 text-3xl">Scheduler</span>
                   <span className="ml-2 text-3xl">{theme === 'ben10' ? 'Ω' : theme === 'tinkerbell' ? '✨' : '📚'}</span>
                 </h1>
-                <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-green-100' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-100'}`}>
+                <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-[#b2e05b]' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-100'}`}>
                   Welcome back, {student?.name}! Schedule {theme === 'ben10' ? 'heroic' : theme === 'tinkerbell' ? 'magical' : 'enriching'} one-on-one sessions with your teachers! {theme === 'ben10' ? '⚡' : theme === 'tinkerbell' ? '✨' : '📚'}
                 </p>
               </div>

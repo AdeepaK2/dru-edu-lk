@@ -190,8 +190,8 @@ export default function StudentDashboard() {
       return {
         message: "Great job! You're performing well. A little more effort and you'll reach the top!",
         icon: Target,
-        color: "text-green-500",
-        bgColor: "bg-green-50 dark:bg-green-900/20"
+        color: "text-[#64cc4f]",
+        bgColor: "bg-[#b2e05b]/20 dark:bg-[#b2e05b]/10"
       };
     } else if (currentGrade >= 70) {
       return {
@@ -267,7 +267,7 @@ export default function StudentDashboard() {
       description: 'Access notes and resources',
       icon: BookOpenCheck,
       href: '/student/study',
-      color: 'bg-green-500'
+      color: 'bg-[#64cc4f]'
     },
     { 
       id: 'videos', 
@@ -282,7 +282,7 @@ export default function StudentDashboard() {
   // Show loading state while data is being fetched
   if (loading) {
     return (
-      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-green-400 to-black' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : 'from-blue-400 to-indigo-600'} flex items-center justify-center`}>
+      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : 'from-blue-400 to-indigo-600'} flex items-center justify-center`}>
         <div className="bg-white border-4 border-black rounded-3xl p-8 shadow-2xl">
           {/* Theme-Specific Loading Animation */}
           <div className="relative mb-6 flex flex-col items-center">
@@ -306,7 +306,7 @@ export default function StudentDashboard() {
                   alt="Ben 10 Loading" 
                   className="w-32 h-32 object-contain"
                 />
-                <span className="text-2xl font-bold text-green-600 mt-4">Loading</span>
+                <span className="text-2xl font-bold text-[#64cc4f] mt-4">Loading</span>
               </div>
             )}
             
@@ -331,7 +331,7 @@ export default function StudentDashboard() {
     <>
       <div className="min-h-screen p-6" style={{
         background: theme === 'ben10'
-          ? 'linear-gradient(to bottom right, rgb(74, 222, 128), rgb(0, 0, 0), rgb(74, 222, 128))'
+          ? 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))'
           : theme === 'tinkerbell'
           ? 'linear-gradient(to bottom right, rgb(134, 239, 172), rgb(202, 138, 4), rgb(134, 239, 172))'
           : 'linear-gradient(to bottom right, rgb(96, 165, 250), rgb(79, 70, 229), rgb(96, 165, 250))'
@@ -340,17 +340,17 @@ export default function StudentDashboard() {
         {/* Welcome Header - Dynamic Theme */}
         <div className={`rounded-2xl text-white p-8 relative overflow-hidden border-4 border-black ${
           theme === 'ben10'
-            ? 'bg-gradient-to-br from-green-500 to-black'
+            ? 'bg-gradient-to-br from-[#64cc4f] to-[#222222]'
             : theme === 'tinkerbell'
             ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500'
             : 'bg-gradient-to-r from-blue-500 to-indigo-600'
         }`}>
           {/* Themed background elements */}
           <div className="absolute top-0 right-0 w-32 h-32 rounded-full -translate-y-16 translate-x-16  opacity-20" style={{
-            backgroundColor: theme === 'ben10' ? 'rgb(134, 239, 172)' : theme === 'tinkerbell' ? 'rgb(202, 138, 4)' : 'rgb(147, 197, 253)'
+            backgroundColor: theme === 'ben10' ? 'rgb(178, 224, 91)' : theme === 'tinkerbell' ? 'rgb(202, 138, 4)' : 'rgb(147, 197, 253)'
           }}></div>
           <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full translate-y-12 -translate-x-12  opacity-20" style={{
-            backgroundColor: theme === 'ben10' ? 'rgb(0, 0, 0)' : theme === 'tinkerbell' ? 'rgb(0, 0, 0)' : 'rgb(55, 65, 81)'
+            backgroundColor: theme === 'ben10' ? 'rgb(34, 34, 34)' : theme === 'tinkerbell' ? 'rgb(0, 0, 0)' : 'rgb(55, 65, 81)'
           }}></div>
          
 
@@ -361,7 +361,7 @@ export default function StudentDashboard() {
                   src={theme === 'ben10' ? '/ben10-welcome.png' : theme === 'tinkerbell' ? '/tinkerbell-welcome.png' : '/welcome-professional.png'} 
                   alt="Welcome" 
                   className={`w-40 h-40 rounded-full border-4 border-black ring-4 ${
-                    theme === 'ben10' ? 'ring-green-400' : theme === 'tinkerbell' ? 'ring-green-600' : 'ring-blue-400'
+                    theme === 'ben10' ? 'ring-[#64cc4f]' : theme === 'tinkerbell' ? 'ring-green-600' : 'ring-blue-400'
                   }`}
                   onError={(e) => {
                     // Fallback to generic welcome image if theme image not found
@@ -373,7 +373,7 @@ export default function StudentDashboard() {
                     Hey {student?.name}! Ready to {theme === 'ben10' ? 'transform' : theme === 'tinkerbell' ? 'enchant' : 'excel'} your learning?
                   </h1>
                   <p className="text-lg font-semibold mt-2" style={{
-                    color: theme === 'ben10' ? 'rgb(187, 247, 208)' : theme === 'tinkerbell' ? 'rgb(0, 0, 30)' : 'rgb(191, 219, 254)'
+                    color: theme === 'ben10' ? 'rgb(178, 224, 91)' : theme === 'tinkerbell' ? 'rgb(0, 0, 30)' : 'rgb(191, 219, 254)'
                   }}>
                     {theme === 'ben10' 
                       ? "Let's make learning heroic with Ben 10's power!" 
@@ -384,7 +384,7 @@ export default function StudentDashboard() {
                 </div>
               </div>
               <p className="mb-4 text-base" style={{
-                color: theme === 'ben10' ? 'rgb(187, 247, 208)' : theme === 'tinkerbell' ? 'rgb(0, 100, 8)' : 'rgb(191, 219, 254)'
+                color: theme === 'ben10' ? 'rgb(178, 224, 91)' : theme === 'tinkerbell' ? 'rgb(0, 100, 8)' : 'rgb(191, 219, 254)'
               }}>
                 {theme === 'ben10' 
                   ? 'Welcome to your alien learning headquarters!' 
@@ -406,7 +406,7 @@ export default function StudentDashboard() {
         {!loading && dashboardStats.currentGrade > 0 && (
         <div className={`border-4 border-black rounded-xl p-6 animate-fade-in relative overflow-hidden ${
           theme === 'ben10'
-            ? 'bg-gradient-to-br from-green-500 to-black'
+            ? 'bg-gradient-to-br from-[#64cc4f] to-[#222222]'
             : theme === 'tinkerbell'
             ? 'bg-gradient-to-r from-green-300 via-yellow-500 to-green-300'
             : 'bg-gradient-to-r from-blue-400 to-indigo-500'
@@ -430,17 +430,19 @@ export default function StudentDashboard() {
                   <div className="flex items-center space-x-1">
                     <span className="text-lg">{theme === 'ben10' ? '📊' : theme === 'tinkerbell' ? '📈' : '📈'}</span>
                     <span>Grade: <strong style={{
-                      color: theme === 'ben10' ? 'rgb(132, 204, 22)' : 'rgb(0, 138, 4)'
+                      color: theme === 'ben10' ? 'rgb(100, 204, 79)' : 'rgb(0, 138, 4)'
                     }}>{dashboardStats.currentGrade}%</strong></span>
                   </div>
                   <div className="flex items-center space-x-1">
                     <span className="text-lg">📝</span>
-                    <span>Tests: <strong className="text-green-800">{dashboardStats.completedTests}</strong></span>
+                    <span>Tests: <strong style={{
+                      color: theme === 'ben10' ? 'rgb(100, 204, 79)' : 'rgb(0, 138, 4)'
+                    }}>{dashboardStats.completedTests}</strong></span>
                   </div>
                   <div className="flex items-center space-x-1">
                     
                     <span>Classes: <strong style={{
-                      color: theme === 'ben10' ? 'rgb(132, 204, 22)' : 'rgb(0, 138, 4)'
+                      color: theme === 'ben10' ? 'rgb(100, 204, 79)' : 'rgb(0, 138, 4)'
                     }}>{dashboardStats.totalClasses}</strong></span>
                   </div>
                 </div>
@@ -457,7 +459,7 @@ export default function StudentDashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className={`rounded-xl shadow-lg border-4 border-black p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105 ${
             theme === 'ben10'
-              ? 'bg-gradient-to-br from-green-400 to-green-600'
+              ? 'bg-gradient-to-br from-[#64cc4f] to-[#b2e05b]'
               : theme === 'tinkerbell'
               ? 'bg-gradient-to-br from-green-400 to-yellow-500'
               : 'bg-gradient-to-br from-blue-400 to-blue-600'
@@ -487,7 +489,7 @@ export default function StudentDashboard() {
 
           <div className={`rounded-xl shadow-lg border-4 border-black p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105 ${
             theme === 'ben10'
-              ? 'bg-gradient-to-br from-green-400 to-green-600'
+              ? 'bg-gradient-to-br from-[#64cc4f] to-[#b2e05b]'
               : theme === 'tinkerbell'
               ? 'bg-gradient-to-br from-green-400 to-yellow-600'
               : 'bg-gradient-to-br from-indigo-400 to-indigo-600'
@@ -532,7 +534,7 @@ export default function StudentDashboard() {
 
           <div className={`rounded-xl shadow-lg border-4 border-black p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105 ${
             theme === 'ben10'
-              ? 'bg-gradient-to-br from-green-400 to-green-600'
+              ? 'bg-gradient-to-br from-[#64cc4f] to-[#b2e05b]'
               : theme === 'tinkerbell'
               ? 'bg-gradient-to-br from-green-400 to-yellow-600'
               : 'bg-gradient-to-br from-cyan-400 to-blue-600'
@@ -575,7 +577,7 @@ export default function StudentDashboard() {
 
           <div className={`rounded-xl shadow-lg border-4 border-black p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105 ${
             theme === 'ben10'
-              ? 'bg-gradient-to-br from-green-400 to-green-600'
+              ? 'bg-gradient-to-br from-[#64cc4f] to-[#b2e05b]'
               : theme === 'tinkerbell'
               ? 'bg-gradient-to-br from-green-400 to-yellow-600'
               : 'bg-gradient-to-br from-purple-400 to-indigo-600'
@@ -596,9 +598,9 @@ export default function StudentDashboard() {
                     className="h-3 rounded-full transition-all duration-1000 ease-out shadow-lg"
                     style={{
                       backgroundColor: 
-                        dashboardStats.currentGrade >= 90 ? (theme === 'ben10' ? 'rgb(132, 204, 22)' : theme === 'tinkerbell' ? 'rgb(202, 138, 4)' : 'rgb(34, 197, 94)') :
-                        dashboardStats.currentGrade >= 80 ? (theme === 'ben10' ? 'rgb(74, 222, 128)' : theme === 'tinkerbell' ? 'rgb(202, 138, 4)' : 'rgb(34, 197, 94)') :
-                        dashboardStats.currentGrade >= 70 ? (theme === 'ben10' ? 'rgb(34, 197, 94)' : theme === 'tinkerbell' ? 'rgb(202, 138, 4)' : 'rgb(96, 165, 250)') :
+                        dashboardStats.currentGrade >= 90 ? (theme === 'ben10' ? 'rgb(100, 204, 79)' : theme === 'tinkerbell' ? 'rgb(202, 138, 4)' : 'rgb(34, 197, 94)') :
+                        dashboardStats.currentGrade >= 80 ? (theme === 'ben10' ? 'rgb(178, 224, 91)' : theme === 'tinkerbell' ? 'rgb(202, 138, 4)' : 'rgb(34, 197, 94)') :
+                        dashboardStats.currentGrade >= 70 ? (theme === 'ben10' ? 'rgb(100, 204, 79)' : theme === 'tinkerbell' ? 'rgb(202, 138, 4)' : 'rgb(96, 165, 250)') :
                         dashboardStats.currentGrade >= 60 ? 'rgb(234, 179, 8)' : 'rgb(239, 68, 68)',
                       width: `${dashboardStats.currentGrade}%`
                     }}
@@ -624,8 +626,10 @@ export default function StudentDashboard() {
           {/* Recent Activity - Dynamic Theme */}
           <div className={`rounded-xl shadow-lg border-4 border-black p-6 ${
             theme === 'ben10'
-              ? 'bg-gradient-to-br from-green-300 via-black to-green-400'
-              : 'bg-gradient-to-br from-yellow-300 via-green-500 to-yellow-400'
+              ? 'bg-gradient-to-br from-[#b2e05b] via-[#222222] to-[#64cc4f]'
+              : theme === 'tinkerbell'
+              ? 'bg-gradient-to-br from-yellow-300 via-green-500 to-yellow-400'
+              : 'bg-gradient-to-br from-blue-300 via-indigo-500 to-blue-400'
           }`}>
             <h3 className="text-xl font-black text-black mb-6 flex items-center">
        
@@ -635,7 +639,7 @@ export default function StudentDashboard() {
               {dashboardStats.completedTests > 0 && (
                 <div className="flex items-start space-x-3 p-4 bg-white border-2 border-black rounded-lg animate-fade-in shadow-lg">
                   <div className="w-10 h-10 rounded-full flex items-center justify-center border-2 border-black" style={{
-                    backgroundColor: theme === 'ben10' ? 'rgb(34, 197, 94)' : 'rgb(255, 255, 255)'
+                    backgroundColor: theme === 'ben10' ? 'rgb(100, 204, 79)' : 'rgb(255, 255, 255)'
                   }}>
                     <FileText className="w-5 h-5 text-black" />
                   </div>
@@ -653,7 +657,7 @@ export default function StudentDashboard() {
               {dashboardStats.totalClasses > 0 && (
                 <div className="flex items-start space-x-3 p-4 bg-white border-2 border-black rounded-lg animate-fade-in shadow-lg" style={{ animationDelay: '0.2s' }}>
                   <div className="w-10 h-10  rounded-full flex items-center justify-center border-2" style={{
-                    borderColor: theme === 'ben10' ? 'rgb(0,0,0)' : 'rgb(0, 0, 0)', backgroundColor: theme === 'ben10' ? 'rgb(34, 197, 94)' : 'rgb(255, 255, 255)'
+                    borderColor: theme === 'ben10' ? 'rgb(0,0,0)' : 'rgb(0, 0, 0)', backgroundColor: theme === 'ben10' ? 'rgb(100, 204, 79)' : 'rgb(255, 255, 255)'
                   }}>
                     <Users className="w-5 h-5" style={{
                       color: theme === 'ben10' ? 'rgb(0,0,0)' : 'rgb(0,0,0)'
@@ -673,7 +677,7 @@ export default function StudentDashboard() {
               {dashboardStats.studyMaterials > 0 && (
                 <div className="flex items-start space-x-3 p-4 bg-white border-2 border-black rounded-lg animate-fade-in shadow-lg" style={{ animationDelay: '0.4s' }}>
                   <div className="w-10 h-10 rounded-full flex items-center justify-center border-2 border-black" style={{
-                    backgroundColor: theme === 'ben10' ? 'rgb(34, 197, 94)' : 'rgb(255, 255, 255)'
+                    backgroundColor: theme === 'ben10' ? 'rgb(100, 204, 79)' : 'rgb(255, 255, 255)'
                   }}>
                     <BookOpenCheck className="w-5 h-5 text-black" />
                   </div>
@@ -691,7 +695,7 @@ export default function StudentDashboard() {
               {(!dashboardStats.completedTests && !dashboardStats.totalClasses && !dashboardStats.studyMaterials) && (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-10 w-10 border-4 border-t-black mx-auto mb-4" style={{
-                    borderColor: theme === 'ben10' ? 'rgb(74, 222, 128)' : 'rgb(244, 114, 182)',
+                    borderColor: theme === 'ben10' ? 'rgb(100, 204, 79)' : 'rgb(244, 114, 182)',
                     borderTopColor: 'black'
                   }}></div>
                   <p className="text-black font-bold text-sm">
@@ -705,8 +709,10 @@ export default function StudentDashboard() {
           {/* Achievement Goals - Dynamic Theme */}
           <div className={`rounded-xl shadow-lg border-4 border-black p-6 ${
             theme === 'ben10'
-              ? 'bg-gradient-to-br from-green-300 via-black to-green-400'
-              : 'bg-gradient-to-br from-green-400 to-yellow-600'
+              ? 'bg-gradient-to-br from-[#b2e05b] via-[#222222] to-[#64cc4f]'
+              : theme === 'tinkerbell'
+              ? 'bg-gradient-to-br from-green-400 to-yellow-600'
+              : 'bg-gradient-to-br from-indigo-400 to-blue-600'
           }`}>
             <h3 className="mb-6 flex items-center text-xl font-black" style={{
               color: theme === 'ben10' ? 'rgb(0,0,0)' : 'rgb(0,0,0)'
@@ -727,12 +733,12 @@ export default function StudentDashboard() {
                   </span>
                 </div>
                 <div className="rounded-full h-4 border-2 border-black" style={{
-                  backgroundColor: theme === 'ben10' ? 'rgba(132, 204, 22, 0.2)' : 'rgba(202, 138, 4, 0.2)'
+                  backgroundColor: theme === 'ben10' ? 'rgba(100, 204, 79, 0.2)' : 'rgba(202, 138, 4, 0.2)'
                 }}>
                   <div
                     className="h-4 rounded-full transition-all duration-1000 ease-out border border-black"
                     style={{
-                      backgroundColor: theme === 'ben10' ? 'rgb(34, 197, 94)' : 'rgb(202, 138, 4)',
+                      backgroundColor: theme === 'ben10' ? 'rgb(100, 204, 79)' : 'rgb(202, 138, 4)',
                       width: `${getProgressPercentage(dashboardStats.completedTests, 20)}%`
                     }}
                   ></div>
@@ -751,15 +757,15 @@ export default function StudentDashboard() {
                   </span>
                 </div>
                 <div className="rounded-full h-4 border-2" style={{
-                  backgroundColor: theme === 'ben10' ? 'rgba(132, 204, 22, 0.2)' : 'rgba(202, 138, 4, 0.2)',
+                  backgroundColor: theme === 'ben10' ? 'rgba(100, 204, 79, 0.2)' : 'rgba(202, 138, 4, 0.2)',
                   borderColor: theme === 'ben10' ? 'rgb(0,0,0)' : 'rgb(0,0,0)'
                 }}>
                   <div
                     className="h-4 rounded-full transition-all duration-1000 ease-out border border-black"
                     style={{
                       backgroundColor: dashboardStats.currentGrade >= 85 
-                        ? (theme === 'ben10' ? 'rgb(34, 197, 94)' : 'rgb(202, 138, 4)')
-                        : (theme === 'ben10' ? 'rgb(132, 204, 22)' : 'rgb(202, 138, 4)'),
+                        ? (theme === 'ben10' ? 'rgb(100, 204, 79)' : 'rgb(202, 138, 4)')
+                        : (theme === 'ben10' ? 'rgb(178, 224, 91)' : 'rgb(202, 138, 4)'),
                       width: `${dashboardStats.currentGrade}%`
                     }}
                   ></div>
@@ -778,13 +784,13 @@ export default function StudentDashboard() {
                   </span>
                 </div>
                 <div className="rounded-full h-4 border-2 border-black" style={{
-                  backgroundColor: theme === 'ben10' ? 'rgba(132, 204, 22, 0.2)' : 'rgba(202, 138, 4, 0.2)'
+                  backgroundColor: theme === 'ben10' ? 'rgba(100, 204, 79, 0.2)' : 'rgba(202, 138, 4, 0.2)'
                 }}>
                   <div
                     className="h-4 rounded-full transition-all duration-1000 ease-out border"
                     style={{
-                      backgroundColor: theme === 'ben10' ? 'rgb(34, 197, 94)' : 'rgb(202, 138, 4)',
-                      borderColor: theme === 'ben10' ? 'rgb(132, 204, 22)' : 'rgb(202, 138, 4)',
+                      backgroundColor: theme === 'ben10' ? 'rgb(100, 204, 79)' : 'rgb(202, 138, 4)',
+                      borderColor: theme === 'ben10' ? 'rgb(100, 204, 79)' : 'rgb(202, 138, 4)',
                       width: `${getProgressPercentage(dashboardStats.studyMaterials, 50)}%`
                     }}
                   ></div>
@@ -793,13 +799,17 @@ export default function StudentDashboard() {
 
               <div className="mt-6 p-4 rounded-lg shadow-lg border-2 border-black" style={{
                 background: theme === 'ben10'
-                  ? 'bg-gradient-to-br from-green-300 via-black to-green-400'
-                  : 'bg-gradient-to-br from-green-400 to-yellow-600'
+                  ? 'linear-gradient(to bottom right, rgb(178, 224, 91), rgb(34, 34, 34), rgb(100, 204, 79))'
+                  : theme === 'tinkerbell'
+                  ? 'linear-gradient(to bottom right, rgb(34, 197, 94), rgb(0, 0, 0), rgb(34, 197, 94))'
+                  : 'linear-gradient(to bottom right, rgb(59, 130, 246), rgb(37, 99, 235))'
               }}>
                 <div className="flex items-center space-x-2">
-                 
-                  <span className="text-green-800 font-black text-sm">
-                    {theme === 'ben10' ? 'Next Transformation Unlocked Soon!' : 'Next Magic Spell Unlocked Soon!'}
+                  
+                  <span style={{
+                    color: theme === 'ben10' ? 'rgb(100, 204, 79)' : 'rgb(0, 138, 4)'
+                  }} className="font-black text-sm">
+                    {theme === 'ben10' ? 'Next Transformation Unlocked Soon!' : theme === 'tinkerbell' ? 'Next Magic Spell Unlocked Soon!' : 'Next Achievement Unlocked Soon!'}
                   </span>
                 </div>
                 <p className="text-white font-bold text-xs mt-1">
@@ -816,8 +826,10 @@ export default function StudentDashboard() {
           {/* Quick Actions - Dynamic Theme */}
           <div className={`bg-gradient-to-r rounded-xl shadow-lg border-4 border-black p-6 ${
             theme === 'ben10'
-              ? 'from-green-400 via-black to-green-500'
-              : 'from-yellow-400 via-green-500 to-yellow-500'
+              ? 'from-[#64cc4f] via-[#222222] to-[#b2e05b]'
+              : theme === 'tinkerbell'
+              ? 'from-yellow-400 via-green-500 to-yellow-500'
+              : 'from-blue-400 via-indigo-500 to-blue-500'
           }`}>
             <h3 className="text-2xl font-black text-black mb-6 flex items-center">
           
@@ -838,19 +850,19 @@ export default function StudentDashboard() {
                         <Icon className="w-6 h-6 text-white group-hover:animate-bounce" />
                       </div>
                       <div className="flex-1">
-                        <h4 className="font-bold text-black group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors duration-300 text-sm">
+                        <h4 className="font-bold text-black group-hover:text-[#64cc4f] dark:group-hover:text-[#64cc4f] transition-colors duration-300 text-sm">
                           {action.title}
                         </h4>
                         <p className="text-gray-700 dark:text-gray-300 mt-1 text-xs font-medium">
                           {action.description}
                         </p>
                         <div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                          <div className="w-full bg-green-400/20 rounded-full h-1">
-                            <div className="bg-green-500 h-1 rounded-full transition-all duration-500 w-0 group-hover:w-full"></div>
+                          <div className="w-full bg-[#64cc4f]/20 rounded-full h-1">
+                            <div className="bg-[#64cc4f] h-1 rounded-full transition-all duration-500 w-0 group-hover:w-full"></div>
                           </div>
                         </div>
                       </div>
-                      <ChevronRight className="w-4 h-4 text-black group-hover:text-green-500 group-hover:translate-x-1 transition-all duration-300" />
+                      <ChevronRight className="w-4 h-4 text-black group-hover:text-[#64cc4f] group-hover:translate-x-1 transition-all duration-300" />
                     </div>
                   </Link>
                 );
@@ -863,8 +875,10 @@ export default function StudentDashboard() {
         {student && (
           <div className={`bg-gradient-to-r rounded-xl shadow-lg border-4 border-black p-6 ${
             theme === 'ben10'
-              ? 'from-green-400 via-black to-green-500'
-              : 'from-yellow-400 via-green-500 to-yellow-500'
+              ? 'from-[#64cc4f] via-[#222222] to-[#b2e05b]'
+              : theme === 'tinkerbell'
+              ? 'from-yellow-400 via-green-500 to-yellow-500'
+              : 'from-blue-400 via-indigo-500 to-blue-500'
           }`}>
             <h3 className="text-xl font-black text-white mb-6 flex items-center">
               <span className="text-6xl mr-2 ">{theme === 'ben10' ? '🦸‍♂️' : '🧚‍♀️'}</span>
@@ -873,13 +887,13 @@ export default function StudentDashboard() {
             <div className="space-y-4">
               <div className="flex items-center justify-between p-3 bg-white border-2 border-black rounded-lg">
                 <span className="text-sm text-black font-bold">🎫 Student ID:</span>
-                <span className="text-sm font-black text-black bg-green-300 px-2 py-1 rounded border border-black">
+                <span className="text-sm font-black text-black bg-[#64cc4f] px-2 py-1 rounded border border-black">
                   {student.id || 'N/A'}
                 </span>
               </div>
               <div className="flex items-center justify-between p-3 bg-white border-2 border-black rounded-lg">
                 <span className="text-sm text-black font-bold">📅 Enrollment Date:</span>
-                <span className="text-sm font-black text-green-400 bg-black px-2 py-1 rounded border border-green-400">
+                <span className="text-sm font-black text-[#64cc4f] bg-black px-2 py-1 rounded border border-[#64cc4f]">
                   {student.enrollmentDate ? new Date(student.enrollmentDate).toLocaleDateString() : 'N/A'}
                 </span>
               </div>
@@ -887,7 +901,7 @@ export default function StudentDashboard() {
                 <span className="text-sm text-black font-bold">🏷️ Status:</span>
                 <span className={`text-sm font-black px-3 py-1 rounded-full border-2 border-black ${
                   student.status === 'Active' 
-                    ? (theme === 'ben10' ? 'bg-green-400 text-black' : 'bg-yellow-400 text-black')
+                    ? (theme === 'ben10' ? 'bg-[#64cc4f] text-black' : 'bg-yellow-400 text-black')
                     : student.status === 'Suspended'
                     ? 'bg-red-400 text-black'
                     : 'bg-gray-400 text-black'
@@ -898,7 +912,7 @@ export default function StudentDashboard() {
               <div className="flex items-center justify-between p-3 bg-white border-2 border-black rounded-lg">
                 <span className="text-sm text-black font-bold">📚 Courses Enrolled:</span>
                 <span className={`text-sm font-black text-black px-2 py-1 rounded border border-black ${
-                  theme === 'ben10' ? 'bg-green-500' : 'bg-yellow-500'
+                  theme === 'ben10' ? 'bg-[#b2e05b]' : 'bg-yellow-500'
                 }`}>
                   {enrollments.length} 
                 </span>

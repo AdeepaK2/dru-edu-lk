@@ -129,7 +129,7 @@ export default function StudentVideos() {
 
   if (loading) {
     return (
-      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-green-400 to-black' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : 'from-blue-400 to-indigo-600'} flex items-center justify-center`}>
+      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : 'from-blue-400 to-indigo-600'} flex items-center justify-center`}>
         <div className="bg-white border-4 border-black rounded-3xl p-8 shadow-2xl">
           {/* Theme-Specific Loading Animation */}
           <div className="relative mb-6 flex flex-col items-center">
@@ -153,7 +153,7 @@ export default function StudentVideos() {
                   alt="Ben 10 Loading" 
                   className="w-32 h-32 object-contain"
                 />
-                <span className="text-2xl font-bold text-green-600 mt-4">Loading</span>
+                <span className="text-2xl font-bold text-[#64cc4f] mt-4">Loading</span>
               </div>
             )}
             
@@ -175,14 +175,14 @@ export default function StudentVideos() {
   }
 
   return (
-    <div className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-green-600 via-green-700 to-black' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : 'bg-gradient-to-br from-blue-600 via-indigo-700 to-slate-900'} p-6`}>
+    <div className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : 'bg-gradient-to-br from-blue-600 via-indigo-700 to-slate-900'} p-6`}>
       {/* Ben 10 Hero Header */}
-      <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-green-600 via-green-700 to-black' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-600 via-indigo-700 to-slate-800'} rounded-3xl shadow-2xl border-4 border-black p-8 mb-8 relative overflow-hidden`}>
+      <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-600 via-indigo-700 to-slate-800'} rounded-3xl shadow-2xl border-4 border-black p-8 mb-8 relative overflow-hidden`}>
         {/* Omnitrix Symbols */}
-        <div className={`absolute -top-4 -left-4 w-12 h-12 ${theme === 'ben10' ? 'bg-green-400' : theme === 'tinkerbell' ? 'bg-yellow-400' : 'bg-blue-400'} rounded-full border-2 border-black flex items-center justify-center`}>
+        <div className={`absolute -top-4 -left-4 w-12 h-12 ${theme === 'ben10' ? 'bg-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-yellow-400' : 'bg-blue-400'} rounded-full border-2 border-black flex items-center justify-center`}>
           <span className="text-black font-black text-lg">{theme === 'ben10' ? 'Ω' : theme === 'tinkerbell' ? '✨' : '📚'}</span>
         </div>
-        <div className={`absolute -top-4 -right-4 w-12 h-12 ${theme === 'ben10' ? 'bg-green-400' : theme === 'tinkerbell' ? 'bg-yellow-400' : 'bg-blue-400'} rounded-full border-2 border-black flex items-center justify-center`}>
+        <div className={`absolute -top-4 -right-4 w-12 h-12 ${theme === 'ben10' ? 'bg-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-yellow-400' : 'bg-blue-400'} rounded-full border-2 border-black flex items-center justify-center`}>
           <span className="text-black font-black text-lg">{theme === 'ben10' ? 'Ω' : theme === 'tinkerbell' ? '✨' : '📚'}</span>
         </div>
 
@@ -191,12 +191,12 @@ export default function StudentVideos() {
           <div>
             <h1 className="text-4xl font-black text-white mb-2 flex items-center">
               <span>{theme === 'ben10' ? 'Ben 10\'s' : theme === 'tinkerbell' ? 'Tinkerbell\'s' : 'My'}</span>
-              <span className={`ml-2 font-black text-5xl ${theme === 'ben10' ? 'text-green-300' : theme === 'tinkerbell' ? 'text-yellow-300' : 'text-blue-300'}`}>{theme === 'ben10' ? 'Hero' : theme === 'tinkerbell' ? 'Magical' : 'Learning'}</span>
+              <span className={`ml-2 font-black text-5xl ${theme === 'ben10' ? 'text-[#b2e05b]' : theme === 'tinkerbell' ? 'text-yellow-300' : 'text-blue-300'}`}>{theme === 'ben10' ? 'Hero' : theme === 'tinkerbell' ? 'Magical' : 'Learning'}</span>
               <span className="ml-2 text-3xl">Video</span>
               <span className="ml-2 text-3xl">Library</span>
               <span className="ml-2 text-3xl">{theme === 'ben10' ? 'Ω' : theme === 'tinkerbell' ? '✨' : '📚'}</span>
             </h1>
-            <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-green-100' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-100'}`}>
+            <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-[#b2e05b]' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-100'}`}>
               Welcome back, {student?.name}! Transform your learning with {theme === 'ben10' ? 'hero' : theme === 'tinkerbell' ? 'magical' : 'enriching'}-powered videos! {theme === 'ben10' ? '⚡' : theme === 'tinkerbell' ? '✨' : '📚'}
             </p>
           </div>
@@ -225,7 +225,7 @@ export default function StudentVideos() {
             placeholder="🔍 Search hero classes..."
             value={searchTerm}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
-            className="pl-12 w-full px-6 py-3 border-4 border-black rounded-3xl focus:ring-4 focus:ring-green-400 focus:border-black bg-white text-black font-bold text-lg placeholder-black/60"
+            className="pl-12 w-full px-6 py-3 border-4 border-black rounded-3xl focus:ring-4 focus:ring-[#64cc4f] focus:border-black bg-white text-black font-bold text-lg placeholder-black/60"
           />
         </div>
       </div>
@@ -244,7 +244,7 @@ export default function StudentVideos() {
                 Special video recommendations from your teachers
               </p>
             </div>
-            <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-green-600 to-black' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 to-yellow-600' : 'bg-gradient-to-r from-blue-600 to-indigo-700'} rounded-full px-4 py-2 border-2 border-black`}>
+            <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 to-yellow-600' : 'bg-gradient-to-r from-blue-600 to-indigo-700'} rounded-full px-4 py-2 border-2 border-black`}>
               <span className="text-white font-black text-sm">
                 {individualVideos.length} {theme === 'ben10' ? 'Hero' : theme === 'tinkerbell' ? 'Magical' : 'Learning'} Video{individualVideos.length > 1 ? 's' : ''} {theme === 'ben10' ? '⚡' : theme === 'tinkerbell' ? '✨' : '📚'}
               </span>
@@ -257,7 +257,7 @@ export default function StudentVideos() {
                 <div className="flex flex-col h-full">
                   <div className="flex items-start space-x-4 mb-4">
                     <div className="flex-shrink-0">
-                      <div className={`w-16 h-12 ${theme === 'ben10' ? 'bg-gradient-to-br from-green-600 to-black' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-400 to-green-500' : 'bg-gradient-to-br from-blue-600 to-indigo-700'} rounded-xl flex items-center justify-center border-2 border-black shadow-md`}>
+                      <div className={`w-16 h-12 ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-400 to-green-500' : 'bg-gradient-to-br from-blue-600 to-indigo-700'} rounded-xl flex items-center justify-center border-2 border-black shadow-md`}>
                         <Play className="w-6 h-6 text-white" />
                       </div>
                     </div>
@@ -277,7 +277,7 @@ export default function StudentVideos() {
                   <div className="mt-auto pt-4 border-t-2 border-black">
                     <Link
                       href={`/student/video/${video.id}/watch`}
-                      className={`w-full ${theme === 'ben10' ? 'bg-gradient-to-r from-green-600 to-black hover:from-green-700 hover:to-gray-900' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700' : 'bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800'} text-white px-4 py-2 rounded-full font-bold text-sm transform hover:scale-105 transition-all border-2 border-black flex items-center justify-center space-x-2`}
+                      className={`w-full ${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222] hover:from-[#b2e05b] hover:to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700' : 'bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800'} text-white px-4 py-2 rounded-full font-bold text-sm transform hover:scale-105 transition-all border-2 border-black flex items-center justify-center space-x-2`}
                     >
                       <Play className="w-4 h-4" />
                       <span>Watch Now</span>
@@ -293,12 +293,12 @@ export default function StudentVideos() {
       {/* Classes Grid */}
       <div>
         {getFilteredClasses().length === 0 ? (
-          <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-green-200 via-green-300 to-black' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-200 via-green-400 to-yellow-300' : 'bg-gradient-to-r from-blue-200 via-indigo-400 to-slate-400'} rounded-3xl shadow-2xl border-4 border-black p-12 text-center`}>
+          <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] via-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-200 via-green-400 to-yellow-300' : 'bg-gradient-to-r from-blue-200 via-indigo-400 to-slate-400'} rounded-3xl shadow-2xl border-4 border-black p-12 text-center`}>
             <div className="text-6xl mb-6">{theme === 'ben10' ? 'Ω' : theme === 'tinkerbell' ? '✨' : '📚'}</div>
             <h3 className="text-2xl font-black text-white mb-4">
               {searchTerm ? 'No Hero Classes Found' : 'No Classes Available Yet'}
             </h3>
-            <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-green-100' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-slate-100'}`}>
+            <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-[#222222]' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-slate-100'}`}>
               {searchTerm
                 ? 'Try adjusting your search to find your hero classes!'
                 : 'You haven\'t enrolled in any classes yet. Time to start your hero learning journey!'
@@ -332,15 +332,15 @@ interface ClassCardProps {
 const ClassCard: React.FC<ClassCardProps> = ({ classInfo, theme }) => {
   return (
     <Link href={`/student/classes/${classInfo.id}/videos`}>
-      <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-green-600 via-green-700 to-black' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 via-green-400 to-yellow-400' : 'bg-gradient-to-r from-blue-600 via-indigo-700 to-slate-800'} rounded-3xl shadow-2xl border-4 border-black overflow-hidden hover:scale-105 transition-all cursor-pointer`}>
+      <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 via-green-400 to-yellow-400' : 'bg-gradient-to-r from-blue-600 via-indigo-700 to-slate-800'} rounded-3xl shadow-2xl border-4 border-black overflow-hidden hover:scale-105 transition-all cursor-pointer`}>
         {/* Class Header */}
-        <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-green-400 to-green-600' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 to-yellow-600' : 'bg-gradient-to-r from-blue-400 to-indigo-600'} text-white p-6 border-b-4 border-black`}>
+        <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 to-yellow-600' : 'bg-gradient-to-r from-blue-400 to-indigo-600'} text-white p-6 border-b-4 border-black`}>
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <h3 className="text-xl font-black truncate mb-2">
                 {classInfo.name}
               </h3>
-              <p className={`text-lg font-bold ${theme === 'ben10' ? 'text-green-100' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-100'}`}>
+              <p className={`text-lg font-bold ${theme === 'ben10' ? 'text-[#222222]' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-100'}`}>
                 {classInfo.subject} • Grade {classInfo.grade}
               </p>
             </div>
@@ -371,7 +371,7 @@ const ClassCard: React.FC<ClassCardProps> = ({ classInfo, theme }) => {
                 <span className="text-black font-bold">
                   Browse Videos
                 </span>
-                <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-green-600 to-black' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 to-yellow-600' : 'bg-gradient-to-r from-blue-600 to-indigo-700'} text-white px-4 py-2 rounded-full font-black text-sm transform hover:scale-105 transition-all border-2 border-black flex items-center space-x-2`}>
+                <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 to-yellow-600' : 'bg-gradient-to-r from-blue-600 to-indigo-700'} text-white px-4 py-2 rounded-full font-black text-sm transform hover:scale-105 transition-all border-2 border-black flex items-center space-x-2`}>
                   <Play className="w-4 h-4" />
                   <span>Open</span>
                 </div>

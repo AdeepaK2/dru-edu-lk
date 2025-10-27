@@ -282,7 +282,7 @@ export default function StudentTestTaking() {
                   <button
                     onClick={handleSubmit}
                     disabled={submitting}
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-[#64cc4f] hover:bg-[#b2e05b] disabled:opacity-50"
                   >
                     {submitting ? (
                       <>
@@ -321,7 +321,7 @@ export default function StudentTestTaking() {
                       }}
                       className={`w-10 h-10 rounded-lg text-sm font-medium flex items-center justify-center ${
                         isQuestionAnswered(question.questionId)
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                          ? 'bg-[#b2e05b] text-[#222222] dark:bg-[#b2e05b]/20 dark:text-[#222222]'
                           : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
                       }`}
                     >
@@ -350,8 +350,8 @@ export default function StudentTestTaking() {
                     </div>
                   </div>
 
-                  <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                    <CheckCircle className="h-8 w-8 text-green-600 mx-auto mb-2" />
+                  <div className="text-center p-4 bg-[#b2e05b]/20 dark:bg-[#b2e05b]/10 rounded-lg">
+                    <CheckCircle className="h-8 w-8 text-[#64cc4f] mx-auto mb-2" />
                     <div className="text-2xl font-bold text-gray-900 dark:text-white">
                       {getAnsweredCount()}
                     </div>
@@ -415,7 +415,7 @@ export default function StudentTestTaking() {
                     <button
                       onClick={handleSubmit}
                       disabled={submitting}
-                      className="flex-1 inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
+                      className="flex-1 inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-[#64cc4f] hover:bg-[#b2e05b] disabled:opacity-50"
                     >
                       {submitting ? (
                         <>
@@ -493,9 +493,9 @@ export default function StudentTestTaking() {
                     onClick={() => navigateToQuestion(index)}
                     className={`w-10 h-10 rounded-lg text-sm font-medium flex items-center justify-center transition-all ${
                       index === currentQuestionIndex
-                        ? 'bg-blue-600 text-white'
-                        : isQuestionAnswered(question.questionId)
                         ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 hover:bg-green-200'
+                        : isQuestionAnswered(question.questionId)
+                        ? 'bg-[#b2e05b] text-[#222222] dark:bg-[#b2e05b]/20 dark:text-[#222222] hover:bg-[#64cc4f]'
                         : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
                     }`}
                   >
@@ -510,7 +510,7 @@ export default function StudentTestTaking() {
                   <span className="text-gray-600 dark:text-gray-300">Current</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <div className="w-4 h-4 bg-green-100 dark:bg-green-900/20 border border-green-300 dark:border-green-700 rounded"></div>
+                  <div className="w-4 h-4 bg-[#b2e05b] dark:bg-[#b2e05b]/20 border border-[#64cc4f] dark:border-[#64cc4f] rounded"></div>
                   <span className="text-gray-600 dark:text-gray-300">Answered</span>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -649,7 +649,7 @@ export default function StudentTestTaking() {
                   test.config.allowReviewBeforeSubmit ? (
                     <button
                       onClick={handleReview}
-                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
+                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-[#64cc4f] hover:bg-[#b2e05b]"
                     >
                       <Eye className="h-4 w-4 mr-2" />
                       Review & Submit
@@ -658,7 +658,7 @@ export default function StudentTestTaking() {
                     <button
                       onClick={handleSubmit}
                       disabled={submitting}
-                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
+                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-[#64cc4f] hover:bg-[#b2e05b] disabled:opacity-50"
                     >
                       {submitting ? (
                         <>

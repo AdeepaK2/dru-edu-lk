@@ -188,15 +188,15 @@ export default function StudentStudyPage() {
       case 'pdf': return <FileText className="w-5 h-5 text-red-500" />;
       case 'video': return <Play className="w-5 h-5 text-purple-500" />;
       case 'link': return <ExternalLink className="w-5 h-5 text-blue-500" />;
-      case 'image': return <Image className="w-5 h-5 text-green-500" />;
+      case 'image': return <Image className={`w-5 h-5 ${theme === 'ben10' ? 'text-[#64cc4f]' : theme === 'tinkerbell' ? 'text-green-500' : 'text-green-500'}`} />;
       default: return <FileText className="w-5 h-5 text-gray-500" />;
     }
   };
 
   const getProgressColor = (progress: number) => {
-    if (progress >= 80) return theme === 'ben10' ? 'bg-green-500' : theme === 'tinkerbell' ? 'bg-green-400' : 'bg-blue-500';
-    if (progress >= 60) return theme === 'ben10' ? 'bg-blue-500' : theme === 'tinkerbell' ? 'bg-yellow-500' : 'bg-indigo-500';
-    if (progress >= 40) return theme === 'ben10' ? 'bg-yellow-500' : theme === 'tinkerbell' ? 'bg-green-300' : 'bg-yellow-500';
+    if (progress >= 80) return theme === 'ben10' ? 'bg-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-green-400' : 'bg-blue-500';
+    if (progress >= 60) return theme === 'ben10' ? 'bg-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-yellow-500' : 'bg-indigo-500';
+    if (progress >= 40) return theme === 'ben10' ? 'bg-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-green-300' : 'bg-yellow-500';
     return theme === 'ben10' ? 'bg-red-500' : theme === 'tinkerbell' ? 'bg-red-400' : 'bg-red-500';
   };
 
@@ -355,7 +355,7 @@ export default function StudentStudyPage() {
 
   if (loading) {
     return (
-      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-green-400 to-black' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : 'from-blue-400 to-indigo-600'} flex items-center justify-center`}>
+      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : 'from-blue-400 to-indigo-600'} flex items-center justify-center`}>
         <div className="bg-white border-4 border-black rounded-3xl p-8 shadow-2xl">
           {/* Theme-Specific Loading Animation */}
           <div className="relative mb-6 flex flex-col items-center">
@@ -379,7 +379,7 @@ export default function StudentStudyPage() {
                   alt="Ben 10 Loading" 
                   className="w-32 h-32 object-contain"
                 />
-                <span className="text-2xl font-bold text-green-600 mt-4">Loading</span>
+                <span className="text-2xl font-bold text-[#64cc4f] mt-4">Loading</span>
               </div>
             )}
             
@@ -417,7 +417,7 @@ export default function StudentStudyPage() {
     if (isViewingMaterial && activeMaterial) {
       // PDF Viewing Layout - Full screen without top space
       return (
-        <div className={`fixed inset-0 bg-gradient-to-br ${theme === 'ben10' ? 'from-green-600 via-green-700 to-black' : theme === 'tinkerbell' ? 'from-green-500 via-yellow-500 to-green-600' : 'from-blue-600 via-indigo-700 to-blue-400'} z-50`}>
+        <div className={`fixed inset-0 bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-500 via-yellow-500 to-green-600' : 'from-blue-600 via-indigo-700 to-blue-400'} z-50`}>
           {/* Minimal Back Button - positioned absolutely */}
           <div className="absolute top-4 left-4 z-10">
             <button
@@ -430,7 +430,7 @@ export default function StudentStudyPage() {
 
           <div className="flex h-full">
             {/* Materials Sidebar - narrower */}
-            <div className={`w-72 bg-gradient-to-b ${theme === 'ben10' ? 'from-green-500 to-green-600' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : 'from-blue-500 to-indigo-600'} border-r-4 border-black overflow-y-auto shadow-2xl pt-16`}>
+            <div className={`w-72 bg-gradient-to-b ${theme === 'ben10' ? 'from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : 'from-blue-500 to-indigo-600'} border-r-4 border-black overflow-y-auto shadow-2xl pt-16`}>
               <div className="p-4 border-b-4 border-black">
                 <h2 className="text-lg font-black text-white text-center">
                   {theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : '📚'} Study Materials 
@@ -448,19 +448,21 @@ export default function StudentStudyPage() {
                     <div key={group.id} className={`bg-white rounded-2xl shadow-lg border-2 transition-all hover:scale-105 ${
                       group.materials.some((m: any) => m.id === activeMaterial.id)
                         ? theme === 'ben10'
-                          ? 'border-green-500 bg-green-50 shadow-green-200'
+                          ? 'border-[#64cc4f] bg-[#64cc4f]/10 shadow-[#64cc4f]/30'
                           : theme === 'tinkerbell'
                           ? 'border-yellow-500 bg-yellow-50 shadow-yellow-200'
                           : 'border-blue-500 bg-blue-50 shadow-blue-200'
                         : 'border-black'
                     }`}>
                       <div
-                        className="cursor-pointer hover:bg-green-100 p-4 rounded-t-2xl"
+                        className={`cursor-pointer p-4 rounded-t-2xl ${
+                          theme === 'ben10' ? 'hover:bg-[#64cc4f]/10' : 'hover:bg-green-100'
+                        }`}
                         onClick={() => toggleGroupExpansion(group.id)}
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex items-start space-x-3 flex-1">
-                            <div className={`w-8 h-8 ${theme === 'ben10' ? 'bg-green-500' : theme === 'tinkerbell' ? 'bg-yellow-500' : 'bg-blue-500'} rounded-xl flex items-center justify-center flex-shrink-0 border-2 border-black`}>
+                            <div className={`w-8 h-8 ${theme === 'ben10' ? 'bg-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-yellow-500' : 'bg-blue-500'} rounded-xl flex items-center justify-center flex-shrink-0 border-2 border-black`}>
                               {group.isGroup ? (
                                 <div className="text-white font-black text-sm">
                                   {group.totalFiles}
@@ -473,9 +475,9 @@ export default function StudentStudyPage() {
                               <div className="flex items-center space-x-2 mb-2">
                                 <span className="font-black text-gray-900 text-sm truncate">{group.groupTitle || group.materials[0]?.title}</span>
                                 {isExpanded ? (
-                                  <ChevronUp className={`w-4 h-4 ${theme === 'ben10' ? 'text-green-600' : theme === 'tinkerbell' ? 'text-yellow-600' : 'text-blue-600'} flex-shrink-0 font-black`} />
+                                  <ChevronUp className={`w-4 h-4 ${theme === 'ben10' ? 'text-[#64cc4f]' : theme === 'tinkerbell' ? 'text-yellow-600' : 'text-blue-600'} flex-shrink-0 font-black`} />
                                 ) : (
-                                  <ChevronDown className={`w-4 h-4 ${theme === 'ben10' ? 'text-green-600' : theme === 'tinkerbell' ? 'text-yellow-600' : 'text-blue-600'} flex-shrink-0 font-black`} />
+                                  <ChevronDown className={`w-4 h-4 ${theme === 'ben10' ? 'text-[#64cc4f]' : theme === 'tinkerbell' ? 'text-yellow-600' : 'text-blue-600'} flex-shrink-0 font-black`} />
                                 )}
                               </div>
 
@@ -488,7 +490,7 @@ export default function StudentStudyPage() {
                               <div className="flex items-center space-x-2 mb-2">
                                 {group.fileTypes.map((fileType: string) => (
                                   <span key={fileType} className={`text-white font-black text-xs px-2 py-1 rounded-lg border border-black ${
-                                    theme === 'ben10' ? 'bg-green-500' : theme === 'tinkerbell' ? 'bg-yellow-500' : 'bg-blue-500'
+                                    theme === 'ben10' ? 'bg-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-yellow-500' : 'bg-blue-500'
                                   }`}>
                                     {fileType.toUpperCase()}
                                   </span>
@@ -510,11 +512,11 @@ export default function StudentStudyPage() {
                                 <div
                                   key={material.id}
                                   className={`flex items-center justify-between p-3 border-2 rounded-xl text-sm transition-all hover:scale-105 ${
-                                    material.fileUrl ? 'cursor-pointer hover:bg-green-50' : ''
+                                    material.fileUrl ? `cursor-pointer ${theme === 'ben10' ? 'hover:bg-[#64cc4f]/10' : 'hover:bg-green-50'}` : ''
                                   } ${
                                     isSelected
                                       ? theme === 'ben10'
-                                        ? 'border-green-500 bg-green-100 shadow-lg'
+                                        ? 'border-[#64cc4f] bg-[#64cc4f]/10 shadow-lg'
                                         : theme === 'tinkerbell'
                                         ? 'border-yellow-500 bg-yellow-100 shadow-lg'
                                         : 'border-blue-500 bg-blue-100 shadow-lg'
@@ -523,14 +525,14 @@ export default function StudentStudyPage() {
                                   onClick={() => material.fileUrl && viewMaterial(material)}
                                 >
                                   <div className="flex items-center space-x-3 flex-1">
-                                    <div className={`w-6 h-6 ${theme === 'ben10' ? 'bg-green-500' : theme === 'tinkerbell' ? 'bg-yellow-500' : 'bg-blue-500'} rounded-lg flex items-center justify-center flex-shrink-0 border-2 border-black`}>
+                                    <div className={`w-6 h-6 ${theme === 'ben10' ? 'bg-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-yellow-500' : 'bg-blue-500'} rounded-lg flex items-center justify-center flex-shrink-0 border-2 border-black`}>
                                       {getFileIcon(material.fileType)}
                                     </div>
                                     <div className="flex-1 min-w-0">
                                       <h4 className={`font-black truncate text-sm ${
                                         isSelected
                                           ? theme === 'ben10'
-                                            ? 'text-green-700'
+                                            ? 'text-[#64cc4f]'
                                             : theme === 'tinkerbell'
                                             ? 'text-yellow-700'
                                             : 'text-blue-700'
@@ -539,7 +541,7 @@ export default function StudentStudyPage() {
                                         {material.title}
                                       </h4>
                                       <div className={`text-xs font-bold ${
-                                        theme === 'ben10' ? 'text-green-600' : theme === 'tinkerbell' ? 'text-yellow-600' : 'text-blue-600'
+                                        theme === 'ben10' ? 'text-[#64cc4f]' : theme === 'tinkerbell' ? 'text-yellow-600' : 'text-blue-600'
                                       }`}>
                                         {material.fileType.toUpperCase()}
                                       </div>
@@ -578,7 +580,7 @@ export default function StudentStudyPage() {
             </div>
 
             {/* Material Viewer - takes remaining space */}
-            <div className={`flex-1 bg-gradient-to-br from-white ${theme === 'ben10' ? 'to-green-50' : theme === 'tinkerbell' ? 'to-yellow-50' : 'to-blue-50'} overflow-hidden`}>
+            <div className={`flex-1 bg-gradient-to-br from-white ${theme === 'ben10' ? 'to-[#64cc4f]/10' : theme === 'tinkerbell' ? 'to-yellow-50' : 'to-blue-50'} overflow-hidden`}>
               <div className="h-full w-full">
                 {activeMaterial.fileType?.toLowerCase() === 'pdf' && activeMaterial.fileUrl && (
                   <PDFViewer
@@ -591,7 +593,7 @@ export default function StudentStudyPage() {
                 )}
                 {activeMaterial.fileType?.toLowerCase() === 'image' && activeMaterial.fileUrl && (
                   <div className="h-full flex flex-col">
-                    <div className={`p-6 border-b-4 border-black bg-gradient-to-r ${theme === 'ben10' ? 'from-green-500 to-green-600' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : 'from-blue-500 to-indigo-600'}`}>
+                    <div className={`p-6 border-b-4 border-black bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : 'from-blue-500 to-indigo-600'}`}>
                       <div className="flex items-center justify-between">
                         <h3 className="text-xl font-black text-white flex items-center">
                           🖼️ {activeMaterial.title}
@@ -630,7 +632,7 @@ export default function StudentStudyPage() {
                       </div>
                     </div>
                     <div
-                      className={`flex-1 flex items-center justify-center p-6 bg-gradient-to-br ${theme === 'ben10' ? 'from-green-50 to-white' : theme === 'tinkerbell' ? 'from-yellow-50 to-green-50' : 'from-blue-50 to-indigo-50'} overflow-hidden relative`}
+                      className={`flex-1 flex items-center justify-center p-6 bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f]/10 to-white' : theme === 'tinkerbell' ? 'from-yellow-50 to-green-50' : 'from-blue-50 to-indigo-50'} overflow-hidden relative`}
                       onMouseDown={handleMouseDown}
                       onMouseMove={handleMouseMove}
                       onMouseUp={handleMouseUp}
@@ -657,12 +659,12 @@ export default function StudentStudyPage() {
                 )}
                 {activeMaterial.fileType?.toLowerCase() === 'video' && activeMaterial.fileUrl && (
                   <div className="h-full flex flex-col">
-                    <div className={`p-6 border-b-4 border-black bg-gradient-to-r ${theme === 'ben10' ? 'from-green-500 to-green-600' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : 'from-blue-500 to-indigo-600'}`}>
+                    <div className={`p-6 border-b-4 border-black bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : 'from-blue-500 to-indigo-600'}`}>
                       <h3 className="text-xl font-black text-white flex items-center">
                         🎥 {activeMaterial.title}
                       </h3>
                     </div>
-                    <div className="flex-1 flex items-center justify-center p-6 bg-gradient-to-br from-green-50 to-white">
+                    <div className={`flex-1 flex items-center justify-center p-6 bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f]/10 to-white' : 'from-green-50 to-white'}`}>
                       <video
                         src={activeMaterial.fileUrl}
                         controls
@@ -676,14 +678,14 @@ export default function StudentStudyPage() {
                 )}
                 {activeMaterial.fileType?.toLowerCase() === 'link' && activeMaterial.fileUrl && (
                   <div className="h-full flex flex-col">
-                    <div className={`p-6 border-b-4 border-black bg-gradient-to-r ${theme === 'ben10' ? 'from-green-500 to-green-600' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : 'from-blue-500 to-indigo-600'}`}>
+                    <div className={`p-6 border-b-4 border-black bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : 'from-blue-500 to-indigo-600'}`}>
                       <h3 className="text-xl font-black text-white flex items-center">
                         🔗 {activeMaterial.title}
                       </h3>
                     </div>
-                    <div className="flex-1 flex items-center justify-center p-6 bg-gradient-to-br from-green-50 to-white">
+                    <div className={`flex-1 flex items-center justify-center p-6 bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f]/10 to-white' : 'from-green-50 to-white'}`}>
                       <div className="text-center space-y-8 max-w-md">
-                        <div className={`w-20 h-20 bg-gradient-to-r ${theme === 'ben10' ? 'from-green-500 to-green-600' : theme === 'tinkerbell' ? 'from-yellow-400 to-green-500' : 'from-blue-400 to-indigo-600'} rounded-3xl flex items-center justify-center mx-auto border-4 border-black shadow-2xl`}>
+                        <div className={`w-20 h-20 bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-yellow-400 to-green-500' : 'from-blue-400 to-indigo-600'} rounded-3xl flex items-center justify-center mx-auto border-4 border-black shadow-2xl`}>
                           <Link className="h-10 w-10 text-white font-black" />
                         </div>
                         <div>
@@ -844,7 +846,9 @@ export default function StudentStudyPage() {
                   isGroupCompleted ? 'border-green-500 bg-gradient-to-r from-green-50 to-white' : 'border-black'
                 }`}>
                   <div
-                    className="cursor-pointer hover:bg-green-100 p-6 rounded-t-3xl"
+                    className={`cursor-pointer p-6 rounded-t-3xl ${
+                      theme === 'ben10' ? 'hover:bg-[#64cc4f]/10' : 'hover:bg-green-100'
+                    }`}
                     onClick={() => toggleGroupExpansion(group.id)}
                   >
                     <div className="flex items-start justify-between">
@@ -866,12 +870,12 @@ export default function StudentStudyPage() {
                           <div className="flex items-center space-x-3 mb-3">
                             <span className="font-black text-gray-900 text-xl truncate">{group.groupTitle || group.materials[0]?.title}</span>
                             {isGroupCompleted && (
-                              <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0 font-black" />
+                              <CheckCircle className={`w-6 h-6 ${theme === 'ben10' ? 'text-[#64cc4f]' : 'text-green-600'} flex-shrink-0 font-black`} />
                             )}
                             {isExpanded ? (
-                              <ChevronUp className="w-6 h-6 text-green-600 flex-shrink-0 font-black" />
+                              <ChevronUp className={`w-6 h-6 ${theme === 'ben10' ? 'text-[#64cc4f]' : 'text-green-600'} flex-shrink-0 font-black`} />
                             ) : (
-                              <ChevronDown className="w-6 h-6 text-green-600 flex-shrink-0 font-black" />
+                              <ChevronDown className={`w-6 h-6 ${theme === 'ben10' ? 'text-[#64cc4f]' : 'text-green-600'} flex-shrink-0 font-black`} />
                             )}
                           </div>
                           
@@ -884,7 +888,7 @@ export default function StudentStudyPage() {
                           
                           <div className="flex items-center space-x-3 mb-3">
                             {group.isGroup && (
-                              <span className="bg-green-500 text-white font-black text-sm px-3 py-1 rounded-lg border border-black">
+                              <span className={`${theme === 'ben10' ? 'bg-[#64cc4f]' : 'bg-green-500'} text-white font-black text-sm px-3 py-1 rounded-lg border border-black`}>
                                 📁 {group.totalFiles} files
                               </span>
                             )}
@@ -1009,11 +1013,13 @@ export default function StudentStudyPage() {
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center space-x-2 mb-1">
                                     {isCompleted && (
-                                      <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+                                      <CheckCircle className={`w-4 h-4 ${theme === 'ben10' ? 'text-[#64cc4f]' : 'text-green-600'} flex-shrink-0`} />
                                     )}
                                     <h4 className={`font-medium truncate ${
                                       isCompleted 
-                                        ? 'text-green-700 dark:text-green-400' 
+                                        ? theme === 'ben10' 
+                                          ? 'text-[#64cc4f] dark:text-[#64cc4f]' 
+                                          : 'text-green-700 dark:text-green-400' 
                                         : 'text-gray-900 dark:text-white'
                                     }`}>
                                       {material.title}
@@ -1148,8 +1154,9 @@ export default function StudentStudyPage() {
                   {Math.round(overallProgress)}%
                 </span>
                 <Badge className={`font-black border-2 border-black ${
-                  getProgressColor(overallProgress) === 'bg-green-500' ? 'bg-green-400' :
+                  getProgressColor(overallProgress) === 'bg-[#64cc4f]' ? 'bg-[#b2e05b]' :
                   getProgressColor(overallProgress) === 'bg-blue-500' ? 'bg-blue-400' :
+                  getProgressColor(overallProgress) === 'bg-[#b2e05b]' ? 'bg-[#64cc4f]' :
                   getProgressColor(overallProgress) === 'bg-yellow-500' ? 'bg-yellow-400' : 'bg-red-400'
                 }`}>
                   {getProgressText(overallProgress)}
