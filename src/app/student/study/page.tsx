@@ -417,7 +417,7 @@ export default function StudentStudyPage() {
     if (isViewingMaterial && activeMaterial) {
       // PDF Viewing Layout - Full screen without top space
       return (
-        <div className={`fixed inset-0 bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-500 via-yellow-500 to-green-600' : 'from-blue-600 via-indigo-700 to-blue-400'} z-50`}>
+        <div className={`fixed inset-0 bg-gradient-to-br ${theme === 'ben10' ? '' : theme === 'tinkerbell' ? 'from-green-500 via-yellow-500 to-green-600' : 'from-blue-600 via-indigo-700 to-blue-400'} z-50`} style={theme === 'ben10' ? { background: 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))' } : undefined}>
           {/* Minimal Back Button - positioned absolutely */}
           <div className="absolute top-4 left-4 z-10">
             <button
@@ -580,7 +580,7 @@ export default function StudentStudyPage() {
             </div>
 
             {/* Material Viewer - takes remaining space */}
-            <div className={`flex-1 bg-gradient-to-br from-white ${theme === 'ben10' ? 'to-[#64cc4f]/10' : theme === 'tinkerbell' ? 'to-yellow-50' : 'to-blue-50'} overflow-hidden`}>
+            <div className={`flex-1 bg-gradient-to-br from-white ${theme === 'ben10' ? 'to-[#b2e05b]/10' : theme === 'tinkerbell' ? 'to-yellow-50' : 'to-blue-50'} overflow-hidden`}>
               <div className="h-full w-full">
                 {activeMaterial.fileType?.toLowerCase() === 'pdf' && activeMaterial.fileUrl && (
                   <PDFViewer
@@ -712,7 +712,7 @@ export default function StudentStudyPage() {
 
     // Normal Materials View
     return (
-      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-green-600 via-green-700 to-black' : theme === 'tinkerbell' ? 'from-green-500 via-yellow-500 to-green-600' : 'from-blue-600 via-indigo-700 to-blue-400'} p-6`}>
+      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? '' : theme === 'tinkerbell' ? 'from-green-500 via-yellow-500 to-green-600' : 'from-blue-600 via-indigo-700 to-blue-400'} p-6`} style={theme === 'ben10' ? { background: 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))' } : undefined}>
         <div className="max-w-6xl mx-auto">
           <div className="mb-8">
             <button
@@ -725,7 +725,7 @@ export default function StudentStudyPage() {
               ← Back to Dashboard
             </button>
 
-            <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-500 to-green-600' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : 'from-blue-500 to-indigo-600'} rounded-3xl shadow-2xl border-4 border-black p-8 mb-8`}>
+            <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : 'from-blue-500 to-indigo-600'} rounded-3xl shadow-2xl border-4 border-black p-8 mb-8`}>
               <div className="flex justify-between items-center mb-6">
                 <div>
                   <h1 className="text-4xl font-black text-black flex items-center">
@@ -742,7 +742,7 @@ export default function StudentStudyPage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-600 to-green-700' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : 'from-blue-600 to-indigo-700'} rounded-3xl shadow-2xl border-4 border-black p-6`}>
+                <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : 'from-blue-500 to-indigo-600'} rounded-3xl shadow-2xl border-4 border-black p-6`}>
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-black text-white">Overall Progress</p>
@@ -758,7 +758,7 @@ export default function StudentStudyPage() {
                   </div>
                 </div>
 
-                <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-700 to-black' : theme === 'tinkerbell' ? 'from-yellow-500 to-green-600' : 'from-indigo-700 to-blue-600'} rounded-3xl shadow-2xl border-4 border-black p-6`}>
+                <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-500 to-green-600' : 'from-indigo-700 to-blue-600'} rounded-3xl shadow-2xl border-4 border-black p-6`}>
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-black text-white">Required Materials</p>
@@ -774,7 +774,7 @@ export default function StudentStudyPage() {
                   </div>
                 </div>
 
-                <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-black to-green-800' : theme === 'tinkerbell' ? 'from-green-600 to-yellow-600' : 'from-slate-700 to-indigo-700'} rounded-3xl shadow-2xl border-4 border-black p-6`}>
+                <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'from-green-600 to-yellow-600' : 'from-slate-700 to-indigo-700'} rounded-3xl shadow-2xl border-4 border-black p-6`}>
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-black text-white">New This Week</p>
@@ -855,7 +855,7 @@ export default function StudentStudyPage() {
                       <div className="flex items-start space-x-4 flex-1">
                         <div className={`w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 border-2 border-black ${
                           theme === 'ben10'
-                            ? 'bg-gradient-to-r from-green-500 to-green-600'
+                            ? 'bg-gradient-to-r from-[#64cc4f] to-[#b2e05b]'
                             : 'bg-gradient-to-r from-yellow-400 to-green-500'
                         }`}>
                           {group.isGroup ? (
@@ -1105,14 +1105,14 @@ export default function StudentStudyPage() {
   return (
     <div key={`study-${theme}`} className={`min-h-screen bg-gradient-to-br p-6 ${
       theme === 'ben10'
-        ? 'from-green-600 via-green-700 to-black'
+        ? ''
         : 'from-green-400 via-green-400 to-yellow-500'
-    }`}>
+    }`} style={theme === 'ben10' ? { background: 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))' } : undefined}>
       <div className="max-w-6xl mx-auto">
         {/* Theme-aware Hero Header */}
         <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 border-black p-8 mb-8 relative overflow-hidden ${
           theme === 'ben10'
-            ? 'from-green-500 via-green-600 to-black'
+            ? 'from-[#64cc4f] to-[#222222]'
             : 'bg-gradient-to-r from-green-400 via-green-500 to-yellow-500'
         }`}>
          
@@ -1141,7 +1141,7 @@ export default function StudentStudyPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 border-black p-6 ${
           theme === 'ben10'
-            ? 'from-green-500 to-green-600'
+            ? 'from-[#64cc4f] to-[#3e7e19]'
             : 'from-green-400 to-yellow-500'
         }`}>
           <div className="flex items-center justify-between">
@@ -1175,7 +1175,7 @@ export default function StudentStudyPage() {
 
         <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 border-black p-6 ${
           theme === 'ben10'
-            ? 'from-green-600 to-green-700'
+            ? 'from-[#64cc4f] to-[#3e7e19]'
             : 'from-green-400 to-yellow-500'
         }`}>
           <div className="flex items-center justify-between">
@@ -1201,7 +1201,7 @@ export default function StudentStudyPage() {
 
         <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 border-black p-6 ${
           theme === 'ben10'
-            ? 'from-green-700 to-black'
+            ? 'from-[#64cc4f] to-[#3e7e19]'
             : 'from-green-400 to-yellow-500'
         }`}>
           <div className="flex items-center justify-between">
@@ -1219,7 +1219,7 @@ export default function StudentStudyPage() {
 
         <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 border-black p-6 ${
           theme === 'ben10'
-            ? 'from-black to-green-800'
+            ? 'from-[#64cc4f] to-[#3e7e19]'
             : 'from-green-400 to-yellow-500'
         }`}>
           <div className="flex items-center justify-between">
@@ -1240,7 +1240,7 @@ export default function StudentStudyPage() {
       <div className="mb-8">
         <h2 className={`text-3xl font-black text-black mb-6 text-center rounded-3xl p-4 border-4 border-black shadow-2xl ${
           theme === 'ben10'
-            ? 'bg-gradient-to-r from-green-500 to-green-600'
+            ? 'bg-gradient-to-r from-[#64cc4f] to-[#3e7e19]'
             : 'bg-gradient-to-r from-green-400 to-green-300'
         }`}>
           {theme === 'ben10' ? ' Your Classes ' : ' Your Classes '}
@@ -1249,7 +1249,7 @@ export default function StudentStudyPage() {
           {classes.map((classItem) => (
             <div key={classItem.id} className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 border-black hover:shadow-3xl transition-all duration-300 cursor-pointer hover:scale-105 ${
               theme === 'ben10'
-                ? 'from-green-500 to-green-600'
+                ? 'from-[#64cc4f] to-[#3e7e19]'
                 : 'from-green-400 to-yellow-500'
             }`}>
               <div className="p-6">

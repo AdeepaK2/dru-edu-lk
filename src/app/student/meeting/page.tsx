@@ -585,7 +585,7 @@ export default function StudentMeetingPage() {
 
           {/* Success display */}
           {successMessage && (
-            <div className="bg-gradient-to-r from-green-200 to-emerald-200 rounded-3xl shadow-2xl border-4 border-black p-6 mt-6">
+            <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f]/20 to-[#b2e05b]/20' : 'from-green-200 to-emerald-200'} rounded-3xl shadow-2xl border-4 border-black p-6 mt-6`}>
               <div className="flex items-center space-x-4">
                 <div className="text-4xl">🎉</div>
                 <div>
@@ -603,7 +603,7 @@ export default function StudentMeetingPage() {
               onClick={() => setActiveTab('select')}
               className={`py-3 px-6 rounded-full font-black text-lg transition-all ${
                 activeTab === 'select'
-                  ? `${theme === 'ben10' ? 'bg-gradient-to-r from-green-600 to-black' : 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500'} text-white border-2 border-black`
+                  ? `${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222]' : 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500'} text-white border-2 border-black`
                   : 'bg-gray-100 hover:bg-gray-200 text-black border-2 border-gray-300'
               }`}
             >
@@ -613,7 +613,7 @@ export default function StudentMeetingPage() {
               onClick={() => setActiveTab('booked')}
               className={`py-3 px-6 rounded-full font-black text-lg transition-all ${
                 activeTab === 'booked'
-                  ? `${theme === 'ben10' ? 'bg-gradient-to-r from-green-600 to-black' : 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500'} text-white border-2 border-black`
+                  ? `${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222]' : 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500'} text-white border-2 border-black`
                   : 'bg-gray-100 hover:bg-gray-200 text-black border-2 border-gray-300'
               }`}
             >
@@ -660,12 +660,12 @@ export default function StudentMeetingPage() {
 
             {/* Theme-aware Teachers List */}
             <div className="bg-white rounded-3xl shadow-2xl border-4 border-black overflow-hidden">
-              <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-green-600 to-black' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-600 to-indigo-600'} text-white p-6 border-b-4 border-black`}>
+              <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-600 to-indigo-600'} text-white p-6 border-b-4 border-black`}>
                 <h2 className="text-2xl text-black font-black flex items-center">
                   <span className="text-3xl mr-3">👨‍🏫</span>
                   Available Teachers
                 </h2>
-                <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-green-100' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-100'}`}>
+                <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-[#b2e05b]' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-100'}`}>
                   Click on a teacher to see their {theme === 'ben10' ? 'heroic' : theme === 'tinkerbell' ? 'magical' : 'enriching'} time slots 
                 </p>
               </div>
@@ -690,7 +690,7 @@ export default function StudentMeetingPage() {
                       return (
                         <div
                           key={teacher.id}
-                          className={`${theme === 'ben10' ? 'bg-gradient-to-r from-green-600 to-black' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-600 to-indigo-700'} rounded-3xl shadow-2xl border-4 border-black overflow-hidden hover:scale-105 transition-all`}
+                          className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-600 to-indigo-700'} rounded-3xl shadow-2xl border-4 border-black overflow-hidden hover:scale-105 transition-all`}
                         >
                           {/* Teacher Header */}
                           <div
@@ -791,7 +791,7 @@ export default function StudentMeetingPage() {
 
         {activeTab === 'booked' && (
           <div className="bg-white rounded-3xl shadow-2xl border-4 border-black overflow-hidden">
-            <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-green-600 to-black' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-600 to-indigo-600'} text-white p-6 border-b-4 border-black`}>
+            <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-600 to-indigo-600'} text-white p-6 border-b-4 border-black`}>
               <h2 className="text-2xl font-black flex items-center">
                 <span className="text-3xl mr-3">📅</span>
                 My Scheduled Meetings
@@ -832,7 +832,7 @@ export default function StudentMeetingPage() {
                                 meeting.status === 'upcoming'
                                   ? 'bg-blue-100 text-blue-800'
                                   : meeting.status === 'completed'
-                                  ? 'bg-green-100 text-green-800'
+                                  ? theme === 'ben10' ? 'bg-[#64cc4f]/20 text-[#222222]' : 'bg-green-100 text-green-800'
                                   : 'bg-red-100 text-red-800'
                               }`}>
                                 {meeting.status === 'upcoming' ? '⏰' : meeting.status === 'completed' ? '✅' : '❌'} {meeting.status}
@@ -860,7 +860,7 @@ export default function StudentMeetingPage() {
                               variant="outline"
                               size="sm"
                               onClick={() => window.open(meeting.meetingLink, '_blank')}
-                              className="bg-gradient-to-r from-green-600 to-black hover:from-green-700 hover:to-gray-900 text-white px-6 py-3 rounded-full font-black text-sm border-2 border-black transform hover:scale-105 transition-all"
+                              className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222] hover:from-[#b2e05b] hover:to-[#222222]' : 'from-green-600 to-black hover:from-green-700 hover:to-gray-900'} text-white px-6 py-3 rounded-full font-black text-sm border-2 border-black transform hover:scale-105 transition-all`}
                             >
                               <Video className="w-5 h-5 mr-2" />
                               🎥 Join Meeting

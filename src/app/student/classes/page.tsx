@@ -154,7 +154,14 @@ export default function StudentClassesPage() {
 
   return (
     <>
-      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : 'from-blue-400 via-indigo-500 to-indigo-600'} p-6`}>
+      <div
+        className={`min-h-screen p-6 ${theme === 'ben10' ? '' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : 'bg-gradient-to-br from-blue-400 via-indigo-500 to-indigo-600'}`}
+        style={
+          theme === 'ben10'
+            ? { background: 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))' }
+            : undefined
+        }
+      >
         {/* Header */}
         <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-300 via-green-500 to-yellow-400' : 'from-blue-400 to-indigo-600'} rounded-3xl shadow-2xl border-4 border-black p-8 mb-6 relative overflow-hidden`}>
       
@@ -443,7 +450,7 @@ export default function StudentClassesPage() {
 
         {/* Summary Stats */}
         {filteredEnrollments.length > 0 && (
-          <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] via-[#222222] to-[#64cc4f]' : 'from-yellow-300 via-green-400 to-yellow-400'} rounded-3xl shadow-2xl border-4 border-black p-8 mt-8`}>
+          <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222] via-[#64cc4f]' : 'from-yellow-300 via-green-400 to-yellow-400'} rounded-3xl shadow-2xl border-4 border-black p-8 mt-8`}>
             <div className="flex items-center justify-center space-x-3 mb-8">
               <div className="text-4xl">📊</div>
               <h3 className="text-3xl font-black text-black">Classes Summary</h3>

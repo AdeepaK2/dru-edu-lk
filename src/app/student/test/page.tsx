@@ -976,7 +976,14 @@ export default function StudentTests() {
   if (!authLoading && !loading && (!enrollments || enrollments.length === 0)) {
     return (
       <StudentLayout>
-        <div className="min-h-screen bg-gradient-to-br from-[#64cc4f] via-black to-[#64cc4f] p-6">
+        <div
+          className={`min-h-screen p-6 ${theme === 'ben10' ? '' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : 'bg-gradient-to-br from-blue-400 to-indigo-600'}`}
+          style={
+            theme === 'ben10'
+              ? { background: 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))' }
+              : undefined
+          }
+        >
         {/* Tests Header */}
         <div className="bg-gradient-to-r from-[#64cc4f] via-black to-[#64cc4f] rounded-3xl shadow-2xl border-4 border-black p-8 mb-6 relative overflow-hidden">
            
@@ -1020,7 +1027,10 @@ export default function StudentTests() {
   if (authLoading || loading) {
     return (
       <StudentLayout>
-        <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : 'from-blue-400 to-indigo-600'} flex items-center justify-center`}>
+        <div
+          className={`min-h-screen p-6 flex items-center justify-center ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : 'bg-gradient-to-br from-blue-400 to-indigo-600'}`}
+          
+        >
           <div className="bg-white border-4 border-black rounded-3xl p-8 shadow-2xl">
             {/* Theme-Specific Loading Animation */}
             <div className="relative mb-6 flex flex-col items-center">
@@ -1068,14 +1078,18 @@ export default function StudentTests() {
 
   return (
     <StudentLayout>
-      <div className={`min-h-screen p-6 ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] via-black to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-300' : 'bg-gradient-to-br from-blue-400 via-indigo-500 to-blue-400'}`}>
+      <div
+        className={`min-h-screen p-6 ${theme === 'ben10' ? '' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-300' : 'bg-gradient-to-br from-blue-400 via-indigo-500 to-blue-400'}`}
+        style={
+          theme === 'ben10'
+            ? { background: 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))' }
+            : undefined
+        }
+      >
         {/* Tests Header */}
-        <div className={`rounded-3xl shadow-2xl border-4 border-black p-8 mb-6 relative overflow-hidden ${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] via-black to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-500 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-500 via-indigo-600 to-blue-500'}`}>
+        <div className={`rounded-3xl shadow-2xl border-4 border-black p-8 mb-6 relative overflow-hidden ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-500 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-500 via-indigo-600 to-blue-500'}`}>
        
-         
-         
-
-          <div className="flex items-center justify-between relative z-10">
+         <div className="flex items-center justify-between relative z-10">
             <div className="flex items-center space-x-4">
               <div className="text-6xl">📝</div>
               <div>
@@ -1116,7 +1130,7 @@ export default function StudentTests() {
         )}
 
         {/* Search Controls */}
-        <div className={`rounded-2xl shadow-xl border-4 border-black p-6 mb-6 ${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] via-black to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 via-green-400 to-yellow-300' : 'bg-gradient-to-r from-blue-300 via-indigo-400 to-blue-300'}`}>
+        <div className={`rounded-2xl shadow-xl border-4 border-black p-6 mb-6 ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 via-green-400 to-yellow-300' : 'bg-gradient-to-r from-blue-300 via-indigo-400 to-blue-300'}`}>
           <div className="flex items-center space-x-3 mb-4">
             <div className="text-3xl">🔍</div>
             <h2 className="text-2xl font-black text-black">Search Tests</h2>

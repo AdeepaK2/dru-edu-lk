@@ -155,7 +155,7 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                   theme === 'ben10' 
                     ? 'bg-[#64cc4f] hover:bg-[#b2e05b]' 
                     : theme === 'tinkerbell'
-                    ? 'bg-green-600 hover:bg-green-700'
+                    ? 'bg-yellow-500 hover:bg-yellow-600'
                     : 'bg-blue-600 hover:bg-blue-700'
                 } text-white`}>
                   Purchase for ${video.price}
@@ -242,14 +242,13 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                     <span>{video.subjectName}</span>
                   </div>
                 </div>
-
                 {/* Purchase Status */}
                 {purchase && (
                   <div className={`${
                     theme === 'ben10'
                       ? 'bg-[#64cc4f]/10 border-[#64cc4f]/30'
                       : theme === 'tinkerbell'
-                      ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                      ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
                       : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
                   } border rounded-lg p-4 mb-4`}>
                     <div className="flex items-center">
@@ -257,7 +256,7 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                         theme === 'ben10'
                           ? 'text-[#64cc4f]'
                           : theme === 'tinkerbell'
-                          ? 'text-green-500'
+                          ? 'text-yellow-500'
                           : 'text-blue-500'
                       }`} />
                       <div>
@@ -327,7 +326,7 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                     <span className="text-gray-500 dark:text-gray-400">Status:</span>
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ml-2 ${
                       video.status === 'active' 
-                        ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300'
+                        ? theme === 'ben10' ? 'bg-[#64cc4f]/20 dark:bg-[#64cc4f]/40 text-[#222222] dark:text-[#64cc4f]' : 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300'
                         : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
                     }`}>
                       {video.status}

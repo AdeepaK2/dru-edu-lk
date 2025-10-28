@@ -236,7 +236,7 @@ export default function RootLayout({
         <meta name="twitter:image" content="https://drueducation.com.au/Logo.png" />
         <meta name="twitter:image" content="https://drueducation.com/Logo.png" />
       </head>
-      <body className="antialiased font-sans bg-gradient-to-br from-white to-primary-50 dark:from-gray-900 dark:to-gray-800 min-h-screen">
+      <body className="antialiased font-sans min-h-screen">
         <TimezoneProvider>
           <ToastProvider>
             {children}

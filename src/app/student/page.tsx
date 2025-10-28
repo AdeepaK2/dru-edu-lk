@@ -282,7 +282,7 @@ export default function StudentDashboard() {
   // Show loading state while data is being fetched
   if (loading) {
     return (
-      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : 'from-blue-400 to-indigo-600'} flex items-center justify-center`}>
+      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f]  to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : 'from-blue-400 to-indigo-600'} flex items-center justify-center`}>
         <div className="bg-white border-4 border-black rounded-3xl p-8 shadow-2xl">
           {/* Theme-Specific Loading Animation */}
           <div className="relative mb-6 flex flex-col items-center">
