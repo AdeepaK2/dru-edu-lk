@@ -433,7 +433,7 @@ export default function StudentStudyPage() {
             <div className={`w-72 bg-gradient-to-b ${theme === 'ben10' ? 'from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : 'from-blue-500 to-indigo-600'} border-r-4 border-black overflow-y-auto shadow-2xl pt-16`}>
               <div className="p-4 border-b-4 border-black">
                 <h2 className="text-lg font-black text-white text-center">
-                  {theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : '📚'} Study Materials 
+                  {(theme === 'ben10' || theme === 'tinkerbell') && <span className="text-2xl mr-2">{theme === 'ben10' ? '�‍♂️' : '🧚‍♀️'}</span>}Study Materials 
                 </h2>
                 <p className="text-sm font-black text-white/90 text-center">
                   {currentClass?.name}
@@ -596,7 +596,7 @@ export default function StudentStudyPage() {
                     <div className={`p-6 border-b-4 border-black bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : 'from-blue-500 to-indigo-600'}`}>
                       <div className="flex items-center justify-between">
                         <h3 className="text-xl font-black text-white flex items-center">
-                          🖼️ {activeMaterial.title}
+                          {(theme === 'ben10' || theme === 'tinkerbell') && <span className="mr-2">🖼️</span>}{activeMaterial.title}
                         </h3>
                         <div className="flex items-center space-x-3">
                           <button
@@ -661,7 +661,7 @@ export default function StudentStudyPage() {
                   <div className="h-full flex flex-col">
                     <div className={`p-6 border-b-4 border-black bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : 'from-blue-500 to-indigo-600'}`}>
                       <h3 className="text-xl font-black text-white flex items-center">
-                        🎥 {activeMaterial.title}
+                        {(theme === 'ben10' || theme === 'tinkerbell') && <span className="mr-2">🎥</span>}{activeMaterial.title}
                       </h3>
                     </div>
                     <div className={`flex-1 flex items-center justify-center p-6 bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f]/10 to-white' : 'from-green-50 to-white'}`}>
@@ -680,7 +680,7 @@ export default function StudentStudyPage() {
                   <div className="h-full flex flex-col">
                     <div className={`p-6 border-b-4 border-black bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : 'from-blue-500 to-indigo-600'}`}>
                       <h3 className="text-xl font-black text-white flex items-center">
-                        🔗 {activeMaterial.title}
+                        {(theme === 'ben10' || theme === 'tinkerbell') && <span className="mr-2">🔗</span>}{activeMaterial.title}
                       </h3>
                     </div>
                     <div className={`flex-1 flex items-center justify-center p-6 bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f]/10 to-white' : 'from-green-50 to-white'}`}>
@@ -748,7 +748,7 @@ export default function StudentStudyPage() {
                       <p className="text-sm font-black text-white">Overall Progress</p>
                       <p className="text-3xl font-black text-white">{Math.round(currentClass?.progress || 0)}%</p>
                     </div>
-                    <div className="text-4xl">📈</div>
+                    <div className="text-4xl">{(theme === 'ben10' || theme === 'tinkerbell') && '📈'}</div>
                   </div>
                   <div className="mt-4 bg-white/20 rounded-full h-3 border-2 border-black">
                     <div
@@ -764,7 +764,7 @@ export default function StudentStudyPage() {
                       <p className="text-sm font-black text-white">Required Materials</p>
                       <p className="text-3xl font-black text-white">{Math.round(currentClass?.requiredProgress || 0)}%</p>
                     </div>
-                    <div className="text-4xl">🏆</div>
+                    <div className="text-4xl">{(theme === 'ben10' || theme === 'tinkerbell') && '🏆'}</div>
                   </div>
                   <div className="mt-4 bg-white/20 rounded-full h-3 border-2 border-black">
                     <div
@@ -792,26 +792,30 @@ export default function StudentStudyPage() {
                 <div className="flex-1">
                   <input
                     type="text"
-                    placeholder={`🔍 Search materials...`}
+                    placeholder={`${(theme === 'ben10' || theme === 'tinkerbell') ? '🔍 ' : ''}Search materials...`}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full px-6 py-4 border-2 border-black rounded-2xl focus:ring-4 focus:ring-green-500 focus:border-green-500 font-bold text-lg bg-gradient-to-r from-green-50 to-white shadow-lg"
+                    className={`w-full px-6 py-4 border-2 border-black rounded-2xl focus:ring-4 focus:ring-green-500 focus:border-green-500 font-bold text-lg shadow-lg ${
+                      theme === 'ben10' ? 'bg-gradient-to-r from-green-50 to-white' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-50 to-green-50' : 'bg-gradient-to-r from-blue-50 to-indigo-50'
+                    }`}
                   />
                 </div>
                 <div>
                   <select
                     value={filterType}
                     onChange={(e) => setFilterType(e.target.value)}
-                    className="px-6 py-4 border-2 border-black rounded-2xl focus:ring-4 focus:ring-green-500 focus:border-green-500 font-bold text-lg bg-gradient-to-r from-green-50 to-white shadow-lg"
+                    className={`px-6 py-4 border-2 border-black rounded-2xl focus:ring-4 focus:ring-green-500 focus:border-green-500 font-bold text-lg shadow-lg ${
+                      theme === 'ben10' ? 'bg-gradient-to-r from-green-50 to-white' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-50 to-green-50' : 'bg-gradient-to-r from-blue-50 to-indigo-50'
+                    }`}
                   >
-                    <option value="all">🎯 All Materials</option>
-                    <option value="required">⭐ Required Only</option>
-                    <option value="completed">✅ Completed</option>
-                    <option value="pending">⏳ Pending</option>
-                    <option value="pdf">📄 PDF Files</option>
-                    <option value="video">🎥 Videos</option>
-                    <option value="link">🔗 Links</option>
-                    <option value="image">🖼️ Images</option>
+                    <option value="all">{(theme === 'ben10' || theme === 'tinkerbell') ? '🎯 ' : ''}All Materials</option>
+                    <option value="required">{(theme === 'ben10' || theme === 'tinkerbell') ? '⭐ ' : ''}Required Only</option>
+                    <option value="completed">{(theme === 'ben10' || theme === 'tinkerbell') ? '✅ ' : ''}Completed</option>
+                    <option value="pending">{(theme === 'ben10' || theme === 'tinkerbell') ? '⏳ ' : ''}Pending</option>
+                    <option value="pdf">{(theme === 'ben10' || theme === 'tinkerbell') ? '📄 ' : ''}PDF Files</option>
+                    <option value="video">{(theme === 'ben10' || theme === 'tinkerbell') ? '🎥 ' : ''}Videos</option>
+                    <option value="link">{(theme === 'ben10' || theme === 'tinkerbell') ? '🔗 ' : ''}Links</option>
+                    <option value="image">{(theme === 'ben10' || theme === 'tinkerbell') ? '🖼️ ' : ''}Images</option>
                   </select>
                 </div>
               </div>
@@ -1106,19 +1110,23 @@ export default function StudentStudyPage() {
     <div key={`study-${theme}`} className={`min-h-screen bg-gradient-to-br p-6 ${
       theme === 'ben10'
         ? ''
-        : 'from-green-400 via-green-400 to-yellow-500'
+        : theme === 'tinkerbell'
+        ? 'from-green-400 via-green-400 to-yellow-500'
+        : 'from-blue-600 via-indigo-600 to-blue-400'
     }`} style={theme === 'ben10' ? { background: 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))' } : undefined}>
       <div className="max-w-6xl mx-auto">
         {/* Theme-aware Hero Header */}
         <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 border-black p-8 mb-8 relative overflow-hidden ${
           theme === 'ben10'
             ? 'from-[#64cc4f] to-[#222222]'
-            : 'bg-gradient-to-r from-green-400 via-green-500 to-yellow-500'
+            : theme === 'tinkerbell'
+            ? 'from-green-400 via-green-500 to-yellow-500'
+            : 'from-blue-500 to-indigo-600'
         }`}>
          
 
           <div className="flex items-center space-x-4 relative z-10">
-            <div className="text-6xl">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : '📚'}</div>
+            <div className="text-6xl">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : ''}</div>
             <div>
               <h1 className="text-4xl font-black text-black mb-2 flex items-center">
                 <span>Your</span>
@@ -1142,7 +1150,9 @@ export default function StudentStudyPage() {
         <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 border-black p-6 ${
           theme === 'ben10'
             ? 'from-[#64cc4f] to-[#3e7e19]'
-            : 'from-green-400 to-yellow-500'
+            : theme === 'tinkerbell'
+            ? 'from-green-400 to-yellow-500'
+            : 'from-blue-500 to-indigo-600'
         }`}>
           <div className="flex items-center justify-between">
             <div>
@@ -1176,7 +1186,9 @@ export default function StudentStudyPage() {
         <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 border-black p-6 ${
           theme === 'ben10'
             ? 'from-[#64cc4f] to-[#3e7e19]'
-            : 'from-green-400 to-yellow-500'
+            : theme === 'tinkerbell'
+            ? 'from-green-400 to-yellow-500'
+            : 'from-blue-500 to-indigo-600'
         }`}>
           <div className="flex items-center justify-between">
             <div>
@@ -1202,7 +1214,9 @@ export default function StudentStudyPage() {
         <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 border-black p-6 ${
           theme === 'ben10'
             ? 'from-[#64cc4f] to-[#3e7e19]'
-            : 'from-green-400 to-yellow-500'
+            : theme === 'tinkerbell'
+            ? 'from-green-400 to-yellow-500'
+            : 'from-blue-500 to-indigo-600'
         }`}>
           <div className="flex items-center justify-between">
             <div>
@@ -1220,7 +1234,9 @@ export default function StudentStudyPage() {
         <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 border-black p-6 ${
           theme === 'ben10'
             ? 'from-[#64cc4f] to-[#3e7e19]'
-            : 'from-green-400 to-yellow-500'
+            : theme === 'tinkerbell'
+            ? 'from-green-400 to-yellow-500'
+            : 'from-blue-500 to-indigo-600'
         }`}>
           <div className="flex items-center justify-between">
             <div>
@@ -1241,7 +1257,9 @@ export default function StudentStudyPage() {
         <h2 className={`text-3xl font-black text-black mb-6 text-center rounded-3xl p-4 border-4 border-black shadow-2xl ${
           theme === 'ben10'
             ? 'bg-gradient-to-r from-[#64cc4f] to-[#3e7e19]'
-            : 'bg-gradient-to-r from-green-400 to-green-300'
+            : theme === 'tinkerbell'
+            ? 'bg-gradient-to-r from-green-400 to-yellow-500'
+            : 'bg-gradient-to-r from-blue-500 to-indigo-600'
         }`}>
           {theme === 'ben10' ? ' Your Classes ' : ' Your Classes '}
         </h2>
@@ -1250,7 +1268,9 @@ export default function StudentStudyPage() {
             <div key={classItem.id} className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 border-black hover:shadow-3xl transition-all duration-300 cursor-pointer hover:scale-105 ${
               theme === 'ben10'
                 ? 'from-[#64cc4f] to-[#3e7e19]'
-                : 'from-green-400 to-yellow-500'
+                : theme === 'tinkerbell'
+                ? 'from-green-400 to-yellow-500'
+                : 'from-blue-500 to-indigo-600'
             }`}>
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
@@ -1314,10 +1334,12 @@ export default function StudentStudyPage() {
         <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 border-black text-center py-12 ${
           theme === 'ben10'
             ? 'from-green-500 to-green-600'
-            : 'from-yellow-400 to-green-500'
+            : theme === 'tinkerbell'
+            ? 'from-yellow-400 to-green-500'
+            : 'from-blue-500 to-indigo-600'
         }`}>
           <div className="p-8">
-            <div className="text-6xl mb-4">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : '📚'}</div>
+            <div className="text-6xl mb-4">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : ''}</div>
             <h3 className="text-2xl font-black text-white mb-4">
               {theme === 'ben10' ? 'No Classes Yet!' : 'No Classes Yet!'}
             </h3>

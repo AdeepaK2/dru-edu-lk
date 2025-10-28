@@ -985,15 +985,15 @@ export default function StudentTests() {
           }
         >
         {/* Tests Header */}
-        <div className="bg-gradient-to-r from-[#64cc4f] via-black to-[#64cc4f] rounded-3xl shadow-2xl border-4 border-black p-8 mb-6 relative overflow-hidden">
+        <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 border-black p-8 mb-6 relative overflow-hidden ${theme === 'ben10' ? 'from-[#64cc4f] via-black to-[#64cc4f]' : theme === 'tinkerbell' ? 'from-pink-500 via-pink-600 to-purple-700' : 'from-blue-500 to-indigo-600'}`}>
            
 
             <div className="flex items-center space-x-4 relative z-10">
-              <div className="text-6xl">📝</div>
+              {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-6xl">📝</div>}
               <div>
                 <h1 className="text-4xl font-black text-white mb-2 flex items-center">
                   <span>My</span>
-                  <span className="ml-2 text-[#b2e05b] font-black text-5xl">Tests</span>
+                  <span className={`ml-2 font-black text-5xl ${theme === 'ben10' ? 'text-[#b2e05b]' : theme === 'tinkerbell' ? 'text-pink-200' : 'text-blue-200'}`}>Tests</span>
                 </h1>
                 <p className="text-white font-bold text-lg">
                   Challenge yourself with epic tests and grow! 
@@ -1003,12 +1003,12 @@ export default function StudentTests() {
           </div>
           {/* No Tests Message */}
           <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 border-black p-12 text-center ${theme === 'ben10' ? 'from-[#b2e05b] via-black to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-green-300 via-black to-green-300' : 'from-blue-300 via-indigo-500 to-blue-300'}`}>
-            <div className="text-8xl mb-6">📚</div>
+            {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-8xl mb-6">📚</div>}
             <h2 className="text-3xl font-black text-white mb-4">
               No Tests Yet
             </h2>
             <p className="text-white font-bold text-lg mb-6">
-              You haven't enrolled in any classes yet. Contact your teacher to start taking tests! 🎓⚡
+              You haven't enrolled in any classes yet. Contact your teacher to start taking tests! {theme === 'ben10' ? '🎓⚡' : theme === 'tinkerbell' ? '🎓⚡' : ''}
             </p>
             <Button
               onClick={() => router.push('/student/dashboard')}
@@ -1091,7 +1091,7 @@ export default function StudentTests() {
        
          <div className="flex items-center justify-between relative z-10">
             <div className="flex items-center space-x-4">
-              <div className="text-6xl">📝</div>
+              {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-6xl">📝</div>}
               <div>
                 <h1 className="text-5xl font-black text-black mb-2 flex items-center">
                   <span>My</span>
@@ -1104,7 +1104,7 @@ export default function StudentTests() {
             </div>
             <div className="bg-white border-4 border-black rounded-2xl p-4 shadow-lg">
               <div className="flex items-center space-x-3">
-                <div className="text-4xl">📚</div>
+                {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-4xl">📚</div>}
                 <div className="text-center">
                   <div className="text-3xl font-black text-black">{enrollments?.length || 0}</div>
                   <div className="text-sm font-bold text-gray-700">Classes</div>
@@ -1132,7 +1132,7 @@ export default function StudentTests() {
         {/* Search Controls */}
         <div className={`rounded-2xl shadow-xl border-4 border-black p-6 mb-6 ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 via-green-400 to-yellow-300' : 'bg-gradient-to-r from-blue-300 via-indigo-400 to-blue-300'}`}>
           <div className="flex items-center space-x-3 mb-4">
-            <div className="text-3xl">🔍</div>
+            {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-3xl">🔍</div>}
             <h2 className="text-2xl font-black text-black">Search Tests</h2>
           
           </div>
@@ -1141,7 +1141,7 @@ export default function StudentTests() {
             {/* Search */}
             <div className="flex-1">
               <div className="relative">
-                <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-2xl">🔍</div>
+                {(theme === 'ben10' || theme === 'tinkerbell') && <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-2xl">🔍</div>}
                 <Input
                   type="text"
                   placeholder="Search for tests..."
@@ -1172,28 +1172,28 @@ export default function StudentTests() {
           {/* Test Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-6">
             <div className="bg-white border-4 border-black rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all">
-              <div className="text-4xl mb-2">📚</div>
+              {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-4xl mb-2">📚</div>}
               <div className="text-3xl font-black text-black mb-1">
                 {Object.keys(testsByClass).length}
               </div>
               <div className="text-sm font-bold text-black">Classes</div>
             </div>
             <div className="bg-white border-4 border-black rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all">
-              <div className="text-4xl mb-2">🎯</div>
+              {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-4xl mb-2">🎯</div>}
               <div className="text-3xl font-black text-black mb-1">
                 {Object.values(testsByClass).reduce((acc, classData) => acc + classData.groupedTests.live.length, 0) + groupedCustomTests.live.length}
               </div>
               <div className="text-sm font-bold text-black">Live Missions</div>
             </div>
             <div className="bg-white border-4 border-black rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all">
-              <div className="text-4xl mb-2">⏰</div>
+              {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-4xl mb-2">⏰</div>}
               <div className="text-3xl font-black text-black mb-1">
                 {Object.values(testsByClass).reduce((acc, classData) => acc + classData.groupedTests.upcoming.length, 0) + groupedCustomTests.upcoming.length}
               </div>
               <div className="text-sm font-bold text-black">Upcoming Quests</div>
             </div>
             <div className="bg-white border-4 border-black rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all">
-              <div className="text-4xl mb-2">📝</div>
+              {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-4xl mb-2">📝</div>}
               <div className="text-3xl font-black text-black mb-1">
                 {filteredTests.length}
               </div>
@@ -1219,7 +1219,7 @@ export default function StudentTests() {
                   )}
                   <div>
                     <h2 className="text-2xl font-black text-black flex items-center">
-                      <span className="text-3xl mr-2">📝</span>
+                      {(theme === 'ben10' || theme === 'tinkerbell') && <span className="text-3xl mr-2">📝</span>}
                       My Custom Tests
                       {(groupedCustomTests.live.length > 0 || groupedCustomTests.upcoming.length > 0 || groupedCustomTests.available.length > 0) && (
                         <span className={`ml-3 inline-flex items-center px-3 py-1 rounded-full text-sm font-black text-black border-2 border-black ${theme === 'ben10' ? 'bg-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-yellow-400' : 'bg-blue-400'}`}>
@@ -1265,7 +1265,7 @@ export default function StudentTests() {
                   <>
                     <div className={`px-6 py-4 border-b-4 border-black ${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] via-black to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 via-green-400 to-yellow-400' : 'bg-gradient-to-r from-blue-300 via-indigo-400 to-blue-300'}`}>
                       <div className="flex items-center">
-                        <div className="text-2xl mr-3">🎯</div>
+                        {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-2xl mr-3">🎯</div>}
                         <span className="text-lg font-black text-black">
                           Live Now ({groupedCustomTests.live.length})
                         </span>
@@ -1277,11 +1277,11 @@ export default function StudentTests() {
                       const ButtonIcon = buttonConfig.icon;
 
                       return (
-                        <div key={test.id} className="p-6 hover:bg-[#b2e05b]/20 transition-all border-b-2 border-black last:border-b-0">
+                        <div key={test.id} className={`p-6 transition-all border-b-2 border-black last:border-b-0 ${theme === 'ben10' ? 'hover:bg-[#b2e05b]/20' : theme === 'tinkerbell' ? 'hover:bg-pink-200/20' : 'hover:bg-blue-200/20'}`}>
                           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                             <div className="mb-4 md:mb-0">
                               <div className="flex items-center space-x-3">
-                                <div className="text-3xl">📝</div>
+                                {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-3xl">📝</div>}
                                 <h3 className="text-xl font-black text-black">
                                   {test.title}
                                 </h3>
@@ -1350,15 +1350,15 @@ export default function StudentTests() {
                         : (test as FlexibleTest).availableFrom;
 
                       return (
-                        <div key={test.id} className="p-6 hover:bg-[#b2e05b]/20 transition-all border-b-2 border-black last:border-b-0">
+                        <div key={test.id} className={`p-6 transition-all border-b-2 border-black last:border-b-0 ${theme === 'ben10' ? 'hover:bg-[#b2e05b]/20' : theme === 'tinkerbell' ? 'hover:bg-pink-200/20' : 'hover:bg-blue-200/20'}`}>
                           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                             <div>
                               <div className="flex items-center space-x-3">
-                                <div className="text-3xl">📅</div>
+                                {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-3xl">📅</div>}
                                 <h3 className="text-xl font-black text-black">
                                   {test.title}
                                 </h3>
-                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-black text-white border-2 border-black ${theme === 'ben10' ? 'bg-[#64cc4f]' : 'bg-yellow-500'}`}>
+                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-black text-white border-2 border-black ${theme === 'ben10' ? 'bg-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-yellow-500' : 'bg-blue-500'}`}>
                                   Custom Assignment
                                 </span>
                                 <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-black bg-purple-500 text-white border-2 border-black">
@@ -1374,7 +1374,7 @@ export default function StudentTests() {
                                 <div className="mt-4 p-4 bg-gradient-to-r from-blue-200 to-cyan-200 border-4 border-black rounded-2xl">
                                   <div className="flex items-center justify-between">
                                     <div className="flex items-center space-x-2">
-                                      <div className="text-2xl">📅</div>
+                                      {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-2xl">📅</div>}
                                       <span className="text-lg font-black text-black">
                                         Deadline
                                       </span>
@@ -1434,11 +1434,11 @@ export default function StudentTests() {
                       const ButtonIcon = buttonConfig.icon;
 
                       return (
-                        <div key={test.id} className="p-6 hover:bg-[#b2e05b]/20 transition-all border-b-2 border-black last:border-b-0">
+                        <div key={test.id} className={`p-6 transition-all border-b-2 border-black last:border-b-0 ${theme === 'ben10' ? 'hover:bg-[#b2e05b]/20' : theme === 'tinkerbell' ? 'hover:bg-pink-200/20' : 'hover:bg-blue-200/20'}`}>
                           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                             <div className="mb-4 md:mb-0">
                               <div className="flex items-center space-x-3">
-                                <div className="text-3xl">📝</div>
+                                {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-3xl">📝</div>}
                                 <h3 className="text-xl font-black text-black">
                                   {test.title}
                                 </h3>
@@ -1457,7 +1457,7 @@ export default function StudentTests() {
                               <div className="mt-4 p-4 bg-gradient-to-r from-blue-200 to-cyan-200 border-4 border-black rounded-2xl">
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center space-x-2">
-                                    <div className="text-2xl">📅</div>
+                                    {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-2xl">📅</div>}
                                     <span className="text-lg font-black text-black">
                                       Deadline
                                     </span>
@@ -1485,7 +1485,7 @@ export default function StudentTests() {
                               {/* Extension indicator */}
                               {getExtensionInfo(test) && (
                                 <p className="text-sm text-black font-bold mt-2 flex items-center">
-                                  <div className="text-xl mr-1">📅</div>
+                                  {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-xl mr-1">📅</div>}
                                   {getExtensionInfo(test)}
                                 </p>
                               )}
@@ -1528,9 +1528,9 @@ export default function StudentTests() {
                 {/* Completed Custom Tests */}
                 {groupedCustomTests.completed.length > 0 && (
                   <>
-                    <div className="px-6 py-4 bg-gradient-to-r from-gray-300 to-slate-300 border-b-4 border-black">
+                    <div className={`px-6 py-4 border-b-4 border-black ${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 to-pink-300' : 'bg-gradient-to-r from-blue-300 to-indigo-300'}`}>
                       <div className="flex items-center">
-                        <div className="text-2xl mr-3">✅</div>
+                        {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-2xl mr-3">✅</div>}
                         <span className="text-lg font-black text-black">
                           Completed ({groupedCustomTests.completed.length})
                         </span>
@@ -1543,11 +1543,11 @@ export default function StudentTests() {
                       const hasAttempted = attempts && attempts.attempts && attempts.attempts.length > 0;
 
                       return (
-                        <div key={test.id} className="p-6 hover:bg-yellow-100 transition-all border-b-2 border-black last:border-b-0">
+                        <div key={test.id} className={`p-6 transition-all border-b-2 border-black last:border-b-0 ${theme === 'ben10' ? 'hover:bg-[#b2e05b]/20' : theme === 'tinkerbell' ? 'hover:bg-pink-200/20' : 'hover:bg-blue-200/20'}`}>
                           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                             <div>
                               <div className="flex items-center space-x-3">
-                                <div className="text-3xl">📝</div>
+                                {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-3xl">📝</div>}
                                 <h3 className="text-xl font-black text-black">
                                   {test.title}
                                 </h3>
@@ -1626,7 +1626,7 @@ export default function StudentTests() {
             <div key={classId} className={`rounded-3xl shadow-2xl border-4 border-black overflow-hidden ${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] via-black to-[#64cc4f]' : 'bg-gradient-to-r from-yellow-300 via-black to-yellow-300'}`}>
               {/* Class Header */}
               <div
-                className={`p-6 border-b-4 border-black cursor-pointer transition-all ${theme === 'ben10' ? 'bg-[#b2e05b] hover:bg-[#b2e05b]' : 'bg-yellow-200 hover:bg-yellow-200'}`}
+                className={`p-6 border-b-4 border-black cursor-pointer transition-all ${theme === 'ben10' ? 'bg-[#b2e05b] hover:bg-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-yellow-200 hover:bg-yellow-200' : 'bg-blue-200 hover:bg-blue-200'}`}
                 onClick={() => toggleClass(classId)}
               >
                 <div className="flex items-center justify-between">
@@ -1650,7 +1650,7 @@ export default function StudentTests() {
                   <div className="flex items-center space-x-3">
                     {/* Test count badges */}
                     {liveCount > 0 && (
-                      <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-black text-white border-2 border-black ${theme === 'ben10' ? 'bg-[#64cc4f]' : 'bg-green-500'}`}>
+                      <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-black text-white border-2 border-black ${theme === 'ben10' ? 'bg-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-green-500' : 'bg-blue-500'}`}>
                         {liveCount} Live Now
                       </span>
                     )}
@@ -1676,12 +1676,12 @@ export default function StudentTests() {
                 <div className="divide-y divide-gray-200 dark:divide-gray-700">
                   {!hasTests ? (
                     <div className={`p-8 text-center rounded-2xl border-4 border-black m-4 ${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] via-black to-[#b2e05b]' : 'bg-gradient-to-r from-yellow-100 via-black to-yellow-100'}`}>
-                      <div className="text-6xl mb-4">📚</div>
+                      {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-6xl mb-4">📚</div>}
                       <h3 className="text-2xl font-black text-white mb-2">
                         No Tests Yet
                       </h3>
                       <p className="text-white font-bold">
-                        Your teacher hasn't created any tests for this class yet. Stay tuned for more tests! 📝
+                        Your teacher hasn't created any tests for this class yet. Stay tuned for more tests! {(theme === 'ben10' || theme === 'tinkerbell') && '📝'}
                       </p>
                     </div>
                   ) : (
@@ -1703,11 +1703,11 @@ export default function StudentTests() {
                             const ButtonIcon = buttonConfig.icon;
 
                             return (
-                              <div key={test.id} className="p-6 hover:bg-[#b2e05b]/20 transition-all border-b-2 border-black last:border-b-0">
+                              <div key={test.id} className={`p-6 transition-all border-b-2 border-black last:border-b-0 ${theme === 'ben10' ? 'hover:bg-[#b2e05b]/20' : theme === 'tinkerbell' ? 'hover:bg-pink-200/20' : 'hover:bg-blue-200/20'}`}>
                                 <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                                   <div className="mb-4 md:mb-0">
                                     <div className="flex items-center space-x-3">
-                                      <div className="text-3xl">📝</div>
+                                      {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-3xl">📝</div>}
                                       <h3 className="text-xl font-black text-black">
                                         {test.title}
                                       </h3>
@@ -1724,7 +1724,7 @@ export default function StudentTests() {
                                           : '📊 MCQ'
                                         }
                                       </span>
-                                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-black text-white border-2 border-black ${theme === 'ben10' ? 'bg-[#64cc4f]' : 'bg-yellow-500'}`}>
+                                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-black text-white border-2 border-black ${theme === 'ben10' ? 'bg-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-yellow-500' : 'bg-blue-500'}`}>
                                         Live Now
                                       </span>
                                       {renderLateSubmissionBadge(test)}
@@ -1777,11 +1777,11 @@ export default function StudentTests() {
                               : (test as FlexibleTest).availableFrom;
 
                             return (
-                              <div key={test.id} className="p-6 hover:bg-[#b2e05b]/20 transition-all border-b-2 border-black last:border-b-0">
+                              <div key={test.id} className={`p-6 transition-all border-b-2 border-black last:border-b-0 ${theme === 'ben10' ? 'hover:bg-[#b2e05b]/20' : theme === 'tinkerbell' ? 'hover:bg-pink-200/20' : 'hover:bg-blue-200/20'}`}>
                                 <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                                   <div>
                                     <div className="flex items-center space-x-3">
-                                      <div className="text-3xl">📅</div>
+                                      {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-3xl">📅</div>}
                                       <h3 className="text-xl font-black text-black">
                                         {test.title}
                                       </h3>
@@ -1810,7 +1810,7 @@ export default function StudentTests() {
                                       <div className="mt-4 p-4 bg-gradient-to-r from-blue-200 to-cyan-200 border-4 border-black rounded-2xl">
                                         <div className="flex items-center justify-between">
                                           <div className="flex items-center space-x-2">
-                                            <div className="text-2xl">📅</div>
+                                            {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-2xl">📅</div>}
                                             <span className="text-lg font-black text-black">
                                               Deadline
                                             </span>
@@ -1865,11 +1865,11 @@ export default function StudentTests() {
                             const ButtonIcon = buttonConfig.icon;
 
                             return (
-                              <div key={test.id} className="p-6 hover:bg-[#b2e05b]/20 transition-all border-b-2 border-black last:border-b-0">
+                              <div key={test.id} className={`p-6 transition-all border-b-2 border-black last:border-b-0 ${theme === 'ben10' ? 'hover:bg-[#b2e05b]/20' : theme === 'tinkerbell' ? 'hover:bg-pink-200/20' : 'hover:bg-blue-200/20'}`}>
                                 <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                                   <div className="mb-4 md:mb-0">
                                     <div className="flex items-center space-x-3">
-                                      <div className="text-3xl">📝</div>
+                                      {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-3xl">📝</div>}
                                       <h3 className="text-xl font-black text-black">
                                         {test.title}
                                       </h3>
@@ -1897,7 +1897,7 @@ export default function StudentTests() {
                                     <div className="mt-4 p-4 bg-gradient-to-r from-blue-200 to-cyan-200 border-4 border-black rounded-2xl">
                                       <div className="flex items-center justify-between">
                                         <div className="flex items-center space-x-2">
-                                          <div className="text-2xl">📅</div>
+                                          {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-2xl">📅</div>}
                                           <span className="text-lg font-black text-black">
                                             Deadline
                                           </span>
@@ -1925,7 +1925,7 @@ export default function StudentTests() {
                                     {/* Extension indicator */}
                                     {getExtensionInfo(test) && (
                                       <p className="text-sm text-black font-bold mt-2 flex items-center">
-                                        <div className="text-xl mr-1">📅</div>
+                                        {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-xl mr-1">📅</div>}
                                         {getExtensionInfo(test)}
                                       </p>
                                     )}
@@ -1959,10 +1959,10 @@ export default function StudentTests() {
                       {/* Completed Tests */}
                       {classData.groupedTests.completed.length > 0 && (
                         <>
-                          <div className="px-6 py-4 bg-gradient-to-r from-gray-300 to-slate-300 border-b-4 border-black">
+                          <div className={`px-6 py-4 border-b-4 border-black ${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 to-pink-300' : 'bg-gradient-to-r from-blue-300 to-indigo-300'}`}>
                             <div className="flex items-center justify-between">
                               <div className="flex items-center">
-                                <div className="text-2xl mr-3">✅</div>
+                                {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-2xl mr-3">✅</div>}
                                 <span className="text-lg font-black text-black">
                                   Completed ({classData.groupedTests.completed.length})
                                 </span>
@@ -1999,7 +1999,7 @@ export default function StudentTests() {
                             const hasAttempted = attempts && attempts.attempts && attempts.attempts.length > 0;
 
                             return (
-                              <div key={test.id} className="p-6 hover:bg-[#b2e05b]/20 transition-all border-b-2 border-black last:border-b-0">
+                              <div key={test.id} className={`p-6 transition-all border-b-2 border-black last:border-b-0 ${theme === 'ben10' ? 'hover:bg-[#b2e05b]/20' : theme === 'tinkerbell' ? 'hover:bg-pink-200/20' : 'hover:bg-blue-200/20'}`}>
                                 <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                                   <div>
                                     <div className="flex items-center space-x-3">

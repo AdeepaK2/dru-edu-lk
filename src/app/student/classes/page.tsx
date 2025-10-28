@@ -318,9 +318,9 @@ export default function StudentClassesPage() {
                       <div 
                         className={`h-4 rounded-full transition-all duration-1000 border-2 border-black ${
                           enrollment.grade >= 80 
-                            ? `${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#b2e05b]' : 'bg-gradient-to-r from-yellow-400 to-yellow-600'}`
+                            ? `${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 to-amber-400' : 'bg-gradient-to-r from-blue-400 to-indigo-600'}`
                             : enrollment.grade >= 60
-                            ? `${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#64cc4f]' : 'bg-gradient-to-r from-yellow-500 to-yellow-700'}`
+                            ? `${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-500 to-amber-500' : 'bg-gradient-to-r from-blue-300 to-blue-500'}`
                             : 'bg-gradient-to-r from-red-400 to-red-600'
                         }`}
                         style={{ width: `${enrollment.grade}%` }}
@@ -340,7 +340,7 @@ export default function StudentClassesPage() {
                         <div className="text-2xl">📝</div>
                         <p className="text-sm font-black text-black">Teacher's Hero Notes:</p>
                       </div>
-                      <p className={`text-black font-medium rounded-lg p-3 border-2 border-black ${theme === 'ben10' ? 'bg-[#b2e05b]' : 'bg-yellow-100'}`}>
+                      <p className={`text-black font-medium rounded-lg p-3 border-2 border-black ${theme === 'ben10' ? 'bg-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-yellow-100' : 'bg-blue-100'}`}>
                         {enrollment.notes}
                       </p>
                     </div>
@@ -362,7 +362,7 @@ export default function StudentClassesPage() {
                               {enrollment.remark.remarkLevel === 'Custom' ? enrollment.remark.customRemark : enrollment.remark.remarkLevel}
                             </span>
                             {enrollment.remark.additionalNotes && (
-                              <div className={`p-4 rounded-xl border-2 border-black ${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#222222]' : 'bg-gradient-to-r from-yellow-100 to-black'}`}>
+                              <div className={`p-4 rounded-xl border-2 border-black ${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-100 to-pink-200' : 'bg-gradient-to-r from-blue-100 to-indigo-200'}`}>
                                 <p className="text-white font-medium">
                                   {enrollment.remark.additionalNotes}
                                 </p>
@@ -387,7 +387,7 @@ export default function StudentClassesPage() {
                           <span className="text-2xl mr-2">🎥</span>
                           Meeting Link:
                         </p>
-                        <div className={`p-3 rounded-xl border-2 border-black ${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#222222]' : 'bg-gradient-to-r from-yellow-200 to-black'}`}>
+                        <div className={`p-3 rounded-xl border-2 border-black ${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-200 to-pink-200' : 'bg-gradient-to-r from-blue-200 to-indigo-300'}`}>
                           <p className="text-white font-medium break-all text-sm">
                             {enrollment.classData.zoomLink}
                           </p>
@@ -398,7 +398,7 @@ export default function StudentClassesPage() {
                         variant="primary"
                         size="sm"
                         onClick={() => handleJoinZoom(enrollment.classData!.zoomLink!)}
-                        className={`w-full text-white px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black flex items-center justify-center space-x-3 ${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222] hover:from-[#b2e05b] hover:to-[#222222]' : 'bg-gradient-to-r from-yellow-500 to-black hover:from-yellow-600 hover:to-gray-900'}`}
+                        className={`w-full text-white px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black flex items-center justify-center space-x-3 ${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222] hover:from-[#b2e05b] hover:to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-500 to-pink-500 hover:from-yellow-600 hover:to-pink-600' : 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700'}`}
                       >
                         <ExternalLink className="w-5 h-5" />
                         <span>Join Meeting 📹</span>
@@ -416,7 +416,7 @@ export default function StudentClassesPage() {
                       // Navigate to tests page
                       window.location.href = `/student/test`;
                     }}
-                    className={`text-black font-black border-4 border-black rounded-2xl transform hover:scale-110 transition-all shadow-lg hover:rotate-3 flex flex-col items-center py-3 ${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#b2e05b] hover:from-[#b2e05b] hover:to-[#64cc4f]' : 'bg-gradient-to-r from-yellow-400 to-amber-400 hover:from-yellow-500 hover:to-amber-500'}`}>
+                    className={`text-black font-black border-4 border-black rounded-2xl transform hover:scale-110 transition-all shadow-lg hover:rotate-3 flex flex-col items-center py-3 ${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#b2e05b] hover:from-[#b2e05b] hover:to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 to-amber-400 hover:from-yellow-500 hover:to-amber-500' : 'bg-gradient-to-r from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-600'}`}>
                     <span className="text-2xl mb-1">📝</span>
                     <span className="text-xs text-black">Tests</span>
                   </Button>
@@ -427,7 +427,7 @@ export default function StudentClassesPage() {
                       // Navigate to study materials page for this class
                       window.location.href = `/student/study?classId=${enrollment.classId}`;
                     }}
-                    className={`text-black font-black border-4 border-black rounded-2xl transform hover:scale-110 transition-all shadow-lg hover:-rotate-3 flex flex-col items-center py-3 ${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#b2e05b] hover:from-[#b2e05b] hover:to-[#64cc4f]' : 'bg-gradient-to-r from-yellow-400 to-amber-400 hover:from-yellow-500 hover:to-amber-500'}`}>
+                    className={`text-black font-black border-4 border-black rounded-2xl transform hover:scale-110 transition-all shadow-lg hover:-rotate-3 flex flex-col items-center py-3 ${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#b2e05b] hover:from-[#b2e05b] hover:to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 to-amber-400 hover:from-yellow-500 hover:to-amber-500' : 'bg-gradient-to-r from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-600'}`}>
                     <span className="text-2xl mb-1">📚</span>
                     <span className="text-xs text-black">Study</span>
                   </Button>
@@ -438,7 +438,7 @@ export default function StudentClassesPage() {
                       // Navigate to videos page for this class
                       window.location.href = `/student/classes/${enrollment.classId}/videos`;
                     }}
-                    className={`text-black font-black border-4 border-black rounded-2xl transform hover:scale-110 transition-all shadow-lg hover:rotate-3 flex flex-col items-center py-3 ${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#b2e05b] hover:from-[#b2e05b] hover:to-[#64cc4f]' : 'bg-gradient-to-r from-yellow-400 to-amber-400 hover:from-yellow-500 hover:to-amber-500'}`}>
+                    className={`text-black font-black border-4 border-black rounded-2xl transform hover:scale-110 transition-all shadow-lg hover:rotate-3 flex flex-col items-center py-3 ${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#b2e05b] hover:from-[#b2e05b] hover:to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 to-amber-400 hover:from-yellow-500 hover:to-amber-500' : 'bg-gradient-to-r from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-600'}`}>
                     <span className="text-2xl mb-1">🎬</span>
                     <span className="text-xs text-black">Videos</span>
                   </Button>
@@ -450,37 +450,36 @@ export default function StudentClassesPage() {
 
         {/* Summary Stats */}
         {filteredEnrollments.length > 0 && (
-          <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222] via-[#64cc4f]' : 'from-yellow-300 via-green-400 to-yellow-400'} rounded-3xl shadow-2xl border-4 border-black p-8 mt-8`}>
+          <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222] via-[#64cc4f]' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : 'from-blue-400 via-indigo-500 to-blue-500'} rounded-3xl shadow-2xl border-4 border-black p-8 mt-8`}>
             <div className="flex items-center justify-center space-x-3 mb-8">
-              <div className="text-4xl">📊</div>
+              {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-4xl">📊</div>}
               <h3 className="text-3xl font-black text-black">Classes Summary</h3>
-         
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               <div className="bg-white border-4 border-black rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all">
                 <div className="text-4xl mb-2">🎯</div>
-                <div className={`text-3xl font-black mb-1 ${theme === 'ben10' ? 'text-[#64cc4f]' : 'text-yellow-600'}`}>
+                <div className={`text-3xl font-black mb-1 ${theme === 'ben10' ? 'text-[#64cc4f]' : theme === 'tinkerbell' ? 'text-yellow-600' : 'text-[#3b82f6]'}`}>
                   {filteredEnrollments.filter(e => e.status === 'Active').length}
                 </div>
                 <div className="text-sm font-bold text-black">Active Classes</div>
               </div>
               <div className="bg-white border-4 border-black rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all">
                 <div className="text-4xl mb-2">🏆</div>
-                <div className={`text-3xl font-black mb-1 ${theme === 'ben10' ? 'text-[#64cc4f]' : 'text-yellow-600'}`}>
+                <div className={`text-3xl font-black mb-1 ${theme === 'ben10' ? 'text-[#64cc4f]' : theme === 'tinkerbell' ? 'text-yellow-600' : 'text-[#3b82f6]'}`}>
                   {filteredEnrollments.filter(e => e.status === 'Completed').length}
                 </div>
                 <div className="text-sm font-bold text-black">Completed Classes</div>
               </div>
               <div className="bg-white border-4 border-black rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all">
                 <div className="text-4xl mb-2">📈</div>
-                <div className={`text-3xl font-black mb-1 ${theme === 'ben10' ? 'text-[#64cc4f]' : 'text-yellow-600'}`}>
+                <div className={`text-3xl font-black mb-1 ${theme === 'ben10' ? 'text-[#64cc4f]' : theme === 'tinkerbell' ? 'text-yellow-600' : 'text-[#3b82f6]'}`}>
                   {Math.round(filteredEnrollments.reduce((acc, e) => acc + e.attendance, 0) / filteredEnrollments.length) || 0}%
                 </div>
                 <div className="text-sm font-bold text-black">Attendance</div>
               </div>
               <div className="bg-white border-4 border-black rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all">
                 <div className="text-4xl mb-2">⭐</div>
-                <div className={`text-3xl font-black mb-1 ${theme === 'ben10' ? 'text-[#64cc4f]' : 'text-yellow-600'}`}>
+                <div className={`text-3xl font-black mb-1 ${theme === 'ben10' ? 'text-[#64cc4f]' : theme === 'tinkerbell' ? 'text-yellow-600' : 'text-[#3b82f6]'}`}>
                   {filteredEnrollments.filter(e => e.grade !== undefined).length > 0 
                     ? Math.round(filteredEnrollments
                         .filter(e => e.grade !== undefined)
