@@ -422,9 +422,9 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                         ? theme === 'ben10' 
                           ? 'bg-[#64cc4f]/20 text-[#222222] border border-[#64cc4f]/30' 
                           : theme === 'tinkerbell'
-                          ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300 border border-green-300'
-                          : 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
+                          ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-800 border border-green-800'
+                          : 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-800'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-800'
                     }`}>
                       {video.status}
                     </span>
@@ -442,14 +442,14 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                       video.visibility === 'public' 
                         ? theme === 'ben10'
                           ? 'bg-[#64cc4f]/20 text-[#222222] border border-[#64cc4f]/30'
-                          : 'bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300'
+                          : 'bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-800'
                         : video.visibility === 'unlisted'
                         ? theme === 'ben10'
                           ? 'bg-[#b2e05b]/20 text-[#222222] border border-[#b2e05b]/30'
-                          : 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300'
+                          : 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-800'
                         : theme === 'ben10'
                         ? 'bg-[#222222]/20 text-[#222222] border border-[#222222]/30'
-                        : 'bg-purple-100 dark:bg-purple-900/20 text-purple-800 dark:text-purple-300'
+                        : 'bg-purple-100 dark:bg-purple-900/20 text-purple-800 dark:text-purple-800'
                     }`}>
                       {video.visibility}
                     </span>

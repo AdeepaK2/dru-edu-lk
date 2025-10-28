@@ -357,20 +357,22 @@ export default function StudentDashboard() {
           <div className="flex items-center justify-between relative z-10">
             <div className="flex-1">
               <div className="flex items-center space-x-4 mb-2">
-                <img 
-                  src={theme === 'ben10' ? '/ben10-welcome.png' : theme === 'tinkerbell' ? '/tinkerbell-welcome.png' : '/welcome-professional.png'} 
-                  alt="Welcome" 
-                  className={`w-40 h-40 rounded-full border-4 border-black ring-4 ${
-                    theme === 'ben10' ? 'ring-[#64cc4f]' : theme === 'tinkerbell' ? 'ring-green-600' : 'ring-blue-400'
-                  }`}
-                  onError={(e) => {
-                    // Fallback to generic welcome image if theme image not found
-                    (e.target as HTMLImageElement).src = '/welcome.png';
-                  }}
-                />
+                {(theme === 'ben10' || theme === 'tinkerbell') && (
+                  <img 
+                    src={theme === 'ben10' ? '/ben10-welcome.png' : '/tinkerbell-welcome.png'} 
+                    alt="Welcome" 
+                    className={`w-40 h-40 rounded-full border-4 border-black ring-4 ${
+                      theme === 'ben10' ? 'ring-[#64cc4f]' : 'ring-green-600'
+                    }`}
+                    onError={(e) => {
+                      // Fallback to generic welcome image if theme image not found
+                      (e.target as HTMLImageElement).src = '/welcome.png';
+                    }}
+                  />
+                )}
                 <div>
                   <h1 className="text-3xl font-bold">
-                    Hey {student?.name}! Ready to {theme === 'ben10' ? 'transform' : theme === 'tinkerbell' ? 'enchant' : 'excel'} your learning?
+                    Hey, {student?.name}! Ready to {theme === 'ben10' ? 'transform' : theme === 'tinkerbell' ? 'enchant' : 'excel'} your learning?
                   </h1>
                   <p className="text-lg font-semibold mt-2" style={{
                     color: theme === 'ben10' ? 'rgb(178, 224, 91)' : theme === 'tinkerbell' ? 'rgb(0, 0, 30)' : 'rgb(191, 219, 254)'

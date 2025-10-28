@@ -344,13 +344,7 @@ export default function ClassVideos({ params }: ClassVideoProps) {
           ? 'bg-gradient-to-br from-yellow-100 to-green-50'
           : 'bg-gradient-to-br from-blue-50 to-indigo-100 dark:bg-gray-800'
       }`}>
-        <div className={`border-b-4 ${
-          theme === 'ben10'
-            ? 'border-[#222222]'
-            : theme === 'tinkerbell'
-            ? 'border-green-500'
-            : 'border-blue-300 dark:border-gray-700'
-        }`}>
+        <div>
           <nav className="flex space-x-8 px-6" aria-label="Tabs">
             <button
               onClick={() => setActiveTab('class')}
@@ -587,7 +581,7 @@ const ClassVideoCard: React.FC<ClassVideoCardProps> = ({ video, onAccess, theme 
         {/* Price badge */}
         {video.isPaid && (
           <div className="absolute top-2 left-2">
-            <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300">
+            <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-600">
               <DollarSign className="w-3 h-3 mr-1" />
               ${video.price}
             </span>
@@ -614,10 +608,10 @@ const ClassVideoCard: React.FC<ClassVideoCardProps> = ({ video, onAccess, theme 
       {/* Video Info */}
       <div className="p-4">
         <div className="mb-3">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1 line-clamp-2">
+          <h3 className="text-lg font-semibold text-gray-900  mb-1 line-clamp-2">
             {video.title}
           </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
+          <p className="text-sm text-gray-600 dark:text-gray-600 line-clamp-2">
             {video.description}
           </p>
         </div>
@@ -636,7 +630,7 @@ const ClassVideoCard: React.FC<ClassVideoCardProps> = ({ video, onAccess, theme 
 
         {/* Subject Badge */}
         <div className="mb-4">
-          <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-purple-100 dark:bg-purple-900/20 text-purple-800 dark:text-purple-300">
+          <span className="inline-flex px-2 py-1 text-black text-xs font-medium rounded-full bg-purple-100 dark:bg-purple-900/20  dark:text-black">
             {video.subjectName}
           </span>
         </div>

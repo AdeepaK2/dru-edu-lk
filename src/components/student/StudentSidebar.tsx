@@ -286,11 +286,11 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
                 <p className="text-sm font-black text-white truncate">
                   {student.name}
                 </p>
-                <p className="text-xs font-bold text-white" style={{
+                <p className="text-xs font-bold text-black" style={{
                   opacity: 0.9
                 }}>
                   {student.status === 'Active' 
-                    ? (theme === 'ben10' ? '🔥 Active' : theme === 'tinkerbell' ? '✨ Active' : '⭐ Active') 
+                    ? (theme === 'ben10' ? 'Active' : theme === 'tinkerbell' ? ' Active' : 'Active') 
                     : student.status || 'Student'
                   }
                 </p>
