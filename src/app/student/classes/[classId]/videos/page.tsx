@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { Button, Input } from '@/components/ui';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
+import { useTheme } from '@/contexts/ThemeContext';
 import Link from 'next/link';
 
 // Import services and types
@@ -53,6 +54,7 @@ export default function ClassVideos({ params }: ClassVideoProps) {
   const { classId } = use(params);
   
   const { student } = useStudentAuth();
+  const { theme } = useTheme();
   const [classInfo, setClassInfo] = useState<any>(null);
   const [videos, setVideos] = useState<ClassVideoData[]>([]);
   const [studentPurchases, setStudentPurchases] = useState<VideoPurchaseDocument[]>([]);
@@ -285,40 +287,80 @@ export default function ClassVideos({ params }: ClassVideoProps) {
   const tabVideos = getTabVideos();
 
   return (
-    <div className="space-y-6">
-      {/* Class Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg shadow p-6">
+    <div 
+      className={`min-h-screen p-6 ${
+        theme === 'tinkerbell'
+          ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400'
+          : theme === 'ben10'
+          ? ''
+          : 'bg-gradient-to-br from-blue-400 via-indigo-500 to-indigo-600'
+      }`}
+      style={theme === 'ben10' ? {
+        background: 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))'
+      } : undefined}
+    >
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Class Header */}
+        <div className={`text-white rounded-3xl shadow-2xl border-4 border-black p-6 ${
+          theme === 'ben10'
+            ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222]'
+            : theme === 'tinkerbell'
+            ? 'bg-gradient-to-r from-green-300 via-green-500 to-yellow-400'
+            : 'bg-gradient-to-r from-blue-400 to-indigo-600'
+        }`}>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold mb-2">
+            <h1 className="text-3xl font-black text-black mb-2">
               {classInfo?.name} - Video Library
             </h1>
-            <p className="text-blue-100">
+            <p className={`font-bold ${
+              theme === 'ben10'
+                ? 'text-white'
+                : theme === 'tinkerbell'
+                ? 'text-white'
+                : 'text-blue-100'
+            }`}>
               {classInfo?.subject} • Grade {classInfo?.grade} • {classInfo?.teacherName}
             </p>
           </div>
           <div className="flex items-center space-x-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold">{videos.length}</div>
-              <div className="text-sm text-blue-100">Total Videos</div>
+            <div className="bg-white border-4 border-black rounded-2xl p-4 shadow-lg text-center">
+              <div className="text-3xl font-black text-black">{videos.length}</div>
+              <div className="text-sm font-bold text-gray-700">Total Videos</div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold">{tabCounts.purchased}</div>
-              <div className="text-sm text-blue-100">Purchased</div>
+            <div className="bg-white border-4 border-black rounded-2xl p-4 shadow-lg text-center">
+              <div className="text-3xl font-black text-black">{tabCounts.purchased}</div>
+              <div className="text-sm font-bold text-gray-700">Purchased</div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Navigation Tabs */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-        <div className="border-b border-gray-200 dark:border-gray-700">
+      <div className={`rounded-2xl shadow-xl border-4 border-black ${
+        theme === 'ben10'
+          ? 'bg-gradient-to-br from-[#64cc4f]/20 to-[#b2e05b]/20'
+          : theme === 'tinkerbell'
+          ? 'bg-gradient-to-br from-yellow-100 to-green-50'
+          : 'bg-gradient-to-br from-blue-50 to-indigo-100 dark:bg-gray-800'
+      }`}>
+        <div className={`border-b-4 ${
+          theme === 'ben10'
+            ? 'border-[#222222]'
+            : theme === 'tinkerbell'
+            ? 'border-green-500'
+            : 'border-blue-300 dark:border-gray-700'
+        }`}>
           <nav className="flex space-x-8 px-6" aria-label="Tabs">
             <button
               onClick={() => setActiveTab('class')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+              className={`py-4 px-1 border-b-4 font-bold text-sm whitespace-nowrap ${
                 activeTab === 'class'
-                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  ? theme === 'ben10'
+                    ? 'border-[#64cc4f] text-[#222222]'
+                    : theme === 'tinkerbell'
+                    ? 'border-yellow-500 text-black'
+                    : 'border-blue-500 text-blue-600 dark:text-blue-400'
                   : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
               }`}
             >
@@ -333,9 +375,13 @@ export default function ClassVideos({ params }: ClassVideoProps) {
             
             <button
               onClick={() => setActiveTab('purchased')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+              className={`py-4 px-1 border-b-4 font-bold text-sm whitespace-nowrap ${
                 activeTab === 'purchased'
-                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  ? theme === 'ben10'
+                    ? 'border-[#64cc4f] text-[#222222]'
+                    : theme === 'tinkerbell'
+                    ? 'border-yellow-500 text-black'
+                    : 'border-blue-500 text-blue-600 dark:text-blue-400'
                   : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
               }`}
             >
@@ -350,9 +396,13 @@ export default function ClassVideos({ params }: ClassVideoProps) {
             
             <button
               onClick={() => setActiveTab('study')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+              className={`py-4 px-1 border-b-4 font-bold text-sm whitespace-nowrap ${
                 activeTab === 'study'
-                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  ? theme === 'ben10'
+                    ? 'border-[#64cc4f] text-[#222222]'
+                    : theme === 'tinkerbell'
+                    ? 'border-yellow-500 text-black'
+                    : 'border-blue-500 text-blue-600 dark:text-blue-400'
                   : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
               }`}
             >
@@ -422,7 +472,13 @@ export default function ClassVideos({ params }: ClassVideoProps) {
       {/* Videos Grid */}
       <div>
         {tabVideos.length === 0 ? (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-12 text-center">
+          <div className={`rounded-2xl shadow-xl border-4 border-black p-12 text-center ${
+            theme === 'ben10'
+              ? 'bg-gradient-to-br from-[#64cc4f]/10 to-[#b2e05b]/10'
+              : theme === 'tinkerbell'
+              ? 'bg-gradient-to-br from-yellow-100 to-green-50'
+              : 'bg-white dark:bg-gray-800'
+          }`}>
             {activeTab === 'class' && (
               <>
                 <Video className="mx-auto h-12 w-12 text-gray-400 mb-4" />
@@ -461,19 +517,27 @@ export default function ClassVideos({ params }: ClassVideoProps) {
             )}
           </div>
         ) : (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <div className={`rounded-2xl shadow-xl border-4 border-black p-6 ${
+            theme === 'ben10'
+              ? 'bg-gradient-to-br from-[#64cc4f]/10 to-[#b2e05b]/10'
+              : theme === 'tinkerbell'
+              ? 'bg-gradient-to-br from-yellow-100 to-green-50'
+              : 'bg-white dark:bg-gray-800'
+          }`}>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {tabVideos.map((video) => (
                 <ClassVideoCard
                   key={video.id}
                   video={video}
                   onAccess={handleVideoAccess}
+                  theme={theme}
                 />
               ))}
             </div>
           </div>
         )}
       </div>
+    </div>
     </div>
   );
 }
@@ -482,11 +546,18 @@ export default function ClassVideos({ params }: ClassVideoProps) {
 interface ClassVideoCardProps {
   video: ClassVideoData;
   onAccess: (video: ClassVideoData) => void;
+  theme: 'ben10' | 'tinkerbell' | 'normal';
 }
 
-const ClassVideoCard: React.FC<ClassVideoCardProps> = ({ video, onAccess }) => {
+const ClassVideoCard: React.FC<ClassVideoCardProps> = ({ video, onAccess, theme }) => {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow">
+    <div className={`rounded-2xl shadow-lg border-4 border-black overflow-hidden hover:shadow-2xl transition-shadow ${
+      theme === 'ben10'
+        ? 'bg-gradient-to-br from-[#64cc4f]/20 to-[#b2e05b]/20'
+        : theme === 'tinkerbell'
+        ? 'bg-gradient-to-br from-yellow-50 to-green-100'
+        : 'bg-white dark:bg-gray-800'
+    }`}>
       {/* Video Thumbnail */}
       <div className="relative aspect-video bg-gray-100 dark:bg-gray-700">
         {video.thumbnailUrl ? (
@@ -573,10 +644,18 @@ const ClassVideoCard: React.FC<ClassVideoCardProps> = ({ video, onAccess }) => {
         {/* Action Button */}
         <Button
           onClick={() => onAccess(video)}
-          className={`w-full flex items-center justify-center space-x-2 ${
+          className={`w-full flex items-center justify-center space-x-2 font-bold ${
             video.canAccess 
-              ? 'bg-blue-600 hover:bg-blue-700' 
-              : 'bg-green-600 hover:bg-green-700'
+              ? theme === 'ben10'
+                ? 'bg-[#64cc4f] hover:bg-[#b2e05b] text-[#222222]'
+                : theme === 'tinkerbell'
+                ? 'bg-yellow-400 hover:bg-yellow-500 text-yellow-900'
+                : 'bg-blue-600 hover:bg-blue-700 text-white'
+              : theme === 'ben10'
+                ? 'bg-[#b2e05b] hover:bg-[#64cc4f] text-[#222222]'
+                : theme === 'tinkerbell'
+                ? 'bg-green-500 hover:bg-green-600 text-white'
+                : 'bg-green-600 hover:bg-green-700 text-white'
           }`}
           size="sm"
         >
