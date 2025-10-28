@@ -1,5 +1,4 @@
 'use client';
-
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -258,21 +257,16 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
 
         {/* Student Profile */}
         {student && (
-          <div className={`p-4 border-b-4 border-black ${
+          <div className={`p-3 border-b-4 border-black ${
             theme === 'ben10'
-              ? 'bg-gradient-to-r from-black to-green-600'
+              ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222]'
               : theme === 'tinkerbell'
               ? 'bg-gradient-to-r from-yellow-500 to-green-600'
               : 'bg-gradient-to-r from-indigo-600 to-blue-500'
           }`}>
-            <div className="flex items-center space-x-3">
-              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border-2 border-black shadow-lg overflow-hidden ${
-                theme === 'ben10'
-                  ? 'bg-gradient-to-br from-green-500 to-black'
-                  : theme === 'tinkerbell'
-                  ? 'bg-gradient-to-br from-yellow-400 to-green-500'
-                  : 'bg-gradient-to-br from-blue-400 to-indigo-500'
-              }`}>
+            <div className="flex items-center space-x-2">
+              {/* Avatar - No circle, just image visible */}
+              <div className="flex-shrink-0 overflow-hidden">
                 {(() => {
                   const avatarPath = getAvatarImagePath((student as any)?.avatar);
                   if (avatarPath && (theme === 'ben10' || theme === 'tinkerbell')) {
@@ -282,23 +276,21 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
                   }
 
                   return (
-                    <span className="text-2xl font-black" style={{
-                      color: theme === 'ben10' ? 'rgb(74, 222, 128)' : theme === 'tinkerbell' ? 'rgb(202, 138, 4)' : 'rgb(147, 197, 253)'
-                    }}>
+                    <span className="text-3xl font-black">
                       {theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : '📚'}
                     </span>
                   );
                 })()}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-base font-black text-white">
+                <p className="text-sm font-black text-white truncate">
                   {student.name}
                 </p>
-                <p className="text-xs font-bold" style={{
-                  color: theme === 'ben10' ? 'rgb(0, 0, 0)' : theme === 'tinkerbell' ? 'rgb(0, 0, 0)' : 'rgb(0, 0, 0)'
+                <p className="text-xs font-bold text-white" style={{
+                  opacity: 0.9
                 }}>
                   {student.status === 'Active' 
-                    ? (theme === 'ben10' ? 'Active' : theme === 'tinkerbell' ? ' Active ' : 'Active Learner') 
+                    ? (theme === 'ben10' ? '🔥 Active' : theme === 'tinkerbell' ? '✨ Active' : '⭐ Active') 
                     : student.status || 'Student'
                   }
                 </p>

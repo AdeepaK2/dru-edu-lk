@@ -137,7 +137,7 @@ export default function StudentClassesPage() {
           </div>
           <div className="text-center">
             <h2 className="text-2xl font-black text-black mb-2">Loading Your Classes...</h2>
-            <p className="text-gray-600 font-medium">Get ready to transform your learning! 🔄⚡</p>
+            <p className="text-gray-600 font-medium">Get ready to transform your learning! </p>
           </div>
         </div>
       </div>
@@ -174,7 +174,7 @@ export default function StudentClassesPage() {
                   <span className="ml-2 text-3xl">Classroom</span>
                 
                 </h1>
-                <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-[#b2e05b]' : theme === 'tinkerbell' ? 'text-white' : 'text-blue-100'}`}>
+                <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-white' : theme === 'tinkerbell' ? 'text-white' : 'text-blue-100'}`}>
                   Transform your learning with amazing adventures! 
                 </p>
               </div>

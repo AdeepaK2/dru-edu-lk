@@ -382,7 +382,7 @@ export default function StudentSettingsPage() {
           </div>
           <div className="text-center">
             <h2 className="text-2xl font-black text-black mb-2">Loading Settings...</h2>
-            <p className="text-gray-600 font-medium">Get ready to transform your learning! 🔄⚡</p>
+            <p className="text-gray-600 font-medium">Get ready to transform your learning! </p>
           </div>
         </div>
       </div>
@@ -400,9 +400,10 @@ export default function StudentSettingsPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className={`min-h-screen bg-gradient-to-br p-6 ${theme === 'ben10' ? '' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : 'from-blue-400 to-indigo-600'}`} style={theme === 'ben10' ? { background: 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))' } : undefined}>
+      <div className="space-y-8 max-w-6xl mx-auto">
       {/* Page Header - Theme Aware */}
-      <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-500 via-yellow-500 to-green-600' : 'from-blue-600 via-indigo-700 to-indigo-900'} rounded-2xl text-white p-8 relative overflow-hidden`}>
+      <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-500 via-yellow-500 to-green-600' : 'from-blue-600 via-indigo-700 to-indigo-900'} rounded-2xl text-white p-8 border-2 border-black relative overflow-hidden`}>
         {/* Ben 10 themed background elements */}
         
    
@@ -428,11 +429,11 @@ export default function StudentSettingsPage() {
             {/* Current Avatar Display (only for themes that support avatars) */}
             {getAvailableAvatars().length > 0 && (
               <div className="relative">
-                <div className={`relative w-24 h-24 rounded-full overflow-hidden border-4 border-black bg-gradient-to-br `}>
+                <div className={`relative w-24 h-24 rounded-full overflow-hidden border-4 border-white bg-gradient-to-br `}>
                   <Image src={getSelectedAvatarData().image || '/images/1.png'} alt={getSelectedAvatarData().name} fill className="object-cover" />
                 </div>
                 <div className="text-center mt-5">
-                  <span className="text-black font-bold text-sm">{getSelectedAvatarData().name}</span>
+                  <span className="text-white font-bold text-sm">{getSelectedAvatarData().name}</span>
                 </div>
               </div>
             )}
@@ -903,6 +904,7 @@ export default function StudentSettingsPage() {
             </Button>
           </div>
         </form>
+      </div>
       </div>
     </div>
   );
