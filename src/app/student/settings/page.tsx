@@ -464,8 +464,8 @@ export default function StudentSettingsPage() {
       {/* Theme Selector Section */}
       <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-200 via-green-200 to-yellow-300' : 'from-blue-200 via-indigo-200 to-purple-300'} rounded-xl shadow-lg border-4 border-black p-6`}>
         <div className="flex items-center space-x-3 mb-6">
-          <div className="text-3xl">🎨</div>
-          <h2 className="text-2xl font-black text-black">Choose Your Learning Theme! ✨</h2>
+        
+          <h2 className="text-2xl font-black text-black">Choose Your Learning Theme! </h2>
         </div>
 
         <div className="grid md:grid-cols-3 gap-3">
@@ -718,8 +718,8 @@ export default function StudentSettingsPage() {
               {/* Account Info Display */}
               <div className="bg-white border-4 border-black rounded-xl p-6 shadow-lg">
                 <h4 className="text-lg font-bold text-black mb-4 flex items-center">
-                  <Sparkles className="w-5 h-5 mr-2 text-yellow-500" />
-                  Your Hero Stats! 📊
+                
+                   📊 Your Stats!
                 </h4>
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between items-center p-3 bg-[#64cc4f]/10 border-2 border-[#64cc4f] rounded-lg">
@@ -748,14 +748,16 @@ export default function StudentSettingsPage() {
               </div>
 
               {/* Fun Fact */}
-              <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-300 to-green-500' : 'from-blue-300 to-indigo-600'} border-4 border-black rounded-xl p-6 shadow-lg`}>
-                <h4 className="text-lg font-bold text-white mb-3 flex items-center">
-                 
-                  Did You Know?
+              <div className={`bg-gradient-to-r ${selectedTheme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : selectedTheme === 'tinkerbell' ? 'from-yellow-300 to-green-500' : 'from-blue-300 to-indigo-600'} border-4 border-black rounded-xl p-6 shadow-lg`}>
+                <h4 className="text-lg font-bold text-black mb-3 flex items-center">
+                  {selectedTheme === 'ben10' ? '💡 Did You Know?' : selectedTheme === 'tinkerbell' ? '💡 Did You Know?' : '💡 Did You Know?'}
                 </h4>
-                <p className="text-white font-medium text-sm leading-relaxed">
-                  Ben 10 first appeared in 2005 and has transformed into over 70 different alien heroes!
-                  Your avatar choice makes you part of the ultimate hero legacy! 
+                <p className="text-black font-medium text-sm leading-relaxed">
+                  {selectedTheme === 'ben10'
+                    ? 'Ben 10 first appeared in 2005 and has transformed into over 70 different alien heroes. Choosing a Ben 10 avatar links you to the Omnitrix legacy — wear it proudly!'
+                    : selectedTheme === 'tinkerbell'
+                    ? "Tinker Bell first appeared in J.M. Barrie's Peter Pan stories and is celebrated for curiosity, creativity, and loyalty. Choosing a Tinkerbell avatar celebrates wonder and kindness!"
+                    : 'Small, consistent study sessions build mastery. Tip: use spaced repetition and active recall to remember more with less time.'}
                 </p>
               </div>
             </div>

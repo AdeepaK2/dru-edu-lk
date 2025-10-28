@@ -354,7 +354,7 @@ export default function DocumentUploadGrid({
                         </div>
                         <div>
                           <p className="text-lg text-black font-black mb-2">
-                            {dragOver === docType ? '🎯 Drop your magical document here!' : '📎 Drag & drop or click to select'}
+                            {dragOver === docType ? 'Drop your magical document here!' : ' Drag & drop or click to select'}
                           </p>
                           <input
                             type="file"

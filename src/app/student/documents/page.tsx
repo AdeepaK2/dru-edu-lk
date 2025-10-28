@@ -203,10 +203,10 @@ export default function StudentDocumentsPage() {
           <div className="flex justify-center items-center space-x-8 mb-4">
             
           </div>
-          <h1 className="text-5xl font-black text-white mb-2 drop-shadow-lg">
+          <h1 className="text-5xl font-black text-black mb-2 drop-shadow-lg">
             📄 Documents
           </h1>
-          <p className={`text-xl font-bold ${theme === 'ben10' ? 'text-[#b2e05b]' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-100'}`}>
+          <p className={`text-xl font-bold ${theme === 'ben10' ? 'text-[#b2e05b]' : theme === 'tinkerbell' ? 'text-white' : 'text-blue-100'}`}>
             Upload your documents here! 
           </p>
         </div>
@@ -217,7 +217,7 @@ export default function StudentDocumentsPage() {
             <div className="flex items-center space-x-4">
               
               <div>
-                <h2 className="text-3xl font-black">Required Documents</h2>
+                <h2 className="text-3xl text-black font-black">Required Documents</h2>
                 <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-[#b2e05b]' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-100'}`}>Complete your enrollment with these documents!</p>
               </div>
             </div>
@@ -301,7 +301,7 @@ export default function StudentDocumentsPage() {
               <span className="text-4xl mr-4">🛡️</span>
               <div>
                 <h4 className="text-xl font-black text-white mb-2">Important Information</h4>
-                <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-green-100' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-100'}`}>
+                <p className={`font-bold text-lg text-black`}>
                   These documents are required for your enrollment. Please upload clear, legible copies in PDF, DOC, or image format.
                   Our admin team will verify your documents within 1-2 business days! 
                 </p>
