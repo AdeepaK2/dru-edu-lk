@@ -220,7 +220,9 @@ export default function ClassSheetsPage() {
         </div>
 
         <div className="flex items-center space-x-4 relative z-10">
-          <div className="text-6xl">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : '�'}</div>
+          {(theme === 'ben10' || theme === 'tinkerbell') && (
+            <div className="text-6xl">{theme === 'ben10' ? '🦸‍♂️' : '🧚‍♀️'}</div>
+          )}
           <div>
             <h1 className="text-4xl font-black text-black mb-2 flex items-center">
               <span>{className}</span>
