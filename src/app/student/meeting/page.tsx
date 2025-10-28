@@ -528,7 +528,7 @@ export default function StudentMeetingPage() {
             <div className="text-center">
               <div className="text-4xl mb-4">😔</div>
               <h3 className="text-xl font-black text-black mb-2">Please Log In</h3>
-              <p className="text-black font-bold">Please log in as a student to access your {theme === 'ben10' ? 'hero' : theme === 'tinkerbell' ? 'magical' : 'learning'} meetings! {theme === 'ben10' ? '⚡' : theme === 'tinkerbell' ? '✨' : '📚'}</p>
+              <p className="text-black font-bold">Please log in as a student to access your meetings!</p>
             </div>
           </div>
         </div>
@@ -541,27 +541,21 @@ export default function StudentMeetingPage() {
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Theme-aware Header */}
         <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-600 via-indigo-700 to-slate-800'} rounded-3xl shadow-2xl border-4 border-black p-8 relative overflow-hidden`}>
-          {/* Theme Symbols */}
-          <div className={`absolute -top-4 -left-4 w-12 h-12 ${theme === 'ben10' ? 'bg-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-yellow-400' : 'bg-blue-400'} rounded-full border-2 border-black flex items-center justify-center`}>
-            <span className="text-black font-black text-lg">{theme === 'ben10' ? 'Ω' : theme === 'tinkerbell' ? '✨' : '📚'}</span>
-          </div>
-          <div className={`absolute -top-4 -right-4 w-12 h-12 ${theme === 'ben10' ? 'bg-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-yellow-400' : 'bg-blue-400'} rounded-full border-2 border-black flex items-center justify-center`}>
-            <span className="text-black font-black text-lg">{theme === 'ben10' ? 'Ω' : theme === 'tinkerbell' ? '✨' : '📚'}</span>
-          </div>
+          
 
           <div className="flex items-center justify-between relative z-10">
             <div className="flex items-center space-x-4">
-              <div className="text-6xl">{theme === 'ben10' ? '⚡' : theme === 'tinkerbell' ? '✨' : '📚'}</div>
+             
               <div>
                 <h1 className="text-4xl font-black text-white mb-2 flex items-center">
-                  <span>{theme === 'ben10' ? 'Ben 10\'s' : theme === 'tinkerbell' ? 'Tinkerbell\'s' : 'My'}</span>
-                  <span className={`ml-2 font-black text-5xl ${theme === 'ben10' ? 'text-[#b2e05b]' : theme === 'tinkerbell' ? 'text-yellow-300' : 'text-blue-300'}`}>{theme === 'ben10' ? 'Hero' : theme === 'tinkerbell' ? 'Magical' : 'Learning'}</span>
-                  <span className="ml-2 text-3xl">Meeting</span>
-                  <span className="ml-2 text-3xl">Scheduler</span>
-                  <span className="ml-2 text-3xl">{theme === 'ben10' ? 'Ω' : theme === 'tinkerbell' ? '✨' : '📚'}</span>
+          
+                  
+                  <span className="ml-2 text-4xl text-black">Meeting</span>
+                  <span className="ml-2 text-4xl text-black">Scheduler</span>
+                 
                 </h1>
                 <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-[#b2e05b]' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-100'}`}>
-                  Welcome back, {student?.name}! Schedule {theme === 'ben10' ? 'heroic' : theme === 'tinkerbell' ? 'magical' : 'enriching'} one-on-one sessions with your teachers! {theme === 'ben10' ? '⚡' : theme === 'tinkerbell' ? '✨' : '📚'}
+                  Welcome back, {student?.name}! Schedule {theme === 'ben10' ? 'heroic' : theme === 'tinkerbell' ? 'magical' : 'enriching'} one-on-one sessions with your teachers! 
                 </p>
               </div>
             </div>
@@ -633,10 +627,10 @@ export default function StudentMeetingPage() {
             {/* Theme-aware Class Selection */}
             <div className="bg-white rounded-3xl shadow-2xl border-4 border-black p-6">
               <div className="flex items-center space-x-4 mb-6">
-                <div className="text-4xl">{theme === 'ben10' ? 'Ω' : theme === 'tinkerbell' ? '✨' : '📚'}</div>
+              
                 <div>
                   <h3 className="text-xl font-black text-black">Select Class (Optional)</h3>
-                  <p className="text-gray-600 font-bold">Filter teachers by your enrolled classes {theme === 'ben10' ? '⚡' : theme === 'tinkerbell' ? '✨' : '📚'}</p>
+                  <p className="text-gray-600 font-bold">Filter teachers by your enrolled classes </p>
                 </div>
               </div>
               
@@ -667,12 +661,12 @@ export default function StudentMeetingPage() {
             {/* Theme-aware Teachers List */}
             <div className="bg-white rounded-3xl shadow-2xl border-4 border-black overflow-hidden">
               <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-green-600 to-black' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-600 to-indigo-600'} text-white p-6 border-b-4 border-black`}>
-                <h2 className="text-2xl font-black flex items-center">
+                <h2 className="text-2xl text-black font-black flex items-center">
                   <span className="text-3xl mr-3">👨‍🏫</span>
-                  Available {theme === 'ben10' ? 'Hero' : theme === 'tinkerbell' ? 'Magical' : 'Learning'} Teachers
+                  Available Teachers
                 </h2>
                 <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-green-100' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-100'}`}>
-                  Click on a teacher to see their {theme === 'ben10' ? 'heroic' : theme === 'tinkerbell' ? 'magical' : 'enriching'} time slots {theme === 'ben10' ? '⚡' : theme === 'tinkerbell' ? '✨' : '📚'}
+                  Click on a teacher to see their {theme === 'ben10' ? 'heroic' : theme === 'tinkerbell' ? 'magical' : 'enriching'} time slots 
                 </p>
               </div>
 
@@ -711,7 +705,7 @@ export default function StudentMeetingPage() {
                                   </span>
                                 </div>
                                 <div>
-                                  <h3 className="text-2xl font-black text-white mb-1">
+                                  <h3 className="text-2xl font-black text-black mb-1">
                                     {teacher.name}
                                   </h3>
                                   <p className="text-indigo-100 font-bold text-lg">
@@ -721,7 +715,7 @@ export default function StudentMeetingPage() {
                               </div>
                               <div className="flex items-center space-x-4">
                                 <span className="bg-white text-black px-4 py-2 rounded-full font-black text-sm border-2 border-black">
-                                  {teacherSlots.length} {theme === 'ben10' ? 'Hero' : theme === 'tinkerbell' ? 'Magical' : 'Learning'} Slots {theme === 'ben10' ? '⚡' : theme === 'tinkerbell' ? '✨' : '📚'}
+                                  {teacherSlots.length}  Slots Available
                                 </span>
                                 <ChevronRight 
                                   className={`w-8 h-8 text-white transition-transform ${
