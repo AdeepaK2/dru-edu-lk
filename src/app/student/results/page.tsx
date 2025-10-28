@@ -331,10 +331,10 @@ export default function StudentResults() {
   }
 
   return (
-    <div key={`results-${theme}`} className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] via-[#b2e05b] to-[#222222]' : 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400'} p-6`}>
+    <div key={`results-${theme}`} className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : 'bg-gradient-to-br from-blue-600 via-indigo-700 to-blue-400'} p-6`}>
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Theme-aware Header */}
-        <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#5ab34a] via-[#64cc4f] to-[#111511]' : 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500'} rounded-3xl shadow-2xl border-4 border-black p-8 relative overflow-hidden`}>
+        <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#5ab34a] via-[#64cc4f] to-[#111511]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-500 to-indigo-600'} rounded-3xl shadow-2xl border-4 border-black p-8 relative overflow-hidden`}>
          
           <div className="flex items-center space-x-4 relative z-10">
             
@@ -347,7 +347,7 @@ export default function StudentResults() {
                 <span className="ml-2 text-4xl text-black">Progress</span>
              
               </h1>
-              <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-[#1f2902]' : 'text-yellow-100'}`}>
+              <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-[#1f2902]' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-200'}`}>
                 Welcome back, {student?.name}! Let's see how {theme === 'ben10' ? 'heroic' : 'magical'} your learning journey has been! 
               </p>
             </div>
@@ -357,7 +357,7 @@ export default function StudentResults() {
         {/* Search */}
         <div className="bg-white rounded-3xl shadow-2xl border-4 border-black p-6">
           <div className="relative">
-            <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-2xl">🔍</div>
+            <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-2xl">{(theme === 'ben10' || theme === 'tinkerbell') && '🔍'}</div>
             <input
               type="text"
               placeholder="Search hero classes..."
@@ -370,9 +370,9 @@ export default function StudentResults() {
 
         {/* Theme-aware Overall Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-lime-800' : 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500'} rounded-3xl shadow-2xl border-4 border-black p-6 hover:scale-105 transition-all`}>
+          <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-lime-800' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-500 to-indigo-600'} rounded-3xl shadow-2xl border-4 border-black p-6 hover:scale-105 transition-all`}>
             <div className="flex items-center space-x-4">
-              <div className={`w-16 h-16 ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] to-[#b2e05b]' : 'bg-gradient-to-br from-yellow-400 to-yellow-600'} rounded-2xl flex items-center justify-center border-4 border-black shadow-lg`}>
+              <div className={`w-16 h-16 ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' : 'bg-gradient-to-br from-blue-400 to-indigo-600'} rounded-2xl flex items-center justify-center border-4 border-black shadow-lg`}>
                 <BookOpen className="w-8 h-8 text-white" />
               </div>
               <div>
@@ -384,9 +384,9 @@ export default function StudentResults() {
             </div>
           </div>
 
-          <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-lime-800' : 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500'} rounded-3xl shadow-2xl border-4 border-black p-6 hover:scale-105 transition-all`}>
+          <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-lime-800' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-500 to-indigo-600'} rounded-3xl shadow-2xl border-4 border-black p-6 hover:scale-105 transition-all`}>
             <div className="flex items-center space-x-4">
-              <div className={`w-16 h-16 ${theme === 'ben10' ? 'bg-gradient-to-br from-[#b2e05b] to-[#64cc4f]' : 'bg-gradient-to-br from-yellow-400 to-yellow-600'} rounded-2xl flex items-center justify-center border-4 border-black shadow-lg`}>
+              <div className={`w-16 h-16 ${theme === 'ben10' ? 'bg-gradient-to-br from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' : 'bg-gradient-to-br from-blue-400 to-indigo-600'} rounded-2xl flex items-center justify-center border-4 border-black shadow-lg`}>
                 <Target className="w-8 h-8 text-white" />
               </div>
               <div>
@@ -398,10 +398,10 @@ export default function StudentResults() {
             </div>
           </div>
 
-          <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-lime-800' : 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500'} rounded-3xl shadow-2xl border-4 border-black p-6 hover:scale-105 transition-all`}>
+          <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-lime-800' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-500 to-indigo-600'} rounded-3xl shadow-2xl border-4 border-black p-6 hover:scale-105 transition-all`}>
             <div className="flex items-center space-x-4">
-              <div className={`w-16 h-16 ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] to-[#b2e05b]' : 'bg-gradient-to-br from-yellow-400 to-yellow-600'} rounded-2xl flex items-center justify-center border-4 border-black shadow-lg`}>
-                <TrendingUp className="w-8 h-8 text-white" />
+              <div className={`w-16 h-16 ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' : 'bg-gradient-to-br from-blue-400 to-indigo-600'} rounded-2xl flex items-center justify-center border-4 border-black shadow-lg`}>
+                <BookOpen className="w-8 h-8 text-white" />
               </div>
               <div>
                 <p className="text-white font-black text-sm mb-1">Improving Classes</p>
@@ -412,10 +412,10 @@ export default function StudentResults() {
             </div>
           </div>
 
-          <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-lime-800' : 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500'} rounded-3xl shadow-2xl border-4 border-black p-6 hover:scale-105 transition-all`}>
+          <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-lime-800' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-500 to-indigo-600'} rounded-3xl shadow-2xl border-4 border-black p-6 hover:scale-105 transition-all`}>
             <div className="flex items-center space-x-4">
-              <div className={`w-16 h-16 ${theme === 'ben10' ? 'bg-gradient-to-br from-[#b2e05b] to-[#64cc4f]' : 'bg-gradient-to-br from-yellow-400 to-yellow-600'} rounded-2xl flex items-center justify-center border-4 border-black shadow-lg`}>
-                <AlertCircle className="w-8 h-8 text-white" />
+              <div className={`w-16 h-16 ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' : 'bg-gradient-to-br from-blue-400 to-indigo-600'} rounded-2xl flex items-center justify-center border-4 border-black shadow-lg`}>
+                <TrendingUp className="w-8 h-8 text-white" />
               </div>
               <div>
                 <p className="text-white font-black text-sm mb-1">Topics to Improve</p>
@@ -432,12 +432,12 @@ export default function StudentResults() {
           {/* Theme-aware Class List */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-3xl shadow-2xl border-4 border-black overflow-hidden">
-              <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#4cc235] to-lime-800' : 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500'} text-white p-6 border-b-4 border-black`}>
+              <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#4cc235] to-lime-800' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-500 via-indigo-600 to-indigo-800'} text-white p-6 border-b-4 border-black`}>
                 <h2 className="text-xl text-black font-black flex items-center">
       
                   My Classes
                 </h2>
-                <p className={`font-bold text-sm ${theme === 'ben10' ? 'text-green-100' : 'text-yellow-100'}`}>
+                <p className={`font-bold text-sm ${theme === 'ben10' ? 'text-green-100' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-200'}`}>
                   Select a class to view your {theme === 'ben10' ? 'heroic' : 'magical'} results! 
                 </p>
               </div>
@@ -511,18 +511,18 @@ export default function StudentResults() {
             </div>
           </div>
 
-          {/* Detailed Results */}
+                {/* Detailed Results */}
           <div className="lg:col-span-2">
             {selectedClass ? (
               <div className="space-y-6">
                 {/* Theme-aware Test Results */}
                 <div className="bg-white rounded-3xl shadow-2xl border-4 border-black overflow-hidden">
-                  <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#4cc235] to-lime-800' : 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500'} text-white p-6 border-b-4 border-black`}>
+                  <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#4cc235] to-lime-800' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-500 via-indigo-600 to-indigo-800'} text-white p-6 border-b-4 border-black`}>
                     <h2 className="text-xl font-black text-black flex items-center">
                       <span className="text-2xl mr-3 ">📊</span>
                       Test Results
                     </h2>
-                    <p className={`font-bold text-sm ${theme === 'ben10' ? 'text-green-100' : 'text-yellow-100'}`}>
+                    <p className={`font-bold text-sm ${theme === 'ben10' ? 'text-green-100' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-200'}`}>
                       Your best {theme === 'ben10' ? 'heroic' : 'magical'} performance for each test.
                     </p>
                   </div>
@@ -613,12 +613,12 @@ export default function StudentResults() {
                 {/* Theme-aware Difficulty Analysis */}
                 {difficultyAnalysis.length > 0 && (
                   <div className="bg-white rounded-3xl shadow-2xl border-4 border-black overflow-hidden">
-                    <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#4cc235] to-lime-800' : 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500'} text-white p-6 border-b-4 border-black`}>
+                    <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#4cc235] to-lime-800' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-500 via-indigo-600 to-indigo-800'} text-white p-6 border-b-4 border-black`}>
                       <h2 className="text-xl font-black flex items-center">
                         <span className="text-2xl mr-3">🎯</span>
                         Topics to Improve
                       </h2>
-                      <p className={`font-bold text-sm ${theme === 'ben10' ? 'text-green-100' : 'text-yellow-100'}`}>
+                      <p className={`font-bold text-sm ${theme === 'ben10' ? 'text-green-100' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-200'}`}>
                         Areas where you need more {theme === 'ben10' ? 'heroic' : 'magical'} practice to boost your skills!
                       </p>
                     </div>
@@ -673,7 +673,13 @@ export default function StudentResults() {
                 )}
               </div>
             ) : (
-              <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-lime-600 via-green-600 to-lime-600' : 'bg-gradient-to-r from-yellow-300 via-pink-300 to-purple-300'} rounded-3xl shadow-2xl border-4 border-black p-12 text-center`}>
+              <div className={`${
+                theme === 'ben10'
+                  ? 'bg-gradient-to-r from-lime-600 via-green-600 to-lime-600'
+                  : theme === 'tinkerbell'
+                  ? 'bg-gradient-to-r from-yellow-300 via-pink-300 to-purple-300'
+                  : 'bg-gradient-to-r from-blue-400 via-indigo-500 to-blue-600'
+              } rounded-3xl shadow-2xl border-4 border-black p-12 text-center`}>
                 <div className="text-6xl mb-6"></div>
                 <h3 className="text-2xl font-black text-black mb-4">
                   Select a Class
@@ -688,9 +694,21 @@ export default function StudentResults() {
 
         {/* Theme-aware Growth Insights */}
         {studentClasses.length > 0 && (
-          <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#4cc235] via-[#4cc235] to-lime-800' : 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500'} rounded-3xl shadow-2xl border-4 border-black p-8`}>
+          <div className={`${
+            theme === 'ben10'
+              ? 'bg-gradient-to-r from-[#4cc235] via-[#4cc235] to-lime-800'
+              : theme === 'tinkerbell'
+              ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500'
+              : 'bg-gradient-to-r from-blue-600 via-indigo-700 to-blue-800'
+          } rounded-3xl shadow-2xl border-4 border-black p-8`}>
             <div className="flex items-start space-x-6">
-              <div className={`w-20 h-20 ${theme === 'ben10' ? 'bg-gradient-to-br from-green-400 to-green-600' : 'bg-gradient-to-br from-yellow-400 to-yellow-600'} rounded-3xl flex items-center justify-center border-4 border-black shadow-lg flex-shrink-0`}>
+              <div className={`w-20 h-20 ${
+                theme === 'ben10'
+                  ? 'bg-gradient-to-br from-green-400 to-green-600'
+                  : theme === 'tinkerbell'
+                  ? 'bg-gradient-to-br from-yellow-400 to-yellow-600'
+                  : 'bg-gradient-to-br from-blue-400 to-indigo-600'
+              } rounded-3xl flex items-center justify-center border-4 border-black shadow-lg flex-shrink-0`}>
                 <Award className="w-10 h-10 text-white" />
               </div>
               <div className="flex-1">

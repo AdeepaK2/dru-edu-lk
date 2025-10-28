@@ -359,7 +359,9 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
         <div className={`p-6 border-t-4 border-black ${
           theme === 'ben10'
             ? 'bg-gradient-to-r from-[#222222] to-[#64cc4f]'
-            : 'bg-gradient-to-r from-yellow-500 to-green-600'
+            : theme === 'tinkerbell'
+            ? 'bg-gradient-to-r from-yellow-500 to-green-600'
+            : 'bg-gradient-to-r from-blue-600 to-indigo-700'
         }`}>
           <Button
             onClick={handleLogout}
@@ -367,7 +369,9 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
             className={`w-full flex items-center justify-center space-x-3 text-black font-black border-2 border-black rounded-full py-3 transform hover:scale-105 transition-all shadow-lg ${
               theme === 'ben10'
                 ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222] hover:from-[#b2e05b] hover:to-[#222222]'
-                : 'bg-gradient-to-r from-yellow-400 to-green-500 hover:from-yellow-500 hover:to-green-600'
+                : theme === 'tinkerbell'
+                ? 'bg-gradient-to-r from-yellow-400 to-green-500 hover:from-yellow-500 hover:to-green-600'
+                : 'bg-gradient-to-r from-blue-400 to-indigo-600 hover:from-blue-500 hover:to-indigo-700'
             }`}
           >
             <LogOut className="text-black w-5 h-5" />
