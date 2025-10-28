@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Button from '@/components/ui/Button';
 import { Badge } from '@/components/ui/badge';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
+import { useTheme } from '@/contexts/ThemeContext';
 import { ClassFirestoreService } from '@/apiservices/classFirestoreService';
 import { firestore } from '@/utils/firebase-client';
 import { collection, query, where, getDocs } from 'firebase/firestore';
@@ -54,6 +55,7 @@ export default function ClassSheetsPage() {
   const params = useParams();
   const classId = params.classId as string;
   const { user, student, loading: authLoading } = useStudentAuth();
+  const { theme } = useTheme();
   
   const [className, setClassName] = useState<string>('');
   const [classSheets, setClassSheets] = useState<ClassSheetData[]>([]);
@@ -166,12 +168,12 @@ export default function ClassSheetsPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-400 via-yellow-400 to-blue-400 p-6">
+      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : 'from-blue-400 to-indigo-600'} p-6`}>
         <div className="flex items-center justify-center py-12">
-          <div className="bg-gradient-to-r from-blue-400 to-purple-400 rounded-3xl shadow-2xl border-4 border-black p-8">
+          <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-yellow-400 to-green-500' : 'from-blue-500 to-purple-500'} rounded-3xl shadow-2xl border-4 border-black p-8`}>
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 border-4 border-black border-t-transparent rounded-full animate-spin bg-gradient-to-r from-yellow-400 to-orange-400"></div>
-              <span className="text-2xl font-black text-black">Loading your magical sheets... ✨</span>
+              <div className="w-12 h-12 border-4 border-black border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-2xl font-black text-black">Loading sheets...</span>
             </div>
           </div>
         </div>
@@ -181,9 +183,9 @@ export default function ClassSheetsPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-400 via-yellow-400 to-blue-400 p-6">
+      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : 'from-blue-400 to-indigo-600'} p-6`}>
         <div className="flex items-center justify-center py-12">
-          <div className="bg-gradient-to-r from-red-200 to-orange-200 rounded-3xl shadow-2xl border-4 border-black p-12 text-center">
+          <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f]/20 to-[#b2e05b]/20' : theme === 'tinkerbell' ? 'from-yellow-200 to-green-200' : 'from-red-200 to-orange-200'} rounded-3xl shadow-2xl border-4 border-black p-12 text-center`}>
             <div className="text-6xl mb-6">😔</div>
             <h3 className="text-2xl font-black text-black mb-4">
               Oops! Something went wrong
@@ -191,10 +193,10 @@ export default function ClassSheetsPage() {
             <p className="text-black font-bold text-lg mb-6">{error}</p>
             <Button
               onClick={() => router.back()}
-              className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black flex items-center space-x-2"
+              className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222] hover:from-[#b2e05b] hover:to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-500 to-green-600 hover:from-yellow-600 hover:to-green-700' : 'from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600'} text-white px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black flex items-center space-x-2`}
             >
               <ArrowLeft className="w-5 h-5" />
-              <span>Go Back to Magic</span>
+              <span>Go Back</span>
             </Button>
           </div>
         </div>
@@ -203,33 +205,29 @@ export default function ClassSheetsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-400 via-yellow-400 to-blue-400 p-6">
-      {/* Mickey Mouse Header */}
-      <div className="bg-gradient-to-r from-red-500 via-yellow-500 to-blue-500 rounded-3xl shadow-2xl border-4 border-black p-8 mb-8 relative overflow-hidden">
-        {/* Mickey Mouse Ears */}
-        <div className="absolute -top-4 -left-4 w-12 h-12 bg-black rounded-full"></div>
-        <div className="absolute -top-4 -right-4 w-12 h-12 bg-black rounded-full"></div>
+    <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : 'from-blue-600 via-indigo-700 to-slate-900'} p-6`}>
+      {/* Header */}
+      <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : 'from-blue-500 via-indigo-600 to-slate-800'} rounded-3xl shadow-2xl border-4 border-black p-8 mb-8 relative overflow-hidden`}>
 
         <div className="flex items-center space-x-4 relative z-10 mb-4">
           <Button
             onClick={() => router.back()}
-            className="bg-gradient-to-r from-gray-500 to-slate-500 hover:from-gray-600 hover:to-slate-600 text-white px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black flex items-center space-x-2"
+            className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#222222] to-[#64cc4f] hover:from-[#222222] hover:to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700' : 'from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800'} text-white px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black flex items-center space-x-2`}
           >
-            <span>← Back to Magic</span>
+            <ArrowLeft className="w-5 h-5" />
+            <span>Back</span>
           </Button>
         </div>
 
         <div className="flex items-center space-x-4 relative z-10">
-          <div className="text-6xl">📊</div>
+          <div className="text-6xl">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : '�'}</div>
           <div>
             <h1 className="text-4xl font-black text-black mb-2 flex items-center">
-              <span>Mickey's</span>
-              <span className="ml-2 text-white font-black text-5xl">{className}</span>
-              <span className="ml-2 text-3xl">Sheets</span>
-              <span className="ml-2 text-3xl">🎭</span>
+              <span>{className}</span>
+              <span className="ml-2 text-white font-black text-5xl">Sheets</span>
             </h1>
-            <p className="text-black font-bold text-lg">
-              Welcome back, {student?.name}! Access your magical Google Sheets assignments! ✨
+            <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-white' : theme === 'tinkerbell' ? 'text-white' : 'text-blue-200'}`}>
+              Welcome back, {student?.name}! Access your Google Sheets assignments! 
             </p>
           </div>
         </div>
@@ -237,19 +235,19 @@ export default function ClassSheetsPage() {
 
       {/* Sheets Grid */}
       {classSheets.length === 0 ? (
-        <div className="bg-gradient-to-r from-yellow-200 via-orange-200 to-red-200 rounded-3xl shadow-2xl border-4 border-black p-12 text-center">
-          <div className="text-6xl mb-6">📚</div>
-          <h3 className="text-2xl font-black text-black mb-4">
-            No Magical Sheets Yet
+        <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#222222] via-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : 'from-slate-700 via-indigo-800 to-blue-900'} rounded-3xl shadow-2xl border-4 border-black p-12 text-center`}>
+          <div className="text-6xl mb-6">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : '📚'}</div>
+          <h3 className="text-2xl font-black text-white mb-4">
+            No Sheets Yet
           </h3>
-          <p className="text-black font-bold text-lg">
-            Your teacher hasn't allocated any Google Sheets for this class yet. Check back soon for magical assignments!
+          <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-[#b2e05b]' : theme === 'tinkerbell' ? 'text-yellow-200' : 'text-blue-200'}`}>
+            Your teacher hasn't allocated any Google Sheets for this class yet. Check back soon!
           </p>
         </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {classSheets.map(({ allocation, sheet }) => (
-            <div key={allocation.id} className="bg-gradient-to-r from-white to-gray-100 rounded-3xl shadow-2xl border-4 border-black p-6 hover:scale-105 transition-all">
+            <div key={allocation.id} className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-white to-[#b2e05b]/10' : theme === 'tinkerbell' ? 'from-white to-yellow-100' : 'from-white to-blue-100'} rounded-3xl shadow-2xl border-4 border-black p-6 hover:scale-105 transition-all`}>
               <div className="flex items-center space-x-3 mb-4">
                 <div className="text-4xl">📊</div>
                 <h3 className="text-xl font-black text-black truncate">
@@ -259,7 +257,7 @@ export default function ClassSheetsPage() {
 
               <div className="space-y-4">
                 {allocation.templateDescription && (
-                  <p className="text-black font-bold text-lg bg-white/80 rounded-2xl p-3 border-2 border-black">
+                  <p className="text-black font-bold text-sm bg-white/80 rounded-2xl p-3 border-2 border-black">
                     {allocation.templateDescription}
                   </p>
                 )}
@@ -267,10 +265,10 @@ export default function ClassSheetsPage() {
                 <div className="flex items-center space-x-2">
                   {getStatusIcon(sheet?.status)}
                   <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-black border-2 border-black ${
-                    sheet?.status === 'completed' ? 'bg-green-400 text-white' :
-                    sheet?.status === 'in-progress' ? 'bg-blue-400 text-white' :
-                    sheet?.status === 'graded' ? 'bg-purple-400 text-white' :
-                    sheet?.status === 'assigned' ? 'bg-yellow-400 text-black' :
+                    sheet?.status === 'completed' ? `bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#b2e05b]' : 'from-green-400 to-green-500'} text-white` :
+                    sheet?.status === 'in-progress' ? `bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : 'from-blue-400 to-blue-500'} text-white` :
+                    sheet?.status === 'graded' ? `bg-gradient-to-r ${theme === 'ben10' ? 'from-[#222222] to-[#64cc4f]' : 'from-purple-400 to-purple-500'} text-white` :
+                    sheet?.status === 'assigned' ? `bg-gradient-to-r ${theme === 'ben10' ? 'from-[#b2e05b] to-[#64cc4f]' : 'from-yellow-400 to-yellow-500'} text-black` :
                     'bg-gray-400 text-white'
                   }`}>
                     {sheet?.status ? sheet.status.replace('-', ' ').toUpperCase() : 'Not Assigned'}
@@ -294,19 +292,19 @@ export default function ClassSheetsPage() {
                     {sheet.grade !== undefined && (
                       <div className="flex items-center space-x-2">
                         <span className="text-2xl">🏆</span>
-                        <span className="text-lg font-black text-purple-600">Grade: {sheet.grade}%</span>
+                        <span className={`text-lg font-black ${theme === 'ben10' ? 'text-[#64cc4f]' : 'text-purple-600'}`}>Grade: {sheet.grade}%</span>
                       </div>
                     )}
                   </div>
                 )}
 
                 {sheet?.feedback && (
-                  <div className="bg-gradient-to-r from-blue-100 to-purple-100 rounded-2xl p-4 border-2 border-black">
+                  <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f]/20 to-[#b2e05b]/20' : theme === 'tinkerbell' ? 'from-yellow-100 to-green-100' : 'from-blue-100 to-purple-100'} rounded-2xl p-4 border-2 border-black`}>
                     <div className="flex items-center space-x-2 mb-2">
                       <span className="text-2xl">💬</span>
                       <span className="font-black text-black">Teacher's Feedback:</span>
                     </div>
-                    <p className="text-black font-bold">
+                    <p className="text-black font-bold text-sm">
                       {sheet.feedback}
                     </p>
                   </div>
@@ -316,10 +314,10 @@ export default function ClassSheetsPage() {
                   {sheet?.googleSheetUrl ? (
                     <Button
                       onClick={() => handleOpenSheet(sheet.googleSheetUrl)}
-                      className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black flex items-center justify-center space-x-2"
+                      className={`w-full bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#b2e05b] hover:from-[#b2e05b] hover:to-[#64cc4f]' : theme === 'tinkerbell' ? 'from-green-500 to-yellow-500 hover:from-green-600 hover:to-yellow-600' : 'from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700'} text-white px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black flex items-center justify-center space-x-2`}
                     >
                       <ExternalLink className="w-5 h-5" />
-                      <span>Open Magical Sheet</span>
+                      <span>Open Sheet</span>
                     </Button>
                   ) : (
                     <Button

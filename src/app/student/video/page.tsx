@@ -178,26 +178,19 @@ export default function StudentVideos() {
     <div className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : 'bg-gradient-to-br from-blue-600 via-indigo-700 to-slate-900'} p-6`}>
       {/* Ben 10 Hero Header */}
       <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-600 via-indigo-700 to-slate-800'} rounded-3xl shadow-2xl border-4 border-black p-8 mb-8 relative overflow-hidden`}>
-        {/* Omnitrix Symbols */}
-        <div className={`absolute -top-4 -left-4 w-12 h-12 ${theme === 'ben10' ? 'bg-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-yellow-400' : 'bg-blue-400'} rounded-full border-2 border-black flex items-center justify-center`}>
-          <span className="text-black font-black text-lg">{theme === 'ben10' ? 'Ω' : theme === 'tinkerbell' ? '✨' : '📚'}</span>
-        </div>
-        <div className={`absolute -top-4 -right-4 w-12 h-12 ${theme === 'ben10' ? 'bg-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-yellow-400' : 'bg-blue-400'} rounded-full border-2 border-black flex items-center justify-center`}>
-          <span className="text-black font-black text-lg">{theme === 'ben10' ? 'Ω' : theme === 'tinkerbell' ? '✨' : '📚'}</span>
-        </div>
+        
 
         <div className="flex items-center space-x-4 relative z-10">
-          <div className="text-6xl">{theme === 'ben10' ? '⚡' : theme === 'tinkerbell' ? '✨' : '📚'}</div>
+          
           <div>
             <h1 className="text-4xl font-black text-white mb-2 flex items-center">
-              <span>{theme === 'ben10' ? 'Ben 10\'s' : theme === 'tinkerbell' ? 'Tinkerbell\'s' : 'My'}</span>
-              <span className={`ml-2 font-black text-5xl ${theme === 'ben10' ? 'text-[#b2e05b]' : theme === 'tinkerbell' ? 'text-yellow-300' : 'text-blue-300'}`}>{theme === 'ben10' ? 'Hero' : theme === 'tinkerbell' ? 'Magical' : 'Learning'}</span>
-              <span className="ml-2 text-3xl">Video</span>
-              <span className="ml-2 text-3xl">Library</span>
-              <span className="ml-2 text-3xl">{theme === 'ben10' ? 'Ω' : theme === 'tinkerbell' ? '✨' : '📚'}</span>
+              
+              <span className="ml-2 text-4xl text-black">Video</span>
+              <span className="ml-2 text-4xl text-black">Library</span>
+              
             </h1>
             <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-[#b2e05b]' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-100'}`}>
-              Welcome back, {student?.name}! Transform your learning with {theme === 'ben10' ? 'hero' : theme === 'tinkerbell' ? 'magical' : 'enriching'}-powered videos! {theme === 'ben10' ? '⚡' : theme === 'tinkerbell' ? '✨' : '📚'}
+              Welcome back, {student?.name}! Transform your learning with {theme === 'ben10' ? 'hero' : theme === 'tinkerbell' ? 'magical' : 'enriching'}-powered videos! 
             </p>
           </div>
         </div>
@@ -222,7 +215,7 @@ export default function StudentVideos() {
           <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-2xl">🔍</div>
           <input
             type="text"
-            placeholder="🔍 Search hero classes..."
+            placeholder="Search hero classes..."
             value={searchTerm}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
             className="pl-12 w-full px-6 py-3 border-4 border-black rounded-3xl focus:ring-4 focus:ring-[#64cc4f] focus:border-black bg-white text-black font-bold text-lg placeholder-black/60"
@@ -236,9 +229,9 @@ export default function StudentVideos() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-2xl font-black text-black mb-2 flex items-center">
-                <span className="text-3xl mr-3">🎯</span>
+               
                 Teacher Selected Videos for You
-                <span className="ml-3 text-xl">⚡</span>
+             
               </h2>
               <p className="text-black font-bold">
                 Special video recommendations from your teachers
@@ -246,7 +239,7 @@ export default function StudentVideos() {
             </div>
             <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 to-yellow-600' : 'bg-gradient-to-r from-blue-600 to-indigo-700'} rounded-full px-4 py-2 border-2 border-black`}>
               <span className="text-white font-black text-sm">
-                {individualVideos.length} {theme === 'ben10' ? 'Hero' : theme === 'tinkerbell' ? 'Magical' : 'Learning'} Video{individualVideos.length > 1 ? 's' : ''} {theme === 'ben10' ? '⚡' : theme === 'tinkerbell' ? '✨' : '📚'}
+                {individualVideos.length}  Video{individualVideos.length > 1 ? 's' : ''} 
               </span>
             </div>
           </div>
@@ -294,7 +287,7 @@ export default function StudentVideos() {
       <div>
         {getFilteredClasses().length === 0 ? (
           <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] via-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-200 via-green-400 to-yellow-300' : 'bg-gradient-to-r from-blue-200 via-indigo-400 to-slate-400'} rounded-3xl shadow-2xl border-4 border-black p-12 text-center`}>
-            <div className="text-6xl mb-6">{theme === 'ben10' ? 'Ω' : theme === 'tinkerbell' ? '✨' : '📚'}</div>
+
             <h3 className="text-2xl font-black text-white mb-4">
               {searchTerm ? 'No Hero Classes Found' : 'No Classes Available Yet'}
             </h3>
@@ -344,7 +337,7 @@ const ClassCard: React.FC<ClassCardProps> = ({ classInfo, theme }) => {
                 {classInfo.subject} • Grade {classInfo.grade}
               </p>
             </div>
-            <div className="text-4xl">{theme === 'ben10' ? '⚡' : theme === 'tinkerbell' ? '✨' : '📚'}</div>
+   
           </div>
         </div>
 

@@ -335,27 +335,21 @@ export default function StudentResults() {
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Theme-aware Header */}
         <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] via-[#b2e05b] to-[#222222]' : 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500'} rounded-3xl shadow-2xl border-4 border-black p-8 relative overflow-hidden`}>
-          {/* Theme Symbols */}
-          <div className={`absolute -top-4 -left-4 w-12 h-12 ${theme === 'ben10' ? 'bg-[#64cc4f]' : 'bg-yellow-400'} rounded-full border-2 border-black flex items-center justify-center`}>
-            <span className="text-black font-black text-lg">{theme === 'ben10' ? 'Ω' : '✨'}</span>
-          </div>
-          <div className={`absolute -top-4 -right-4 w-12 h-12 ${theme === 'ben10' ? 'bg-[#64cc4f]' : 'bg-yellow-400'} rounded-full border-2 border-black flex items-center justify-center`}>
-            <span className="text-black font-black text-lg">{theme === 'ben10' ? 'Ω' : '✨'}</span>
-          </div>
+         
 
           <div className="flex items-center space-x-4 relative z-10">
-            <div className="text-6xl">{theme === 'ben10' ? '⚡' : '✨'}</div>
+            
             <div>
               <h1 className="text-4xl font-black text-white mb-2 flex items-center">
-                <span>{theme === 'ben10' ? 'Ben 10\'s' : 'Tinkerbell\'s'}</span>
-                <span className={`ml-2 font-black text-5xl ${theme === 'ben10' ? 'text-[#b2e05b]' : 'text-yellow-300'}`}>{theme === 'ben10' ? 'Hero' : 'Magical'}</span>
-                <span className="ml-2 text-3xl">Results</span>
-                <span className="ml-2 text-3xl">&</span>
-                <span className="ml-2 text-3xl">Progress</span>
-                <span className="ml-2 text-3xl">{theme === 'ben10' ? 'Ω' : '✨'}</span>
+                
+               
+                <span className="ml-2 text-4xl text-black ">Results</span>
+                <span className="ml-2 text-4xl text-black">&</span>
+                <span className="ml-2 text-4xl text-black">Progress</span>
+             
               </h1>
               <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-[#b2e05b]' : 'text-yellow-100'}`}>
-                Welcome back, {student?.name}! Let's see how {theme === 'ben10' ? 'heroic' : 'magical'} your learning journey has been! {theme === 'ben10' ? '⚡' : '✨'}
+                Welcome back, {student?.name}! Let's see how {theme === 'ben10' ? 'heroic' : 'magical'} your learning journey has been! 
               </p>
             </div>
           </div>
@@ -367,7 +361,7 @@ export default function StudentResults() {
             <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-2xl">🔍</div>
             <input
               type="text"
-              placeholder="🔍 Search hero classes..."
+              placeholder="Search hero classes..."
               value={searchTerm}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
               className="pl-12 w-full px-6 py-3 border-4 border-black rounded-3xl focus:ring-4 focus:ring-[#64cc4f] focus:border-black bg-white text-black font-bold text-lg placeholder-black/60"
@@ -440,12 +434,12 @@ export default function StudentResults() {
           <div className="lg:col-span-1">
             <div className="bg-white rounded-3xl shadow-2xl border-4 border-black overflow-hidden">
               <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-green-600 to-black' : 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500'} text-white p-6 border-b-4 border-black`}>
-                <h2 className="text-xl font-black flex items-center">
-                  <span className="text-2xl mr-3">{theme === 'ben10' ? 'Ω' : '✨'}</span>
-                  My {theme === 'ben10' ? 'Hero' : 'Magical'} Classes
+                <h2 className="text-xl text-black font-black flex items-center">
+                  
+                  My Classes
                 </h2>
                 <p className={`font-bold text-sm ${theme === 'ben10' ? 'text-green-100' : 'text-yellow-100'}`}>
-                  Select a class to view your {theme === 'ben10' ? 'heroic' : 'magical'} results! {theme === 'ben10' ? '⚡' : '✨'}
+                  Select a class to view your {theme === 'ben10' ? 'heroic' : 'magical'} results! 
                 </p>
               </div>
               
@@ -502,14 +496,14 @@ export default function StudentResults() {
                 
                 {filteredClasses.length === 0 && (
                   <div className="text-center py-8">
-                    <div className="text-4xl mb-4">{theme === 'ben10' ? 'Ω' : '✨'}</div>
+                    
                     <h3 className="text-xl font-black text-black mb-2">
-                      {searchTerm ? `No ${theme === 'ben10' ? 'Hero' : 'Magical'} Classes Found` : `No Classes Available Yet`}
+                      {searchTerm ? `No Classes Found` : `No Classes Available Yet`}
                     </h3>
                     <p className="text-gray-600 font-bold">
                       {searchTerm
-                        ? `Try adjusting your search to find your ${theme === 'ben10' ? 'hero' : 'magical'} classes! 🔍`
-                        : `You haven't enrolled in any classes yet. Time to start your ${theme === 'ben10' ? 'hero' : 'magical'} learning journey! ${theme === 'ben10' ? '⚡' : '✨'}`
+                        ? `Try adjusting your search to find your classes! 🔍`
+                        : `You haven't enrolled in any classes yet. Time to start your ${theme === 'ben10' ? 'hero' : 'magical'} learning journey!`
                       }
                     </p>
                   </div>
@@ -525,12 +519,12 @@ export default function StudentResults() {
                 {/* Theme-aware Test Results */}
                 <div className="bg-white rounded-3xl shadow-2xl border-4 border-black overflow-hidden">
                   <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-green-600 to-black' : 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500'} text-white p-6 border-b-4 border-black`}>
-                    <h2 className="text-xl font-black flex items-center">
-                      <span className="text-2xl mr-3">{theme === 'ben10' ? '⚡' : '✨'}</span>
+                    <h2 className="text-xl font-black text-black flex items-center">
+                      <span className="text-2xl mr-3 ">📊</span>
                       Test Results
                     </h2>
                     <p className={`font-bold text-sm ${theme === 'ben10' ? 'text-green-100' : 'text-yellow-100'}`}>
-                      Your best {theme === 'ben10' ? 'heroic' : 'magical'} performance for each test {theme === 'ben10' ? 'Ω' : '✨'}
+                      Your best {theme === 'ben10' ? 'heroic' : 'magical'} performance for each test.
                     </p>
                   </div>
                   
@@ -605,12 +599,12 @@ export default function StudentResults() {
                       </div>
                     ) : (
                       <div className="text-center py-8">
-                        <div className="text-4xl mb-4">{theme === 'ben10' ? '⚡' : '✨'}</div>
+                       
                         <h3 className="text-xl font-black text-black mb-2">
                           No Test Results Yet
                         </h3>
                         <p className="text-gray-600 font-bold">
-                          Complete some {theme === 'ben10' ? 'hero' : 'magical'} tests to see your results here! {theme === 'ben10' ? 'Ω' : '✨'}
+                          Complete some {theme === 'ben10' ? 'hero' : 'magical'} tests to see your results here! 
                         </p>
                       </div>
                     )}
@@ -626,7 +620,7 @@ export default function StudentResults() {
                         Topics to Improve
                       </h2>
                       <p className={`font-bold text-sm ${theme === 'ben10' ? 'text-green-100' : 'text-yellow-100'}`}>
-                        Areas where you need more {theme === 'ben10' ? 'heroic' : 'magical'} practice {theme === 'ben10' ? '⚡' : '✨'}
+                        Areas where you need more {theme === 'ben10' ? 'heroic' : 'magical'} practice to boost your skills!
                       </p>
                     </div>
                     
@@ -668,7 +662,7 @@ export default function StudentResults() {
                             {analysis.improvementNeeded && (
                               <div className="mt-3 p-3 bg-gradient-to-r from-red-100 to-pink-100 rounded-xl border-2 border-red-300">
                                 <p className="text-red-700 font-black text-sm">
-                                  💡 Focus on this topic - accuracy below 60%! Let's make it {theme === 'ben10' ? 'heroic' : 'magical'}! {theme === 'ben10' ? '⚡' : '✨'}
+                                  💡 Focus on this topic - accuracy below 60%! Let's make it {theme === 'ben10' ? 'heroic' : 'magical'}! 
                                 </p>
                               </div>
                             )}
@@ -681,12 +675,12 @@ export default function StudentResults() {
               </div>
             ) : (
               <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-yellow-200 via-orange-200 to-red-200' : 'bg-gradient-to-r from-yellow-300 via-pink-300 to-purple-300'} rounded-3xl shadow-2xl border-4 border-black p-12 text-center`}>
-                <div className="text-6xl mb-6">{theme === 'ben10' ? 'Ω' : '✨'}</div>
+                <div className="text-6xl mb-6"></div>
                 <h3 className="text-2xl font-black text-black mb-4">
-                  Select a {theme === 'ben10' ? 'Hero' : 'Magical'} Class
+                  Select a Class
                 </h3>
                 <p className="text-black font-bold text-lg">
-                  Choose a class from the left to view your detailed test results and progress analysis! {theme === 'ben10' ? '⚡' : '✨'}
+                  Choose a class from the left to view your detailed test results and progress analysis! 
                 </p>
               </div>
             )}
@@ -701,12 +695,12 @@ export default function StudentResults() {
                 <Award className="w-10 h-10 text-white" />
               </div>
               <div className="flex-1">
-                <h3 className="text-2xl font-black text-white mb-3 flex items-center">
+                <h3 className="text-2xl font-black text-black mb-3 flex items-center">
                   <span>Your Learning Journey</span>
                   <span className="ml-3 text-3xl">{theme === 'ben10' ? '🚀' : '🧚‍♀️'}</span>
                 </h3>
                 <p className="text-white font-bold text-lg mb-6">
-                  Keep up the great work! Here's what we noticed about your {theme === 'ben10' ? 'heroic' : 'magical'} progress:
+                  Keep up the great work! Here's what we noticed about your progress:
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                   <div className="flex items-center bg-white/20 rounded-2xl p-4 border-2 border-white/30">

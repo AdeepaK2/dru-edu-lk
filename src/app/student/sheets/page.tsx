@@ -201,7 +201,7 @@ export default function StudentSheetsPage() {
        
               </h1>
               <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-white' : theme === 'tinkerbell' ? 'text-white' : 'text-blue-200'}`}>
-                Welcome back, {student?.name}! Access your {theme === 'ben10' ? 'hero' : theme === 'tinkerbell' ? 'magical' : 'learning'} Google Sheets assignments! {theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : '📖'}
+                Welcome back, {student?.name}! Access your Google Sheets assignments! 
               </p>
             </div>
           </div>
@@ -258,10 +258,10 @@ export default function StudentSheetsPage() {
             <h2 className="text-2xl font-black text-black mb-2 flex items-center">
               <span className="text-3xl mr-3">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : '📖'}</span>
               Your  Classes
-              <span className="ml-3 text-xl">{theme === 'ben10' ? '⚡' : theme === 'tinkerbell' ? '✨' : '📚'}</span>
+             
             </h2>
             <p className={`font-bold ${theme === 'ben10' ? 'text-[#b2e05b]' : theme === 'tinkerbell' ? 'text-yellow-200' : 'text-blue-200'}`}>
-              Click on a class to view and access your {theme === 'ben10' ? 'hero' : theme === 'tinkerbell' ? 'magical' : 'learning'} sheets
+              Click on a class to view and access your sheets
             </p>
           </div>
 
@@ -269,10 +269,10 @@ export default function StudentSheetsPage() {
             <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#222222] via-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : 'from-slate-700 via-indigo-800 to-blue-900'} p-12 text-center border-t-4 border-black`}>
               <div className="text-6xl mb-6">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : '📖'}</div>
               <h3 className="text-2xl font-black text-white mb-4">
-                No {theme === 'ben10' ? 'Hero' : theme === 'tinkerbell' ? 'Magical' : 'Learning'} Classes Yet
+                No Classes Yet
               </h3>
               <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-[#b2e05b]' : theme === 'tinkerbell' ? 'text-yellow-200' : 'text-blue-200'}`}>
-                You haven't enrolled in any classes yet. Time to start your {theme === 'ben10' ? 'hero' : theme === 'tinkerbell' ? 'magical' : 'learning'} training!
+                You haven't enrolled in any classes yet. Time to start your training!
               </p>
             </div>
           ) : (
@@ -300,7 +300,7 @@ export default function StudentSheetsPage() {
                         <div className={`flex items-center space-x-6 text-sm font-bold ${theme === 'ben10' ? 'text-black' : theme === 'tinkerbell' ? 'text-black' : 'text-blue-200'}`}>
                           <div className="flex items-center space-x-2">
                             <span className="text-2xl">📊</span>
-                            <span>{classData.sheetCount} {theme === 'ben10' ? 'hero' : theme === 'tinkerbell' ? 'magical' : 'active'} sheet{classData.sheetCount !== 1 ? 's' : ''}</span>
+                            <span>{classData.sheetCount} sheet{classData.sheetCount !== 1 ? 's' : ''}</span>
                           </div>
                           {classData.lastActivity && (
                             <div className="flex items-center space-x-2">
@@ -314,7 +314,7 @@ export default function StudentSheetsPage() {
                     <div className="flex items-center space-x-3">
                       {classData.sheetCount > 0 && (
                         <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-black border-2 border-black shadow-lg ${theme === 'ben10' ? 'bg-[#64cc4f] text-white' : theme === 'tinkerbell' ? 'bg-yellow-500 text-white' : 'bg-blue-500 text-white'}`}>
-                          {classData.sheetCount} Sheet{classData.sheetCount !== 1 ? 's' : ''} {theme === 'ben10' ? '⚡' : theme === 'tinkerbell' ? '✨' : '📚'}
+                          {classData.sheetCount} Sheet{classData.sheetCount !== 1 ? 's' : ''}
                         </span>
                       )}
                       <div className="text-3xl transform group-hover:translate-x-1 transition-transform text-white">➡️</div>

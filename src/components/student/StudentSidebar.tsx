@@ -202,7 +202,7 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
         <div 
           className={`fixed inset-0 z-40 backdrop-blur-sm lg:hidden ${
             theme === 'ben10'
-              ? 'bg-gradient-to-br from-green-400/80 via-black/80 to-green-500/80'
+              ? 'bg-gradient-to-br from-[#64cc4f]/80 via-[#222222]/80 to-[#b2e05b]/80'
               : theme === 'tinkerbell'
               ? 'bg-gradient-to-br from-green-400/80 via-yellow-400/80 to-yellow-600/80'
               : 'bg-gradient-to-br from-blue-400/80 via-indigo-400/80 to-indigo-600/80'
@@ -217,7 +217,7 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
         lg:translate-x-0 lg:static lg:inset-0 lg:w-64
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         ${theme === 'ben10' 
-          ? 'bg-gradient-to-b from-green-500 via-black to-green-600' 
+          ? 'bg-gradient-to-b from-[#64cc4f] via-[#222222] to-[#b2e05b]' 
           : theme === 'tinkerbell'
           ? 'bg-gradient-to-br from-green-400 to-yellow-600'
           : 'bg-gradient-to-b from-blue-500 via-indigo-500 to-indigo-600'}
@@ -320,13 +320,13 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
                   flex items-center justify-between px-4 py-3 text-sm font-black rounded-2xl transition-all transform hover:scale-105 border-2
                   ${isActive 
                     ? (theme === 'ben10'
-                        ? 'bg-gradient-to-r from-green-500 to-black text-white border-black shadow-lg'
+                        ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222] text-white border-black shadow-lg'
                         : theme === 'tinkerbell'
                         ? 'bg-gradient-to-r from-yellow-400 to-green-500 text-white border-black shadow-lg'
                         : 'bg-gradient-to-r from-blue-400 to-indigo-600 text-white border-indigo-700 shadow-lg')
                     : `bg-white text-black hover:bg-gradient-to-r border-gray-300 hover:border-black ${
                         theme === 'ben10'
-                          ? 'hover:from-green-400 hover:to-black hover:text-white'
+                          ? 'hover:from-[#64cc4f] hover:to-[#222222] hover:text-white'
                           : theme === 'tinkerbell'
                           ? 'hover:from-yellow-300 hover:to-green-400 hover:text-white'
                           : 'hover:from-blue-300 hover:to-indigo-500 hover:text-white'
@@ -347,7 +347,7 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
                 {item.badge && (
                   <span className={`inline-flex items-center px-3 py-1 text-sm font-black text-white rounded-full border-2 border-black ${
                     theme === 'ben10'
-                      ? 'bg-gradient-to-r from-green-500 to-black'
+                      ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222]'
                       : theme === 'tinkerbell'
                       ? 'bg-gradient-to-r from-yellow-400 to-green-500'
                       : 'bg-gradient-to-r from-blue-400 to-indigo-600'
@@ -366,7 +366,7 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
         {/* Logout Button */}
         <div className={`p-6 border-t-4 border-black ${
           theme === 'ben10'
-            ? 'bg-gradient-to-r from-black to-green-600'
+            ? 'bg-gradient-to-r from-[#222222] to-[#64cc4f]'
             : 'bg-gradient-to-r from-yellow-500 to-green-600'
         }`}>
           <Button
