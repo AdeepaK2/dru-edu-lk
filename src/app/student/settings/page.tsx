@@ -404,7 +404,7 @@ export default function StudentSettingsPage() {
       <div className="space-y-8 max-w-6xl mx-auto">
       {/* Page Header - Theme Aware */}
       <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-500 via-yellow-500 to-green-600' : 'from-blue-600 via-indigo-700 to-indigo-900'} rounded-2xl text-white p-8 border-2 border-black relative overflow-hidden`}>
-        {/* Ben 10 themed background elements */}
+
         
    
         
@@ -778,10 +778,23 @@ export default function StudentSettingsPage() {
       </div>
 
       {/* Password Settings - Theme Aware */}
-      <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' : 'from-green-400 via-yellow-500 to-green-600'} rounded-xl shadow-lg border-4 border-black p-6`}>
+      <div className={`bg-gradient-to-r ${
+        theme === 'ben10'
+          ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]'
+          : theme === 'tinkerbell'
+          ? 'from-green-400 via-yellow-500 to-green-600'
+          : 'from-blue-400 via-indigo-500 to-blue-600'
+      } rounded-xl shadow-lg border-4 border-black p-6`}>
         <div className="flex items-center space-x-3 mb-6">
           <div className="text-3xl">🔐</div>
-          <h2 className="text-2xl font-black text-black">Ben 10's Hero Password Chamber</h2>
+          <h2 className="text-2xl font-black text-black">
+            {theme === 'ben10'
+              ? "Ben 10's Hero Password Chamber"
+              : theme === 'tinkerbell'
+              ? "Tinkerbell's Magical Password Realm"
+              : "Secure Password Center"
+            }
+          </h2>
         </div>
 
         <form onSubmit={handlePasswordSubmit} className="space-y-6">
@@ -898,7 +911,13 @@ export default function StudentSettingsPage() {
             <Button
               type="submit"
               disabled={loading.password || !Object.values(passwordValidation).every(v => v)}
-              className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222] hover:from-[#b2e05b] hover:to-[#222222]' : 'from-yellow-500 to-green-600 hover:from-yellow-600 hover:to-green-700'} text-white px-8 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black disabled:opacity-50 animate-pulse`}
+              className={`bg-gradient-to-r ${
+                theme === 'ben10'
+                  ? 'from-[#64cc4f] to-[#222222] hover:from-[#b2e05b] hover:to-[#222222]'
+                  : theme === 'tinkerbell'
+                  ? 'from-yellow-500 to-green-600 hover:from-yellow-600 hover:to-green-700'
+                  : 'from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700'
+              } text-white px-8 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black disabled:opacity-50 animate-pulse`}
             >
               {loading.password ? 'Transforming Hero...' : 'Change Password Power!'}
             </Button>
