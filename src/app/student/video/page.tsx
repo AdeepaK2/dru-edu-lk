@@ -167,7 +167,7 @@ export default function StudentVideos() {
           </div>
           <div className="text-center">
             <h2 className="text-2xl font-black text-black mb-2">Loading Videos...</h2>
-            <p className="text-gray-600 font-medium">Get ready to transform your learning! 🔄⚡</p>
+            <p className="text-gray-600 font-medium">Get ready to transform your learning!</p>
           </div>
         </div>
       </div>
@@ -185,11 +185,11 @@ export default function StudentVideos() {
           <div>
             <h1 className="text-4xl font-black text-white mb-2 flex items-center">
               
-              <span className="ml-2 text-4xl text-black">Video</span>
+              <span className=" text-4xl text-black">Video</span>
               <span className="ml-2 text-4xl text-black">Library</span>
               
             </h1>
-            <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-[#b2e05b]' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-100'}`}>
+            <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-[#314603]' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-100'}`}>
               Welcome back, {student?.name}! Transform your learning with {theme === 'ben10' ? 'hero' : theme === 'tinkerbell' ? 'magical' : 'enriching'}-powered videos! 
             </p>
           </div>
@@ -327,7 +327,7 @@ const ClassCard: React.FC<ClassCardProps> = ({ classInfo, theme }) => {
     <Link href={`/student/classes/${classInfo.id}/videos`}>
       <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 via-green-400 to-yellow-400' : 'bg-gradient-to-r from-blue-600 via-indigo-700 to-slate-800'} rounded-3xl shadow-2xl border-4 border-black overflow-hidden hover:scale-105 transition-all cursor-pointer`}>
         {/* Class Header */}
-        <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 to-yellow-600' : 'bg-gradient-to-r from-blue-400 to-indigo-600'} text-white p-6 border-b-4 border-black`}>
+        <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#2c6508]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 to-yellow-600' : 'bg-gradient-to-r from-blue-400 to-indigo-600'} text-white p-6 border-b-4 border-black`}>
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <h3 className="text-xl font-black truncate mb-2">

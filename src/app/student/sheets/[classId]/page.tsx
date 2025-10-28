@@ -207,7 +207,7 @@ export default function ClassSheetsPage() {
   return (
     <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : 'from-blue-600 via-indigo-700 to-slate-900'} p-6`}>
       {/* Header */}
-      <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : 'from-blue-500 via-indigo-600 to-slate-800'} rounded-3xl shadow-2xl border-4 border-black p-8 mb-8 relative overflow-hidden`}>
+      <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#486b05] ' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : 'from-blue-500 via-indigo-600 to-slate-800'} rounded-3xl shadow-2xl border-4 border-black p-8 mb-8 relative overflow-hidden`}>
 
         <div className="flex items-center space-x-4 relative z-10 mb-4">
           <Button
@@ -235,7 +235,7 @@ export default function ClassSheetsPage() {
 
       {/* Sheets Grid */}
       {classSheets.length === 0 ? (
-        <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#222222] via-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : 'from-slate-700 via-indigo-800 to-blue-900'} rounded-3xl shadow-2xl border-4 border-black p-12 text-center`}>
+        <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#222222] via-[#64cc4f] to-[#51760d]' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : 'from-slate-700 via-indigo-800 to-blue-900'} rounded-3xl shadow-2xl border-4 border-black p-12 text-center`}>
           <div className="text-6xl mb-6">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : '📚'}</div>
           <h3 className="text-2xl font-black text-white mb-4">
             No Sheets Yet
@@ -314,7 +314,7 @@ export default function ClassSheetsPage() {
                   {sheet?.googleSheetUrl ? (
                     <Button
                       onClick={() => handleOpenSheet(sheet.googleSheetUrl)}
-                      className={`w-full bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#b2e05b] hover:from-[#b2e05b] hover:to-[#64cc4f]' : theme === 'tinkerbell' ? 'from-green-500 to-yellow-500 hover:from-green-600 hover:to-yellow-600' : 'from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700'} text-white px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black flex items-center justify-center space-x-2`}
+                      className={`w-full bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#5a840a] hover:from-[#b2e05b] hover:to-[#64cc4f]' : theme === 'tinkerbell' ? 'from-green-500 to-yellow-500 hover:from-green-600 hover:to-yellow-600' : 'from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700'} text-white px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black flex items-center justify-center space-x-2`}
                     >
                       <ExternalLink className="w-5 h-5" />
                       <span>Open Sheet</span>

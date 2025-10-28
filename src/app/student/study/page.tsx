@@ -393,7 +393,7 @@ export default function StudentStudyPage() {
           </div>
           <div className="text-center">
             <h2 className="text-2xl font-black text-black mb-2">Loading Study Materials...</h2>
-            <p className="text-gray-600 font-medium">Get ready to transform your learning! 🔄⚡</p>
+            <p className="text-gray-600 font-medium">Get ready to transform your learning! </p>
           </div>
         </div>
       </div>

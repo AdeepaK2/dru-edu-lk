@@ -540,7 +540,7 @@ export default function StudentMeetingPage() {
     <div key={`meeting-${theme}`} className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : 'bg-gradient-to-br from-blue-600 via-indigo-700 to-slate-900'} p-6`}>
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Theme-aware Header */}
-        <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-600 via-indigo-700 to-slate-800'} rounded-3xl shadow-2xl border-4 border-black p-8 relative overflow-hidden`}>
+        <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-lime-800' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-600 via-indigo-700 to-slate-800'} rounded-3xl shadow-2xl border-4 border-black p-8 relative overflow-hidden`}>
           
 
           <div className="flex items-center justify-between relative z-10">
@@ -554,8 +554,8 @@ export default function StudentMeetingPage() {
                   <span className="ml-2 text-4xl text-black">Scheduler</span>
                  
                 </h1>
-                <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-[#b2e05b]' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-100'}`}>
-                  Welcome back, {student?.name}! Schedule {theme === 'ben10' ? 'heroic' : theme === 'tinkerbell' ? 'magical' : 'enriching'} one-on-one sessions with your teachers! 
+                <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-white' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-100'}`}>
+                  Welcome back, {student?.name}! Schedule one-on-one sessions with your teachers! 
                 </p>
               </div>
             </div>
@@ -665,8 +665,8 @@ export default function StudentMeetingPage() {
                   <span className="text-3xl mr-3">👨‍🏫</span>
                   Available Teachers
                 </h2>
-                <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-[#b2e05b]' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-100'}`}>
-                  Click on a teacher to see their {theme === 'ben10' ? 'heroic' : theme === 'tinkerbell' ? 'magical' : 'enriching'} time slots 
+                <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-white' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-100'}`}>
+                  Click on a teacher to see their time slots 
                 </p>
               </div>
 
@@ -863,7 +863,7 @@ export default function StudentMeetingPage() {
                               className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222] hover:from-[#b2e05b] hover:to-[#222222]' : 'from-green-600 to-black hover:from-green-700 hover:to-gray-900'} text-white px-6 py-3 rounded-full font-black text-sm border-2 border-black transform hover:scale-105 transition-all`}
                             >
                               <Video className="w-5 h-5 mr-2" />
-                              🎥 Join Meeting
+                              Join Meeting
                             </Button>
                           )}
                         </div>

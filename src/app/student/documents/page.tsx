@@ -172,7 +172,7 @@ export default function StudentDocumentsPage() {
           </div>
           <div className="text-center">
             <h2 className="text-2xl font-black text-black mb-2">Loading Documents...</h2>
-            <p className="text-gray-600 font-medium">Get ready to transform your learning! 🔄⚡</p>
+            <p className="text-gray-600 font-medium">Get ready to transform your learning! </p>
           </div>
         </div>
       </div>
@@ -206,7 +206,7 @@ export default function StudentDocumentsPage() {
           <h1 className="text-5xl font-black text-black mb-2 drop-shadow-lg">
             📄 Documents
           </h1>
-          <p className={`text-xl font-bold ${theme === 'ben10' ? 'text-[#b2e05b]' : theme === 'tinkerbell' ? 'text-white' : 'text-blue-100'}`}>
+          <p className={`text-xl font-bold ${theme === 'ben10' ? 'text-white' : theme === 'tinkerbell' ? 'text-white' : 'text-blue-100'}`}>
             Upload your documents here! 
           </p>
         </div>
@@ -218,7 +218,7 @@ export default function StudentDocumentsPage() {
               
               <div>
                 <h2 className="text-3xl text-black font-black">Required Documents</h2>
-                <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-[#b2e05b]' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-100'}`}>Complete your enrollment with these documents!</p>
+                <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-white' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-100'}`}>Complete your enrollment with these documents!</p>
               </div>
             </div>
           </div>

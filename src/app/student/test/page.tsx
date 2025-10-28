@@ -1068,7 +1068,7 @@ export default function StudentTests() {
             </div>
             <div className="text-center">
               <h2 className="text-2xl font-black text-black mb-2">Loading Tests...</h2>
-              <p className="text-gray-600 font-medium">Getting your tests ready! 📝⚡</p>
+              <p className="text-gray-600 font-medium">Getting your tests ready!</p>
             </div>
           </div>
         </div>
@@ -1417,7 +1417,7 @@ export default function StudentTests() {
                   </>
                 )}
 
-                {/* Available Custom Tests */}
+            {/* Available Custom Tests */}
                 {groupedCustomTests.available.length > 0 && (
                   <>
                     <div className="px-6 py-4 bg-gradient-to-r from-blue-300 to-cyan-300 border-b-4 border-black">

@@ -415,8 +415,8 @@ export default function StudentSettingsPage() {
                 <h1 className="text-3xl font-bold">
                Setting Page 
                 </h1>
-                <p className={`${theme === 'ben10' ? 'text-[#b2e05b]' : 'text-green-100'} text-lg font-semibold mt-2`}>
-                  Customize your heroic learning profile!
+                <p className={`${theme === 'ben10' ? 'text-black' : 'text-green-100'} text-lg font-semibold mt-2`}>
+                  Customize your learning profile!
                 </p>
               </div>
             </div>
@@ -475,7 +475,7 @@ export default function StudentSettingsPage() {
             onClick={() => handleThemeChange('ben10')}
             className={`p-3 rounded-xl border-4 transition-all transform hover:scale-105 ${
               selectedTheme === 'ben10'
-                ? 'border-[#64cc4f] bg-[#b2e05b]/10 shadow-lg scale-105'
+                ? 'border-green-950 bg-[#b2e05b]/10 shadow-lg scale-105'
                 : 'border-black bg-white hover:border-[#64cc4f]'
             }`}
           >
@@ -496,7 +496,7 @@ export default function StudentSettingsPage() {
             </div>
             {selectedTheme === 'ben10' && (
               <div className="mt-2 flex items-center justify-center">
-                <span className="text-xs font-bold text-[#64cc4f]">✓ Selected</span>
+                <span className="text-xs font-bold text-black">✓ Selected</span>
               </div>
             )}
           </button>
