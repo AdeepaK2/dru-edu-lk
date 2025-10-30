@@ -366,16 +366,10 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
           <Button
             onClick={handleLogout}
             variant="outline"
-            className={`w-full flex items-center justify-center space-x-3 text-black font-black border-2 border-black rounded-full py-3 transform hover:scale-105 transition-all shadow-lg ${
-              theme === 'ben10'
-                ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222] hover:from-[#b2e05b] hover:to-[#222222]'
-                : theme === 'tinkerbell'
-                ? 'bg-gradient-to-r from-yellow-400 to-green-500 hover:from-yellow-500 hover:to-green-600'
-                : 'bg-gradient-to-r from-blue-400 to-indigo-600 hover:from-blue-500 hover:to-indigo-700'
-            }`}
+            className={`w-full flex items-center justify-center space-x-3 text-white font-black border-2 border-black rounded-full py-3 transform hover:scale-105 transition-all shadow-lg bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800`}
           >
-            <LogOut className="text-black w-5 h-5" />
-            <span className="text-black"> Logout</span>
+            <LogOut className="text-white w-5 h-5" />
+            <span className="text-white"> Logout</span>
           </Button>
         </div>
       </div>
