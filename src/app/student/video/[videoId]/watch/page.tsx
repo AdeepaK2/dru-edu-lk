@@ -210,7 +210,7 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                 ? 'bg-gradient-to-br from-[#64cc4f]/10 to-[#222222]/10'
                 : theme === 'tinkerbell'
                 ? 'bg-gradient-to-br from-yellow-100 to-green-50'
-                : 'bg-gradient-to-br from-blue-50 to-indigo-100 dark:bg-gray-800'
+                : 'bg-gradient-to-br from-blue-900 via-indigo-800 to-indigo-800'
             }`}>
               {/* Video Player Container */}
               <div className="relative aspect-video bg-black">

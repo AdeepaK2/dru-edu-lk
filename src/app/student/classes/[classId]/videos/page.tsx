@@ -471,7 +471,7 @@ export default function ClassVideos({ params }: ClassVideoProps) {
               ? 'bg-gradient-to-br from-[#64cc4f]/10 to-[#b2e05b]/10'
               : theme === 'tinkerbell'
               ? 'bg-gradient-to-br from-yellow-100 to-green-50'
-              : 'bg-white dark:bg-gray-800'
+              : 'bg-gradient-to-br from-blue-400 via-indigo-500 to-indigo-600'
           }`}>
             {activeTab === 'class' && (
               <>
@@ -516,7 +516,7 @@ export default function ClassVideos({ params }: ClassVideoProps) {
               ? 'bg-gradient-to-br from-[#64cc4f]/10 to-[#b2e05b]/10'
               : theme === 'tinkerbell'
               ? 'bg-gradient-to-br from-yellow-100 to-green-50'
-              : 'bg-white dark:bg-gray-800'
+              : 'bg-gradient-to-br from-blue-400 via-indigo-500 to-indigo-600'
           }`}>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {tabVideos.map((video) => (
@@ -550,7 +550,7 @@ const ClassVideoCard: React.FC<ClassVideoCardProps> = ({ video, onAccess, theme 
         ? 'bg-gradient-to-br from-[#64cc4f]/20 to-[#b2e05b]/20'
         : theme === 'tinkerbell'
         ? 'bg-gradient-to-br from-yellow-50 to-green-100'
-        : 'bg-white dark:bg-gray-800'
+        : 'bg-gradient-to-br from-blue-400 via-indigo-500 to-indigo-600'
     }`}>
       {/* Video Thumbnail */}
       <div className="relative aspect-video bg-gray-100 dark:bg-gray-700">
@@ -611,18 +611,18 @@ const ClassVideoCard: React.FC<ClassVideoCardProps> = ({ video, onAccess, theme 
           <h3 className="text-lg font-semibold text-gray-900  mb-1 line-clamp-2">
             {video.title}
           </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-600 line-clamp-2">
+          <p className="text-sm text-gray-600 dark:text-gray-100 line-clamp-2">
             {video.description}
           </p>
         </div>
 
         {/* Video Meta */}
         <div className="space-y-1 mb-4">
-          <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
+          <div className="flex items-center text-xs text-gray-500 dark:text-gray-100">
             <Users className="w-3 h-3 mr-1" />
             <span>{video.teacherName}</span>
           </div>
-          <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
+          <div className="flex items-center text-xs text-gray-500 dark:text-gray-100">
             <BookOpen className="w-3 h-3 mr-1" />
             <span>{video.lessonName || 'Lesson Content'}</span>
           </div>
