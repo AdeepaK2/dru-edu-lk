@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState } from 'react';
 import StudentLayout from '@/components/student/StudentLayout';
+import { ThemeProvider } from '@/contexts/ThemeContext';
 
 // Context for controlling sidebar visibility
 interface SidebarContextType {
@@ -27,10 +28,12 @@ export default function StudentRootLayout({
   const [hideSidebar, setHideSidebar] = useState(false);
 
   return (
-    <SidebarContext.Provider value={{ hideSidebar, setHideSidebar }}>
-      <StudentLayout hideSidebar={hideSidebar}>
-        {children}
-      </StudentLayout>
-    </SidebarContext.Provider>
+    <ThemeProvider>
+      <SidebarContext.Provider value={{ hideSidebar, setHideSidebar }}>
+        <StudentLayout hideSidebar={hideSidebar}>
+          {children}
+        </StudentLayout>
+      </SidebarContext.Provider>
+    </ThemeProvider>
   );
 }

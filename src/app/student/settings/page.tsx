@@ -1,19 +1,23 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { User, Mail, Phone, KeyRound } from 'lucide-react';
+import { User, Mail, Phone, KeyRound, Camera, Star, Sparkles, Palette } from 'lucide-react';
+import Image from 'next/image';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 import Input from '@/components/ui/form/Input';
 import Button from '@/components/ui/Button';
 import { updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 import { doc, updateDoc } from 'firebase/firestore';
 import { firestore, auth } from '@/utils/firebase-client';
+import { useTheme, type ThemeType } from '@/contexts/ThemeContext';
+import { THEMES } from '@/utils/themeConfig';
 
 interface StudentProfileData {
   name: string;
   email: string;
   phone: string;
   countryCode: string;
+  avatar: string;
 }
 
 interface PasswordData {
@@ -36,6 +40,84 @@ interface LoadingState {
   password: boolean;
 }
 
+// Ben 10 Hero themed avatars - Omnitrix Animals
+const ben10Avatars = [
+  {
+    id: 'heatblast',
+    name: 'Heatblast',
+    image: '/heatblast.png',
+    description: 'Pyronite from Pyros - Master of fire!',
+    colors: 'from-red-500 to-orange-500'
+  },
+  {
+    id: 'wildmutt',
+    name: 'Wildmutt',
+    image: '/Wildmutt.png',
+    description: 'Vulpimancer from Vulpin - The beast within!',
+    colors: 'from-gray-600 to-gray-800'
+  },
+  {
+    id: 'diamondhead',
+    name: 'Diamondhead',
+    image: '/Diamondhead.png',
+    description: 'Petrosapien from Petropia - Crystal warrior!',
+    colors: 'from-cyan-400 to-blue-500'
+  },
+  {
+    id: 'ghostfreak',
+    name: 'Ghostfreak',
+    image: '/ghostfreak.png',
+    description: 'Ectonurite from Anur Phaetos - Spirit walker!',
+    colors: 'from-purple-600 to-indigo-700'
+  },
+  {
+    id: 'benwolf',
+    name: 'Benwolf',
+    image: '/benwolf.png',
+    description: 'Anur Transyl\'s werewolf form - Lunar hunter!',
+    colors: 'from-yellow-600 to-orange-600'
+  }
+];
+
+// Tinkerbell themed avatars
+const tinkerbellAvatars = [
+  {
+    id: 'silvermist',
+    name: 'Silvermist',
+    image: '/silvermist.png',
+    description: 'Water fairy — calm and graceful',
+    colors: 'from-blue-300 to-cyan-300'
+  },
+  {
+    id: 'fawn',
+    name: 'Fawn',
+    image: '/Fawn.png',
+    description: 'Animal fairy — playful and brave',
+    colors: 'from-amber-300 to-orange-400'
+  },
+  {
+    id: 'iridessa',
+    name: 'Iridessa',
+    image: '/Iridessa .png',
+    description: 'Light fairy — bright and clever',
+    colors: 'from-yellow-300 to-amber-400'
+  },
+  {
+    id: 'rosetta',
+    name: 'Rosetta',
+    image: '/Rosetta.png',
+    description: 'Garden fairy — warm and nurturing',
+    colors: 'from-rose-300 to-pink-400'
+  },
+  {
+    id: 'tinkerbell',
+    name: 'Tinkerbell',
+    image: '/tinkerbell.png',
+    description: 'The pixie herself — curious and loyal',
+    colors: 'from-green-300 to-yellow-300'
+  }
+];
+
 export default function StudentSettingsPage() {
   const { student, loading: authLoading, refreshStudent } = useStudentAuth();
 
@@ -50,8 +132,13 @@ export default function StudentSettingsPage() {
     name: '',
     email: '',
     phone: '',
-    countryCode: '+61'
+    countryCode: '+61',
+    avatar: 'heatblast' // Default avatar
   });
+
+  // Avatar selection state
+  const [selectedAvatar, setSelectedAvatar] = useState<string>('heatblast');
+  const [showAvatarSelector, setShowAvatarSelector] = useState<boolean>(false);
 
   // Password form state
   const [passwordData, setPasswordData] = useState<PasswordData>({
@@ -70,17 +157,94 @@ export default function StudentSettingsPage() {
     match: false
   });
 
+  // Message state for success/error notifications
+  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+
+  // Theme state
+  const { theme, setTheme } = useTheme();
+  const [selectedTheme, setSelectedTheme] = useState<ThemeType>(theme);
+
+  // Clear message after 5 seconds
+  useEffect(() => {
+    if (message) {
+      const timer = setTimeout(() => {
+        setMessage(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [message]);
+
   // Initialize profile data when student data is available
   useEffect(() => {
     if (student) {
+      // Determine sensible default avatar based on current theme
+      let defaultAvatar = '';
+      if (selectedTheme === 'tinkerbell' || theme === 'tinkerbell') {
+        defaultAvatar = student.avatar || 'silvermist';
+      } else if (selectedTheme === 'ben10' || theme === 'ben10') {
+        defaultAvatar = student.avatar || 'heatblast';
+      } else {
+        // default theme: avatars disabled
+        defaultAvatar = '';
+      }
+
       setProfileData({
         name: student.name || '',
         email: student.email || '',
         phone: student.phone || '',
-        countryCode: '+61' // Default to Australia
+        countryCode: '+61', // Default to Australia
+        avatar: defaultAvatar
       });
+      setSelectedAvatar(defaultAvatar);
     }
-  }, [student]);
+  }, [student, selectedTheme, theme]);
+
+  // Initialize theme state
+  useEffect(() => {
+    setSelectedTheme(theme);
+  }, [theme]);
+
+  const handleAvatarSelect = async (avatarId: string) => {
+    setSelectedAvatar(avatarId);
+    setProfileData(prev => ({
+      ...prev,
+      avatar: avatarId
+    }));
+    setShowAvatarSelector(false);
+
+    // Persist avatar change immediately so DB stays in sync
+    if (!student || !student.id) return;
+
+    setLoading(prev => ({ ...prev, profile: true }));
+    try {
+      const studentRef = doc(firestore, 'students', student.id);
+      await updateDoc(studentRef, { avatar: avatarId });
+      await refreshStudent();
+      setMessage({ type: 'success', text: 'Avatar updated successfully!' });
+    } catch (err) {
+      console.error('Failed to update avatar:', err);
+      setMessage({ type: 'error', text: 'Failed to save avatar. Please try again.' });
+    } finally {
+      setLoading(prev => ({ ...prev, profile: false }));
+    }
+  };
+
+  const getAvailableAvatars = () => {
+    if (selectedTheme === 'tinkerbell' || theme === 'tinkerbell') return tinkerbellAvatars;
+    if (selectedTheme === 'ben10' || theme === 'ben10') return ben10Avatars;
+    return [];
+  };
+
+  const getSelectedAvatarData = () => {
+    const list = getAvailableAvatars();
+    return list.find(avatar => avatar.id === selectedAvatar) || { id: '', name: '', image: '/images/1.png', description: '' };
+  };
+
+  const handleThemeChange = (newTheme: ThemeType) => {
+    setSelectedTheme(newTheme);
+    setTheme(newTheme);
+    setMessage({ type: 'success', text: `Theme changed to ${THEMES[newTheme].name}! 🎨` });
+  };
 
   const handleProfileInputChange = (field: keyof StudentProfileData, value: string) => {
     setProfileData(prev => ({
@@ -122,15 +286,17 @@ export default function StudentSettingsPage() {
       const studentRef = doc(firestore, 'students', student.id);
       await updateDoc(studentRef, {
         name: profileData.name,
-        phone: `${profileData.countryCode}${profileData.phone}`
+        phone: `${profileData.countryCode}${profileData.phone}`,
+        avatar: profileData.avatar
       });
       
       alert('Profile updated successfully!');
       // Refresh student data
       await refreshStudent();
+      setMessage({ type: 'success', text: 'Your heroic profile has been updated! 🎉' });
     } catch (error) {
       console.error('Error updating profile:', error);
-      alert('Failed to update profile. Please try again.');
+      setMessage({ type: 'error', text: 'Oops! Failed to update your profile. Please try again. 😅' });
     } finally {
       setLoading(prev => ({ ...prev, profile: false }));
     }
@@ -161,15 +327,15 @@ export default function StudentSettingsPage() {
         confirmPassword: ''
       });
       
-      alert('Password updated successfully!');
+      setMessage({ type: 'success', text: 'Your hero password has been changed! 🔐⚡' });
     } catch (error) {
       console.error('Error updating password:', error);
       
       // Handle specific errors
       if ((error as any).code === 'auth/wrong-password') {
-        alert('Current password is incorrect. Please try again.');
+        setMessage({ type: 'error', text: 'Oops! Your current password is incorrect. Please try again. 🔑' });
       } else {
-        alert('Failed to update password. Please try again.');
+        setMessage({ type: 'error', text: 'Oops! Failed to update your password. Please try again. 😅' });
       }
     } finally {
       setLoading(prev => ({ ...prev, password: false }));
@@ -178,8 +344,47 @@ export default function StudentSettingsPage() {
 
   if (authLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="w-8 h-8 border-t-2 border-green-600 rounded-full animate-spin"></div>
+      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : 'from-blue-400 to-indigo-600'} flex items-center justify-center`}>
+        <div className="bg-white border-4 border-black rounded-3xl p-8 shadow-2xl">
+          {/* Theme-Specific Loading Animation */}
+          <div className="relative mb-6 flex flex-col items-center">
+            {/* Tinkerbell Loading GIF */}
+            {theme === 'tinkerbell' && (
+              <div className="flex flex-col items-center">
+                <img 
+                  src="/tinkerbell-loading.gif" 
+                  alt="Tinkerbell Loading" 
+                  className="w-32 h-32 object-contain"
+                />
+                <span className="text-2xl font-bold text-yellow-600 mt-4">Loading</span>
+              </div>
+            )}
+            
+            {/* Ben 10 Loading GIF */}
+            {theme === 'ben10' && (
+              <div className="flex flex-col items-center">
+                <img 
+                  src="/ben10-loading.gif" 
+                  alt="Ben 10 Loading" 
+                  className="w-32 h-32 object-contain"
+                />
+                <span className="text-2xl font-bold text-[#64cc4f] mt-4">Loading</span>
+              </div>
+            )}
+            
+            {/* Default Theme Spinner with Loading Text */}
+            {theme !== 'tinkerbell' && theme !== 'ben10' && (
+              <div className="flex flex-col items-center">
+                <div className="w-24 h-24 border-4 border-blue-400 border-t-blue-600 rounded-full animate-spin"></div>
+                <span className="text-2xl font-bold text-blue-600 mt-4">Loading</span>
+              </div>
+            )}
+          </div>
+          <div className="text-center">
+            <h2 className="text-2xl font-black text-black mb-2">Loading Settings...</h2>
+            <p className="text-gray-600 font-medium">Get ready to transform your learning! </p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -195,69 +400,297 @@ export default function StudentSettingsPage() {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          Account Settings
-        </h1>
+    <div className={`min-h-screen bg-gradient-to-br p-6 ${theme === 'ben10' ? '' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : 'from-blue-400 to-indigo-600'}`} style={theme === 'ben10' ? { background: 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))' } : undefined}>
+      <div className="space-y-8 max-w-6xl mx-auto">
+      {/* Page Header - Theme Aware */}
+      <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-500 via-yellow-500 to-green-600' : 'from-blue-600 via-indigo-700 to-indigo-900'} rounded-2xl text-white p-8 border-2 border-black relative overflow-hidden`}>
+
+        
+   
+        
+        <div className="flex items-center justify-between relative z-10">
+          <div className="flex-1">
+            <div className="flex items-center space-x-4 mb-2">
+              
+              <div>
+                <h1 className="text-3xl font-bold">
+               Setting Page 
+                </h1>
+                <p className={`${theme === 'ben10' ? 'text-black' : 'text-green-100'} text-lg font-semibold mt-2`}>
+                  Customize your learning profile!
+                </p>
+              </div>
+            </div>
+            <p className="text-black mb-4 text-base">
+              Choose your favorite Disney character and make learning more fun! 
+            </p>
+          </div>
+          <div className="hidden md:block">
+            {/* Current Avatar Display (only for themes that support avatars) */}
+            {getAvailableAvatars().length > 0 && (
+              <div className="relative">
+                <div className={`relative w-24 h-24 rounded-full overflow-hidden border-4 border-white bg-gradient-to-br `}>
+                  <Image src={getSelectedAvatarData().image || '/images/1.png'} alt={getSelectedAvatarData().name} fill className="object-cover" />
+                </div>
+                <div className="text-center mt-5">
+                  <span className="text-white font-bold text-sm">{getSelectedAvatarData().name}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* Profile Settings */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+      {/* Success/Error Messages - Theme Aware */}
+      {message && (
+        <div className={`rounded-xl border-4 border-black p-4 shadow-lg ${
+          message.type === 'success' 
+            ? `${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 to-green-300' : 'bg-gradient-to-r from-blue-300 to-indigo-300'}` 
+            : 'bg-gradient-to-r from-red-300 to-pink-300'
+        }`}>
+          <div className="flex items-center space-x-3">
+            <div className="text-2xl">
+              {message.type === 'success' ? '🎉' : '😅'}
+            </div>
+            <div>
+              <p className="font-bold text-black text-lg">
+                {message.type === 'success' ? 'Ben 10 Says: Hero Success!' : 'Oops! Ben 10 Says: Try Again!'}
+              </p>
+              <p className="text-black font-medium">{message.text}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Theme Selector Section */}
+      <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-200 via-green-200 to-yellow-300' : 'from-blue-200 via-indigo-200 to-purple-300'} rounded-xl shadow-lg border-4 border-black p-6`}>
         <div className="flex items-center space-x-3 mb-6">
-          <User className="w-5 h-5 text-green-600" />
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Profile Information</h2>
+        
+          <h2 className="text-2xl font-black text-black">Choose Your Learning Theme! </h2>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-3">
+          {/* Ben10 Theme Card */}
+          <button
+            type="button"
+            onClick={() => handleThemeChange('ben10')}
+            className={`p-3 rounded-xl border-4 transition-all transform hover:scale-105 ${
+              selectedTheme === 'ben10'
+                ? 'border-green-950 bg-[#b2e05b]/10 shadow-lg scale-105'
+                : 'border-black bg-white hover:border-[#64cc4f]'
+            }`}
+          >
+            <div className="relative w-full h-24 mb-2 rounded-lg overflow-hidden border-2 border-black bg-white p-1">
+              <Image
+                src="/ben10.jpg"
+                alt="Ben 10 Theme"
+                fill
+                className="object-cover object-fit"
+              />
+            </div>
+            <h3 className="text-lg font-bold text-black mb-1">Ben 10 Hero</h3>
+            <p className="text-sm text-black font-semibold mb-1">Green & Black Theme</p>
+            <div className="flex items-center justify-center space-x-1 mb-2">
+              <div className="w-5 h-5 bg-[#64cc4f] rounded-full border-2 border-black"></div>
+              <div className="w-5 h-5 bg-[#b2e05b] rounded-full border-2 border-black"></div>
+              <div className="w-5 h-5 bg-[#222222] rounded-full border-2 border-black"></div>
+            </div>
+            {selectedTheme === 'ben10' && (
+              <div className="mt-2 flex items-center justify-center">
+                <span className="text-xs font-bold text-black">✓ Selected</span>
+              </div>
+            )}
+          </button>
+
+          {/* Tinkerbell Theme Card */}
+          <button
+            type="button"
+            onClick={() => handleThemeChange('tinkerbell')}
+            className={`p-3 rounded-xl border-4 transition-all transform hover:scale-105 ${
+              selectedTheme === 'tinkerbell'
+                ? 'border-yellow-600 bg-yellow-100 shadow-lg scale-105'
+                : 'border-black bg-white hover:border-yellow-400'
+            }`}
+          >
+            <div className="relative w-full h-24 mb-2 rounded-lg overflow-hidden border-2 border-black">
+              <Image
+                src="/tinkerbell.avif"
+                alt="Tinkerbell Theme"
+                fill
+                className="object-cover object-top"
+              />
+            </div>
+            <h3 className="text-lg font-bold text-black mb-1">Tinkerbell Magic</h3>
+            <p className="text-sm text-black font-semibold mb-1">Green & Gold Theme</p>
+            <div className="flex items-center justify-center space-x-1 mb-2">
+              <div className="w-5 h-5 bg-green-400 rounded-full border-2 border-black"></div>
+              <div className="w-5 h-5 bg-green-500 rounded-full border-2 border-black"></div>
+              <div className="w-5 h-5 bg-yellow-500 rounded-full border-2 border-black"></div>
+              <div className="w-5 h-5 bg-yellow-600 rounded-full border-2 border-black"></div>
+            </div>
+            {selectedTheme === 'tinkerbell' && (
+              <div className="mt-2 flex items-center justify-center">
+                <span className="text-xs font-bold text-yellow-600">✓ Selected</span>
+              </div>
+            )}
+          </button>
+
+          {/* Default Theme Card (internal key: normal) */}
+          <button
+            type="button"
+            onClick={() => handleThemeChange('normal')}
+            className={`p-3 rounded-xl border-4 transition-all transform hover:scale-105 ${
+              selectedTheme === 'normal'
+                ? 'border-blue-600 bg-blue-100 shadow-lg scale-105'
+                : 'border-black bg-white hover:border-blue-400'
+            }`}
+          >
+            <div className="relative w-full h-24 mb-2 rounded-lg overflow-hidden border-2 border-black bg-white">
+              <Image
+                src="/images/1.png"
+                alt="Default Theme"
+                fill
+                className="object-cover"
+              />
+            </div>
+            <h3 className="text-lg font-bold text-black mb-1">Default</h3>
+            <p className="text-sm text-black font-semibold mb-1">Blue & Clean Theme</p>
+            <div className="flex items-center justify-center space-x-1 mb-2">
+              <div className="w-5 h-5 bg-blue-400 rounded-full border-2 border-black"></div>
+              <div className="w-5 h-5 bg-blue-500 rounded-full border-2 border-black"></div>
+              <div className="w-5 h-5 bg-indigo-600 rounded-full border-2 border-black"></div>
+              <div className="w-5 h-5 bg-white rounded-full border-2 border-black"></div>
+            </div>
+            {selectedTheme === 'normal' && (
+              <div className="mt-2 flex items-center justify-center">
+                <span className="text-xs font-bold text-blue-600">✓ Selected</span>
+              </div>
+            )}
+          </button>
+        </div>
+
+        <div className="mt-4 p-3 bg-white border-2 border-black rounded-lg">
+          <p className="text-xs text-black">
+            <strong>💡 Tip:</strong> Your chosen theme will be applied instantly across the learning dashboard and study pages. 
+            The theme selection is saved automatically!
+          </p>
+        </div>
+      </div>
+
+      {/* Profile Settings - Theme Aware */}
+      <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-500' : 'from-blue-300 via-indigo-400 to-indigo-600'} rounded-xl shadow-lg border-4 border-black p-6`}>
+        <div className="flex items-center space-x-3 mb-6">
+          <h2 className="text-2xl font-black text-black">Profile Studio</h2>
         </div>
 
         <form onSubmit={handleProfileSubmit} className="space-y-6">
           <div className="grid md:grid-cols-2 gap-6">
             {/* Left Column */}
             <div className="space-y-6">
+              {/* Avatar Selection */}
+              <div className="bg-white border-4 border-black rounded-xl p-6 shadow-lg">
+                <div className="flex items-center justify-between mb-4">
+                  <label className="text-lg font-bold text-black flex items-center">
+                    <Camera className="w-5 h-5 mr-2" />
+                    Choose Your Avatar! 
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowAvatarSelector(!showAvatarSelector)}
+                    disabled={getAvailableAvatars().length === 0}
+                    className={`${theme === 'ben10' ? 'bg-[#64cc4f] hover:bg-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-blue-500 hover:bg-blue-600'} text-white px-4 py-2 rounded-full text-sm font-bold transform hover:scale-105 transition-all disabled:opacity-50`}
+                  >
+                    {getAvailableAvatars().length === 0 ? 'Avatars Disabled' : (showAvatarSelector ? 'Hide' : 'Change') + ' Avatar'}
+                  </button>
+                </div>
+
+                {/* Current Avatar Display */}
+                <div className="flex items-center space-x-4 mb-4">
+                  <div className={`relative w-16 h-16 rounded-full overflow-hidden border-4 border-black bg-white flex-shrink-0`}>
+                    <Image src={getSelectedAvatarData().image || '/images/1.png'} alt={getSelectedAvatarData().name} fill className="object-cover" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-black">{getSelectedAvatarData().name}</h3>
+                    <p className="text-gray-600 text-sm">{getSelectedAvatarData().description}</p>
+                  </div>
+                </div>
+
+                {/* Avatar Selector */}
+                {/* Avatar Selector */}
+                {showAvatarSelector && getAvailableAvatars().length > 0 && (
+                  <div className="border-t-4 border-black pt-4">
+                    <h4 className="text-lg font-bold text-black mb-4 flex items-center">
+                      <Star className="w-5 h-5 mr-2 text-yellow-500" />
+                      {selectedTheme === 'tinkerbell' || theme === 'tinkerbell' ? 'Choose Your Tinkerbell Avatar!' : 'Choose Your Ben 10 Hero Avatar!'}
+                    </h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                      {getAvailableAvatars().map((avatar) => (
+                        <button
+                          key={avatar.id}
+                          type="button"
+                          onClick={() => handleAvatarSelect(avatar.id)}
+                          className={`p-3 rounded-xl border-4 transition-all transform hover:scale-105 ${
+                            selectedAvatar === avatar.id
+                              ? (selectedTheme === 'tinkerbell' ? 'border-yellow-400 bg-yellow-50 shadow-lg' : 'border-[#64cc4f] bg-[#b2e05b]/10 shadow-lg')
+                              : 'border-black bg-white hover:border-green-400'
+                          }`}>
+                          <div className={`relative w-12 h-12 rounded-full overflow-hidden mx-auto mb-2 bg-white border-2 border-black`}>
+                            <Image src={avatar.image || '/images/1.png'} alt={avatar.name} fill className="object-cover" />
+                          </div>
+                          <h5 className="text-sm font-bold text-black text-center">{avatar.name}</h5>
+                          <p className="text-xs text-gray-600 text-center mt-1">{avatar.description}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* Name */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  <User className="w-4 h-4 inline mr-2" />
-                  Full Name *
+              <div className="bg-white border-4 border-black rounded-xl p-4">
+                <label className="text-sm font-bold text-black mb-2 flex items-center">
+                  <User className="w-4 h-4 mr-2" />
+                  Your Hero Name!
                 </label>
                 <Input
                   type="text"
                   value={profileData.name}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleProfileInputChange('name', e.target.value)}
-                  placeholder="Enter your full name"
+                  placeholder="Enter your hero name"
                   disabled={loading.profile}
                   required
+                  className="border-2 border-black rounded-lg"
                 />
               </div>
 
               {/* Email */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  <Mail className="w-4 h-4 inline mr-2" />
-                  Email Address (Read Only)
+              <div className="bg-white border-4 border-black rounded-xl p-4">
+                <label className="text-sm font-bold text-black mb-2 flex items-center">
+                  <Mail className="w-4 h-4 mr-2" />
+                  Email Address (Heroically Protected) 🔒
                 </label>
                 <Input
                   type="email"
                   value={profileData.email}
-                  placeholder="Email address cannot be changed"
+                  placeholder="Email cannot be changed"
                   disabled={true}
                   readOnly={true}
-                  className="bg-gray-100 dark:bg-gray-600 cursor-not-allowed"
+                  className="bg-gray-100 border-2 border-gray-300 rounded-lg cursor-not-allowed"
                 />
               </div>
 
               {/* Phone */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  <Phone className="w-4 h-4 inline mr-2" />
-                  Phone Number *
+              <div className="bg-white border-4 border-black rounded-xl p-4">
+                <label className="text-sm font-bold text-black mb-2 flex items-center">
+                  <Phone className="w-4 h-4 mr-2" />
+                  Phone Number 
                 </label>
                 <div className="flex space-x-2">
                   <select
                     value={profileData.countryCode}
                     onChange={(e) => handleProfileInputChange('countryCode', e.target.value)}
                     disabled={loading.profile}
-                    className="border rounded-lg px-3 py-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="border-2 border-black rounded-lg px-3 py-2 bg-white text-black focus:outline-none focus:ring-2 focus:ring-green-400"
                   >
                     <option value="+61">🇦🇺 +61</option>
                     <option value="+1">🇺🇸 +1</option>
@@ -274,7 +707,7 @@ export default function StudentSettingsPage() {
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleProfileInputChange('phone', e.target.value)}
                     placeholder="Enter your phone number"
                     disabled={loading.profile}
-                    className="flex-1"
+                    className="flex-1 border-2 border-black rounded-lg"
                     required
                   />
                 </div>
@@ -284,164 +717,213 @@ export default function StudentSettingsPage() {
             {/* Right Column */}
             <div className="space-y-6">
               {/* Account Info Display */}
-              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Account Information</h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-300">Status:</span>
-                    <span className={`font-medium ${
-                      student.status === 'Active' 
-                        ? 'text-green-600 dark:text-green-400' 
-                        : 'text-red-600 dark:text-red-400'
+              <div className="bg-white border-4 border-black rounded-xl p-6 shadow-lg">
+                <h4 className="text-lg font-bold text-black mb-4 flex items-center">
+                
+                   📊 Your Stats!
+                </h4>
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between items-center p-3 bg-[#64cc4f]/10 border-2 border-[#64cc4f] rounded-lg">
+                    <span className="text-black font-bold">🏷️ Status:</span>
+                    <span className={`font-black px-3 py-1 rounded-full border-2 border-black ${
+                      student.status === 'Active'
+                        ? 'bg-[#64cc4f] text-black'
+                        : 'bg-red-300 text-black'
                     }`}>
-                      {student.status}
+                      {student.status} 
                     </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-300">Enrolled Since:</span>
-                    <span className="text-gray-900 dark:text-white">
+                  <div className={`flex justify-between items-center p-3 ${theme === 'ben10' ? 'bg-[#64cc4f]/10 border-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-yellow-50 border-yellow-300' : 'bg-blue-50 border-blue-300'} border-2 rounded-lg`}>
+                    <span className="text-black font-bold">📅 Enrolled Since:</span>
+                    <span className={`text-black font-bold ${theme === 'ben10' ? 'bg-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-yellow-300' : 'bg-blue-300'} px-2 py-1 rounded border border-black`}>
                       {student.enrollmentDate ? new Date(student.enrollmentDate).toLocaleDateString() : 'N/A'}
                     </span>
                   </div>
+                  <div className={`flex justify-between items-center p-3 bg-black border-2 ${theme === 'ben10' ? 'border-[#64cc4f]' : theme === 'tinkerbell' ? 'border-yellow-400' : 'border-blue-400'} rounded-lg`}>
+                    <span className="text-white font-bold">🎓 Student ID:</span>
+                    <span className={`text-black font-bold ${theme === 'ben10' ? 'bg-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-yellow-300' : 'bg-blue-300'} px-2 py-1 rounded border border-black`}>
+                      {student.id}
+                    </span>
+                  </div>
                 </div>
+              </div>
+
+              {/* Fun Fact */}
+              <div className={`bg-gradient-to-r ${selectedTheme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : selectedTheme === 'tinkerbell' ? 'from-yellow-300 to-green-500' : 'from-blue-300 to-indigo-600'} border-4 border-black rounded-xl p-6 shadow-lg`}>
+                <h4 className="text-lg font-bold text-black mb-3 flex items-center">
+                  {selectedTheme === 'ben10' ? '💡 Did You Know?' : selectedTheme === 'tinkerbell' ? '💡 Did You Know?' : '💡 Did You Know?'}
+                </h4>
+                <p className="text-black font-medium text-sm leading-relaxed">
+                  {selectedTheme === 'ben10'
+                    ? 'Ben 10 first appeared in 2005 and has transformed into over 70 different alien heroes. Choosing a Ben 10 avatar links you to the Omnitrix legacy — wear it proudly!'
+                    : selectedTheme === 'tinkerbell'
+                    ? "Tinker Bell first appeared in J.M. Barrie's Peter Pan stories and is celebrated for curiosity, creativity, and loyalty. Choosing a Tinkerbell avatar celebrates wonder and kindness!"
+                    : 'Small, consistent study sessions build mastery. Tip: use spaced repetition and active recall to remember more with less time.'}
+                </p>
               </div>
             </div>
           </div>
 
           {/* Submit Button */}
-          <div className="flex justify-end">
+          <div className="flex justify-center">
             <Button
               type="submit"
               disabled={loading.profile}
-              className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium disabled:opacity-50"
+              className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222] hover:from-[#b2e05b] hover:to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-500 to-green-600 hover:from-yellow-600 hover:to-green-700' : 'from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700'} text-white px-8 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black disabled:opacity-50 animate-pulse`}
             >
-              {loading.profile ? 'Updating...' : 'Update Profile'}
+              {loading.profile ? 'Saving Hero...' : 'Save Your Hero Profile! '}
             </Button>
           </div>
         </form>
       </div>
 
-      {/* Password Settings */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+      {/* Password Settings - Theme Aware */}
+      <div className={`bg-gradient-to-r ${
+        theme === 'ben10'
+          ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]'
+          : theme === 'tinkerbell'
+          ? 'from-green-400 via-yellow-500 to-green-600'
+          : 'from-blue-400 via-indigo-500 to-blue-600'
+      } rounded-xl shadow-lg border-4 border-black p-6`}>
         <div className="flex items-center space-x-3 mb-6">
-          <KeyRound className="w-5 h-5 text-green-600" />
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Change Password</h2>
+          <div className="text-3xl">🔐</div>
+          <h2 className="text-2xl font-black text-black">
+            {theme === 'ben10'
+              ? "Ben 10's Hero Password Chamber"
+              : theme === 'tinkerbell'
+              ? "Tinkerbell's Magical Password Realm"
+              : "Secure Password Center"
+            }
+          </h2>
         </div>
 
         <form onSubmit={handlePasswordSubmit} className="space-y-6">
           <div className="grid md:grid-cols-2 gap-6">
             {/* Left Column - Password Fields */}
             <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Current Password *
+              <div className="bg-white border-4 border-black rounded-xl p-4">
+                <label className="text-sm font-bold text-black mb-2 flex items-center">
+                  🔑 Current Password *
                 </label>
                 <Input
                   type="password"
                   value={passwordData.currentPassword}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => handlePasswordInputChange('currentPassword', e.target.value)}
-                  placeholder="Enter your current password"
+                  placeholder="Enter your current hero password"
                   disabled={loading.password}
                   required
+                  className="border-2 border-black rounded-lg"
                 />
               </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  New Password *
+
+              <div className="bg-white border-4 border-black rounded-xl p-4">
+                <label className="text-sm font-bold text-black mb-2 flex items-center">
+                   New Password *
                 </label>
                 <Input
                   type="password"
                   value={passwordData.newPassword}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => handlePasswordInputChange('newPassword', e.target.value)}
-                  placeholder="Enter your new password"
+                  placeholder="Create a super hero password"
                   disabled={loading.password}
                   required
+                  className="border-2 border-black rounded-lg"
                 />
               </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Confirm New Password *
+
+              <div className="bg-white border-4 border-black rounded-xl p-4">
+                <label className="text-sm font-bold text-black mb-2 flex items-center">
+                   Confirm New Password *
                 </label>
                 <Input
                   type="password"
                   value={passwordData.confirmPassword}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => handlePasswordInputChange('confirmPassword', e.target.value)}
-                  placeholder="Confirm your new password"
+                  placeholder="Confirm your hero password"
                   disabled={loading.password}
                   required
+                  className="border-2 border-black rounded-lg"
                 />
               </div>
             </div>
 
             {/* Right Column - Password Requirements */}
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6">
-              <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-4">Password Requirements</h3>
-              <ul className="space-y-2">
+            <div className="bg-white border-4 border-black rounded-xl p-6 shadow-lg">
+              <h3 className="text-lg font-bold text-black mb-4 flex items-center">
+                <span className="text-2xl mr-2">🛡️</span>
+                Hero Password Rules!
+              </h3>
+              <ul className="space-y-3">
                 <li className="flex items-center text-sm">
-                  <span className={`w-5 h-5 mr-2 flex items-center justify-center rounded-full ${
-                    passwordValidation.minLength ? 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-400' : 'bg-gray-100 text-gray-400 dark:bg-gray-800'
+                  <span className={`w-6 h-6 mr-3 flex items-center justify-center rounded-full border-2 border-black ${
+                    passwordValidation.minLength ? `${theme === 'ben10' ? 'bg-[#64cc4f] text-black' : 'bg-yellow-300 text-black'}` : 'bg-white text-gray-400'
                   }`}>
                     {passwordValidation.minLength ? '✓' : '·'}
                   </span>
-                  At least 8 characters
+                  <span className="text-black font-medium">At least 8 heroic characters </span>
                 </li>
                 <li className="flex items-center text-sm">
-                  <span className={`w-5 h-5 mr-2 flex items-center justify-center rounded-full ${
-                    passwordValidation.hasUppercase ? 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-400' : 'bg-gray-100 text-gray-400 dark:bg-gray-800'
+                  <span className={`w-6 h-6 mr-3 flex items-center justify-center rounded-full border-2 border-black ${
+                    passwordValidation.hasUppercase ? `${theme === 'ben10' ? 'bg-[#64cc4f] text-black' : 'bg-yellow-300 text-black'}` : 'bg-white text-gray-400'
                   }`}>
                     {passwordValidation.hasUppercase ? '✓' : '·'}
                   </span>
-                  At least 1 uppercase letter
+                  <span className="text-black font-medium">At least 1 uppercase letter </span>
                 </li>
                 <li className="flex items-center text-sm">
-                  <span className={`w-5 h-5 mr-2 flex items-center justify-center rounded-full ${
-                    passwordValidation.hasLowercase ? 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-400' : 'bg-gray-100 text-gray-400 dark:bg-gray-800'
+                  <span className={`w-6 h-6 mr-3 flex items-center justify-center rounded-full border-2 border-black ${
+                    passwordValidation.hasLowercase ? `${theme === 'ben10' ? 'bg-[#64cc4f] text-black' : 'bg-yellow-300 text-black'}` : 'bg-white text-gray-400'
                   }`}>
                     {passwordValidation.hasLowercase ? '✓' : '·'}
                   </span>
-                  At least 1 lowercase letter
+                  <span className="text-black font-medium">At least 1 lowercase letter </span>
                 </li>
                 <li className="flex items-center text-sm">
-                  <span className={`w-5 h-5 mr-2 flex items-center justify-center rounded-full ${
-                    passwordValidation.hasNumber ? 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-400' : 'bg-gray-100 text-gray-400 dark:bg-gray-800'
+                  <span className={`w-6 h-6 mr-3 flex items-center justify-center rounded-full border-2 border-black ${
+                    passwordValidation.hasNumber ? `${theme === 'ben10' ? 'bg-[#64cc4f] text-black' : 'bg-yellow-300 text-black'}` : 'bg-white text-gray-400'
                   }`}>
                     {passwordValidation.hasNumber ? '✓' : '·'}
                   </span>
-                  At least 1 number
+                  <span className="text-black font-medium">At least 1 number </span>
                 </li>
                 <li className="flex items-center text-sm">
-                  <span className={`w-5 h-5 mr-2 flex items-center justify-center rounded-full ${
-                    passwordValidation.hasSpecialChar ? 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-400' : 'bg-gray-100 text-gray-400 dark:bg-gray-800'
+                  <span className={`w-6 h-6 mr-3 flex items-center justify-center rounded-full border-2 border-black ${
+                    passwordValidation.hasSpecialChar ? `${theme === 'ben10' ? 'bg-[#64cc4f] text-black' : 'bg-yellow-300 text-black'}` : 'bg-white text-gray-400'
                   }`}>
                     {passwordValidation.hasSpecialChar ? '✓' : '·'}
                   </span>
-                  At least 1 special character
+                  <span className="text-black font-medium">At least 1 special character </span>
                 </li>
                 <li className="flex items-center text-sm">
-                  <span className={`w-5 h-5 mr-2 flex items-center justify-center rounded-full ${
-                    passwordValidation.match ? 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-400' : 'bg-gray-100 text-gray-400 dark:bg-gray-800'
+                  <span className={`w-6 h-6 mr-3 flex items-center justify-center rounded-full border-2 border-black ${
+                    passwordValidation.match ? `${theme === 'ben10' ? 'bg-[#64cc4f] text-black' : 'bg-yellow-300 text-black'}` : 'bg-white text-gray-400'
                   }`}>
                     {passwordValidation.match ? '✓' : '·'}
                   </span>
-                  Passwords match
+                  <span className="text-black font-medium">Passwords match perfectly </span>
                 </li>
               </ul>
             </div>
           </div>
 
           {/* Submit Button */}
-          <div className="flex justify-end">
+          <div className="flex justify-center">
             <Button
               type="submit"
               disabled={loading.password || !Object.values(passwordValidation).every(v => v)}
-              className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium disabled:opacity-50"
+              className={`bg-gradient-to-r ${
+                theme === 'ben10'
+                  ? 'from-[#64cc4f] to-[#222222] hover:from-[#b2e05b] hover:to-[#222222]'
+                  : theme === 'tinkerbell'
+                  ? 'from-yellow-500 to-green-600 hover:from-yellow-600 hover:to-green-700'
+                  : 'from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700'
+              } text-white px-8 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black disabled:opacity-50 animate-pulse`}
             >
-              {loading.password ? 'Updating...' : 'Update Password'}
+              {loading.password ? 'Transforming Hero...' : 'Change Password Power!'}
             </Button>
           </div>
         </form>
+      </div>
       </div>
     </div>
   );

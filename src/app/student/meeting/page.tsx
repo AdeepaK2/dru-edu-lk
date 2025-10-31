@@ -15,6 +15,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
+import { useTheme } from '@/contexts/ThemeContext';
 import { TimeSlotService, MeetingBookingService } from '@/apiservices/meetingFireStoreServices';
 import { TeacherFirestoreService } from '@/apiservices/teacherFirestoreService';
 import { ClassFirestoreService } from '@/apiservices/classFirestoreService';
@@ -74,6 +75,7 @@ interface BookedMeeting {
 
 export default function StudentMeetingPage() {
   const { student, loading: authLoading } = useStudentAuth();
+  const { theme } = useTheme();
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
   const [bookedMeetings, setBookedMeetings] = useState<BookedMeeting[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
@@ -472,10 +474,46 @@ export default function StudentMeetingPage() {
   // Show loading spinner while authenticating or loading data
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-t-2 border-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-300">Loading meeting data...</p>
+      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : 'from-blue-400 to-indigo-600'} flex items-center justify-center`}>
+        <div className="bg-white border-4 border-black rounded-3xl p-8 shadow-2xl">
+          {/* Theme-Specific Loading Animation */}
+          <div className="relative mb-6 flex flex-col items-center">
+            {/* Tinkerbell Loading GIF */}
+            {theme === 'tinkerbell' && (
+              <div className="flex flex-col items-center">
+                <img 
+                  src="/tinkerbell-loading.gif" 
+                  alt="Tinkerbell Loading" 
+                  className="w-32 h-32 object-contain"
+                />
+                <span className="text-2xl font-bold text-yellow-600 mt-4">Loading</span>
+              </div>
+            )}
+            
+            {/* Ben 10 Loading GIF */}
+            {theme === 'ben10' && (
+              <div className="flex flex-col items-center">
+                <img 
+                  src="/ben10-loading.gif" 
+                  alt="Ben 10 Loading" 
+                  className="w-32 h-32 object-contain"
+                />
+                <span className="text-2xl font-bold text-[#64cc4f] mt-4">Loading</span>
+              </div>
+            )}
+            
+            {/* Default Theme Spinner with Loading Text */}
+            {theme !== 'tinkerbell' && theme !== 'ben10' && (
+              <div className="flex flex-col items-center">
+                <div className="w-24 h-24 border-4 border-blue-400 border-t-blue-600 rounded-full animate-spin"></div>
+                <span className="text-2xl font-bold text-blue-600 mt-4">Loading</span>
+              </div>
+            )}
+          </div>
+          <div className="text-center">
+            <h2 className="text-2xl font-black text-black mb-2">Loading Meetings...</h2>
+            <p className="text-gray-600 font-medium">Get ready to transform your learning! </p>
+          </div>
         </div>
       </div>
     );
@@ -484,12 +522,14 @@ export default function StudentMeetingPage() {
   // Show error if not authenticated
   if (!student) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center max-w-md">
-          <div className="bg-red-100 dark:bg-red-900/20 p-6 rounded-lg">
-            <p className="text-red-600 dark:text-red-400 mb-4">
-              Please log in as a student to access this page.
-            </p>
+      <div className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : 'bg-gradient-to-br from-blue-600 via-indigo-700 to-slate-900'} p-6`}>
+        <div className="flex items-center justify-center py-12">
+          <div className="bg-gradient-to-r from-red-200 to-pink-200 rounded-3xl shadow-2xl border-4 border-black p-8">
+            <div className="text-center">
+              <div className="text-4xl mb-4">😔</div>
+              <h3 className="text-xl font-black text-black mb-2">Please Log In</h3>
+              <p className="text-black font-bold">Please log in as a student to access your meetings!</p>
+            </div>
           </div>
         </div>
       </div>
@@ -497,88 +537,125 @@ export default function StudentMeetingPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                Book a Meeting
-              </h1>
-              <p className="mt-2 text-gray-600 dark:text-gray-400">
-                Schedule one-on-one sessions with your teachers - <span className="text-green-600 dark:text-green-400 font-medium">Free of charge</span>
-              </p>
+    <div key={`meeting-${theme}`} className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : 'bg-gradient-to-br from-blue-600 via-indigo-700 to-slate-900'} p-6`}>
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Theme-aware Header */}
+        <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-lime-800' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-600 via-indigo-700 to-slate-800'} rounded-3xl shadow-2xl border-4 border-black p-8 relative overflow-hidden`}>
+          
+
+          <div className="flex items-center justify-between relative z-10">
+            <div className="flex items-center space-x-4">
+             
+              <div>
+                <h1 className="text-4xl font-black text-white mb-2 flex items-center">
+          
+                  
+                  <span className="ml-2 text-4xl text-black">Meeting</span>
+                  <span className="ml-2 text-4xl text-black">Scheduler</span>
+                 
+                </h1>
+                <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-white' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-100'}`}>
+                  Welcome back, {student?.name}! Schedule one-on-one sessions with your teachers! 
+                </p>
+              </div>
             </div>
             <Button
               onClick={loadInitialData}
               variant="outline"
               disabled={loading}
+              className="bg-white hover:bg-gray-100 text-black font-black border-2 border-black rounded-full px-6 py-2"
             >
-              {loading ? 'Loading...' : 'Refresh'}
+              {loading ? 'Loading...' : '🔄 Refresh'}
             </Button>
           </div>
+        </div>
           
           {/* Error display */}
           {error && (
-            <div className="mt-4 bg-red-100 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-              <div className="flex items-center">
-                <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 mr-2" />
-                <p className="text-red-600 dark:text-red-400">{error}</p>
+            <div className="bg-gradient-to-r from-red-200 to-pink-200 rounded-3xl shadow-2xl border-4 border-black p-6 mt-6">
+              <div className="flex items-center space-x-4">
+                <div className="text-4xl">😔</div>
+                <div>
+                  <h3 className="text-xl font-black text-black mb-2">Oops! Something went wrong</h3>
+                  <p className="text-black font-bold">{error}</p>
+                </div>
               </div>
             </div>
           )}
 
           {/* Success display */}
           {successMessage && (
-            <div className="mt-4 bg-green-100 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-              <div className="flex items-center">
-                <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 mr-2" />
-                <p className="text-green-600 dark:text-green-400">{successMessage}</p>
+            <div className={`bg-gradient-to-r ${
+              theme === 'ben10'
+                ? 'from-[#64cc4f]/20 to-[#b2e05b]/20'
+                : theme === 'tinkerbell'
+                ? 'from-yellow-200 to-green-200'
+                : 'from-blue-200 to-indigo-200'
+            } rounded-3xl shadow-2xl border-4 border-black p-6 mt-6`}>
+              <div className="flex items-center space-x-4">
+                <div className="text-4xl">🎉</div>
+                <div>
+                  <h3 className="text-xl font-black text-black mb-2">Success!</h3>
+                  <p className="text-black font-bold">{successMessage}</p>
+                </div>
               </div>
             </div>
           )}
-        </div>
 
-        {/* Tabs */}
-        <div className="mb-6">
+        {/* Theme-aware Tabs */}
+        <div className="bg-white rounded-3xl shadow-2xl border-4 border-black p-6">
           <nav className="flex space-x-8">
             <button
               onClick={() => setActiveTab('select')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              className={`py-3 px-6 rounded-full font-black text-lg transition-all ${
                 activeTab === 'select'
-                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                  ? `${
+                      theme === 'ben10'
+                        ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222]'
+                        : theme === 'tinkerbell'
+                        ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500'
+                        : 'bg-gradient-to-r from-blue-400 to-indigo-600'
+                    } text-white border-2 border-black`
+                  : 'bg-gray-100 hover:bg-gray-200 text-black border-2 border-gray-300'
               }`}
             >
-              Select Teacher & Book
+              🎯 Select Teacher & Book
             </button>
             <button
               onClick={() => setActiveTab('booked')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              className={`py-3 px-6 rounded-full font-black text-lg transition-all ${
                 activeTab === 'booked'
-                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                  ? `${
+                      theme === 'ben10'
+                        ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222]'
+                        : theme === 'tinkerbell'
+                        ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500'
+                        : 'bg-gradient-to-r from-blue-400 to-indigo-600'
+                    } text-white border-2 border-black`
+                  : 'bg-gray-100 hover:bg-gray-200 text-black border-2 border-gray-300'
               }`}
             >
-              My Meetings ({bookedMeetings.length})
+              📅 My Meetings ({bookedMeetings.length})
             </button>
           </nav>
         </div>
 
         {activeTab === 'select' && (
           <>
-            {/* Class Selection */}
-            <div className="mb-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-              <div className="flex items-center space-x-4 mb-4">
-                <Filter className="w-5 h-5 text-gray-500" />
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white">Select Class (Optional)</h3>
+            {/* Theme-aware Class Selection */}
+            <div className="bg-white rounded-3xl shadow-2xl border-4 border-black p-6">
+              <div className="flex items-center space-x-4 mb-6">
+              
+                <div>
+                  <h3 className="text-xl font-black text-black">Select Class (Optional)</h3>
+                  <p className="text-gray-600 font-bold">Filter teachers by your enrolled classes </p>
+                </div>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Class
+                  <label className="block text-lg font-black text-black mb-3">
+                    🎓 Class
                   </label>
                   <select
                     value={selectedClass}
@@ -586,7 +663,7 @@ export default function StudentMeetingPage() {
                       setSelectedClass(e.target.value);
                       setExpandedTeacher(''); // Reset expanded teacher when class changes
                     }}
-                    className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    className="w-full p-4 border-4 border-black rounded-3xl bg-white text-black font-bold text-lg focus:ring-4 focus:ring-green-400 focus:border-black"
                   >
                     <option value="">All Classes</option>
                     {classes.map(cls => (
@@ -599,26 +676,31 @@ export default function StudentMeetingPage() {
               </div>
             </div>
 
-            {/* Teachers List with Collapsible Slots */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-              <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+            {/* Theme-aware Teachers List */}
+            <div className="bg-white rounded-3xl shadow-2xl border-4 border-black overflow-hidden">
+              <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-600 to-indigo-600'} text-white p-6 border-b-4 border-black`}>
+                <h2 className="text-2xl text-black font-black flex items-center">
+                  <span className="text-3xl mr-3">👨‍🏫</span>
                   Available Teachers
                 </h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                  Click on a teacher to see their available time slots
+                <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-white' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-100'}`}>
+                  Click on a teacher to see their time slots 
                 </p>
               </div>
 
               <div className="p-6">
                 {getAvailableTeachers().length === 0 ? (
-                  <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-                    <Calendar className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                    <h3 className="text-lg font-medium mb-2">No teachers available</h3>
-                    <p>Try selecting a different class</p>
+                  <div className="text-center py-12">
+                    <div className="text-6xl mb-6">🎓</div>
+                    <h3 className="text-2xl font-black text-black mb-4">
+                      No Teachers Available Yet
+                    </h3>
+                    <p className="text-gray-600 font-bold text-lg">
+                      {theme === 'ben10' ? 'Hero' : theme === 'tinkerbell' ? 'Magical' : 'Learning'} teachers will appear here once they set up their schedules! {theme === 'ben10' ? '⚡' : theme === 'tinkerbell' ? '✨' : '📚'}
+                    </p>
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-6">
                     {getAvailableTeachers().map((teacher) => {
                       const teacherSlots = getTeacherSlots(teacher.id);
                       const isExpanded = expandedTeacher === teacher.id;
@@ -626,35 +708,35 @@ export default function StudentMeetingPage() {
                       return (
                         <div
                           key={teacher.id}
-                          className="border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden"
+                          className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-600 to-indigo-700'} rounded-3xl shadow-2xl border-4 border-black overflow-hidden hover:scale-105 transition-all`}
                         >
                           {/* Teacher Header */}
                           <div
-                            className="p-4 bg-gray-50 dark:bg-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                            className="p-6 cursor-pointer transition-all"
                             onClick={() => handleTeacherExpand(teacher.id)}
                           >
                             <div className="flex items-center justify-between">
-                              <div className="flex items-center space-x-3">
-                                <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
-                                  <span className="text-lg font-medium text-blue-600 dark:text-blue-300">
+                              <div className="flex items-center space-x-4">
+                                <div className="w-16 h-16 bg-gradient-to-br from-yellow-400 to-orange-400 rounded-3xl flex items-center justify-center border-4 border-black shadow-lg">
+                                  <span className="text-2xl font-black text-black">
                                     {teacher.name.charAt(0)}
                                   </span>
                                 </div>
                                 <div>
-                                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                                  <h3 className="text-2xl font-black text-black mb-1">
                                     {teacher.name}
                                   </h3>
-                                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                                  <p className="text-indigo-100 font-bold text-lg">
                                     {teacher.subjects.join(', ')}
                                   </p>
                                 </div>
                               </div>
-                              <div className="flex items-center space-x-3">
-                                <span className="text-sm text-gray-600 dark:text-gray-400">
-                                  {teacherSlots.length} slots available
+                              <div className="flex items-center space-x-4">
+                                <span className="bg-white text-black px-4 py-2 rounded-full font-black text-sm border-2 border-black">
+                                  {teacherSlots.length}  Slots Available
                                 </span>
                                 <ChevronRight 
-                                  className={`w-5 h-5 text-gray-400 transition-transform ${
+                                  className={`w-8 h-8 text-white transition-transform ${
                                     isExpanded ? 'rotate-90' : ''
                                   }`} 
                                 />
@@ -664,46 +746,50 @@ export default function StudentMeetingPage() {
 
                           {/* Teacher Slots (Collapsible) */}
                           {isExpanded && (
-                            <div className="p-4 border-t border-gray-200 dark:border-gray-600">
+                            <div className="p-6 border-t-4 border-black bg-white">
                               {teacherSlots.length === 0 ? (
-                                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                                  <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                                  <p>No available slots for this teacher</p>
+                                <div className="text-center py-8">
+                                  <div className="text-4xl mb-4">⏰</div>
+                                  <h4 className="text-xl font-black text-black mb-2">
+                                    No Available Slots
+                                  </h4>
+                                  <p className="text-gray-600 font-bold">
+                                    This teacher has no available time slots right now
+                                  </p>
                                 </div>
                               ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                   {teacherSlots.map((slot) => (
                                     <div
                                       key={slot.id}
-                                      className="border border-gray-200 dark:border-gray-600 rounded-lg p-3 hover:shadow-md transition-shadow"
+                                      className="bg-gradient-to-r from-white to-gray-50 rounded-2xl border-2 border-gray-300 p-4 hover:border-black transition-all"
                                     >
-                                      <div className="space-y-2 mb-3">
-                                        <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                                          <Calendar className="w-4 h-4 mr-2" />
+                                      <div className="space-y-3 mb-4">
+                                        <div className="flex items-center text-sm text-gray-600 font-bold">
+                                          <Calendar className="w-5 h-5 mr-2 text-blue-600" />
                                           {formatDate(slot.date)}
                                         </div>
-                                        <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                                          <Clock className="w-4 h-4 mr-2" />
+                                        <div className="flex items-center text-sm text-gray-600 font-bold">
+                                          <Clock className="w-5 h-5 mr-2 text-green-600" />
                                           {formatTime(slot.startTime)} - {formatTime(slot.endTime)}
                                         </div>
-                                        <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                                          <Video className="w-4 h-4 mr-2" />
+                                        <div className="flex items-center text-sm text-gray-600 font-bold">
+                                          <Video className="w-5 h-5 mr-2 text-purple-600" />
                                           {slot.duration} minutes
                                         </div>
                                         {slot.className && (
-                                          <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                                            <BookOpen className="w-4 h-4 mr-2" />
+                                          <div className="flex items-center text-sm text-gray-600 font-bold">
+                                            <BookOpen className="w-5 h-5 mr-2 text-orange-600" />
                                             {slot.className}
                                           </div>
                                         )}
                                       </div>
-
+                                      
                                       <Button
                                         onClick={() => handleBookSlot(slot)}
-                                        className="w-full bg-blue-600 hover:bg-blue-700 text-sm"
-                                        size="sm"
+                                        className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-4 py-3 rounded-full font-black text-sm transform hover:scale-105 transition-all border-2 border-black"
                                       >
-                                        Book This Slot
+                                        🎯 Book This Slot
                                       </Button>
                                     </div>
                                   ))}
@@ -722,66 +808,89 @@ export default function StudentMeetingPage() {
         )}
 
         {activeTab === 'booked' && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+          <div className="bg-white rounded-3xl shadow-2xl border-4 border-black overflow-hidden">
+            <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-600 to-indigo-600'} text-white p-6 border-b-4 border-black`}>
+              <h2 className="text-2xl font-black flex items-center">
+                <span className="text-3xl mr-3">📅</span>
                 My Scheduled Meetings
               </h2>
             </div>
 
             <div className="p-6">
               {bookedMeetings.length === 0 ? (
-                <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-                  <BookOpen className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                  <h3 className="text-lg font-medium mb-2">No meetings scheduled</h3>
-                  <p>Book your first meeting with a teacher</p>
+                <div className="text-center py-12">
+                  <div className="text-6xl mb-6">{theme === 'ben10' ? 'Ω' : theme === 'tinkerbell' ? '✨' : '📚'}</div>
+                  <h3 className="text-2xl font-black text-black mb-4">
+                    No Meetings Scheduled Yet
+                  </h3>
+                  <p className="text-gray-600 font-bold text-lg">
+                    Book your first {theme === 'ben10' ? 'heroic' : theme === 'tinkerbell' ? 'magical' : 'enriching'} one-on-one session with a teacher! {theme === 'ben10' ? '⚡' : theme === 'tinkerbell' ? '✨' : '📚'}
+                  </p>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-6">
                   {bookedMeetings.map((meeting) => (
                     <div
                       key={meeting.id}
-                      className="border border-gray-200 dark:border-gray-600 rounded-lg p-4"
+                      className="bg-gradient-to-r from-white to-gray-50 rounded-2xl border-2 border-gray-300 p-6 hover:border-black transition-all"
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
-                          <div className="flex items-center space-x-3 mb-2">
-                            <h4 className="font-medium text-gray-900 dark:text-white">
-                              {meeting.teacherName}
-                            </h4>
-                            <span className={`px-2 py-1 text-xs rounded-full ${
-                              meeting.status === 'upcoming'
-                                ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
-                                : meeting.status === 'completed'
-                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-                                : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
-                            }`}>
-                              {meeting.status}
-                            </span>
+                          <div className="flex items-center space-x-4 mb-3">
+                            <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-400 rounded-2xl flex items-center justify-center border-2 border-black">
+                              <span className="text-lg font-black text-white">
+                                {meeting.teacherName.charAt(0)}
+                              </span>
+                            </div>
+                            <div>
+                              <h4 className="text-xl font-black text-black">
+                                {meeting.teacherName}
+                              </h4>
+                              <span className={`px-3 py-1 text-sm font-black rounded-full border-2 border-black ${
+                                meeting.status === 'upcoming'
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : meeting.status === 'completed'
+                                  ? theme === 'ben10'
+                                    ? 'bg-[#64cc4f]/20 text-[#222222]'
+                                    : theme === 'tinkerbell'
+                                    ? 'bg-yellow-100 text-yellow-800'
+                                    : 'bg-blue-100 text-blue-800'
+                                  : 'bg-red-100 text-red-800'
+                              }`}>
+                                {meeting.status === 'upcoming' ? '⏰' : meeting.status === 'completed' ? '✅' : '❌'} {meeting.status}
+                              </span>
+                            </div>
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm text-gray-600 dark:text-gray-400">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm text-gray-600 font-bold">
                             <div className="flex items-center">
-                              <Calendar className="w-4 h-4 mr-2" />
+                              <Calendar className="w-5 h-5 mr-2 text-blue-600" />
                               {formatDate(meeting.date)}
                             </div>
                             <div className="flex items-center">
-                              <Clock className="w-4 h-4 mr-2" />
+                              <Clock className="w-5 h-5 mr-2 text-green-600" />
                               {formatTime(meeting.startTime)} - {formatTime(meeting.endTime)}
                             </div>
                             <div className="flex items-center">
-                              <BookOpen className="w-4 h-4 mr-2" />
+                              <BookOpen className="w-5 h-5 mr-2 text-purple-600" />
                               {meeting.subject}
                             </div>
                           </div>
                         </div>
-                        <div className="flex space-x-2 ml-4">
+                        <div className="flex space-x-3 ml-6">
                           {meeting.status === 'upcoming' && (
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => window.open(meeting.meetingLink, '_blank')}
+                              className={`bg-gradient-to-r ${
+                                theme === 'ben10'
+                                  ? 'from-[#64cc4f] to-[#222222] hover:from-[#b2e05b] hover:to-[#222222]'
+                                  : theme === 'tinkerbell'
+                                  ? 'from-yellow-400 to-green-500 hover:from-yellow-500 hover:to-green-600'
+                                  : 'from-blue-400 to-indigo-600 hover:from-blue-500 hover:to-indigo-700'
+                              } text-white px-6 py-3 rounded-full font-black text-sm border-2 border-black transform hover:scale-105 transition-all`}
                             >
-                              <Video className="w-4 h-4 mr-2" />
+                              <Video className="w-5 h-5 mr-2" />
                               Join Meeting
                             </Button>
                           )}
@@ -799,59 +908,65 @@ export default function StudentMeetingPage() {
         {showBookingModal && selectedSlot && (
           <div className="fixed inset-0 z-50 overflow-y-auto">
             <div className="flex items-center justify-center min-h-screen px-4">
-              <div className="fixed inset-0 bg-gray-600 bg-opacity-75"></div>
-              <div className="relative bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6">
-                <div className="flex items-center justify-center w-12 h-12 mx-auto bg-blue-100 dark:bg-blue-900 rounded-full mb-4">
-                  <CheckCircle className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              <div className="fixed inset-0 bg-black bg-opacity-50"></div>
+              <div className="relative bg-white rounded-3xl shadow-2xl border-4 border-black max-w-md w-full p-8">
+                <div className="flex items-center justify-center w-20 h-20 mx-auto bg-gradient-to-br from-yellow-400 to-orange-400 rounded-3xl mb-6 border-4 border-black">
+                  <CheckCircle className="w-10 h-10 text-black" />
                 </div>
                 
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white text-center mb-4">
-                  Confirm Booking
+                <h3 className="text-2xl font-black text-black text-center mb-6">
+                  🎯 Confirm Your {theme === 'ben10' ? 'Hero' : theme === 'tinkerbell' ? 'Magical' : 'Learning'} Booking
                 </h3>
                 
-                <div className="space-y-3 mb-6">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Teacher:</span>
-                    <span className="font-medium text-gray-900 dark:text-white">
+                <div className="space-y-4 mb-8">
+                  <div className="flex justify-between items-center p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl border-2 border-blue-200">
+                    <span className="text-gray-600 font-bold">👨‍🏫 Teacher:</span>
+                    <span className="font-black text-black">
                       {selectedSlot.teacherName}
                     </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Date:</span>
-                    <span className="font-medium text-gray-900 dark:text-white">
+                  <div className="flex justify-between items-center p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl border-2 border-green-200">
+                    <span className="text-gray-600 font-bold">📅 Date:</span>
+                    <span className="font-black text-black">
                       {formatDate(selectedSlot.date)}
                     </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Time:</span>
-                    <span className="font-medium text-gray-900 dark:text-white">
+                  <div className="flex justify-between items-center p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl border-2 border-purple-200">
+                    <span className="text-gray-600 font-bold">⏰ Time:</span>
+                    <span className="font-black text-black">
                       {formatTime(selectedSlot.startTime)} - {formatTime(selectedSlot.endTime)}
                     </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Duration:</span>
-                    <span className="font-medium text-gray-900 dark:text-white">
+                  <div className="flex justify-between items-center p-3 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-2xl border-2 border-yellow-200">
+                    <span className="text-gray-600 font-bold">⏳ Duration:</span>
+                    <span className="font-black text-black">
                       {selectedSlot.duration} minutes
                     </span>
                   </div>
                 </div>
 
-                <div className="flex space-x-3">
+                <div className="flex space-x-4">
                   <Button
                     variant="outline"
-                    className="flex-1"
+                    className="flex-1 bg-gray-100 hover:bg-gray-200 text-black font-black border-2 border-black rounded-full py-3"
                     onClick={() => {
                       setShowBookingModal(false);
                       setSelectedSlot(null);
                     }}
                   >
-                    Cancel
+                    ❌ Cancel
                   </Button>
                   <Button
-                    className="flex-1 bg-blue-600 hover:bg-blue-700"
+                    className={`flex-1 bg-gradient-to-r ${
+                      theme === 'ben10'
+                        ? 'from-[#64cc4f] to-[#222222] hover:from-[#b2e05b] hover:to-[#222222]'
+                        : theme === 'tinkerbell'
+                        ? 'from-yellow-400 to-green-500 hover:from-yellow-500 hover:to-green-600'
+                        : 'from-blue-400 to-indigo-600 hover:from-blue-500 hover:to-indigo-700'
+                    } text-white font-black border-2 border-black rounded-full py-3 transform hover:scale-105 transition-all`}
                     onClick={confirmBooking}
                   >
-                    Confirm Booking
+                    🎯 Confirm Booking
                   </Button>
                 </div>
               </div>

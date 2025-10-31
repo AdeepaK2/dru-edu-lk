@@ -19,6 +19,7 @@ import {
 import { Button } from '@/components/ui';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { useRouter } from 'next/navigation';
+import { useTheme } from '@/contexts/ThemeContext';
 
 // Import services and types
 import { VideoFirestoreService } from '@/apiservices/videoFirestoreService';
@@ -36,6 +37,7 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
   const { videoId } = use(params);
   const { student } = useStudentAuth();
   const router = useRouter();
+  const { theme } = useTheme();
   const [video, setVideo] = useState<VideoDocument | null>(null);
   const [purchase, setPurchase] = useState<VideoPurchaseDocument | null>(null);
   const [loading, setLoading] = useState(true);
@@ -149,7 +151,13 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                 Go Back
               </Button>
               {video?.price && video.price > 0 && (
-                <Button onClick={handlePurchase} className="bg-green-600 hover:bg-green-700">
+                <Button onClick={handlePurchase} className={`${
+                  theme === 'ben10' 
+                    ? 'bg-[#64cc4f] hover:bg-[#b2e05b]' 
+                    : theme === 'tinkerbell'
+                    ? 'bg-yellow-500 hover:bg-yellow-600'
+                    : 'bg-blue-600 hover:bg-blue-700'
+                } text-white`}>
                   Purchase for ${video.price}
                 </Button>
               )}
@@ -164,10 +172,31 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
   }
 
   return (
-    <div className="max-w-6xl mx-auto py-6">
+    <div 
+      className={`min-h-screen p-6 ${
+        theme === 'tinkerbell'
+          ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400'
+          : theme === 'ben10'
+          ? ''
+          : 'bg-gradient-to-br from-blue-400 via-indigo-500 to-indigo-600'
+      }`}
+      style={theme === 'ben10' ? {
+        background: 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))'
+      } : undefined}
+    >
+      <div className="max-w-6xl mx-auto py-6">
         {/* Header */}
         <div className="mb-6">
-          <Button onClick={handleGoBack} variant="outline" className="mb-4">
+          <Button 
+            onClick={handleGoBack} 
+            className={`mb-4 font-semibold ${
+              theme === 'ben10'
+                ? 'bg-[#64cc4f] hover:bg-[#b2e05b] text-[#222222]'
+                : theme === 'tinkerbell'
+                ? 'bg-yellow-400 hover:bg-yellow-500 text-yellow-900'
+                : 'bg-blue-500 hover:bg-blue-600 text-white'
+            }`}
+          >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Videos
           </Button>
@@ -176,7 +205,13 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Video Player */}
           <div className="lg:col-span-3">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+            <div className={`rounded-lg shadow-lg overflow-hidden border-4 border-black ${
+              theme === 'ben10'
+                ? 'bg-gradient-to-br from-[#64cc4f]/10 to-[#222222]/10'
+                : theme === 'tinkerbell'
+                ? 'bg-gradient-to-br from-yellow-100 to-green-50'
+                : 'bg-gradient-to-br from-blue-900 via-indigo-800 to-indigo-800'
+            }`}>
               {/* Video Player Container */}
               <div className="relative aspect-video bg-black">
                 {video.videoUrl ? (
@@ -214,11 +249,23 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
 
               {/* Video Info */}
               <div className="p-6">
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
+                <h1 className={`text-2xl font-bold mb-3 ${
+                  theme === 'ben10'
+                    ? 'text-[#222222]'
+                    : theme === 'tinkerbell'
+                    ? 'text-black'
+                    : 'text-black dark:text-white'
+                }`}>
                   {video.title}
                 </h1>
                 
-                <div className="flex items-center space-x-6 text-sm text-gray-500 dark:text-gray-400 mb-4">
+                <div className={`flex items-center space-x-6 text-sm mb-4 ${
+                  theme === 'ben10'
+                    ? 'text-[#222222]/70'
+                    : theme === 'tinkerbell'
+                    ? 'text-black/80'
+                    : 'text-black/70 dark:text-gray-400'
+                }`}>
                   <div className="flex items-center">
                     <Eye className="w-4 h-4 mr-1" />
                     <span>{video.views} views</span>
@@ -234,17 +281,40 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                     <span>{video.subjectName}</span>
                   </div>
                 </div>
-
                 {/* Purchase Status */}
                 {purchase && (
-                  <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-4">
+                  <div className={`${
+                    theme === 'ben10'
+                      ? 'bg-[#64cc4f]/15 border-2 border-[#64cc4f]/40'
+                      : theme === 'tinkerbell'
+                      ? 'bg-gradient-to-r from-green-50 to-yellow-50 border-2 border-yellow-300 dark:bg-green-900/20 dark:border-yellow-600'
+                      : 'bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-800'
+                  } rounded-lg p-4 mb-4`}>
                     <div className="flex items-center">
-                      <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
+                      <CheckCircle className={`h-5 w-5 mr-2 ${
+                        theme === 'ben10'
+                          ? 'text-[#64cc4f]'
+                          : theme === 'tinkerbell'
+                          ? 'text-yellow-500'
+                          : 'text-blue-500'
+                      }`} />
                       <div>
-                        <p className="text-sm font-medium text-green-800 dark:text-green-200">
+                        <p className={`text-sm font-medium ${
+                          theme === 'ben10'
+                            ? 'text-[#64cc4f]'
+                            : theme === 'tinkerbell'
+                            ? 'text-green-800 dark:text-green-200'
+                            : 'text-blue-800 dark:text-blue-200'
+                        }`}>
                           You own this video
                         </p>
-                        <p className="text-xs text-green-600 dark:text-green-300">
+                        <p className={`text-xs ${
+                          theme === 'ben10'
+                            ? 'text-[#b2e05b]'
+                            : theme === 'tinkerbell'
+                            ? 'text-green-600 dark:text-green-300'
+                            : 'text-blue-600 dark:text-blue-300'
+                        }`}>
                           Purchased on {purchase.purchasedAt?.toDate().toLocaleDateString()}
                           {purchase.viewCount > 0 && ` • Watched ${purchase.viewCount} times`}
                         </p>
@@ -255,10 +325,22 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
 
                 {/* Description */}
                 <div className="prose dark:prose-invert max-w-none">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  <h3 className={`text-lg font-semibold mb-2 ${
+                    theme === 'ben10'
+                      ? 'text-[#222222]'
+                      : theme === 'tinkerbell'
+                      ? 'text-black'
+                      : 'text-black dark:text-white'
+                  }`}>
                     Description
                   </h3>
-                  <p className="text-gray-600 dark:text-gray-300 whitespace-pre-wrap">
+                  <p className={`whitespace-pre-wrap ${
+                    theme === 'ben10'
+                      ? 'text-[#222222]/80'
+                      : theme === 'tinkerbell'
+                      ? 'text-black/80'
+                      : 'text-black/80 dark:text-gray-300'
+                  }`}>
                     {video.description}
                   </p>
                 </div>
@@ -270,46 +352,104 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
           <div className="lg:col-span-1">
             <div className="space-y-6">
               {/* Video Details Card */}
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
+              <div className={`rounded-lg shadow-lg p-6 ${
+                theme === 'ben10'
+                  ? 'bg-gradient-to-br from-[#64cc4f]/10 to-[#b2e05b]/10 border-2 border-[#64cc4f]/30'
+                  : theme === 'tinkerbell'
+                  ? 'bg-gradient-to-br from-yellow-50 to-yellow-100 border-2 border-yellow-300 dark:border-yellow-600'
+                  : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700'
+              }`}>
+                <h3 className={`font-semibold mb-4 ${
+                  theme === 'ben10'
+                    ? 'text-[#222222]'
+                    : theme === 'tinkerbell'
+                    ? 'text-black'
+                    : 'text-black dark:text-white'
+                }`}>
                   Video Details
                 </h3>
                 <div className="space-y-3 text-sm">
                   <div>
-                    <span className="text-gray-500 dark:text-gray-400">Subject:</span>
-                    <p className="font-medium text-gray-900 dark:text-white">
+                    <span className={`${
+                      theme === 'ben10'
+                        ? 'text-[#222222]/60'
+                        : theme === 'tinkerbell'
+                        ? 'text-black/70'
+                        : 'text-black/70 dark:text-gray-400'
+                    }`}>Subject:</span>
+                    <p className={`font-medium ${
+                      theme === 'ben10'
+                        ? 'text-[#222222]'
+                        : theme === 'tinkerbell'
+                        ? 'text-black'
+                        : 'text-black dark:text-white'
+                    }`}>
                       {video.subjectName}
                     </p>
                   </div>
                   
                   {video.lessonName && (
                     <div>
-                      <span className="text-gray-500 dark:text-gray-400">Lesson:</span>
-                      <p className="font-medium text-gray-900 dark:text-white">
+                      <span className={`${
+                        theme === 'ben10'
+                          ? 'text-[#222222]/60'
+                          : theme === 'tinkerbell'
+                          ? 'text-black/70'
+                          : 'text-black/70 dark:text-gray-400'
+                      }`}>Lesson:</span>
+                      <p className={`font-medium ${
+                        theme === 'ben10'
+                          ? 'text-[#222222]'
+                          : theme === 'tinkerbell'
+                          ? 'text-black'
+                          : 'text-black dark:text-white'
+                      }`}>
                         {video.lessonName}
                       </p>
                     </div>
                   )}
                   
                   <div>
-                    <span className="text-gray-500 dark:text-gray-400">Status:</span>
+                    <span className={`${
+                      theme === 'ben10'
+                        ? 'text-[#222222]/60'
+                        : theme === 'tinkerbell'
+                        ? 'text-black/70'
+                        : 'text-black/70 dark:text-gray-400'
+                    }`}>Status:</span>
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ml-2 ${
                       video.status === 'active' 
-                        ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
+                        ? theme === 'ben10' 
+                          ? 'bg-[#64cc4f]/20 text-[#222222] border border-[#64cc4f]/30' 
+                          : theme === 'tinkerbell'
+                          ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-800 border border-green-800'
+                          : 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-800'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-800'
                     }`}>
                       {video.status}
                     </span>
                   </div>
                   
                   <div>
-                    <span className="text-gray-500 dark:text-gray-400">Visibility:</span>
+                    <span className={`${
+                      theme === 'ben10'
+                        ? 'text-[#222222]/60'
+                        : theme === 'tinkerbell'
+                        ? 'text-black/70'
+                        : 'text-black/70 dark:text-gray-400'
+                    }`}>Visibility:</span>
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ml-2 ${
                       video.visibility === 'public' 
-                        ? 'bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300'
+                        ? theme === 'ben10'
+                          ? 'bg-[#64cc4f]/20 text-[#222222] border border-[#64cc4f]/30'
+                          : 'bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-800'
                         : video.visibility === 'unlisted'
-                        ? 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300'
-                        : 'bg-purple-100 dark:bg-purple-900/20 text-purple-800 dark:text-purple-300'
+                        ? theme === 'ben10'
+                          ? 'bg-[#b2e05b]/20 text-[#222222] border border-[#b2e05b]/30'
+                          : 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-800'
+                        : theme === 'ben10'
+                        ? 'bg-[#222222]/20 text-[#222222] border border-[#222222]/30'
+                        : 'bg-purple-100 dark:bg-purple-900/20 text-purple-800 dark:text-purple-800'
                     }`}>
                       {video.visibility}
                     </span>
@@ -317,8 +457,20 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                   
                   {video.price && video.price > 0 && (
                     <div>
-                      <span className="text-gray-500 dark:text-gray-400">Price:</span>
-                      <p className="font-medium text-gray-900 dark:text-white">
+                      <span className={`${
+                        theme === 'ben10'
+                          ? 'text-[#222222]/60'
+                          : theme === 'tinkerbell'
+                          ? 'text-black/70'
+                          : 'text-black/70 dark:text-gray-400'
+                      }`}>Price:</span>
+                      <p className={`font-medium ${
+                        theme === 'ben10'
+                          ? 'text-[#222222]'
+                          : theme === 'tinkerbell'
+                          ? 'text-black'
+                          : 'text-black dark:text-white'
+                      }`}>
                         ${video.price}
                       </p>
                     </div>
@@ -328,15 +480,33 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
 
               {/* Tags */}
               {video.tags && video.tags.length > 0 && (
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-3">
+                <div className={`rounded-lg shadow-lg p-6 ${
+                  theme === 'ben10'
+                    ? 'bg-gradient-to-br from-[#64cc4f]/10 to-[#b2e05b]/10 border-2 border-[#64cc4f]/30'
+                    : theme === 'tinkerbell'
+                    ? 'bg-gradient-to-br from-yellow-50 to-yellow-100 border-2 border-yellow-300 dark:border-yellow-600'
+                    : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700'
+                }`}>
+                  <h3 className={`font-semibold mb-3 ${
+                    theme === 'ben10'
+                      ? 'text-[#222222]'
+                      : theme === 'tinkerbell'
+                      ? 'text-black'
+                      : 'text-black dark:text-white'
+                  }`}>
                     Tags
                   </h3>
                   <div className="flex flex-wrap gap-2">
                     {video.tags.map((tag, index) => (
                       <span
                         key={index}
-                        className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300"
+                        className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                          theme === 'ben10'
+                            ? 'bg-[#64cc4f]/20 text-[#222222] border border-[#64cc4f]/30'
+                            : theme === 'tinkerbell'
+                            ? 'bg-green-200 dark:bg-green-900/40 text-green-800 dark:text-green-200 border border-green-300 dark:border-green-700'
+                            : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
+                        }`}
                       >
                         {tag}
                       </span>
@@ -346,11 +516,29 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
               )}
 
               {/* Access Info */}
-              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
-                <h3 className="font-semibold text-blue-900 dark:text-blue-200 mb-2">
+              <div className={`rounded-lg p-4 shadow-lg ${
+                theme === 'ben10'
+                  ? 'bg-[#64cc4f]/10 border-2 border-[#64cc4f]/30'
+                  : theme === 'tinkerbell'
+                  ? 'bg-gradient-to-r from-green-100 to-yellow-100 border-2 border-yellow-300 dark:border-yellow-600'
+                  : 'bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-800'
+              }`}>
+                <h3 className={`font-semibold mb-2 ${
+                  theme === 'ben10'
+                    ? 'text-[#222222]'
+                    : theme === 'tinkerbell'
+                    ? 'text-black'
+                    : 'text-black dark:text-white'
+                }`}>
                   Access Information
                 </h3>
-                <div className="text-sm text-blue-800 dark:text-blue-300 space-y-1">
+                <div className={`text-sm space-y-1 ${
+                  theme === 'ben10'
+                    ? 'text-[#222222]/80'
+                    : theme === 'tinkerbell'
+                    ? 'text-black/80'
+                    : 'text-black/80 dark:text-gray-300'
+                }`}>
                   {video.price && video.price > 0 ? (
                     purchase ? (
                       <>
@@ -373,5 +561,6 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
           </div>
         </div>
       </div>
+    </div>
   );
 }

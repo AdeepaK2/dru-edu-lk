@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { useSidebar } from '../layout';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Button from '@/components/ui/Button';
 import { Badge } from '@/components/ui/badge';
@@ -67,6 +68,7 @@ export default function StudentStudyPage() {
   const router = useRouter();
   const { student, loading } = useStudentAuth();
   const { setHideSidebar } = useSidebar();
+  const { theme } = useTheme();
   const [classes, setClasses] = useState<ClassWithProgress[]>([]);
   const [selectedClass, setSelectedClass] = useState<string | null>(null);
   const [materials, setMaterials] = useState<StudyMaterial[]>([]);
@@ -186,16 +188,16 @@ export default function StudentStudyPage() {
       case 'pdf': return <FileText className="w-5 h-5 text-red-500" />;
       case 'video': return <Play className="w-5 h-5 text-purple-500" />;
       case 'link': return <ExternalLink className="w-5 h-5 text-blue-500" />;
-      case 'image': return <Image className="w-5 h-5 text-green-500" />;
+      case 'image': return <Image className={`w-5 h-5 ${theme === 'ben10' ? 'text-[#64cc4f]' : theme === 'tinkerbell' ? 'text-green-500' : 'text-green-500'}`} />;
       default: return <FileText className="w-5 h-5 text-gray-500" />;
     }
   };
 
   const getProgressColor = (progress: number) => {
-    if (progress >= 80) return 'bg-green-500';
-    if (progress >= 60) return 'bg-blue-500';
-    if (progress >= 40) return 'bg-yellow-500';
-    return 'bg-red-500';
+    if (progress >= 80) return theme === 'ben10' ? 'bg-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-green-400' : 'bg-blue-500';
+    if (progress >= 60) return theme === 'ben10' ? 'bg-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-yellow-500' : 'bg-indigo-500';
+    if (progress >= 40) return theme === 'ben10' ? 'bg-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-green-300' : 'bg-yellow-500';
+    return theme === 'ben10' ? 'bg-red-500' : theme === 'tinkerbell' ? 'bg-red-400' : 'bg-red-500';
   };
 
   const getProgressText = (progress: number) => {
@@ -353,10 +355,46 @@ export default function StudentStudyPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="w-8 h-8 border-t-2 border-blue-600 border-solid rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : 'from-blue-400 to-indigo-600'} flex items-center justify-center`}>
+        <div className="bg-white border-4 border-black rounded-3xl p-8 shadow-2xl">
+          {/* Theme-Specific Loading Animation */}
+          <div className="relative mb-6 flex flex-col items-center">
+            {/* Tinkerbell Loading GIF */}
+            {theme === 'tinkerbell' && (
+              <div className="flex flex-col items-center">
+                <img 
+                  src="/tinkerbell-loading.gif" 
+                  alt="Tinkerbell Loading" 
+                  className="w-32 h-32 object-contain"
+                />
+                <span className="text-2xl font-bold text-yellow-600 mt-4">Loading</span>
+              </div>
+            )}
+            
+            {/* Ben 10 Loading GIF */}
+            {theme === 'ben10' && (
+              <div className="flex flex-col items-center">
+                <img 
+                  src="/ben10-loading.gif" 
+                  alt="Ben 10 Loading" 
+                  className="w-32 h-32 object-contain"
+                />
+                <span className="text-2xl font-bold text-[#64cc4f] mt-4">Loading</span>
+              </div>
+            )}
+            
+            {/* Default Theme Spinner with Loading Text */}
+            {theme !== 'tinkerbell' && theme !== 'ben10' && (
+              <div className="flex flex-col items-center">
+                <div className="w-24 h-24 border-4 border-blue-400 border-t-blue-600 rounded-full animate-spin"></div>
+                <span className="text-2xl font-bold text-blue-600 mt-4">Loading</span>
+              </div>
+            )}
+          </div>
+          <div className="text-center">
+            <h2 className="text-2xl font-black text-black mb-2">Loading Study Materials...</h2>
+            <p className="text-gray-600 font-medium">Get ready to transform your learning! </p>
+          </div>
         </div>
       </div>
     );
@@ -379,46 +417,54 @@ export default function StudentStudyPage() {
     if (isViewingMaterial && activeMaterial) {
       // PDF Viewing Layout - Full screen without top space
       return (
-        <div className="fixed inset-0 bg-gray-50 dark:bg-gray-900 z-50">
+        <div className={`fixed inset-0 bg-gradient-to-br ${theme === 'ben10' ? '' : theme === 'tinkerbell' ? 'from-green-500 via-yellow-500 to-green-600' : 'from-blue-600 via-indigo-700 to-blue-400'} z-50`} style={theme === 'ben10' ? { background: 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))' } : undefined}>
           {/* Minimal Back Button - positioned absolutely */}
           <div className="absolute top-4 left-4 z-10">
-            <Button 
+            <button
               onClick={exitMaterialView}
-              variant="outline"
-              size="sm"
-              className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm shadow-lg"
+              className="bg-black text-white font-black py-2 px-4 rounded-2xl border-2 border-white hover:bg-white hover:text-black transition-all duration-300 shadow-lg"
             >
-              <span>← Back to Materials</span>
-            </Button>
+              <span>← Back to Classes</span>
+            </button>
           </div>
 
           <div className="flex h-full">
             {/* Materials Sidebar - narrower */}
-            <div className="w-72 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-y-auto shadow-lg pt-16">
-              <div className="p-3 border-b border-gray-200 dark:border-gray-700">
-                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">
-                  Study Materials
+            <div className={`w-72 bg-gradient-to-b ${theme === 'ben10' ? 'from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : 'from-blue-500 to-indigo-600'} border-r-4 border-black overflow-y-auto shadow-2xl pt-16`}>
+              <div className="p-4 border-b-4 border-black">
+                <h2 className="text-lg font-black text-white text-center">
+                  {(theme === 'ben10' || theme === 'tinkerbell') && <span className="text-2xl mr-2">{theme === 'ben10' ? '�‍♂️' : '🧚‍♀️'}</span>}Study Materials 
                 </h2>
-                <p className="text-xs text-gray-600 dark:text-gray-400">
+                <p className="text-sm font-black text-white/90 text-center">
                   {currentClass?.name}
                 </p>
               </div>
 
-              <div className="p-3 space-y-2">
+              <div className="p-4 space-y-3">
                 {groupedMaterials.map((group: any) => {
                   const isExpanded = expandedGroups.has(group.id);
-                  
+
                   return (
-                    <Card key={group.id} className={`transition-all ${group.materials.some((m: any) => m.id === activeMaterial.id) ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : ''}`}>
-                      <CardHeader 
-                        className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 pb-3 px-3"
+                    <div key={group.id} className={`bg-white rounded-2xl shadow-lg border-2 transition-all hover:scale-105 ${
+                      group.materials.some((m: any) => m.id === activeMaterial.id)
+                        ? theme === 'ben10'
+                          ? 'border-[#64cc4f] bg-[#64cc4f]/10 shadow-[#64cc4f]/30'
+                          : theme === 'tinkerbell'
+                          ? 'border-yellow-500 bg-yellow-50 shadow-yellow-200'
+                          : 'border-blue-500 bg-blue-50 shadow-blue-200'
+                        : 'border-black'
+                    }`}>
+                      <div
+                        className={`cursor-pointer p-4 rounded-t-2xl ${
+                          theme === 'ben10' ? 'hover:bg-[#64cc4f]/10' : 'hover:bg-green-100'
+                        }`}
                         onClick={() => toggleGroupExpansion(group.id)}
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex items-start space-x-3 flex-1">
-                            <div className="w-6 h-6 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <div className={`w-8 h-8 ${theme === 'ben10' ? 'bg-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-yellow-500' : 'bg-blue-500'} rounded-xl flex items-center justify-center flex-shrink-0 border-2 border-black`}>
                               {group.isGroup ? (
-                                <div className="text-blue-600 font-bold text-xs">
+                                <div className="text-white font-black text-sm">
                                   {group.totalFiles}
                                 </div>
                               ) : (
@@ -426,73 +472,98 @@ export default function StudentStudyPage() {
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <CardTitle className="flex items-center space-x-2 mb-1 text-sm">
-                                <span className="truncate">{group.groupTitle || group.materials[0]?.title}</span>
+                              <div className="flex items-center space-x-2 mb-2">
+                                <span className="font-black text-gray-900 text-sm truncate">{group.groupTitle || group.materials[0]?.title}</span>
                                 {isExpanded ? (
-                                  <ChevronUp className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                                  <ChevronUp className={`w-4 h-4 ${theme === 'ben10' ? 'text-[#64cc4f]' : theme === 'tinkerbell' ? 'text-yellow-600' : 'text-blue-600'} flex-shrink-0 font-black`} />
                                 ) : (
-                                  <ChevronDown className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                                  <ChevronDown className={`w-4 h-4 ${theme === 'ben10' ? 'text-[#64cc4f]' : theme === 'tinkerbell' ? 'text-yellow-600' : 'text-blue-600'} flex-shrink-0 font-black`} />
                                 )}
-                              </CardTitle>
-                              
+                              </div>
+
                               {group.materials[0]?.description && (
-                                <p className="text-xs text-gray-600 dark:text-gray-400 mb-1 line-clamp-2">
+                                <p className="text-xs font-bold text-gray-700 mb-2 line-clamp-2">
                                   {group.materials[0].description}
                                 </p>
                               )}
-                              
-                              <div className="flex items-center space-x-1 mb-1">
+
+                              <div className="flex items-center space-x-2 mb-2">
                                 {group.fileTypes.map((fileType: string) => (
-                                  <Badge key={fileType} variant="secondary" className="text-xs px-1 py-0">
+                                  <span key={fileType} className={`text-white font-black text-xs px-2 py-1 rounded-lg border border-black ${
+                                    theme === 'ben10' ? 'bg-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-yellow-500' : 'bg-blue-500'
+                                  }`}>
                                     {fileType.toUpperCase()}
-                                  </Badge>
+                                  </span>
                                 ))}
                               </div>
                             </div>
                           </div>
                         </div>
-                      </CardHeader>
-                      
+                      </div>
+
                       {/* Collapsible content */}
                       {isExpanded && (
-                        <CardContent className="pt-0 px-3 pb-3">
-                          <div className="space-y-2 border-t border-gray-100 dark:border-gray-700 pt-3">
+                        <div className="pt-0 px-4 pb-4 border-t-2 border-black">
+                          <div className="space-y-3 border-t border-gray-100 pt-3">
                             {group.materials.map((material: any) => {
                               const isSelected = material.id === activeMaterial?.id;
-                              
+
                               return (
-                                <div 
-                                  key={material.id} 
-                                  className={`flex items-center justify-between p-2 border rounded-lg text-sm ${material.fileUrl ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700' : ''} ${
-                                    isSelected 
-                                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
-                                      : 'border-gray-200'
+                                <div
+                                  key={material.id}
+                                  className={`flex items-center justify-between p-3 border-2 rounded-xl text-sm transition-all hover:scale-105 ${
+                                    material.fileUrl ? `cursor-pointer ${theme === 'ben10' ? 'hover:bg-[#64cc4f]/10' : 'hover:bg-green-50'}` : ''
+                                  } ${
+                                    isSelected
+                                      ? theme === 'ben10'
+                                        ? 'border-[#64cc4f] bg-[#64cc4f]/10 shadow-lg'
+                                        : theme === 'tinkerbell'
+                                        ? 'border-yellow-500 bg-yellow-100 shadow-lg'
+                                        : 'border-blue-500 bg-blue-100 shadow-lg'
+                                      : 'border-gray-300 bg-white'
                                   }`}
                                   onClick={() => material.fileUrl && viewMaterial(material)}
                                 >
-                                  <div className="flex items-center space-x-2 flex-1">
-                                    <div className="w-5 h-5 bg-white dark:bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0 border">
+                                  <div className="flex items-center space-x-3 flex-1">
+                                    <div className={`w-6 h-6 ${theme === 'ben10' ? 'bg-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-yellow-500' : 'bg-blue-500'} rounded-lg flex items-center justify-center flex-shrink-0 border-2 border-black`}>
                                       {getFileIcon(material.fileType)}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                      <h4 className={`font-medium truncate text-xs ${
-                                        isSelected 
-                                          ? 'text-blue-700 dark:text-blue-400' 
-                                          : 'text-gray-900 dark:text-white'
+                                      <h4 className={`font-black truncate text-sm ${
+                                        isSelected
+                                          ? theme === 'ben10'
+                                            ? 'text-[#64cc4f]'
+                                            : theme === 'tinkerbell'
+                                            ? 'text-yellow-700'
+                                            : 'text-blue-700'
+                                          : 'text-gray-900'
                                       }`}>
                                         {material.title}
                                       </h4>
-                                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                                      <div className={`text-xs font-bold ${
+                                        theme === 'ben10' ? 'text-[#64cc4f]' : theme === 'tinkerbell' ? 'text-yellow-600' : 'text-blue-600'
+                                      }`}>
                                         {material.fileType.toUpperCase()}
                                       </div>
                                     </div>
                                   </div>
-                                  
+
                                   {material.fileUrl && (
-                                    <Eye 
-                                      className={`w-3 h-3 flex-shrink-0 cursor-pointer hover:text-blue-600 transition-colors pointer-events-auto ${
-                                        isSelected ? 'text-blue-600' : 'text-gray-400'
-                                      }`}
+                                    <Eye
+                                      className="w-4 h-4 flex-shrink-0 cursor-pointer transition-colors pointer-events-auto font-black"
+                                      style={{
+                                        color: isSelected 
+                                          ? (theme === 'ben10' ? '#22c55e' : theme === 'tinkerbell' ? '#eab308' : '#3b82f6')
+                                          : '#9ca3af'
+                                      }}
+                                      onMouseEnter={(e) => {
+                                        e.currentTarget.style.color = theme === 'ben10' ? '#16a34a' : theme === 'tinkerbell' ? '#ca8a04' : '#1d4ed8';
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        e.currentTarget.style.color = isSelected 
+                                          ? (theme === 'ben10' ? '#22c55e' : theme === 'tinkerbell' ? '#eab308' : '#3b82f6')
+                                          : '#9ca3af';
+                                      }}
                                       onClick={() => viewMaterial(material)}
                                     />
                                   )}
@@ -500,16 +571,16 @@ export default function StudentStudyPage() {
                               );
                             })}
                           </div>
-                        </CardContent>
+                        </div>
                       )}
-                    </Card>
+                    </div>
                   );
                 })}
               </div>
             </div>
 
             {/* Material Viewer - takes remaining space */}
-            <div className="flex-1 bg-white dark:bg-gray-900 overflow-hidden">
+            <div className={`flex-1 bg-gradient-to-br from-white ${theme === 'ben10' ? 'to-[#b2e05b]/10' : theme === 'tinkerbell' ? 'to-yellow-50' : 'to-blue-50'} overflow-hidden`}>
               <div className="h-full w-full">
                 {activeMaterial.fileType?.toLowerCase() === 'pdf' && activeMaterial.fileUrl && (
                   <PDFViewer
@@ -522,50 +593,46 @@ export default function StudentStudyPage() {
                 )}
                 {activeMaterial.fileType?.toLowerCase() === 'image' && activeMaterial.fileUrl && (
                   <div className="h-full flex flex-col">
-                    <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                    <div className={`p-6 border-b-4 border-black bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : 'from-blue-500 to-indigo-600'}`}>
                       <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{activeMaterial.title}</h3>
-                        <div className="flex items-center space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
+                        <h3 className="text-xl font-black text-white flex items-center">
+                          {(theme === 'ben10' || theme === 'tinkerbell') && <span className="mr-2">🖼️</span>}{activeMaterial.title}
+                        </h3>
+                        <div className="flex items-center space-x-3">
+                          <button
                             onClick={handleZoomOut}
                             disabled={imageZoom <= 0.1}
-                            className="p-2"
+                            className="bg-black text-white p-3 rounded-xl border-2 border-white hover:bg-white hover:text-black transition-all duration-300 font-black"
                             title="Zoom Out (-)"
                           >
-                            <ZoomOut className="h-4 w-4" />
-                          </Button>
-                          <span className="text-sm text-gray-600 dark:text-gray-400 min-w-[60px] text-center">
+                            <ZoomOut className="h-5 w-5" />
+                          </button>
+                          <span className="text-lg font-black text-white min-w-[70px] text-center bg-black/20 rounded-lg px-3 py-2 border-2 border-white">
                             {Math.round(imageZoom * 100)}%
                           </span>
-                          <Button
-                            variant="outline"
-                            size="sm"
+                          <button
                             onClick={handleZoomIn}
                             disabled={imageZoom >= 5}
-                            className="p-2"
+                            className="bg-black text-white p-3 rounded-xl border-2 border-white hover:bg-white hover:text-black transition-all duration-300 font-black"
                             title="Zoom In (+)"
                           >
-                            <ZoomIn className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
+                            <ZoomIn className="h-5 w-5" />
+                          </button>
+                          <button
                             onClick={handleZoomReset}
-                            className="p-2"
+                            className="bg-black text-white p-3 rounded-xl border-2 border-white hover:bg-white hover:text-black transition-all duration-300 font-black"
                             title="Reset Zoom (0)"
                           >
-                            <RotateCcw className="h-4 w-4" />
-                          </Button>
+                            <RotateCcw className="h-5 w-5" />
+                          </button>
                         </div>
                       </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                        Use mouse to drag when zoomed • Keyboard: + zoom in, - zoom out, 0 reset
+                      <div className="text-sm font-black text-white/90 mt-3 text-center">
+                        🖱️ Use mouse to drag when zoomed • ⌨️ Keyboard: + zoom in, - zoom out, 0 reset ⚡
                       </div>
                     </div>
-                    <div 
-                      className="flex-1 flex items-center justify-center p-4 bg-gray-50 dark:bg-gray-900 overflow-hidden relative"
+                    <div
+                      className={`flex-1 flex items-center justify-center p-6 bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f]/10 to-white' : theme === 'tinkerbell' ? 'from-yellow-50 to-green-50' : 'from-blue-50 to-indigo-50'} overflow-hidden relative`}
                       onMouseDown={handleMouseDown}
                       onMouseMove={handleMouseMove}
                       onMouseUp={handleMouseUp}
@@ -575,7 +642,7 @@ export default function StudentStudyPage() {
                       <img
                         src={activeMaterial.fileUrl}
                         alt={activeMaterial.title}
-                        className="rounded-lg shadow-lg select-none"
+                        className="rounded-3xl shadow-2xl border-4 border-black select-none"
                         style={{
                           transform: `scale(${imageZoom}) translate(${imagePan.x / imageZoom}px, ${imagePan.y / imageZoom}px)`,
                           transformOrigin: 'center center',
@@ -592,14 +659,16 @@ export default function StudentStudyPage() {
                 )}
                 {activeMaterial.fileType?.toLowerCase() === 'video' && activeMaterial.fileUrl && (
                   <div className="h-full flex flex-col">
-                    <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{activeMaterial.title}</h3>
+                    <div className={`p-6 border-b-4 border-black bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : 'from-blue-500 to-indigo-600'}`}>
+                      <h3 className="text-xl font-black text-white flex items-center">
+                        {(theme === 'ben10' || theme === 'tinkerbell') && <span className="mr-2">🎥</span>}{activeMaterial.title}
+                      </h3>
                     </div>
-                    <div className="flex-1 flex items-center justify-center p-4 bg-gray-50 dark:bg-gray-900">
+                    <div className={`flex-1 flex items-center justify-center p-6 bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f]/10 to-white' : 'from-green-50 to-white'}`}>
                       <video
                         src={activeMaterial.fileUrl}
                         controls
-                        className="max-w-full max-h-full rounded-lg shadow-lg"
+                        className="max-w-full max-h-full rounded-3xl shadow-2xl border-4 border-black"
                         preload="metadata"
                       >
                         Your browser does not support the video tag.
@@ -609,26 +678,27 @@ export default function StudentStudyPage() {
                 )}
                 {activeMaterial.fileType?.toLowerCase() === 'link' && activeMaterial.fileUrl && (
                   <div className="h-full flex flex-col">
-                    <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{activeMaterial.title}</h3>
+                    <div className={`p-6 border-b-4 border-black bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : 'from-blue-500 to-indigo-600'}`}>
+                      <h3 className="text-xl font-black text-white flex items-center">
+                        {(theme === 'ben10' || theme === 'tinkerbell') && <span className="mr-2">🔗</span>}{activeMaterial.title}
+                      </h3>
                     </div>
-                    <div className="flex-1 flex items-center justify-center p-4 bg-gray-50 dark:bg-gray-900">
-                      <div className="text-center space-y-6 max-w-md">
-                        <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center mx-auto">
-                          <Link className="h-8 w-8 text-blue-600" />
+                    <div className={`flex-1 flex items-center justify-center p-6 bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f]/10 to-white' : 'from-green-50 to-white'}`}>
+                      <div className="text-center space-y-8 max-w-md">
+                        <div className={`w-20 h-20 bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-yellow-400 to-green-500' : 'from-blue-400 to-indigo-600'} rounded-3xl flex items-center justify-center mx-auto border-4 border-black shadow-2xl`}>
+                          <Link className="h-10 w-10 text-white font-black" />
                         </div>
                         <div>
-                          <h4 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">External Link</h4>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 break-all">{activeMaterial.fileUrl}</p>
+                          <h4 className="text-2xl font-black text-gray-900 mb-4"> External Link </h4>
+                          <p className="text-sm font-bold text-gray-700 mb-6 break-all bg-white p-4 rounded-2xl border-2 border-black shadow-lg">{activeMaterial.fileUrl}</p>
                         </div>
-                        <Button
+                        <button
                           onClick={() => window.open(activeMaterial.fileUrl, '_blank')}
-                          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2"
-                          size="lg"
+                          className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-500 to-green-600 hover:from-green-600 hover:to-green-700' : theme === 'tinkerbell' ? 'from-yellow-400 to-green-500 hover:from-green-500 hover:to-yellow-500' : 'from-blue-500 to-indigo-600 hover:from-indigo-600 hover:to-blue-700'} text-white font-black px-8 py-4 rounded-2xl border-4 border-black shadow-2xl hover:shadow-3xl transition-all duration-300 text-lg`}
                         >
-                          <ExternalLink className="h-4 w-4 mr-2" />
-                          Open Link
-                        </Button>
+                          <ExternalLink className="h-5 w-5 mr-2 inline" />
+                          Open Link 
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -642,117 +712,130 @@ export default function StudentStudyPage() {
 
     // Normal Materials View
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-6">
-          <Button 
-            onClick={() => {
-              setSelectedClass(null);
-              setHideSidebar(false);
-            }}
-            variant="outline"
-            className="mb-4"
-          >
-            ← Back to Dashboard
-          </Button>
-          
-          <div className="flex justify-between items-center mb-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                {currentClass?.name}
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400">{currentClass?.subject}</p>
-            </div>
-            <div className="text-right">
-              <div className="text-2xl font-bold text-blue-600">
-                {currentClass?.completedMaterials}/{currentClass?.totalMaterials}
+      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? '' : theme === 'tinkerbell' ? 'from-green-500 via-yellow-500 to-green-600' : 'from-blue-600 via-indigo-700 to-blue-400'} p-6`} style={theme === 'ben10' ? { background: 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))' } : undefined}>
+        <div className="max-w-6xl mx-auto">
+          <div className="mb-8">
+            <button
+              onClick={() => {
+                setSelectedClass(null);
+                setHideSidebar(false);
+              }}
+              className="bg-black text-white font-black py-3 px-6 rounded-2xl border-2 border-white hover:bg-white hover:text-black transition-all duration-300 shadow-lg mb-6"
+            >
+              ← Back to Dashboard
+            </button>
+
+            <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : 'from-blue-500 to-indigo-600'} rounded-3xl shadow-2xl border-4 border-black p-8 mb-8`}>
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h1 className="text-4xl font-black text-black flex items-center">
+                     {currentClass?.name} 
+                  </h1>
+                  <p className="text-white font-bold text-2xl">{currentClass?.subject}</p>
+                </div>
+                <div className="text-right">
+                  <div className="text-4xl font-black text-black">
+                    {currentClass?.completedMaterials}/{currentClass?.totalMaterials}
+                  </div>
+                  <div className="text-sm font-black text-black">Materials Completed </div>
+                </div>
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Materials Completed</div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : 'from-blue-500 to-indigo-600'} rounded-3xl shadow-2xl border-4 border-black p-6`}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-black text-white">Overall Progress</p>
+                      <p className="text-3xl font-black text-white">{Math.round(currentClass?.progress || 0)}%</p>
+                    </div>
+                    <div className="text-4xl">{(theme === 'ben10' || theme === 'tinkerbell') && '📈'}</div>
+                  </div>
+                  <div className="mt-4 bg-white/20 rounded-full h-3 border-2 border-black">
+                    <div
+                      className="bg-white h-3 rounded-full transition-all duration-300"
+                      style={{ width: `${currentClass?.progress || 0}%` }}
+                    ></div>
+                  </div>
+                </div>
+
+                <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-500 to-green-600' : 'from-indigo-700 to-blue-600'} rounded-3xl shadow-2xl border-4 border-black p-6`}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-black text-white">Required Materials</p>
+                      <p className="text-3xl font-black text-white">{Math.round(currentClass?.requiredProgress || 0)}%</p>
+                    </div>
+                    <div className="text-4xl">{(theme === 'ben10' || theme === 'tinkerbell') && '🏆'}</div>
+                  </div>
+                  <div className="mt-4 bg-white/20 rounded-full h-3 border-2 border-black">
+                    <div
+                      className="bg-white h-3 rounded-full transition-all duration-300"
+                      style={{ width: `${currentClass?.requiredProgress || 0}%` }}
+                    ></div>
+                  </div>
+                </div>
+
+                <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'from-green-600 to-yellow-600' : 'from-slate-700 to-indigo-700'} rounded-3xl shadow-2xl border-4 border-black p-6`}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-black text-white">New This Week</p>
+                      <p className="text-3xl font-black text-white">{currentClass?.recentMaterials || 0}</p>
+                    </div>
+                    
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Search and Filter */}
+            <div className="bg-white rounded-3xl shadow-2xl border-4 border-black p-6 mb-8">
+              <div className="flex flex-col md:flex-row gap-6 text-black">
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    placeholder={`${(theme === 'ben10' || theme === 'tinkerbell') ? '🔍 ' : ''}Search materials...`}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className={`w-full px-6 py-4 border-2 border-black rounded-2xl focus:ring-4 focus:ring-green-500 focus:border-green-500 font-bold text-lg shadow-lg ${
+                      theme === 'ben10' ? 'bg-gradient-to-r from-green-50 to-white' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-50 to-green-50' : 'bg-gradient-to-r from-blue-50 to-indigo-50'
+                    }`}
+                  />
+                </div>
+                <div>
+                  <select
+                    value={filterType}
+                    onChange={(e) => setFilterType(e.target.value)}
+                    className={`px-6 py-4 border-2 border-black rounded-2xl focus:ring-4 focus:ring-green-500 focus:border-green-500 font-bold text-lg shadow-lg ${
+                      theme === 'ben10' ? 'bg-gradient-to-r from-green-50 to-white' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-50 to-green-50' : 'bg-gradient-to-r from-blue-50 to-indigo-50'
+                    }`}
+                  >
+                    <option value="all">{(theme === 'ben10' || theme === 'tinkerbell') ? '🎯 ' : ''}All Materials</option>
+                    <option value="required">{(theme === 'ben10' || theme === 'tinkerbell') ? '⭐ ' : ''}Required Only</option>
+                    <option value="completed">{(theme === 'ben10' || theme === 'tinkerbell') ? '✅ ' : ''}Completed</option>
+                    <option value="pending">{(theme === 'ben10' || theme === 'tinkerbell') ? '⏳ ' : ''}Pending</option>
+                    <option value="pdf">{(theme === 'ben10' || theme === 'tinkerbell') ? '📄 ' : ''}PDF Files</option>
+                    <option value="video">{(theme === 'ben10' || theme === 'tinkerbell') ? '🎥 ' : ''}Videos</option>
+                    <option value="link">{(theme === 'ben10' || theme === 'tinkerbell') ? '🔗 ' : ''}Links</option>
+                    <option value="image">{(theme === 'ben10' || theme === 'tinkerbell') ? '🖼️ ' : ''}Images</option>
+                  </select>
+                </div>
+              </div>
             </div>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Overall Progress</p>
-                    <p className="text-2xl font-bold">{Math.round(currentClass?.progress || 0)}%</p>
-                  </div>
-                  <TrendingUp className="w-8 h-8 text-blue-500" />
-                </div>
-                <div className="mt-2 bg-gray-200 rounded-full h-2 dark:bg-gray-700">
-                  <div 
-                    className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
-                    style={{ width: `${currentClass?.progress || 0}%` }}
-                  ></div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Required Materials</p>
-                    <p className="text-2xl font-bold">{Math.round(currentClass?.requiredProgress || 0)}%</p>
-                  </div>
-                  <Award className="w-8 h-8 text-green-500" />
-                </div>
-                <div className="mt-2 bg-gray-200 rounded-full h-2 dark:bg-gray-700">
-                  <div 
-                    className="bg-green-600 h-2 rounded-full transition-all duration-300" 
-                    style={{ width: `${currentClass?.requiredProgress || 0}%` }}
-                  ></div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">New This Week</p>
-                    <p className="text-2xl font-bold">{currentClass?.recentMaterials || 0}</p>
-                  </div>
-                  <Clock className="w-8 h-8 text-orange-500" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Search and Filter */}
-          <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="flex-1">
-              <input
-                type="text"
-                placeholder="Search materials..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-              />
-            </div>
-            <div>
-              <select
-                value={filterType}
-                onChange={(e) => setFilterType(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-              >
-                <option value="all">All Materials</option>
-                <option value="required">Required Only</option>
-                <option value="completed">Completed</option>
-                <option value="pending">Pending</option>
-                <option value="pdf">PDF Files</option>
-                <option value="video">Videos</option>
-                <option value="link">Links</option>
-                <option value="image">Images</option>
-              </select>
-            </div>
-          </div>
-        </div>
 
         {materialLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="w-8 h-8 border-t-2 border-blue-600 border-solid rounded-full animate-spin"></div>
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <div className={`w-12 h-12 border-4 border-t-transparent rounded-full animate-spin mx-auto mb-6 bg-gradient-to-r ${
+                theme === 'ben10'
+                  ? 'border-green-400 from-green-400 to-green-500'
+                  : 'border-yellow-400 from-yellow-400 to-green-500'
+              }`}></div>
+              <p className="text-white font-black text-xl">
+                {theme === 'ben10'
+                  ? `Loading  materials...`
+                  : 'Loading  materials...'}
+              </p>
+            </div>
           </div>
         ) : (
           <div className="space-y-4">
@@ -763,16 +846,24 @@ export default function StudentStudyPage() {
               const isGroupCompleted = completedCount === totalCount;
               
               return (
-                <Card key={group.id} className={`transition-all ${isGroupCompleted ? 'border-green-200 bg-green-50 dark:bg-green-900/10' : ''}`}>
-                  <CardHeader 
-                    className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 pb-4"
+                <div key={group.id} className={`bg-white rounded-3xl shadow-2xl border-4 transition-all hover:scale-105 ${
+                  isGroupCompleted ? 'border-green-500 bg-gradient-to-r from-green-50 to-white' : 'border-black'
+                }`}>
+                  <div
+                    className={`cursor-pointer p-6 rounded-t-3xl ${
+                      theme === 'ben10' ? 'hover:bg-[#64cc4f]/10' : 'hover:bg-green-100'
+                    }`}
                     onClick={() => toggleGroupExpansion(group.id)}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-start space-x-4 flex-1">
-                        <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 border-2 border-black ${
+                          theme === 'ben10'
+                            ? 'bg-gradient-to-r from-[#64cc4f] to-[#b2e05b]'
+                            : 'bg-gradient-to-r from-yellow-400 to-green-500'
+                        }`}>
                           {group.isGroup ? (
-                            <div className="text-blue-600 font-bold text-sm">
+                            <div className="text-white font-black text-lg">
                               {group.totalFiles}
                             </div>
                           ) : (
@@ -780,63 +871,65 @@ export default function StudentStudyPage() {
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <CardTitle className="flex items-center space-x-2 mb-2">
-                            <span className="truncate">{group.groupTitle || group.materials[0]?.title}</span>
+                          <div className="flex items-center space-x-3 mb-3">
+                            <span className="font-black text-gray-900 text-xl truncate">{group.groupTitle || group.materials[0]?.title}</span>
                             {isGroupCompleted && (
-                              <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                              <CheckCircle className={`w-6 h-6 ${theme === 'ben10' ? 'text-[#64cc4f]' : 'text-green-600'} flex-shrink-0 font-black`} />
                             )}
                             {isExpanded ? (
-                              <ChevronUp className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                              <ChevronUp className={`w-6 h-6 ${theme === 'ben10' ? 'text-[#64cc4f]' : 'text-green-600'} flex-shrink-0 font-black`} />
                             ) : (
-                              <ChevronDown className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                              <ChevronDown className={`w-6 h-6 ${theme === 'ben10' ? 'text-[#64cc4f]' : 'text-green-600'} flex-shrink-0 font-black`} />
                             )}
-                          </CardTitle>
+                          </div>
                           
                           {/* Display description from the first material (they all have the same description) */}
                           {group.materials[0]?.description && (
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                            <p className="text-sm font-bold text-gray-700 mb-3">
                               {group.materials[0].description}
                             </p>
                           )}
                           
-                          <div className="flex items-center space-x-2 mb-2">
+                          <div className="flex items-center space-x-3 mb-3">
                             {group.isGroup && (
-                              <Badge variant="secondary" className="text-xs">
-                                {group.totalFiles} files
-                              </Badge>
+                              <span className={`${theme === 'ben10' ? 'bg-[#64cc4f]' : 'bg-green-500'} text-white font-black text-sm px-3 py-1 rounded-lg border border-black`}>
+                                📁 {group.totalFiles} files
+                              </span>
                             )}
                             {group.fileTypes.map((fileType: string) => (
-                              <Badge key={fileType} variant="secondary" className="text-xs">
+                              <span key={fileType} className="text-white font-black text-sm px-3 py-1 rounded-lg border border-black" style={{
+                                backgroundColor: theme === 'ben10' ? '#16a34a' : theme === 'tinkerbell' ? '#ca8a04' : '#2563eb'
+                              }}>
                                 {fileType.toUpperCase()}
-                              </Badge>
+                              </span>
                             ))}
                             {group.isRequired && (
-                              <Badge variant="destructive" className="text-xs">Required</Badge>
+                              <span className="bg-red-500 text-white font-black text-sm px-3 py-1 rounded-lg border border-black">
+                                ⭐ Required
+                              </span>
                             )}
                             {group.lessonName && (
-                              <Badge variant="secondary" className="text-xs">
-                                {group.lessonName}
-                              </Badge>
+                              <span className="bg-blue-500 text-white font-black text-sm px-3 py-1 rounded-lg border border-black">
+                                📚 {group.lessonName}
+                              </span>
                             )}
                           </div>
                           
-                          <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                            {new Date(group.uploadedAt?.toDate ? group.uploadedAt.toDate() : group.uploadedAt).toLocaleDateString()}
+                          <div className="text-sm font-bold text-gray-600 mb-3">
+                            📅 {new Date(group.uploadedAt?.toDate ? group.uploadedAt.toDate() : group.uploadedAt).toLocaleDateString()}
                           </div>
-                          
+
                           {/* Progress bar for groups */}
                           {group.isGroup && (
-                            <div className="mt-2">
-                              <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400 mb-1">
+                            <div className="mt-3">
+                              <div className="flex justify-between text-sm font-black text-gray-700 mb-2">
                                 <span>Progress</span>
                                 <span>{completedCount}/{totalCount}</span>
                               </div>
-                              <div className="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
-                                <div 
-                                  className={`h-2 rounded-full transition-all duration-300 ${
-                                    isGroupCompleted ? 'bg-green-600' : 'bg-blue-600'
-                                  }`}
-                                  style={{ width: `${(completedCount / totalCount) * 100}%` }}
+                              <div className="bg-gray-200 rounded-full h-3 border-2 border-black">
+                                <div
+                                  className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-500 to-green-600' : theme === 'tinkerbell' ? 'from-yellow-400 to-green-500' : 'from-blue-500 to-indigo-600'} h-3 rounded-full transition-all duration-300`}
+                                  style={{ width: `${totalCount > 0 ? (completedCount / totalCount) * 100 : 0}%` }}
                                 ></div>
                               </div>
                             </div>
@@ -902,7 +995,7 @@ export default function StudentStudyPage() {
                         )}
                       </div>
                     </div>
-                  </CardHeader>
+                    </div>
                   
                   {/* Collapsible content */}
                   {isExpanded && (
@@ -924,11 +1017,13 @@ export default function StudentStudyPage() {
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center space-x-2 mb-1">
                                     {isCompleted && (
-                                      <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+                                      <CheckCircle className={`w-4 h-4 ${theme === 'ben10' ? 'text-[#64cc4f]' : 'text-green-600'} flex-shrink-0`} />
                                     )}
                                     <h4 className={`font-medium truncate ${
                                       isCompleted 
-                                        ? 'text-green-700 dark:text-green-400' 
+                                        ? theme === 'ben10' 
+                                          ? 'text-[#64cc4f] dark:text-[#64cc4f]' 
+                                          : 'text-green-700 dark:text-green-400' 
                                         : 'text-gray-900 dark:text-white'
                                     }`}>
                                       {material.title}
@@ -1001,193 +1096,273 @@ export default function StudentStudyPage() {
                       </div>
                     </CardContent>
                   )}
-                </Card>
+                </div>
               );
             })}
           </div>
         )}
       </div>
+      </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-          Welcome back, {student.name}!
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400">
-          Track your learning progress and access your study materials
-        </p>
-      </div>
+    <div key={`study-${theme}`} className={`min-h-screen bg-gradient-to-br p-6 ${
+      theme === 'ben10'
+        ? ''
+        : theme === 'tinkerbell'
+        ? 'from-green-400 via-green-400 to-yellow-500'
+        : 'from-blue-600 via-indigo-600 to-blue-400'
+    }`} style={theme === 'ben10' ? { background: 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))' } : undefined}>
+      <div className="max-w-6xl mx-auto">
+        {/* Theme-aware Hero Header */}
+        <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 border-black p-8 mb-8 relative overflow-hidden ${
+          theme === 'ben10'
+            ? 'from-[#64cc4f] to-[#222222]'
+            : theme === 'tinkerbell'
+            ? 'from-green-400 via-green-500 to-yellow-500'
+            : 'from-blue-500 to-indigo-600'
+        }`}>
+         
+
+          <div className="flex items-center space-x-4 relative z-10">
+            <div className="text-6xl">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : ''}</div>
+            <div>
+              <h1 className="text-4xl font-black text-black mb-2 flex items-center">
+                <span>Your</span>
+                <span className={`ml-2 font-black text-4xl text-black
+                }`}>Study</span>
+               
+              </h1>
+              <p className={`font-bold text-lg ${
+                theme === 'ben10' ? 'text-green-200' : theme === 'tinkerbell' ? 'text-white' : 'text-blue-100'
+              }`}>
+                {theme === 'ben10'
+                  ? `Welcome back, ${student.name}! Access your study materials!`
+                  : `Welcome back, ${student.name}! Access your study materials!`}
+              </p>
+            </div>
+          </div>
+        </div>
 
       {/* Overall Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  Overall Progress
-                </p>
-                <div className="flex items-center space-x-2 mt-2">
-                  <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {Math.round(overallProgress)}%
-                  </span>
-                  <Badge className={getProgressColor(overallProgress)}>
-                    {getProgressText(overallProgress)}
-                  </Badge>
-                </div>
+        <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 border-black p-6 ${
+          theme === 'ben10'
+            ? 'from-[#64cc4f] to-[#3e7e19]'
+            : theme === 'tinkerbell'
+            ? 'from-green-400 to-yellow-500'
+            : 'from-blue-500 to-indigo-600'
+        }`}>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-black text-white">
+                Overall Progress
+              </p>
+              <div className="flex items-center space-x-2 mt-2">
+                <span className="text-2xl font-black text-white">
+                  {Math.round(overallProgress)}%
+                </span>
+                <Badge className={`font-black border-2 border-black ${
+                  getProgressColor(overallProgress) === 'bg-[#64cc4f]' ? 'bg-[#b2e05b]' :
+                  getProgressColor(overallProgress) === 'bg-blue-500' ? 'bg-blue-400' :
+                  getProgressColor(overallProgress) === 'bg-[#b2e05b]' ? 'bg-[#64cc4f]' :
+                  getProgressColor(overallProgress) === 'bg-yellow-500' ? 'bg-yellow-400' : 'bg-red-400'
+                }`}>
+                  {getProgressText(overallProgress)}
+                </Badge>
               </div>
-              <TrendingUp className="w-8 h-8 text-blue-500" />
             </div>
-            <div className="mt-4 bg-gray-200 rounded-full h-2 dark:bg-gray-700">
-              <div 
-                className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
-                style={{ width: `${overallProgress}%` }}
-              ></div>
-            </div>
-          </CardContent>
-        </Card>
+            <div className="text-4xl">{theme === 'ben10' ? '📈' : theme === 'tinkerbell' ? '📊' : '📚'}</div>
+          </div>
+          <div className="mt-4 bg-white/20 rounded-full h-2 border-2 border-black">
+            <div 
+              className="bg-white h-2 rounded-full transition-all duration-300" 
+              style={{ width: `${overallProgress}%` }}
+            ></div>
+          </div>
+        </div>
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  Required Materials
-                </p>
-                <div className="flex items-center space-x-2 mt-2">
-                  <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {Math.round(requiredProgress)}%
-                  </span>
-                </div>
+        <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 border-black p-6 ${
+          theme === 'ben10'
+            ? 'from-[#64cc4f] to-[#3e7e19]'
+            : theme === 'tinkerbell'
+            ? 'from-green-400 to-yellow-500'
+            : 'from-blue-500 to-indigo-600'
+        }`}>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-black text-white">
+                Required Materials
+              </p>
+              <div className="flex items-center space-x-2 mt-2">
+                <span className="text-2xl font-black text-white">
+                  {Math.round(requiredProgress)}%
+                </span>
               </div>
-              <Award className="w-8 h-8 text-green-500" />
             </div>
-            <div className="mt-4 bg-gray-200 rounded-full h-2 dark:bg-gray-700">
-              <div 
-                className="bg-green-600 h-2 rounded-full transition-all duration-300" 
-                style={{ width: `${requiredProgress}%` }}
-              ></div>
-            </div>
-          </CardContent>
-        </Card>
+            <div className="text-4xl">🏆</div>
+          </div>
+          <div className="mt-4 bg-white/20 rounded-full h-2 border-2 border-black">
+            <div 
+              className="bg-white h-2 rounded-full transition-all duration-300" 
+              style={{ width: `${requiredProgress}%` }}
+            ></div>
+          </div>
+        </div>
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  Enrolled Classes
-                </p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2">
-                  {classes.length}
-                </p>
-              </div>
-              <BookOpen className="w-8 h-8 text-purple-500" />
+        <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 border-black p-6 ${
+          theme === 'ben10'
+            ? 'from-[#64cc4f] to-[#3e7e19]'
+            : theme === 'tinkerbell'
+            ? 'from-green-400 to-yellow-500'
+            : 'from-blue-500 to-indigo-600'
+        }`}>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-black text-white">
+                {theme === 'ben10' ? 'Your Classes' : 'Your Classes'}
+              </p>
+              <p className="text-3xl font-black text-white mt-2">
+                {classes.length}
+              </p>
             </div>
-          </CardContent>
-        </Card>
+           
+          </div>
+        </div>
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  New This Week
-                </p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2">
-                  {classes.reduce((sum, cls) => sum + cls.recentMaterials, 0)}
-                </p>
-              </div>
-              <Clock className="w-8 h-8 text-orange-500" />
+        <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 border-black p-6 ${
+          theme === 'ben10'
+            ? 'from-[#64cc4f] to-[#3e7e19]'
+            : theme === 'tinkerbell'
+            ? 'from-green-400 to-yellow-500'
+            : 'from-blue-500 to-indigo-600'
+        }`}>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-black text-white">
+                New This Week
+              </p>
+              <p className="text-3xl font-black text-white mt-2">
+                {classes.reduce((sum, cls) => sum + cls.recentMaterials, 0)}
+              </p>
             </div>
-          </CardContent>
-        </Card>
+          
+          </div>
+        </div>
       </div>
 
       {/* Classes Grid */}
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Your Classes</h2>
+        <h2 className={`text-3xl font-black text-black mb-6 text-center rounded-3xl p-4 border-4 border-black shadow-2xl ${
+          theme === 'ben10'
+            ? 'bg-gradient-to-r from-[#64cc4f] to-[#3e7e19]'
+            : theme === 'tinkerbell'
+            ? 'bg-gradient-to-r from-green-400 to-yellow-500'
+            : 'bg-gradient-to-r from-blue-500 to-indigo-600'
+        }`}>
+          {theme === 'ben10' ? ' Your Classes ' : ' Your Classes '}
+        </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {classes.map((classItem) => (
-            <Card key={classItem.id} className="hover:shadow-lg transition-shadow cursor-pointer">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">{classItem.name}</CardTitle>
+            <div key={classItem.id} className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 border-black hover:shadow-3xl transition-all duration-300 cursor-pointer hover:scale-105 ${
+              theme === 'ben10'
+                ? 'from-[#64cc4f] to-[#3e7e19]'
+                : theme === 'tinkerbell'
+                ? 'from-green-400 to-yellow-500'
+                : 'from-blue-500 to-indigo-600'
+            }`}>
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-black text-black">{classItem.name}</h3>
                   {classItem.recentMaterials > 0 && (
-                    <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">
-                      {classItem.recentMaterials} new
+                    <Badge className={`font-black border-2 border-black ${
+                      theme === 'ben10' ? 'bg-yellow-400 text-black' : theme === 'tinkerbell' ? 'bg-green-400 text-black' : 'bg-blue-300 text-white'
+                    }`}>
+                       {classItem.recentMaterials} new
                     </Badge>
                   )}
                 </div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">{classItem.subject}</p>
-              </CardHeader>
-              <CardContent>
+                <p className="text-3xl font-black text-white/90 mb-4">{classItem.subject}</p>
+
                 <div className="space-y-4">
                   <div>
-                    <div className="flex justify-between text-sm mb-2">
+                    <div className="flex justify-between text-sm font-black text-black mb-2">
                       <span>Overall Progress</span>
                       <span>{Math.round(classItem.progress)}%</span>
                     </div>
-                    <div className="bg-gray-200 rounded-full h-2 dark:bg-gray-700">
-                      <div 
-                        className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                    <div className="bg-white/20 rounded-full h-3 border-2 border-black">
+                      <div
+                        className="bg-black h-3 rounded-full transition-all duration-300"
                         style={{ width: `${classItem.progress}%` }}
                       ></div>
                     </div>
                   </div>
 
                   <div>
-                    <div className="flex justify-between text-sm mb-2">
+                    <div className="flex justify-between text-sm font-black text-black mb-2">
                       <span>Required Materials</span>
                       <span>{classItem.completedRequired}/{classItem.requiredMaterials}</span>
                     </div>
-                    <div className="bg-gray-200 rounded-full h-2 dark:bg-gray-700">
-                      <div 
-                        className="bg-green-600 h-2 rounded-full transition-all duration-300" 
+                    <div className="bg-white/20 rounded-full h-3 border-2 border-black">
+                      <div
+                        className="bg-black h-3 rounded-full transition-all duration-300"
                         style={{ width: `${classItem.requiredProgress}%` }}
                       ></div>
                     </div>
                   </div>
 
-                  <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
+                  <div className="flex justify-between text-sm font-black text-black">
                     <span>Total Materials</span>
                     <span>{classItem.completedMaterials}/{classItem.totalMaterials}</span>
                   </div>
 
-                  <Button 
+                  <button
                     onClick={() => loadClassMaterials(classItem.id)}
-                    className="w-full mt-4"
+                    className="w-full mt-4 bg-black text-white font-black py-3 px-6 rounded-2xl border-2 border-white hover:bg-white hover:text-black transition-all duration-300 shadow-lg"
                   >
-                    View Materials
-                  </Button>
+                    {theme === 'ben10' ? ' View Materials ' : ' View Materials '}
+                  </button>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           ))}
         </div>
       </div>
 
       {classes.length === 0 && (
-        <Card className="text-center py-12">
-          <CardContent>
-            <BookOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              No Classes Enrolled
+        <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 border-black text-center py-12 ${
+          theme === 'ben10'
+            ? 'from-green-500 to-green-600'
+            : theme === 'tinkerbell'
+            ? 'from-yellow-400 to-green-500'
+            : 'from-blue-500 to-indigo-600'
+        }`}>
+          <div className="p-8">
+            <div className="text-6xl mb-4">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : ''}</div>
+            <h3 className="text-2xl font-black text-white mb-4">
+              {theme === 'ben10' ? 'No Classes Yet!' : 'No Classes Yet!'}
             </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
-              You haven't enrolled in any classes yet.
+            <p className="text-white/90 font-black mb-6">
+              {theme === 'ben10'
+                ? 'Ready to become a learning hero? Enroll in your first class and start your adventure!'
+                : theme === 'tinkerbell'
+                ? 'Ready to become a magical learner? Enroll in your first class and start your magical journey!'
+                : 'Ready to become an enriching learner? Enroll in your first class and start your learning journey!'}
             </p>
-            <Button onClick={() => router.push('/enroll')}>
-              Browse Available Classes
-            </Button>
-          </CardContent>
-        </Card>
+            <button
+              onClick={() => router.push('/enroll')}
+              className="bg-black text-white font-black py-4 px-8 rounded-2xl border-2 border-white hover:bg-white hover:text-black transition-all duration-300 shadow-lg text-lg"
+            >
+              {theme === 'ben10' ? ' Browse Classes ' : ' Browse Classes '}
+            </button>
+          </div>
+        </div>
       )}
 
+        </div>
       </div>
-   
-  );
-}
+    
+    
+    );
+  }

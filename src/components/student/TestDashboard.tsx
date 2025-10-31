@@ -207,7 +207,7 @@ export default function StudentTestDashboard() {
                           {isLive ? 'Live Test' : 'Flexible'}
                         </span>
                         {isAvailable && (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#b2e05b] text-[#222222] dark:bg-[#b2e05b]/20 dark:text-[#222222]">
                             Available Now
                           </span>
                         )}
@@ -254,7 +254,7 @@ export default function StudentTestDashboard() {
                       {isAvailable ? (
                         <button
                           onClick={() => startTest(test.id)}
-                          className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                          className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-[#64cc4f] hover:bg-[#b2e05b] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#64cc4f]"
                         >
                           <Play className="h-5 w-5 mr-2" />
                           Start Test

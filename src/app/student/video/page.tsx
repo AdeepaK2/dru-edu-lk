@@ -10,6 +10,7 @@ import {
   GraduationCap
 } from 'lucide-react';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
+import { useTheme } from '@/contexts/ThemeContext';
 import Link from 'next/link';
 
 // Import services and types
@@ -20,6 +21,7 @@ import { getEnrollmentsByStudent } from '@/services/studentEnrollmentService';
 
 export default function StudentVideos() {
   const { student } = useStudentAuth();
+  const { theme } = useTheme();
   const [studentClasses, setStudentClasses] = useState<any[]>([]);
   const [individualVideos, setIndividualVideos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -127,111 +129,152 @@ export default function StudentVideos() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="w-16 h-16 border-t-4 border-blue-600 border-solid rounded-full animate-spin mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-300 font-medium">Loading classes...</p>
+      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : 'from-blue-400 to-indigo-600'} flex items-center justify-center`}>
+        <div className="bg-white border-4 border-black rounded-3xl p-8 shadow-2xl">
+          {/* Theme-Specific Loading Animation */}
+          <div className="relative mb-6 flex flex-col items-center">
+            {/* Tinkerbell Loading GIF */}
+            {theme === 'tinkerbell' && (
+              <div className="flex flex-col items-center">
+                <img 
+                  src="/tinkerbell-loading.gif" 
+                  alt="Tinkerbell Loading" 
+                  className="w-32 h-32 object-contain"
+                />
+                <span className="text-2xl font-bold text-yellow-600 mt-4">Loading</span>
+              </div>
+            )}
+            
+            {/* Ben 10 Loading GIF */}
+            {theme === 'ben10' && (
+              <div className="flex flex-col items-center">
+                <img 
+                  src="/ben10-loading.gif" 
+                  alt="Ben 10 Loading" 
+                  className="w-32 h-32 object-contain"
+                />
+                <span className="text-2xl font-bold text-[#64cc4f] mt-4">Loading</span>
+              </div>
+            )}
+            
+            {/* Default Theme Spinner with Loading Text */}
+            {theme !== 'tinkerbell' && theme !== 'ben10' && (
+              <div className="flex flex-col items-center">
+                <div className="w-24 h-24 border-4 border-blue-400 border-t-blue-600 rounded-full animate-spin"></div>
+                <span className="text-2xl font-bold text-blue-600 mt-4">Loading</span>
+              </div>
+            )}
+          </div>
+          <div className="text-center">
+            <h2 className="text-2xl font-black text-black mb-2">Loading Videos...</h2>
+            <p className="text-gray-600 font-medium">Get ready to transform your learning!</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <div className="flex items-center justify-between">
+    <div className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : 'bg-gradient-to-br from-blue-600 via-indigo-700 to-slate-900'} p-6`}>
+      {/* Ben 10 Hero Header */}
+      <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-600 via-indigo-700 to-slate-800'} rounded-3xl shadow-2xl border-4 border-black p-8 mb-8 relative overflow-hidden`}>
+        
+
+        <div className="flex items-center space-x-4 relative z-10">
+          
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              Video Library
+            <h1 className="text-4xl font-black text-white mb-2 flex items-center">
+              
+              <span className=" text-4xl text-black">Video</span>
+              <span className="ml-2 text-4xl text-black">Library</span>
+              
             </h1>
-            <p className="text-gray-600 dark:text-gray-300">
-              Select a class to browse and watch educational videos
+            <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-[#314603]' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-100'}`}>
+              Welcome back, {student?.name}! Transform your learning with {theme === 'ben10' ? 'hero' : theme === 'tinkerbell' ? 'magical' : 'enriching'}-powered videos! 
             </p>
-          </div>
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center bg-green-50 dark:bg-green-900/20 px-4 py-2 rounded-lg">
-              <Users className="w-5 h-5 text-green-600 dark:text-green-400 mr-2" />
-              <span className="text-green-600 dark:text-green-400 font-medium">
-                {studentClasses.length} Classes
-              </span>
-            </div>
           </div>
         </div>
       </div>
 
       {/* Error Display */}
       {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
-          <div className="flex">
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800 dark:text-red-200">Error</h3>
-              <p className="mt-1 text-sm text-red-700 dark:text-red-300">{error}</p>
+        <div className="bg-gradient-to-r from-red-200 to-orange-200 rounded-3xl shadow-2xl border-4 border-black p-6">
+          <div className="flex items-center space-x-4">
+            <div className="text-4xl">😔</div>
+            <div>
+              <h3 className="text-xl font-black text-black mb-2">Oops! Something went wrong</h3>
+              <p className="text-black font-bold">{error}</p>
             </div>
           </div>
         </div>
       )}
 
       {/* Search */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+      <div className="bg-white rounded-3xl shadow-2xl border-4 border-black p-6 mb-8">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-2xl">🔍</div>
           <input
             type="text"
-            placeholder="Search classes..."
+            placeholder="Search hero classes..."
             value={searchTerm}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
-            className="pl-10 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+            className="pl-12 w-full px-6 py-3 border-4 border-black rounded-3xl focus:ring-4 focus:ring-[#64cc4f] focus:border-black bg-white text-black font-bold text-lg placeholder-black/60"
           />
         </div>
       </div>
 
       {/* Teacher Selected Videos Section */}
       {individualVideos.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-white rounded-3xl shadow-2xl border-4 border-black p-6 mb-8">
+          <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                🎯 Teacher Selected Videos for You
+              <h2 className="text-2xl font-black text-black mb-2 flex items-center">
+               
+                Teacher Selected Videos for You
+             
               </h2>
-              <p className="text-gray-600 dark:text-gray-400 text-sm">
+              <p className="text-black font-bold">
                 Special video recommendations from your teachers
               </p>
             </div>
-            <div className="bg-blue-50 dark:bg-blue-900/20 px-3 py-1 rounded-full">
-              <span className="text-blue-600 dark:text-blue-400 font-medium text-sm">
-                {individualVideos.length} video{individualVideos.length > 1 ? 's' : ''}
+            <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 to-yellow-600' : 'bg-gradient-to-r from-blue-600 to-indigo-700'} rounded-full px-4 py-2 border-2 border-black`}>
+              <span className="text-white font-black text-sm">
+                {individualVideos.length}  Video{individualVideos.length > 1 ? 's' : ''} 
               </span>
             </div>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {individualVideos.map((video) => (
-              <div key={video.id} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
-                <div className="flex items-start space-x-3">
-                  <div className="flex-shrink-0">
-                    <div className="w-16 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
-                      <Play className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              <div key={video.id} className="bg-white rounded-2xl shadow-lg border-2 border-black p-6 overflow-hidden">
+                <div className="flex flex-col h-full">
+                  <div className="flex items-start space-x-4 mb-4">
+                    <div className="flex-shrink-0">
+                      <div className={`w-16 h-12 ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-400 to-green-500' : 'bg-gradient-to-br from-blue-600 to-indigo-700'} rounded-xl flex items-center justify-center border-2 border-black shadow-md`}>
+                        <Play className="w-6 h-6 text-white" />
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-medium text-gray-900 dark:text-white overflow-x-auto whitespace-nowrap scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
-                      {video.title}
-                    </h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
-                      {video.description}
-                    </p>
-                    <div className="flex items-center justify-between mt-2">
-                      <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg font-bold text-black mb-2 line-clamp-2">
+                        {video.title}
+                      </h3>
+                      <p className="text-gray-700 font-medium text-sm mb-3 line-clamp-3">
+                        {video.description}
+                      </p>
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800 border border-green-300">
                         {video.subjectName}
                       </span>
-                      <Link 
-                        href={`/student/video/${video.id}/watch`}
-                        className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded transition-colors"
-                      >
-                        Watch
-                      </Link>
                     </div>
+                  </div>
+
+                  <div className="mt-auto pt-4 border-t-2 border-black">
+                    <Link
+                      href={`/student/video/${video.id}/watch`}
+                      className={`w-full ${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222] hover:from-[#b2e05b] hover:to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700' : 'bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800'} text-white px-4 py-2 rounded-full font-bold text-sm transform hover:scale-105 transition-all border-2 border-black flex items-center justify-center space-x-2`}
+                    >
+                      <Play className="w-4 h-4" />
+                      <span>Watch Now</span>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -243,25 +286,26 @@ export default function StudentVideos() {
       {/* Classes Grid */}
       <div>
         {getFilteredClasses().length === 0 ? (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-12 text-center">
-            <GraduationCap className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              {searchTerm ? 'No classes found' : 'No classes available'}
+          <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] via-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-200 via-green-400 to-yellow-300' : 'bg-gradient-to-r from-blue-200 via-indigo-400 to-slate-400'} rounded-3xl shadow-2xl border-4 border-black p-12 text-center`}>
+
+            <h3 className="text-2xl font-black text-white mb-4">
+              {searchTerm ? 'No Hero Classes Found' : 'No Classes Available Yet'}
             </h3>
-            <p className="text-gray-500 dark:text-gray-400">
-              {searchTerm 
-                ? 'Try adjusting your search criteria'
-                : 'You are not enrolled in any classes yet'
+            <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-[#222222]' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-slate-100'}`}>
+              {searchTerm
+                ? 'Try adjusting your search to find your hero classes!'
+                : 'You haven\'t enrolled in any classes yet. Time to start your hero learning journey!'
               }
             </p>
           </div>
         ) : (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <div className="bg-white rounded-3xl shadow-2xl border-4 border-black p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {getFilteredClasses().map((classInfo) => (
                 <ClassCard
                   key={classInfo.id}
                   classInfo={classInfo}
+                  theme={theme}
                 />
               ))}
             </div>
@@ -275,53 +319,54 @@ export default function StudentVideos() {
 // Class Card Component
 interface ClassCardProps {
   classInfo: any;
+  theme: 'ben10' | 'tinkerbell' | 'normal';
 }
 
-const ClassCard: React.FC<ClassCardProps> = ({ classInfo }) => {
+const ClassCard: React.FC<ClassCardProps> = ({ classInfo, theme }) => {
   return (
     <Link href={`/student/classes/${classInfo.id}/videos`}>
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow cursor-pointer group">
+      <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 via-green-400 to-yellow-400' : 'bg-gradient-to-r from-blue-600 via-indigo-700 to-slate-800'} rounded-3xl shadow-2xl border-4 border-black overflow-hidden hover:scale-105 transition-all cursor-pointer`}>
         {/* Class Header */}
-        <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white p-4">
+        <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#2c6508]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 to-yellow-600' : 'bg-gradient-to-r from-blue-400 to-indigo-600'} text-white p-6 border-b-4 border-black`}>
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <h3 className="text-lg font-semibold truncate mb-1">
+              <h3 className="text-xl font-black truncate mb-2">
                 {classInfo.name}
               </h3>
-              <p className="text-green-100 text-sm">
+              <p className={`text-lg font-bold ${theme === 'ben10' ? 'text-[#222222]' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-100'}`}>
                 {classInfo.subject} • Grade {classInfo.grade}
               </p>
             </div>
-            <Video className="w-8 h-8 text-white opacity-80 group-hover:opacity-100 transition-opacity" />
+   
           </div>
         </div>
 
         {/* Class Info */}
-        <div className="p-4">
-          <div className="space-y-3">
-            <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-              <Users className="w-4 h-4 mr-2 flex-shrink-0" />
+        <div className="bg-white p-6">
+          <div className="space-y-4">
+            <div className="flex items-center text-black font-bold">
+              <span className="text-2xl mr-3">👨‍🏫</span>
               <span className="truncate">{classInfo.teacherName}</span>
             </div>
-            
-            <div className="flex items-start text-sm text-gray-600 dark:text-gray-400">
-              <BookOpen className="w-4 h-4 mr-2 flex-shrink-0 mt-0.5" />
+
+            <div className="flex items-start text-black font-bold">
+              <span className="text-2xl mr-3 mt-1">📚</span>
               <span className="line-clamp-2 break-words overflow-hidden">
-                {classInfo.description && classInfo.description.length > 100 
+                {classInfo.description && classInfo.description.length > 100
                   ? `${classInfo.description.substring(0, 100)}...`
-                  : classInfo.description || 'Explore video content for this class'
+                  : classInfo.description || 'Explore hero video content for this class'
                 }
               </span>
             </div>
-            
-            <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-500 dark:text-gray-400">
+
+            <div className="pt-4 border-t-4 border-black">
+              <div className="flex items-center justify-between">
+                <span className="text-black font-bold">
                   Browse Videos
                 </span>
-                <div className="flex items-center space-x-1 text-green-600 dark:text-green-400 group-hover:text-green-700 dark:group-hover:text-green-300 transition-colors">
+                <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 to-yellow-600' : 'bg-gradient-to-r from-blue-600 to-indigo-700'} text-white px-4 py-2 rounded-full font-black text-sm transform hover:scale-105 transition-all border-2 border-black flex items-center space-x-2`}>
                   <Play className="w-4 h-4" />
-                  <span className="font-medium">Open</span>
+                  <span>Open</span>
                 </div>
               </div>
             </div>

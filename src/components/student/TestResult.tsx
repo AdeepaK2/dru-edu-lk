@@ -10,9 +10,12 @@ import {
   TrendingUp,
   ArrowLeft,
   FileText,
-  AlertTriangle
+  AlertTriangle,
+  X,
+  Quote
 } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
+import Confetti from 'react-confetti';
 import { TestService } from '@/apiservices/testService';
 import { Test, TestAttempt } from '@/models/testSchema';
 
@@ -24,6 +27,53 @@ export default function StudentTestResult() {
   const [test, setTest] = useState<Test | null>(null);
   const [attempt, setAttempt] = useState<TestAttempt | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [showCongratulations, setShowCongratulations] = useState(false);
+  const [selectedQuote, setSelectedQuote] = useState<{quote: string, author: string} | null>(null);
+
+  // Motivational quotes for passing exams
+  const motivationalQuotes = [
+    {
+      quote: "Success is not final, failure is not fatal: It is the courage to continue that counts.",
+      author: "Winston Churchill"
+    },
+    {
+      quote: "The only way to do great work is to love what you do.",
+      author: "Steve Jobs"
+    },
+    {
+      quote: "Believe you can and you're halfway there.",
+      author: "Theodore Roosevelt"
+    },
+    {
+      quote: "The future belongs to those who believe in the beauty of their dreams.",
+      author: "Eleanor Roosevelt"
+    },
+    {
+      quote: "Your education is a dress rehearsal for a life that is yours to lead.",
+      author: "Nora Ephron"
+    },
+    {
+      quote: "The beautiful thing about learning is that no one can take it away from you.",
+      author: "B.B. King"
+    },
+    {
+      quote: "Education is the most powerful weapon which you can use to change the world.",
+      author: "Nelson Mandela"
+    },
+    {
+      quote: "The more that you read, the more things you will know. The more that you learn, the more places you'll go.",
+      author: "Dr. Seuss"
+    },
+    {
+      quote: "Success is walking from failure to failure with no loss of enthusiasm.",
+      author: "Winston Churchill"
+    },
+    {
+      quote: "The expert in anything was once a beginner.",
+      author: "Helen Hayes"
+    }
+  ];
 
   // Mock student data - replace with actual auth
   const studentId = 'student123';
@@ -48,6 +98,15 @@ export default function StudentTestResult() {
 
       setTest(testData);
       setAttempt(attemptData);
+
+      // Show confetti and congratulations if student passed
+      if (attemptData.passStatus === 'passed') {
+        setShowConfetti(true);
+        setShowCongratulations(true);
+        setSelectedQuote(getRandomQuote());
+        // Hide confetti after 5 seconds
+        setTimeout(() => setShowConfetti(false), 5000);
+      }
     } catch (error) {
       console.error('Error loading test result:', error);
       router.push('/student/dashboard');
@@ -85,6 +144,16 @@ export default function StudentTestResult() {
     if (percentage >= 60) return 'D+';
     if (percentage >= 55) return 'D';
     return 'F';
+  };
+
+  const closeCongratulations = () => {
+    setShowCongratulations(false);
+  };
+
+  // Get a random motivational quote
+  const getRandomQuote = () => {
+    const randomIndex = Math.floor(Math.random() * motivationalQuotes.length);
+    return motivationalQuotes[randomIndex];
   };
 
   if (loading) {
@@ -125,6 +194,17 @@ export default function StudentTestResult() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Confetti Animation */}
+      {showConfetti && (
+        <Confetti
+          width={window.innerWidth}
+          height={window.innerHeight}
+          recycle={false}
+          numberOfPieces={200}
+          gravity={0.1}
+        />
+      )}
+
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -500,6 +580,72 @@ export default function StudentTestResult() {
           </div>
         </div>
       </div>
+
+      {/* Congratulations Modal */}
+      {showCongratulations && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full mx-4 transform animate-in fade-in-0 zoom-in-95 duration-300">
+            <div className="relative">
+              {/* Close button */}
+              <button
+                onClick={closeCongratulations}
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+
+              {/* Header */}
+              <div className="text-center pt-8 pb-6">
+                <div className="mx-auto w-20 h-20 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center mb-4 shadow-lg">
+                  <Award className="h-10 w-10 text-white" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                  Congratulations! 🎉
+                </h2>
+                <p className="text-gray-600 dark:text-gray-300">
+                  You passed the exam with {attempt?.percentage?.toFixed(1)}%!
+                </p>
+              </div>
+
+              {/* Motivational Quote */}
+              <div className="px-8 pb-8">
+                <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl p-6 border border-blue-100 dark:border-blue-800">
+                  <div className="flex items-start space-x-3">
+                    <Quote className="h-6 w-6 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-1" />
+                    <div>
+                      <blockquote className="text-gray-800 dark:text-gray-200 font-medium italic mb-3 leading-relaxed">
+                        "{selectedQuote?.quote}"
+                      </blockquote>
+                      <cite className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                        — {selectedQuote?.author}
+                      </cite>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex space-x-3 mt-6">
+                  <button
+                    onClick={closeCongratulations}
+                    className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium py-3 px-4 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg"
+                  >
+                    Continue
+                  </button>
+                  <button
+                    onClick={() => {
+                      closeCongratulations();
+                      router.push('/student/dashboard');
+                    }}
+                    className="flex-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium py-3 px-4 rounded-xl transition-all duration-200"
+                  >
+                    Back to Dashboard
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

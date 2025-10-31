@@ -1,7 +1,7 @@
 'use client';
-
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { 
   BookOpen,
@@ -27,6 +27,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui';
 import { TestService } from '@/apiservices/testService';
 import { getEnrollmentsByStudent } from '@/services/studentEnrollmentService';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface SidebarItem {
   id: string;
@@ -137,6 +138,7 @@ interface StudentSidebarProps {
 export default function StudentSidebar({ student, isOpen, onToggle }: StudentSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const { theme } = useTheme();
   const [upcomingQuizCount, setUpcomingQuizCount] = useState(0);
 
   useEffect(() => {
@@ -150,6 +152,38 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
   }, [student]);
 
   const sidebarItems = buildSidebarItems(upcomingQuizCount);
+
+  const getAvatarImagePath = (avatarId?: string) => {
+    if (!avatarId) return null;
+
+    // Ben10 avatars (ids map to files in /public)
+    const ben10Map: Record<string, string> = {
+      heatblast: '/heatblast.png',
+      wildmutt: '/Wildmutt.png',
+      diamondhead: '/Diamondhead.png',
+      ghostfreak: '/ghostfreak.png',
+      benwolf: '/benwolf.png'
+    };
+
+    // Tinkerbell avatars
+    const tinkerMap: Record<string, string> = {
+      silvermist: '/silvermist.png',
+      fawn: '/Fawn.png',
+      iridessa: '/Iridessa .png',
+      rosetta: '/Rosetta.png',
+      tinkerbell: '/tinkerbell.png'
+    };
+
+    if (ben10Map[avatarId]) return ben10Map[avatarId];
+    if (tinkerMap[avatarId]) return tinkerMap[avatarId];
+
+    // If avatarId looks like a path, return it directly
+    if (avatarId.startsWith('/') || avatarId.includes('.png') || avatarId.includes('.jpg') || avatarId.includes('.avif')) {
+      return avatarId;
+    }
+
+    return null;
+  };
 
   const handleLogout = async () => {
     try {
@@ -165,53 +199,100 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
       {/* Mobile overlay */}
       {isOpen && (
         <div 
-          className="fixed inset-0 z-40 bg-gray-600 bg-opacity-75 lg:hidden" 
+          className={`fixed inset-0 z-40 backdrop-blur-sm lg:hidden ${
+            theme === 'ben10'
+              ? 'bg-gradient-to-br from-[#64cc4f]/80 via-[#222222]/80 to-[#b2e05b]/80'
+              : theme === 'tinkerbell'
+              ? 'bg-gradient-to-br from-green-400/80 via-yellow-400/80 to-yellow-600/80'
+              : 'bg-gradient-to-br from-blue-400/80 via-indigo-400/80 to-indigo-600/80'
+          }`}
           onClick={onToggle}
         />
       )}
 
       {/* Sidebar */}
       <div className={`
-        fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-800 shadow-lg transform transition-transform duration-300 ease-in-out
+        fixed inset-y-0 left-0 z-50 w-64 shadow-2xl transform transition-transform duration-300 ease-in-out border-r-4 border-black
         lg:translate-x-0 lg:static lg:inset-0 lg:w-64
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+        ${theme === 'ben10' 
+          ? 'bg-gradient-to-b from-[#64cc4f] via-[#222222] to-[#b2e05b]' 
+          : theme === 'tinkerbell'
+          ? 'bg-gradient-to-br from-green-400 to-yellow-600'
+          : 'bg-gradient-to-b from-blue-500 via-indigo-500 to-indigo-600'}
       `}>
         {/* Header */}
-        <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
-              <GraduationCap className="w-5 h-5 text-white" />
+          <div className={`flex items-center justify-between px-6 py-3 ${
+            theme === 'ben10' 
+              ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222]' 
+              : theme === 'tinkerbell'
+              ? 'bg-gradient-to-r from-yellow-500 to-green-600'
+              : 'bg-gradient-to-r from-blue-600 to-indigo-700'
+          }`}>
+            <div className="flex items-center space-x-3">
+              <img 
+                src="/Logo.png" 
+                alt="Ben 10 Academy Logo" 
+                className="w-10 h-10 rounded-2xl border-2 border-black shadow-lg"
+              />
+              <div className="hidden lg:block">
+                <h1 className="text-lg font-black text-white drop-shadow-lg">
+                  Dr. U Education
+                </h1>
+              </div>
             </div>
-            <div className="hidden lg:block">
-              <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Dr U Education
-              </h1>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Student Portal</p>
-            </div>
+            <button
+              onClick={onToggle}
+              className={`lg:hidden p-2 rounded-full text-white border-2 border-white font-black transition-all ${
+                theme === 'ben10'
+                  ? 'hover:text-green-400 hover:bg-black'
+                  : theme === 'tinkerbell'
+                  ? 'hover:text-yellow-400 hover:bg-black'
+                  : 'hover:text-blue-400 hover:bg-indigo-700'
+              }`}
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
-          <button
-            onClick={onToggle}
-            className="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
 
         {/* Student Profile */}
         {student && (
-          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
-                <span className="text-sm font-medium text-green-600 dark:text-green-300">
-                  {student.avatar || student.name.charAt(0).toUpperCase()}
-                </span>
+          <div className={`p-3 border-b-4 border-black ${
+            theme === 'ben10'
+              ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222]'
+              : theme === 'tinkerbell'
+              ? 'bg-gradient-to-r from-yellow-500 to-green-600'
+              : 'bg-gradient-to-r from-indigo-600 to-blue-500'
+          }`}>
+            <div className="flex items-center space-x-2">
+              {/* Avatar - No circle, just image visible */}
+              <div className="flex-shrink-0 overflow-hidden">
+                {(() => {
+                  const avatarPath = getAvatarImagePath((student as any)?.avatar);
+                  if (avatarPath && (theme === 'ben10' || theme === 'tinkerbell')) {
+                    return (
+                      <Image src={avatarPath} alt={(student as any)?.name || 'Avatar'} width={48} height={48} className="object-cover" />
+                    );
+                  }
+
+                  return (
+                    <span className="text-3xl font-black">
+                      {theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : '📚'}
+                    </span>
+                  );
+                })()}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                <p className="text-sm font-black text-white truncate">
                   {student.name}
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                  {student.status === 'Active' ? 'Active Student' : student.status || 'Student'}
+                <p className="text-xs font-bold text-black" style={{
+                  opacity: 0.9
+                }}>
+                  {student.status === 'Active' 
+                    ? (theme === 'ben10' ? 'Active' : theme === 'tinkerbell' ? ' Active' : 'Active') 
+                    : student.status || 'Student'
+                  }
                 </p>
               </div>
             </div>
@@ -219,7 +300,7 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
         )}
 
         {/* Navigation */}
-        <nav className="flex-1 px-4 py-6 space-y-2">
+        <nav className="flex-1 px-6 py-6 space-y-3">
           {sidebarItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
@@ -228,10 +309,20 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
                 key={item.id}
                 href={item.href}
                 className={`
-                  flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-colors
+                  flex items-center justify-between px-4 py-3 text-sm font-black rounded-2xl transition-all transform hover:scale-105 border-2
                   ${isActive 
-                    ? 'bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-300' 
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    ? (theme === 'ben10'
+                        ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222] text-white border-black shadow-lg'
+                        : theme === 'tinkerbell'
+                        ? 'bg-gradient-to-r from-yellow-400 to-green-500 text-white border-black shadow-lg'
+                        : 'bg-gradient-to-r from-blue-400 to-indigo-600 text-white border-indigo-700 shadow-lg')
+                    : `bg-white text-black hover:bg-gradient-to-r border-gray-300 hover:border-black ${
+                        theme === 'ben10'
+                          ? 'hover:from-[#64cc4f] hover:to-[#222222] hover:text-white'
+                          : theme === 'tinkerbell'
+                          ? 'hover:from-yellow-300 hover:to-green-400 hover:text-white'
+                          : 'hover:from-blue-300 hover:to-indigo-500 hover:text-white'
+                      }`
                   }
                 `}
                 onClick={() => {
@@ -242,16 +333,22 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
                 }}
               >
                 <div className="flex items-center space-x-3">
-                  <Icon className="w-5 h-5" />
+                  <Icon className={`w-6 h-6 ${isActive ? 'text-white' : 'text-black'}`} />
                   <span>{item.label}</span>
                 </div>
                 {item.badge && (
-                  <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">
+                  <span className={`inline-flex items-center px-3 py-1 text-sm font-black text-white rounded-full border-2 border-black ${
+                    theme === 'ben10'
+                      ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222]'
+                      : theme === 'tinkerbell'
+                      ? 'bg-gradient-to-r from-yellow-400 to-green-500'
+                      : 'bg-gradient-to-r from-blue-400 to-indigo-600'
+                  }`}>
                     {item.badge}
                   </span>
                 )}
                 {isActive && (
-                  <ChevronRight className="w-4 h-4" />
+                  <ChevronRight className="w-5 h-5 text-white" />
                 )}
               </Link>
             );
@@ -259,14 +356,20 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
         </nav>
 
         {/* Logout Button */}
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+        <div className={`p-6 border-t-4 border-black ${
+          theme === 'ben10'
+            ? 'bg-gradient-to-r from-[#222222] to-[#64cc4f]'
+            : theme === 'tinkerbell'
+            ? 'bg-gradient-to-r from-yellow-500 to-green-600'
+            : 'bg-gradient-to-r from-blue-600 to-indigo-700'
+        }`}>
           <Button
             onClick={handleLogout}
             variant="outline"
-            className="w-full flex items-center space-x-2 text-red-600 hover:text-red-700 border-red-200 hover:border-red-300"
+            className={`w-full flex items-center justify-center space-x-3 text-white font-black border-2 border-black rounded-full py-3 transform hover:scale-105 transition-all shadow-lg bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800`}
           >
-            <LogOut className="w-4 h-4" />
-            <span>Logout</span>
+            <LogOut className="text-white w-5 h-5" />
+            <span className="text-white"> Logout</span>
           </Button>
         </div>
       </div>

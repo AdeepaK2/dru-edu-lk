@@ -70,30 +70,34 @@ const getStatusConfig = (status: string) => {
     case 'Verified':
       return {
         icon: CheckCircle2,
-        color: 'text-green-600 dark:text-green-400',
-        bgColor: 'bg-green-50 dark:bg-green-900/20',
-        borderColor: 'border-green-200 dark:border-green-800'
+        color: 'text-green-600',
+        bgColor: 'bg-gradient-to-r from-green-400 to-emerald-500',
+        borderColor: 'border-black',
+        textColor: 'text-white'
       };
     case 'Rejected':
       return {
         icon: XCircle,
-        color: 'text-red-600 dark:text-red-400',
-        bgColor: 'bg-red-50 dark:bg-red-900/20',
-        borderColor: 'border-red-200 dark:border-red-800'
+        color: 'text-red-600',
+        bgColor: 'bg-gradient-to-r from-red-400 to-pink-500',
+        borderColor: 'border-black',
+        textColor: 'text-white'
       };
     case 'Pending':
       return {
         icon: Clock,
-        color: 'text-yellow-600 dark:text-yellow-400',
-        bgColor: 'bg-yellow-50 dark:bg-yellow-900/20',
-        borderColor: 'border-yellow-200 dark:border-yellow-800'
+        color: 'text-yellow-600',
+        bgColor: 'bg-gradient-to-r from-yellow-400 to-orange-500',
+        borderColor: 'border-black',
+        textColor: 'text-black'
       };
     default:
       return {
         icon: Upload,
-        color: 'text-gray-600 dark:text-gray-400',
-        bgColor: 'bg-gray-50 dark:bg-gray-800',
-        borderColor: 'border-gray-200 dark:border-gray-600'
+        color: 'text-gray-600',
+        bgColor: 'bg-gradient-to-r from-gray-400 to-gray-500',
+        borderColor: 'border-black',
+        textColor: 'text-white'
       };
   }
 };
@@ -194,9 +198,9 @@ export default function DocumentUploadGrid({
   const canUploadAll = Object.values(uploadState).some(file => file !== null && file !== undefined) && !loading && !disabled;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Upload Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {Object.values(DocumentType).map((docType) => {
           const config = DOCUMENT_CONFIGS[docType];
           const existingDoc = getDocumentByType(docType);
@@ -209,72 +213,78 @@ export default function DocumentUploadGrid({
           return (
             <div
               key={docType}
-              className={`relative rounded-xl border-2 transition-all duration-200 ${
+              className={`relative rounded-3xl border-4 transition-all duration-300 hover:scale-105 shadow-2xl ${
                 dragOver === docType 
-                  ? 'border-blue-400 bg-blue-50 dark:bg-blue-900/20' 
-                  : statusConfig.borderColor
-              } ${statusConfig.bgColor} overflow-hidden`}
+                  ? 'border-blue-400 bg-gradient-to-r from-blue-400 to-purple-500' 
+                  : statusConfig.borderColor + ' ' + statusConfig.bgColor
+              } overflow-hidden`}
               onDragOver={handleDragOver}
               onDragEnter={handleDragEnter(docType)}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop(docType)}
             >
               {/* Header */}
-              <div className="p-4 border-b border-gray-200 dark:border-gray-600">
+              <div className="p-6 border-b-4 border-black">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <IconComponent className={`w-5 h-5 ${statusConfig.color}`} />
-                    <h3 className="font-medium text-gray-900 dark:text-white text-sm">
-                      {config.title}
-                    </h3>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-400 rounded-2xl flex items-center justify-center border-2 border-black">
+                      <IconComponent className="w-6 h-6 text-black" />
+                    </div>
+                    <div>
+                      <h3 className="font-black text-black text-lg">
+                        {config.title}
+                      </h3>
+                      <p className="text-black font-bold text-sm">
+                        {config.description}
+                      </p>
+                    </div>
                   </div>
-                  <StatusIcon className={`w-5 h-5 ${statusConfig.color}`} />
+                  <div className="flex items-center space-x-2">
+                    <StatusIcon className="w-8 h-8 text-black" />
+                  </div>
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  {config.description}
-                </p>
               </div>
 
               {/* Content */}
-              <div className="p-4">
+              <div className="p-6 bg-white">
                 {existingDoc ? (
                   // Existing document display
-                  <div className="space-y-3">
-                    <div className="flex items-center space-x-2">
-                      <FileIcon className="w-4 h-4 text-gray-500" />
-                      <span className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-3 p-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl border-2 border-gray-300">
+                      <FileIcon className="w-6 h-6 text-gray-600" />
+                      <span className="text-sm font-black text-black truncate">
                         {existingDoc.filename}
                       </span>
                     </div>
                     
-                    <div className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${statusConfig.color} ${statusConfig.bgColor}`}>
-                      <StatusIcon className="w-3 h-3 mr-1" />
+                    <div className={`inline-flex items-center px-4 py-2 text-sm font-black rounded-full border-2 border-black ${statusConfig.bgColor} ${statusConfig.textColor}`}>
+                      <StatusIcon className="w-4 h-4 mr-2" />
                       {existingDoc.status}
                     </div>
 
                     {existingDoc.submittedAt && (
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Uploaded: {new Date(existingDoc.submittedAt).toLocaleDateString()}
+                      <p className="text-sm text-gray-600 font-bold">
+                        📅 Uploaded: {new Date(existingDoc.submittedAt).toLocaleDateString()}
                       </p>
                     )}
 
                     {existingDoc.notes && existingDoc.status === 'Rejected' && (
-                      <div className="bg-red-100 dark:bg-red-900/30 p-2 rounded text-xs text-red-700 dark:text-red-300">
-                        <strong>Reason:</strong> {existingDoc.notes}
+                      <div className="bg-gradient-to-r from-red-400 to-pink-500 p-3 rounded-2xl text-sm text-white font-bold border-2 border-black">
+                        <strong>💬 Reason:</strong> {existingDoc.notes}
                       </div>
                     )}
 
                     {/* Action Buttons */}
-                    <div className="flex space-x-2">
+                    <div className="flex space-x-3">
                       {existingDoc.status === 'Verified' && (
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => onDownload(existingDoc)}
-                          className="flex items-center space-x-1 text-xs"
+                          className="flex items-center space-x-2 text-sm bg-gradient-to-r from-[#64cc4f] to-[#b2e05b] hover:from-[#b2e05b] hover:to-[#64cc4f] text-white font-black border-2 border-black rounded-full px-4 py-2 transform hover:scale-105 transition-all"
                         >
-                          <Download className="w-3 h-3" />
-                          <span>Download</span>
+                          <Download className="w-4 h-4" />
+                          <span>📥 Download</span>
                         </Button>
                       )}
                       
@@ -298,10 +308,10 @@ export default function DocumentUploadGrid({
                             size="sm"
                             onClick={() => fileInputRefs.current[docType]?.click()}
                             disabled={loading}
-                            className="flex items-center space-x-1 text-xs bg-red-600 hover:bg-red-700"
+                            className="flex items-center space-x-2 text-sm bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white font-black border-2 border-black rounded-full px-4 py-2 transform hover:scale-105 transition-all"
                           >
-                            <RefreshCw className="w-3 h-3" />
-                            <span>Re-upload</span>
+                            <RefreshCw className="w-4 h-4" />
+                            <span>🔄 Re-upload</span>
                           </Button>
                         </>
                       )}
@@ -309,64 +319,66 @@ export default function DocumentUploadGrid({
                   </div>
                 ) : (
                   // Upload area
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     {selectedFile ? (
                       // File selected
-                      <div className="space-y-2">
-                        <div className="flex items-center space-x-2 p-2 bg-white dark:bg-gray-700 rounded border">
-                          <FileIcon className="w-4 h-4 text-gray-500" />
-                          <span className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                      <div className="space-y-3">
+                        <div className="flex items-center space-x-3 p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl border-2 border-blue-300">
+                          <FileIcon className="w-6 h-6 text-blue-600" />
+                          <span className="text-sm font-black text-black truncate">
                             {selectedFile.name}
                           </span>
                         </div>
-                        <p className="text-xs text-gray-500">
-                          {formatFileSize(selectedFile.size)}
+                        <p className="text-sm text-gray-600 font-bold">
+                          📏 Size: {formatFileSize(selectedFile.size)}
                         </p>
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => setUploadState(prev => ({ ...prev, [docType]: null }))}
-                          className="w-full text-xs"
+                          className="w-full bg-gradient-to-r from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600 text-white font-black border-2 border-black rounded-full py-2 transform hover:scale-105 transition-all"
                         >
-                          <X className="w-3 h-3 mr-1" />
-                          Remove
+                          <X className="w-4 h-4 mr-2" />
+                          ❌ Remove File
                         </Button>
                       </div>
                     ) : (
                       // Upload prompt
-                      <div className="text-center">
-                        <div className={`mx-auto w-12 h-12 rounded-full flex items-center justify-center mb-2 ${
-                          dragOver === docType ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-gray-100 dark:bg-gray-700'
+                      <div className="text-center space-y-4">
+                        <div className={`mx-auto w-16 h-16 rounded-3xl flex items-center justify-center border-4 border-black shadow-lg ${
+                          dragOver === docType ? 'bg-gradient-to-r from-blue-400 to-purple-500' : 'bg-gradient-to-r from-gray-400 to-gray-500'
                         }`}>
-                          <Upload className={`w-6 h-6 ${
-                            dragOver === docType ? 'text-blue-600' : 'text-gray-400'
+                          <Upload className={`w-8 h-8 ${
+                            dragOver === docType ? 'text-white' : 'text-white'
                           }`} />
                         </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-                          Drag & drop or click to select
-                        </p>
-                        <input
-                          type="file"
-                          id={`file-input-${docType}`}
-                          className="hidden"
-                          accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                          onChange={(e) => handleFileInputChange(docType, e)}
-                          disabled={loading || disabled}
-                        />
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            document.getElementById(`file-input-${docType}`)?.click();
-                          }}
-                          disabled={loading || disabled}
-                          className="text-xs"
-                        >
-                          Choose File
-                        </Button>
-                        <p className="text-xs text-gray-400 mt-1">
-                          PDF, DOC, JPG, PNG (Max 10MB)
-                        </p>
+                        <div>
+                          <p className="text-lg text-black font-black mb-2">
+                            {dragOver === docType ? 'Drop your magical document here!' : ' Drag & drop or click to select'}
+                          </p>
+                          <input
+                            type="file"
+                            id={`file-input-${docType}`}
+                            className="hidden"
+                            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                            onChange={(e) => handleFileInputChange(docType, e)}
+                            disabled={loading || disabled}
+                          />
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              document.getElementById(`file-input-${docType}`)?.click();
+                            }}
+                            disabled={loading || disabled}
+                            className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-black border-2 border-black rounded-full px-6 py-3 transform hover:scale-105 transition-all"
+                          >
+                            📂 Choose File
+                          </Button>
+                          <p className="text-sm text-gray-600 font-bold mt-3">
+                            PDF, DOC, JPG, PNG (Max 10MB) 📊
+                          </p>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -383,17 +395,17 @@ export default function DocumentUploadGrid({
           <Button
             onClick={handleUploadAll}
             disabled={loading}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium flex items-center space-x-2"
+            className="bg-gradient-to-r from-[#64cc4f] to-[#b2e05b] hover:from-[#b2e05b] hover:to-[#64cc4f] text-white px-8 py-4 rounded-full font-black text-lg flex items-center space-x-3 transform hover:scale-105 transition-all border-4 border-black shadow-2xl"
           >
             {loading ? (
               <>
-                <RefreshCw className="w-4 h-4 animate-spin" />
-                <span>Uploading...</span>
+                <RefreshCw className="w-6 h-6 animate-spin" />
+                <span>🔄 Uploading Magical Documents...</span>
               </>
             ) : (
               <>
-                <Upload className="w-4 h-4" />
-                <span>Upload Selected Documents</span>
+                <Upload className="w-6 h-6" />
+                <span>🚀 Upload Selected Documents</span>
               </>
             )}
           </Button>
@@ -402,15 +414,15 @@ export default function DocumentUploadGrid({
 
       {/* Upload Progress */}
       {loading && (
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-          <div className="flex items-center space-x-3">
-            <RefreshCw className="w-5 h-5 text-blue-600 animate-spin" />
+        <div className="bg-gradient-to-r from-blue-400 to-purple-500 border-4 border-black rounded-3xl p-6 shadow-2xl">
+          <div className="flex items-center space-x-4">
+            <RefreshCw className="w-8 h-8 text-white animate-spin" />
             <div>
-              <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                Uploading Documents...
+              <p className="text-xl font-black text-white mb-1">
+                📤 Uploading Documents...
               </p>
-              <p className="text-xs text-blue-700 dark:text-blue-300">
-                Please wait while we process your files.
+              <p className="text-blue-100 font-bold text-lg">
+                Please wait while we process your magical files! ✨
               </p>
             </div>
           </div>

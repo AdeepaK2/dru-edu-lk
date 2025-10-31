@@ -7,7 +7,7 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #0fec33;
   
   /* Primary Colors */
   --color-primary-50: #f0f9ff;
@@ -25,11 +25,20 @@
   --color-accent-100: #d1fae5;
   --color-accent-500: #10b981;
   --color-accent-700: #047857;
+
+  /* Theme Colors - Default Ben10 */
+  --theme-primary-light: #4ade80;
+  --theme-primary: #22c55e;
+  --theme-primary-dark: #16a34a;
+  --theme-secondary: #000000;
+  --theme-accent: #84cc16;
+  --theme-bg-light: #f0fdf4;
+  --theme-bg-dark: #1b4332;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0f172a;
+    --background: #0b773c;
     --foreground: #f8fafc;
     --color-primary-100: #1e293b;
     --color-primary-500: #38bdf8;
@@ -38,8 +47,15 @@
 }
 
 @layer base {
-  html {
+  html, body {
     font-family: 'Inter', system-ui, sans-serif;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+  
+  html {
+    overflow-x: hidden;
   }
   
   h1, h2, h3, h4, h5, h6 {
@@ -47,7 +63,6 @@
   }
   
   body {
-    background: var(--background);
     color: var(--foreground);
     @apply text-base antialiased;
   }
@@ -156,4 +171,20 @@
 
 .delay-1200 {
   animation-delay: 1.2s;
+}
+
+/* Custom animations for student dashboard */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.6s ease-out;
 }
