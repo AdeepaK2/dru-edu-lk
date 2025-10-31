@@ -19,6 +19,7 @@ import {
   Clock
 } from 'lucide-react';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Button, Input } from '@/components/ui';
 import Link from 'next/link';
 
@@ -70,6 +71,7 @@ interface DifficultyAnalysis {
 
 export default function StudentResults() {
   const { student } = useStudentAuth();
+  const { theme } = useTheme();
   const [studentClasses, setStudentClasses] = useState<ClassProgress[]>([]);
   const [selectedClass, setSelectedClass] = useState<string | null>(null);
   const [testResults, setTestResults] = useState<TestResult[]>([]);
@@ -283,22 +285,45 @@ export default function StudentResults() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
-          {/* Header skeleton */}
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-300 dark:bg-gray-600 rounded w-1/3 mb-2"></div>
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
-          </div>
-          
-          {/* Stats skeleton */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="animate-pulse bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-                <div className="h-6 bg-gray-300 dark:bg-gray-600 rounded mb-4"></div>
-                <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded"></div>
+      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : 'from-blue-400 to-indigo-600'} flex items-center justify-center`}>
+        <div className="bg-white border-4 border-black rounded-3xl p-8 shadow-2xl">
+          {/* Theme-Specific Loading Animation */}
+          <div className="relative mb-6 flex flex-col items-center">
+            {/* Tinkerbell Loading GIF */}
+            {theme === 'tinkerbell' && (
+              <div className="flex flex-col items-center">
+                <img 
+                  src="/tinkerbell-loading.gif" 
+                  alt="Tinkerbell Loading" 
+                  className="w-32 h-32 object-contain"
+                />
+                <span className="text-2xl font-bold text-yellow-600 mt-4">Loading</span>
               </div>
-            ))}
+            )}
+            
+            {/* Ben 10 Loading GIF */}
+            {theme === 'ben10' && (
+              <div className="flex flex-col items-center">
+                <img 
+                  src="/ben10-loading.gif" 
+                  alt="Ben 10 Loading" 
+                  className="w-32 h-32 object-contain"
+                />
+                <span className="text-2xl font-bold text-[#64cc4f] mt-4">Loading</span>
+              </div>
+            )}
+            
+            {/* Default Theme Spinner with Loading Text */}
+            {theme !== 'tinkerbell' && theme !== 'ben10' && (
+              <div className="flex flex-col items-center">
+                <div className="w-24 h-24 border-4 border-blue-400 border-t-blue-600 rounded-full animate-spin"></div>
+                <span className="text-2xl font-bold text-blue-600 mt-4">Loading</span>
+              </div>
+            )}
+          </div>
+          <div className="text-center">
+            <h2 className="text-2xl font-black text-black mb-2">Loading Results...</h2>
+            <p className="text-gray-600 font-medium">Get ready to transform your learning!</p>
           </div>
         </div>
       </div>
@@ -306,87 +331,95 @@ export default function StudentResults() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
+    <div key={`results-${theme}`} className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : 'bg-gradient-to-br from-blue-600 via-indigo-700 to-blue-400'} p-6`}>
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                My Progress & Results
-              </h1>
-              <p className="text-gray-600 dark:text-gray-300 mt-1">
-                Track your test performance and identify areas for improvement
-              </p>
-            </div>
+        {/* Theme-aware Header */}
+        <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#5ab34a] via-[#64cc4f] to-[#111511]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-500 to-indigo-600'} rounded-3xl shadow-2xl border-4 border-black p-8 relative overflow-hidden`}>
+         
+          <div className="flex items-center space-x-4 relative z-10">
             
-            <div className="mt-4 sm:mt-0 flex items-center space-x-3">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  type="text"
-                  placeholder="Search classes..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-64"
-                />
-              </div>
+            <div>
+              <h1 className="text-4xl font-black text-white mb-2 flex items-center">
+                
+               
+                <span className="ml-2 text-4xl text-black ">Results</span>
+                <span className="ml-2 text-4xl text-black">&</span>
+                <span className="ml-2 text-4xl text-black">Progress</span>
+             
+              </h1>
+              <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-[#1f2902]' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-200'}`}>
+                Welcome back, {student?.name}! Let's see how {theme === 'ben10' ? 'heroic' : 'magical'} your learning journey has been! 
+              </p>
             </div>
           </div>
         </div>
 
-        {/* Overall Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
-                <BookOpen className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+        {/* Search */}
+        <div className="bg-white rounded-3xl shadow-2xl border-4 border-black p-6">
+          <div className="relative">
+            <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-2xl">{(theme === 'ben10' || theme === 'tinkerbell') && '🔍'}</div>
+            <input
+              type="text"
+              placeholder="🔍 Search classes..."
+              value={searchTerm}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
+              className="pl-12 w-full px-6 py-3 border-4 border-black rounded-3xl focus:ring-4 focus:ring-[#64cc4f] focus:border-black bg-white text-black font-bold text-lg placeholder-black/60"
+            />
+          </div>
+        </div>
+
+        {/* Theme-aware Overall Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-lime-800' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-500 to-indigo-600'} rounded-3xl shadow-2xl border-4 border-black p-6 hover:scale-105 transition-all`}>
+            <div className="flex items-center space-x-4">
+              <div className={`w-16 h-16 ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' : 'bg-gradient-to-br from-blue-400 to-indigo-600'} rounded-2xl flex items-center justify-center border-4 border-black shadow-lg`}>
+                <BookOpen className="w-8 h-8 text-white" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Tests Completed</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <div>
+                <p className="text-white font-black text-sm mb-1">Tests Completed</p>
+                <p className="text-3xl font-black text-white">
                   {overallStats.totalTests}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="w-12 h-12 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
-                <Target className="w-6 h-6 text-green-600 dark:text-green-400" />
+          <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-lime-800' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-500 to-indigo-600'} rounded-3xl shadow-2xl border-4 border-black p-6 hover:scale-105 transition-all`}>
+            <div className="flex items-center space-x-4">
+              <div className={`w-16 h-16 ${theme === 'ben10' ? 'bg-gradient-to-br from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' : 'bg-gradient-to-br from-blue-400 to-indigo-600'} rounded-2xl flex items-center justify-center border-4 border-black shadow-lg`}>
+                <Target className="w-8 h-8 text-white" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Average Score</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <div>
+                <p className="text-white font-black text-sm mb-1">Average Score</p>
+                <p className="text-3xl font-black text-white">
                   {overallStats.averageScore}%
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/20 rounded-lg flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+          <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-lime-800' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-500 to-indigo-600'} rounded-3xl shadow-2xl border-4 border-black p-6 hover:scale-105 transition-all`}>
+            <div className="flex items-center space-x-4">
+              <div className={`w-16 h-16 ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' : 'bg-gradient-to-br from-blue-400 to-indigo-600'} rounded-2xl flex items-center justify-center border-4 border-black shadow-lg`}>
+                <BookOpen className="w-8 h-8 text-white" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Improving Classes</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <div>
+                <p className="text-white font-black text-sm mb-1">Improving Classes</p>
+                <p className="text-3xl font-black text-white">
                   {overallStats.improvingClasses}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg flex items-center justify-center">
-                <AlertCircle className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
+          <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-lime-800' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-500 to-indigo-600'} rounded-3xl shadow-2xl border-4 border-black p-6 hover:scale-105 transition-all`}>
+            <div className="flex items-center space-x-4">
+              <div className={`w-16 h-16 ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' : 'bg-gradient-to-br from-blue-400 to-indigo-600'} rounded-2xl flex items-center justify-center border-4 border-black shadow-lg`}>
+                <TrendingUp className="w-8 h-8 text-white" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Topics to Improve</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <div>
+                <p className="text-white font-black text-sm mb-1">Topics to Improve</p>
+                <p className="text-3xl font-black text-white">
                   {overallStats.strugglingSubjects}
                 </p>
               </div>
@@ -396,51 +429,52 @@ export default function StudentResults() {
 
         {/* Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Class List */}
+          {/* Theme-aware Class List */}
           <div className="lg:col-span-1">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-              <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+            <div className="bg-white rounded-3xl shadow-2xl border-4 border-black overflow-hidden">
+              <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#4cc235] to-lime-800' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-500 via-indigo-600 to-indigo-800'} text-white p-6 border-b-4 border-black`}>
+                <h2 className="text-xl text-black font-black flex items-center">
+      
                   My Classes
                 </h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Select a class to view detailed results
+                <p className={`font-bold text-sm ${theme === 'ben10' ? 'text-green-100' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-200'}`}>
+                  Select a class to view your {theme === 'ben10' ? 'heroic' : 'magical'} results! 
                 </p>
               </div>
               
-              <div className="p-6 space-y-3 max-h-96 overflow-y-auto">
+              <div className="p-6 space-y-4 max-h-96 overflow-y-auto">
                 {filteredClasses.map((classInfo) => (
                   <div
                     key={classInfo.id}
                     onClick={() => loadClassResults(classInfo.id)}
-                    className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                    className={`p-4 rounded-2xl border-2 cursor-pointer transition-all hover:scale-105 ${
                       selectedClass === classInfo.id
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                        ? 'border-green-400 bg-gradient-to-r from-green-100 to-green-200'
+                        : 'border-gray-300 hover:border-black bg-white'
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
-                        <h3 className="font-medium text-gray-900 dark:text-white text-sm">
+                        <h3 className="font-black text-black text-sm mb-1">
                           {classInfo.name}
                         </h3>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                        <p className="text-gray-600 font-bold text-xs">
                           {classInfo.subject} • Grade {classInfo.grade}
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="text-lg font-bold text-gray-900 dark:text-white">
+                        <p className="text-2xl font-black text-black">
                           {classInfo.averageScore}%
                         </p>
                         <div className="flex items-center text-xs">
                           {classInfo.improvement > 0 ? (
-                            <TrendingUp className="w-3 h-3 text-green-500 mr-1" />
+                            <TrendingUp className="w-4 h-4 text-green-600 mr-1" />
                           ) : classInfo.improvement < 0 ? (
-                            <TrendingDown className="w-3 h-3 text-red-500 mr-1" />
+                            <TrendingDown className="w-4 h-4 text-red-600 mr-1" />
                           ) : null}
-                          <span className={`${
-                            classInfo.improvement > 0 ? 'text-green-500' : 
-                            classInfo.improvement < 0 ? 'text-red-500' : 'text-gray-500'
+                          <span className={`font-black ${
+                            classInfo.improvement > 0 ? 'text-green-600' : 
+                            classInfo.improvement < 0 ? 'text-red-600' : 'text-gray-600'
                           }`}>
                             {classInfo.improvement > 0 ? '+' : ''}{classInfo.improvement}%
                           </span>
@@ -448,7 +482,7 @@ export default function StudentResults() {
                       </div>
                     </div>
                     
-                    <div className="mt-3 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                    <div className="mt-3 flex items-center justify-between text-xs text-gray-600 font-bold">
                       <span>{classInfo.completedTests} tests completed</span>
                       {classInfo.lastTestDate && (
                         <span>
@@ -461,9 +495,15 @@ export default function StudentResults() {
                 
                 {filteredClasses.length === 0 && (
                   <div className="text-center py-8">
-                    <GraduationCap className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-                    <p className="text-gray-500 dark:text-gray-400">
-                      {searchTerm ? 'No classes match your search' : 'No classes available'}
+                    
+                    <h3 className="text-xl font-black text-black mb-2">
+                      {searchTerm ? `No Classes Found` : `No Classes Available Yet`}
+                    </h3>
+                    <p className="text-gray-600 font-bold">
+                      {searchTerm
+                        ? `Try adjusting your search to find your classes! 🔍`
+                        : `You haven't enrolled in any classes yet. Time to start your ${theme === 'ben10' ? 'hero' : 'magical'} learning journey!`
+                      }
                     </p>
                   </div>
                 )}
@@ -471,18 +511,19 @@ export default function StudentResults() {
             </div>
           </div>
 
-          {/* Detailed Results */}
+                {/* Detailed Results */}
           <div className="lg:col-span-2">
             {selectedClass ? (
               <div className="space-y-6">
-                {/* Test Results */}
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-                  <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                {/* Theme-aware Test Results */}
+                <div className="bg-white rounded-3xl shadow-2xl border-4 border-black overflow-hidden">
+                  <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#4cc235] to-lime-800' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-500 via-indigo-600 to-indigo-800'} text-white p-6 border-b-4 border-black`}>
+                    <h2 className="text-xl font-black text-black flex items-center">
+                      <span className="text-2xl mr-3 ">📊</span>
                       Test Results
                     </h2>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Your best performance for each test
+                    <p className={`font-bold text-sm ${theme === 'ben10' ? 'text-green-100' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-200'}`}>
+                      Your best {theme === 'ben10' ? 'heroic' : 'magical'} performance for each test.
                     </p>
                   </div>
                   
@@ -490,8 +531,9 @@ export default function StudentResults() {
                     {loadingResults ? (
                       <div className="space-y-4">
                         {[1, 2, 3].map((i) => (
-                          <div key={i} className="animate-pulse">
-                            <div className="h-16 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                          <div key={i} className="animate-pulse bg-gradient-to-r from-gray-200 to-gray-300 rounded-2xl p-4 border-2 border-gray-400">
+                            <div className="h-4 bg-gray-400 rounded mb-2"></div>
+                            <div className="h-3 bg-gray-300 rounded"></div>
                           </div>
                         ))}
                       </div>
@@ -500,38 +542,38 @@ export default function StudentResults() {
                         {testResults.map((result) => (
                           <div
                             key={result.id}
-                            className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg"
+                            className="bg-gradient-to-r from-white to-gray-50 rounded-2xl border-2 border-gray-300 p-4 hover:border-black transition-all"
                           >
                             <div className="flex items-center justify-between">
                               <div className="flex-1">
                                 <div className="flex items-center space-x-2 mb-1">
-                                  <h3 className="font-medium text-gray-900 dark:text-white">
+                                  <h3 className="font-black text-black text-base">
                                     {result.testTitle}
                                   </h3>
-                                  <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400 rounded-full">
-                                    Best Attempt
+                                  <span className="px-3 py-1 text-xs font-black bg-gradient-to-r from-green-400 to-green-600 text-white rounded-full border-2 border-black">
+                                    Best Attempt 🏆
                                   </span>
                                 </div>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">
+                                <p className="text-gray-600 font-bold text-sm">
                                   {result.completedAt.toLocaleDateString()} • {result.subject}
                                 </p>
                               </div>
                               
                               <div className="text-right">
                                 <div className="flex items-center space-x-2">
-                                  <span className={`text-lg font-bold ${
+                                  <span className={`text-2xl font-black ${
                                     result.score >= 80 ? 'text-green-600' :
                                     result.score >= 60 ? 'text-yellow-600' : 'text-red-600'
                                   }`}>
                                     {result.score}%
                                   </span>
                                   {result.score >= 80 ? (
-                                    <CheckCircle className="w-5 h-5 text-green-500" />
+                                    <CheckCircle className="w-6 h-6 text-green-600" />
                                   ) : (
-                                    <XCircle className="w-5 h-5 text-red-500" />
+                                    <XCircle className="w-6 h-6 text-red-600" />
                                   )}
                                 </div>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                <p className="text-gray-600 font-bold text-xs">
                                   {result.totalQuestions > 0 ? 
                                     `${result.correctAnswers}/${result.totalQuestions} correct` :
                                     'Score calculated'
@@ -540,7 +582,7 @@ export default function StudentResults() {
                               </div>
                             </div>
                             
-                            <div className="mt-3 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                            <div className="mt-3 flex items-center justify-between text-xs text-gray-600 font-bold">
                               <span>
                                 Time: {result.timeSpent > 0 ? `${Math.round(result.timeSpent / 60)} min` : 'Not recorded'}
                               </span>
@@ -556,24 +598,28 @@ export default function StudentResults() {
                       </div>
                     ) : (
                       <div className="text-center py-8">
-                        <BarChart3 className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-                        <p className="text-gray-500 dark:text-gray-400">
-                          No test results available for this class
+                       
+                        <h3 className="text-xl font-black text-black mb-2">
+                          No Test Results Yet
+                        </h3>
+                        <p className="text-gray-600 font-bold">
+                          Complete some {theme === 'ben10' ? 'hero' : 'magical'} tests to see your results here! 
                         </p>
                       </div>
                     )}
                   </div>
                 </div>
 
-                {/* Difficulty Analysis */}
+                {/* Theme-aware Difficulty Analysis */}
                 {difficultyAnalysis.length > 0 && (
-                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-                    <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-                      <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  <div className="bg-white rounded-3xl shadow-2xl border-4 border-black overflow-hidden">
+                    <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#4cc235] to-lime-800' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-500 via-indigo-600 to-indigo-800'} text-white p-6 border-b-4 border-black`}>
+                      <h2 className="text-xl font-black flex items-center">
+                        <span className="text-2xl mr-3">🎯</span>
                         Topics to Improve
                       </h2>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Areas where you need more practice
+                      <p className={`font-bold text-sm ${theme === 'ben10' ? 'text-green-100' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-200'}`}>
+                        Areas where you need more {theme === 'ben10' ? 'heroic' : 'magical'} practice to boost your skills!
                       </p>
                     </div>
                     
@@ -582,40 +628,40 @@ export default function StudentResults() {
                         {difficultyAnalysis.slice(0, 5).map((analysis, index) => (
                           <div
                             key={analysis.topic}
-                            className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg"
+                            className="bg-gradient-to-r from-white to-gray-50 rounded-2xl border-2 border-gray-300 p-4 hover:border-black transition-all"
                           >
                             <div className="flex items-center justify-between">
                               <div className="flex-1">
-                                <h3 className="font-medium text-gray-900 dark:text-white">
+                                <h3 className="font-black text-black text-base">
                                   {analysis.topic}
                                 </h3>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">
+                                <p className="text-gray-600 font-bold text-sm">
                                   {analysis.subject}
                                 </p>
                               </div>
                               
                               <div className="text-right">
                                 <div className="flex items-center space-x-2">
-                                  <span className={`text-lg font-bold ${
+                                  <span className={`text-xl font-black ${
                                     analysis.accuracy >= 80 ? 'text-green-600' :
                                     analysis.accuracy >= 60 ? 'text-yellow-600' : 'text-red-600'
                                   }`}>
                                     {Math.round(analysis.accuracy)}%
                                   </span>
                                   {analysis.improvementNeeded && (
-                                    <AlertCircle className="w-5 h-5 text-red-500" />
+                                    <AlertCircle className="w-6 h-6 text-red-600" />
                                   )}
                                 </div>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                <p className="text-gray-600 font-bold text-xs">
                                   {analysis.correctAnswers}/{analysis.totalQuestions} correct
                                 </p>
                               </div>
                             </div>
                             
                             {analysis.improvementNeeded && (
-                              <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                                <p className="text-sm text-red-700 dark:text-red-300">
-                                  💡 Focus on this topic - accuracy below 60%
+                              <div className="mt-3 p-3 bg-gradient-to-r from-red-100 to-pink-100 rounded-xl border-2 border-red-300">
+                                <p className="text-red-700 font-black text-sm">
+                                  💡 Focus on this topic - accuracy below 60%! Let's make it {theme === 'ben10' ? 'heroic' : 'magical'}! 
                                 </p>
                               </div>
                             )}
@@ -627,49 +673,67 @@ export default function StudentResults() {
                 )}
               </div>
             ) : (
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-12 text-center">
-                <BarChart3 className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+              <div className={`${
+                theme === 'ben10'
+                  ? 'bg-gradient-to-r from-lime-600 via-green-600 to-lime-600'
+                  : theme === 'tinkerbell'
+                  ? 'bg-gradient-to-r from-yellow-300 via-pink-300 to-purple-300'
+                  : 'bg-gradient-to-r from-blue-400 via-indigo-500 to-blue-600'
+              } rounded-3xl shadow-2xl border-4 border-black p-12 text-center`}>
+                <div className="text-6xl mb-6"></div>
+                <h3 className="text-2xl font-black text-black mb-4">
                   Select a Class
                 </h3>
-                <p className="text-gray-500 dark:text-gray-400">
-                  Choose a class from the left to view your detailed test results and progress analysis
+                <p className="text-black font-bold text-lg">
+                  Choose a class from the left to view your detailed test results and progress analysis! 
                 </p>
               </div>
             )}
           </div>
         </div>
 
-        {/* Growth Insights */}
+        {/* Theme-aware Growth Insights */}
         {studentClasses.length > 0 && (
-          <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-lg p-6">
-            <div className="flex items-start space-x-4">
-              <div className="w-10 h-10 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                <Award className="w-5 h-5 text-green-600 dark:text-green-400" />
+          <div className={`${
+            theme === 'ben10'
+              ? 'bg-gradient-to-r from-[#4cc235] via-[#4cc235] to-lime-800'
+              : theme === 'tinkerbell'
+              ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500'
+              : 'bg-gradient-to-r from-blue-600 via-indigo-700 to-blue-800'
+          } rounded-3xl shadow-2xl border-4 border-black p-8`}>
+            <div className="flex items-start space-x-6">
+              <div className={`w-20 h-20 ${
+                theme === 'ben10'
+                  ? 'bg-gradient-to-br from-green-400 to-green-600'
+                  : theme === 'tinkerbell'
+                  ? 'bg-gradient-to-br from-yellow-400 to-yellow-600'
+                  : 'bg-gradient-to-br from-blue-400 to-indigo-600'
+              } rounded-3xl flex items-center justify-center border-4 border-black shadow-lg flex-shrink-0`}>
+                <Award className="w-10 h-10 text-white" />
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                  Your Learning Journey
+                <h3 className="text-2xl font-black text-black mb-3 flex items-center">
+                  <span>Your Learning Journey</span>
                 </h3>
-                <p className="text-gray-600 dark:text-gray-300 mb-4">
+                <p className="text-white font-bold text-lg mb-6">
                   Keep up the great work! Here's what we noticed about your progress:
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                  <div className="flex items-center">
-                    <TrendingUp className="w-4 h-4 text-green-500 mr-2" />
-                    <span className="text-gray-700 dark:text-gray-300">
+                  <div className="flex items-center bg-white/20 rounded-2xl p-4 border-2 border-white/30">
+                    <TrendingUp className="w-6 h-6 text-green-300 mr-3 flex-shrink-0" />
+                    <span className="text-white font-black">
                       {overallStats.improvingClasses} subjects showing improvement
                     </span>
                   </div>
-                  <div className="flex items-center">
-                    <Target className="w-4 h-4 text-blue-500 mr-2" />
-                    <span className="text-gray-700 dark:text-gray-300">
+                  <div className="flex items-center bg-white/20 rounded-2xl p-4 border-2 border-white/30">
+                    <Target className="w-6 h-6 text-blue-300 mr-3 flex-shrink-0" />
+                    <span className="text-white font-black">
                       {overallStats.averageScore}% average performance
                     </span>
                   </div>
-                  <div className="flex items-center">
-                    <BookOpen className="w-4 h-4 text-purple-500 mr-2" />
-                    <span className="text-gray-700 dark:text-gray-300">
+                  <div className="flex items-center bg-white/20 rounded-2xl p-4 border-2 border-white/30">
+                    <BookOpen className="w-6 h-6 text-purple-300 mr-3 flex-shrink-0" />
+                    <span className="text-white font-black">
                       {overallStats.totalTests} tests completed
                     </span>
                   </div>

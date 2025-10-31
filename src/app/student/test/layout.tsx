@@ -16,10 +16,8 @@ export default function StudentTestLayout({ children }: { children: React.ReactN
   }, [student, loading, router]);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <main className="px-4 py-6 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        {children}
-      </main>
+    <div className="min-h-screen">
+      {children}
     </div>
   );
 }

@@ -76,7 +76,7 @@ export default function StudentLayout({ children, hideSidebar = false }: Student
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="w-8 h-8 border-t-2 border-green-600 rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-gray-300">Loading...</p>
@@ -87,7 +87,7 @@ export default function StudentLayout({ children, hideSidebar = false }: Student
 
   if (error || !isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center max-w-md">
           <div className="bg-red-100 dark:bg-red-900/20 p-6 rounded-lg">
             <p className="text-red-600 dark:text-red-400 mb-4">
@@ -104,7 +104,7 @@ export default function StudentLayout({ children, hideSidebar = false }: Student
 
   return (
     <PDFViewerContext.Provider value={{ openPDFViewer }}>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen">
         <div className="flex">
           {/* Sidebar - conditionally rendered */}
           {!hideSidebar && (
@@ -138,7 +138,7 @@ export default function StudentLayout({ children, hideSidebar = false }: Student
             )}
 
             {/* Page Content */}
-            <main className="p-6">
+            <main>
               {children}
             </main>
           </div>
