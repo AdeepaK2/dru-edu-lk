@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { AlertCircle, Clock, ArrowLeft, Target, RefreshCw } from 'lucide-react';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui';
 import { Test, LiveTest, FlexibleTest } from '@/models/testSchema';
 import { Timestamp } from 'firebase/firestore';
@@ -18,6 +19,7 @@ export default function TestPage() {
   const testId = params?.testId as string;
   
   const { student, loading: authLoading } = useStudentAuth();
+  const { theme } = useTheme();
   
   // States
   const [test, setTest] = useState<Test | null>(null);
@@ -780,22 +782,50 @@ export default function TestPage() {
 
   return (
     <StudentLayout>
-      <div className="min-h-screen bg-gradient-to-br from-green-400 via-black to-green-400 p-6">
+      <div className={`min-h-screen p-6 ${
+        theme === 'ben10'
+          ? 'bg-gradient-to-br from-[#64cc4f] via-black to-[#64cc4f]'
+          : theme === 'tinkerbell'
+          ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400'
+          : 'bg-gradient-to-br from-blue-400 via-indigo-600 to-blue-400'
+      }`}>
         {/* Ben 10 Hero Header */}
-        <div className="bg-gradient-to-r from-green-500 via-black to-green-500 rounded-3xl shadow-2xl border-4 border-green-400 p-8 mb-6 relative overflow-hidden">
-          {/* Omnitrix Symbol */}
-          <div className="absolute -top-4 -left-4 w-12 h-12 bg-green-400 rounded-full border-4 border-green-400"></div>
-          <div className="absolute -top-4 -right-4 w-12 h-12 bg-green-400 rounded-full border-4 border-green-400"></div>
+        <div className={`rounded-3xl shadow-2xl border-4 p-8 mb-6 relative overflow-hidden ${
+          theme === 'ben10'
+            ? 'bg-gradient-to-r from-[#64cc4f] via-black to-[#64cc4f] border-[#64cc4f]'
+            : theme === 'tinkerbell'
+            ? 'bg-gradient-to-r from-green-600 via-green-500 to-yellow-500 border-black'
+            : 'bg-gradient-to-r from-blue-500 via-indigo-600 to-blue-500 border-black'
+        }`}>
+          
+          
 
           <div className="flex items-center space-x-4 relative z-10">
-            <div className="text-6xl">📝</div>
+            {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-6xl">📝</div>}
             <div>
               <h1 className="text-4xl font-black text-white mb-2 flex items-center">
-                <span>Ben 10</span>
-                <span className="ml-2 text-green-400 font-black text-5xl">Hero</span>
+                <span>{theme === 'ben10' ? 'Student' : theme === 'tinkerbell' ? 'Student' : 'Student'}</span>
+                <span className={`ml-2 font-black text-5xl ${
+                  theme === 'ben10'
+                    ? 'text-[#64cc4f]'
+                    : theme === 'tinkerbell'
+                    ? 'text-yellow-200'
+                    : 'text-blue-200'
+                }`}>{theme === 'ben10' ? 'Academic' : theme === 'tinkerbell' ? 'Academic' : 'Academic'}</span>
                 <span className="ml-2 text-3xl">Test</span>
               </h1>
-              <p className="text-green-200 text-lg mb-4">Ready to prove your hero skills? ⚡🦸‍♂️</p>
+              <p className={`text-lg mb-4 ${
+                theme === 'ben10'
+                  ? 'text-[#b2e05b]'
+                  : theme === 'tinkerbell'
+                  ? 'text-green-100'
+                  : 'text-blue-100'
+              }`}>{theme === 'ben10' 
+                ? 'Ready to prove your hero skills? ⚡🦸‍♂️' 
+                : theme === 'tinkerbell'
+                ? 'Ready to cast your magic spells? ✨🧚‍♀️'
+                : 'Ready to showcase your knowledge?'
+              }</p>
               
               {/* Test Title and Badges */}
               <div className="flex items-center space-x-3 mb-2">
@@ -803,9 +833,23 @@ export default function TestPage() {
                   {test.title}
                 </h2>
                 {/* Test Type Badge */}
-                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border-2 border-green-400 ${
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border-2 ${
+                  theme === 'ben10'
+                    ? 'border-[#64cc4f]'
+                    : theme === 'tinkerbell'
+                    ? 'border-yellow-400'
+                    : 'border-blue-400'
+                } ${
                   test.questions?.some(q => q.type === 'essay' || q.questionType === 'essay')
-                    ? 'bg-purple-500 text-white'
+                    ? theme === 'ben10'
+                      ? 'bg-purple-500 text-white'
+                      : theme === 'tinkerbell'
+                      ? 'bg-purple-500 text-white'
+                      : 'bg-purple-500 text-white'
+                    : theme === 'ben10'
+                    ? 'bg-[#64cc4f] text-white'
+                    : theme === 'tinkerbell'
+                    ? 'bg-yellow-500 text-white'
                     : 'bg-blue-500 text-white'
                 }`}>
                   {test.questions?.some(q => q.type === 'essay' || q.questionType === 'essay')
@@ -817,7 +861,13 @@ export default function TestPage() {
                 </span>
                 {/* Late Submission Badge */}
                 {lateSubmissionInfo && lateSubmissionInfo.status === 'approved' && (
-                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border-2 border-green-400 ${
+                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border-2 ${
+                    theme === 'ben10'
+                      ? 'border-[#64cc4f]'
+                      : theme === 'tinkerbell'
+                      ? 'border-yellow-400'
+                      : 'border-blue-400'
+                  } ${
                     isLateSubmissionActive
                       ? 'bg-orange-500 text-white'
                       : 'bg-red-500 text-white'
@@ -827,58 +877,171 @@ export default function TestPage() {
                   </span>
                 )}
               </div>
-              <p className="text-green-200">
+              <p className={`${
+                theme === 'ben10'
+                  ? 'text-[#b2e05b]'
+                  : theme === 'tinkerbell'
+                  ? 'text-green-200'
+                  : 'text-blue-200'
+              }`}>
                 {test.description || 'No description provided.'}
               </p>
             </div>
           </div>
         </div>
         
-        <div className="bg-gradient-to-r from-green-500 via-black to-green-500 rounded-3xl shadow-2xl border-4 border-green-400 p-8 mb-6">
-          <h2 className="text-2xl font-black text-white mb-6 flex items-center">
-            <div className="text-4xl mr-3">📊</div>
-            Hero Test Information
+        <div className={`rounded-3xl shadow-2xl border-4 p-8 mb-6 ${
+          theme === 'ben10'
+            ? 'bg-gradient-to-r from-[#64cc4f] via-black to-[#64cc4f] border-[#64cc4f]'
+            : theme === 'tinkerbell'
+            ? 'bg-gradient-to-r from-green-400 via-green-500 to-green-400 border-black'
+            : 'bg-gradient-to-r from-blue-500 via-black to-blue-500 border-black'
+        }`}>
+          <h2 className="text-2xl font-black text-black mb-6 flex items-center">
+            {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-4xl mr-3">📊</div>}
+            {theme === 'ben10' 
+              ? 'Test Information'
+              : theme === 'tinkerbell'
+              ? 'Test Information'
+              : 'Test Information'
+            }
           </h2>
           
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-white/10 rounded-xl p-4 border-2 border-green-400">
-                <p className="text-sm font-medium text-green-200">Subject</p>
+              <div className={`bg-white/10 rounded-xl p-4 border-2 ${
+                theme === 'ben10'
+                  ? 'border-black'
+                  : theme === 'tinkerbell'
+                  ? 'border-black'
+                  : 'border-black'
+              }`}>
+                <p className={`text-sm font-medium ${
+                  theme === 'ben10'
+                    ? 'text-[#64cc4f]'
+                    : theme === 'tinkerbell'
+                    ? 'text-black'
+                    : 'text-blue-200'
+                }`}>Subject</p>
                 <p className="mt-1 text-white font-bold text-lg">{test.subjectName || 'Unknown Subject'}</p>
               </div>
-              <div className="bg-white/10 rounded-xl p-4 border-2 border-green-400">
-                <p className="text-sm font-medium text-green-200">Teacher</p>
+              <div className={`bg-white/10 rounded-xl p-4 border-2 ${
+                theme === 'ben10'
+                  ? 'border-black'
+                  : theme === 'tinkerbell'
+                  ? 'border-black'
+                  : 'border-black'
+              }`}>
+                <p className={`text-sm font-medium ${
+                  theme === 'ben10'
+                    ? 'text-black'
+                    : theme === 'tinkerbell'
+                    ? 'text-black'
+                    : 'text-black'
+                }`}>Teacher</p>
                 <p className="mt-1 text-white font-bold text-lg">{test.teacherName || 'Unknown Teacher'}</p>
               </div>
-              <div className="bg-white/10 rounded-xl p-4 border-2 border-green-400">
-                <p className="text-sm font-medium text-green-200">Test Type</p>
+              <div className={`bg-white/10 rounded-xl p-4 border-2 ${
+                theme === 'ben10'
+                  ? 'border-black'
+                  : theme === 'tinkerbell'
+                  ? 'border-black'
+                  : 'border-black'
+              }`}>
+                <p className={`text-sm font-medium ${
+                  theme === 'ben10'
+                    ? 'text-black'
+                    : theme === 'tinkerbell'
+                    ? 'text-black'
+                    : 'text-black'
+                }`}>Test Type</p>
                 <p className="mt-1 text-white font-bold text-lg capitalize">{test.type}</p>
               </div>
-              <div className="bg-white/10 rounded-xl p-4 border-2 border-green-400">
-                <p className="text-sm font-medium text-green-200">Total Questions</p>
+              <div className={`bg-white/10 rounded-xl p-4 border-2 ${
+                theme === 'ben10'
+                  ? 'border-black'
+                  : theme === 'tinkerbell'
+                  ? 'border-black'
+                  : 'border-black'
+              }`}>
+                <p className={`text-sm font-medium ${
+                  theme === 'ben10'
+                    ? 'text-black'
+                    : theme === 'tinkerbell'
+                    ? 'text-black'
+                    : 'text-black'
+                }`}>Total Questions</p>
                 <p className="mt-1 text-white font-bold text-lg">{test.questions.length}</p>
               </div>
-              <div className="bg-white/10 rounded-xl p-4 border-2 border-green-400">
-                <p className="text-sm font-medium text-green-200">Total Marks</p>
+              <div className={`bg-white/10 rounded-xl p-4 border-2 ${
+                theme === 'ben10'
+                  ? 'border-black'
+                  : theme === 'tinkerbell'
+                  ? 'border-black'
+                  : 'border-black'
+              }`}>
+                <p className={`text-sm font-medium ${
+                  theme === 'ben10'
+                    ? 'text-black'
+                    : theme === 'tinkerbell'
+                    ? 'text-black'
+                    : 'text-black'
+                }`}>Total Marks</p>
                 <p className="mt-1 text-white font-bold text-lg">{test.totalMarks}</p>
               </div>
               {test.type === 'live' ? (
-                <div className="bg-white/10 rounded-xl p-4 border-2 border-green-400">
-                  <p className="text-sm font-medium text-green-200">Scheduled Time</p>
+                <div className={`bg-white/10 rounded-xl p-4 border-2 ${
+                  theme === 'ben10'
+                    ? 'border-black'
+                    : theme === 'tinkerbell'
+                    ? 'border-black'
+                    : 'border-black'
+                }`}>
+                  <p className={`text-sm font-medium ${
+                    theme === 'ben10'
+                      ? 'text-black'
+                      : theme === 'tinkerbell'
+                      ? 'text-black'
+                      : 'text-black'
+                  }`}>Scheduled Time</p>
                   <p className="mt-1 text-white font-bold text-lg">
                     {formatDateTime((test as LiveTest).scheduledStartTime)}
                   </p>
                 </div>
               ) : (
-                <div className="bg-white/10 rounded-xl p-4 border-2 border-green-400">
-                  <p className="text-sm font-medium text-green-200">Available Until</p>
+                <div className={`bg-white/10 rounded-xl p-4 border-2 ${
+                  theme === 'ben10'
+                    ? 'border-black'
+                    : theme === 'tinkerbell'
+                    ? 'border-black'
+                    : 'border-black'
+                }`}>
+                  <p className={`text-sm font-medium ${
+                    theme === 'ben10'
+                      ? 'text-black'
+                      : theme === 'tinkerbell'
+                      ? 'text-black'
+                      : 'text-black'
+                  }`}>Available Until</p>
                   <p className="mt-1 text-white font-bold text-lg">
                     {formatDateTime((test as FlexibleTest).availableTo)}
                   </p>
                 </div>
               )}
-              <div className="bg-white/10 rounded-xl p-4 border-2 border-green-400">
-                <p className="text-sm font-medium text-green-200">Duration</p>
+              <div className={`bg-white/10 rounded-xl p-4 border-2 ${
+                theme === 'ben10'
+                  ? 'border-black'
+                  : theme === 'tinkerbell'
+                  ? 'border-black'
+                  : 'border-black'
+              }`}>
+                <p className={`text-sm font-medium ${
+                  theme === 'ben10'
+                    ? 'text-black'
+                    : theme === 'tinkerbell'
+                    ? 'text-black'
+                    : 'text-black'
+                }`}>Duration</p>
                 <p className="mt-1 text-white font-bold text-lg">
                   {test.type === 'live' 
                     ? `${(test as LiveTest).duration} minutes` 
@@ -888,12 +1051,29 @@ export default function TestPage() {
             </div>
             
             {test.instructions && (
-              <div className="mt-6 bg-white/10 rounded-xl p-6 border-2 border-green-400">
+              <div className={`mt-6 bg-white/10 rounded-xl p-6 border-2 ${
+                theme === 'ben10'
+                  ? 'border-[#64cc4f]'
+                  : theme === 'tinkerbell'
+                  ? 'border-yellow-400'
+                  : 'border-blue-400'
+              }`}>
                 <h3 className="text-lg font-bold text-white mb-3 flex items-center">
-                  <div className="text-2xl mr-2">📋</div>
-                  Hero Instructions
+                  {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-2xl mr-2">📋</div>}
+                  {theme === 'ben10' 
+                    ? 'Hero Instructions'
+                    : theme === 'tinkerbell'
+                    ? 'Fairy Instructions'
+                    : 'Test Instructions'
+                  }
                 </h3>
-                <div className="bg-black/30 rounded-lg p-4 text-green-100 border border-green-400">
+                <div className={`bg-black/30 rounded-lg p-4 border ${
+                  theme === 'ben10'
+                    ? 'text-[#b2e05b] border-[#64cc4f]'
+                    : theme === 'tinkerbell'
+                    ? 'text-green-100 border-yellow-400'
+                    : 'text-blue-100 border-blue-400'
+                }`}>
                   {test.instructions}
                 </div>
               </div>
@@ -957,16 +1137,45 @@ export default function TestPage() {
 
               {/* Attempt Information */}
               {attemptInfo && (
-                <div className="mb-6 bg-white/10 rounded-xl p-6 border-2 border-green-400">
+                <div className={`mb-6 bg-white/10 rounded-xl p-6 border-2 ${
+                  theme === 'ben10'
+                    ? 'border-[#64cc4f]'
+                    : theme === 'tinkerbell'
+                    ? 'border-yellow-400'
+                    : 'border-blue-400'
+                }`}>
                   <h3 className="text-lg font-bold text-white mb-4 flex items-center">
-                    <div className="text-2xl mr-2">🎯</div>
-                    Hero Attempt Information
+                    {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-2xl mr-2">🎯</div>}
+                    {theme === 'ben10' 
+                      ? 'Hero Attempt Information'
+                      : theme === 'tinkerbell'
+                      ? 'Magic Attempt Information'
+                      : 'Attempt Information'
+                    }
                   </h3>
                   
-                  <div className="bg-black/30 rounded-lg p-4 border border-green-400">
+                  <div className={`bg-black/30 rounded-lg p-4 border ${
+                    theme === 'ben10'
+                      ? 'border-[#64cc4f]'
+                      : theme === 'tinkerbell'
+                      ? 'border-yellow-400'
+                      : 'border-blue-400'
+                  }`}>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="bg-white/10 rounded-lg p-3 border border-green-400">
-                        <p className="text-sm font-medium text-green-200">Attempts Allowed</p>
+                      <div className={`bg-white/10 rounded-lg p-3 border ${
+                        theme === 'ben10'
+                          ? 'border-[#64cc4f]'
+                          : theme === 'tinkerbell'
+                          ? 'border-yellow-400'
+                          : 'border-blue-400'
+                      }`}>
+                        <p className={`text-sm font-medium ${
+                          theme === 'ben10'
+                            ? 'text-[#64cc4f]'
+                            : theme === 'tinkerbell'
+                            ? 'text-yellow-200'
+                            : 'text-blue-200'
+                        }`}>Attempts Allowed</p>
                         <p className="mt-1 text-lg font-bold text-white">
                           {attemptInfo.attemptsAllowed}
                           {isLateSubmissionActive && (
@@ -977,15 +1186,39 @@ export default function TestPage() {
                         </p>
                       </div>
                       
-                      <div className="bg-white/10 rounded-lg p-3 border border-green-400">
-                        <p className="text-sm font-medium text-green-200">Completed Attempts</p>
+                      <div className={`bg-white/10 rounded-lg p-3 border ${
+                        theme === 'ben10'
+                          ? 'border-[#64cc4f]'
+                          : theme === 'tinkerbell'
+                          ? 'border-pink-400'
+                          : 'border-blue-400'
+                      }`}>
+                        <p className={`text-sm font-medium ${
+                          theme === 'ben10'
+                            ? 'text-[#64cc4f]'
+                            : theme === 'tinkerbell'
+                            ? 'text-pink-200'
+                            : 'text-blue-200'
+                        }`}>Completed Attempts</p>
                         <p className="mt-1 text-lg font-bold text-white">
                           {attemptInfo.totalAttempts}
                         </p>
                       </div>
                       
-                      <div className="bg-white/10 rounded-lg p-3 border border-green-400">
-                        <p className="text-sm font-medium text-green-200">Status</p>
+                      <div className={`bg-white/10 rounded-lg p-3 border ${
+                        theme === 'ben10'
+                          ? 'border-[#64cc4f]'
+                          : theme === 'tinkerbell'
+                          ? 'border-pink-400'
+                          : 'border-blue-400'
+                      }`}>
+                        <p className={`text-sm font-medium ${
+                          theme === 'ben10'
+                            ? 'text-[#64cc4f]'
+                            : theme === 'tinkerbell'
+                            ? 'text-pink-200'
+                            : 'text-blue-200'
+                        }`}>Status</p>
                         <p className={`mt-1 text-sm font-medium ${
                           (attemptInfo as any).hasActiveAttempt
                             ? 'text-blue-400'
@@ -1009,16 +1242,45 @@ export default function TestPage() {
                     
                     {/* Active attempts indicator */}
                     {(attemptInfo as any).activeAttempts > 0 && (
-                      <div className="mt-4 bg-green-500/20 border-2 border-green-400 rounded-xl p-4">
+                      <div className={`mt-4 border-2 rounded-xl p-4 ${
+                        theme === 'ben10'
+                          ? 'bg-[#64cc4f]/20 border-[#64cc4f]'
+                          : theme === 'tinkerbell'
+                          ? 'bg-pink-500/20 border-pink-400'
+                          : 'bg-blue-500/20 border-blue-400'
+                      }`}>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center">
-                            <Clock className="h-5 w-5 text-green-400 mr-3" />
-                            <p className="text-sm text-green-200 font-medium">
-                              You have an active hero test in progress. Click "Resume Test" to continue your hero journey! ⚡
+                            <Clock className={`h-5 w-5 mr-3 ${
+                              theme === 'ben10'
+                                ? 'text-[#64cc4f]'
+                                : theme === 'tinkerbell'
+                                ? 'text-pink-400'
+                                : 'text-blue-400'
+                            }`} />
+                            <p className={`text-sm font-medium ${
+                              theme === 'ben10'
+                                ? 'text-[#64cc4f]'
+                                : theme === 'tinkerbell'
+                                ? 'text-pink-200'
+                                : 'text-blue-200'
+                            }`}>
+                              {theme === 'ben10' 
+                                ? 'You have an active hero test in progress. Click "Resume Test" to continue your hero journey! ⚡'
+                                : theme === 'tinkerbell'
+                                ? 'You have an active magical test in progress. Click "Resume Test" to continue your fairy adventure! ✨'
+                                : 'You have an active test in progress. Click "Resume Test" to continue your assessment! 📚'
+                              }
                             </p>
                           </div>
                           {(attemptInfo as any).activeAttemptRemainingMinutes !== undefined && (
-                            <div className="text-sm font-bold text-green-300">
+                            <div className={`text-sm font-bold ${
+                              theme === 'ben10'
+                                ? 'text-[#64cc4f]'
+                                : theme === 'tinkerbell'
+                                ? 'text-pink-300'
+                                : 'text-blue-300'
+                            }`}>
                               {(attemptInfo as any).activeAttemptRemainingMinutes > 0 
                                 ? `${(attemptInfo as any).activeAttemptRemainingMinutes} min left`
                                 : 'Time expired'
@@ -1030,8 +1292,20 @@ export default function TestPage() {
                     )}
                     
                     {attemptInfo.totalAttempts > 0 && (
-                      <div className="mt-4 pt-4 border-t border-green-500/30">
-                        <p className="text-sm text-green-200">
+                      <div className={`mt-4 pt-4 border-t ${
+                        theme === 'ben10'
+                          ? 'border-[#64cc4f]/30'
+                          : theme === 'tinkerbell'
+                          ? 'border-pink-500/30'
+                          : 'border-blue-500/30'
+                      }`}>
+                        <p className={`text-sm ${
+                          theme === 'ben10'
+                            ? 'text-[#64cc4f]'
+                            : theme === 'tinkerbell'
+                            ? 'text-pink-200'
+                            : 'text-blue-200'
+                        }`}>
                           You have completed {attemptInfo.totalAttempts} regular attempt{attemptInfo.totalAttempts !== 1 ? 's' : ''} for this test.
                           {isLateSubmissionActive ? (
                             ' You can use your late submission opportunity to attempt this test.'
@@ -1045,7 +1319,13 @@ export default function TestPage() {
                         {attemptInfo.totalAttempts > 0 && (
                           <button
                             onClick={() => router.push(`/student/test/${testId}/result`)}
-                            className="mt-2 text-sm text-green-400 hover:text-green-300 transition-colors duration-200"
+                            className={`mt-2 text-sm transition-colors duration-200 ${
+                              theme === 'ben10'
+                                ? 'text-[#64cc4f] hover:text-[#b2e05b]'
+                                : theme === 'tinkerbell'
+                                ? 'text-pink-400 hover:text-pink-300'
+                                : 'text-blue-400 hover:text-blue-300'
+                            }`}
                           >
                             View Previous Results →
                           </button>
@@ -1056,18 +1336,44 @@ export default function TestPage() {
                 </div>
               )}
               
-              <div className={`p-4 rounded-md flex items-center mb-6 ${
+              <div className={`p-4 rounded-md flex items-center mb-6 border ${
                 isLateSubmissionActive 
-                  ? 'bg-gradient-to-r from-green-900/40 to-black/60 border border-green-500/30' 
-                  : 'bg-gradient-to-r from-green-900/30 to-black/50 border border-green-500/20'
+                  ? theme === 'ben10'
+                    ? 'bg-gradient-to-r from-[#64cc4f]/40 to-black/60 border-[#64cc4f]/30'
+                    : theme === 'tinkerbell'
+                    ? 'bg-gradient-to-r from-pink-900/40 to-black/60 border-pink-500/30'
+                    : 'bg-gradient-to-r from-blue-900/40 to-black/60 border-blue-500/30'
+                  : theme === 'ben10'
+                  ? 'bg-gradient-to-r from-[#64cc4f]/30 to-black/50 border-[#64cc4f]/20'
+                  : theme === 'tinkerbell'
+                  ? 'bg-gradient-to-r from-pink-900/30 to-black/50 border-pink-500/20'
+                  : 'bg-gradient-to-r from-blue-900/30 to-black/50 border-blue-500/20'
               }`}>
                 <Clock className={`h-5 w-5 mr-3 ${
-                  isLateSubmissionActive ? 'text-green-400' : 'text-green-300'
+                  isLateSubmissionActive 
+                    ? theme === 'ben10'
+                      ? 'text-[#64cc4f]'
+                      : theme === 'tinkerbell'
+                      ? 'text-pink-400'
+                      : 'text-blue-400'
+                    : theme === 'ben10'
+                    ? 'text-[#64cc4f]'
+                    : theme === 'tinkerbell'
+                    ? 'text-pink-300'
+                    : 'text-blue-300'
                 }`} />
                 <p className={`${
                   isLateSubmissionActive 
-                    ? 'text-green-200 font-semibold' 
-                    : 'text-green-100'
+                    ? theme === 'ben10'
+                      ? 'text-[#64cc4f] font-semibold'
+                      : theme === 'tinkerbell'
+                      ? 'text-pink-200 font-semibold'
+                      : 'text-blue-200 font-semibold'
+                    : theme === 'ben10'
+                    ? 'text-[#b2e05b]'
+                    : theme === 'tinkerbell'
+                    ? 'text-purple-100'
+                    : 'text-blue-100'
                 }`}>
                   {testStatus}
                 </p>
@@ -1077,15 +1383,31 @@ export default function TestPage() {
                 <Button
                   onClick={handleBack}
                   variant="outline"
-                  className="border-green-500/50 text-green-300 hover:bg-green-900/30 hover:border-green-400 transition-all duration-200"
+                  className={`border transition-all duration-200 ${
+                    theme === 'ben10'
+                      ? 'border-[#64cc4f]/50 text-[#64cc4f] hover:bg-[#64cc4f]/30 hover:border-[#64cc4f]'
+                      : theme === 'tinkerbell'
+                      ? 'border-pink-500/50 text-pink-300 hover:bg-pink-900/30 hover:border-pink-400'
+                      : 'border-blue-500/50 text-blue-300 hover:bg-blue-900/30 hover:border-blue-400'
+                  }`}
                 >
                   Return to Tests
                 </Button>
                 
                 <Button
                   onClick={handleStartTest}
-                  className={`inline-flex items-center bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 border border-green-500/50 shadow-lg hover:shadow-green-500/25 transition-all duration-200 ${
-                    isLateSubmissionActive ? 'from-orange-600 to-orange-700 hover:from-orange-500 hover:to-orange-600 border-orange-500/50' : ''
+                  className={`inline-flex items-center border shadow-lg transition-all duration-200 ${
+                    isLateSubmissionActive 
+                      ? theme === 'ben10'
+                        ? 'bg-gradient-to-r from-[#64cc4f] to-[#b2e05b] hover:from-[#b2e05b] hover:to-[#64cc4f] border-[#64cc4f] hover:shadow-[#64cc4f]/25'
+                        : theme === 'tinkerbell'
+                        ? 'bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-500 hover:to-orange-600 border-orange-500/50'
+                        : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 border-blue-500/50'
+                      : theme === 'ben10'
+                      ? 'bg-gradient-to-r from-[#64cc4f] to-[#b2e05b] hover:from-[#b2e05b] hover:to-[#64cc4f] border-[#64cc4f]/50 hover:shadow-[#64cc4f]/25'
+                      : theme === 'tinkerbell'
+                      ? 'bg-gradient-to-r from-pink-600 to-pink-700 hover:from-pink-500 hover:to-pink-600 border-pink-500/50'
+                      : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 border-blue-500/50'
                   }`}
                   variant={isLateSubmissionActive ? 'warning' : 'primary'}
                   disabled={!canStart || (!(attemptInfo as any)?.hasActiveAttempt && !attemptInfo?.canCreateNewAttempt && !isLateSubmissionActive) || startingTest}
