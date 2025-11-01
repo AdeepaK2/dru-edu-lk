@@ -1042,7 +1042,7 @@ export default function StudentTests() {
                     alt="Tinkerbell Loading" 
                     className="w-32 h-32 object-contain"
                   />
-                  <span className={`text-2xl font-bold mt-4 ${theme === 'ben10' ? 'text-[#64cc4f]' : theme === 'tinkerbell' ? 'text-yellow-600' : 'text-blue-600'}`}>Loading</span>
+                  <span className={`text-2xl font-bold mt-4 ${theme === 'tinkerbell' ? 'text-yellow-600' : theme === 'ben10' ? 'text-[#64cc4f]' : 'text-blue-600'}`}>Loading</span>
                 </div>
               )}
               
