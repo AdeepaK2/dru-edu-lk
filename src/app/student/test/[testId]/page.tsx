@@ -892,10 +892,10 @@ export default function TestPage() {
         
         <div className={`rounded-3xl shadow-2xl border-4 p-8 mb-6 ${
           theme === 'ben10'
-            ? 'bg-gradient-to-r from-[#64cc4f] via-black to-[#64cc4f] border-[#64cc4f]'
+            ? 'bg-gradient-to-r from-[#4ba539] via-[#3fa32c] to-[#2c761d] border-[#64cc4f]'
             : theme === 'tinkerbell'
             ? 'bg-gradient-to-r from-green-400 via-green-500 to-green-400 border-black'
-            : 'bg-gradient-to-r from-blue-500 via-black to-blue-500 border-black'
+            : 'bg-gradient-to-r from-blue-400 via-blue-500 to-blue-500 border-black'
         }`}>
           <h2 className="text-2xl font-black text-black mb-6 flex items-center">
             {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-4xl mr-3">📊</div>}
@@ -918,10 +918,10 @@ export default function TestPage() {
               }`}>
                 <p className={`text-sm font-medium ${
                   theme === 'ben10'
-                    ? 'text-[#64cc4f]'
+                    ? 'text-black'
                     : theme === 'tinkerbell'
                     ? 'text-black'
-                    : 'text-blue-200'
+                    : 'text-black'
                 }`}>Subject</p>
                 <p className="mt-1 text-white font-bold text-lg">{test.subjectName || 'Unknown Subject'}</p>
               </div>
@@ -1253,17 +1253,17 @@ export default function TestPage() {
                           <div className="flex items-center">
                             <Clock className={`h-5 w-5 mr-3 ${
                               theme === 'ben10'
-                                ? 'text-[#64cc4f]'
+                                ? 'text-black'
                                 : theme === 'tinkerbell'
-                                ? 'text-pink-400'
-                                : 'text-blue-400'
+                                ? 'text-black'
+                                : 'text-black'
                             }`} />
                             <p className={`text-sm font-medium ${
                               theme === 'ben10'
-                                ? 'text-[#64cc4f]'
+                                ? 'text-black'
                                 : theme === 'tinkerbell'
-                                ? 'text-pink-200'
-                                : 'text-blue-200'
+                                ? 'text-black'
+                                : 'text-black'
                             }`}>
                               {theme === 'ben10' 
                                 ? 'You have an active hero test in progress. Click "Resume Test" to continue your hero journey! ⚡'
@@ -1352,28 +1352,41 @@ export default function TestPage() {
                 <Clock className={`h-5 w-5 mr-3 ${
                   isLateSubmissionActive 
                     ? theme === 'ben10'
-                      ? 'text-[#64cc4f]'
+                      ? 'text-black'
                       : theme === 'tinkerbell'
-                      ? 'text-pink-400'
-                      : 'text-blue-400'
+                      ? 'text-black'
+                      : 'text-black'
                     : theme === 'ben10'
-                    ? 'text-[#64cc4f]'
+                    ? 'text-black'
                     : theme === 'tinkerbell'
-                    ? 'text-pink-300'
-                    : 'text-blue-300'
+                    ? 'text-black'
+                    : 'text-black'
                 }`} />
                 <p className={`${
                   isLateSubmissionActive 
                     ? theme === 'ben10'
-                      ? 'text-[#64cc4f] font-semibold'
+                      ? 'text-black font-semibold'
                       : theme === 'tinkerbell'
-                      ? 'text-pink-200 font-semibold'
-                      : 'text-blue-200 font-semibold'
+                      ? 'text-black font-semibold'
+                      : 'text-black font-semibold'
                     : theme === 'ben10'
-                    ? 'text-[#b2e05b]'
+                    ? 'text-black'
                     : theme === 'tinkerbell'
-                    ? 'text-purple-100'
-                    : 'text-blue-100'
+                    ? 'text-black'
+                    : 'text-black'
+                }`} />
+                <p className={`${
+                  isLateSubmissionActive 
+                    ? theme === 'ben10'
+                      ? 'text-black font-semibold'
+                      : theme === 'tinkerbell'
+                      ? 'text-black font-semibold'
+                      : 'text-black font-semibold'
+                    : theme === 'ben10'
+                    ? 'text-black'
+                    : theme === 'tinkerbell'
+                    ? 'text-black'
+                    : 'text-black'
                 }`}>
                   {testStatus}
                 </p>
