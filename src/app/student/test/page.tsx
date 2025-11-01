@@ -1042,7 +1042,7 @@ export default function StudentTests() {
                     alt="Tinkerbell Loading" 
                     className="w-32 h-32 object-contain"
                   />
-                  <span className="text-2xl font-bold text-yellow-600 mt-4">Loading</span>
+                  <span className={`text-2xl font-bold mt-4 ${theme === 'tinkerbell' ? 'text-yellow-600' : theme === 'ben10' ? 'text-[#64cc4f]' : 'text-blue-600'}`}>Loading</span>
                 </div>
               )}
               
@@ -1623,7 +1623,7 @@ export default function StudentTests() {
           const completedCount = classData.groupedTests.completed.length;
 
           return (
-            <div key={classId} className={`rounded-3xl shadow-2xl border-4 border-black overflow-hidden ${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] via-black to-[#64cc4f]' : 'bg-gradient-to-r from-yellow-300 via-black to-yellow-300'}`}>
+            <div key={classId} className={`rounded-3xl shadow-2xl border-4 border-black overflow-hidden ${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] via-black to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 via-black to-yellow-300' : 'bg-gradient-to-r from-blue-300 via-black to-blue-300'}`}>
               {/* Class Header */}
               <div
                 className={`p-6 border-b-4 border-black cursor-pointer transition-all ${theme === 'ben10' ? 'bg-[#b2e05b] hover:bg-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-yellow-200 hover:bg-yellow-200' : 'bg-blue-200 hover:bg-blue-200'}`}
@@ -1675,7 +1675,7 @@ export default function StudentTests() {
               {isExpanded && (
                 <div className="divide-y divide-gray-200 dark:divide-gray-700">
                   {!hasTests ? (
-                    <div className={`p-8 text-center rounded-2xl border-4 border-black m-4 ${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] via-black to-[#b2e05b]' : 'bg-gradient-to-r from-yellow-100 via-black to-yellow-100'}`}>
+                    <div className={`p-8 text-center rounded-2xl border-4 border-black m-4 ${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] via-black to-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-100 via-black to-yellow-100' : 'bg-gradient-to-r from-blue-100 via-black to-blue-100'}`}>
                       {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-6xl mb-4">📚</div>}
                       <h3 className="text-2xl font-black text-white mb-2">
                         No Tests Yet
@@ -1745,7 +1745,7 @@ export default function StudentTests() {
                                       disabled={buttonConfig.disabled}
                                       className={`inline-flex items-center px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black ${
                                         buttonConfig.variant === 'primary' && !buttonConfig.disabled
-                                          ? `${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222] hover:from-[#b2e05b] hover:to-[#222222]' : 'bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600'} text-white`
+                                          ? `${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222] hover:from-[#b2e05b] hover:to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600' : 'bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600'} text-white`
                                           : 'bg-gradient-to-r from-gray-400 to-gray-500 text-white'
                                       }`}
                                     >
@@ -1941,7 +1941,7 @@ export default function StudentTests() {
                                       disabled={buttonConfig.disabled}
                                       className={`inline-flex items-center px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black ${
                                         buttonConfig.variant === 'primary' && !buttonConfig.disabled
-                                          ? `${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222] hover:from-[#b2e05b] hover:to-[#222222]' : 'bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600'} text-white`
+                                          ? `${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222] hover:from-[#b2e05b] hover:to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600' : 'bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600'} text-white`
                                           : 'bg-gradient-to-r from-gray-400 to-gray-500 text-white'
                                       }`}
                                     >
@@ -1959,7 +1959,7 @@ export default function StudentTests() {
                       {/* Completed Tests */}
                       {classData.groupedTests.completed.length > 0 && (
                         <>
-                          <div className={`px-6 py-4 border-b-4 border-black ${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 to-pink-300' : 'bg-gradient-to-r from-blue-300 to-indigo-300'}`}>
+                          <div className={`px-6 py-4 border-b-4 border-black ${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 to-green-300' : 'bg-gradient-to-r from-blue-300 to-indigo-300'}`}>
                             <div className="flex items-center justify-between">
                               <div className="flex items-center">
                                 {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-2xl mr-3">✅</div>}
@@ -1999,7 +1999,7 @@ export default function StudentTests() {
                             const hasAttempted = attempts && attempts.attempts && attempts.attempts.length > 0;
 
                             return (
-                              <div key={test.id} className={`p-6 transition-all border-b-2 border-black last:border-b-0 ${theme === 'ben10' ? 'hover:bg-[#b2e05b]/20' : theme === 'tinkerbell' ? 'hover:bg-pink-200/20' : 'hover:bg-blue-200/20'}`}>
+                              <div key={test.id} className={`p-6 transition-all border-b-2 border-black last:border-b-0 ${theme === 'ben10' ? 'hover:bg-[#b2e05b]/20' : theme === 'tinkerbell' ? 'hover:bg-yellow-200/20' : 'hover:bg-blue-200/20'}`}>
                                 <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                                   <div>
                                     <div className="flex items-center space-x-3">
@@ -2021,7 +2021,7 @@ export default function StudentTests() {
                                         }
                                       </span>
                                       {hasAttempted ? (
-                                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-black text-white border-2 border-black ${theme === 'ben10' ? 'bg-[#64cc4f]' : 'bg-yellow-500'}`}>
+                                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-black text-white border-2 border-black ${theme === 'ben10' ? 'bg-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-yellow-500' : 'bg-blue-500'}`}>
                                           Attempted
                                         </span>
                                       ) : (
@@ -2051,7 +2051,7 @@ export default function StudentTests() {
                                       disabled={buttonConfig.disabled}
                                       className={`inline-flex items-center px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black ${
                                         buttonConfig.variant === 'primary' && !buttonConfig.disabled
-                                          ? `${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222] hover:from-[#b2e05b] hover:to-[#222222]' : 'bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600'} text-white`
+                                          ? `${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222] hover:from-[#b2e05b] hover:to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600' : 'bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600'} text-white`
                                           : 'bg-gradient-to-r from-gray-400 to-gray-500 text-white'
                                       }`}
                                     >

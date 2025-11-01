@@ -92,7 +92,7 @@ export class LateSubmissionAttemptService {
       
       // Check if deadline has passed
       const now = Timestamp.now();
-      if (now.seconds > lateSubmission.deadline.seconds) {
+      if (now.seconds > lateSubmission.newDeadline.seconds) {
         throw new Error('Late submission deadline has passed');
       }
       
@@ -168,7 +168,7 @@ export class LateSubmissionAttemptService {
         originalTestEndTime: test.type === 'flexible' 
           ? (test as FlexibleTest).availableTo 
           : (test as LiveTest).actualEndTime,
-        lateSubmissionDeadline: lateSubmission.deadline
+        lateSubmissionDeadline: lateSubmission.newDeadline
       };
 
       // Remove undefined values
@@ -292,7 +292,7 @@ export class LateSubmissionAttemptService {
       
       // Check if deadline has passed
       const now = Timestamp.now();
-      if (now.seconds > lateSubmission.deadline.seconds) {
+      if (now.seconds > lateSubmission.newDeadline.seconds) {
         return { canCreate: false, reason: 'Late submission deadline has passed' };
       }
       
