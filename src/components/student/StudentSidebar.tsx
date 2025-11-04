@@ -208,10 +208,25 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
       bam: '/bounceworld/Bam Adebayowebp.webp'
     };
 
+    // CricketVerse avatars (Cricket players)
+    const cricketVerseMap: Record<string, string> = {
+      virat: '/cricketverse/VIRAT KOHLI.avif',
+      rohit: '/cricketverse/ROHIT SHARMA.avif',
+      shubman: '/cricketverse/SHUBMAN GILL.avif',
+      klrahul: '/cricketverse/KL RAHUL.avif',
+      rishabh: '/cricketverse/RISHABH PANT.avif',
+      hardik: '/cricketverse/HARDIK PANDYA.avif',
+      jadeja: '/cricketverse/RAVINDRA JADEJAavif.avif',
+      bumrah: '/cricketverse/JASPRIT BUMRAH.avif',
+      shami: '/cricketverse/MOHAMMAD SHAMI.avif',
+      siraj: '/cricketverse/MOHAMMED SIRAJ.avif'
+    };
+
     if (ben10Map[avatarId]) return ben10Map[avatarId];
     if (tinkerMap[avatarId]) return tinkerMap[avatarId];
     if (avengersMap[avatarId]) return avengersMap[avatarId];
     if (bounceWorldMap[avatarId]) return bounceWorldMap[avatarId];
+    if (cricketVerseMap[avatarId]) return cricketVerseMap[avatarId];
 
     // If avatarId looks like a path, return it directly
     if (avatarId.startsWith('/') || avatarId.includes('.png') || avatarId.includes('.jpg') || avatarId.includes('.avif') || avatarId.includes('.webp')) {
@@ -333,7 +348,7 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
               <div className="flex-shrink-0 overflow-hidden">
                 {(() => {
                   const avatarPath = getAvatarImagePath((student as any)?.avatar);
-                  if (avatarPath && (theme === 'ben10' || theme === 'tinkerbell' || theme === 'avengers' || theme === 'bounceworld')) {
+                  if (avatarPath && (theme === 'ben10' || theme === 'tinkerbell' || theme === 'avengers' || theme === 'bounceworld' || theme === 'cricketverse')) {
                     return (
                       <Image 
                         key={`avatar-${avatarKey}-${(student as any)?.avatar || 'default'}`} 
@@ -348,7 +363,7 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
 
                   return (
                     <span className="text-3xl font-black">
-                      {theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'bounceworld' ? '🏀' : theme === 'avengers' ? '🦸‍♂️' : '📚'}
+                      {theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'bounceworld' ? '🏀' : theme === 'cricketverse' ? '🏏' : theme === 'avengers' ? '🦸‍♂️' : '📚'}
                     </span>
                   );
                 })()}

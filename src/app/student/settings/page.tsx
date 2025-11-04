@@ -266,6 +266,80 @@ const avengersAvatars = [
   }
 ];
 
+// CricketVerse themed avatars - Cricket Champions
+const cricketverseAvatars = [
+  {
+    id: 'virat',
+    name: 'Virat Kohli',
+    image: '/cricketverse/VIRAT KOHLI.avif',
+    description: 'The King of Cricket — chase master and run machine!',
+    colors: 'from-blue-500 to-indigo-600'
+  },
+  {
+    id: 'rohit',
+    name: 'Rohit Sharma',
+    image: '/cricketverse/ROHIT SHARMA.avif',
+    description: 'Hitman — opener extraordinaire and captain cool!',
+    colors: 'from-blue-500 to-indigo-600'
+  },
+  {
+    id: 'shubman',
+    name: 'Shubman Gill',
+    image: '/cricketverse/SHUBMAN GILL.avif',
+    description: 'The Gill-man — elegant batsman and future star!',
+    colors: 'from-blue-500 to-indigo-600'
+  },
+  {
+    id: 'klrahul',
+    name: 'KL Rahul',
+    image: '/cricketverse/KL RAHUL.avif',
+    description: 'The Wall — dependable opener and wicketkeeper!',
+    colors: 'from-blue-500 to-indigo-600'
+  },
+  {
+    id: 'rishabh',
+    name: 'Rishabh Pant',
+    image: '/cricketverse/RISHABH PANT.avif',
+    description: 'The Destroyer — aggressive finisher and keeper!',
+    colors: 'from-blue-500 to-indigo-600'
+  },
+  {
+    id: 'hardik',
+    name: 'Hardik Pandya',
+    image: '/cricketverse/HARDIK PANDYA.avif',
+    description: 'All-rounder supreme — bowler, batsman, fielder!',
+    colors: 'from-blue-500 to-indigo-600'
+  },
+  {
+    id: 'jadeja',
+    name: 'Ravindra Jadeja',
+    image: '/cricketverse/RAVINDRA JADEJAavif.avif',
+    description: 'Sir Jadeja — magician with ball and bat!',
+    colors: 'from-blue-500 to-indigo-600'
+  },
+  {
+    id: 'bumrah',
+    name: 'Jasprit Bumrah',
+    image: '/cricketverse/JASPRIT BUMRAH.avif',
+    description: 'Bumrah Bhai — death bowler and yorker king!',
+    colors: 'from-blue-500 to-indigo-600'
+  },
+  {
+    id: 'shami',
+    name: 'Mohammad Shami',
+    image: '/cricketverse/MOHAMMAD SHAMI.avif',
+    description: 'The Speedster — express pace and lethal swing!',
+    colors: 'from-blue-500 to-indigo-600'
+  },
+  {
+    id: 'siraj',
+    name: 'Mohammed Siraj',
+    image: '/cricketverse/MOHAMMED SIRAJ.avif',
+    description: 'Siraj Bhai — rising pace sensation!',
+    colors: 'from-blue-500 to-indigo-600'
+  }
+];
+
 export default function StudentSettingsPage() {
   const { student, loading: authLoading, refreshStudent } = useStudentAuth();
 
@@ -335,6 +409,8 @@ export default function StudentSettingsPage() {
         defaultAvatar = student.avatar || 'lebron';
       } else if (selectedTheme === 'avengers' || theme === 'avengers') {
         defaultAvatar = student.avatar || 'ironman'; // Default to Iron Man for Avengers theme
+      } else if (selectedTheme === 'cricketverse' || theme === 'cricketverse') {
+        defaultAvatar = student.avatar || 'virat'; // Default to Virat Kohli for CricketVerse theme
       } else {
         // default theme: avatars disabled
         defaultAvatar = '';
@@ -386,6 +462,7 @@ export default function StudentSettingsPage() {
     if (selectedTheme === 'ben10' || theme === 'ben10') return ben10Avatars;
     if (selectedTheme === 'bounceworld' || theme === 'bounceworld') return bounceworldAvatars;
     if (selectedTheme === 'avengers' || theme === 'avengers') return avengersAvatars;
+    if (selectedTheme === 'cricketverse' || theme === 'cricketverse') return cricketverseAvatars;
     return [];
   };
 
