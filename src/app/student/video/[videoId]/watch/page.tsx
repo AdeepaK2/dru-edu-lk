@@ -146,7 +146,17 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
               </div>
             </div>
             <div className="mt-4 flex space-x-3">
-              <Button onClick={handleGoBack} variant="outline">
+              <Button onClick={handleGoBack} className={`border-2 ${
+                theme === 'ben10'
+                  ? 'border-[#64cc4f] bg-white hover:bg-[#64cc4f]/10 text-[#222222]'
+                  : theme === 'tinkerbell'
+                  ? 'border-yellow-400 bg-white hover:bg-yellow-50 text-yellow-900'
+                  : theme === 'bounceworld'
+                  ? 'border-[#1D428A] bg-white hover:bg-[#1D428A]/10 text-[#1D428A]'
+                  : theme === 'avengers'
+                  ? 'border-[#604AC7] bg-white hover:bg-[#604AC7]/10 text-[#604AC7]'
+                  : 'border-gray-300 bg-white hover:bg-gray-50 text-gray-700'
+              }`}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Go Back
               </Button>
