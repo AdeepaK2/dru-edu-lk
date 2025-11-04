@@ -1582,11 +1582,11 @@ export default function StudentTests() {
                 {/* Completed Custom Tests */}
                 {groupedCustomTests.completed.length > 0 && (
                   <>
-                    <div className={`px-6 py-4 border-b-4 border-black ${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 to-pink-300' : theme === 'avengers' ? 'bg-gradient-to-r from-[#C88DA5]/30 to-[#604AC7]/30' : 'bg-gradient-to-r from-blue-300 to-indigo-300'}`}>
+                    <div className={`px-6 py-4 border-b-4 border-black ${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 to-pink-300' : theme === 'avengers' ? 'bg-gradient-to-r from-[#C88DA5]/30 to-[#604AC7]/30' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]/20' : 'bg-gradient-to-r from-blue-300 to-indigo-300'}`}>
                       <div className="flex items-center">
-                        {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-2xl mr-3">✅</div>}
+                        {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-2xl mr-3">{theme === 'ponyville' ? '🦄' : '✅'}</div>}
                         <span className="text-lg font-black text-black">
-                          Completed ({groupedCustomTests.completed.length})
+                          {theme === 'ponyville' ? `Magical Completed (${groupedCustomTests.completed.length})` : `Completed (${groupedCustomTests.completed.length})`}
                         </span>
                       </div>
                     </div>
@@ -1679,10 +1679,10 @@ export default function StudentTests() {
           const completedCount = classData.groupedTests.completed.length;
 
           return (
-            <div key={classId} className={`rounded-3xl shadow-2xl border-4 border-black overflow-hidden ${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] via-black to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 via-black to-yellow-300' : theme === 'bounceworld' ? 'bg-gradient-to-r from-white via-[#1D428A]/20 to-white border-[#1D428A]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7] via-[#2C1267] to-[#0F0826]' : 'bg-gradient-to-r from-blue-300 via-black to-blue-300'}`}>
+            <div key={classId} className={`rounded-3xl shadow-2xl border-4 border-black overflow-hidden ${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] via-black to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 via-black to-yellow-300' : theme === 'bounceworld' ? 'bg-gradient-to-r from-white via-[#1D428A]/20 to-white border-[#1D428A]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7] via-[#2C1267] to-[#0F0826]' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]/20 border-[#e13690]' : 'bg-gradient-to-r from-blue-300 via-black to-blue-300'}`}>
               {/* Class Header */}
               <div
-                className={`p-6 border-b-4 border-black cursor-pointer transition-all ${theme === 'ben10' ? 'bg-[#b2e05b] hover:bg-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-yellow-200 hover:bg-yellow-200' : theme === 'bounceworld' ? 'bg-white hover:bg-gray-50 border-[#1D428A]' : theme === 'avengers' ? 'bg-[#604AC7]/30 hover:bg-[#604AC7]/40' : 'bg-blue-200 hover:bg-blue-200'}`}
+                className={`p-6 border-b-4 border-black cursor-pointer transition-all ${theme === 'ben10' ? 'bg-[#b2e05b] hover:bg-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-yellow-200 hover:bg-yellow-200' : theme === 'bounceworld' ? 'bg-white hover:bg-gray-50 border-[#1D428A]' : theme === 'avengers' ? 'bg-[#604AC7]/30 hover:bg-[#604AC7]/40' : theme === 'ponyville' ? 'bg-[#f1aed5] hover:bg-[#f1aed5]/80' : 'bg-blue-200 hover:bg-blue-200'}`}
                 onClick={() => toggleClass(classId)}
               >
                 <div className="flex items-center justify-between">
@@ -1907,11 +1907,11 @@ export default function StudentTests() {
                       {/* Available Tests */}
                       {classData.groupedTests.available.length > 0 && (
                         <>
-                          <div className={`px-6 py-4 border-b-4 border-black ${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 to-green-300' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A]/10 to-[#C8102E]/10' : 'bg-gradient-to-r from-blue-300 to-cyan-300'}`}>
+                          <div className={`px-6 py-4 border-b-4 border-black ${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 to-green-300' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A]/10 to-[#C8102E]/10' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]/20' : 'bg-gradient-to-r from-blue-300 to-cyan-300'}`}>
                             <div className="flex items-center">
-                             
+                              {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-2xl mr-3">{theme === 'ponyville' ? '🦄' : '🎯'}</div>}
                               <span className="text-lg font-black text-black">
-                                Available ({classData.groupedTests.available.length})
+                                {theme === 'ponyville' ? `Magical Available (${classData.groupedTests.available.length})` : `Available (${classData.groupedTests.available.length})`}
                               </span>
                             </div>
                           </div>
@@ -2015,12 +2015,12 @@ export default function StudentTests() {
                       {/* Completed Tests */}
                       {classData.groupedTests.completed.length > 0 && (
                         <>
-                          <div className={`px-6 py-4 border-b-4 border-black ${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 to-green-300' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A]/10 to-[#C8102E]/10' : theme === 'avengers' ? 'bg-gradient-to-r from-[#C88DA5]/30 to-[#604AC7]/30' : 'bg-gradient-to-r from-blue-300 to-indigo-300'}`}>
+                          <div className={`px-6 py-4 border-b-4 border-black ${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 to-green-300' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A]/10 to-[#C8102E]/10' : theme === 'avengers' ? 'bg-gradient-to-r from-[#C88DA5]/30 to-[#604AC7]/30' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]/20' : 'bg-gradient-to-r from-blue-300 to-indigo-300'}`}>
                             <div className="flex items-center justify-between">
                               <div className="flex items-center">
-                                {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-2xl mr-3">✅</div>}
+                                {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-2xl mr-3">{theme === 'ponyville' ? '🦄' : '✅'}</div>}
                                 <span className="text-lg font-black text-black">
-                                  Completed ({classData.groupedTests.completed.length})
+                                  {theme === 'ponyville' ? `Magical Completed (${classData.groupedTests.completed.length})` : `Completed (${classData.groupedTests.completed.length})`}
                                 </span>
                               </div>
                               {classData.groupedTests.completed.length > 3 && (
