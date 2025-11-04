@@ -474,7 +474,7 @@ export default function StudentMeetingPage() {
   // Show loading spinner while authenticating or loading data
   if (authLoading || loading) {
     return (
-      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A] to-[#C8102E]' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]' : 'from-blue-400 to-indigo-600'} flex items-center justify-center`}>
+      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A] to-[#C8102E]' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]' : theme === 'ponyville' ? 'from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : 'from-blue-400 to-indigo-600'} flex items-center justify-center`}>
         <div className={`bg-white border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : 'border-black'} rounded-3xl p-8 shadow-2xl`}>
           {/* Theme-Specific Loading Animation */}
           <div className="relative mb-6 flex flex-col items-center">
@@ -537,9 +537,17 @@ export default function StudentMeetingPage() {
                 <span className="text-2xl font-bold text-blue-600 mt-4">Loading</span>
               </div>
             )}
+
+            {/* Ponyville Loading Animation */}
+            {theme === 'ponyville' && (
+              <div className="flex flex-col items-center">
+                <div className="text-6xl mb-4">🦄</div>
+                <span className="text-2xl font-bold text-[#e13690] mt-4">Casting Magic</span>
+              </div>
+            )}
             
             {/* Default Theme Spinner with Loading Text */}
-            {theme !== 'tinkerbell' && theme !== 'ben10' && theme !== 'bounceworld' && theme !== 'avengers' && theme !== 'cricketverse' && (
+            {theme !== 'tinkerbell' && theme !== 'ben10' && theme !== 'bounceworld' && theme !== 'avengers' && theme !== 'cricketverse' && theme !== 'ponyville' && (
               <div className="flex flex-col items-center">
                 <div className="w-24 h-24 border-4 border-blue-400 border-t-blue-600 rounded-full animate-spin"></div>
                 <span className="text-2xl font-bold text-blue-600 mt-4">Loading</span>
@@ -548,8 +556,8 @@ export default function StudentMeetingPage() {
           </div>
           <div className="text-center">
             <h2 className="text-2xl font-black text-black mb-2">Loading Meetings...</h2>
-            <p className={`text-gray-600 font-medium ${theme === 'bounceworld' ? 'text-[#1D428A]' : theme === 'avengers' ? 'text-[#2C1267]' : ''}`}>
-              {theme === 'bounceworld' ? 'Get ready to slam dunk your meeting schedule! 🏀' : theme === 'avengers' ? 'Assemble your meeting schedule! 🦸‍♂️' : 'Get ready to transform your learning!'}
+            <p className={`text-gray-600 font-medium ${theme === 'bounceworld' ? 'text-[#1D428A]' : theme === 'avengers' ? 'text-[#2C1267]' : theme === 'ponyville' ? 'text-[#e13690]' : ''}`}>
+              {theme === 'bounceworld' ? 'Get ready to slam dunk your meeting schedule! 🏀' : theme === 'avengers' ? 'Assemble your meeting schedule! 🦸‍♂️' : theme === 'ponyville' ? 'Get ready to cast magical meeting spells! ✨🦄' : 'Get ready to transform your learning!'}
             </p>
           </div>
         </div>
@@ -575,24 +583,24 @@ export default function StudentMeetingPage() {
   }
 
   return (
-    <div key={`meeting-${theme}`} className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A]/20 to-[#C8102E]/20' : theme === 'avengers' ? 'bg-gradient-to-br from-[#2C1267] via-[#604AC7]/20 to-[#0F0826]' : 'bg-gradient-to-br from-blue-600 via-indigo-700 to-slate-900'} p-6`}>
+    <div key={`meeting-${theme}`} className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A]/20 to-[#C8102E]/20' : theme === 'avengers' ? 'bg-gradient-to-br from-[#2C1267] via-[#604AC7]/20 to-[#0F0826]' : theme === 'ponyville' ? 'bg-gradient-to-br from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]' : 'bg-gradient-to-br from-blue-600 via-indigo-700 to-slate-900'} p-6`}>
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Theme-aware Header */}
-        <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-lime-800' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#2C1267] via-[#604AC7] to-[#0F0826]' : 'bg-gradient-to-r from-blue-600 via-indigo-700 to-slate-800'} rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : 'border-black'} p-8 relative overflow-hidden`}>
+        <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-lime-800' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#2C1267] via-[#604AC7] to-[#0F0826]' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : 'bg-gradient-to-r from-blue-600 via-indigo-700 to-slate-800'} rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} p-8 relative overflow-hidden`}>
           
 
           <div className="flex items-center justify-between relative z-10">
             <div className="flex items-center space-x-4">
-              <div className={`text-6xl ${theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-white' : ''}`}>{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'bounceworld' ? '🏀' : theme === 'avengers' ? '🦸‍♂️' : ''}</div>
+              <div className={`text-6xl ${theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-white' : theme === 'ponyville' ? 'text-white' : ''}`}>{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'bounceworld' ? '🏀' : theme === 'avengers' ? '🦸‍♂️' : theme === 'ponyville' ? '🦄' : ''}</div>
               <div>
                 <h1 className="text-4xl font-black text-black mb-2 flex items-center">
           
           
-                  <span className={`ml-2 text-4xl ${theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-white' : 'text-black'}`}>Meeting</span>
-                  <span className={`ml-2 text-4xl ${theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-white' : 'text-black'}`}>Scheduler</span>
+                  <span className={`ml-2 text-4xl ${theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-white' : theme === 'ponyville' ? 'text-white' : 'text-black'}`}>Meeting</span>
+                  <span className={`ml-2 text-4xl ${theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-white' : theme === 'ponyville' ? 'text-white' : 'text-black'}`}>Scheduler</span>
                  
                 </h1>
-                <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-white' : theme === 'tinkerbell' ? 'text-yellow-100' : theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-[#C88DA5]' : 'text-blue-100'}`}>
+                <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-white' : theme === 'tinkerbell' ? 'text-yellow-100' : theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-[#C88DA5]' : theme === 'ponyville' ? 'text-white' : 'text-blue-100'}`}>
                   {theme === 'bounceworld'
                     ? `Welcome back, ${student?.name}! Slam dunk your one-on-one sessions with your teachers! 🏀`
                     : theme === 'ben10'
@@ -601,6 +609,8 @@ export default function StudentMeetingPage() {
                     ? `Welcome back, ${student?.name}! Schedule magical one-on-one sessions with your teachers!`
                     : theme === 'avengers'
                     ? `Welcome back, ${student?.name}! Assemble your one-on-one sessions with your teachers! 🦸‍♂️`
+                    : theme === 'ponyville'
+                    ? `Welcome back, ${student?.name}! Cast magical one-on-one sessions with your teachers! ✨🦄`
                     : `Welcome back, ${student?.name}! Schedule one-on-one sessions with your teachers!`}
                 </p>
               </div>
@@ -640,8 +650,10 @@ export default function StudentMeetingPage() {
                 ? 'from-[#1D428A]/20 to-[#C8102E]/20'
                 : theme === 'avengers'
                 ? 'from-[#2C1267]/20 to-[#604AC7]/20'
+                : theme === 'ponyville'
+                ? 'from-[#f1aed5]/20 to-[#e13690]/20'
                 : 'from-blue-200 to-indigo-200'
-            } rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : 'border-black'} p-6 mt-6`}>
+            } rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} p-6 mt-6`}>
               <div className="flex items-center space-x-4">
                 <div className="text-4xl">🎉</div>
                 <div>
@@ -668,6 +680,8 @@ export default function StudentMeetingPage() {
                         ? 'bg-gradient-to-r from-[#1D428A] to-[#C8102E]'
                         : theme === 'avengers'
                         ? 'bg-gradient-to-r from-[#2C1267] to-[#604AC7]'
+                        : theme === 'ponyville'
+                        ? 'bg-gradient-to-r from-[#f1aed5] to-[#e13690]'
                         : 'bg-gradient-to-r from-blue-400 to-indigo-600'
                     } text-white border-2 border-black`
                   : 'bg-gray-100 hover:bg-gray-200 text-black border-2 border-gray-300'
@@ -688,6 +702,8 @@ export default function StudentMeetingPage() {
                         ? 'bg-gradient-to-r from-[#1D428A] to-[#C8102E]'
                         : theme === 'avengers'
                         ? 'bg-gradient-to-r from-[#2C1267] to-[#604AC7]'
+                        : theme === 'ponyville'
+                        ? 'bg-gradient-to-r from-[#f1aed5] to-[#e13690]'
                         : 'bg-gradient-to-r from-blue-400 to-indigo-600'
                     } text-white border-2 border-black`
                   : 'bg-gray-100 hover:bg-gray-200 text-black border-2 border-gray-300'
@@ -701,7 +717,7 @@ export default function StudentMeetingPage() {
         {activeTab === 'select' && (
           <>
             {/* Theme-aware Class Selection */}
-            <div className={`bg-white rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : 'border-black'} p-6`}>
+            <div className={`bg-white rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} p-6`}>
               <div className="flex items-center space-x-4 mb-6">
               
                 <div>
@@ -721,7 +737,7 @@ export default function StudentMeetingPage() {
                       setSelectedClass(e.target.value);
                       setExpandedTeacher(''); // Reset expanded teacher when class changes
                     }}
-                    className="w-full p-4 border-4 border-black rounded-3xl bg-white text-black font-bold text-lg focus:ring-4 focus:ring-green-400 focus:border-black"
+                    className={`w-full p-4 border-4 border-black rounded-3xl bg-white text-black font-bold text-lg focus:ring-4 ${theme === 'ponyville' ? 'focus:ring-[#e13690]' : 'focus:ring-green-400'} focus:border-black`}
                   >
                     <option value="">All Classes</option>
                     {classes.map(cls => (
@@ -735,14 +751,14 @@ export default function StudentMeetingPage() {
             </div>
 
             {/* Theme-aware Teachers List */}
-            <div className={`bg-white rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : 'border-black'} overflow-hidden`}>
-              <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#2C1267] via-[#604AC7] to-[#0F0826]' : 'bg-gradient-to-r from-blue-600 to-indigo-600'} text-white p-6 border-b-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : 'border-black'}`}>
+            <div className={`bg-white rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} overflow-hidden`}>
+              <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#2C1267] via-[#604AC7] to-[#0F0826]' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : 'bg-gradient-to-r from-blue-600 to-indigo-600'} text-white p-6 border-b-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'}`}>
                 <h2 className="text-2xl text-black font-black flex items-center">
-                  <span className="text-3xl mr-3">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'bounceworld' ? '🏀' : theme === 'avengers' ? '🦸‍♂️' : '👨‍🏫'}</span>
+                  <span className="text-3xl mr-3">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'bounceworld' ? '🏀' : theme === 'avengers' ? '🦸‍♂️' : theme === 'ponyville' ? '🦄' : '👨‍🏫'}</span>
                   Available Teachers
                 </h2>
-                <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-white' : theme === 'tinkerbell' ? 'text-yellow-100' : theme === 'bounceworld' ? 'text-[#1D428A]' : theme === 'avengers' ? 'text-[#C88DA5]' : 'text-blue-100'}`}>
-                  {theme === 'bounceworld' ? 'Click on a teacher to slam dunk your time slot selection! 🏀' : theme === 'avengers' ? 'Click on a teacher to assemble your time slot selection! 🦸‍♂️' : 'Click on a teacher to see their time slots'}
+                <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-white' : theme === 'tinkerbell' ? 'text-yellow-100' : theme === 'bounceworld' ? 'text-[#1D428A]' : theme === 'avengers' ? 'text-[#C88DA5]' : theme === 'ponyville' ? 'text-white' : 'text-blue-100'}`}>
+                  {theme === 'bounceworld' ? 'Click on a teacher to slam dunk your time slot selection! 🏀' : theme === 'avengers' ? 'Click on a teacher to assemble your time slot selection! 🦸‍♂️' : theme === 'ponyville' ? 'Click on a teacher to cast magical time slot spells! ✨🦄' : 'Click on a teacher to see their time slots'}
                 </p>
               </div>
 
@@ -754,7 +770,7 @@ export default function StudentMeetingPage() {
                       No Teachers Available Yet
                     </h3>
                     <p className="text-gray-600 font-bold text-lg">
-                      {theme === 'ben10' ? 'Hero' : theme === 'tinkerbell' ? 'Magical' : theme === 'bounceworld' ? 'Slam dunk' : theme === 'avengers' ? 'Heroic' : 'Learning'} teachers will appear here once they set up their schedules! {theme === 'ben10' ? '⚡' : theme === 'tinkerbell' ? '✨' : theme === 'bounceworld' ? '🏀' : theme === 'avengers' ? '🦸‍♂️' : '📚'}
+                      {theme === 'ben10' ? 'Hero' : theme === 'tinkerbell' ? 'Magical' : theme === 'bounceworld' ? 'Slam dunk' : theme === 'avengers' ? 'Heroic' : theme === 'ponyville' ? 'Magical' : 'Learning'} teachers will appear here once they set up their schedules! {theme === 'ben10' ? '⚡' : theme === 'tinkerbell' ? '✨' : theme === 'bounceworld' ? '🏀' : theme === 'avengers' ? '🦸‍♂️' : theme === 'ponyville' ? '✨🦄' : '📚'}
                     </p>
                   </div>
                 ) : (
@@ -775,8 +791,8 @@ export default function StudentMeetingPage() {
                           >
                             <div className="flex items-center justify-between">
                               <div className="flex items-center space-x-4">
-                                <div className={`w-16 h-16 ${theme === 'bounceworld' ? 'bg-gradient-to-br from-[#1D428A] to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-br from-[#2C1267] to-[#604AC7]' : 'bg-gradient-to-br from-yellow-400 to-orange-400'} rounded-3xl flex items-center justify-center border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : 'border-black'} shadow-lg`}>
-                                  <span className={`text-2xl font-black ${theme === 'bounceworld' ? 'text-white' : 'text-black'}`}>
+                                <div className={`w-16 h-16 ${theme === 'bounceworld' ? 'bg-gradient-to-br from-[#1D428A] to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-br from-[#2C1267] to-[#604AC7]' : theme === 'ponyville' ? 'bg-gradient-to-br from-[#f1aed5] to-[#e13690]' : 'bg-gradient-to-br from-yellow-400 to-orange-400'} rounded-3xl flex items-center justify-center border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} shadow-lg`}>
+                                  <span className={`text-2xl font-black ${theme === 'bounceworld' ? 'text-white' : theme === 'ponyville' ? 'text-white' : 'text-black'}`}>
                                     {teacher.name.charAt(0)}
                                   </span>
                                 </div>
@@ -784,17 +800,17 @@ export default function StudentMeetingPage() {
                                   <h3 className="text-2xl font-black text-black mb-1">
                                     {teacher.name}
                                   </h3>
-                                  <p className={`${theme === 'bounceworld' ? 'text-white' : 'text-indigo-100'} font-bold text-lg`}>
+                                  <p className={`${theme === 'bounceworld' ? 'text-white' : theme === 'ponyville' ? 'text-white' : 'text-indigo-100'} font-bold text-lg`}>
                                     {teacher.subjects.join(', ')}
                                   </p>
                                 </div>
                               </div>
                               <div className="flex items-center space-x-4">
-                                <span className={`bg-white text-black px-4 py-2 rounded-full font-black text-sm border-2 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'}`}>
+                                <span className={`bg-white text-black px-4 py-2 rounded-full font-black text-sm border-2 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'}`}>
                                   {teacherSlots.length}  Slots Available
                                 </span>
                                 <ChevronRight 
-                                  className={`w-8 h-8 ${theme === 'bounceworld' ? 'text-white' : 'text-white'} transition-transform ${
+                                  className={`w-8 h-8 ${theme === 'bounceworld' ? 'text-white' : theme === 'ponyville' ? 'text-white' : 'text-white'} transition-transform ${
                                     isExpanded ? 'rotate-90' : ''
                                   }`} 
                                 />
@@ -804,7 +820,7 @@ export default function StudentMeetingPage() {
 
                           {/* Teacher Slots (Collapsible) */}
                           {isExpanded && (
-                            <div className={`p-6 border-t-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} bg-white`}>
+                            <div className={`p-6 border-t-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} bg-white`}>
                               {teacherSlots.length === 0 ? (
                                 <div className="text-center py-8">
                                   <div className="text-4xl mb-4">⏰</div>
@@ -820,7 +836,7 @@ export default function StudentMeetingPage() {
                                   {teacherSlots.map((slot) => (
                                     <div
                                       key={slot.id}
-                                      className="bg-gradient-to-r from-white to-gray-50 rounded-2xl border-2 border-gray-300 p-4 hover:border-black transition-all"
+                                      className={`bg-gradient-to-r ${theme === 'ponyville' ? 'from-[#f1aed5]/10 to-[#e13690]/10' : 'from-white to-gray-50'} rounded-2xl border-2 ${theme === 'ponyville' ? 'border-[#e13690]/30' : 'border-gray-300'} p-4 hover:border-black transition-all`}
                                     >
                                       <div className="space-y-3 mb-4">
                                         <div className="flex items-center text-sm text-gray-600 font-bold">
@@ -866,10 +882,10 @@ export default function StudentMeetingPage() {
         )}
 
         {activeTab === 'booked' && (
-          <div className={`bg-white rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : 'border-black'} overflow-hidden`}>
-            <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#2C1267] via-[#604AC7] to-[#0F0826]' : 'bg-gradient-to-r from-blue-600 to-indigo-600'} text-white p-6 border-b-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : 'border-black'}`}>
+          <div className={`bg-white rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} overflow-hidden`}>
+            <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#2C1267] via-[#604AC7] to-[#0F0826]' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : 'bg-gradient-to-r from-blue-600 to-indigo-600'} text-white p-6 border-b-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'}`}>
               <h2 className="text-2xl font-black flex items-center">
-                <span className="text-3xl mr-3">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'bounceworld' ? '🏀' : theme === 'avengers' ? '🦸‍♂️' : '📅'}</span>
+                <span className="text-3xl mr-3">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'bounceworld' ? '🏀' : theme === 'avengers' ? '🦸‍♂️' : theme === 'ponyville' ? '🦄' : '📅'}</span>
                 My Scheduled Meetings
               </h2>
             </div>
@@ -877,12 +893,12 @@ export default function StudentMeetingPage() {
             <div className="p-6">
               {bookedMeetings.length === 0 ? (
                 <div className="text-center py-12">
-                  <div className="text-6xl mb-6">{theme === 'ben10' ? 'Ω' : theme === 'tinkerbell' ? '✨' : theme === 'bounceworld' ? '🏀' : theme === 'avengers' ? '🦸‍♂️' : '📚'}</div>
+                  <div className="text-6xl mb-6">{theme === 'ben10' ? 'Ω' : theme === 'tinkerbell' ? '✨' : theme === 'bounceworld' ? '🏀' : theme === 'avengers' ? '🦸‍♂️' : theme === 'ponyville' ? '🦄' : '📚'}</div>
                   <h3 className="text-2xl font-black text-black mb-4">
                     No Meetings Scheduled Yet
                   </h3>
                   <p className="text-gray-600 font-bold text-lg">
-                    Book your first {theme === 'ben10' ? 'heroic' : theme === 'tinkerbell' ? 'magical' : theme === 'bounceworld' ? 'slam dunk' : theme === 'avengers' ? 'heroic' : 'enriching'} one-on-one session with a teacher! {theme === 'ben10' ? '⚡' : theme === 'tinkerbell' ? '✨' : theme === 'bounceworld' ? '🏀' : theme === 'avengers' ? '🦸‍♂️' : '📚'}
+                    Book your first {theme === 'ben10' ? 'heroic' : theme === 'tinkerbell' ? 'magical' : theme === 'bounceworld' ? 'slam dunk' : theme === 'avengers' ? 'heroic' : theme === 'ponyville' ? 'magical' : 'enriching'} one-on-one session with a teacher! {theme === 'ben10' ? '⚡' : theme === 'tinkerbell' ? '✨' : theme === 'bounceworld' ? '🏀' : theme === 'avengers' ? '🦸‍♂️' : theme === 'ponyville' ? '✨🦄' : '📚'}
                   </p>
                 </div>
               ) : (
@@ -890,12 +906,12 @@ export default function StudentMeetingPage() {
                   {bookedMeetings.map((meeting) => (
                     <div
                       key={meeting.id}
-                      className="bg-gradient-to-r from-white to-gray-50 rounded-2xl border-2 border-gray-300 p-6 hover:border-black transition-all"
+                      className={`bg-gradient-to-r ${theme === 'ponyville' ? 'from-[#f1aed5]/20 to-[#e13690]/20' : 'from-white to-gray-50'} rounded-2xl border-2 ${theme === 'ponyville' ? 'border-[#e13690]' : 'border-gray-300'} p-6 hover:border-black transition-all`}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
                           <div className="flex items-center space-x-4 mb-3">
-                            <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-400 rounded-2xl flex items-center justify-center border-2 border-black">
+                            <div className={`w-12 h-12 ${theme === 'ponyville' ? 'bg-gradient-to-br from-[#f1aed5] to-[#e13690]' : 'bg-gradient-to-br from-blue-400 to-purple-400'} rounded-2xl flex items-center justify-center border-2 border-black`}>
                               <span className="text-lg font-black text-white">
                                 {meeting.teacherName.charAt(0)}
                               </span>
@@ -912,6 +928,8 @@ export default function StudentMeetingPage() {
                                     ? 'bg-[#64cc4f]/20 text-[#222222]'
                                     : theme === 'tinkerbell'
                                     ? 'bg-yellow-100 text-yellow-800'
+                                    : theme === 'ponyville'
+                                    ? 'bg-[#f1aed5]/20 text-[#e13690]'
                                     : 'bg-blue-100 text-blue-800'
                                   : 'bg-red-100 text-red-800'
                               }`}>
@@ -945,6 +963,12 @@ export default function StudentMeetingPage() {
                                   ? 'from-[#64cc4f] to-[#222222] hover:from-[#b2e05b] hover:to-[#222222]'
                                   : theme === 'tinkerbell'
                                   ? 'from-yellow-400 to-green-500 hover:from-yellow-500 hover:to-green-600'
+                                  : theme === 'bounceworld'
+                                  ? 'from-[#1D428A] to-[#C8102E] hover:from-[#2E4A89] hover:to-[#D81E3A]'
+                                  : theme === 'avengers'
+                                  ? 'from-[#2C1267] to-[#604AC7] hover:from-[#3D1A8C] hover:to-[#7A5ED0]'
+                                  : theme === 'ponyville'
+                                  ? 'from-[#f1aed5] to-[#e13690] hover:from-[#e8b8d8] hover:to-[#d42a7f]'
                                   : 'from-blue-400 to-indigo-600 hover:from-blue-500 hover:to-indigo-700'
                               } text-white px-6 py-3 rounded-full font-black text-sm border-2 border-black transform hover:scale-105 transition-all`}
                             >
@@ -967,35 +991,35 @@ export default function StudentMeetingPage() {
           <div className="fixed inset-0 z-50 overflow-y-auto">
             <div className="flex items-center justify-center min-h-screen px-4">
               <div className="fixed inset-0 bg-black bg-opacity-50"></div>
-              <div className={`relative bg-white rounded-3xl shadow-2xl border-4 ${theme === 'avengers' ? 'border-[#2C1267]' : 'border-black'} max-w-md w-full p-8`}>
-                <div className="flex items-center justify-center w-20 h-20 mx-auto bg-gradient-to-br from-yellow-400 to-orange-400 rounded-3xl mb-6 border-4 border-black">
+              <div className={`relative bg-white rounded-3xl shadow-2xl border-4 ${theme === 'avengers' ? 'border-[#2C1267]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} max-w-md w-full p-8`}>
+                <div className={`flex items-center justify-center w-20 h-20 mx-auto ${theme === 'ponyville' ? 'bg-gradient-to-br from-[#f1aed5] to-[#e13690]' : 'bg-gradient-to-br from-yellow-400 to-orange-400'} rounded-3xl mb-6 border-4 border-black`}>
                   <CheckCircle className="w-10 h-10 text-black" />
                 </div>
                 
                 <h3 className="text-2xl font-black text-black text-center mb-6">
-                  🎯 Confirm Your {theme === 'ben10' ? 'Hero' : theme === 'tinkerbell' ? 'Magical' : theme === 'bounceworld' ? 'Slam Dunk' : theme === 'avengers' ? 'Heroic' : 'Learning'} Booking
+                  🎯 Confirm Your {theme === 'ben10' ? 'Hero' : theme === 'tinkerbell' ? 'Magical' : theme === 'bounceworld' ? 'Slam Dunk' : theme === 'avengers' ? 'Heroic' : theme === 'ponyville' ? 'Magical' : 'Learning'} Booking
                 </h3>
                 
                 <div className="space-y-4 mb-8">
-                  <div className="flex justify-between items-center p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl border-2 border-blue-200">
+                  <div className={`flex justify-between items-center p-3 ${theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5]/20 to-[#e13690]/20 border-[#e13690]/30' : 'bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200'} rounded-2xl border-2`}>
                     <span className="text-gray-600 font-bold">👨‍🏫 Teacher:</span>
                     <span className="font-black text-black">
                       {selectedSlot.teacherName}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl border-2 border-green-200">
+                  <div className={`flex justify-between items-center p-3 ${theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5]/20 to-[#ff2e9f]/20 border-[#ff2e9f]/30' : 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-200'} rounded-2xl border-2`}>
                     <span className="text-gray-600 font-bold">📅 Date:</span>
                     <span className="font-black text-black">
                       {formatDate(selectedSlot.date)}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl border-2 border-purple-200">
+                  <div className={`flex justify-between items-center p-3 ${theme === 'ponyville' ? 'bg-gradient-to-r from-[#e13690]/20 to-[#ff2e9f]/20 border-[#e13690]/30' : 'bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200'} rounded-2xl border-2`}>
                     <span className="text-gray-600 font-bold">⏰ Time:</span>
                     <span className="font-black text-black">
                       {formatTime(selectedSlot.startTime)} - {formatTime(selectedSlot.endTime)}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center p-3 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-2xl border-2 border-yellow-200">
+                  <div className={`flex justify-between items-center p-3 ${theme === 'ponyville' ? 'bg-gradient-to-r from-[#ff2e9f]/20 to-[#f1aed5]/20 border-[#ff2e9f]/30' : 'bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200'} rounded-2xl border-2`}>
                     <span className="text-gray-600 font-bold">⏳ Duration:</span>
                     <span className="font-black text-black">
                       {selectedSlot.duration} minutes
@@ -1024,6 +1048,8 @@ export default function StudentMeetingPage() {
                         ? 'from-[#1D428A] to-[#C8102E] hover:from-[#2E4A89] hover:to-[#D81E3A]'
                         : theme === 'avengers'
                         ? 'from-[#2C1267] to-[#604AC7] hover:from-[#3D1A8C] hover:to-[#7A5ED0]'
+                        : theme === 'ponyville'
+                        ? 'from-[#f1aed5] to-[#e13690] hover:from-[#e8b8d8] hover:to-[#d42a7f]'
                         : 'from-blue-400 to-indigo-600 hover:from-blue-500 hover:to-indigo-700'
                     } text-white font-black border-2 border-black rounded-full py-3 transform hover:scale-105 transition-all`}
                     onClick={confirmBooking}

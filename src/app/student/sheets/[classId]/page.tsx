@@ -168,9 +168,9 @@ export default function ClassSheetsPage() {
 
   if (authLoading || loading) {
     return (
-      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A]/20 to-[#C8102E]/20' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]' : 'from-blue-400 to-indigo-600'} p-6`}>
+      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A]/20 to-[#C8102E]/20' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]' : theme === 'ponyville' ? 'from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : 'from-blue-400 to-indigo-600'} p-6`}>
         <div className="flex items-center justify-center py-12">
-          <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-yellow-400 to-green-500' : theme === 'bounceworld' ? 'from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]' : 'from-blue-500 to-purple-500'} rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#604AC7]' : 'border-black'} p-8`}>
+          <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-yellow-400 to-green-500' : theme === 'bounceworld' ? 'from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]' : theme === 'ponyville' ? 'from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : 'from-blue-500 to-purple-500'} rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#604AC7]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} p-8`}>
             <div className="flex items-center space-x-4">
               <div className="w-12 h-12 border-4 border-black border-t-transparent rounded-full animate-spin"></div>
               <span className="text-2xl font-black text-black">Loading sheets...</span>
@@ -183,9 +183,9 @@ export default function ClassSheetsPage() {
 
   if (error) {
     return (
-      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A]/20 to-[#C8102E]/20' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]' : 'from-blue-400 to-indigo-600'} p-6`}>
+      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A]/20 to-[#C8102E]/20' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]' : theme === 'ponyville' ? 'from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : 'from-blue-400 to-indigo-600'} p-6`}>
         <div className="flex items-center justify-center py-12">
-          <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f]/20 to-[#b2e05b]/20' : theme === 'tinkerbell' ? 'from-yellow-200 to-green-200' : theme === 'bounceworld' ? 'from-[#1D428A]/20 via-white/20 to-[#C8102E]/20' : theme === 'avengers' ? 'from-[#2C1267]/20 via-[#604AC7]/20 to-[#0F0826]/20' : 'from-red-200 to-orange-200'} rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#604AC7]' : 'border-black'} p-12 text-center`}>
+          <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f]/20 to-[#b2e05b]/20' : theme === 'tinkerbell' ? 'from-yellow-200 to-green-200' : theme === 'bounceworld' ? 'from-[#1D428A]/20 via-white/20 to-[#C8102E]/20' : theme === 'avengers' ? 'from-[#2C1267]/20 via-[#604AC7]/20 to-[#0F0826]/20' : theme === 'ponyville' ? 'from-[#f1aed5]/20 to-[#e13690]/20' : 'from-red-200 to-orange-200'} rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#604AC7]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} p-12 text-center`}>
             <div className="text-6xl mb-6">😔</div>
             <h3 className="text-2xl font-black text-black mb-4">
               Oops! Something went wrong
@@ -193,7 +193,7 @@ export default function ClassSheetsPage() {
             <p className="text-black font-bold text-lg mb-6">{error}</p>
             <Button
               onClick={() => router.back()}
-              className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222] hover:from-[#b2e05b] hover:to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-500 to-green-600 hover:from-yellow-600 hover:to-green-700' : theme === 'bounceworld' ? 'from-[#1D428A] via-white to-[#C8102E] hover:from-[#1D428A]/80 hover:via-white/80 hover:to-[#C8102E]/80' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826] hover:from-[#2C1267]/80 hover:via-[#604AC7]/80 hover:to-[#0F0826]/80' : 'from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600'} text-white px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#604AC7]' : 'border-black'} flex items-center space-x-2`}
+              className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222] hover:from-[#b2e05b] hover:to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-500 to-green-600 hover:from-yellow-600 hover:to-green-700' : theme === 'bounceworld' ? 'from-[#1D428A] via-white to-[#C8102E] hover:from-[#1D428A]/80 hover:via-white/80 hover:to-[#C8102E]/80' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826] hover:from-[#2C1267]/80 hover:via-[#604AC7]/80 hover:to-[#0F0826]/80' : theme === 'ponyville' ? 'from-[#f1aed5] to-[#e13690] hover:from-[#e8b8d8] hover:to-[#d42a7f]' : 'from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600'} text-white px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#604AC7]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} flex items-center space-x-2`}
             >
               <ArrowLeft className="w-5 h-5" />
               <span>Go Back</span>
@@ -205,14 +205,14 @@ export default function ClassSheetsPage() {
   }
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A]/20 to-[#C8102E]/20' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]' : 'from-blue-600 via-indigo-700 to-slate-900'} p-6`}>
+    <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A]/20 to-[#C8102E]/20' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]' : theme === 'ponyville' ? 'from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]' : 'from-blue-600 via-indigo-700 to-slate-900'} p-6`}>
       {/* Header */}
-      <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#486b05] ' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : theme === 'bounceworld' ? 'from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]' : 'from-blue-500 via-indigo-600 to-slate-800'} rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#604AC7]' : 'border-black'} p-8 mb-8 relative overflow-hidden`}>
+      <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#486b05] ' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : theme === 'bounceworld' ? 'from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]' : theme === 'ponyville' ? 'from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : 'from-blue-500 via-indigo-600 to-slate-800'} rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#604AC7]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} p-8 mb-8 relative overflow-hidden`}>
 
         <div className="flex items-center space-x-4 relative z-10 mb-4">
           <Button
             onClick={() => router.back()}
-            className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#222222] to-[#64cc4f] hover:from-[#222222] hover:to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700' : theme === 'bounceworld' ? 'from-[#1D428A] via-white to-[#C8102E] hover:from-[#1D428A]/80 hover:via-white/80 hover:to-[#C8102E]/80' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826] hover:from-[#2C1267]/80 hover:via-[#604AC7]/80 hover:to-[#0F0826]/80' : 'from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800'} text-white px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#604AC7]' : 'border-black'} flex items-center space-x-2`}
+            className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#222222] to-[#64cc4f] hover:from-[#222222] hover:to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700' : theme === 'bounceworld' ? 'from-[#1D428A] via-white to-[#C8102E] hover:from-[#1D428A]/80 hover:via-white/80 hover:to-[#C8102E]/80' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826] hover:from-[#2C1267]/80 hover:via-[#604AC7]/80 hover:to-[#0F0826]/80' : theme === 'ponyville' ? 'from-[#f1aed5] to-[#e13690] hover:from-[#e8b8d8] hover:to-[#d42a7f]' : 'from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800'} text-white px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#604AC7]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} flex items-center space-x-2`}
           >
             <ArrowLeft className="w-5 h-5" />
             <span>Back</span>
@@ -220,16 +220,16 @@ export default function ClassSheetsPage() {
         </div>
 
         <div className="flex items-center space-x-4 relative z-10">
-          {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'avengers') && (
-            <div className="text-6xl">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'avengers' ? '🦸‍♂️' : ''}</div>
+          {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'avengers' || theme === 'ponyville') && (
+            <div className="text-6xl">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'avengers' ? '🦸‍♂️' : theme === 'ponyville' ? '🦄' : ''}</div>
           )}
           <div>
             <h1 className="text-4xl font-black text-black mb-2 flex items-center">
               <span>{className}</span>
               <span className="ml-2 text-white font-black text-5xl">Sheets</span>
             </h1>
-            <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-white' : theme === 'tinkerbell' ? 'text-white' : theme === 'bounceworld' ? 'text-[#1D428A]' : theme === 'avengers' ? 'text-[#C88DA5]' : 'text-blue-200'}`}>
-              {theme === 'avengers' ? `Welcome back, ${student?.name}! Assemble your Google Sheets assignments! 🦸‍♂️` : `Welcome back, ${student?.name}! Access your Google Sheets assignments!`}
+            <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-white' : theme === 'tinkerbell' ? 'text-white' : theme === 'bounceworld' ? 'text-[#1D428A]' : theme === 'avengers' ? 'text-[#C88DA5]' : theme === 'ponyville' ? 'text-white' : 'text-blue-200'}`}>
+              {theme === 'avengers' ? `Welcome back, ${student?.name}! Assemble your Google Sheets assignments! 🦸‍♂️` : theme === 'ponyville' ? `Welcome back, ${student?.name}! Cast magical Google Sheets spells! ✨🦄` : `Welcome back, ${student?.name}! Access your Google Sheets assignments!`}
             </p>
           </div>
         </div>
@@ -237,19 +237,19 @@ export default function ClassSheetsPage() {
 
       {/* Sheets Grid */}
       {classSheets.length === 0 ? (
-        <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#222222] via-[#64cc4f] to-[#51760d]' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : theme === 'bounceworld' ? 'from-white via-[#1D428A]/20 to-[#C8102E]/20' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]' : 'from-slate-700 via-indigo-800 to-blue-900'} rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#604AC7]' : 'border-black'} p-12 text-center`}>
-          <div className="text-6xl mb-6">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'bounceworld' ? '🏀' : theme === 'avengers' ? '🦸‍♂️' : '📚'}</div>
+        <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#222222] via-[#64cc4f] to-[#51760d]' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : theme === 'bounceworld' ? 'from-white via-[#1D428A]/20 to-[#C8102E]/20' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]' : theme === 'ponyville' ? 'from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : 'from-slate-700 via-indigo-800 to-blue-900'} rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#604AC7]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} p-12 text-center`}>
+          <div className="text-6xl mb-6">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'bounceworld' ? '🏀' : theme === 'avengers' ? '🦸‍♂️' : theme === 'ponyville' ? '🦄' : '📚'}</div>
           <h3 className="text-2xl font-black text-white mb-4">
-            {theme === 'avengers' ? 'No Sheets Yet - Time to Assemble!' : 'No Sheets Yet'}
+            {theme === 'avengers' ? 'No Sheets Yet - Time to Assemble!' : theme === 'ponyville' ? 'No Sheets Yet - Time to Cast Magic!' : 'No Sheets Yet'}
           </h3>
-          <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-[#b2e05b]' : theme === 'tinkerbell' ? 'text-yellow-200' : theme === 'bounceworld' ? 'text-[#1D428A]' : theme === 'avengers' ? 'text-[#C88DA5]' : 'text-blue-200'}`}>
-            {theme === 'avengers' ? 'Your teacher hasn\'t allocated any Google Sheets for this class yet. Assemble your skills and check back soon! 🦸‍♂️' : 'Your teacher hasn\'t allocated any Google Sheets for this class yet. Check back soon!'}
+          <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-[#b2e05b]' : theme === 'tinkerbell' ? 'text-yellow-200' : theme === 'bounceworld' ? 'text-[#1D428A]' : theme === 'avengers' ? 'text-[#C88DA5]' : theme === 'ponyville' ? 'text-white' : 'text-blue-200'}`}>
+            {theme === 'avengers' ? 'Your teacher hasn\'t allocated any Google Sheets for this class yet. Assemble your skills and check back soon! 🦸‍♂️' : theme === 'ponyville' ? 'Your teacher hasn\'t allocated any Google Sheets for this class yet. Cast your magical skills and check back soon! ✨🦄' : 'Your teacher hasn\'t allocated any Google Sheets for this class yet. Check back soon!'}
           </p>
         </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {classSheets.map(({ allocation, sheet }) => (
-            <div key={allocation.id} className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-white to-[#b2e05b]/10' : theme === 'tinkerbell' ? 'from-white to-yellow-100' : theme === 'bounceworld' ? 'from-white via-[#1D428A]/10 to-[#C8102E]/10' : theme === 'avengers' ? 'from-white via-[#604AC7]/10 to-[#2C1267]/10' : 'from-white to-blue-100'} rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#604AC7]' : 'border-black'} p-6 hover:scale-105 transition-all`}>
+            <div key={allocation.id} className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-white to-[#b2e05b]/10' : theme === 'tinkerbell' ? 'from-white to-yellow-100' : theme === 'bounceworld' ? 'from-white via-[#1D428A]/10 to-[#C8102E]/10' : theme === 'avengers' ? 'from-white via-[#604AC7]/10 to-[#2C1267]/10' : theme === 'ponyville' ? 'from-[#f1aed5]/10 to-[#e13690]/10' : 'from-white to-blue-100'} rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#604AC7]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} p-6 hover:scale-105 transition-all`}>
               <div className="flex items-center space-x-3 mb-4">
                 <div className="text-4xl">📊</div>
                 <h3 className="text-xl font-black text-black truncate">
@@ -266,11 +266,11 @@ export default function ClassSheetsPage() {
 
                 <div className="flex items-center space-x-2">
                   {getStatusIcon(sheet?.status)}
-                  <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-black border-2 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#604AC7]' : 'border-black'} ${
-                    sheet?.status === 'completed' ? `bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#b2e05b]' : theme === 'avengers' ? 'from-[#2C1267] to-[#604AC7]' : 'from-green-400 to-green-500'} text-white` :
-                    sheet?.status === 'in-progress' ? `bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'avengers' ? 'from-[#604AC7] to-[#2C1267]' : 'from-blue-400 to-blue-500'} text-white` :
-                    sheet?.status === 'graded' ? `bg-gradient-to-r ${theme === 'ben10' ? 'from-[#222222] to-[#64cc4f]' : theme === 'avengers' ? 'from-[#0F0826] to-[#604AC7]' : 'from-purple-400 to-purple-500'} text-white` :
-                    sheet?.status === 'assigned' ? `bg-gradient-to-r ${theme === 'ben10' ? 'from-[#b2e05b] to-[#64cc4f]' : theme === 'avengers' ? 'from-[#C88DA5] to-[#604AC7]' : 'from-yellow-400 to-yellow-500'} text-black` :
+                  <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-black border-2 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#604AC7]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} ${
+                    sheet?.status === 'completed' ? `bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#b2e05b]' : theme === 'avengers' ? 'from-[#2C1267] to-[#604AC7]' : theme === 'ponyville' ? 'from-[#f1aed5] to-[#e13690]' : 'from-green-400 to-green-500'} text-white` :
+                    sheet?.status === 'in-progress' ? `bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'avengers' ? 'from-[#604AC7] to-[#2C1267]' : theme === 'ponyville' ? 'from-[#e13690] to-[#ff2e9f]' : 'from-blue-400 to-blue-500'} text-white` :
+                    sheet?.status === 'graded' ? `bg-gradient-to-r ${theme === 'ben10' ? 'from-[#222222] to-[#64cc4f]' : theme === 'avengers' ? 'from-[#0F0826] to-[#604AC7]' : theme === 'ponyville' ? 'from-[#ff2e9f] to-[#f1aed5]' : 'from-purple-400 to-purple-500'} text-white` :
+                    sheet?.status === 'assigned' ? `bg-gradient-to-r ${theme === 'ben10' ? 'from-[#b2e05b] to-[#64cc4f]' : theme === 'avengers' ? 'from-[#C88DA5] to-[#604AC7]' : theme === 'ponyville' ? 'from-[#f1aed5] to-[#ff2e9f]' : 'from-yellow-400 to-yellow-500'} text-black` :
                     'bg-gray-400 text-white'
                   }`}>
                     {sheet?.status ? sheet.status.replace('-', ' ').toUpperCase() : 'Not Assigned'}
@@ -301,7 +301,7 @@ export default function ClassSheetsPage() {
                 )}
 
                 {sheet?.feedback && (
-                  <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f]/20 to-[#b2e05b]/20' : theme === 'tinkerbell' ? 'from-yellow-100 to-green-100' : theme === 'bounceworld' ? 'from-[#1D428A]/20 via-white/20 to-[#C8102E]/20' : theme === 'avengers' ? 'from-[#2C1267]/20 via-[#604AC7]/20 to-[#0F0826]/20' : 'from-blue-100 to-purple-100'} rounded-2xl p-4 border-2 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#604AC7]' : 'border-black'}`}>
+                  <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f]/20 to-[#b2e05b]/20' : theme === 'tinkerbell' ? 'from-yellow-100 to-green-100' : theme === 'bounceworld' ? 'from-[#1D428A]/20 via-white/20 to-[#C8102E]/20' : theme === 'avengers' ? 'from-[#2C1267]/20 via-[#604AC7]/20 to-[#0F0826]/20' : theme === 'ponyville' ? 'from-[#f1aed5]/20 to-[#e13690]/20' : 'from-blue-100 to-purple-100'} rounded-2xl p-4 border-2 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#604AC7]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'}`}>
                     <div className="flex items-center space-x-2 mb-2">
                       <span className="text-2xl">💬</span>
                       <span className="font-black text-black">Teacher's Feedback:</span>
@@ -316,7 +316,7 @@ export default function ClassSheetsPage() {
                   {sheet?.googleSheetUrl ? (
                     <Button
                       onClick={() => handleOpenSheet(sheet.googleSheetUrl)}
-                      className={`w-full bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#5a840a] hover:from-[#b2e05b] hover:to-[#64cc4f]' : theme === 'tinkerbell' ? 'from-green-500 to-yellow-500 hover:from-green-600 hover:to-yellow-600' : theme === 'bounceworld' ? 'from-[#1D428A] via-white to-[#C8102E] hover:from-[#1D428A]/80 hover:via-white/80 hover:to-[#C8102E]/80' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826] hover:from-[#2C1267]/80 hover:via-[#604AC7]/80 hover:to-[#0F0826]/80' : 'from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700'} text-white px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#604AC7]' : 'border-black'} flex items-center justify-center space-x-2`}
+                      className={`w-full bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#5a840a] hover:from-[#b2e05b] hover:to-[#64cc4f]' : theme === 'tinkerbell' ? 'from-green-500 to-yellow-500 hover:from-green-600 hover:to-yellow-600' : theme === 'bounceworld' ? 'from-[#1D428A] via-white to-[#C8102E] hover:from-[#1D428A]/80 hover:via-white/80 hover:to-[#C8102E]/80' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826] hover:from-[#2C1267]/80 hover:via-[#604AC7]/80 hover:to-[#0F0826]/80' : theme === 'ponyville' ? 'from-[#f1aed5] to-[#e13690] hover:from-[#e8b8d8] hover:to-[#d42a7f]' : 'from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700'} text-white px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#604AC7]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} flex items-center justify-center space-x-2`}
                     >
                       <ExternalLink className="w-5 h-5" />
                       <span>Open Sheet</span>
