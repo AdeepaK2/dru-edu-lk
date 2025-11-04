@@ -99,8 +99,8 @@ export default function StudentClassesPage() {
 
   if (authLoading || loading) {
     return (
-      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'from-white via-[#1D428A]/10 to-white' : 'from-blue-400 to-indigo-600'} flex items-center justify-center`}>
-        <div className={`${theme === 'bounceworld' ? 'bg-white border-4 border-[#1D428A]' : 'bg-white border-4 border-black'} rounded-3xl p-8 shadow-2xl`}>
+      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'from-white via-[#1D428A]/10 to-white' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]' : 'from-blue-400 to-indigo-600'} flex items-center justify-center`}>
+        <div className={`${theme === 'bounceworld' ? 'bg-white border-4 border-[#1D428A]' : theme === 'avengers' ? 'bg-gradient-to-br from-[#604AC7] to-[#2C1267] border-4 border-[#2C1267]' : 'bg-white border-4 border-black'} rounded-3xl p-8 shadow-2xl`}>
           {/* Theme-Specific Loading Animation */}
           <div className="relative mb-6 flex flex-col items-center">
             {/* Tinkerbell Loading GIF */}
@@ -128,27 +128,28 @@ export default function StudentClassesPage() {
             )}
             
             {/* Default Theme Spinner with Loading Text */}
-            {theme !== 'tinkerbell' && theme !== 'ben10' && theme !== 'bounceworld' && (
+            {theme !== 'tinkerbell' && theme !== 'ben10' && theme !== 'bounceworld' && theme !== 'avengers' && (
               <div className="flex flex-col items-center">
                 <div className="w-24 h-24 border-4 border-blue-400 border-t-blue-600 rounded-full animate-spin"></div>
                 <span className="text-2xl font-bold text-blue-600 mt-4">Loading</span>
               </div>
             )}
 
-            {/* BounceWorld Loading */}
-            {theme === 'bounceworld' && (
+            {/* Avengers Loading */}
+            {theme === 'avengers' && (
               <div className="flex flex-col items-center">
-                <div className="w-24 h-24 border-4 border-[#1D428A] border-t-[#C8102E] rounded-full animate-spin"></div>
-                <span className="text-2xl font-bold text-[#1D428A] mt-4">Loading</span>
+                <div className="w-24 h-24 border-4 border-[#2C1267] border-t-[#604AC7] rounded-full animate-spin"></div>
+                <span className="text-2xl font-bold text-[#2C1267] mt-4">Assembling</span>
               </div>
             )}
           </div>
           <div className="text-center">
             <h2 className="text-2xl font-black text-black mb-2">Loading Your Classes...</h2>
-            <p className={`font-medium ${theme === 'bounceworld' ? 'text-[#1D428A]' : 'text-gray-600'}`}>
+            <p className={`font-medium ${theme === 'bounceworld' ? 'text-[#1D428A]' : theme === 'avengers' ? 'text-white' : 'text-gray-600'}`}>
               {theme === 'ben10' ? 'Get ready to transform your learning!' 
                 : theme === 'tinkerbell' ? 'Get ready for magical adventures!' 
                 : theme === 'bounceworld' ? 'Get ready to bounce into learning!'
+                : theme === 'avengers' ? 'Get ready to assemble your classes!'
                 : 'Get ready to transform your learning!'}
             </p>
           </div>
@@ -168,7 +169,7 @@ export default function StudentClassesPage() {
   return (
     <>
       <div
-        className={`min-h-screen p-6 ${theme === 'ben10' ? '' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A]/10 to-white' : 'bg-gradient-to-br from-blue-400 via-indigo-500 to-indigo-600'}`}
+        className={`min-h-screen p-6 ${theme === 'ben10' ? '' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A]/10 to-white' : theme === 'avengers' ? 'bg-gradient-to-br from-[#2C1267]/10 via-[#604AC7]/10 to-[#0F0826]/10' : 'bg-gradient-to-br from-blue-400 via-indigo-500 to-indigo-600'}`}
         style={
           theme === 'ben10'
             ? { background: 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))' }
@@ -176,7 +177,7 @@ export default function StudentClassesPage() {
         }
       >
         {/* Header */}
-        <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-300 via-green-500 to-yellow-400' : theme === 'bounceworld' ? 'from-white via-[#1D428A]/20 to-white border-[#1D428A]' : 'from-blue-400 to-indigo-600'} rounded-3xl shadow-2xl border-4 border-black p-8 mb-6 relative overflow-hidden`}>
+        <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-300 via-green-500 to-yellow-400' : theme === 'bounceworld' ? 'from-white via-[#1D428A]/20 to-white border-[#1D428A]' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826] border-[#2C1267]' : 'from-blue-400 to-indigo-600'} rounded-3xl shadow-2xl border-4 border-black p-8 mb-6 relative overflow-hidden`}>
       
           <div className="flex items-center justify-between relative z-10">
             <div className="flex items-center space-x-4">
@@ -187,10 +188,11 @@ export default function StudentClassesPage() {
                   <span className="ml-2 text-3xl">Classroom</span>
                   {theme === 'bounceworld' && <span className="ml-2 text-4xl">🏀</span>}
                 </h1>
-                <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-white' : theme === 'tinkerbell' ? 'text-white' : theme === 'bounceworld' ? 'text-[#1D428A]' : 'text-blue-100'}`}>
+                <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-white' : theme === 'tinkerbell' ? 'text-white' : theme === 'bounceworld' ? 'text-[#1D428A]' : theme === 'avengers' ? 'text-white' : 'text-blue-100'}`}>
                   {theme === 'ben10' ? 'Transform your learning with amazing adventures!' 
                     : theme === 'tinkerbell' ? 'Transform your learning with magical adventures!' 
                     : theme === 'bounceworld' ? 'Bounce into learning with amazing adventures!'
+                    : theme === 'avengers' ? 'Assemble your learning with heroic adventures!'
                     : 'Transform your learning with amazing adventures!'}
                 </p>
               </div>
@@ -208,7 +210,7 @@ export default function StudentClassesPage() {
         </div>
 
         {/* Search and Filter */}
-        <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'from-white via-[#1D428A]/20 to-white border-[#1D428A]' : 'from-blue-300 via-indigo-400 to-indigo-500'} rounded-2xl shadow-xl border-4 border-black p-6 mb-6`}>
+        <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'from-white via-[#1D428A]/20 to-white border-[#1D428A]' : theme === 'avengers' ? 'from-[#604AC7]/20 via-[#2C1267]/20 to-[#0F0826]/20 border-[#2C1267]' : 'from-blue-300 via-indigo-400 to-indigo-500'} rounded-2xl shadow-xl border-4 border-black p-6 mb-6`}>
           <div className="flex items-center space-x-3 mb-4">
             <div className="text-3xl">🔍</div>
             <h2 className="text-2xl font-bold text-black">Search Classes</h2>
@@ -224,7 +226,7 @@ export default function StudentClassesPage() {
                   placeholder="Search for classes or subjects..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className={`pl-12 pr-4 py-3 text-lg border-4 border-black rounded-2xl bg-white text-black placeholder-gray-500 focus:outline-none shadow-lg ${theme === 'ben10' ? 'focus:ring-4 focus:ring-[#64cc4f]' : theme === 'tinkerbell' ? 'focus:ring-4 focus:ring-yellow-400' : theme === 'bounceworld' ? 'focus:ring-4 focus:ring-[#1D428A]' : 'focus:ring-4 focus:ring-blue-400'}`}
+                  className={`pl-12 pr-4 py-3 text-lg border-4 border-black rounded-2xl bg-white text-black placeholder-gray-500 focus:outline-none shadow-lg ${theme === 'ben10' ? 'focus:ring-4 focus:ring-[#64cc4f]' : theme === 'tinkerbell' ? 'focus:ring-4 focus:ring-yellow-400' : theme === 'bounceworld' ? 'focus:ring-4 focus:ring-[#1D428A]' : theme === 'avengers' ? 'focus:ring-4 focus:ring-[#604AC7]' : 'focus:ring-4 focus:ring-blue-400'}`}
                 />
               </div>
             </div>
@@ -233,7 +235,7 @@ export default function StudentClassesPage() {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className={`border-4 border-black rounded-2xl px-6 py-3 bg-white text-black font-bold text-lg focus:outline-none shadow-lg hover:bg-gray-50 transition-all ${theme === 'ben10' ? 'focus:ring-4 focus:ring-[#64cc4f]' : theme === 'tinkerbell' ? 'focus:ring-4 focus:ring-yellow-400' : theme === 'bounceworld' ? 'focus:ring-4 focus:ring-[#1D428A]' : 'focus:ring-4 focus:ring-blue-400'}`}
+                className={`border-4 border-black rounded-2xl px-6 py-3 bg-white text-black font-bold text-lg focus:outline-none shadow-lg hover:bg-gray-50 transition-all ${theme === 'ben10' ? 'focus:ring-4 focus:ring-[#64cc4f]' : theme === 'tinkerbell' ? 'focus:ring-4 focus:ring-yellow-400' : theme === 'bounceworld' ? 'focus:ring-4 focus:ring-[#1D428A]' : theme === 'avengers' ? 'focus:ring-4 focus:ring-[#604AC7]' : 'focus:ring-4 focus:ring-blue-400'}`}
               >
                 <option value="all"> All Classes</option>
                 <option value="Active">Active Classes</option>
@@ -247,16 +249,17 @@ export default function StudentClassesPage() {
 
         {/* Classes Grid */}
         {filteredEnrollments.length === 0 ? (
-          <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#b2e05b] via-[#222222] to-[#64cc4f]' : theme === 'tinkerbell' ? 'from-yellow-200 via-green-400 to-yellow-300' : theme === 'bounceworld' ? 'from-white via-[#1D428A]/20 to-white border-[#1D428A]' : 'from-blue-300 via-indigo-400 to-blue-400'} rounded-3xl shadow-2xl border-4 border-black p-12`}>
+          <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#b2e05b] via-[#222222] to-[#64cc4f]' : theme === 'tinkerbell' ? 'from-yellow-200 via-green-400 to-yellow-300' : theme === 'bounceworld' ? 'from-white via-[#1D428A]/20 to-white border-[#1D428A]' : theme === 'avengers' ? 'from-[#604AC7]/30 via-[#2C1267]/30 to-[#0F0826]/30 border-[#2C1267]' : 'from-blue-300 via-indigo-400 to-blue-400'} rounded-3xl shadow-2xl border-4 border-black p-12`}>
             <div className="text-center">
               <div className="text-8xl mb-6">📚</div>
               <h3 className="text-3xl font-black text-white mb-4">
                 {searchTerm || statusFilter !== 'all' ? 'No Classes Found' : 'No Classes Yet'}
               </h3>
-              <p className={`font-bold text-lg mb-6 ${theme === 'ben10' ? 'text-[#b2e05b]' : theme === 'tinkerbell' ? 'text-yellow-100' : theme === 'bounceworld' ? 'text-[#1D428A]' : 'text-blue-100'}`}>
+              <p className={`font-bold text-lg mb-6 ${theme === 'ben10' ? 'text-[#b2e05b]' : theme === 'tinkerbell' ? 'text-yellow-100' : theme === 'bounceworld' ? 'text-[#1D428A]' : theme === 'avengers' ? 'text-white' : 'text-blue-100'}`}>
                 {searchTerm || statusFilter !== 'all' 
                   ? 'Try adjusting your search or filter criteria ' 
                   : theme === 'bounceworld' ? 'Contact your teacher to get enrolled in some bouncing classes!'
+                  : theme === 'avengers' ? 'Contact your teacher to get enrolled in some heroic classes! 🦸'
                   : 'Contact your teacher to get enrolled in some epic classes! '}
               </p>
              
@@ -267,30 +270,30 @@ export default function StudentClassesPage() {
             {filteredEnrollments.map((enrollment) => (
               <div
                 key={enrollment.id}
-                className={`rounded-3xl shadow-2xl border-4 border-black p-6 hover:shadow-3xl hover:scale-105 transition-all duration-300 hover:rotate-1 ${theme === 'ben10' ? 'bg-gradient-to-br from-[#b2e05b] via-[#222222] to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-200 via-green-400 to-yellow-300' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A]/20 to-white' : 'bg-gradient-to-br from-blue-300 via-indigo-400 to-blue-400'}`}
+                className={`rounded-3xl shadow-2xl border-4 border-black p-6 hover:shadow-3xl hover:scale-105 transition-all duration-300 hover:rotate-1 ${theme === 'ben10' ? 'bg-gradient-to-br from-[#b2e05b] via-[#222222] to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-200 via-green-400 to-yellow-300' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A]/20 to-white' : theme === 'avengers' ? 'bg-gradient-to-br from-[#604AC7] via-[#2C1267] to-[#0F0826]' : 'bg-gradient-to-br from-blue-300 via-indigo-400 to-blue-400'}`}
               >
                 {/* Class Header */}
                 <div className="flex items-start justify-between mb-6">
                   <div className="flex items-center space-x-4">
-                    <div className={`w-16 h-16 rounded-full flex items-center justify-center border-4 border-black shadow-lg  ${theme === 'ben10' ? 'bg-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-yellow-500' : theme === 'bounceworld' ? 'bg-[#1D428A]' : 'bg-blue-500'}`}>
+                    <div className={`w-16 h-16 rounded-full flex items-center justify-center border-4 border-black shadow-lg  ${theme === 'ben10' ? 'bg-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-yellow-500' : theme === 'bounceworld' ? 'bg-[#1D428A]' : theme === 'avengers' ? 'bg-[#604AC7]' : 'bg-blue-500'}`}>
                       <div className="text-3xl">📚</div>
                     </div>
                     <div>
                       <h3 className="font-black text-black text-xl mb-1">
                         {enrollment.className}
                       </h3>
-                      <p className={`text-black font-bold text-sm rounded-full px-3 py-1 border-2 border-black ${theme === 'ben10' ? 'bg-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-yellow-200' : theme === 'bounceworld' ? 'bg-[#C8102E]/20' : 'bg-blue-200'}`}>
+                      <p className={`text-black font-bold text-sm rounded-full px-3 py-1 border-2 border-black ${theme === 'ben10' ? 'bg-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-yellow-200' : theme === 'bounceworld' ? 'bg-[#C8102E]/20' : theme === 'avengers' ? 'bg-[#604AC7]/30' : 'bg-blue-200'}`}>
                         {enrollment.subject}
                       </p>
                     </div>
                   </div>
                   <span className={`px-4 py-2 text-sm font-black rounded-full border-4 border-black shadow-lg ${
                     enrollment.status === 'Active' 
-                      ? `${theme === 'ben10' ? 'bg-[#64cc4f] text-black' : theme === 'tinkerbell' ? 'bg-yellow-400 text-black' : theme === 'bounceworld' ? 'bg-[#1D428A] text-white' : 'bg-blue-400 text-black'}`
+                      ? `${theme === 'ben10' ? 'bg-[#64cc4f] text-black' : theme === 'tinkerbell' ? 'bg-yellow-400 text-black' : theme === 'bounceworld' ? 'bg-[#1D428A] text-white' : theme === 'avengers' ? 'bg-[#604AC7] text-white' : 'bg-blue-400 text-black'}`
                       : enrollment.status === 'Completed'
-                      ? `${theme === 'ben10' ? 'bg-[#222222] text-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-black text-yellow-400' : theme === 'bounceworld' ? 'bg-[#C8102E] text-white' : 'bg-black text-blue-400'}`
+                      ? `${theme === 'ben10' ? 'bg-[#222222] text-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-black text-yellow-400' : theme === 'bounceworld' ? 'bg-[#C8102E] text-white' : theme === 'avengers' ? 'bg-[#0F0826] text-[#604AC7]' : 'bg-black text-blue-400'}`
                       : enrollment.status === 'Inactive'
-                      ? `${theme === 'ben10' ? 'bg-[#b2e05b] text-black' : theme === 'tinkerbell' ? 'bg-yellow-500 text-black' : theme === 'bounceworld' ? 'bg-[#1D428A]/50 text-white' : 'bg-blue-500 text-black'}`
+                      ? `${theme === 'ben10' ? 'bg-[#b2e05b] text-black' : theme === 'tinkerbell' ? 'bg-yellow-500 text-black' : theme === 'bounceworld' ? 'bg-[#1D428A]/50 text-white' : theme === 'avengers' ? 'bg-[#604AC7]/50 text-white' : 'bg-blue-500 text-black'}`
                       : 'bg-red-400 text-black'
                   }`}>
                     {enrollment.status}
@@ -304,7 +307,7 @@ export default function StudentClassesPage() {
                       <div className="text-2xl">📅</div>
                       <span className="text-sm font-bold text-black">Enrolled</span>
                     </div>
-                      <span className={`text-sm font-black rounded-full px-3 py-1 border-2 text-black border-black ${theme === 'ben10' ? 'bg-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-yellow-200' : theme === 'bounceworld' ? 'bg-[#1D428A]/20' : 'bg-blue-200'}`}>
+                      <span className={`text-sm font-black rounded-full px-3 py-1 border-2 text-black border-black ${theme === 'ben10' ? 'bg-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-yellow-200' : theme === 'bounceworld' ? 'bg-[#1D428A]/20' : theme === 'avengers' ? 'bg-[#604AC7]/30' : 'bg-blue-200'}`}>
                       {enrollment.enrolledAt.toLocaleDateString()}
                     </span>
                   </div>
@@ -317,9 +320,9 @@ export default function StudentClassesPage() {
                       </div>
                       <span className={`text-lg font-black px-3 py-1 rounded-full border-2 border-black ${
                         enrollment.grade >= 80 
-                          ? `${theme === 'ben10' ? 'bg-[#64cc4f] text-black' : theme === 'tinkerbell' ? 'bg-yellow-400 text-black' : theme === 'bounceworld' ? 'bg-[#1D428A] text-white' : 'bg-blue-400 text-black'}`
+                          ? `${theme === 'ben10' ? 'bg-[#64cc4f] text-black' : theme === 'tinkerbell' ? 'bg-yellow-400 text-black' : theme === 'bounceworld' ? 'bg-[#1D428A] text-white' : theme === 'avengers' ? 'bg-[#604AC7] text-white' : 'bg-blue-400 text-black'}`
                           : enrollment.grade >= 60
-                          ? `${theme === 'ben10' ? 'bg-[#b2e05b] text-black' : theme === 'tinkerbell' ? 'bg-yellow-500 text-black' : theme === 'bounceworld' ? 'bg-[#C8102E] text-white' : 'bg-blue-500 text-black'}`
+                          ? `${theme === 'ben10' ? 'bg-[#b2e05b] text-black' : theme === 'tinkerbell' ? 'bg-yellow-500 text-black' : theme === 'bounceworld' ? 'bg-[#C8102E] text-white' : theme === 'avengers' ? 'bg-[#C88DA5] text-white' : 'bg-blue-500 text-black'}`
                           : 'bg-red-400 text-black'
                       }`}>
                         {enrollment.grade}%
@@ -335,13 +338,13 @@ export default function StudentClassesPage() {
                       <div 
                         className={`h-4 rounded-full transition-all duration-1000 border-2 border-black ${
                           enrollment.grade >= 80 
-                            ? `${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 to-amber-400' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] to-[#C8102E]' : 'bg-gradient-to-r from-blue-400 to-indigo-600'}`
+                            ? `${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 to-amber-400' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7] to-[#C88DA5]' : 'bg-gradient-to-r from-blue-400 to-indigo-600'}`
                             : enrollment.grade >= 60
-                            ? `${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-500 to-amber-500' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#C8102E] to-[#1D428A]' : 'bg-gradient-to-r from-blue-300 to-blue-500'}`
+                            ? `${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-500 to-amber-500' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#C8102E] to-[#1D428A]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#C88DA5] to-[#604AC7]' : 'bg-gradient-to-r from-blue-300 to-blue-500'}`
                             : 'bg-gradient-to-r from-red-400 to-red-600'
                         }`}
                         style={{ width: `${enrollment.grade}%` }}
-                      ></div>
+                      />
                     </div>
                     <div className="text-center mt-2">
                       <span className="text-sm font-bold text-white">Transform to Excellence! </span>
@@ -357,7 +360,7 @@ export default function StudentClassesPage() {
                         <div className="text-2xl">📝</div>
                         <p className="text-sm font-black text-black">Teacher's Hero Notes:</p>
                       </div>
-                      <p className={`text-black font-medium rounded-lg p-3 border-2 border-black ${theme === 'ben10' ? 'bg-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-yellow-100' : theme === 'bounceworld' ? 'bg-[#1D428A]/10' : 'bg-blue-100'}`}>
+                      <p className={`text-black font-medium rounded-lg p-3 border-2 border-black ${theme === 'ben10' ? 'bg-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-yellow-100' : theme === 'bounceworld' ? 'bg-[#1D428A]/10' : theme === 'avengers' ? 'bg-[#604AC7]/20' : 'bg-blue-100'}`}>
                         {enrollment.notes}
                       </p>
                     </div>
@@ -379,7 +382,7 @@ export default function StudentClassesPage() {
                               {enrollment.remark.remarkLevel === 'Custom' ? enrollment.remark.customRemark : enrollment.remark.remarkLevel}
                             </span>
                             {enrollment.remark.additionalNotes && (
-                              <div className={`p-4 rounded-xl border-2 border-black ${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-100 to-pink-200' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A]/10 to-[#C8102E]/10' : 'bg-gradient-to-r from-blue-100 to-indigo-200'}`}>
+                              <div className={`p-4 rounded-xl border-2 border-black ${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-100 to-pink-200' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A]/10 to-[#C8102E]/10' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7]/30 to-[#C88DA5]/20' : 'bg-gradient-to-r from-blue-100 to-indigo-200'}`}>
                                 <p className={`font-medium ${theme === 'ben10' ? 'text-white' : theme === 'tinkerbell' ? 'text-gray-800' : theme === 'bounceworld' ? 'text-[#1D428A]' : 'text-gray-700'}`}>
                                   {enrollment.remark.additionalNotes}
                                 </p>
@@ -404,7 +407,7 @@ export default function StudentClassesPage() {
                           <span className="text-2xl mr-2">🎥</span>
                           Meeting Link:
                         </p>
-                        <div className={`p-3 rounded-xl border-2 border-black ${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-200 to-pink-200' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A]/10 to-[#C8102E]/10' : 'bg-gradient-to-r from-blue-200 to-indigo-300'}`}>
+                        <div className={`p-3 rounded-xl border-2 border-black ${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-200 to-pink-200' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A]/10 to-[#C8102E]/10' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7]/30 to-[#C88DA5]/20' : 'bg-gradient-to-r from-blue-200 to-indigo-300'}`}>
                           <p className={`font-medium break-all text-sm ${theme === 'ben10' ? 'text-white' : theme === 'tinkerbell' ? 'text-gray-800' : theme === 'bounceworld' ? 'text-[#1D428A]' : 'text-gray-700'}`}>
                             {enrollment.classData.zoomLink}
                           </p>
@@ -415,7 +418,7 @@ export default function StudentClassesPage() {
                         variant="primary"
                         size="sm"
                         onClick={() => handleJoinZoom(enrollment.classData!.zoomLink!)}
-                        className={`w-full text-white px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black flex items-center justify-center space-x-3 ${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222] hover:from-[#b2e05b] hover:to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-500 to-pink-500 hover:from-yellow-600 hover:to-pink-600' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] to-[#C8102E] hover:from-[#C8102E] hover:to-[#1D428A]' : 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700'}`}
+                        className={`w-full text-white px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black flex items-center justify-center space-x-3 ${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222] hover:from-[#b2e05b] hover:to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-500 to-pink-500 hover:from-yellow-600 hover:to-pink-600' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] to-[#C8102E] hover:from-[#C8102E] hover:to-[#1D428A]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7] to-[#2C1267] hover:from-[#2C1267] hover:to-[#0F0826]' : 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700'}`}
                       >
                         <ExternalLink className="w-5 h-5" />
                         <span>Join Meeting 📹</span>
@@ -433,9 +436,7 @@ export default function StudentClassesPage() {
                       // Navigate to tests page
                       window.location.href = `/student/test`;
                     }}
-                    className={`text-black font-black border-4 border-black rounded-2xl transform hover:scale-110 transition-all shadow-lg hover:rotate-3 flex flex-col items-center py-3 ${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#b2e05b] hover:from-[#b2e05b] hover:to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 to-amber-400 hover:from-yellow-500 hover:to-amber-500' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] to-[#C8102E] hover:from-[#C8102E] hover:to-[#1D428A]' : 'bg-gradient-to-r from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-600'}`}>
-                    <span className="text-2xl mb-1">📝</span>
-                    <span className="text-xs text-black">Tests</span>
+                    className={`text-black font-black border-4 border-black rounded-2xl transform hover:scale-110 transition-all shadow-lg hover:rotate-3 flex flex-col items-center py-3 ${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#b2e05b] hover:from-[#b2e05b] hover:to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 to-amber-400 hover:from-yellow-500 hover:to-amber-500' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] to-[#C8102E] hover:from-[#C8102E] hover:to-[#1D428A]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7] to-[#C88DA5] hover:from-[#C88DA5] hover:to-[#604AC7]' : 'bg-gradient-to-r from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-600'}`}>
                   </Button>
                   <Button
                     variant="outline"
@@ -444,7 +445,7 @@ export default function StudentClassesPage() {
                       // Navigate to study materials page for this class
                       window.location.href = `/student/study?classId=${enrollment.classId}`;
                     }}
-                    className={`text-black font-black border-4 border-black rounded-2xl transform hover:scale-110 transition-all shadow-lg hover:-rotate-3 flex flex-col items-center py-3 ${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#b2e05b] hover:from-[#b2e05b] hover:to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 to-amber-400 hover:from-yellow-500 hover:to-amber-500' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] to-[#C8102E] hover:from-[#C8102E] hover:to-[#1D428A]' : 'bg-gradient-to-r from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-600'}`}>
+                    className={`text-black font-black border-4 border-black rounded-2xl transform hover:scale-110 transition-all shadow-lg hover:-rotate-3 flex flex-col items-center py-3 ${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#b2e05b] hover:from-[#b2e05b] hover:to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 to-amber-400 hover:from-yellow-500 hover:to-amber-500' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] to-[#C8102E] hover:from-[#C8102E] hover:to-[#1D428A]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7] to-[#C88DA5] hover:from-[#C88DA5] hover:to-[#604AC7]' : 'bg-gradient-to-r from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-600'}`}>
                     <span className="text-2xl mb-1">📚</span>
                     <span className="text-xs text-black">Study</span>
                   </Button>
@@ -455,7 +456,7 @@ export default function StudentClassesPage() {
                       // Navigate to videos page for this class
                       window.location.href = `/student/classes/${enrollment.classId}/videos`;
                     }}
-                    className={`text-black font-black border-4 border-black rounded-2xl transform hover:scale-110 transition-all shadow-lg hover:rotate-3 flex flex-col items-center py-3 ${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#b2e05b] hover:from-[#b2e05b] hover:to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 to-amber-400 hover:from-yellow-500 hover:to-amber-500' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] to-[#C8102E] hover:from-[#C8102E] hover:to-[#1D428A]' : 'bg-gradient-to-r from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-600'}`}>
+                    className={`text-black font-black border-4 border-black rounded-2xl transform hover:scale-110 transition-all shadow-lg hover:rotate-3 flex flex-col items-center py-3 ${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#b2e05b] hover:from-[#b2e05b] hover:to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 to-amber-400 hover:from-yellow-500 hover:to-amber-500' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] to-[#C8102E] hover:from-[#C8102E] hover:to-[#1D428A]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7] to-[#C88DA5] hover:from-[#C88DA5] hover:to-[#604AC7]' : 'bg-gradient-to-r from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-600'}`}>
                     <span className="text-2xl mb-1">🎬</span>
                     <span className="text-xs text-black">Videos</span>
                   </Button>
@@ -467,7 +468,7 @@ export default function StudentClassesPage() {
 
         {/* Summary Stats */}
         {filteredEnrollments.length > 0 && (
-          <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222] via-[#64cc4f]' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'from-[#1D428A] to-[#C8102E] via-[#1D428A]' : 'from-blue-400 via-indigo-500 to-blue-500'} rounded-3xl shadow-2xl border-4 border-black p-8 mt-8`}>
+          <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222] via-[#64cc4f]' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'from-[#1D428A] to-[#C8102E] via-[#1D428A]' : theme === 'avengers' ? 'from-[#604AC7] via-[#2C1267] to-[#0F0826]' : 'from-blue-400 via-indigo-500 to-blue-500'} rounded-3xl shadow-2xl border-4 border-black p-8 mt-8`}>
             <div className="flex items-center justify-center space-x-3 mb-8">
               {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-4xl">📊</div>}
               <h3 className="text-3xl font-black text-black">Classes Summary</h3>
@@ -475,28 +476,28 @@ export default function StudentClassesPage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               <div className="bg-white border-4 border-black rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all">
                 <div className="text-4xl mb-2">🎯</div>
-                <div className={`text-3xl font-black mb-1 ${theme === 'ben10' ? 'text-[#64cc4f]' : theme === 'tinkerbell' ? 'text-yellow-600' : theme === 'bounceworld' ? 'text-[#C8102E]' : 'text-[#3b82f6]'}`}>
+                <div className={`text-3xl font-black mb-1 ${theme === 'ben10' ? 'text-[#64cc4f]' : theme === 'tinkerbell' ? 'text-yellow-600' : theme === 'bounceworld' ? 'text-[#C8102E]' : theme === 'avengers' ? 'text-[#604AC7]' : 'text-[#3b82f6]'}`}>
                   {filteredEnrollments.filter(e => e.status === 'Active').length}
                 </div>
                 <div className="text-sm font-bold text-black">Active Classes</div>
               </div>
               <div className="bg-white border-4 border-black rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all">
                 <div className="text-4xl mb-2">🏆</div>
-                <div className={`text-3xl font-black mb-1 ${theme === 'ben10' ? 'text-[#64cc4f]' : theme === 'tinkerbell' ? 'text-yellow-600' : theme === 'bounceworld' ? 'text-[#C8102E]' : 'text-[#3b82f6]'}`}>
+                <div className={`text-3xl font-black mb-1 ${theme === 'ben10' ? 'text-[#64cc4f]' : theme === 'tinkerbell' ? 'text-yellow-600' : theme === 'bounceworld' ? 'text-[#C8102E]' : theme === 'avengers' ? 'text-[#0F0826]' : 'text-[#3b82f6]'}`}>
                   {filteredEnrollments.filter(e => e.status === 'Completed').length}
                 </div>
                 <div className="text-sm font-bold text-black">Completed Classes</div>
               </div>
               <div className="bg-white border-4 border-black rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all">
                 <div className="text-4xl mb-2">📈</div>
-                <div className={`text-3xl font-black mb-1 ${theme === 'ben10' ? 'text-[#64cc4f]' : theme === 'tinkerbell' ? 'text-yellow-600' : theme === 'bounceworld' ? 'text-[#C8102E]' : 'text-[#3b82f6]'}`}>
+                <div className={`text-3xl font-black mb-1 ${theme === 'ben10' ? 'text-[#64cc4f]' : theme === 'tinkerbell' ? 'text-yellow-600' : theme === 'bounceworld' ? 'text-[#C8102E]' : theme === 'avengers' ? 'text-[#C88DA5]' : 'text-[#3b82f6]'}`}>
                   {Math.round(filteredEnrollments.reduce((acc, e) => acc + e.attendance, 0) / filteredEnrollments.length) || 0}%
                 </div>
                 <div className="text-sm font-bold text-black">Attendance</div>
               </div>
               <div className="bg-white border-4 border-black rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all">
                 <div className="text-4xl mb-2">⭐</div>
-                <div className={`text-3xl font-black mb-1 ${theme === 'ben10' ? 'text-[#64cc4f]' : theme === 'tinkerbell' ? 'text-yellow-600' : theme === 'bounceworld' ? 'text-[#C8102E]' : 'text-[#3b82f6]'}`}>
+                <div className={`text-3xl font-black mb-1 ${theme === 'ben10' ? 'text-[#64cc4f]' : theme === 'tinkerbell' ? 'text-yellow-600' : theme === 'bounceworld' ? 'text-[#C8102E]' : theme === 'avengers' ? 'text-[#604AC7]' : 'text-[#3b82f6]'}`}>
                   {filteredEnrollments.filter(e => e.grade !== undefined).length > 0 
                     ? Math.round(filteredEnrollments
                         .filter(e => e.grade !== undefined)
