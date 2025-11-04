@@ -140,6 +140,12 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
   const router = useRouter();
   const { theme } = useTheme();
   const [upcomingQuizCount, setUpcomingQuizCount] = useState(0);
+  const [avatarKey, setAvatarKey] = useState(0); // Force re-render key
+
+  // Force re-render when avatar changes
+  useEffect(() => {
+    setAvatarKey(prev => prev + 1); // Force re-render
+  }, [student?.avatar]);
 
   useEffect(() => {
     if (student?.email || student?.name) {
@@ -174,11 +180,41 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
       tinkerbell: '/tinkerbell.png'
     };
 
+    // Avengers avatars
+    const avengersMap: Record<string, string> = {
+      ironman: '/avengers/Iron Man.png',
+      captainamerica: '/avengers/captain-america.png',
+      thor: '/avengers/thor.png',
+      hulk: '/avengers/hulk.png',
+      spiderman: '/avengers/spiderman.png',
+      batman: '/avengers/batman.png',
+      superman: '/avengers/supermanpng.png',
+      wonderwoman: '/avengers/wonder-women.png'
+    };
+
+    // BounceWorld avatars (NBA players)
+    const bounceWorldMap: Record<string, string> = {
+      lebron: '/bounceworld/LeBron James.webp',
+      steph: '/bounceworld/Stephen Curry.webp',
+      kd: '/bounceworld/Kevin Durant.webp',
+      jayson: '/bounceworld/Jayson Tatum.webp',
+      joel: '/bounceworld/Joel Embiid.webp',
+      anthony: '/bounceworld/Anthony Davis.webp',
+      devin: '/bounceworld/Devin Booker.webp',
+      jrue: '/bounceworld/Jrue Holiday.webp',
+      derrick: '/bounceworld/Derrick White.webp',
+      tyrese: '/bounceworld/Tyrese Haliburton.webp',
+      ant: '/bounceworld/Anthony Edwards.webp',
+      bam: '/bounceworld/Bam Adebayowebp.webp'
+    };
+
     if (ben10Map[avatarId]) return ben10Map[avatarId];
     if (tinkerMap[avatarId]) return tinkerMap[avatarId];
+    if (avengersMap[avatarId]) return avengersMap[avatarId];
+    if (bounceWorldMap[avatarId]) return bounceWorldMap[avatarId];
 
     // If avatarId looks like a path, return it directly
-    if (avatarId.startsWith('/') || avatarId.includes('.png') || avatarId.includes('.jpg') || avatarId.includes('.avif')) {
+    if (avatarId.startsWith('/') || avatarId.includes('.png') || avatarId.includes('.jpg') || avatarId.includes('.avif') || avatarId.includes('.webp')) {
       return avatarId;
     }
 
@@ -297,15 +333,22 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
               <div className="flex-shrink-0 overflow-hidden">
                 {(() => {
                   const avatarPath = getAvatarImagePath((student as any)?.avatar);
-                  if (avatarPath && (theme === 'ben10' || theme === 'tinkerbell')) {
+                  if (avatarPath && (theme === 'ben10' || theme === 'tinkerbell' || theme === 'avengers' || theme === 'bounceworld')) {
                     return (
-                      <Image src={avatarPath} alt={(student as any)?.name || 'Avatar'} width={48} height={48} className="object-cover" />
+                      <Image 
+                        key={`avatar-${avatarKey}-${(student as any)?.avatar || 'default'}`} 
+                        src={avatarPath} 
+                        alt={(student as any)?.name || 'Avatar'} 
+                        width={48} 
+                        height={48} 
+                        className="object-cover" 
+                      />
                     );
                   }
 
                   return (
                     <span className="text-3xl font-black">
-                      {theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'bounceworld' ? '🏀' : '📚'}
+                      {theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'bounceworld' ? '🏀' : theme === 'avengers' ? '🦸‍♂️' : '📚'}
                     </span>
                   );
                 })()}
