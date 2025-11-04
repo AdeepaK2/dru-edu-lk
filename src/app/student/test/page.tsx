@@ -1057,17 +1057,45 @@ export default function StudentTests() {
                   <span className="text-2xl font-bold text-[#b2e05b] mt-4">Loading</span>
                 </div>
               )}
+
+              {/* BounceWorld Loading Animation */}
+              {theme === 'bounceworld' && (
+                <div className="flex flex-col items-center">
+                  <img
+                    src="/bounceworld.gif"
+                    alt="BounceWorld Loading"
+                    className="w-32 h-32 object-contain"
+                  />
+                  <span className="text-2xl font-bold text-[#1D428A] mt-4">Loading</span>
+                </div>
+              )}
               
-              {/* Avengers Loading Spinner */}
+              {/* Avengers Loading Animation */}
               {theme === 'avengers' && (
                 <div className="flex flex-col items-center">
-                  <div className="w-24 h-24 border-4 border-[#2C1267] border-t-[#604AC7] rounded-full animate-spin"></div>
+                  <img
+                    src="/avenger.gif"
+                    alt="Avengers Loading"
+                    className="w-32 h-32 object-contain"
+                  />
                   <span className="text-2xl font-bold text-[#2C1267] mt-4">Assembling</span>
                 </div>
               )}
               
+              {/* CricketVerse Loading GIF */}
+              {theme === 'cricketverse' && (
+                <div className="flex flex-col items-center">
+                  <img
+                    src="/batsman.gif"
+                    alt="CricketVerse Loading"
+                    className="w-32 h-32 object-contain"
+                  />
+                  <span className="text-2xl font-bold text-blue-600 mt-4">Loading</span>
+                </div>
+              )}
+              
               {/* Default Theme Spinner with Loading Text */}
-              {theme !== 'tinkerbell' && theme !== 'ben10' && (
+              {theme !== 'tinkerbell' && theme !== 'ben10' && theme !== 'bounceworld' && theme !== 'avengers' && theme !== 'cricketverse' && (
                 <div className="flex flex-col items-center">
                   <div className="w-24 h-24 border-4 border-blue-400 border-t-blue-600 rounded-full animate-spin"></div>
                   <span className="text-2xl font-bold text-blue-600 mt-4">Loading</span>
