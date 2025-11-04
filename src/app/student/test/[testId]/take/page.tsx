@@ -56,6 +56,8 @@ export default function TestTakePage() {
   
   // Navigation panel state
   const [showNavPanel, setShowNavPanel] = useState(false);
+  const [showPreSubmitReview, setShowPreSubmitReview] = useState(false); // New pre-submit review
+  const [isSubmitting, setIsSubmitting] = useState(false); // Prevent double-click
   
   // PDF upload state
   const [pdfFiles, setPdfFiles] = useState<Record<string, PdfAttachment[]>>({});
@@ -1484,14 +1486,40 @@ export default function TestTakePage() {
 
   // Submit test
   const handleSubmitTest = async () => {
-    if (!attemptId) return;
+    if (!attemptId || isSubmitting) return; // Prevent double submission
     
     try {
+      setIsSubmitting(true); // Lock submission
       setLoading(true);
       
       // Import services
       const { RealtimeTestService } = await import('@/apiservices/realtimeTestService');
       const { SubmissionService } = await import('@/apiservices/submissionService');
+      
+      // Save all current answers before submission (network resilience)
+      console.log('💾 Final save before submission - preserving answer state...');
+      const savePromises = Object.entries(answers).map(async ([questionId, answer]) => {
+        try {
+          const question = displayQuestions.find(q => q.id === questionId);
+          if (question) {
+            const timeSpent = timeSpentRef.current[questionId] || 0;
+            await RealtimeTestService.saveAnswer(
+              attemptId,
+              questionId,
+              answer.selectedOption ?? answer.textContent ?? null,
+              question.type,
+              timeSpent,
+              answer.pdfFiles
+            );
+          }
+        } catch (err) {
+          console.warn(`Failed to save answer for ${questionId}:`, err);
+          // Continue even if one save fails
+        }
+      });
+      
+      await Promise.allSettled(savePromises);
+      console.log('✅ All answers saved before submission');
       
       // Submit test session in Realtime DB and attempt management
       await RealtimeTestService.submitTestSession(attemptId, false);
@@ -1504,6 +1532,7 @@ export default function TestTakePage() {
     } catch (error) {
       console.error('Error submitting test:', error);
       setError('Failed to submit test. Please try again.');
+      setIsSubmitting(false); // Release lock on error
       setLoading(false);
     }
   };
@@ -1638,36 +1667,241 @@ export default function TestTakePage() {
     );
   }
   
-  // Submit confirmation dialog
+  // Pre-submission review page (like Moodle)
+  if (showPreSubmitReview) {
+    const answeredQuestions = displayQuestions.filter(q => {
+      const answer = answers[q.id];
+      if (q.type === 'mcq') {
+        return answer?.selectedOption !== undefined && answer?.selectedOption !== null;
+      } else {
+        return answer?.textContent && answer.textContent.trim().length > 0;
+      }
+    });
+    
+    const unansweredQuestions = displayQuestions.filter(q => !answeredQuestions.includes(q));
+    const markedForReview = displayQuestions.filter(q => answers[q.id]?.isMarkedForReview);
+    
+    return (
+      <StudentLayout>
+        <div className="space-y-6 max-w-6xl mx-auto">
+          {/* Header */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                  Review Your Answers
+                </h1>
+                <p className="text-gray-600 dark:text-gray-300">
+                  Please review your answers before final submission
+                </p>
+              </div>
+              <Button 
+                variant="outline"
+                onClick={() => setShowPreSubmitReview(false)}
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Test
+              </Button>
+            </div>
+          </div>
+          
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-green-50 dark:bg-green-900/20 border-2 border-green-500 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-green-700 dark:text-green-300 font-medium">Answered</p>
+                  <p className="text-3xl font-bold text-green-600 dark:text-green-400">{answeredQuestions.length}</p>
+                </div>
+                <CheckCircle className="h-10 w-10 text-green-500" />
+              </div>
+            </div>
+            
+            <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-500 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-red-700 dark:text-red-300 font-medium">Unanswered</p>
+                  <p className="text-3xl font-bold text-red-600 dark:text-red-400">{unansweredQuestions.length}</p>
+                </div>
+                <AlertCircle className="h-10 w-10 text-red-500" />
+              </div>
+            </div>
+            
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-500 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-yellow-700 dark:text-yellow-300 font-medium">Marked for Review</p>
+                  <p className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">{markedForReview.length}</p>
+                </div>
+                <Flag className="h-10 w-10 text-yellow-500" />
+              </div>
+            </div>
+          </div>
+          
+          {/* Warning for unanswered questions */}
+          {unansweredQuestions.length > 0 && (
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+              <div className="flex items-start space-x-3">
+                <AlertTriangle className="h-6 w-6 text-red-500 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-red-800 dark:text-red-200 mb-2">
+                    Warning: {unansweredQuestions.length} Question{unansweredQuestions.length !== 1 ? 's' : ''} Not Answered
+                  </h3>
+                  <p className="text-red-700 dark:text-red-300 mb-3">
+                    The following questions have not been answered. They will be marked as "Not answered" and will receive 0 marks.
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {unansweredQuestions.map((q, idx) => (
+                      <button
+                        key={q.id}
+                        onClick={() => {
+                          setShowPreSubmitReview(false);
+                          setCurrentIndex(displayQuestions.findIndex(dq => dq.id === q.id));
+                        }}
+                        className="px-3 py-1 bg-white dark:bg-gray-700 border border-red-300 dark:border-red-600 rounded text-sm font-medium text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
+                      >
+                        Question {idx + 1}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Question List */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                All Questions ({displayQuestions.length})
+              </h2>
+            </div>
+            <div className="p-4">
+              <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-3">
+                {displayQuestions.map((q, idx) => {
+                  const answer = answers[q.id];
+                  const isAnswered = q.type === 'mcq' 
+                    ? (answer?.selectedOption !== undefined && answer?.selectedOption !== null)
+                    : (answer?.textContent && answer.textContent.trim().length > 0);
+                  const isMarked = answer?.isMarkedForReview;
+                  
+                  return (
+                    <button
+                      key={q.id}
+                      onClick={() => {
+                        setShowPreSubmitReview(false);
+                        setCurrentIndex(idx);
+                      }}
+                      className={`h-12 rounded-lg border-2 font-semibold transition-all ${
+                        isAnswered
+                          ? 'bg-green-100 border-green-500 text-green-700 dark:bg-green-900/30 dark:border-green-500 dark:text-green-300'
+                          : 'bg-red-100 border-red-500 text-red-700 dark:bg-red-900/30 dark:border-red-500 dark:text-red-300'
+                      } ${isMarked ? 'ring-2 ring-yellow-400' : ''} hover:scale-105`}
+                    >
+                      {idx + 1}
+                      {isMarked && <Flag className="h-3 w-3 mx-auto mt-0.5 text-yellow-500" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+          
+          {/* Final Submission Button */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  Ready to Submit?
+                </h3>
+                <p className="text-gray-600 dark:text-gray-300">
+                  {unansweredQuestions.length === 0 
+                    ? 'All questions have been answered. You can now submit your test.'
+                    : `${unansweredQuestions.length} question${unansweredQuestions.length !== 1 ? 's are' : ' is'} unanswered and will receive 0 marks.`
+                  }
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowPreSubmitReview(false)}
+                >
+                  Review More
+                </Button>
+                <Button
+                  onClick={() => {
+                    setShowPreSubmitReview(false);
+                    setShowConfirmSubmit(true);
+                  }}
+                  disabled={isSubmitting}
+                  className={unansweredQuestions.length > 0 ? 'bg-red-600 hover:bg-red-700' : ''}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4 mr-2" />
+                      {unansweredQuestions.length > 0 ? 'Submit Anyway' : 'Submit Test'}
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </StudentLayout>
+    );
+  }
+  
+  // Submit confirmation dialog (final step after review)
   if (showConfirmSubmit) {
     return (
       <StudentLayout>
         <div className="space-y-6">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              Submit Test
+              Final Confirmation
             </h1>
           </div>
           
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md p-6 text-center">
             <AlertCircle className="mx-auto h-12 w-12 text-blue-500 mb-4" />
             <h2 className="text-xl font-semibold text-blue-800 dark:text-blue-200 mb-2">
-              Confirm Submission
+              Submit Your Test?
             </h2>
             <p className="text-blue-700 dark:text-blue-300 mb-6">
-              Are you sure you want to submit your test? This action cannot be undone.
+              Once submitted, you cannot make any changes. Are you sure you want to submit your test now?
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button 
                 variant="outline"
-                onClick={() => setShowConfirmSubmit(false)}
+                onClick={() => {
+                  setShowConfirmSubmit(false);
+                  setShowPreSubmitReview(true); // Go back to review
+                }}
+                disabled={isSubmitting}
               >
-                Cancel
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Review
               </Button>
               <Button 
                 onClick={handleSubmitTest}
+                disabled={isSubmitting}
               >
-                Yes, Submit Test
+                {isSubmitting ? (
+                  <>
+                    <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                    Submitting...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4 mr-2" />
+                    Yes, Submit Now
+                  </>
+                )}
               </Button>
             </div>
           </div>
@@ -2334,10 +2568,11 @@ export default function TestTakePage() {
             {/* Only show Submit button on the last question */}
             {currentIndex === (displayQuestions.length || test?.questions.length || 1) - 1 && (
               <Button
-                onClick={() => setShowConfirmSubmit(true)}
+                onClick={() => setShowPreSubmitReview(true)}
+                disabled={isSubmitting}
               >
                 <Send className="w-4 h-4 mr-2" />
-                Submit Test
+                Review & Submit
               </Button>
             )}
           </div>
