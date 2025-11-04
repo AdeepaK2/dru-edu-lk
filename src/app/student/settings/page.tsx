@@ -206,6 +206,66 @@ const bounceworldAvatars = [
   }
 ];
 
+// Avengers themed avatars - Super Heroes
+const avengersAvatars = [
+  {
+    id: 'ironman',
+    name: 'Iron Man',
+    image: '/avengers/Iron Man.png',
+    description: 'Tony Stark — genius billionaire playboy philanthropist!',
+    colors: 'from-[#2C1267] to-[#604AC7]'
+  },
+  {
+    id: 'captainamerica',
+    name: 'Captain America',
+    image: '/avengers/captain-america.png',
+    description: 'Steve Rogers — the first Avenger, symbol of hope!',
+    colors: 'from-[#2C1267] to-[#604AC7]'
+  },
+  {
+    id: 'thor',
+    name: 'Thor',
+    image: '/avengers/thor.png',
+    description: 'God of Thunder — wielder of Mjolnir!',
+    colors: 'from-[#2C1267] to-[#604AC7]'
+  },
+  {
+    id: 'hulk',
+    name: 'Hulk',
+    image: '/avengers/hulk.png',
+    description: 'Bruce Banner — you won\'t like him when he\'s angry!',
+    colors: 'from-[#2C1267] to-[#604AC7]'
+  },
+  {
+    id: 'spiderman',
+    name: 'Spider-Man',
+    image: '/avengers/spiderman.png',
+    description: 'Peter Parker — your friendly neighborhood superhero!',
+    colors: 'from-[#2C1267] to-[#604AC7]'
+  },
+  {
+    id: 'batman',
+    name: 'Batman',
+    image: '/avengers/batman.png',
+    description: 'Bruce Wayne — the Dark Knight of Gotham!',
+    colors: 'from-[#2C1267] to-[#604AC7]'
+  },
+  {
+    id: 'superman',
+    name: 'Superman',
+    image: '/avengers/supermanpng.png',
+    description: 'Clark Kent — Man of Steel, faster than a speeding bullet!',
+    colors: 'from-[#2C1267] to-[#604AC7]'
+  },
+  {
+    id: 'wonderwoman',
+    name: 'Wonder Woman',
+    image: '/avengers/wonder-women.png',
+    description: 'Diana Prince — Amazon warrior princess!',
+    colors: 'from-[#2C1267] to-[#604AC7]'
+  }
+];
+
 export default function StudentSettingsPage() {
   const { student, loading: authLoading, refreshStudent } = useStudentAuth();
 
@@ -273,6 +333,8 @@ export default function StudentSettingsPage() {
         defaultAvatar = student.avatar || 'heatblast';
       } else if (selectedTheme === 'bounceworld' || theme === 'bounceworld') {
         defaultAvatar = student.avatar || 'lebron';
+      } else if (selectedTheme === 'avengers' || theme === 'avengers') {
+        defaultAvatar = student.avatar || 'ironman'; // Default to Iron Man for Avengers theme
       } else {
         // default theme: avatars disabled
         defaultAvatar = '';
@@ -323,6 +385,7 @@ export default function StudentSettingsPage() {
     if (selectedTheme === 'tinkerbell' || theme === 'tinkerbell') return tinkerbellAvatars;
     if (selectedTheme === 'ben10' || theme === 'ben10') return ben10Avatars;
     if (selectedTheme === 'bounceworld' || theme === 'bounceworld') return bounceworldAvatars;
+    if (selectedTheme === 'avengers' || theme === 'avengers') return avengersAvatars;
     return [];
   };
 
@@ -384,10 +447,10 @@ export default function StudentSettingsPage() {
       alert('Profile updated successfully!');
       // Refresh student data
       await refreshStudent();
-      setMessage({ type: 'success', text: theme === 'bounceworld' ? 'Your slam dunk profile has been updated! 🏀' : 'Your heroic profile has been updated! 🎉' });
+      setMessage({ type: 'success', text: theme === 'bounceworld' ? 'Your slam dunk profile has been updated! 🏀' : theme === 'avengers' ? 'Your heroic profile has been updated! 🦸‍♂️' : 'Your heroic profile has been updated! 🎉' });
     } catch (error) {
       console.error('Error updating profile:', error);
-      setMessage({ type: 'error', text: theme === 'bounceworld' ? 'Oops! Failed to update your profile. Try again! 🏀' : 'Oops! Failed to update your profile. Please try again. 😅' });
+      setMessage({ type: 'error', text: theme === 'bounceworld' ? 'Oops! Failed to update your profile. Try again! 🏀' : theme === 'avengers' ? 'Oops! Failed to update your profile. Assemble again! 🦸‍♂️' : 'Oops! Failed to update your profile. Please try again. 😅' });
     } finally {
       setLoading(prev => ({ ...prev, profile: false }));
     }
@@ -418,15 +481,15 @@ export default function StudentSettingsPage() {
         confirmPassword: ''
       });
       
-      setMessage({ type: 'success', text: theme === 'bounceworld' ? 'Your slam dunk password has been changed! 🔐🏀' : 'Your hero password has been changed! 🔐⚡' });
+      setMessage({ type: 'success', text: theme === 'bounceworld' ? 'Your slam dunk password has been changed! 🔐🏀' : theme === 'avengers' ? 'Your heroic password has been changed! 🔐🦸‍♂️' : 'Your hero password has been changed! 🔐⚡' });
     } catch (error) {
       console.error('Error updating password:', error);
       
       // Handle specific errors
       if ((error as any).code === 'auth/wrong-password') {
-        setMessage({ type: 'error', text: theme === 'bounceworld' ? 'Oops! Your current password is incorrect. Try again! 🔑' : 'Oops! Your current password is incorrect. Please try again. 🔑' });
+        setMessage({ type: 'error', text: theme === 'bounceworld' ? 'Oops! Your current password is incorrect. Try again! 🔑' : theme === 'avengers' ? 'Oops! Your current password is incorrect. Assemble again! 🔑🦸‍♂️' : 'Oops! Your current password is incorrect. Please try again. 🔑' });
       } else {
-        setMessage({ type: 'error', text: theme === 'bounceworld' ? 'Oops! Failed to update your password. Try again! 🏀' : 'Oops! Failed to update your password. Please try again. 😅' });
+        setMessage({ type: 'error', text: theme === 'bounceworld' ? 'Oops! Failed to update your password. Try again! 🏀' : theme === 'avengers' ? 'Oops! Failed to update your password. Assemble again! 🦸‍♂️' : 'Oops! Failed to update your password. Please try again. 😅' });
       }
     } finally {
       setLoading(prev => ({ ...prev, password: false }));
@@ -435,7 +498,7 @@ export default function StudentSettingsPage() {
 
   if (authLoading) {
     return (
-      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : 'from-blue-400 to-indigo-600'} flex items-center justify-center`}>
+      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]' : 'from-blue-400 to-indigo-600'} flex items-center justify-center`}>
         <div className="bg-white border-4 border-black rounded-3xl p-8 shadow-2xl">
           {/* Theme-Specific Loading Animation */}
           <div className="relative mb-6 flex flex-col items-center">
@@ -470,9 +533,17 @@ export default function StudentSettingsPage() {
                 <span className="text-2xl font-bold text-[#1D428A] mt-4">Loading</span>
               </div>
             )}
+
+            {/* Avengers Loading Animation */}
+            {theme === 'avengers' && (
+              <div className="flex flex-col items-center">
+                <div className="w-32 h-32 border-4 border-[#2C1267] border-t-[#604AC7] rounded-full animate-spin"></div>
+                <span className="text-2xl font-bold text-[#2C1267] mt-4">Assembling</span>
+              </div>
+            )}
             
             {/* Default Theme Spinner with Loading Text */}
-            {theme !== 'tinkerbell' && theme !== 'ben10' && theme !== 'bounceworld' && (
+            {theme !== 'tinkerbell' && theme !== 'ben10' && theme !== 'bounceworld' && theme !== 'avengers' && (
               <div className="flex flex-col items-center">
                 <div className="w-24 h-24 border-4 border-blue-400 border-t-blue-600 rounded-full animate-spin"></div>
                 <span className="text-2xl font-bold text-blue-600 mt-4">Loading</span>
@@ -480,8 +551,8 @@ export default function StudentSettingsPage() {
             )}
           </div>
           <div className="text-center">
-            <h2 className="text-2xl font-black text-black mb-2">Loading Settings...</h2>
-            <p className="text-gray-600 font-medium">{theme === 'bounceworld' ? 'Get ready to slam dunk your settings! 🏀' : 'Get ready to transform your learning!'}</p>
+            <h2 className="text-2xl font-black text-black mb-2">{theme === 'avengers' ? 'Assembling Settings...' : 'Loading Settings...'}</h2>
+            <p className="text-gray-600 font-medium">{theme === 'bounceworld' ? 'Get ready to slam dunk your settings! 🏀' : theme === 'avengers' ? 'Get ready to assemble your settings! 🦸‍♂️' : 'Get ready to transform your learning!'}</p>
           </div>
         </div>
       </div>
@@ -499,10 +570,10 @@ export default function StudentSettingsPage() {
   }
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br p-6 ${theme === 'ben10' ? '' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'from-white via-[#1D428A]/10 to-[#C8102E]/10' : 'from-blue-400 to-indigo-600'}`} style={theme === 'ben10' ? { background: 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))' } : undefined}>
+    <div className={`min-h-screen bg-gradient-to-br p-6 ${theme === 'ben10' ? '' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'from-white via-[#1D428A]/10 to-[#C8102E]/10' : theme === 'avengers' ? 'from-[#2C1267]/10 via-[#604AC7]/10 to-[#0F0826]/10' : 'from-blue-400 to-indigo-600'}`} style={theme === 'ben10' ? { background: 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))' } : undefined}>
       <div className="space-y-8 max-w-6xl mx-auto">
       {/* Page Header - Theme Aware */}
-      <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-500 via-yellow-500 to-green-600' : theme === 'bounceworld' ? 'from-[#1D428A] via-white to-[#C8102E]' : 'from-blue-600 via-indigo-700 to-indigo-900'} rounded-2xl text-white p-8 border-2 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} relative overflow-hidden`}>
+      <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-500 via-yellow-500 to-green-600' : theme === 'bounceworld' ? 'from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]' : 'from-blue-600 via-indigo-700 to-indigo-900'} rounded-2xl text-white p-8 border-2 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : 'border-black'} relative overflow-hidden`}>
 
         
    
@@ -513,23 +584,23 @@ export default function StudentSettingsPage() {
               
               <div>
                 <h1 className="text-3xl font-bold">
-               Setting Page 
+                  {theme === 'avengers' ? '🦸 Avengers Command Center' : 'Setting Page'}
                 </h1>
-                <p className={`${theme === 'ben10' ? 'text-black' : theme === 'bounceworld' ? 'text-white' : 'text-green-100'} text-lg font-semibold mt-2`}>
-                  Customize your learning profile!
+                <p className={`${theme === 'ben10' ? 'text-black' : theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-white' : 'text-green-100'} text-lg font-semibold mt-2`}>
+                  {theme === 'avengers' ? 'Assemble your perfect learning experience!' : 'Customize your learning profile!'}
                 </p>
               </div>
             </div>
             <p className="text-black mb-4 text-base">
-              Choose your favorite theme and character to make learning more fun! 
+              {theme === 'avengers' ? 'Choose your favorite superhero theme and assemble your learning powers!' : 'Choose your favorite theme and character to make learning more fun!'}
             </p>
           </div>
           <div className="hidden md:block">
             {/* Current Avatar Display (only for themes that support avatars) */}
             {getAvailableAvatars().length > 0 && (
               <div className="relative">
-                <div className={`relative w-24 h-24 rounded-full overflow-hidden border-4 border-white bg-gradient-to-br `}>
-                  <Image src={getSelectedAvatarData().image || '/images/1.png'} alt={getSelectedAvatarData().name} fill className="object-cover" />
+                <div className={`relative w-24 h-24 rounded-full overflow-hidden border-4 border-white bg-white flex items-center justify-center`}>
+                  <Image src={getSelectedAvatarData().image || '/images/1.png'} alt={getSelectedAvatarData().name} fill className="object-contain object-center" />
                 </div>
                 <div className="text-center mt-5">
                   <span className="text-white font-bold text-sm">{getSelectedAvatarData().name}</span>
@@ -542,9 +613,9 @@ export default function StudentSettingsPage() {
 
       {/* Success/Error Messages - Theme Aware */}
       {message && (
-        <div className={`rounded-xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} p-4 shadow-lg ${
+        <div className={`rounded-xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : 'border-black'} p-4 shadow-lg ${
           message.type === 'success' 
-            ? `${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 to-green-300' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] to-[#C8102E]' : 'bg-gradient-to-r from-blue-300 to-indigo-300'}` 
+            ? `${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 to-green-300' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7] to-[#2C1267]' : 'bg-gradient-to-r from-blue-300 to-indigo-300'}` 
             : 'bg-gradient-to-r from-red-300 to-pink-300'
         }`}>
           <div className="flex items-center space-x-3">
@@ -552,20 +623,20 @@ export default function StudentSettingsPage() {
               {message.type === 'success' ? '🎉' : '😅'}
             </div>
             <div>
-              <p className={`font-bold ${theme === 'bounceworld' ? 'text-white' : 'text-black'} text-lg`}>
-                {message.type === 'success' ? (theme === 'bounceworld' ? '🏀 Slam Dunk Success!' : 'Ben 10 Says: Hero Success!') : theme === 'bounceworld' ? '🏀 Oops! Airball!' : 'Oops! Ben 10 Says: Try Again!'}
+              <p className={`font-bold ${theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-white' : 'text-black'} text-lg`}>
+                {message.type === 'success' ? (theme === 'bounceworld' ? '🏀 Slam Dunk Success!' : theme === 'avengers' ? '🦸 Avengers Assemble Success!' : 'Ben 10 Says: Hero Success!') : theme === 'bounceworld' ? '🏀 Oops! Airball!' : theme === 'avengers' ? '🦸 Avengers Assemble Error!' : 'Oops! Ben 10 Says: Try Again!'}
               </p>
-              <p className={`${theme === 'bounceworld' ? 'text-white' : 'text-black'} font-medium`}>{message.text}</p>
+              <p className={`${theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-white' : 'text-black'} font-medium`}>{message.text}</p>
             </div>
           </div>
         </div>
       )}
 
       {/* Theme Selector Section */}
-      <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-200 via-green-200 to-yellow-300' : theme === 'cricketverse' ? 'from-blue-200 via-indigo-200 to-purple-300' : theme === 'bounceworld' ? 'from-white via-[#1D428A]/30 to-[#C8102E]/30' : theme === 'avengers' ? 'from-[#2C1267]/20 via-[#604AC7]/20 to-[#C88DA5]/20' : 'from-blue-200 via-indigo-200 to-purple-300'} rounded-xl shadow-lg border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} p-6`}>
+      <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-200 via-green-200 to-yellow-300' : theme === 'cricketverse' ? 'from-blue-200 via-indigo-200 to-purple-300' : theme === 'bounceworld' ? 'from-white via-[#1D428A]/30 to-[#C8102E]/30' : theme === 'avengers' ? 'from-[#604AC7]/20 via-[#2C1267]/20 to-[#0F0826]/20' : 'from-blue-200 via-indigo-200 to-purple-300'} rounded-xl shadow-lg border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : 'border-black'} p-6`}>
         <div className="flex items-center space-x-3 mb-6">
         
-          <h2 className={`text-2xl font-black ${theme === 'bounceworld' ? 'text-[#1D428A]' : 'text-black'}`}>Choose Your Learning Theme! </h2>
+          <h2 className={`text-2xl font-black ${theme === 'bounceworld' ? 'text-[#1D428A]' : theme === 'avengers' ? 'text-white' : 'text-black'}`}>Choose Your Learning Theme! </h2>
         </div>
 
         <div className="grid md:grid-cols-3 gap-3">
@@ -749,10 +820,16 @@ export default function StudentSettingsPage() {
           ? 'from-yellow-300 via-green-400 to-yellow-500'
           : theme === 'bounceworld'
           ? 'from-[#1D428A] via-white to-[#C8102E]'
+          : theme === 'avengers'
+          ? 'from-[#604AC7] via-[#2C1267] to-[#0F0826]'
           : 'from-blue-300 via-indigo-400 to-indigo-600'
-      } rounded-xl shadow-lg border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} p-6`}>
+      } rounded-xl shadow-lg border-4 ${
+        theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : 'border-black'
+      } p-6`}>
         <div className="flex items-center space-x-3 mb-6">
-          <h2 className={`text-2xl font-black ${theme === 'bounceworld' ? 'text-[#1D428A]' : 'text-black'}`}>Profile Studio</h2>
+          <h2 className={`text-2xl font-black ${
+            theme === 'bounceworld' ? 'text-[#1D428A]' : theme === 'avengers' ? 'text-white' : 'text-black'
+          }`}>Profile Studio</h2>
         </div>
 
         <form onSubmit={handleProfileSubmit} className="space-y-6">
@@ -770,7 +847,7 @@ export default function StudentSettingsPage() {
                     type="button"
                     onClick={() => setShowAvatarSelector(!showAvatarSelector)}
                     disabled={getAvailableAvatars().length === 0}
-                    className={`${theme === 'ben10' ? 'bg-[#64cc4f] hover:bg-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-yellow-500 hover:bg-yellow-600' : theme === 'bounceworld' ? 'bg-[#1D428A] hover:bg-[#3B82F6]' : 'bg-blue-500 hover:bg-blue-600'} text-white px-4 py-2 rounded-full text-sm font-bold transform hover:scale-105 transition-all disabled:opacity-50`}
+                    className={`${theme === 'ben10' ? 'bg-[#64cc4f] hover:bg-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-yellow-500 hover:bg-yellow-600' : theme === 'bounceworld' ? 'bg-[#1D428A] hover:bg-[#3B82F6]' : theme === 'avengers' ? 'bg-[#2C1267] hover:bg-[#604AC7]' : 'bg-blue-500 hover:bg-blue-600'} text-white px-4 py-2 rounded-full text-sm font-bold transform hover:scale-105 transition-all disabled:opacity-50`}
                   >
                     {getAvailableAvatars().length === 0 ? 'Avatars Disabled' : (showAvatarSelector ? 'Hide' : 'Change') + ' Avatar'}
                   </button>
@@ -778,8 +855,8 @@ export default function StudentSettingsPage() {
 
                 {/* Current Avatar Display */}
                 <div className="flex items-center space-x-4 mb-4">
-                  <div className={`relative w-16 h-16 rounded-full overflow-hidden border-4 border-black bg-white flex-shrink-0`}>
-                    <Image src={getSelectedAvatarData().image || '/images/1.png'} alt={getSelectedAvatarData().name} fill className="object-cover" />
+                  <div className={`relative w-16 h-16 rounded-full overflow-hidden border-4 border-black bg-white flex-shrink-0 flex items-center justify-center`}>
+                    <Image src={getSelectedAvatarData().image || '/images/1.png'} alt={getSelectedAvatarData().name} fill className="object-contain object-center" />
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-black">{getSelectedAvatarData().name}</h3>
@@ -793,7 +870,7 @@ export default function StudentSettingsPage() {
                   <div className="border-t-4 border-black pt-4">
                     <h4 className="text-lg font-bold text-black mb-4 flex items-center">
                       <Star className="w-5 h-5 mr-2 text-yellow-500" />
-                      {selectedTheme === 'tinkerbell' || theme === 'tinkerbell' ? 'Choose Your Tinkerbell Avatar!' : selectedTheme === 'ben10' || theme === 'ben10' ? 'Choose Your Ben 10 Hero Avatar!' : selectedTheme === 'bounceworld' || theme === 'bounceworld' ? 'Choose Your Basketball Legend!' : 'Choose Your Avatar!'}
+                      {selectedTheme === 'tinkerbell' || theme === 'tinkerbell' ? 'Choose Your Tinkerbell Avatar!' : selectedTheme === 'ben10' || theme === 'ben10' ? 'Choose Your Ben 10 Hero Avatar!' : selectedTheme === 'bounceworld' || theme === 'bounceworld' ? 'Choose Your Basketball Legend!' : selectedTheme === 'avengers' || theme === 'avengers' ? 'Choose Your Super Hero!' : 'Choose Your Avatar!'}
                     </h4>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                       {getAvailableAvatars().map((avatar) => (
@@ -803,11 +880,11 @@ export default function StudentSettingsPage() {
                           onClick={() => handleAvatarSelect(avatar.id)}
                           className={`p-3 rounded-xl border-4 transition-all transform hover:scale-105 ${
                             selectedAvatar === avatar.id
-                              ? (selectedTheme === 'tinkerbell' ? 'border-yellow-400 bg-yellow-50 shadow-lg' : selectedTheme === 'bounceworld' ? 'border-[#1D428A] bg-blue-50 shadow-lg' : 'border-[#64cc4f] bg-[#b2e05b]/10 shadow-lg')
+                              ? (selectedTheme === 'tinkerbell' ? 'border-yellow-400 bg-yellow-50 shadow-lg' : selectedTheme === 'bounceworld' ? 'border-[#1D428A] bg-blue-50 shadow-lg' : selectedTheme === 'avengers' ? 'border-[#604AC7] bg-purple-50 shadow-lg' : 'border-[#64cc4f] bg-[#b2e05b]/10 shadow-lg')
                               : 'border-black bg-white hover:border-green-400'
                           }`}>
-                          <div className={`relative w-12 h-12 rounded-full overflow-hidden mx-auto mb-2 bg-white border-2 border-black`}>
-                            <Image src={avatar.image || '/images/1.png'} alt={avatar.name} fill className="object-cover" />
+                          <div className={`relative w-12 h-12 rounded-full overflow-hidden mx-auto mb-2 bg-white border-2 border-black flex items-center justify-center`}>
+                            <Image src={avatar.image || '/images/1.png'} alt={avatar.name} fill className="object-contain object-center" />
                           </div>
                           <h5 className="text-sm font-bold text-black text-center">{avatar.name}</h5>
                           <p className="text-xs text-gray-600 text-center mt-1">{avatar.description}</p>
@@ -912,6 +989,8 @@ export default function StudentSettingsPage() {
                       ? 'bg-yellow-50 border-yellow-300'
                       : theme === 'bounceworld'
                       ? 'bg-[#1D428A]/10 border-[#1D428A]'
+                      : theme === 'avengers'
+                      ? 'bg-[#604AC7]/10 border-[#604AC7]'
                       : 'bg-blue-50 border-blue-300'
                   } border-2 rounded-lg`}>
                     <span className="text-black font-bold">📅 Enrolled Since:</span>
@@ -922,6 +1001,8 @@ export default function StudentSettingsPage() {
                         ? 'bg-yellow-300'
                         : theme === 'bounceworld'
                         ? 'bg-[#1D428A]'
+                        : theme === 'avengers'
+                        ? 'bg-[#604AC7]'
                         : 'bg-blue-300'
                     } px-2 py-1 rounded border border-black`}>
                       {student.enrollmentDate ? new Date(student.enrollmentDate).toLocaleDateString() : 'N/A'}
@@ -934,6 +1015,8 @@ export default function StudentSettingsPage() {
                       ? 'border-yellow-400'
                       : theme === 'bounceworld'
                       ? 'border-[#1D428A]'
+                      : theme === 'avengers'
+                      ? 'border-[#604AC7]'
                       : 'border-blue-400'
                   } rounded-lg`}>
                     <span className="text-white font-bold">🎓 Student ID:</span>
@@ -944,6 +1027,8 @@ export default function StudentSettingsPage() {
                         ? 'bg-yellow-300'
                         : theme === 'bounceworld'
                         ? 'bg-[#1D428A]'
+                        : theme === 'avengers'
+                        ? 'bg-[#604AC7]'
                         : 'bg-blue-300'
                     } px-2 py-1 rounded border border-black`}>
                       {student.id}
@@ -960,10 +1045,12 @@ export default function StudentSettingsPage() {
                   ? 'from-yellow-300 to-green-500'
                   : selectedTheme === 'bounceworld'
                   ? 'from-[#1D428A] to-[#C8102E]'
+                  : selectedTheme === 'avengers'
+                  ? 'from-[#604AC7] to-[#2C1267]'
                   : 'from-blue-300 to-indigo-600'
               } border-4 border-black rounded-xl p-6 shadow-lg`}>
                 <h4 className="text-lg font-bold text-black mb-3 flex items-center">
-                  {selectedTheme === 'ben10' ? '💡 Did You Know?' : selectedTheme === 'tinkerbell' ? '💡 Did You Know?' : selectedTheme === 'bounceworld' ? '🏀 Slam Dunk Fact!' : '💡 Did You Know?'}
+                  {selectedTheme === 'ben10' ? '💡 Did You Know?' : selectedTheme === 'tinkerbell' ? '💡 Did You Know?' : selectedTheme === 'bounceworld' ? '🏀 Slam Dunk Fact!' : selectedTheme === 'avengers' ? '🦸 Avengers Assembly Fact!' : '💡 Did You Know?'}
                 </h4>
                 <p className="text-black font-medium text-sm leading-relaxed">
                   {selectedTheme === 'ben10'
@@ -972,6 +1059,8 @@ export default function StudentSettingsPage() {
                     ? "Tinker Bell first appeared in J.M. Barrie's Peter Pan stories and is celebrated for curiosity, creativity, and loyalty. Choosing a Tinkerbell avatar celebrates wonder and kindness!"
                     : selectedTheme === 'bounceworld'
                     ? "The NBA was founded in 1946 and features the world's most talented basketball players. Choosing a basketball legend avatar connects you to the spirit of champions — play hard and dream big!"
+                    : selectedTheme === 'avengers'
+                    ? 'The Avengers: Earth\'s Mightiest Heroes! Assembled in 2012, they represent the pinnacle of heroism and teamwork. Choosing Avengers theme connects you to the spirit of heroic learning and achieving greatness together! 🦸‍♂️'
                     : 'Small, consistent study sessions build mastery. Tip: use spaced repetition and active recall to remember more with less time.'}
                 </p>
               </div>
@@ -983,7 +1072,15 @@ export default function StudentSettingsPage() {
             <Button
               type="submit"
               disabled={loading.profile}
-              className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222] hover:from-[#b2e05b] hover:to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-500 to-green-600 hover:from-yellow-600 hover:to-green-700' : theme === 'bounceworld' ? 'from-[#1D428A] to-[#C8102E] hover:from-[#C8102E] hover:to-[#1D428A] border-[#1D428A]' : 'from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700'} text-white px-8 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} disabled:opacity-50 animate-pulse`}
+              className={`bg-gradient-to-r ${
+                theme === 'ben10' ? 'from-[#64cc4f] to-[#222222] hover:from-[#b2e05b] hover:to-[#222222]' : 
+                theme === 'tinkerbell' ? 'from-yellow-500 to-green-600 hover:from-yellow-600 hover:to-green-700' : 
+                theme === 'bounceworld' ? 'from-[#1D428A] to-[#C8102E] hover:from-[#C8102E] hover:to-[#1D428A] border-[#1D428A]' : 
+                theme === 'avengers' ? 'from-[#2C1267] to-[#604AC7] hover:from-[#604AC7] hover:to-[#2C1267] border-[#2C1267]' :
+                'from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700'
+              } text-white px-8 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 ${
+                theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : 'border-black'
+              } disabled:opacity-50 animate-pulse`}
             >
               {loading.profile ? 'Saving Hero...' : 'Save Your Hero Profile! '}
             </Button>
@@ -999,8 +1096,12 @@ export default function StudentSettingsPage() {
           ? 'from-green-400 via-yellow-500 to-green-600'
           : theme === 'bounceworld'
           ? 'from-[#1D428A] via-white to-[#C8102E]'
+          : theme === 'avengers'
+          ? 'from-[#604AC7] via-[#2C1267] to-[#0F0826]'
           : 'from-blue-400 via-indigo-500 to-blue-600'
-      } rounded-xl shadow-lg border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} p-6`}>
+      } rounded-xl shadow-lg border-4 ${
+        theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : 'border-black'
+      } p-6`}>
         <div className="flex items-center space-x-3 mb-6">
           <div className="text-3xl">🔐</div>
           <h2 className="text-2xl font-black text-black">
@@ -1010,6 +1111,8 @@ export default function StudentSettingsPage() {
               ? "Tinkerbell's Magical Password Realm"
               : theme === 'bounceworld'
               ? "BounceWorld's Slam Dunk Password Court"
+              : theme === 'avengers'
+              ? "Avengers' Secure Command Center"
               : "Secure Password Center"
             }
           </h2>
@@ -1078,6 +1181,7 @@ export default function StudentSettingsPage() {
                       theme === 'ben10' ? 'bg-[#64cc4f] text-black' :
                       theme === 'tinkerbell' ? 'bg-yellow-300 text-black' :
                       theme === 'bounceworld' ? 'bg-[#1D428A] text-white' :
+                      theme === 'avengers' ? 'bg-[#604AC7] text-white' :
                       'bg-yellow-300 text-black'
                     }` : 'bg-white text-gray-400'
                   }`}>
@@ -1091,6 +1195,7 @@ export default function StudentSettingsPage() {
                       theme === 'ben10' ? 'bg-[#64cc4f] text-black' :
                       theme === 'tinkerbell' ? 'bg-yellow-300 text-black' :
                       theme === 'bounceworld' ? 'bg-[#1D428A] text-white' :
+                      theme === 'avengers' ? 'bg-[#604AC7] text-white' :
                       'bg-yellow-300 text-black'
                     }` : 'bg-white text-gray-400'
                   }`}>
@@ -1104,6 +1209,7 @@ export default function StudentSettingsPage() {
                       theme === 'ben10' ? 'bg-[#64cc4f] text-black' :
                       theme === 'tinkerbell' ? 'bg-yellow-300 text-black' :
                       theme === 'bounceworld' ? 'bg-[#1D428A] text-white' :
+                      theme === 'avengers' ? 'bg-[#604AC7] text-white' :
                       'bg-yellow-300 text-black'
                     }` : 'bg-white text-gray-400'
                   }`}>
@@ -1117,6 +1223,7 @@ export default function StudentSettingsPage() {
                       theme === 'ben10' ? 'bg-[#64cc4f] text-black' :
                       theme === 'tinkerbell' ? 'bg-yellow-300 text-black' :
                       theme === 'bounceworld' ? 'bg-[#1D428A] text-white' :
+                      theme === 'avengers' ? 'bg-[#604AC7] text-white' :
                       'bg-yellow-300 text-black'
                     }` : 'bg-white text-gray-400'
                   }`}>
@@ -1130,6 +1237,7 @@ export default function StudentSettingsPage() {
                       theme === 'ben10' ? 'bg-[#64cc4f] text-black' :
                       theme === 'tinkerbell' ? 'bg-yellow-300 text-black' :
                       theme === 'bounceworld' ? 'bg-[#1D428A] text-white' :
+                      theme === 'avengers' ? 'bg-[#604AC7] text-white' :
                       'bg-yellow-300 text-black'
                     }` : 'bg-white text-gray-400'
                   }`}>
@@ -1143,6 +1251,7 @@ export default function StudentSettingsPage() {
                       theme === 'ben10' ? 'bg-[#64cc4f] text-black' :
                       theme === 'tinkerbell' ? 'bg-yellow-300 text-black' :
                       theme === 'bounceworld' ? 'bg-[#1D428A] text-white' :
+                      theme === 'avengers' ? 'bg-[#604AC7] text-white' :
                       'bg-yellow-300 text-black'
                     }` : 'bg-white text-gray-400'
                   }`}>
@@ -1166,8 +1275,12 @@ export default function StudentSettingsPage() {
                   ? 'from-yellow-500 to-green-600 hover:from-yellow-600 hover:to-green-700'
                   : theme === 'bounceworld'
                   ? 'from-[#1D428A] to-[#C8102E] hover:from-[#C8102E] hover:to-[#1D428A]'
+                  : theme === 'avengers'
+                  ? 'from-[#2C1267] to-[#604AC7] hover:from-[#604AC7] hover:to-[#2C1267]'
                   : 'from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700'
-              } text-white px-8 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} disabled:opacity-50 animate-pulse`}
+              } text-white px-8 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 ${
+                theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : 'border-black'
+              } disabled:opacity-50 animate-pulse`}
             >
               {loading.password ? 'Transforming Hero...' : 'Change Password Power!'}
             </Button>
