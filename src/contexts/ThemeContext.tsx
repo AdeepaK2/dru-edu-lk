@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-export type ThemeType = 'ben10' | 'tinkerbell' | 'normal';
+export type ThemeType = 'ben10' | 'tinkerbell' | 'cricketverse' | 'bounceworld' | 'avengers';
 
 interface ThemeContextType {
   theme: ThemeType;
@@ -19,11 +19,18 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setIsClient(true);
     const savedTheme = localStorage.getItem('student-theme') as ThemeType | null;
-    if (savedTheme === 'ben10' || savedTheme === 'tinkerbell' || savedTheme === 'normal') {
+    if (savedTheme === 'ben10' || savedTheme === 'tinkerbell' || savedTheme === 'cricketverse' || savedTheme === 'bounceworld' || savedTheme === 'avengers') {
       setThemeState(savedTheme);
       applyTheme(savedTheme);
     } else {
-      applyTheme('ben10');
+      // Handle legacy 'normal' theme
+      if (savedTheme === 'normal') {
+        setThemeState('cricketverse');
+        localStorage.setItem('student-theme', 'cricketverse');
+        applyTheme('cricketverse');
+      } else {
+        applyTheme('ben10');
+      }
     }
   }, []);
 
@@ -54,8 +61,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.style.setProperty('--theme-accent', '#a855f7');
       root.style.setProperty('--theme-bg-light', '#fef2f8');
       root.style.setProperty('--theme-bg-dark', '#500724');
-    } else if (selectedTheme === 'normal') {
-      // Normal/Professional Theme - Blue and White
+    } else if (selectedTheme === 'cricketverse') {
+      // CricketVerse Theme - Blue and White (renamed from normal)
       root.style.setProperty('--theme-primary-light', '#60a5fa');
       root.style.setProperty('--theme-primary', '#3b82f6');
       root.style.setProperty('--theme-primary-dark', '#1e40af');
@@ -63,6 +70,24 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.style.setProperty('--theme-accent', '#6366f1');
       root.style.setProperty('--theme-bg-light', '#f8fafc');
       root.style.setProperty('--theme-bg-dark', '#1e293b');
+    } else if (selectedTheme === 'bounceworld') {
+      // BounceWorld Theme - White, Blue (#1D428A), and Red (#C8102E)
+      root.style.setProperty('--theme-primary-light', '#3B82F6');
+      root.style.setProperty('--theme-primary', '#1D428A');
+      root.style.setProperty('--theme-primary-dark', '#1e3a8a');
+      root.style.setProperty('--theme-secondary', '#C8102E');
+      root.style.setProperty('--theme-accent', '#ef4444');
+      root.style.setProperty('--theme-bg-light', '#ffffff');
+      root.style.setProperty('--theme-bg-dark', '#1D428A');
+    } else if (selectedTheme === 'avengers') {
+      // Avengers Theme - Midnight Blue variations with Rosy Brown and Slate Blue
+      root.style.setProperty('--theme-primary-light', '#604AC7');
+      root.style.setProperty('--theme-primary', '#2C1267');
+      root.style.setProperty('--theme-primary-dark', '#0F0826');
+      root.style.setProperty('--theme-secondary', '#C88DA5');
+      root.style.setProperty('--theme-accent', '#4F2C8D');
+      root.style.setProperty('--theme-bg-light', '#f8fafc');
+      root.style.setProperty('--theme-bg-dark', '#0F0826');
     }
   };
 

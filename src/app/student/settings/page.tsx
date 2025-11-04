@@ -400,10 +400,10 @@ export default function StudentSettingsPage() {
   }
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br p-6 ${theme === 'ben10' ? '' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : 'from-blue-400 to-indigo-600'}`} style={theme === 'ben10' ? { background: 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))' } : undefined}>
+    <div className={`min-h-screen bg-gradient-to-br p-6 ${theme === 'ben10' ? '' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'from-white via-[#1D428A]/10 to-[#C8102E]/10' : 'from-blue-400 to-indigo-600'}`} style={theme === 'ben10' ? { background: 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))' } : undefined}>
       <div className="space-y-8 max-w-6xl mx-auto">
       {/* Page Header - Theme Aware */}
-      <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-500 via-yellow-500 to-green-600' : 'from-blue-600 via-indigo-700 to-indigo-900'} rounded-2xl text-white p-8 border-2 border-black relative overflow-hidden`}>
+      <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-500 via-yellow-500 to-green-600' : theme === 'bounceworld' ? 'from-[#1D428A] via-white to-[#C8102E]' : 'from-blue-600 via-indigo-700 to-indigo-900'} rounded-2xl text-white p-8 border-2 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} relative overflow-hidden`}>
 
         
    
@@ -416,7 +416,7 @@ export default function StudentSettingsPage() {
                 <h1 className="text-3xl font-bold">
                Setting Page 
                 </h1>
-                <p className={`${theme === 'ben10' ? 'text-black' : 'text-green-100'} text-lg font-semibold mt-2`}>
+                <p className={`${theme === 'ben10' ? 'text-black' : theme === 'bounceworld' ? 'text-white' : 'text-green-100'} text-lg font-semibold mt-2`}>
                   Customize your learning profile!
                 </p>
               </div>
@@ -443,9 +443,9 @@ export default function StudentSettingsPage() {
 
       {/* Success/Error Messages - Theme Aware */}
       {message && (
-        <div className={`rounded-xl border-4 border-black p-4 shadow-lg ${
+        <div className={`rounded-xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} p-4 shadow-lg ${
           message.type === 'success' 
-            ? `${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 to-green-300' : 'bg-gradient-to-r from-blue-300 to-indigo-300'}` 
+            ? `${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 to-green-300' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] to-[#C8102E]' : 'bg-gradient-to-r from-blue-300 to-indigo-300'}` 
             : 'bg-gradient-to-r from-red-300 to-pink-300'
         }`}>
           <div className="flex items-center space-x-3">
@@ -453,20 +453,20 @@ export default function StudentSettingsPage() {
               {message.type === 'success' ? '🎉' : '😅'}
             </div>
             <div>
-              <p className="font-bold text-black text-lg">
+              <p className={`font-bold ${theme === 'bounceworld' ? 'text-white' : 'text-black'} text-lg`}>
                 {message.type === 'success' ? 'Ben 10 Says: Hero Success!' : 'Oops! Ben 10 Says: Try Again!'}
               </p>
-              <p className="text-black font-medium">{message.text}</p>
+              <p className={`${theme === 'bounceworld' ? 'text-white' : 'text-black'} font-medium`}>{message.text}</p>
             </div>
           </div>
         </div>
       )}
 
       {/* Theme Selector Section */}
-      <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-200 via-green-200 to-yellow-300' : 'from-blue-200 via-indigo-200 to-purple-300'} rounded-xl shadow-lg border-4 border-black p-6`}>
+      <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-200 via-green-200 to-yellow-300' : theme === 'cricketverse' ? 'from-blue-200 via-indigo-200 to-purple-300' : theme === 'bounceworld' ? 'from-white via-[#1D428A]/30 to-[#C8102E]/30' : theme === 'avengers' ? 'from-[#2C1267]/20 via-[#604AC7]/20 to-[#C88DA5]/20' : 'from-blue-200 via-indigo-200 to-purple-300'} rounded-xl shadow-lg border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} p-6`}>
         <div className="flex items-center space-x-3 mb-6">
         
-          <h2 className="text-2xl font-black text-black">Choose Your Learning Theme! </h2>
+          <h2 className={`text-2xl font-black ${theme === 'bounceworld' ? 'text-[#1D428A]' : 'text-black'}`}>Choose Your Learning Theme! </h2>
         </div>
 
         <div className="grid md:grid-cols-3 gap-3">
@@ -535,35 +535,100 @@ export default function StudentSettingsPage() {
             )}
           </button>
 
-          {/* Default Theme Card (internal key: normal) */}
+          {/* CricketVerse Theme Card */}
           <button
             type="button"
-            onClick={() => handleThemeChange('normal')}
+            onClick={() => handleThemeChange('cricketverse')}
             className={`p-3 rounded-xl border-4 transition-all transform hover:scale-105 ${
-              selectedTheme === 'normal'
+              selectedTheme === 'cricketverse'
                 ? 'border-blue-600 bg-blue-100 shadow-lg scale-105'
                 : 'border-black bg-white hover:border-blue-400'
             }`}
           >
             <div className="relative w-full h-24 mb-2 rounded-lg overflow-hidden border-2 border-black bg-white">
               <Image
-                src="/images/1.png"
-                alt="Default Theme"
+                src="/CricketVerse.avif"
+                alt="CricketVerse Theme"
                 fill
                 className="object-cover"
               />
             </div>
-            <h3 className="text-lg font-bold text-black mb-1">Default</h3>
-            <p className="text-sm text-black font-semibold mb-1">Blue & Clean Theme</p>
+            <h3 className="text-lg font-bold text-black mb-1">CricketVerse</h3>
+            <p className="text-sm text-black font-semibold mb-1">Cricket Blue Theme</p>
             <div className="flex items-center justify-center space-x-1 mb-2">
               <div className="w-5 h-5 bg-blue-400 rounded-full border-2 border-black"></div>
               <div className="w-5 h-5 bg-blue-500 rounded-full border-2 border-black"></div>
               <div className="w-5 h-5 bg-indigo-600 rounded-full border-2 border-black"></div>
               <div className="w-5 h-5 bg-white rounded-full border-2 border-black"></div>
             </div>
-            {selectedTheme === 'normal' && (
+            {selectedTheme === 'cricketverse' && (
               <div className="mt-2 flex items-center justify-center">
                 <span className="text-xs font-bold text-blue-600">✓ Selected</span>
+              </div>
+            )}
+          </button>
+
+          {/* BounceWorld Theme Card */}
+          <button
+            type="button"
+            onClick={() => handleThemeChange('bounceworld')}
+            className={`p-3 rounded-xl border-4 transition-all transform hover:scale-105 ${
+              selectedTheme === 'bounceworld'
+                ? 'border-[#1D428A] bg-blue-100 shadow-lg scale-105'
+                : 'border-black bg-white hover:border-[#1D428A]'
+            }`}
+          >
+            <div className="relative w-full h-24 mb-2 rounded-lg overflow-hidden border-2 border-black bg-white">
+              <Image
+                src="/BounceWorld.jpg"
+                alt="BounceWorld Theme"
+                fill
+                className="object-cover"
+              />
+            </div>
+            <h3 className="text-lg font-bold text-black mb-1">BounceWorld</h3>
+            <p className="text-sm text-black font-semibold mb-1">Bounce Blue & Red</p>
+            <div className="flex items-center justify-center space-x-1 mb-2">
+              <div className="w-5 h-5 bg-[#1D428A] rounded-full border-2 border-black"></div>
+              <div className="w-5 h-5 bg-[#C8102E] rounded-full border-2 border-black"></div>
+              <div className="w-5 h-5 bg-white rounded-full border-2 border-black"></div>
+            </div>
+            {selectedTheme === 'bounceworld' && (
+              <div className="mt-2 flex items-center justify-center">
+                <span className="text-xs font-bold text-[#1D428A]">✓ Selected</span>
+              </div>
+            )}
+          </button>
+
+          {/* Avengers Theme Card */}
+          <button
+            type="button"
+            onClick={() => handleThemeChange('avengers')}
+            className={`p-3 rounded-xl border-4 transition-all transform hover:scale-105 ${
+              selectedTheme === 'avengers'
+                ? 'border-[#2C1267] bg-purple-100 shadow-lg scale-105'
+                : 'border-black bg-white hover:border-[#2C1267]'
+            }`}
+          >
+            <div className="relative w-full h-24 mb-2 rounded-lg overflow-hidden border-2 border-black bg-white">
+              <Image
+                src="/avengers.webp"
+                alt="Avengers Theme"
+                fill
+                className="object-cover"
+              />
+            </div>
+            <h3 className="text-lg font-bold text-black mb-1">Avengers</h3>
+            <p className="text-sm text-black font-semibold mb-1">Hero Midnight Theme</p>
+            <div className="flex items-center justify-center space-x-1 mb-2">
+              <div className="w-5 h-5 bg-[#2C1267] rounded-full border-2 border-black"></div>
+              <div className="w-5 h-5 bg-[#604AC7] rounded-full border-2 border-black"></div>
+              <div className="w-5 h-5 bg-[#C88DA5] rounded-full border-2 border-black"></div>
+              <div className="w-5 h-5 bg-[#4F2C8D] rounded-full border-2 border-black"></div>
+            </div>
+            {selectedTheme === 'avengers' && (
+              <div className="mt-2 flex items-center justify-center">
+                <span className="text-xs font-bold text-[#2C1267]">✓ Selected</span>
               </div>
             )}
           </button>
@@ -578,9 +643,9 @@ export default function StudentSettingsPage() {
       </div>
 
       {/* Profile Settings - Theme Aware */}
-      <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-500' : 'from-blue-300 via-indigo-400 to-indigo-600'} rounded-xl shadow-lg border-4 border-black p-6`}>
+      <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-500' : theme === 'bounceworld' ? 'from-white via-[#1D428A]/20 to-[#C8102E]/20' : 'from-blue-300 via-indigo-400 to-indigo-600'} rounded-xl shadow-lg border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} p-6`}>
         <div className="flex items-center space-x-3 mb-6">
-          <h2 className="text-2xl font-black text-black">Profile Studio</h2>
+          <h2 className={`text-2xl font-black ${theme === 'bounceworld' ? 'text-[#1D428A]' : 'text-black'}`}>Profile Studio</h2>
         </div>
 
         <form onSubmit={handleProfileSubmit} className="space-y-6">
@@ -769,7 +834,7 @@ export default function StudentSettingsPage() {
             <Button
               type="submit"
               disabled={loading.profile}
-              className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222] hover:from-[#b2e05b] hover:to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-500 to-green-600 hover:from-yellow-600 hover:to-green-700' : 'from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700'} text-white px-8 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black disabled:opacity-50 animate-pulse`}
+              className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222] hover:from-[#b2e05b] hover:to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-500 to-green-600 hover:from-yellow-600 hover:to-green-700' : theme === 'bounceworld' ? 'from-[#1D428A] to-[#C8102E] hover:from-[#C8102E] hover:to-[#1D428A] border-[#1D428A]' : 'from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700'} text-white px-8 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} disabled:opacity-50 animate-pulse`}
             >
               {loading.profile ? 'Saving Hero...' : 'Save Your Hero Profile! '}
             </Button>

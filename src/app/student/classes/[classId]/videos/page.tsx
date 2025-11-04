@@ -540,7 +540,7 @@ export default function ClassVideos({ params }: ClassVideoProps) {
 interface ClassVideoCardProps {
   video: ClassVideoData;
   onAccess: (video: ClassVideoData) => void;
-  theme: 'ben10' | 'tinkerbell' | 'normal';
+  theme: 'ben10' | 'tinkerbell' | 'cricketverse' | 'bounceworld' | 'avengers';
 }
 
 const ClassVideoCard: React.FC<ClassVideoCardProps> = ({ video, onAccess, theme }) => {

@@ -204,6 +204,12 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
               ? 'bg-gradient-to-br from-[#64cc4f]/80 via-[#222222]/80 to-[#b2e05b]/80'
               : theme === 'tinkerbell'
               ? 'bg-gradient-to-br from-green-400/80 via-yellow-400/80 to-yellow-600/80'
+              : theme === 'cricketverse'
+              ? 'bg-gradient-to-br from-blue-400/80 via-indigo-400/80 to-indigo-600/80'
+              : theme === 'bounceworld'
+              ? 'bg-white/80'
+              : theme === 'avengers'
+              ? 'bg-gradient-to-br from-[#2C1267]/80 to-[#4F2C8D]/80'
               : 'bg-gradient-to-br from-blue-400/80 via-indigo-400/80 to-indigo-600/80'
           }`}
           onClick={onToggle}
@@ -219,6 +225,12 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
           ? 'bg-gradient-to-b from-[#64cc4f] via-[#222222] to-[#b2e05b]' 
           : theme === 'tinkerbell'
           ? 'bg-gradient-to-br from-green-400 to-yellow-600'
+          : theme === 'cricketverse'
+          ? 'bg-gradient-to-b from-blue-500 via-indigo-500 to-indigo-600'
+          : theme === 'bounceworld'
+          ? 'bg-white'
+          : theme === 'avengers'
+          ? 'bg-gradient-to-b from-[#2C1267] to-[#4F2C8D]'
           : 'bg-gradient-to-b from-blue-500 via-indigo-500 to-indigo-600'}
       `}>
         {/* Header */}
@@ -227,6 +239,12 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
               ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222]' 
               : theme === 'tinkerbell'
               ? 'bg-gradient-to-r from-yellow-500 to-green-600'
+              : theme === 'cricketverse'
+              ? 'bg-gradient-to-r from-blue-600 to-indigo-700'
+              : theme === 'bounceworld'
+              ? 'bg-white border-b-2 border-[#1D428A]'
+              : theme === 'avengers'
+              ? 'bg-gradient-to-r from-[#2C1267] to-[#4F2C8D]'
               : 'bg-gradient-to-r from-blue-600 to-indigo-700'
           }`}>
             <div className="flex items-center space-x-3">
@@ -236,19 +254,23 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
                 className="w-10 h-10 rounded-2xl border-2 border-black shadow-lg"
               />
               <div className="hidden lg:block">
-                <h1 className="text-lg font-black text-white drop-shadow-lg">
-                  Dr. U Education
-                </h1>
-              </div>
+                  <h1 className={`text-lg font-black drop-shadow-lg ${theme === 'bounceworld' ? 'text-black' : 'text-white'}`}>
+                    Dr. U Education
+                  </h1>
+                </div>
             </div>
             <button
               onClick={onToggle}
-              className={`lg:hidden p-2 rounded-full text-white border-2 border-white font-black transition-all ${
+              className={`lg:hidden p-2 rounded-full border-2 font-black transition-all ${theme === 'bounceworld' ? 'text-black border-black hover:text-[#1D428A] hover:bg-white' : 'text-white border-white'} ${
                 theme === 'ben10'
                   ? 'hover:text-green-400 hover:bg-black'
                   : theme === 'tinkerbell'
                   ? 'hover:text-yellow-400 hover:bg-black'
-                  : 'hover:text-blue-400 hover:bg-indigo-700'
+                  : theme === 'cricketverse'
+                  ? 'hover:text-blue-400 hover:bg-indigo-700'
+                  : theme === 'avengers'
+                  ? 'hover:text-[#604AC7] hover:bg-[#2C1267]'
+                  : ''
               }`}
             >
               <X className="w-5 h-5" />
@@ -262,6 +284,12 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
               ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222]'
               : theme === 'tinkerbell'
               ? 'bg-gradient-to-r from-yellow-500 to-green-600'
+              : theme === 'cricketverse'
+              ? 'bg-gradient-to-r from-indigo-600 to-blue-500'
+              : theme === 'bounceworld'
+              ? 'bg-white'
+              : theme === 'avengers'
+              ? 'bg-gradient-to-r from-[#2C1267] to-[#4F2C8D]'
               : 'bg-gradient-to-r from-indigo-600 to-blue-500'
           }`}>
             <div className="flex items-center space-x-2">
@@ -277,13 +305,13 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
 
                   return (
                     <span className="text-3xl font-black">
-                      {theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : '📚'}
+                      {theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'bounceworld' ? '🏀' : '📚'}
                     </span>
                   );
                 })()}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-black text-white truncate">
+                <p className={`text-sm font-black ${theme === 'bounceworld' ? 'text-black' : 'text-white'} truncate`}>
                   {student.name}
                 </p>
                 <p className="text-xs font-bold text-black" style={{
@@ -315,12 +343,24 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
                         ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222] text-white border-black shadow-lg'
                         : theme === 'tinkerbell'
                         ? 'bg-gradient-to-r from-yellow-400 to-green-500 text-white border-black shadow-lg'
+                        : theme === 'cricketverse'
+                        ? 'bg-gradient-to-r from-blue-400 to-indigo-600 text-white border-indigo-700 shadow-lg'
+                        : theme === 'bounceworld'
+                        ? 'bg-white text-[#1D428A] border-[#1D428A] shadow-lg'
+                        : theme === 'avengers'
+                        ? 'bg-gradient-to-r from-[#2C1267] to-[#4F2C8D] text-white border-black shadow-lg'
                         : 'bg-gradient-to-r from-blue-400 to-indigo-600 text-white border-indigo-700 shadow-lg')
                     : `bg-white text-black hover:bg-gradient-to-r border-gray-300 hover:border-black ${
                         theme === 'ben10'
                           ? 'hover:from-[#64cc4f] hover:to-[#222222] hover:text-white'
                           : theme === 'tinkerbell'
                           ? 'hover:from-yellow-300 hover:to-green-400 hover:text-white'
+                          : theme === 'cricketverse'
+                          ? 'hover:from-blue-300 hover:to-indigo-500 hover:text-white'
+                          : theme === 'bounceworld'
+                          ? 'hover:from-white hover:to-[#1D428A] hover:text-[#1D428A]'
+                          : theme === 'avengers'
+                          ? 'hover:from-[#604AC7] hover:to-[#2C1267] hover:text-white'
                           : 'hover:from-blue-300 hover:to-indigo-500 hover:text-white'
                       }`
                   }
@@ -361,6 +401,12 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
             ? 'bg-gradient-to-r from-[#222222] to-[#64cc4f]'
             : theme === 'tinkerbell'
             ? 'bg-gradient-to-r from-yellow-500 to-green-600'
+            : theme === 'cricketverse'
+            ? 'bg-gradient-to-r from-blue-600 to-indigo-700'
+            : theme === 'bounceworld'
+            ? 'bg-white'
+            : theme === 'avengers'
+            ? 'bg-gradient-to-r from-[#2C1267] to-[#4F2C8D]'
             : 'bg-gradient-to-r from-blue-600 to-indigo-700'
         }`}>
           <Button

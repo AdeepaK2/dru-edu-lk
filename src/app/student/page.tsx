@@ -282,8 +282,8 @@ export default function StudentDashboard() {
   // Show loading state while data is being fetched
   if (loading) {
     return (
-      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f]  to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : 'from-blue-400 to-indigo-600'} flex items-center justify-center`}>
-        <div className="bg-white border-4 border-black rounded-3xl p-8 shadow-2xl">
+      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f]  to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : theme === 'cricketverse' ? 'from-blue-400 to-indigo-600' : theme === 'bounceworld' ? 'from-white via-[#1D428A]/10 to-white' : theme === 'avengers' ? 'from-[#2C1267]/20 to-[#4F2C8D]/20' : 'from-blue-400 to-indigo-600'} flex items-center justify-center`}>
+        <div className={`${theme === 'bounceworld' ? 'bg-white border-4 border-[#1D428A]' : 'bg-white border-4 border-black'} rounded-3xl p-8 shadow-2xl`}>
           {/* Theme-Specific Loading Animation */}
           <div className="relative mb-6 flex flex-col items-center">
             {/* Tinkerbell Loading GIF */}
@@ -310,8 +310,32 @@ export default function StudentDashboard() {
               </div>
             )}
             
+            {/* CricketVerse Loading */}
+            {theme === 'cricketverse' && (
+              <div className="flex flex-col items-center">
+                <div className="w-24 h-24 border-4 border-blue-400 border-t-blue-600 rounded-full animate-spin"></div>
+                <span className="text-2xl font-bold text-blue-600 mt-4">Loading</span>
+              </div>
+            )}
+            
+            {/* BounceWorld Loading */}
+            {theme === 'bounceworld' && (
+              <div className="flex flex-col items-center">
+                <div className="w-24 h-24 border-4 border-[#1D428A] border-t-[#C8102E] rounded-full animate-spin"></div>
+                <span className="text-2xl font-bold text-[#1D428A] mt-4">Loading</span>
+              </div>
+            )}
+            
+            {/* Avengers Loading */}
+            {theme === 'avengers' && (
+              <div className="flex flex-col items-center">
+                <div className="w-24 h-24 border-4 border-[#2C1267] border-t-[#604AC7] rounded-full animate-spin"></div>
+                <span className="text-2xl font-bold text-[#2C1267] mt-4">Loading</span>
+              </div>
+            )}
+            
             {/* Default Theme Spinner with Loading Text */}
-            {theme !== 'tinkerbell' && theme !== 'ben10' && (
+            {!['tinkerbell', 'ben10', 'cricketverse', 'bounceworld', 'avengers'].includes(theme) && (
               <div className="flex flex-col items-center">
                 <div className="w-24 h-24 border-4 border-blue-400 border-t-blue-600 rounded-full animate-spin"></div>
                 <span className="text-2xl font-bold text-blue-600 mt-4">Loading</span>
@@ -334,6 +358,12 @@ export default function StudentDashboard() {
           ? 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))'
           : theme === 'tinkerbell'
           ? 'linear-gradient(to bottom right, rgb(134, 239, 172), rgb(202, 138, 4), rgb(134, 239, 172))'
+          : theme === 'cricketverse'
+          ? 'linear-gradient(to bottom right, rgb(96, 165, 250), rgb(79, 70, 229), rgb(96, 165, 250))'
+          : theme === 'bounceworld'
+          ? 'linear-gradient(to bottom right, rgb(255, 255, 255), rgba(29, 66, 138, 0.1), rgb(255, 255, 255))'
+          : theme === 'avengers'
+          ? 'linear-gradient(to bottom right, rgba(44, 18, 103, 0.3), rgba(79, 44, 141, 0.2), rgba(44, 18, 103, 0.3))'
           : 'linear-gradient(to bottom right, rgb(96, 165, 250), rgb(79, 70, 229), rgb(96, 165, 250))'
       }}>
         <div className="space-y-6">
@@ -343,26 +373,48 @@ export default function StudentDashboard() {
             ? 'bg-gradient-to-br from-[#64cc4f] to-[#222222]'
             : theme === 'tinkerbell'
             ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500'
+            : theme === 'cricketverse'
+            ? 'bg-gradient-to-r from-blue-500 to-indigo-600'
+            : theme === 'bounceworld'
+            ? 'bg-gradient-to-r from-white via-[#1D428A] to-[#C8102E] text-black border-[#1D428A]'
+            : theme === 'avengers'
+            ? 'bg-gradient-to-r from-[#2C1267] to-[#4F2C8D]'
             : 'bg-gradient-to-r from-blue-500 to-indigo-600'
         }`}>
           {/* Themed background elements */}
           <div className="absolute top-0 right-0 w-32 h-32 rounded-full -translate-y-16 translate-x-16  opacity-20" style={{
-            backgroundColor: theme === 'ben10' ? 'rgb(178, 224, 91)' : theme === 'tinkerbell' ? 'rgb(202, 138, 4)' : 'rgb(147, 197, 253)'
+            backgroundColor: theme === 'ben10' ? 'rgb(178, 224, 91)' 
+              : theme === 'tinkerbell' ? 'rgb(202, 138, 4)' 
+              : theme === 'cricketverse' ? 'rgb(147, 197, 253)'
+              : theme === 'bounceworld' ? 'rgb(200, 16, 46)'
+              : theme === 'avengers' ? 'rgb(96, 74, 199)'
+              : 'rgb(147, 197, 253)'
           }}></div>
           <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full translate-y-12 -translate-x-12  opacity-20" style={{
-            backgroundColor: theme === 'ben10' ? 'rgb(34, 34, 34)' : theme === 'tinkerbell' ? 'rgb(0, 0, 0)' : 'rgb(55, 65, 81)'
+            backgroundColor: theme === 'ben10' ? 'rgb(34, 34, 34)' 
+              : theme === 'tinkerbell' ? 'rgb(0, 0, 0)' 
+              : theme === 'cricketverse' ? 'rgb(55, 65, 81)'
+              : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
+              : theme === 'avengers' ? 'rgb(44, 18, 103)'
+              : 'rgb(55, 65, 81)'
           }}></div>
          
 
           <div className="flex items-center justify-between relative z-10">
             <div className="flex-1">
               <div className="flex items-center space-x-4 mb-2">
-                {(theme === 'ben10' || theme === 'tinkerbell') && (
+                {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'cricketverse') && (
                   <img 
-                    src={theme === 'ben10' ? '/ben10-welcome.png' : '/tinkerbell-welcome.png'} 
+                    src={theme === 'ben10' ? '/ben10-welcome.png' 
+                        : theme === 'tinkerbell' ? '/tinkerbell-welcome.png'
+                        : theme === 'cricketverse' ? '/CricketVerse.avif'
+                        : '/welcome.png'} 
                     alt="Welcome" 
                     className={`w-40 h-40 rounded-full border-4 border-black ring-4 ${
-                      theme === 'ben10' ? 'ring-[#64cc4f]' : 'ring-green-600'
+                      theme === 'ben10' ? 'ring-[#64cc4f]' 
+                      : theme === 'tinkerbell' ? 'ring-green-600'
+                      : theme === 'cricketverse' ? 'ring-blue-500'
+                      : 'ring-green-600'
                     }`}
                     onError={(e) => {
                       // Fallback to generic welcome image if theme image not found
@@ -371,31 +423,65 @@ export default function StudentDashboard() {
                   />
                 )}
                 <div>
-                  <h1 className="text-3xl font-bold">
-                    Hey, {student?.name}! Ready to {theme === 'ben10' ? 'transform' : theme === 'tinkerbell' ? 'enchant' : 'excel'} your learning?
+                  <h1 className={`text-3xl font-bold ${theme === 'bounceworld' ? 'text-black' : ''}`}>
+                    Hey, {student?.name}! Ready to {
+                      theme === 'ben10' ? 'transform' 
+                      : theme === 'tinkerbell' ? 'enchant' 
+                      : theme === 'cricketverse' ? 'score big in'
+                      : theme === 'bounceworld' ? 'bounce into'
+                      : theme === 'avengers' ? 'assemble for'
+                      : 'excel in'
+                    } your learning?
                   </h1>
                   <p className="text-lg font-semibold mt-2" style={{
-                    color: theme === 'ben10' ? 'rgb(178, 224, 91)' : theme === 'tinkerbell' ? 'rgb(0, 0, 30)' : 'rgb(191, 219, 254)'
+                    color: theme === 'ben10' ? 'rgb(178, 224, 91)' 
+                      : theme === 'tinkerbell' ? 'rgb(0, 0, 30)' 
+                      : theme === 'cricketverse' ? 'rgb(191, 219, 254)'
+                      : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
+                      : theme === 'avengers' ? 'rgb(200, 138, 165)'
+                      : 'rgb(191, 219, 254)'
                   }}>
                     {theme === 'ben10' 
                       ? "Let's make learning heroic with Ben 10's power!" 
                       : theme === 'tinkerbell'
                       ? "Let's sprinkle some fairy magic into learning!"
+                      : theme === 'cricketverse'
+                      ? "Let's hit learning for six in the CricketVerse!"
+                      : theme === 'bounceworld'
+                      ? "Let's bounce into exciting learning adventures!"
+                      : theme === 'avengers'
+                      ? "Let's assemble the greatest learning team!"
                       : "Let's focus on your educational goals!"}
                   </p>
                 </div>
               </div>
               <p className="mb-4 text-base" style={{
-                color: theme === 'ben10' ? 'rgb(178, 224, 91)' : theme === 'tinkerbell' ? 'rgb(0, 100, 8)' : 'rgb(191, 219, 254)'
+                color: theme === 'ben10' ? 'rgb(178, 224, 91)' 
+                  : theme === 'tinkerbell' ? 'rgb(0, 100, 8)' 
+                  : theme === 'cricketverse' ? 'rgb(191, 219, 254)'
+                  : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
+                  : theme === 'avengers' ? 'rgb(200, 138, 165)'
+                  : 'rgb(191, 219, 254)'
               }}>
                 {theme === 'ben10' 
                   ? 'Welcome to your alien learning headquarters!' 
                   : theme === 'tinkerbell'
                   ? 'Welcome to your enchanted learning sanctuary!'
+                  : theme === 'cricketverse'
+                  ? 'Welcome to your CricketVerse learning ground!'
+                  : theme === 'bounceworld'
+                  ? 'Welcome to your BounceWorld learning arena!'
+                  : theme === 'avengers'
+                  ? 'Welcome to your Avengers learning headquarters!'
                   : 'Welcome to your learning dashboard!'}
               </p>
               <div className="flex items-center space-x-2" style={{
-                color: theme === 'ben10' ? 'rgb(0,0,0)' : theme === 'tinkerbell' ? 'rgb(0, 0, 8)' : 'rgb(226, 232, 240)'
+                color: theme === 'ben10' ? 'rgb(0,0,0)' 
+                  : theme === 'tinkerbell' ? 'rgb(0, 0, 8)' 
+                  : theme === 'cricketverse' ? 'rgb(226, 232, 240)'
+                  : theme === 'bounceworld' ? 'rgb(0, 0, 0)'
+                  : theme === 'avengers' ? 'rgb(226, 232, 240)'
+                  : 'rgb(226, 232, 240)'
               }}>
                 <span className="text-sm font-medium">{getMelbourneDateTime()}</span>
               </div>
@@ -411,40 +497,67 @@ export default function StudentDashboard() {
             ? 'bg-gradient-to-br from-[#64cc4f] to-[#222222]'
             : theme === 'tinkerbell'
             ? 'bg-gradient-to-r from-green-300 via-yellow-500 to-green-300'
+            : theme === 'cricketverse'
+            ? 'bg-gradient-to-r from-blue-400 to-indigo-500'
+            : theme === 'bounceworld'
+            ? 'bg-gradient-to-r from-white via-[#1D428A]/20 to-white border-[#1D428A]'
+            : theme === 'avengers'
+            ? 'bg-gradient-to-r from-[#2C1267]/50 to-[#4F2C8D]/50'
             : 'bg-gradient-to-r from-blue-400 to-indigo-500'
         }`}>
             <div className="flex items-start space-x-4 relative z-10">
               <div className="relative">
               </div>
               <div className="flex-1">
-                <h3 className="text-2xl font-bold text-white mb-2 flex items-center">
+                <h3 className={`text-2xl font-bold mb-2 flex items-center ${theme === 'bounceworld' ? 'text-black' : 'text-white'}`}>
                   {getMotivationalMessage().message}
                  
                 </h3>
-                <p className="text-black text-base leading-relaxed font-medium">
+                <p className={`text-base leading-relaxed font-medium ${theme === 'bounceworld' ? 'text-black' : 'text-black'}`}>
                   {theme === 'ben10'
                     ? "Remember, just like Ben 10's transformations, every great achievement starts with a single power-up!"
                     : theme === 'tinkerbell'
                     ? "Remember, like Tinkerbell's magic, every learning moment sparkles with possibility!"
+                    : theme === 'cricketverse'
+                    ? "Remember, like a perfect cricket match, every learning session is a chance to score big!"
+                    : theme === 'bounceworld'
+                    ? "Remember, every bounce back from a challenge makes you stronger and higher!"
+                    : theme === 'avengers'
+                    ? "Remember, like the Avengers, your learning powers grow stronger when you practice together!"
                     : "Stay focused and consistent. Success comes from small steps taken every day!"}
                 </p>
-                <div className="mt-4 flex items-center space-x-4 text-sm text-black">
+                <div className={`mt-4 flex items-center space-x-4 text-sm ${theme === 'bounceworld' ? 'text-black' : 'text-black'}`}>
                   <div className="flex items-center space-x-1">
-                    <span className="text-lg">{theme === 'ben10' ? '📊' : theme === 'tinkerbell' ? '📈' : '📈'}</span>
+                    <span className="text-lg">{theme === 'ben10' ? '📊' : theme === 'tinkerbell' ? '📈' : theme === 'cricketverse' ? '🏏' : theme === 'bounceworld' ? '⚽' : theme === 'avengers' ? '�️' : '�📈'}</span>
                     <span>Grade: <strong style={{
-                      color: theme === 'ben10' ? 'rgb(100, 204, 79)' : 'rgb(0, 138, 4)'
+                      color: theme === 'ben10' ? 'rgb(100, 204, 79)' 
+                        : theme === 'tinkerbell' ? 'rgb(0, 138, 4)'
+                        : theme === 'cricketverse' ? 'rgb(59, 130, 246)'
+                        : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
+                        : theme === 'avengers' ? 'rgb(96, 74, 199)'
+                        : 'rgb(0, 138, 4)'
                     }}>{dashboardStats.currentGrade}%</strong></span>
                   </div>
                   <div className="flex items-center space-x-1">
                     <span className="text-lg">📝</span>
                     <span>Tests: <strong style={{
-                      color: theme === 'ben10' ? 'rgb(100, 204, 79)' : 'rgb(0, 138, 4)'
+                      color: theme === 'ben10' ? 'rgb(100, 204, 79)' 
+                        : theme === 'tinkerbell' ? 'rgb(0, 138, 4)'
+                        : theme === 'cricketverse' ? 'rgb(59, 130, 246)'
+                        : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
+                        : theme === 'avengers' ? 'rgb(96, 74, 199)'
+                        : 'rgb(0, 138, 4)'
                     }}>{dashboardStats.completedTests}</strong></span>
                   </div>
                   <div className="flex items-center space-x-1">
                     
                     <span>Classes: <strong style={{
-                      color: theme === 'ben10' ? 'rgb(100, 204, 79)' : 'rgb(0, 138, 4)'
+                      color: theme === 'ben10' ? 'rgb(100, 204, 79)' 
+                        : theme === 'tinkerbell' ? 'rgb(0, 138, 4)'
+                        : theme === 'cricketverse' ? 'rgb(59, 130, 246)'
+                        : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
+                        : theme === 'avengers' ? 'rgb(96, 74, 199)'
+                        : 'rgb(0, 138, 4)'
                     }}>{dashboardStats.totalClasses}</strong></span>
                   </div>
                 </div>
@@ -459,11 +572,17 @@ export default function StudentDashboard() {
 
         {/* Stats Cards - Dynamic Theme */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className={`rounded-xl shadow-lg border-4 border-black p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105 ${
+          <div className={`rounded-xl shadow-lg border-4 ${theme === 'bounceworld' ? 'border-[#C8102E]' : 'border-black'} p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105 ${
             theme === 'ben10'
               ? 'bg-gradient-to-br from-[#64cc4f] to-[#b2e05b]'
               : theme === 'tinkerbell'
               ? 'bg-gradient-to-br from-green-400 to-yellow-500'
+              : theme === 'cricketverse'
+              ? 'bg-gradient-to-br from-blue-400 to-blue-600'
+              : theme === 'bounceworld'
+              ? 'bg-gradient-to-br from-white to-[#1D428A]/20 border-[#1D428A]'
+              : theme === 'avengers'
+              ? 'bg-gradient-to-br from-[#604AC7]/30 to-[#C88DA5]/30'
               : 'bg-gradient-to-br from-blue-400 to-blue-600'
           }`}>
             <div className="flex items-center justify-between">
@@ -489,133 +608,261 @@ export default function StudentDashboard() {
             </div>
           </div>
 
-          <div className={`rounded-xl shadow-lg border-4 border-black p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105 ${
+          <div className={`rounded-xl shadow-lg border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105 ${
             theme === 'ben10'
               ? 'bg-gradient-to-br from-[#64cc4f] to-[#b2e05b]'
               : theme === 'tinkerbell'
               ? 'bg-gradient-to-br from-green-400 to-yellow-600'
+              : theme === 'cricketverse'
+              ? 'bg-gradient-to-br from-blue-400 to-blue-600'
+              : theme === 'bounceworld'
+              ? 'bg-gradient-to-br from-white to-[#1D428A]/20 border-l-8 border-l-[#C8102E] border-r-8 border-r-[#1D428A]'
+              : theme === 'avengers'
+              ? 'bg-gradient-to-br from-[#604AC7]/30 to-[#C88DA5]/30'
               : 'bg-gradient-to-br from-blue-400 to-blue-600'
           }`}>
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <p className="text-sm font-bold mb-2" style={{
-                  color: theme === 'ben10' ? 'rgb(0,0,0)' : theme === 'tinkerbell' ? 'rgb(0, 0, 0)' : 'rgb(0, 0, 0)'
+                  color: theme === 'ben10' ? 'rgb(0,0,0)' 
+                    : theme === 'tinkerbell' ? 'rgb(0, 0, 0)' 
+                    : theme === 'cricketverse' ? 'rgb(0, 0, 0)'
+                    : theme === 'bounceworld' ? 'rgb(0, 0, 0)'
+                    : theme === 'avengers' ? 'rgb(0, 0, 0)'
+                    : 'rgb(0, 0, 0)'
                 }}>Tests Completed</p>
                 <p className="text-4xl font-black mt-2" style={{
-                  color: theme === 'ben10' ? 'rgb(255,255,255)' : 'rgb(255, 255, 255)'
+                  color: theme === 'ben10' ? 'rgb(255,255,255)' 
+                    : theme === 'tinkerbell' ? 'rgb(255, 255, 255)'
+                    : theme === 'cricketverse' ? 'rgb(255, 255, 255)'
+                    : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
+                    : theme === 'avengers' ? 'rgb(255, 255, 255)'
+                    : 'rgb(255, 255, 255)'
                 }}>
                   {dashboardStats.completedTests}
                 </p>
                 <p className="mt-1 font-semibold" style={{
-                  color: theme === 'ben10' ? 'rgb(0,0,0)' : 'rgb(0, 0, 4)'
+                  color: theme === 'ben10' ? 'rgb(0,0,0)' 
+                    : theme === 'tinkerbell' ? 'rgb(0, 0, 4)'
+                    : theme === 'cricketverse' ? 'rgb(0, 0, 0)'
+                    : theme === 'bounceworld' ? 'rgb(0, 0, 0)'
+                    : theme === 'avengers' ? 'rgb(0, 0, 0)'
+                    : 'rgb(0, 0, 4)'
                 }}>This semester</p>
                 <div className="mt-3 rounded-full h-3" style={{
-                  backgroundColor: theme === 'ben10' ? 'rgba(0,0,0, 0.3)' : 'rgba(0, 0, 0, 0.3)'
+                  backgroundColor: theme === 'ben10' ? 'rgba(0,0,0, 0.3)' 
+                    : theme === 'tinkerbell' ? 'rgba(0, 0, 0, 0.3)'
+                    : theme === 'cricketverse' ? 'rgba(0, 0, 0, 0.3)'
+                    : theme === 'bounceworld' ? 'rgba(29, 66, 138, 0.3)'
+                    : theme === 'avengers' ? 'rgba(44, 18, 103, 0.3)'
+                    : 'rgba(0, 0, 0, 0.3)'
                 }}>
                   <div
                     className="h-3 rounded-full transition-all duration-1000 ease-out shadow-lg"
                     style={{
-                      backgroundColor: theme === 'ben10' ? 'rgb(255,255,255)' : 'rgb(255, 255, 255)',
+                      backgroundColor: theme === 'ben10' ? 'rgb(255,255,255)' 
+                        : theme === 'tinkerbell' ? 'rgb(255, 255, 255)'
+                        : theme === 'cricketverse' ? 'rgb(255, 255, 255)'
+                        : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
+                        : theme === 'avengers' ? 'rgb(96, 74, 199)'
+                        : 'rgb(255, 255, 255)',
                       width: `${getProgressPercentage(dashboardStats.completedTests, 20)}%`
                     }}
                   ></div>
                 </div>
                 <p className="text-xs mt-1 font-bold" style={{
-                  color: theme === 'ben10' ? 'rgb(0,0,0)' : 'rgb(0, 0, 8)'
+                  color: theme === 'ben10' ? 'rgb(0,0,0)' 
+                    : theme === 'tinkerbell' ? 'rgb(0, 0, 8)'
+                    : theme === 'cricketverse' ? 'rgb(0, 0, 0)'
+                    : theme === 'bounceworld' ? 'rgb(0, 0, 0)'
+                    : theme === 'avengers' ? 'rgb(0, 0, 0)'
+                    : 'rgb(0, 0, 8)'
                 }}>
-                  {dashboardStats.completedTests}/20 goal {theme === 'ben10' ? '🎯' : theme === 'tinkerbell' ? '🎯' : ''}
+                  {dashboardStats.completedTests}/20 goal {theme === 'ben10' ? '🎯' : theme === 'tinkerbell' ? '🎯' : theme === 'cricketverse' ? '🏏' : theme === 'bounceworld' ? '⚽' : theme === 'avengers' ? '🛡️' : '🎯'}
                 </p>
               </div>
               <div className="w-16 h-16 rounded-full flex items-center justify-center border-4 border-white transform hover:rotate-12 transition-transform" style={{
-                backgroundColor: theme === 'ben10' ? 'rgb(0,0,0)' : 'rgb(0, 0, 5)'
+                backgroundColor: theme === 'ben10' ? 'rgb(0,0,0)' 
+                  : theme === 'tinkerbell' ? 'rgb(0, 0, 5)'
+                  : theme === 'cricketverse' ? 'rgb(0, 0, 0)'
+                  : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
+                  : theme === 'avengers' ? 'rgb(44, 18, 103)'
+                  : 'rgb(0, 0, 5)'
               }}>
                 <FileText className="w-8 h-8 text-white" />
               </div>
             </div>
           </div>
 
-          <div className={`rounded-xl shadow-lg border-4 border-black p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105 ${
+          <div className={`rounded-xl shadow-lg border-4 ${theme === 'bounceworld' ? 'border-[#C8102E]' : 'border-black'} p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105 ${
             theme === 'ben10'
               ? 'bg-gradient-to-br from-[#64cc4f] to-[#b2e05b]'
               : theme === 'tinkerbell'
               ? 'bg-gradient-to-br from-green-400 to-yellow-600'
+              : theme === 'cricketverse'
+              ? 'bg-gradient-to-br from-blue-400 to-blue-600'
+              : theme === 'bounceworld'
+              ? 'bg-gradient-to-br from-white to-[#1D428A]/20'
+              : theme === 'avengers'
+              ? 'bg-gradient-to-br from-[#604AC7]/30 to-[#C88DA5]/30'
               : 'bg-gradient-to-br from-blue-400 to-blue-600'
           }`}>
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <p className="text-black text-sm font-bold mb-2">Study Materials</p>
                 <p className="text-4xl font-black mt-2 " style={{
-                  color: theme === 'ben10' ? 'rgb(255,255,255)' : 'rgb(255, 255, 255)'
+                  color: theme === 'ben10' ? 'rgb(255,255,255)' 
+                    : theme === 'tinkerbell' ? 'rgb(255, 255, 255)'
+                    : theme === 'cricketverse' ? 'rgb(255, 255, 255)'
+                    : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
+                    : theme === 'avengers' ? 'rgb(255, 255, 255)'
+                    : 'rgb(255, 255, 255)'
                 }}>
                   {dashboardStats.studyMaterials}
                 </p>
                 <p className="mt-1 font-semibold" style={{
-                  color: theme === 'ben10' ? 'rgb(0,0,0)' : 'rgb(0, 0, 4)'
+                  color: theme === 'ben10' ? 'rgb(0,0,0)' 
+                    : theme === 'tinkerbell' ? 'rgb(0, 0, 4)'
+                    : theme === 'cricketverse' ? 'rgb(0, 0, 0)'
+                    : theme === 'bounceworld' ? 'rgb(0, 0, 0)'
+                    : theme === 'avengers' ? 'rgb(0, 0, 0)'
+                    : 'rgb(0, 0, 4)'
                 }}>Resources</p>
                 <div className="mt-3 rounded-full h-3" style={{
-                  backgroundColor: theme === 'ben10' ? 'rgba(0,0,0, 0.3)' : 'rgba(0, 0, 4, 0.3)'
+                  backgroundColor: theme === 'ben10' ? 'rgba(0,0,0, 0.3)' 
+                    : theme === 'tinkerbell' ? 'rgba(0, 0, 4, 0.3)'
+                    : theme === 'cricketverse' ? 'rgba(0, 0, 0, 0.3)'
+                    : theme === 'bounceworld' ? 'rgba(29, 66, 138, 0.3)'
+                    : theme === 'avengers' ? 'rgba(44, 18, 103, 0.3)'
+                    : 'rgba(0, 0, 4, 0.3)'
                 }}>
                   <div
                     className="h-3 rounded-full transition-all duration-1000 ease-out shadow-lg"
                     style={{
-                      backgroundColor: theme === 'ben10' ? 'rgb(255,255,255)' : 'rgb(255, 255, 255)',
+                      backgroundColor: theme === 'ben10' ? 'rgb(255,255,255)' 
+                        : theme === 'tinkerbell' ? 'rgb(255, 255, 255)'
+                        : theme === 'cricketverse' ? 'rgb(255, 255, 255)'
+                        : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
+                        : theme === 'avengers' ? 'rgb(96, 74, 199)'
+                        : 'rgb(255, 255, 255)',
                       width: `${getProgressPercentage(dashboardStats.studyMaterials, 50)}%`
                     }}
                   ></div>
                 </div>
                 <p className="text-xs mt-1 font-bold" style={{
-                  color: theme === 'ben10' ? 'rgb(0,0,4)' : 'rgb(0, 0, 4)'
+                  color: theme === 'ben10' ? 'rgb(0,0,4)' 
+                    : theme === 'tinkerbell' ? 'rgb(0, 0, 4)'
+                    : theme === 'cricketverse' ? 'rgb(0, 0, 0)'
+                    : theme === 'bounceworld' ? 'rgb(0, 0, 0)'
+                    : theme === 'avengers' ? 'rgb(0, 0, 0)'
+                    : 'rgb(0, 0, 4)'
                 }}>
-                  {dashboardStats.studyMaterials}/50 goal {theme === 'ben10' ? '📚' : theme === 'tinkerbell' ? '📚' : ''}
+                  {dashboardStats.studyMaterials}/50 goal {theme === 'ben10' ? '📚' : theme === 'tinkerbell' ? '📚' : theme === 'cricketverse' ? '📖' : theme === 'bounceworld' ? '📖' : theme === 'avengers' ? '📖' : '📚'}
                 </p>
               </div>
               <div className="w-16 h-16 rounded-full flex items-center justify-center border-4 border-white transform hover:rotate-12 transition-transform" style={{
-                backgroundColor: theme === 'ben10' ? 'rgb(0,0,5)' : 'rgb(0, 0, 5)'
+                backgroundColor: theme === 'ben10' ? 'rgb(0,0,5)' 
+                  : theme === 'tinkerbell' ? 'rgb(0, 0, 5)'
+                  : theme === 'cricketverse' ? 'rgb(0, 0, 0)'
+                  : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
+                  : theme === 'avengers' ? 'rgb(44, 18, 103)'
+                  : 'rgb(0, 0, 5)'
               }}>
                 <BookOpenCheck className="w-8 h-8 text-white" />
               </div>
             </div>
           </div>
 
-          <div className={`rounded-xl shadow-lg border-4 border-black p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105 ${
+          <div className={`rounded-xl shadow-lg border-4 ${theme === 'bounceworld' ? 'border-[#C8102E]' : 'border-black'} p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105 ${
             theme === 'ben10'
               ? 'bg-gradient-to-br from-[#64cc4f] to-[#b2e05b]'
               : theme === 'tinkerbell'
               ? 'bg-gradient-to-br from-green-400 to-yellow-600'
+              : theme === 'cricketverse'
+              ? 'bg-gradient-to-br from-blue-400 to-blue-600'
+              : theme === 'bounceworld'
+              ? 'bg-gradient-to-br from-white to-[#1D428A]/20'
+              : theme === 'avengers'
+              ? 'bg-gradient-to-br from-[#604AC7]/30 to-[#C88DA5]/30'
               : 'bg-gradient-to-br from-blue-400 to-blue-600'
           }`}>
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <p className="text-black text-sm font-bold mb-2">Current Grade</p>
                 <p className="text-4xl font-black mt-2 " style={{
-                  color: theme === 'ben10' ? 'rgb(255,255,255)' : 'rgb(255, 255, 255)'
+                  color: theme === 'ben10' ? 'rgb(255,255,255)' 
+                    : theme === 'tinkerbell' ? 'rgb(255, 255, 255)'
+                    : theme === 'cricketverse' ? 'rgb(255, 255, 255)'
+                    : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
+                    : theme === 'avengers' ? 'rgb(255, 255, 255)'
+                    : 'rgb(255, 255, 255)'
                 }}>
                   {dashboardStats.currentGrade}%
                 </p>
                 <p className="mt-1 font-semibold" style={{
-                  color: theme === 'ben10' ? 'rgb(0,0,0)' : 'rgb(0, 0, 4)'
+                  color: theme === 'ben10' ? 'rgb(0,0,0)' 
+                    : theme === 'tinkerbell' ? 'rgb(0, 0, 4)'
+                    : theme === 'cricketverse' ? 'rgb(0, 0, 0)'
+                    : theme === 'bounceworld' ? 'rgb(0, 0, 0)'
+                    : theme === 'avengers' ? 'rgb(0, 0, 0)'
+                    : 'rgb(0, 0, 4)'
                 }}>Average</p>
-                <div className="mt-3 bg-black/30 rounded-full h-3">
+                <div className="mt-3 rounded-full h-3" style={{
+                  backgroundColor: theme === 'bounceworld' ? 'rgba(29, 66, 138, 0.3)' 
+                    : theme === 'avengers' ? 'rgba(44, 18, 103, 0.3)'
+                    : 'rgba(0, 0, 0, 0.3)'
+                }}>
                   <div
                     className="h-3 rounded-full transition-all duration-1000 ease-out shadow-lg"
                     style={{
                       backgroundColor: 
-                        dashboardStats.currentGrade >= 90 ? (theme === 'ben10' ? 'rgb(100, 204, 79)' : theme === 'tinkerbell' ? 'rgb(202, 138, 4)' : 'rgb(34, 197, 94)') :
-                        dashboardStats.currentGrade >= 80 ? (theme === 'ben10' ? 'rgb(178, 224, 91)' : theme === 'tinkerbell' ? 'rgb(202, 138, 4)' : 'rgb(34, 197, 94)') :
-                        dashboardStats.currentGrade >= 70 ? (theme === 'ben10' ? 'rgb(100, 204, 79)' : theme === 'tinkerbell' ? 'rgb(202, 138, 4)' : 'rgb(96, 165, 250)') :
+                        dashboardStats.currentGrade >= 90 ? (
+                          theme === 'ben10' ? 'rgb(100, 204, 79)' 
+                          : theme === 'tinkerbell' ? 'rgb(202, 138, 4)' 
+                          : theme === 'cricketverse' ? 'rgb(34, 197, 94)'
+                          : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
+                          : theme === 'avengers' ? 'rgb(96, 74, 199)'
+                          : 'rgb(34, 197, 94)'
+                        ) :
+                        dashboardStats.currentGrade >= 80 ? (
+                          theme === 'ben10' ? 'rgb(178, 224, 91)' 
+                          : theme === 'tinkerbell' ? 'rgb(202, 138, 4)' 
+                          : theme === 'cricketverse' ? 'rgb(34, 197, 94)'
+                          : theme === 'bounceworld' ? 'rgb(200, 16, 46)'
+                          : theme === 'avengers' ? 'rgb(200, 138, 165)'
+                          : 'rgb(34, 197, 94)'
+                        ) :
+                        dashboardStats.currentGrade >= 70 ? (
+                          theme === 'ben10' ? 'rgb(100, 204, 79)' 
+                          : theme === 'tinkerbell' ? 'rgb(202, 138, 4)' 
+                          : theme === 'cricketverse' ? 'rgb(96, 165, 250)'
+                          : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
+                          : theme === 'avengers' ? 'rgb(96, 74, 199)'
+                          : 'rgb(96, 165, 250)'
+                        ) :
                         dashboardStats.currentGrade >= 60 ? 'rgb(234, 179, 8)' : 'rgb(239, 68, 68)',
                       width: `${dashboardStats.currentGrade}%`
                     }}
                   ></div>
                 </div>
                 <p className="text-xs mt-1 font-bold" style={{
-                  color: theme === 'ben10' ? 'rgb(0,0,0)' : 'rgb(0, 0, 4)'
+                  color: theme === 'ben10' ? 'rgb(0,0,0)' 
+                    : theme === 'tinkerbell' ? 'rgb(0, 0, 4)'
+                    : theme === 'cricketverse' ? 'rgb(0, 0, 0)'
+                    : theme === 'bounceworld' ? 'rgb(0, 0, 0)'
+                    : theme === 'avengers' ? 'rgb(0, 0, 0)'
+                    : 'rgb(0, 0, 4)'
                 }}>
-                  Target: 85% {theme === 'ben10' ? '🎓' : theme === 'tinkerbell' ? '🎓' : ''}
+                  Target: 85% {theme === 'ben10' ? '🎓' : theme === 'tinkerbell' ? '🎓' : theme === 'cricketverse' ? '🏆' : theme === 'bounceworld' ? '🎯' : theme === 'avengers' ? '🛡️' : '🎓'}
                 </p>
               </div>
               <div className="w-16 h-16 rounded-full flex items-center justify-center border-4 border-white transform hover:rotate-12 transition-transform" style={{
-                backgroundColor: theme === 'ben10' ? 'rgb(0,0,0)' : 'rgb(0, 0, 4)'
+                backgroundColor: theme === 'ben10' ? 'rgb(0,0,0)' 
+                  : theme === 'tinkerbell' ? 'rgb(0, 0, 4)'
+                  : theme === 'cricketverse' ? 'rgb(0, 0, 0)'
+                  : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
+                  : theme === 'avengers' ? 'rgb(44, 18, 103)'
+                  : 'rgb(0, 0, 4)'
               }}>
                 <BarChart3 className="w-8 h-8 text-white" />
               </div>
@@ -626,11 +873,17 @@ export default function StudentDashboard() {
         {/* Recent Activity & Updates */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Recent Activity - Dynamic Theme */}
-          <div className={`rounded-xl shadow-lg border-4 border-black p-6 ${
+          <div className={`rounded-xl shadow-lg border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} p-6 ${
             theme === 'ben10'
               ? 'bg-gradient-to-br from-[#b2e05b] via-[#222222] to-[#64cc4f]'
               : theme === 'tinkerbell'
               ? 'bg-gradient-to-br from-yellow-300 via-green-500 to-yellow-400'
+              : theme === 'cricketverse'
+              ? 'bg-gradient-to-br from-blue-300 via-indigo-500 to-blue-400'
+              : theme === 'bounceworld'
+              ? 'bg-gradient-to-br from-white via-[#1D428A]/20 to-white'
+              : theme === 'avengers'
+              ? 'bg-gradient-to-br from-[#2C1267]/20 via-[#604AC7]/30 to-[#C88DA5]/20'
               : 'bg-gradient-to-br from-blue-300 via-indigo-500 to-blue-400'
           }`}>
             <h3 className="text-xl font-black text-black mb-6 flex items-center">
@@ -639,9 +892,14 @@ export default function StudentDashboard() {
             </h3>
             <div className="space-y-4">
               {dashboardStats.completedTests > 0 && (
-                <div className="flex items-start space-x-3 p-4 bg-white border-2 border-black rounded-lg animate-fade-in shadow-lg">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center border-2 border-black" style={{
-                    backgroundColor: theme === 'ben10' ? 'rgb(100, 204, 79)' : 'rgb(255, 255, 255)'
+                <div className={`flex items-start space-x-3 p-4 ${theme === 'bounceworld' ? 'bg-white' : 'bg-white'} border-2 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} rounded-lg animate-fade-in shadow-lg`}>
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'}`} style={{
+                    backgroundColor: theme === 'ben10' ? 'rgb(100, 204, 79)' 
+                      : theme === 'tinkerbell' ? 'rgb(255, 255, 255)'
+                      : theme === 'cricketverse' ? 'rgb(59, 130, 246)'
+                      : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
+                      : theme === 'avengers' ? 'rgb(96, 74, 199)'
+                      : 'rgb(255, 255, 255)'
                   }}>
                     <FileText className="w-5 h-5 text-black" />
                   </div>
@@ -657,38 +915,79 @@ export default function StudentDashboard() {
               )}
 
               {dashboardStats.totalClasses > 0 && (
-                <div className="flex items-start space-x-3 p-4 bg-white border-2 border-black rounded-lg animate-fade-in shadow-lg" style={{ animationDelay: '0.2s' }}>
+                <div className={`flex items-start space-x-3 p-4 ${theme === 'bounceworld' ? 'bg-white' : 'bg-white'} border-2 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} rounded-lg animate-fade-in shadow-lg`} style={{ animationDelay: '0.2s' }}>
                   <div className="w-10 h-10  rounded-full flex items-center justify-center border-2" style={{
-                    borderColor: theme === 'ben10' ? 'rgb(0,0,0)' : 'rgb(0, 0, 0)', backgroundColor: theme === 'ben10' ? 'rgb(100, 204, 79)' : 'rgb(255, 255, 255)'
+                    borderColor: theme === 'ben10' ? 'rgb(0,0,0)' 
+                      : theme === 'tinkerbell' ? 'rgb(0, 0, 0)'
+                      : theme === 'cricketverse' ? 'rgb(0, 0, 0)'
+                      : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
+                      : theme === 'avengers' ? 'rgb(44, 18, 103)'
+                      : 'rgb(0, 0, 0)', 
+                    backgroundColor: theme === 'ben10' ? 'rgb(100, 204, 79)' 
+                      : theme === 'tinkerbell' ? 'rgb(255, 255, 255)'
+                      : theme === 'cricketverse' ? 'rgb(59, 130, 246)'
+                      : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
+                      : theme === 'avengers' ? 'rgb(96, 74, 199)'
+                      : 'rgb(255, 255, 255)'
                   }}>
                     <Users className="w-5 h-5" style={{
-                      color: theme === 'ben10' ? 'rgb(0,0,0)' : 'rgb(0,0,0)'
+                      color: theme === 'ben10' ? 'rgb(0,0,0)' 
+                        : theme === 'tinkerbell' ? 'rgb(0,0,0)'
+                        : theme === 'cricketverse' ? 'rgb(255,255,255)'
+                        : theme === 'bounceworld' ? 'rgb(255,255,255)'
+                        : theme === 'avengers' ? 'rgb(255,255,255)'
+                        : 'rgb(0,0,0)'
                     }} />
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-bold text-black">
-                      {theme === 'ben10' ? '🔄 Class Transformer' : theme === 'tinkerbell' ? '🌙 Learning Dreamer' : 'Academic Achiever'}!
+                      {theme === 'ben10' ? '🔄 Class Transformer' 
+                        : theme === 'tinkerbell' ? '🌙 Learning Dreamer' 
+                        : theme === 'cricketverse' ? '🏏 Cricket Scholar'
+                        : theme === 'bounceworld' ? '⚽ Learning Striker'
+                        : theme === 'avengers' ? '🛡️ Knowledge Guardian'
+                        : 'Academic Achiever'}!
                     </p>
                     <p className="text-xs text-gray-700 font-medium">
-                      You're enrolled in {dashboardStats.totalClasses} class{dashboardStats.totalClasses !== 1 ? 'es' : ''} - {theme === 'ben10' ? "What an alien adventure! 👽" : theme === 'tinkerbell' ? "Welcome to the enchanted realm! 🏰" : "Your learning community!"}
+                      You're enrolled in {dashboardStats.totalClasses} class{dashboardStats.totalClasses !== 1 ? 'es' : ''} - {theme === 'ben10' ? "What an alien adventure! 👽" 
+                        : theme === 'tinkerbell' ? "Welcome to the enchanted realm! 🏰" 
+                        : theme === 'cricketverse' ? "Ready for the learning pitch! 🏏"
+                        : theme === 'bounceworld' ? "Time to bounce higher in learning! ⚽"
+                        : theme === 'avengers' ? "Assemble your knowledge team! 🦸‍♂️"
+                        : "Your learning community!"}
                     </p>
                   </div>
                 </div>
               )}
 
               {dashboardStats.studyMaterials > 0 && (
-                <div className="flex items-start space-x-3 p-4 bg-white border-2 border-black rounded-lg animate-fade-in shadow-lg" style={{ animationDelay: '0.4s' }}>
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center border-2 border-black" style={{
-                    backgroundColor: theme === 'ben10' ? 'rgb(100, 204, 79)' : 'rgb(255, 255, 255)'
+                <div className={`flex items-start space-x-3 p-4 ${theme === 'bounceworld' ? 'bg-white' : 'bg-white'} border-2 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} rounded-lg animate-fade-in shadow-lg`} style={{ animationDelay: '0.4s' }}>
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'}`} style={{
+                    backgroundColor: theme === 'ben10' ? 'rgb(100, 204, 79)' 
+                      : theme === 'tinkerbell' ? 'rgb(255, 255, 255)'
+                      : theme === 'cricketverse' ? 'rgb(59, 130, 246)'
+                      : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
+                      : theme === 'avengers' ? 'rgb(96, 74, 199)'
+                      : 'rgb(255, 255, 255)'
                   }}>
                     <BookOpenCheck className="w-5 h-5 text-black" />
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-bold text-black">
-                      {theme === 'ben10' ? '⚡ Study Champion' : theme === 'tinkerbell' ? '💫 Knowledge Seeker' : 'Learning Guide'}!
+                      {theme === 'ben10' ? '⚡ Study Champion' 
+                        : theme === 'tinkerbell' ? '💫 Knowledge Seeker' 
+                        : theme === 'cricketverse' ? '🏏 Study Batsman'
+                        : theme === 'bounceworld' ? '⚽ Learning Scorer'
+                        : theme === 'avengers' ? '📖 Knowledge Collector'
+                        : 'Learning Guide'}!
                     </p>
                     <p className="text-xs text-gray-700 font-medium">
-                      {dashboardStats.studyMaterials} resource{dashboardStats.studyMaterials !== 1 ? 's' : ''} ready for your {theme === 'ben10' ? 'heroic learning journey! 🚀' : theme === 'tinkerbell' ? 'magical adventure! 🌟' : 'educational journey!'}
+                      {dashboardStats.studyMaterials} resource{dashboardStats.studyMaterials !== 1 ? 's' : ''} ready for your {theme === 'ben10' ? 'heroic learning journey! 🚀' 
+                        : theme === 'tinkerbell' ? 'magical adventure! 🌟' 
+                        : theme === 'cricketverse' ? 'learning innings! 🏏'
+                        : theme === 'bounceworld' ? 'learning match! ⚽'
+                        : theme === 'avengers' ? 'heroic mission! 🛡️'
+                        : 'educational journey!'}
                     </p>
                   </div>
                 </div>
@@ -697,11 +996,21 @@ export default function StudentDashboard() {
               {(!dashboardStats.completedTests && !dashboardStats.totalClasses && !dashboardStats.studyMaterials) && (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-10 w-10 border-4 border-t-black mx-auto mb-4" style={{
-                    borderColor: theme === 'ben10' ? 'rgb(100, 204, 79)' : 'rgb(244, 114, 182)',
-                    borderTopColor: 'black'
+                    borderColor: theme === 'ben10' ? 'rgb(100, 204, 79)' 
+                      : theme === 'tinkerbell' ? 'rgb(244, 114, 182)'
+                      : theme === 'cricketverse' ? 'rgb(59, 130, 246)'
+                      : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
+                      : theme === 'avengers' ? 'rgb(96, 74, 199)'
+                      : 'rgb(244, 114, 182)',
+                    borderTopColor: theme === 'bounceworld' ? 'rgb(200, 16, 46)' : 'black'
                   }}></div>
                   <p className="text-black font-bold text-sm">
-                    Loading {theme === 'ben10' ? "Ben 10's power... ⚡" : theme === 'tinkerbell' ? "Tinkerbell's magic... ✨" : "your data..."}
+                    Loading {theme === 'ben10' ? "Ben 10's power... ⚡" 
+                      : theme === 'tinkerbell' ? "Tinkerbell's magic... ✨" 
+                      : theme === 'cricketverse' ? "CricketVerse data... 🏏"
+                      : theme === 'bounceworld' ? "BounceWorld stats... ⚽"
+                      : theme === 'avengers' ? "Avengers intel... 🛡️"
+                      : "your data..."}
                   </p>
                 </div>
               )}
@@ -709,38 +1018,79 @@ export default function StudentDashboard() {
           </div>
 
           {/* Achievement Goals - Dynamic Theme */}
-          <div className={`rounded-xl shadow-lg border-4 border-black p-6 ${
+          <div className={`rounded-xl shadow-lg border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} p-6 ${
             theme === 'ben10'
               ? 'bg-gradient-to-br from-[#b2e05b] via-[#222222] to-[#64cc4f]'
               : theme === 'tinkerbell'
               ? 'bg-gradient-to-br from-green-400 to-yellow-600'
+              : theme === 'cricketverse'
+              ? 'bg-gradient-to-br from-indigo-400 to-blue-600'
+              : theme === 'bounceworld'
+              ? 'bg-gradient-to-br from-white via-[#1D428A]/20 to-white'
+              : theme === 'avengers'
+              ? 'bg-gradient-to-br from-[#2C1267]/20 via-[#604AC7]/30 to-[#C88DA5]/20'
               : 'bg-gradient-to-br from-indigo-400 to-blue-600'
           }`}>
             <h3 className="mb-6 flex items-center text-xl font-black" style={{
-              color: theme === 'ben10' ? 'rgb(0,0,0)' : 'rgb(0,0,0)'
+              color: theme === 'ben10' ? 'rgb(0,0,0)' 
+                : theme === 'tinkerbell' ? 'rgb(0,0,0)'
+                : theme === 'cricketverse' ? 'rgb(0,0,0)'
+                : theme === 'bounceworld' ? 'rgb(0,0,0)'
+                : theme === 'avengers' ? 'rgb(0,0,0)'
+                : 'rgb(0,0,0)'
             }}>
               
-              {theme === 'ben10' ? "Your Goals" : "Your Goals"}
+              {theme === 'ben10' ? "Your Goals" 
+                : theme === 'tinkerbell' ? "Your Goals"
+                : theme === 'cricketverse' ? "Your Goals"
+                : theme === 'bounceworld' ? "Your Goals"
+                : theme === 'avengers' ? "Your Goals"
+                : "Your Goals"}
             </h3>
             <div className="space-y-4">
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="font-bold" style={{
-                    color: theme === 'ben10' ? 'rgb(255,255,255)' : 'rgb(255,255,255)'
-                  }}> {theme === 'ben10' ? 'Complete 20 Tests' : theme === 'tinkerbell' ? 'Complete 20 Quizzes' : 'Complete 20 Assessments'}</span>
+                    color: theme === 'ben10' ? 'rgb(255,255,255)' 
+                      : theme === 'tinkerbell' ? 'rgb(255,255,255)'
+                      : theme === 'cricketverse' ? 'rgb(255,255,255)'
+                      : theme === 'bounceworld' ? 'rgb(0,0,0)'
+                      : theme === 'avengers' ? 'rgb(255,255,255)'
+                      : 'rgb(255,255,255)'
+                  }}> {theme === 'ben10' ? 'Complete 20 Tests' 
+                    : theme === 'tinkerbell' ? 'Complete 20 Quizzes' 
+                    : theme === 'cricketverse' ? 'Complete 20 Matches'
+                    : theme === 'bounceworld' ? 'Complete 20 Challenges'
+                    : theme === 'avengers' ? 'Complete 20 Missions'
+                    : 'Complete 20 Assessments'}</span>
                   <span className="font-black" style={{
-                    color: theme === 'ben10' ? 'rgb(255,255,255)' : 'rgb(255, 255, 255)'
+                    color: theme === 'ben10' ? 'rgb(255,255,255)' 
+                      : theme === 'tinkerbell' ? 'rgb(255, 255, 255)'
+                      : theme === 'cricketverse' ? 'rgb(255,255,255)'
+                      : theme === 'bounceworld' ? 'rgb(0,0,0)'
+                      : theme === 'avengers' ? 'rgb(255,255,255)'
+                      : 'rgb(255, 255, 255)'
                   }}>
                     {dashboardStats.completedTests}/20
                   </span>
                 </div>
-                <div className="rounded-full h-4 border-2 border-black" style={{
-                  backgroundColor: theme === 'ben10' ? 'rgba(100, 204, 79, 0.2)' : 'rgba(202, 138, 4, 0.2)'
+                <div className={`rounded-full h-4 border-2 ${theme === 'bounceworld' ? 'border-[#C8102E]' : 'border-black'}`} style={{
+                  backgroundColor: theme === 'ben10' ? 'rgba(100, 204, 79, 0.2)' 
+                    : theme === 'tinkerbell' ? 'rgba(202, 138, 4, 0.2)'
+                    : theme === 'cricketverse' ? 'rgba(59, 130, 246, 0.2)'
+                    : theme === 'bounceworld' ? 'rgba(200, 16, 46, 0.2)'
+                    : theme === 'avengers' ? 'rgba(96, 74, 199, 0.2)'
+                    : 'rgba(202, 138, 4, 0.2)'
                 }}>
                   <div
-                    className="h-4 rounded-full transition-all duration-1000 ease-out border border-black"
+                    className={`h-4 rounded-full transition-all duration-1000 ease-out border ${theme === 'bounceworld' ? 'border-[#C8102E]' : 'border-black'}`}
                     style={{
-                      backgroundColor: theme === 'ben10' ? 'rgb(100, 204, 79)' : 'rgb(202, 138, 4)',
+                      backgroundColor: theme === 'ben10' ? 'rgb(100, 204, 79)' 
+                        : theme === 'tinkerbell' ? 'rgb(202, 138, 4)'
+                        : theme === 'cricketverse' ? 'rgb(59, 130, 246)'
+                        : theme === 'bounceworld' ? 'rgb(200, 16, 46)'
+                        : theme === 'avengers' ? 'rgb(96, 74, 199)'
+                        : 'rgb(202, 138, 4)',
                       width: `${getProgressPercentage(dashboardStats.completedTests, 20)}%`
                     }}
                   ></div>
@@ -750,24 +1100,59 @@ export default function StudentDashboard() {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="font-bold" style={{
-                    color: theme === 'ben10' ? 'rgb(255,255,255)' : 'rgb(255,255,255)'
-                  }}> {theme === 'ben10' ? 'Reach 85% Average' : 'Reach 85% Average'}</span>
+                    color: theme === 'ben10' ? 'rgb(255,255,255)' 
+                      : theme === 'tinkerbell' ? 'rgb(255,255,255)'
+                      : theme === 'cricketverse' ? 'rgb(255,255,255)'
+                      : theme === 'bounceworld' ? 'rgb(0,0,0)'
+                      : theme === 'avengers' ? 'rgb(255,255,255)'
+                      : 'rgb(255,255,255)'
+                  }}> {theme === 'ben10' ? 'Reach 85% Average' 
+                    : theme === 'tinkerbell' ? 'Reach 85% Average'
+                    : theme === 'cricketverse' ? 'Score 85% Average'
+                    : theme === 'bounceworld' ? 'Achieve 85% Score'
+                    : theme === 'avengers' ? 'Maintain 85% Power'
+                    : 'Reach 85% Average'}</span>
                   <span className="font-black" style={{
-                    color: theme === 'ben10' ? 'rgb(255,255,255)' : 'rgb(255, 255, 255)'
+                    color: theme === 'ben10' ? 'rgb(255,255,255)' 
+                      : theme === 'tinkerbell' ? 'rgb(255, 255, 255)'
+                      : theme === 'cricketverse' ? 'rgb(255,255,255)'
+                      : theme === 'bounceworld' ? 'rgb(0,0,0)'
+                      : theme === 'avengers' ? 'rgb(255,255,255)'
+                      : 'rgb(255, 255, 255)'
                   }}>
                     {dashboardStats.currentGrade}%
                   </span>
                 </div>
-                <div className="rounded-full h-4 border-2" style={{
-                  backgroundColor: theme === 'ben10' ? 'rgba(100, 204, 79, 0.2)' : 'rgba(202, 138, 4, 0.2)',
-                  borderColor: theme === 'ben10' ? 'rgb(0,0,0)' : 'rgb(0,0,0)'
+                <div className={`rounded-full h-4 border-2`} style={{
+                  backgroundColor: theme === 'ben10' ? 'rgba(100, 204, 79, 0.2)' 
+                    : theme === 'tinkerbell' ? 'rgba(202, 138, 4, 0.2)'
+                    : theme === 'cricketverse' ? 'rgba(59, 130, 246, 0.2)'
+                    : theme === 'bounceworld' ? 'rgba(29, 66, 138, 0.2)'
+                    : theme === 'avengers' ? 'rgba(96, 74, 199, 0.2)'
+                    : 'rgba(202, 138, 4, 0.2)',
+                  borderColor: theme === 'ben10' ? 'rgb(0,0,0)' 
+                    : theme === 'tinkerbell' ? 'rgb(0,0,0)'
+                    : theme === 'cricketverse' ? 'rgb(0,0,0)'
+                    : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
+                    : theme === 'avengers' ? 'rgb(44, 18, 103)'
+                    : 'rgb(0,0,0)'
                 }}>
                   <div
-                    className="h-4 rounded-full transition-all duration-1000 ease-out border border-black"
+                    className={`h-4 rounded-full transition-all duration-1000 ease-out border ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'}`}
                     style={{
                       backgroundColor: dashboardStats.currentGrade >= 85 
-                        ? (theme === 'ben10' ? 'rgb(100, 204, 79)' : 'rgb(202, 138, 4)')
-                        : (theme === 'ben10' ? 'rgb(178, 224, 91)' : 'rgb(202, 138, 4)'),
+                        ? (theme === 'ben10' ? 'rgb(100, 204, 79)' 
+                          : theme === 'tinkerbell' ? 'rgb(202, 138, 4)'
+                          : theme === 'cricketverse' ? 'rgb(59, 130, 246)'
+                          : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
+                          : theme === 'avengers' ? 'rgb(96, 74, 199)'
+                          : 'rgb(202, 138, 4)')
+                        : (theme === 'ben10' ? 'rgb(178, 224, 91)' 
+                          : theme === 'tinkerbell' ? 'rgb(202, 138, 4)'
+                          : theme === 'cricketverse' ? 'rgb(96, 165, 250)'
+                          : theme === 'bounceworld' ? 'rgb(200, 16, 46)'
+                          : theme === 'avengers' ? 'rgb(200, 138, 165)'
+                          : 'rgb(202, 138, 4)'),
                       width: `${dashboardStats.currentGrade}%`
                     }}
                   ></div>
@@ -777,45 +1162,101 @@ export default function StudentDashboard() {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="font-bold" style={{
-                    color: theme === 'ben10' ? 'rgb(255,255,255)' : 'rgb(255, 255, 255)'
-                  }}>{theme === 'ben10' ? 'Study 50 Materials' : 'Explore 50 Resources'}</span>
+                    color: theme === 'ben10' ? 'rgb(255,255,255)' 
+                      : theme === 'tinkerbell' ? 'rgb(255, 255, 255)'
+                      : theme === 'cricketverse' ? 'rgb(255,255,255)'
+                      : theme === 'bounceworld' ? 'rgb(0,0,0)'
+                      : theme === 'avengers' ? 'rgb(255,255,255)'
+                      : 'rgb(255, 255, 255)'
+                  }}>{theme === 'ben10' ? 'Study 50 Materials' 
+                    : theme === 'tinkerbell' ? 'Explore 50 Resources'
+                    : theme === 'cricketverse' ? 'Master 50 Strategies'
+                    : theme === 'bounceworld' ? 'Practice 50 Techniques'
+                    : theme === 'avengers' ? 'Collect 50 Insights'
+                    : 'Explore 50 Resources'}</span>
                   <span className="font-black" style={{
-                    color: theme === 'ben10' ? 'rgb(255,255,255)' : 'rgb(255, 255, 255)'
+                    color: theme === 'ben10' ? 'rgb(255,255,255)' 
+                      : theme === 'tinkerbell' ? 'rgb(255, 255, 255)'
+                      : theme === 'cricketverse' ? 'rgb(255,255,255)'
+                      : theme === 'bounceworld' ? 'rgb(0,0,0)'
+                      : theme === 'avengers' ? 'rgb(255,255,255)'
+                      : 'rgb(255, 255, 255)'
                   }}>
                     {dashboardStats.studyMaterials}/50
                   </span>
                 </div>
-                <div className="rounded-full h-4 border-2 border-black" style={{
-                  backgroundColor: theme === 'ben10' ? 'rgba(100, 204, 79, 0.2)' : 'rgba(202, 138, 4, 0.2)'
+                <div className={`rounded-full h-4 border-2 ${theme === 'bounceworld' ? 'border-[#C8102E]' : 'border-black'}`} style={{
+                  backgroundColor: theme === 'ben10' ? 'rgba(100, 204, 79, 0.2)' 
+                    : theme === 'tinkerbell' ? 'rgba(202, 138, 4, 0.2)'
+                    : theme === 'cricketverse' ? 'rgba(59, 130, 246, 0.2)'
+                    : theme === 'bounceworld' ? 'rgba(200, 16, 46, 0.2)'
+                    : theme === 'avengers' ? 'rgba(96, 74, 199, 0.2)'
+                    : 'rgba(202, 138, 4, 0.2)'
                 }}>
                   <div
-                    className="h-4 rounded-full transition-all duration-1000 ease-out border"
+                    className={`h-4 rounded-full transition-all duration-1000 ease-out border`}
                     style={{
-                      backgroundColor: theme === 'ben10' ? 'rgb(100, 204, 79)' : 'rgb(202, 138, 4)',
-                      borderColor: theme === 'ben10' ? 'rgb(100, 204, 79)' : 'rgb(202, 138, 4)',
+                      backgroundColor: theme === 'ben10' ? 'rgb(100, 204, 79)' 
+                        : theme === 'tinkerbell' ? 'rgb(202, 138, 4)'
+                        : theme === 'cricketverse' ? 'rgb(59, 130, 246)'
+                        : theme === 'bounceworld' ? 'rgb(200, 16, 46)'
+                        : theme === 'avengers' ? 'rgb(96, 74, 199)'
+                        : 'rgb(202, 138, 4)',
+                      borderColor: theme === 'ben10' ? 'rgb(100, 204, 79)' 
+                        : theme === 'tinkerbell' ? 'rgb(202, 138, 4)'
+                        : theme === 'cricketverse' ? 'rgb(59, 130, 246)'
+                        : theme === 'bounceworld' ? 'rgb(200, 16, 46)'
+                        : theme === 'avengers' ? 'rgb(96, 74, 199)'
+                        : 'rgb(202, 138, 4)',
                       width: `${getProgressPercentage(dashboardStats.studyMaterials, 50)}%`
                     }}
                   ></div>
                 </div>
               </div>
 
-              {(theme === 'ben10' || theme === 'tinkerbell') && (
-                <div className="mt-6 p-4 rounded-lg shadow-lg border-2 border-black" style={{
+              {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'cricketverse' || theme === 'bounceworld' || theme === 'avengers') && (
+                <div className={`mt-6 p-4 rounded-lg shadow-lg border-2 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'}`} style={{
                   background: theme === 'ben10'
                     ? 'linear-gradient(to bottom right, rgb(178, 224, 91), rgb(34, 34, 34), rgb(100, 204, 79))'
+                    : theme === 'tinkerbell'
+                    ? 'linear-gradient(to bottom right, rgb(34, 197, 94), rgb(0, 0, 0), rgb(34, 197, 94))'
+                    : theme === 'cricketverse'
+                    ? 'linear-gradient(to bottom right, rgb(96, 165, 250), rgb(55, 65, 81), rgb(59, 130, 246))'
+                    : theme === 'bounceworld'
+                    ? 'linear-gradient(to bottom right, rgb(255, 255, 255), rgba(29, 66, 138, 0.3), rgb(255, 255, 255))'
+                    : theme === 'avengers'
+                    ? 'linear-gradient(to bottom right, rgba(96, 74, 199, 0.8), rgba(44, 18, 103, 0.8), rgba(200, 138, 165, 0.8))'
                     : 'linear-gradient(to bottom right, rgb(34, 197, 94), rgb(0, 0, 0), rgb(34, 197, 94))'
                 }}>
                   <div className="flex items-center space-x-2">
                     
                     <span style={{
-                      color: theme === 'ben10' ? 'rgb(100, 204, 79)' : 'rgb(0, 138, 4)'
+                      color: theme === 'ben10' ? 'rgb(100, 204, 79)' 
+                        : theme === 'tinkerbell' ? 'rgb(0, 138, 4)'
+                        : theme === 'cricketverse' ? 'rgb(255, 255, 255)'
+                        : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
+                        : theme === 'avengers' ? 'rgb(255, 255, 255)'
+                        : 'rgb(0, 138, 4)'
                     }} className="font-black text-sm">
-                      {theme === 'ben10' ? 'Next Transformation Unlocked Soon!' : 'Next Magic Spell Unlocked Soon!'}
+                      {theme === 'ben10' ? 'Next Transformation Unlocked Soon!' 
+                        : theme === 'tinkerbell' ? 'Next Magic Spell Unlocked Soon!'
+                        : theme === 'cricketverse' ? 'Next Achievement Badge Unlocked Soon!'
+                        : theme === 'bounceworld' ? 'Next Level Boost Unlocked Soon!'
+                        : theme === 'avengers' ? 'Next Super Power Unlocked Soon!'
+                        : 'Next Magic Spell Unlocked Soon!'}
                     </span>
                   </div>
-                  <p className="text-white font-bold text-xs mt-1">
+                  <p className={`font-bold text-xs mt-1 ${theme === 'bounceworld' ? 'text-black' : 'text-white'}`}>
                     {theme === 'ben10' 
                       ? "Keep up the heroic work to unlock Ben 10's powers! " 
+                      : theme === 'tinkerbell'
+                      ? "Keep up the magical work to unlock Tinkerbell's spells! "
+                      : theme === 'cricketverse'
+                      ? "Keep scoring runs to unlock your next cricket achievement! "
+                      : theme === 'bounceworld'
+                      ? "Keep bouncing higher to unlock your next level! "
+                      : theme === 'avengers'
+                      ? "Keep assembling knowledge to unlock your next superpower! "
                       : "Keep up the magical work to unlock Tinkerbell's spells! "}
                   </p>
                 </div>
@@ -826,16 +1267,27 @@ export default function StudentDashboard() {
 
         <div className="grid grid-cols-1 gap-6">
           {/* Quick Actions - Dynamic Theme */}
-          <div className={`bg-gradient-to-r rounded-xl shadow-lg border-4 border-black p-6 ${
+          <div className={`bg-gradient-to-r rounded-xl shadow-lg border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} p-6 ${
             theme === 'ben10'
               ? 'from-[#64cc4f] via-[#222222] to-[#b2e05b]'
               : theme === 'tinkerbell'
               ? 'from-yellow-400 via-green-500 to-yellow-500'
+              : theme === 'cricketverse'
+              ? 'from-blue-400 via-indigo-500 to-blue-500'
+              : theme === 'bounceworld'
+              ? 'from-white via-[#1D428A]/20 to-white'
+              : theme === 'avengers'
+              ? 'from-[#2C1267]/30 via-[#604AC7]/20 to-[#C88DA5]/30'
               : 'from-blue-400 via-indigo-500 to-blue-500'
           }`}>
-            <h3 className="text-2xl font-black text-black mb-6 flex items-center">
+            <h3 className={`text-2xl font-black mb-6 flex items-center ${theme === 'bounceworld' ? 'text-black' : 'text-black'}`}>
           
-              {theme === 'ben10' ? "Quick Actions" : "Quick Actions"}
+              {theme === 'ben10' ? "Quick Actions" 
+                : theme === 'tinkerbell' ? "Quick Actions"
+                : theme === 'cricketverse' ? "Quick Actions"
+                : theme === 'bounceworld' ? "Quick Actions"
+                : theme === 'avengers' ? "Quick Actions"
+                : "Quick Actions"}
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {quickActions.map((action, index) => {
@@ -844,27 +1296,55 @@ export default function StudentDashboard() {
                   <Link
                     key={action.id}
                     href={action.href}
-                    className={`group bg-white border-4 border-black rounded-xl p-4 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105 animate-fade-in`}
+                    className={`group ${theme === 'bounceworld' ? 'bg-white border-4 border-[#1D428A]' : 'bg-white border-4 border-black'} rounded-xl p-4 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105 animate-fade-in`}
                     style={{ animationDelay: `${index * 0.1}s` }}
                   >
                     <div className="flex items-start space-x-3">
-                      <div className={`w-12 h-12 ${action.color} rounded-full flex items-center justify-center border-2 border-black group-hover:scale-110 transition-all duration-300 group-hover:rotate-12`}>
+                      <div className={`w-12 h-12 ${action.color} rounded-full flex items-center justify-center border-2 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} group-hover:scale-110 transition-all duration-300 group-hover:rotate-12`}>
                         <Icon className="w-6 h-6 text-white group-hover:animate-bounce" />
                       </div>
                       <div className="flex-1">
-                        <h4 className="font-bold text-black group-hover:text-[#64cc4f] dark:group-hover:text-[#64cc4f] transition-colors duration-300 text-sm">
+                        <h4 className={`font-bold text-black transition-colors duration-300 text-sm ${
+                          theme === 'ben10' ? 'group-hover:text-[#64cc4f]'
+                          : theme === 'tinkerbell' ? 'group-hover:text-green-600'
+                          : theme === 'cricketverse' ? 'group-hover:text-blue-600'
+                          : theme === 'bounceworld' ? 'group-hover:text-[#C8102E]'
+                          : theme === 'avengers' ? 'group-hover:text-[#604AC7]'
+                          : 'group-hover:text-[#64cc4f]'
+                        }`}>
                           {action.title}
                         </h4>
                         <p className="text-gray-700 dark:text-gray-300 mt-1 text-xs font-medium">
                           {action.description}
                         </p>
                         <div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                          <div className="w-full bg-[#64cc4f]/20 rounded-full h-1">
-                            <div className="bg-[#64cc4f] h-1 rounded-full transition-all duration-500 w-0 group-hover:w-full"></div>
+                          <div className={`w-full rounded-full h-1 ${
+                            theme === 'ben10' ? 'bg-[#64cc4f]/20'
+                            : theme === 'tinkerbell' ? 'bg-green-600/20'
+                            : theme === 'cricketverse' ? 'bg-blue-600/20'
+                            : theme === 'bounceworld' ? 'bg-[#1D428A]/20'
+                            : theme === 'avengers' ? 'bg-[#604AC7]/20'
+                            : 'bg-[#64cc4f]/20'
+                          }`}>
+                            <div className={`h-1 rounded-full transition-all duration-500 w-0 group-hover:w-full ${
+                              theme === 'ben10' ? 'bg-[#64cc4f]'
+                              : theme === 'tinkerbell' ? 'bg-green-600'
+                              : theme === 'cricketverse' ? 'bg-blue-600'
+                              : theme === 'bounceworld' ? 'bg-[#C8102E]'
+                              : theme === 'avengers' ? 'bg-[#604AC7]'
+                              : 'bg-[#64cc4f]'
+                            }`}></div>
                           </div>
                         </div>
                       </div>
-                      <ChevronRight className="w-4 h-4 text-black group-hover:text-[#64cc4f] group-hover:translate-x-1 transition-all duration-300" />
+                      <ChevronRight className={`w-4 h-4 text-black group-hover:translate-x-1 transition-all duration-300 ${
+                        theme === 'ben10' ? 'group-hover:text-[#64cc4f]'
+                        : theme === 'tinkerbell' ? 'group-hover:text-green-600'
+                        : theme === 'cricketverse' ? 'group-hover:text-blue-600'
+                        : theme === 'bounceworld' ? 'group-hover:text-[#C8102E]'
+                        : theme === 'avengers' ? 'group-hover:text-[#604AC7]'
+                        : 'group-hover:text-[#64cc4f]'
+                      }`} />
                     </div>
                   </Link>
                 );
@@ -875,15 +1355,29 @@ export default function StudentDashboard() {
 
         {/* Account Information - Dynamic Theme */}
         {student && (
-          <div className={`bg-gradient-to-r rounded-xl shadow-lg border-4 border-black p-6 ${
+          <div className={`bg-gradient-to-r rounded-xl shadow-lg border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} p-6 ${
             theme === 'ben10'
               ? 'from-[#64cc4f] via-[#222222] to-[#b2e05b]'
               : theme === 'tinkerbell'
               ? 'from-yellow-400 via-green-500 to-yellow-500'
+              : theme === 'cricketverse'
+              ? 'from-blue-400 via-indigo-500 to-blue-500'
+              : theme === 'bounceworld'
+              ? 'from-white via-[#1D428A]/20 to-white'
+              : theme === 'avengers'
+              ? 'from-[#2C1267]/30 via-[#604AC7]/20 to-[#C88DA5]/30'
               : 'from-blue-400 via-indigo-500 to-blue-500'
           }`}>
-            <h3 className="text-xl font-black text-white mb-6 flex items-center">
-              {(theme === 'ben10' || theme === 'tinkerbell') && <span className="text-6xl mr-2 ">{theme === 'ben10' ? '🦸‍♂️' : '🧚‍♀️'}</span>}
+            <h3 className={`text-xl font-black mb-6 flex items-center ${theme === 'bounceworld' ? 'text-black' : 'text-white'}`}>
+              {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'cricketverse' || theme === 'bounceworld' || theme === 'avengers') && 
+                <span className="text-6xl mr-2 ">
+                  {theme === 'ben10' ? '🦸‍♂️' 
+                    : theme === 'tinkerbell' ? '🧚‍♀️'
+                    : theme === 'cricketverse' ? '🏏'
+                    : theme === 'bounceworld' ? '⚽'
+                    : theme === 'avengers' ? '🛡️'
+                    : '🦸‍♂️'}
+                </span>}
               Student Profile
             </h3>
             <div className="space-y-4">
@@ -895,21 +1389,39 @@ export default function StudentDashboard() {
                   {student.id || 'N/A'}
                 </span>
               </div>
-              <div className="flex items-center justify-between p-3 bg-white border-2 border-black rounded-lg">
-                <span className="text-sm text-black font-bold">{theme === 'ben10' ? '📅' : theme === 'tinkerbell' ? '📅' : ''} Enrollment Date:</span>
+              <div className={`flex items-center justify-between p-3 bg-white border-2 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} rounded-lg`}>
+                <span className="text-sm text-black font-bold">{theme === 'ben10' ? '📅' 
+                  : theme === 'tinkerbell' ? '📅'
+                  : theme === 'cricketverse' ? '📅'
+                  : theme === 'bounceworld' ? '📅'
+                  : theme === 'avengers' ? '📅'
+                  : '📅'} Enrollment Date:</span>
                 <span className={`text-sm font-black px-2 py-1 rounded border ${
-                  theme === 'ben10' ? 'text-[#64cc4f] bg-black border-[#64cc4f]' : 
-                  theme === 'tinkerbell' ? 'text-yellow-400 bg-black border-yellow-400' : 
-                  'text-[#3b82f6] bg-black border-[#3b82f6]'
+                  theme === 'ben10' ? 'text-[#64cc4f] bg-black border-[#64cc4f]' 
+                  : theme === 'tinkerbell' ? 'text-yellow-400 bg-black border-yellow-400' 
+                  : theme === 'cricketverse' ? 'text-blue-400 bg-black border-blue-400'
+                  : theme === 'bounceworld' ? 'text-[#1D428A] bg-white border-[#1D428A]'
+                  : theme === 'avengers' ? 'text-[#604AC7] bg-black border-[#604AC7]'
+                  : 'text-[#3b82f6] bg-black border-[#3b82f6]'
                 }`}>
                   {student.enrollmentDate ? new Date(student.enrollmentDate).toLocaleDateString() : 'N/A'}
                 </span>
               </div>
-              <div className="flex items-center justify-between p-3 bg-white border-2 border-black rounded-lg">
-                <span className="text-sm text-black font-bold">{theme === 'ben10' ? '🏷️' : theme === 'tinkerbell' ? '🏷️' : ''} Status:</span>
-                <span className={`text-sm font-black px-3 py-1 rounded-full border-2 border-black ${
+              <div className={`flex items-center justify-between p-3 bg-white border-2 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} rounded-lg`}>
+                <span className="text-sm text-black font-bold">{theme === 'ben10' ? '🏷️' 
+                  : theme === 'tinkerbell' ? '🏷️'
+                  : theme === 'cricketverse' ? '🏷️'
+                  : theme === 'bounceworld' ? '🏷️'
+                  : theme === 'avengers' ? '🏷️'
+                  : '🏷️'} Status:</span>
+                <span className={`text-sm font-black px-3 py-1 rounded-full border-2 ${theme === 'bounceworld' ? 'border-[#C8102E]' : 'border-black'} ${
                   student.status === 'Active' 
-                    ? (theme === 'ben10' ? 'bg-[#64cc4f] text-black' : theme === 'tinkerbell' ? 'bg-yellow-400 text-black' : 'bg-[#3b82f6] text-white')
+                    ? (theme === 'ben10' ? 'bg-[#64cc4f] text-black' 
+                      : theme === 'tinkerbell' ? 'bg-yellow-400 text-black' 
+                      : theme === 'cricketverse' ? 'bg-[#3b82f6] text-white'
+                      : theme === 'bounceworld' ? 'bg-[#1D428A] text-white'
+                      : theme === 'avengers' ? 'bg-[#604AC7] text-white'
+                      : 'bg-[#3b82f6] text-white')
                     : student.status === 'Suspended'
                     ? 'bg-red-400 text-black'
                     : 'bg-gray-400 text-black'
@@ -917,10 +1429,20 @@ export default function StudentDashboard() {
                   {student.status || 'Active'} 
                 </span>
               </div>
-              <div className="flex items-center justify-between p-3 bg-white border-2 border-black rounded-lg">
-                <span className="text-sm text-black font-bold">{theme === 'ben10' ? '📚' : theme === 'tinkerbell' ? '📚' : ''} Courses Enrolled:</span>
-                <span className={`text-sm font-black text-black px-2 py-1 rounded border border-black ${
-                  theme === 'ben10' ? 'bg-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-yellow-500' : 'bg-[#60a5fa]'
+              <div className={`flex items-center justify-between p-3 bg-white border-2 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} rounded-lg`}>
+                <span className="text-sm text-black font-bold">{theme === 'ben10' ? '📚' 
+                  : theme === 'tinkerbell' ? '📚'
+                  : theme === 'cricketverse' ? '📚'
+                  : theme === 'bounceworld' ? '📚'
+                  : theme === 'avengers' ? '📚'
+                  : '📚'} Courses Enrolled:</span>
+                <span className={`text-sm font-black text-black px-2 py-1 rounded border ${theme === 'bounceworld' ? 'border-[#C8102E]' : 'border-black'} ${
+                  theme === 'ben10' ? 'bg-[#b2e05b]' 
+                  : theme === 'tinkerbell' ? 'bg-yellow-500' 
+                  : theme === 'cricketverse' ? 'bg-[#60a5fa]'
+                  : theme === 'bounceworld' ? 'bg-[#1D428A]/20'
+                  : theme === 'avengers' ? 'bg-[#604AC7]/20'
+                  : 'bg-[#60a5fa]'
                 }`}>
                   {enrollments.length} 
                 </span>
