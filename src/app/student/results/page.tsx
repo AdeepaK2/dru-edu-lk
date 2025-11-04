@@ -285,8 +285,8 @@ export default function StudentResults() {
 
   if (loading) {
     return (
-      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A] to-[#C8102E]' : 'from-blue-400 to-indigo-600'} flex items-center justify-center`}>
-        <div className={`bg-white border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} rounded-3xl p-8 shadow-2xl`}>
+      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A] to-[#C8102E]' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]' : 'from-blue-400 to-indigo-600'} flex items-center justify-center`}>
+        <div className={`bg-white border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : 'border-black'} rounded-3xl p-8 shadow-2xl`}>
           {/* Theme-Specific Loading Animation */}
           <div className="relative mb-6 flex flex-col items-center">
             {/* Tinkerbell Loading GIF */}
@@ -325,9 +325,22 @@ export default function StudentResults() {
                 <span className="text-2xl font-bold text-[#1D428A] mt-4">Loading</span>
               </div>
             )}
+
+            {/* Avengers Loading Animation */}
+            {theme === 'avengers' && (
+              <div className="flex flex-col items-center">
+                <div className="relative">
+                  <div className="w-24 h-24 border-4 border-[#2C1267] border-t-[#604AC7] rounded-full animate-spin"></div>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-4xl">🦸‍♂️</span>
+                  </div>
+                </div>
+                <span className="text-2xl font-bold text-[#2C1267] mt-4">Assembling</span>
+              </div>
+            )}
             
             {/* Default Theme Spinner with Loading Text */}
-            {theme !== 'tinkerbell' && theme !== 'ben10' && theme !== 'bounceworld' && (
+            {theme !== 'tinkerbell' && theme !== 'ben10' && theme !== 'bounceworld' && theme !== 'avengers' && (
               <div className="flex flex-col items-center">
                 <div className="w-24 h-24 border-4 border-blue-400 border-t-blue-600 rounded-full animate-spin"></div>
                 <span className="text-2xl font-bold text-blue-600 mt-4">Loading</span>
@@ -336,8 +349,8 @@ export default function StudentResults() {
           </div>
           <div className="text-center">
             <h2 className="text-2xl font-black text-black mb-2">Loading Results...</h2>
-            <p className={`text-gray-600 font-medium ${theme === 'bounceworld' ? 'text-[#1D428A]' : ''}`}>
-              {theme === 'bounceworld' ? 'Get ready to slam dunk your progress analysis! 🏀' : 'Get ready to transform your learning!'}
+            <p className={`text-gray-600 font-medium ${theme === 'bounceworld' ? 'text-[#1D428A]' : theme === 'avengers' ? 'text-[#2C1267]' : ''}`}>
+              {theme === 'bounceworld' ? 'Get ready to slam dunk your progress analysis! 🏀' : theme === 'avengers' ? 'Assemble your progress analysis! 🦸‍♂️' : 'Get ready to transform your learning!'}
             </p>
           </div>
         </div>
@@ -346,35 +359,37 @@ export default function StudentResults() {
   }
 
   return (
-    <div key={`results-${theme}`} className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A]/20 to-[#C8102E]/20' : 'bg-gradient-to-br from-blue-600 via-indigo-700 to-blue-400'} p-6`}>
+    <div key={`results-${theme}`} className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A]/20 to-[#C8102E]/20' : theme === 'avengers' ? 'bg-gradient-to-br from-[#2C1267] via-[#604AC7]/20 to-[#0F0826]' : 'bg-gradient-to-br from-blue-600 via-indigo-700 to-blue-400'} p-6`}>
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Theme-aware Header */}
-        <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#5ab34a] via-[#64cc4f] to-[#111511]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : 'bg-gradient-to-r from-blue-500 to-indigo-600'} rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} p-8 relative overflow-hidden`}>
+        <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#5ab34a] via-[#64cc4f] to-[#111511]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#2C1267] via-[#604AC7] to-[#0F0826]' : 'bg-gradient-to-r from-blue-500 to-indigo-600'} rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : 'border-black'} p-8 relative overflow-hidden`}>
          
           <div className="flex items-center space-x-4 relative z-10">
-            <div className="text-6xl">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'bounceworld' ? '🏀' : ''}</div>
+            <div className="text-6xl">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'bounceworld' ? '🏀' : theme === 'avengers' ? '🦸‍♂️' : ''}</div>
             <div>
               <h1 className="text-4xl font-black text-black mb-2 flex items-center">
                
                
-                <span className={`ml-2 text-4xl ${theme === 'bounceworld' ? 'text-white' : 'text-black'}`}>Results</span>
-                <span className={`ml-2 text-4xl ${theme === 'bounceworld' ? 'text-white' : 'text-black'}`}>&</span>
-                <span className={`ml-2 text-4xl ${theme === 'bounceworld' ? 'text-white' : 'text-black'}`}>Progress</span>
+                <span className={`ml-2 text-4xl ${theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-white' : 'text-black'}`}>Results</span>
+                <span className={`ml-2 text-4xl ${theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-white' : 'text-black'}`}>&</span>
+                <span className={`ml-2 text-4xl ${theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-white' : 'text-black'}`}>Progress</span>
              
               </h1>
-              <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-[#1f2902]' : theme === 'tinkerbell' ? 'text-yellow-100' : theme === 'bounceworld' ? 'text-white' : 'text-blue-200'}`}>
+              <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-[#1f2902]' : theme === 'tinkerbell' ? 'text-yellow-100' : theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-[#C88DA5]' : 'text-blue-200'}`}>
                 {theme === 'bounceworld'
                   ? `Welcome back, ${student?.name}! Slam dunk your progress analysis! 🏀`
                   : theme === 'ben10'
                   ? `Welcome back, ${student?.name}! Let's see how heroic your learning journey has been!`
                   : theme === 'tinkerbell'
                   ? `Welcome back, ${student?.name}! Let's see how magical your learning journey has been!`
+                  : theme === 'avengers'
+                  ? `Welcome back, ${student?.name}! Assemble your progress analysis! 🦸‍♂️`
                   : `Welcome back, ${student?.name}! Let's see how your learning journey has been!`}
               </p>
             </div>
           </div>
         </div>        {/* Search */}
-        <div className={`bg-white rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} p-6`}>
+        <div className={`bg-white rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : 'border-black'} p-6`}>
           <div className="relative">
             <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-2xl">{(theme === 'ben10' || theme === 'tinkerbell') && '🔍'}</div>
             <input
@@ -382,7 +397,7 @@ export default function StudentResults() {
               placeholder={theme === 'bounceworld' ? 'Search classes...' : '🔍 Search classes...'}
               value={searchTerm}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
-              className={`pl-12 w-full px-6 py-3 border-4 ${theme === 'bounceworld' ? 'border-[#1D428A] focus:ring-[#1D428A]' : 'border-black focus:ring-[#64cc4f]'} rounded-3xl focus:ring-4 focus:border-black bg-white text-black font-bold text-lg placeholder-black/60`}
+              className={`pl-12 w-full px-6 py-3 border-4 ${theme === 'bounceworld' ? 'border-[#1D428A] focus:ring-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267] focus:ring-[#604AC7]' : 'border-black focus:ring-[#64cc4f]'} rounded-3xl focus:ring-4 focus:border-black bg-white text-black font-bold text-lg placeholder-black/60`}
             />
           </div>
         </div>
@@ -404,7 +419,7 @@ export default function StudentResults() {
             </div>
           </div>
 
-          <div className={`bg-white rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} p-6 hover:scale-105 transition-all relative overflow-hidden`}>
+          <div className={`bg-white rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : 'border-black'} p-6 hover:scale-105 transition-all relative overflow-hidden`}>
             <div className={`absolute top-0 left-0 w-full h-2 ${theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] to-[#C8102E]' : 'bg-black'}`}></div>
             <div className="flex items-center space-x-4">
               <div className={`w-16 h-16 ${theme === 'ben10' ? 'bg-gradient-to-br from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' : theme === 'bounceworld' ? 'bg-gradient-to-br from-[#1D428A] to-[#C8102E]' : 'bg-gradient-to-br from-blue-400 to-indigo-600'} rounded-2xl flex items-center justify-center border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} shadow-lg`}>
@@ -419,7 +434,7 @@ export default function StudentResults() {
             </div>
           </div>
 
-          <div className={`bg-white rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} p-6 hover:scale-105 transition-all relative overflow-hidden`}>
+          <div className={`bg-white rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : 'border-black'} p-6 hover:scale-105 transition-all relative overflow-hidden`}>
             <div className={`absolute top-0 left-0 w-full h-2 ${theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] to-[#C8102E]' : 'bg-black'}`}></div>
             <div className="flex items-center space-x-4">
               <div className={`w-16 h-16 ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' : theme === 'bounceworld' ? 'bg-gradient-to-br from-[#1D428A] to-[#C8102E]' : 'bg-gradient-to-br from-blue-400 to-indigo-600'} rounded-2xl flex items-center justify-center border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} shadow-lg`}>
@@ -434,7 +449,7 @@ export default function StudentResults() {
             </div>
           </div>
 
-          <div className={`bg-white rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} p-6 hover:scale-105 transition-all relative overflow-hidden`}>
+          <div className={`bg-white rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : 'border-black'} p-6 hover:scale-105 transition-all relative overflow-hidden`}>
             <div className={`absolute top-0 left-0 w-full h-2 ${theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] to-[#C8102E]' : 'bg-black'}`}></div>
             <div className="flex items-center space-x-4">
               <div className={`w-16 h-16 ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' : theme === 'bounceworld' ? 'bg-gradient-to-br from-[#1D428A] to-[#C8102E]' : 'bg-gradient-to-br from-blue-400 to-indigo-600'} rounded-2xl flex items-center justify-center border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} shadow-lg`}>
@@ -455,13 +470,13 @@ export default function StudentResults() {
           {/* Theme-aware Class List */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-3xl shadow-2xl border-4 border-black overflow-hidden">
-              <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#4cc235] to-lime-800' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : 'bg-gradient-to-r from-blue-500 via-indigo-600 to-indigo-800'} text-white p-6 border-b-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'}`}>
+              <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#4cc235] to-lime-800' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#2C1267] via-[#604AC7] to-[#0F0826]' : 'bg-gradient-to-r from-blue-500 via-indigo-600 to-indigo-800'} text-white p-6 border-b-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : 'border-black'}`}>
                 <h2 className="text-xl text-black font-black flex items-center">
-                  <span className="text-3xl mr-3">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'bounceworld' ? '🏀' : ''}</span>
+                  <span className="text-3xl mr-3">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'bounceworld' ? '🏀' : theme === 'avengers' ? '🦸‍♂️' : ''}</span>
                   {theme === 'bounceworld' ? 'My Classes' : 'My Classes'}
                 </h2>
-                <p className={`font-bold text-sm ${theme === 'ben10' ? 'text-green-100' : theme === 'tinkerbell' ? 'text-yellow-100' : theme === 'bounceworld' ? 'text-[#1D428A]' : 'text-blue-200'}`}>
-                  {theme === 'bounceworld' ? 'Select a class to slam dunk your detailed results! 🏀' : 'Select a class to view your detailed results!'}
+                <p className={`font-bold text-sm ${theme === 'ben10' ? 'text-green-100' : theme === 'tinkerbell' ? 'text-yellow-100' : theme === 'bounceworld' ? 'text-[#1D428A]' : theme === 'avengers' ? 'text-[#C88DA5]' : 'text-blue-200'}`}>
+                  {theme === 'bounceworld' ? 'Select a class to slam dunk your detailed results! 🏀' : theme === 'avengers' ? 'Select a class to assemble your detailed results! 🦸‍♂️' : 'Select a class to view your detailed results!'}
                 </p>
               </div>
               
@@ -540,13 +555,13 @@ export default function StudentResults() {
               <div className="space-y-6">
                 {/* Theme-aware Test Results */}
                 <div className="bg-white rounded-3xl shadow-2xl border-4 border-black overflow-hidden">
-                  <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#4cc235] to-lime-800' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : 'bg-gradient-to-r from-blue-500 via-indigo-600 to-indigo-800'} text-white p-6 border-b-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'}`}>
+                  <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#4cc235] to-lime-800' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#2C1267] via-[#604AC7] to-[#0F0826]' : 'bg-gradient-to-r from-blue-500 via-indigo-600 to-indigo-800'} text-white p-6 border-b-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : 'border-black'}`}>
                     <h2 className="text-xl font-black text-black flex items-center">
-                      <span className="text-2xl mr-3">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'bounceworld' ? '🏀' : '📊'}</span>
+                      <span className="text-2xl mr-3">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'bounceworld' ? '🏀' : theme === 'avengers' ? '🦸‍♂️' : '📊'}</span>
                       {theme === 'bounceworld' ? 'Test Results' : 'Test Results'}
                     </h2>
-                    <p className={`font-bold text-sm ${theme === 'ben10' ? 'text-green-100' : theme === 'tinkerbell' ? 'text-yellow-100' : theme === 'bounceworld' ? 'text-[#1D428A]' : 'text-blue-200'}`}>
-                      {theme === 'bounceworld' ? 'Your best slam dunk performance for each test! 🏀' : `Your best ${theme === 'ben10' ? 'heroic' : 'magical'} performance for each test.`}
+                    <p className={`font-bold text-sm ${theme === 'ben10' ? 'text-green-100' : theme === 'tinkerbell' ? 'text-yellow-100' : theme === 'bounceworld' ? 'text-[#1D428A]' : theme === 'avengers' ? 'text-[#C88DA5]' : 'text-blue-200'}`}>
+                      {theme === 'bounceworld' ? 'Your best slam dunk performance for each test! 🏀' : theme === 'avengers' ? 'Your best heroic performance for each test! 🦸‍♂️' : `Your best ${theme === 'ben10' ? 'heroic' : 'magical'} performance for each test.`}
                     </p>
                   </div>
                   
@@ -636,13 +651,13 @@ export default function StudentResults() {
                 {/* Theme-aware Difficulty Analysis */}
                 {difficultyAnalysis.length > 0 && (
                   <div className="bg-white rounded-3xl shadow-2xl border-4 border-black overflow-hidden">
-                    <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#4cc235] to-lime-800' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : 'bg-gradient-to-r from-blue-500 via-indigo-600 to-indigo-800'} text-white p-6 border-b-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'}`}>
+                    <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#4cc235] to-lime-800' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#2C1267] via-[#604AC7] to-[#0F0826]' : 'bg-gradient-to-r from-blue-500 via-indigo-600 to-indigo-800'} text-white p-6 border-b-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : 'border-black'}`}>
                       <h2 className="text-xl font-black flex items-center">
-                        <span className="text-2xl mr-3">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'bounceworld' ? '🏀' : '🎯'}</span>
+                        <span className="text-2xl mr-3">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'bounceworld' ? '🏀' : theme === 'avengers' ? '🦸‍♂️' : '🎯'}</span>
                         {theme === 'bounceworld' ? 'Topics to Improve' : 'Topics to Improve'}
                       </h2>
-                      <p className={`font-bold text-sm ${theme === 'ben10' ? 'text-green-100' : theme === 'tinkerbell' ? 'text-yellow-100' : theme === 'bounceworld' ? 'text-[#1D428A]' : 'text-blue-200'}`}>
-                        {theme === 'bounceworld' ? 'Areas where you need more practice to slam dunk your skills! 🏀' : `Areas where you need more ${theme === 'ben10' ? 'heroic' : 'magical'} practice to boost your skills!`}
+                      <p className={`font-bold text-sm ${theme === 'ben10' ? 'text-green-100' : theme === 'tinkerbell' ? 'text-yellow-100' : theme === 'bounceworld' ? 'text-[#1D428A]' : theme === 'avengers' ? 'text-[#C88DA5]' : 'text-blue-200'}`}>
+                        {theme === 'bounceworld' ? 'Areas where you need more practice to slam dunk your skills! 🏀' : theme === 'avengers' ? 'Areas where you need more heroic practice to assemble your skills! 🦸‍♂️' : `Areas where you need more ${theme === 'ben10' ? 'heroic' : 'magical'} practice to boost your skills!`}
                       </p>
                     </div>
                     
@@ -684,7 +699,7 @@ export default function StudentResults() {
                             {analysis.improvementNeeded && (
                               <div className="mt-3 p-3 bg-gradient-to-r from-red-100 to-pink-100 rounded-xl border-2 border-red-300">
                                 <p className="text-red-700 font-black text-sm">
-                                  💡 Focus on this topic - accuracy below 60%! Let's make it {theme === 'bounceworld' ? 'slam dunk worthy' : theme === 'ben10' ? 'heroic' : 'magical'}! {theme === 'bounceworld' ? '🏀' : ''}
+                                  💡 Focus on this topic - accuracy below 60%! Let's make it {theme === 'bounceworld' ? 'slam dunk worthy' : theme === 'ben10' ? 'heroic' : theme === 'avengers' ? 'assemble-worthy' : 'magical'}! {theme === 'bounceworld' ? '🏀' : theme === 'avengers' ? '🦸‍♂️' : ''}
                                 </p>
                               </div>
                             )}
@@ -704,13 +719,13 @@ export default function StudentResults() {
                   : theme === 'bounceworld'
                   ? 'bg-gradient-to-r from-white via-[#1D428A]/20 to-[#C8102E]/20'
                   : 'bg-gradient-to-r from-blue-400 via-indigo-500 to-blue-600'
-              } rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} p-12 text-center`}>
-                <div className="text-6xl mb-6">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'bounceworld' ? '🏀' : ''}</div>
+              } rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : 'border-black'} p-12 text-center`}>
+                <div className="text-6xl mb-6">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'bounceworld' ? '🏀' : theme === 'avengers' ? '🦸‍♂️' : ''}</div>
                 <h3 className="text-2xl font-black text-black mb-4">
                   Select a Class
                 </h3>
                 <p className="text-black font-bold text-lg">
-                  {theme === 'bounceworld' ? 'Choose a class from the left to slam dunk your detailed results! 🏀' : 'Choose a class from the left to view your detailed test results and progress analysis!'}
+                  {theme === 'bounceworld' ? 'Choose a class from the left to slam dunk your detailed results! 🏀' : theme === 'avengers' ? 'Choose a class from the left to assemble your detailed results! 🦸‍♂️' : 'Choose a class from the left to view your detailed test results and progress analysis!'}
                 </p>
               </div>
             )}
@@ -726,8 +741,10 @@ export default function StudentResults() {
               ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500'
               : theme === 'bounceworld'
               ? 'bg-white'
+              : theme === 'avengers'
+              ? 'bg-gradient-to-r from-[#2C1267] via-[#604AC7] to-[#0F0826]'
               : 'bg-gradient-to-r from-blue-600 via-indigo-700 to-blue-800'
-          } rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} p-8`}>
+          } rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : 'border-black'} p-8`}>
             <div className="flex items-start space-x-6">
               <div className={`w-20 h-20 ${
                 theme === 'ben10'
@@ -736,16 +753,18 @@ export default function StudentResults() {
                   ? 'bg-gradient-to-br from-yellow-400 to-yellow-600'
                   : theme === 'bounceworld'
                   ? 'bg-gradient-to-br from-[#1D428A] to-[#C8102E]'
+                  : theme === 'avengers'
+                  ? 'bg-gradient-to-br from-[#2C1267] to-[#604AC7]'
                   : 'bg-gradient-to-br from-blue-400 to-indigo-600'
-              } rounded-3xl flex items-center justify-center border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} shadow-lg flex-shrink-0`}>
+              } rounded-3xl flex items-center justify-center border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : 'border-black'} shadow-lg flex-shrink-0`}>
                 <Award className="w-10 h-10 text-white" />
               </div>
               <div className="flex-1">
                 <h3 className="text-2xl font-black text-black mb-3 flex items-center">
                   <span>{theme === 'bounceworld' ? 'Your Learning Journey' : 'Your Learning Journey'}</span>
                 </h3>
-                <p className={`${theme === 'bounceworld' ? 'text-black' : 'text-white'} font-bold text-lg mb-6`}>
-                  {theme === 'bounceworld' ? 'Keep up the great work! Here\'s what we noticed about your slam dunk progress:' : 'Keep up the great work! Here\'s what we noticed about your progress:'}
+                <p className={`${theme === 'bounceworld' ? 'text-black' : theme === 'avengers' ? 'text-[#C88DA5]' : 'text-white'} font-bold text-lg mb-6`}>
+                  {theme === 'bounceworld' ? 'Keep up the great work! Here\'s what we noticed about your slam dunk progress:' : theme === 'avengers' ? 'Keep up the great work! Here\'s what we noticed about your heroic progress:' : 'Keep up the great work! Here\'s what we noticed about your progress:'}
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                   <div className="flex items-center bg-white/20 rounded-2xl p-4 border-2 border-white/30">
