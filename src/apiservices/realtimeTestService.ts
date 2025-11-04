@@ -136,10 +136,13 @@ export class RealtimeTestService {
       const db = this.init();
       const now = Date.now();
       
-      // Ensure answer is not undefined - convert to appropriate default values
+      // ⚠️ IMPORTANT: Do NOT default unanswered MCQ questions to 0 (Option A)
+      // Keep them as null/undefined to indicate "not answered"
       let cleanAnswer = answer;
       if (answer === undefined || answer === null) {
-        cleanAnswer = questionType === 'essay' ? '' : 0;
+        // For essay, empty string is acceptable
+        // For MCQ, null means "not answered" - DO NOT default to 0
+        cleanAnswer = questionType === 'essay' ? '' : null;
       }
       
       // Get current answer to track changes
@@ -167,9 +170,13 @@ export class RealtimeTestService {
 
       // Add type-specific properties only if they have values
       if (questionType === 'mcq') {
-        updatedAnswer.selectedOption = cleanAnswer;
+        // Only set selectedOption if answer is not null (actually answered)
+        if (cleanAnswer !== null) {
+          updatedAnswer.selectedOption = cleanAnswer;
+        }
+        // If cleanAnswer is null, don't set selectedOption at all - keeps it unanswered
       } else if (questionType === 'essay') {
-        updatedAnswer.textContent = cleanAnswer;
+        updatedAnswer.textContent = cleanAnswer || '';
         // Add PDF files if provided
         if (pdfFiles && pdfFiles.length > 0) {
           updatedAnswer.pdfFiles = pdfFiles;

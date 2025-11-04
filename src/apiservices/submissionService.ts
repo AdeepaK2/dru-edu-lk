@@ -598,19 +598,28 @@ export class SubmissionService {
             });
             if (selectedOptionIndex === -1) {
               console.warn(`Selected option ID ${answer.selectedOption} not found in question options`);
-              selectedOptionIndex = 0; // Default to first option
+              selectedOptionIndex = 0; // Default to first option if not found
             }
+          } else if (answer.selectedOption === null) {
+            // ⚠️ IMPORTANT: Student did not answer - mark as -1 (unanswered)
+            selectedOptionIndex = -1;
           } else {
             // If it's already a number, use it directly
             selectedOptionIndex = answer.selectedOption as number;
           }
           
-          const isCorrect = selectedOptionIndex === correctOptionIndex;
+          // Check if question was answered or left blank
+          const isAnswered = selectedOptionIndex !== -1;
+          const isCorrect = isAnswered && selectedOptionIndex === correctOptionIndex;
           const marksAwarded = isCorrect ? (question.marks || 0) : 0;
           
           finalAnswer.isCorrect = isCorrect;
           finalAnswer.marksAwarded = marksAwarded;
-          autoGradedScore += marksAwarded;
+          
+          // Only add to score if answered
+          if (isAnswered) {
+            autoGradedScore += marksAwarded;
+          }
 
           // Create MCQ result with proper option text handling
           const options = question.questionData?.options || question.options || [];
@@ -618,9 +627,9 @@ export class SubmissionService {
             questionId: question.id || '',
             questionText: questionData.questionText || '',
             selectedOption: selectedOptionIndex,
-            selectedOptionText: options[selectedOptionIndex] 
+            selectedOptionText: isAnswered && options[selectedOptionIndex] 
               ? getOptionText(options[selectedOptionIndex], selectedOptionIndex)
-              : 'No answer selected',
+              : 'Not answered',
             correctOption: correctOptionIndex,
             correctOptionText: options[correctOptionIndex] 
               ? getOptionText(options[correctOptionIndex], correctOptionIndex)
