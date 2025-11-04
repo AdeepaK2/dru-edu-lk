@@ -118,6 +118,45 @@ const tinkerbellAvatars = [
   }
 ];
 
+// BounceWorld themed avatars - Basketball Champions
+const bounceworldAvatars = [
+  {
+    id: 'lebron',
+    name: 'LeBron James',
+    image: '/lebron.png',
+    description: 'King James — unstoppable force on the court!',
+    colors: 'from-blue-500 to-red-500'
+  },
+  {
+    id: 'steph',
+    name: 'Stephen Curry',
+    image: '/steph.png',
+    description: 'Chef Curry — master of the three-point shot!',
+    colors: 'from-blue-600 to-gold-500'
+  },
+  {
+    id: 'mj',
+    name: 'Michael Jordan',
+    image: '/mj.png',
+    description: 'His Airness — the greatest of all time!',
+    colors: 'from-red-600 to-black'
+  },
+  {
+    id: 'kobe',
+    name: 'Kobe Bryant',
+    image: '/kobe.png',
+    description: 'Black Mamba — legendary competitor!',
+    colors: 'from-purple-600 to-gold-600'
+  },
+  {
+    id: 'shaq',
+    name: 'Shaquille O\'Neal',
+    image: '/shaq.png',
+    description: 'Shaq Diesel — dominant center and force!',
+    colors: 'from-orange-500 to-blue-500'
+  }
+];
+
 export default function StudentSettingsPage() {
   const { student, loading: authLoading, refreshStudent } = useStudentAuth();
 
@@ -183,6 +222,8 @@ export default function StudentSettingsPage() {
         defaultAvatar = student.avatar || 'silvermist';
       } else if (selectedTheme === 'ben10' || theme === 'ben10') {
         defaultAvatar = student.avatar || 'heatblast';
+      } else if (selectedTheme === 'bounceworld' || theme === 'bounceworld') {
+        defaultAvatar = student.avatar || 'lebron';
       } else {
         // default theme: avatars disabled
         defaultAvatar = '';
@@ -232,6 +273,7 @@ export default function StudentSettingsPage() {
   const getAvailableAvatars = () => {
     if (selectedTheme === 'tinkerbell' || theme === 'tinkerbell') return tinkerbellAvatars;
     if (selectedTheme === 'ben10' || theme === 'ben10') return ben10Avatars;
+    if (selectedTheme === 'bounceworld' || theme === 'bounceworld') return bounceworldAvatars;
     return [];
   };
 
@@ -371,9 +413,17 @@ export default function StudentSettingsPage() {
                 <span className="text-2xl font-bold text-[#64cc4f] mt-4">Loading</span>
               </div>
             )}
+
+            {/* BounceWorld Loading Animation */}
+            {theme === 'bounceworld' && (
+              <div className="flex flex-col items-center">
+                <div className="w-32 h-32 border-4 border-[#1D428A] border-t-[#C8102E] rounded-full animate-spin"></div>
+                <span className="text-2xl font-bold text-[#1D428A] mt-4">Loading</span>
+              </div>
+            )}
             
             {/* Default Theme Spinner with Loading Text */}
-            {theme !== 'tinkerbell' && theme !== 'ben10' && (
+            {theme !== 'tinkerbell' && theme !== 'ben10' && theme !== 'bounceworld' && (
               <div className="flex flex-col items-center">
                 <div className="w-24 h-24 border-4 border-blue-400 border-t-blue-600 rounded-full animate-spin"></div>
                 <span className="text-2xl font-bold text-blue-600 mt-4">Loading</span>
@@ -663,7 +713,7 @@ export default function StudentSettingsPage() {
                     type="button"
                     onClick={() => setShowAvatarSelector(!showAvatarSelector)}
                     disabled={getAvailableAvatars().length === 0}
-                    className={`${theme === 'ben10' ? 'bg-[#64cc4f] hover:bg-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-blue-500 hover:bg-blue-600'} text-white px-4 py-2 rounded-full text-sm font-bold transform hover:scale-105 transition-all disabled:opacity-50`}
+                    className={`${theme === 'ben10' ? 'bg-[#64cc4f] hover:bg-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-yellow-500 hover:bg-yellow-600' : theme === 'bounceworld' ? 'bg-[#1D428A] hover:bg-[#3B82F6]' : 'bg-blue-500 hover:bg-blue-600'} text-white px-4 py-2 rounded-full text-sm font-bold transform hover:scale-105 transition-all disabled:opacity-50`}
                   >
                     {getAvailableAvatars().length === 0 ? 'Avatars Disabled' : (showAvatarSelector ? 'Hide' : 'Change') + ' Avatar'}
                   </button>
@@ -686,7 +736,7 @@ export default function StudentSettingsPage() {
                   <div className="border-t-4 border-black pt-4">
                     <h4 className="text-lg font-bold text-black mb-4 flex items-center">
                       <Star className="w-5 h-5 mr-2 text-yellow-500" />
-                      {selectedTheme === 'tinkerbell' || theme === 'tinkerbell' ? 'Choose Your Tinkerbell Avatar!' : 'Choose Your Ben 10 Hero Avatar!'}
+                      {selectedTheme === 'tinkerbell' || theme === 'tinkerbell' ? 'Choose Your Tinkerbell Avatar!' : selectedTheme === 'ben10' || theme === 'ben10' ? 'Choose Your Ben 10 Hero Avatar!' : selectedTheme === 'bounceworld' || theme === 'bounceworld' ? 'Choose Your Basketball Legend!' : 'Choose Your Avatar!'}
                     </h4>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                       {getAvailableAvatars().map((avatar) => (
@@ -696,7 +746,7 @@ export default function StudentSettingsPage() {
                           onClick={() => handleAvatarSelect(avatar.id)}
                           className={`p-3 rounded-xl border-4 transition-all transform hover:scale-105 ${
                             selectedAvatar === avatar.id
-                              ? (selectedTheme === 'tinkerbell' ? 'border-yellow-400 bg-yellow-50 shadow-lg' : 'border-[#64cc4f] bg-[#b2e05b]/10 shadow-lg')
+                              ? (selectedTheme === 'tinkerbell' ? 'border-yellow-400 bg-yellow-50 shadow-lg' : selectedTheme === 'bounceworld' ? 'border-[#1D428A] bg-blue-50 shadow-lg' : 'border-[#64cc4f] bg-[#b2e05b]/10 shadow-lg')
                               : 'border-black bg-white hover:border-green-400'
                           }`}>
                           <div className={`relative w-12 h-12 rounded-full overflow-hidden mx-auto mb-2 bg-white border-2 border-black`}>
