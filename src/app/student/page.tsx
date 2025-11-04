@@ -415,18 +415,27 @@ export default function StudentDashboard() {
           <div className="flex items-center justify-between relative z-10">
             <div className="flex-1">
               <div className="flex items-center space-x-4 mb-2">
-                {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'cricketverse') && (
+                {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'cricketverse' || theme === 'avengers' || theme === 'bounceworld') && (
                   <img 
                     src={theme === 'ben10' ? '/ben10-welcome.png' 
                         : theme === 'tinkerbell' ? '/tinkerbell-welcome.png'
                         : theme === 'cricketverse' ? '/CricketVerse.avif'
+                        : theme === 'avengers' ? '/avengers/Iron Man.png'
+                        : theme === 'bounceworld' ? '/bounce_world.jpg'
                         : '/welcome.png'} 
                     alt="Welcome" 
-                    className={`w-40 h-40 rounded-full border-4 border-black ring-4 ${
-                      theme === 'ben10' ? 'ring-[#64cc4f]' 
-                      : theme === 'tinkerbell' ? 'ring-green-600'
-                      : theme === 'cricketverse' ? 'ring-blue-500'
-                      : 'ring-green-600'
+                    className={`${
+                      theme === 'avengers' ? 'w-48 h-48' 
+                      : theme === 'bounceworld' ? 'w-48 h-48'
+                      : 'w-40 h-40'
+                    } ${
+                      theme === 'avengers' ? '' : 'rounded-full'
+                    } ${
+                      theme === 'ben10' ? 'ring-4 ring-[#64cc4f] border-4 border-black' 
+                      : theme === 'tinkerbell' ? 'ring-4 ring-green-600 border-4 border-black'
+                      : theme === 'cricketverse' ? 'ring-4 ring-blue-500 border-4 border-black'
+                      : theme === 'bounceworld' ? 'ring-4 ring-[#1D428A] border-4 border-black'
+                      : ''
                     }`}
                     onError={(e) => {
                       // Fallback to generic welcome image if theme image not found
