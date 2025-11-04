@@ -293,6 +293,10 @@ export default function ClassVideos({ params }: ClassVideoProps) {
           ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400'
           : theme === 'ben10'
           ? ''
+          : theme === 'bounceworld'
+          ? 'bg-gradient-to-br from-white via-[#1D428A]/10 to-[#C8102E]/10'
+          : theme === 'avengers'
+          ? 'bg-gradient-to-br from-[#2C1267]/10 via-[#604AC7]/10 to-[#0F0826]/10'
           : 'bg-gradient-to-br from-blue-400 via-indigo-500 to-indigo-600'
       }`}
       style={theme === 'ben10' ? {
@@ -306,6 +310,10 @@ export default function ClassVideos({ params }: ClassVideoProps) {
             ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222]'
             : theme === 'tinkerbell'
             ? 'bg-gradient-to-r from-green-300 via-green-500 to-yellow-400'
+            : theme === 'bounceworld'
+            ? 'bg-gradient-to-r from-white via-[#1D428A]/20 to-[#C8102E]/20 border-[#1D428A]'
+            : theme === 'avengers'
+            ? 'bg-gradient-to-r from-[#2C1267] via-[#604AC7] to-[#0F0826] border-[#2C1267]'
             : 'bg-gradient-to-r from-blue-400 to-indigo-600'
         }`}>
         <div className="flex items-center justify-between">
@@ -317,6 +325,10 @@ export default function ClassVideos({ params }: ClassVideoProps) {
               theme === 'ben10'
                 ? 'text-white'
                 : theme === 'tinkerbell'
+                ? 'text-white'
+                : theme === 'bounceworld'
+                ? 'text-[#1D428A]'
+                : theme === 'avengers'
                 ? 'text-white'
                 : 'text-blue-100'
             }`}>
@@ -342,6 +354,10 @@ export default function ClassVideos({ params }: ClassVideoProps) {
           ? 'bg-gradient-to-br from-[#64cc4f]/20 to-[#b2e05b]/20'
           : theme === 'tinkerbell'
           ? 'bg-gradient-to-br from-yellow-100 to-green-50'
+          : theme === 'bounceworld'
+          ? 'bg-gradient-to-br from-white via-[#1D428A]/20 to-[#C8102E]/20'
+          : theme === 'avengers'
+          ? 'bg-gradient-to-br from-[#604AC7]/30 via-[#2C1267]/30 to-[#0F0826]/30'
           : 'bg-gradient-to-br from-blue-50 to-indigo-100 dark:bg-gray-800'
       }`}>
         <div>
@@ -354,6 +370,10 @@ export default function ClassVideos({ params }: ClassVideoProps) {
                     ? 'border-[#64cc4f] text-[#222222]'
                     : theme === 'tinkerbell'
                     ? 'border-yellow-500 text-black'
+                    : theme === 'bounceworld'
+                    ? 'border-[#1D428A] text-[#1D428A]'
+                    : theme === 'avengers'
+                    ? 'border-[#604AC7] text-[#2C1267]'
                     : 'border-blue-500 text-blue-600 dark:text-blue-400'
                   : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
               }`}
@@ -375,6 +395,10 @@ export default function ClassVideos({ params }: ClassVideoProps) {
                     ? 'border-[#64cc4f] text-[#222222]'
                     : theme === 'tinkerbell'
                     ? 'border-yellow-500 text-black'
+                    : theme === 'bounceworld'
+                    ? 'border-[#1D428A] text-[#1D428A]'
+                    : theme === 'avengers'
+                    ? 'border-[#604AC7] text-[#2C1267]'
                     : 'border-blue-500 text-blue-600 dark:text-blue-400'
                   : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
               }`}
@@ -396,6 +420,10 @@ export default function ClassVideos({ params }: ClassVideoProps) {
                     ? 'border-[#64cc4f] text-[#222222]'
                     : theme === 'tinkerbell'
                     ? 'border-yellow-500 text-black'
+                    : theme === 'bounceworld'
+                    ? 'border-[#1D428A] text-[#1D428A]'
+                    : theme === 'avengers'
+                    ? 'border-[#604AC7] text-[#2C1267]'
                     : 'border-blue-500 text-blue-600 dark:text-blue-400'
                   : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
               }`}
@@ -471,6 +499,10 @@ export default function ClassVideos({ params }: ClassVideoProps) {
               ? 'bg-gradient-to-br from-[#64cc4f]/10 to-[#b2e05b]/10'
               : theme === 'tinkerbell'
               ? 'bg-gradient-to-br from-yellow-100 to-green-50'
+              : theme === 'bounceworld'
+              ? 'bg-gradient-to-br from-white via-[#1D428A]/20 to-[#C8102E]/20'
+              : theme === 'avengers'
+              ? 'bg-gradient-to-br from-[#604AC7]/30 via-[#2C1267]/30 to-[#0F0826]/30'
               : 'bg-gradient-to-br from-blue-400 via-indigo-500 to-indigo-600'
           }`}>
             {activeTab === 'class' && (
@@ -516,6 +548,10 @@ export default function ClassVideos({ params }: ClassVideoProps) {
               ? 'bg-gradient-to-br from-[#64cc4f]/10 to-[#b2e05b]/10'
               : theme === 'tinkerbell'
               ? 'bg-gradient-to-br from-yellow-100 to-green-50'
+              : theme === 'bounceworld'
+              ? 'bg-gradient-to-br from-white via-[#1D428A]/20 to-[#C8102E]/20'
+              : theme === 'avengers'
+              ? 'bg-gradient-to-br from-[#604AC7]/30 via-[#2C1267]/30 to-[#0F0826]/30'
               : 'bg-gradient-to-br from-blue-400 via-indigo-500 to-indigo-600'
           }`}>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -550,6 +586,10 @@ const ClassVideoCard: React.FC<ClassVideoCardProps> = ({ video, onAccess, theme 
         ? 'bg-gradient-to-br from-[#64cc4f]/20 to-[#b2e05b]/20'
         : theme === 'tinkerbell'
         ? 'bg-gradient-to-br from-yellow-50 to-green-100'
+        : theme === 'bounceworld'
+        ? 'bg-gradient-to-br from-white via-[#1D428A]/20 to-[#C8102E]/20'
+        : theme === 'avengers'
+        ? 'bg-gradient-to-br from-[#604AC7]/30 via-[#2C1267]/30 to-[#0F0826]/30'
         : 'bg-gradient-to-br from-blue-400 via-indigo-500 to-indigo-600'
     }`}>
       {/* Video Thumbnail */}
@@ -638,17 +678,26 @@ const ClassVideoCard: React.FC<ClassVideoCardProps> = ({ video, onAccess, theme 
         {/* Action Button */}
         <Button
           onClick={() => onAccess(video)}
+          variant="custom"
           className={`w-full flex items-center justify-center space-x-2 font-bold ${
             video.canAccess 
               ? theme === 'ben10'
                 ? 'bg-[#64cc4f] hover:bg-[#b2e05b] text-[#222222]'
                 : theme === 'tinkerbell'
                 ? 'bg-yellow-400 hover:bg-yellow-500 text-yellow-900'
+                : theme === 'bounceworld'
+                ? 'bg-[#1D428A] hover:bg-[#C8102E] text-white'
+                : theme === 'avengers'
+                ? 'bg-[#604AC7] hover:bg-[#2C1267] text-white'
                 : 'bg-blue-600 hover:bg-blue-700 text-white'
               : theme === 'ben10'
                 ? 'bg-[#b2e05b] hover:bg-[#64cc4f] text-[#222222]'
                 : theme === 'tinkerbell'
                 ? 'bg-green-500 hover:bg-green-600 text-white'
+                : theme === 'bounceworld'
+                ? 'bg-[#C8102E] hover:bg-[#1D428A] text-white'
+                : theme === 'avengers'
+                ? 'bg-[#2C1267] hover:bg-[#604AC7] text-white'
                 : 'bg-green-600 hover:bg-green-700 text-white'
           }`}
           size="sm"

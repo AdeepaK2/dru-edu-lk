@@ -156,6 +156,10 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                     ? 'bg-[#64cc4f] hover:bg-[#b2e05b]' 
                     : theme === 'tinkerbell'
                     ? 'bg-yellow-500 hover:bg-yellow-600'
+                    : theme === 'bounceworld'
+                    ? 'bg-[#C8102E] hover:bg-[#A00D26]'
+                    : theme === 'avengers'
+                    ? 'bg-[#604AC7] hover:bg-[#4F2C8D]'
                     : 'bg-blue-600 hover:bg-blue-700'
                 } text-white`}>
                   Purchase for ${video.price}
@@ -178,6 +182,12 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
           ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400'
           : theme === 'ben10'
           ? ''
+          : theme === 'bounceworld'
+          ? 'bg-gradient-to-br from-white via-[#1D428A]/20 to-[#C8102E]/20'
+          : theme === 'avengers'
+          ? 'bg-gradient-to-br from-[#2C1267] via-[#604AC7]/20 to-[#0F0826]'
+          : theme === 'cricketverse'
+          ? 'bg-gradient-to-br from-blue-400 via-indigo-500 to-indigo-600'
           : 'bg-gradient-to-br from-blue-400 via-indigo-500 to-indigo-600'
       }`}
       style={theme === 'ben10' ? {
@@ -194,6 +204,10 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                 ? 'bg-[#64cc4f] hover:bg-[#b2e05b] text-[#222222]'
                 : theme === 'tinkerbell'
                 ? 'bg-yellow-400 hover:bg-yellow-500 text-yellow-900'
+                : theme === 'bounceworld'
+                ? 'bg-[#1D428A] hover:bg-[#0D2A5C] text-white'
+                : theme === 'avengers'
+                ? 'bg-[#604AC7] hover:bg-[#4F2C8D] text-white'
                 : 'bg-blue-500 hover:bg-blue-600 text-white'
             }`}
           >
@@ -210,6 +224,10 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                 ? 'bg-gradient-to-br from-[#64cc4f]/10 to-[#222222]/10'
                 : theme === 'tinkerbell'
                 ? 'bg-gradient-to-br from-yellow-100 to-green-50'
+                : theme === 'bounceworld'
+                ? 'bg-gradient-to-br from-[#1D428A]/10 to-[#C8102E]/10'
+                : theme === 'avengers'
+                ? 'bg-gradient-to-br from-[#2C1267]/10 to-[#604AC7]/10'
                 : 'bg-gradient-to-br from-blue-900 via-indigo-800 to-indigo-800'
             }`}>
               {/* Video Player Container */}
@@ -254,6 +272,10 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                     ? 'text-[#222222]'
                     : theme === 'tinkerbell'
                     ? 'text-black'
+                    : theme === 'bounceworld'
+                    ? 'text-[#1D428A]'
+                    : theme === 'avengers'
+                    ? 'text-[#604AC7]'
                     : 'text-black dark:text-white'
                 }`}>
                   {video.title}
@@ -264,6 +286,10 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                     ? 'text-[#222222]/70'
                     : theme === 'tinkerbell'
                     ? 'text-black/80'
+                    : theme === 'bounceworld'
+                    ? 'text-[#1D428A]/80'
+                    : theme === 'avengers'
+                    ? 'text-[#604AC7]/80'
                     : 'text-black/70 dark:text-gray-400'
                 }`}>
                   <div className="flex items-center">
@@ -288,6 +314,10 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                       ? 'bg-[#64cc4f]/15 border-2 border-[#64cc4f]/40'
                       : theme === 'tinkerbell'
                       ? 'bg-gradient-to-r from-green-50 to-yellow-50 border-2 border-yellow-300 dark:bg-green-900/20 dark:border-yellow-600'
+                      : theme === 'bounceworld'
+                      ? 'bg-gradient-to-r from-[#1D428A]/15 to-[#C8102E]/15 border-2 border-[#1D428A]/40'
+                      : theme === 'avengers'
+                      ? 'bg-gradient-to-r from-[#2C1267]/15 to-[#604AC7]/15 border-2 border-[#604AC7]/40'
                       : 'bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-800'
                   } rounded-lg p-4 mb-4`}>
                     <div className="flex items-center">
@@ -296,6 +326,10 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                           ? 'text-[#64cc4f]'
                           : theme === 'tinkerbell'
                           ? 'text-yellow-500'
+                          : theme === 'bounceworld'
+                          ? 'text-[#1D428A]'
+                          : theme === 'avengers'
+                          ? 'text-[#604AC7]'
                           : 'text-blue-500'
                       }`} />
                       <div>
@@ -304,6 +338,10 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                             ? 'text-[#64cc4f]'
                             : theme === 'tinkerbell'
                             ? 'text-green-800 dark:text-green-200'
+                            : theme === 'bounceworld'
+                            ? 'text-[#1D428A]'
+                            : theme === 'avengers'
+                            ? 'text-[#604AC7]'
                             : 'text-blue-800 dark:text-blue-200'
                         }`}>
                           You own this video
@@ -313,6 +351,10 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                             ? 'text-[#b2e05b]'
                             : theme === 'tinkerbell'
                             ? 'text-green-600 dark:text-green-300'
+                            : theme === 'bounceworld'
+                            ? 'text-[#1D428A]/80'
+                            : theme === 'avengers'
+                            ? 'text-[#604AC7]/80'
                             : 'text-blue-600 dark:text-blue-300'
                         }`}>
                           Purchased on {purchase.purchasedAt?.toDate().toLocaleDateString()}
@@ -330,6 +372,10 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                       ? 'text-[#222222]'
                       : theme === 'tinkerbell'
                       ? 'text-black'
+                      : theme === 'bounceworld'
+                      ? 'text-[#1D428A]'
+                      : theme === 'avengers'
+                      ? 'text-[#604AC7]'
                       : 'text-black dark:text-white'
                   }`}>
                     Description
@@ -339,6 +385,10 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                       ? 'text-[#222222]/80'
                       : theme === 'tinkerbell'
                       ? 'text-black/80'
+                      : theme === 'bounceworld'
+                      ? 'text-[#1D428A]/80'
+                      : theme === 'avengers'
+                      ? 'text-[#604AC7]/80'
                       : 'text-black/80 dark:text-gray-300'
                   }`}>
                     {video.description}
@@ -357,6 +407,10 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                   ? 'bg-gradient-to-br from-[#64cc4f]/10 to-[#b2e05b]/10 border-2 border-[#64cc4f]/30'
                   : theme === 'tinkerbell'
                   ? 'bg-gradient-to-br from-yellow-50 to-yellow-100 border-2 border-yellow-300 dark:border-yellow-600'
+                  : theme === 'bounceworld'
+                  ? 'bg-gradient-to-br from-[#1D428A]/10 to-[#C8102E]/10 border-2 border-[#1D428A]/30'
+                  : theme === 'avengers'
+                  ? 'bg-gradient-to-br from-[#2C1267]/10 to-[#604AC7]/10 border-2 border-[#604AC7]/30'
                   : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700'
               }`}>
                 <h3 className={`font-semibold mb-4 ${
@@ -364,6 +418,10 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                     ? 'text-[#222222]'
                     : theme === 'tinkerbell'
                     ? 'text-black'
+                    : theme === 'bounceworld'
+                    ? 'text-[#1D428A]'
+                    : theme === 'avengers'
+                    ? 'text-[#604AC7]'
                     : 'text-black dark:text-white'
                 }`}>
                   Video Details
@@ -375,6 +433,10 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                         ? 'text-[#222222]/60'
                         : theme === 'tinkerbell'
                         ? 'text-black/70'
+                        : theme === 'bounceworld'
+                        ? 'text-[#1D428A]/60'
+                        : theme === 'avengers'
+                        ? 'text-[#604AC7]/60'
                         : 'text-black/70 dark:text-gray-400'
                     }`}>Subject:</span>
                     <p className={`font-medium ${
@@ -382,6 +444,10 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                         ? 'text-[#222222]'
                         : theme === 'tinkerbell'
                         ? 'text-black'
+                        : theme === 'bounceworld'
+                        ? 'text-[#1D428A]'
+                        : theme === 'avengers'
+                        ? 'text-[#604AC7]'
                         : 'text-black dark:text-white'
                     }`}>
                       {video.subjectName}
@@ -395,6 +461,10 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                           ? 'text-[#222222]/60'
                           : theme === 'tinkerbell'
                           ? 'text-black/70'
+                          : theme === 'bounceworld'
+                          ? 'text-[#1D428A]/60'
+                          : theme === 'avengers'
+                          ? 'text-[#604AC7]/60'
                           : 'text-black/70 dark:text-gray-400'
                       }`}>Lesson:</span>
                       <p className={`font-medium ${
@@ -402,6 +472,10 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                           ? 'text-[#222222]'
                           : theme === 'tinkerbell'
                           ? 'text-black'
+                          : theme === 'bounceworld'
+                          ? 'text-[#1D428A]'
+                          : theme === 'avengers'
+                          ? 'text-[#604AC7]'
                           : 'text-black dark:text-white'
                       }`}>
                         {video.lessonName}
@@ -415,6 +489,10 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                         ? 'text-[#222222]/60'
                         : theme === 'tinkerbell'
                         ? 'text-black/70'
+                        : theme === 'bounceworld'
+                        ? 'text-[#1D428A]/60'
+                        : theme === 'avengers'
+                        ? 'text-[#604AC7]/60'
                         : 'text-black/70 dark:text-gray-400'
                     }`}>Status:</span>
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ml-2 ${
@@ -436,6 +514,10 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                         ? 'text-[#222222]/60'
                         : theme === 'tinkerbell'
                         ? 'text-black/70'
+                        : theme === 'bounceworld'
+                        ? 'text-[#1D428A]/60'
+                        : theme === 'avengers'
+                        ? 'text-[#604AC7]/60'
                         : 'text-black/70 dark:text-gray-400'
                     }`}>Visibility:</span>
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ml-2 ${
@@ -462,6 +544,10 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                           ? 'text-[#222222]/60'
                           : theme === 'tinkerbell'
                           ? 'text-black/70'
+                          : theme === 'bounceworld'
+                          ? 'text-[#1D428A]/60'
+                          : theme === 'avengers'
+                          ? 'text-[#604AC7]/60'
                           : 'text-black/70 dark:text-gray-400'
                       }`}>Price:</span>
                       <p className={`font-medium ${
@@ -469,6 +555,10 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                           ? 'text-[#222222]'
                           : theme === 'tinkerbell'
                           ? 'text-black'
+                          : theme === 'bounceworld'
+                          ? 'text-[#1D428A]'
+                          : theme === 'avengers'
+                          ? 'text-[#604AC7]'
                           : 'text-black dark:text-white'
                       }`}>
                         ${video.price}
@@ -485,6 +575,10 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                     ? 'bg-gradient-to-br from-[#64cc4f]/10 to-[#b2e05b]/10 border-2 border-[#64cc4f]/30'
                     : theme === 'tinkerbell'
                     ? 'bg-gradient-to-br from-yellow-50 to-yellow-100 border-2 border-yellow-300 dark:border-yellow-600'
+                    : theme === 'bounceworld'
+                    ? 'bg-gradient-to-br from-[#1D428A]/10 to-[#C8102E]/10 border-2 border-[#1D428A]/30'
+                    : theme === 'avengers'
+                    ? 'bg-gradient-to-br from-[#2C1267]/10 to-[#604AC7]/10 border-2 border-[#604AC7]/30'
                     : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700'
                 }`}>
                   <h3 className={`font-semibold mb-3 ${
@@ -492,6 +586,10 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                       ? 'text-[#222222]'
                       : theme === 'tinkerbell'
                       ? 'text-black'
+                      : theme === 'bounceworld'
+                      ? 'text-[#1D428A]'
+                      : theme === 'avengers'
+                      ? 'text-[#604AC7]'
                       : 'text-black dark:text-white'
                   }`}>
                     Tags
@@ -505,6 +603,10 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                             ? 'bg-[#64cc4f]/20 text-[#222222] border border-[#64cc4f]/30'
                             : theme === 'tinkerbell'
                             ? 'bg-green-200 dark:bg-green-900/40 text-green-800 dark:text-green-200 border border-green-300 dark:border-green-700'
+                            : theme === 'bounceworld'
+                            ? 'bg-[#1D428A]/20 text-[#1D428A] border border-[#1D428A]/30'
+                            : theme === 'avengers'
+                            ? 'bg-[#604AC7]/20 text-[#604AC7] border border-[#604AC7]/30'
                             : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
                         }`}
                       >
@@ -521,6 +623,10 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                   ? 'bg-[#64cc4f]/10 border-2 border-[#64cc4f]/30'
                   : theme === 'tinkerbell'
                   ? 'bg-gradient-to-r from-green-100 to-yellow-100 border-2 border-yellow-300 dark:border-yellow-600'
+                  : theme === 'bounceworld'
+                  ? 'bg-gradient-to-r from-[#1D428A]/10 to-[#C8102E]/10 border-2 border-[#1D428A]/30'
+                  : theme === 'avengers'
+                  ? 'bg-gradient-to-r from-[#2C1267]/10 to-[#604AC7]/10 border-2 border-[#604AC7]/30'
                   : 'bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-800'
               }`}>
                 <h3 className={`font-semibold mb-2 ${
@@ -528,6 +634,10 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                     ? 'text-[#222222]'
                     : theme === 'tinkerbell'
                     ? 'text-black'
+                    : theme === 'bounceworld'
+                    ? 'text-[#1D428A]'
+                    : theme === 'avengers'
+                    ? 'text-[#604AC7]'
                     : 'text-black dark:text-white'
                 }`}>
                   Access Information
@@ -537,6 +647,10 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                     ? 'text-[#222222]/80'
                     : theme === 'tinkerbell'
                     ? 'text-black/80'
+                    : theme === 'bounceworld'
+                    ? 'text-[#1D428A]/80'
+                    : theme === 'avengers'
+                    ? 'text-[#604AC7]/80'
                     : 'text-black/80 dark:text-gray-300'
                 }`}>
                   {video.price && video.price > 0 ? (
