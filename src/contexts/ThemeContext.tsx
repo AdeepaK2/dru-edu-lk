@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-export type ThemeType = 'ben10' | 'tinkerbell' | 'cricketverse' | 'bounceworld' | 'avengers';
+export type ThemeType = 'ben10' | 'tinkerbell' | 'cricketverse' | 'bounceworld' | 'avengers' | 'ponyville';
 
 interface ThemeContextType {
   theme: ThemeType;
@@ -19,7 +19,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setIsClient(true);
     const savedTheme = localStorage.getItem('student-theme') as ThemeType | null;
-    if (savedTheme === 'ben10' || savedTheme === 'tinkerbell' || savedTheme === 'cricketverse' || savedTheme === 'bounceworld' || savedTheme === 'avengers') {
+    if (savedTheme === 'ben10' || savedTheme === 'tinkerbell' || savedTheme === 'cricketverse' || savedTheme === 'bounceworld' || savedTheme === 'avengers' || savedTheme === 'ponyville') {
       setThemeState(savedTheme);
       applyTheme(savedTheme);
     } else {
@@ -88,6 +88,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.style.setProperty('--theme-accent', '#4F2C8D');
       root.style.setProperty('--theme-bg-light', '#f8fafc');
       root.style.setProperty('--theme-bg-dark', '#0F0826');
+    } else if (selectedTheme === 'ponyville') {
+      // Ponyville Funland - Cotton candy pinks
+      root.style.setProperty('--theme-primary-light', '#ff2e9f');
+      root.style.setProperty('--theme-primary', '#e13690');
+      root.style.setProperty('--theme-primary-dark', '#f1aed5');
+      root.style.setProperty('--theme-secondary', '#ffffff');
+      root.style.setProperty('--theme-accent', '#ff2e9f');
+      root.style.setProperty('--theme-bg-light', '#fff5fb');
+      root.style.setProperty('--theme-bg-dark', '#5a0033');
     }
   };
 

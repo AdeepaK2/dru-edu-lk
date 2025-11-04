@@ -282,8 +282,8 @@ export default function StudentDashboard() {
   // Show loading state while data is being fetched
   if (loading) {
     return (
-      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f]  to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : theme === 'cricketverse' ? 'from-blue-400 to-indigo-600' : theme === 'bounceworld' ? 'from-white via-[#1D428A]/10 to-white' : theme === 'avengers' ? 'from-[#2C1267]/20 to-[#4F2C8D]/20' : 'from-blue-400 to-indigo-600'} flex items-center justify-center`}>
-        <div className={`${theme === 'bounceworld' ? 'bg-white border-4 border-[#1D428A]' : 'bg-white border-4 border-black'} rounded-3xl p-8 shadow-2xl`}>
+      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f]  to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : theme === 'cricketverse' ? 'from-blue-400 to-indigo-600' : theme === 'bounceworld' ? 'from-white via-[#1D428A]/10 to-white' : theme === 'avengers' ? 'from-[#2C1267]/20 to-[#4F2C8D]/20' : theme === 'ponyville' ? 'from-[#fff5fb] via-[#f1aed5] to-[#ff2e9f]' : 'from-blue-400 to-indigo-600'} flex items-center justify-center`}>
+        <div className={`${theme === 'bounceworld' ? 'bg-white border-4 border-[#1D428A]' : theme === 'ponyville' ? 'bg-white border-4 border-[#e13690]' : 'bg-white border-4 border-black'} rounded-3xl p-8 shadow-2xl`}>
           {/* Theme-Specific Loading Animation */}
           <div className="relative mb-6 flex flex-col items-center">
             {/* Tinkerbell Loading GIF */}
@@ -346,8 +346,20 @@ export default function StudentDashboard() {
               </div>
             )}
             
+            {/* Ponyville Loading */}
+            {theme === 'ponyville' && (
+              <div className="flex flex-col items-center">
+                <img
+                  src="/ponyville-loading.gif"
+                  alt="Ponyville Loading"
+                  className="w-32 h-32 object-contain"
+                />
+                <span className="text-2xl font-bold text-[#e13690] mt-4">Loading</span>
+              </div>
+            )}
+            
             {/* Default Theme Spinner with Loading Text */}
-            {!['tinkerbell', 'ben10', 'cricketverse', 'bounceworld', 'avengers'].includes(theme) && (
+            {!['tinkerbell', 'ben10', 'cricketverse', 'bounceworld', 'avengers', 'ponyville'].includes(theme) && (
               <div className="flex flex-col items-center">
                 <div className="w-24 h-24 border-4 border-blue-400 border-t-blue-600 rounded-full animate-spin"></div>
                 <span className="text-2xl font-bold text-blue-600 mt-4">Loading</span>
@@ -376,6 +388,8 @@ export default function StudentDashboard() {
           ? 'linear-gradient(to bottom right, rgb(255, 255, 255), rgba(29, 66, 138, 0.1), rgb(255, 255, 255))'
           : theme === 'avengers'
           ? 'linear-gradient(to bottom right, rgba(44, 18, 103, 0.3), rgba(79, 44, 141, 0.2), rgba(44, 18, 103, 0.3))'
+          : theme === 'ponyville'
+          ? 'linear-gradient(to bottom right, rgb(255, 245, 251), rgb(241, 174, 213), rgb(255, 46, 159))'
           : 'linear-gradient(to bottom right, rgb(96, 165, 250), rgb(79, 70, 229), rgb(96, 165, 250))'
       }}>
         <div className="space-y-6">
@@ -391,6 +405,8 @@ export default function StudentDashboard() {
             ? 'bg-gradient-to-r from-white via-[#1D428A] to-[#C8102E] text-black border-[#1D428A]'
             : theme === 'avengers'
             ? 'bg-gradient-to-r from-[#2C1267] to-[#4F2C8D]'
+            : theme === 'ponyville'
+            ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690] to-[#ff2e9f]'
             : 'bg-gradient-to-r from-blue-500 to-indigo-600'
         }`}>
           {/* Themed background elements */}
@@ -400,6 +416,7 @@ export default function StudentDashboard() {
               : theme === 'cricketverse' ? 'rgb(147, 197, 253)'
               : theme === 'bounceworld' ? 'rgb(200, 16, 46)'
               : theme === 'avengers' ? 'rgb(96, 74, 199)'
+              : theme === 'ponyville' ? 'rgb(255, 46, 159)'
               : 'rgb(147, 197, 253)'
           }}></div>
           <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full translate-y-12 -translate-x-12  opacity-20" style={{
@@ -408,6 +425,7 @@ export default function StudentDashboard() {
               : theme === 'cricketverse' ? 'rgb(55, 65, 81)'
               : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
               : theme === 'avengers' ? 'rgb(44, 18, 103)'
+              : theme === 'ponyville' ? 'rgb(241, 174, 213)'
               : 'rgb(55, 65, 81)'
           }}></div>
          
@@ -415,18 +433,20 @@ export default function StudentDashboard() {
           <div className="flex items-center justify-between relative z-10">
             <div className="flex-1">
               <div className="flex items-center space-x-4 mb-2">
-                {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'cricketverse' || theme === 'avengers' || theme === 'bounceworld') && (
+                {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'cricketverse' || theme === 'avengers' || theme === 'bounceworld' || theme === 'ponyville') && (
                   <img 
                     src={theme === 'ben10' ? '/ben10-welcome.png' 
                         : theme === 'tinkerbell' ? '/tinkerbell-welcome.png'
                         : theme === 'cricketverse' ? '/CricketVerse.avif'
                         : theme === 'avengers' ? '/avengers/Iron Man.png'
                         : theme === 'bounceworld' ? '/bounce_world.jpg'
+                        : theme === 'ponyville' ? '/Ponyville Funland.jpg'
                         : '/welcome.png'} 
                     alt="Welcome" 
                     className={`${
                       theme === 'avengers' ? 'w-48 h-48' 
                       : theme === 'bounceworld' ? 'w-48 h-48'
+                      : theme === 'ponyville' ? 'w-48 h-48' 
                       : 'w-40 h-40'
                     } ${
                       theme === 'avengers' ? '' : 'rounded-full'
@@ -435,6 +455,7 @@ export default function StudentDashboard() {
                       : theme === 'tinkerbell' ? 'ring-4 ring-green-600 border-4 border-black'
                       : theme === 'cricketverse' ? 'ring-4 ring-blue-500 border-4 border-black'
                       : theme === 'bounceworld' ? 'ring-4 ring-[#1D428A] border-4 border-black'
+                      : theme === 'ponyville' ? 'ring-4 ring-[#e13690] border-4 border-black'
                       : ''
                     }`}
                     onError={(e) => {
@@ -450,6 +471,7 @@ export default function StudentDashboard() {
                       : theme === 'tinkerbell' ? 'enchant' 
                       : theme === 'cricketverse' ? 'score big in'
                       : theme === 'bounceworld' ? 'bounce into'
+                      : theme === 'ponyville' ? 'gallop into'
                       : theme === 'avengers' ? 'assemble for'
                       : 'excel in'
                     } your learning?
@@ -460,6 +482,7 @@ export default function StudentDashboard() {
                       : theme === 'cricketverse' ? 'rgb(191, 219, 254)'
                       : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
                       : theme === 'avengers' ? 'rgb(200, 138, 165)'
+                      : theme === 'ponyville' ? 'rgb(255, 245, 251)'
                       : 'rgb(191, 219, 254)'
                   }}>
                     {theme === 'ben10' 
@@ -472,6 +495,8 @@ export default function StudentDashboard() {
                       ? "Let's bounce into exciting learning adventures!"
                       : theme === 'avengers'
                       ? "Let's assemble the greatest learning team!"
+                      : theme === 'ponyville'
+                      ? "Let's gallop into magical learning adventures!"
                       : "Let's focus on your educational goals!"}
                   </p>
                 </div>
@@ -482,6 +507,7 @@ export default function StudentDashboard() {
                   : theme === 'cricketverse' ? 'rgb(191, 219, 254)'
                   : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
                   : theme === 'avengers' ? 'rgb(200, 138, 165)'
+                  : theme === 'ponyville' ? 'rgb(255, 245, 251)'
                   : 'rgb(191, 219, 254)'
               }}>
                 {theme === 'ben10' 
@@ -494,6 +520,8 @@ export default function StudentDashboard() {
                   ? 'Welcome to your BounceWorld learning arena!'
                   : theme === 'avengers'
                   ? 'Welcome to your Avengers learning headquarters!'
+                  : theme === 'ponyville'
+                  ? 'Welcome to your Ponyville Funland learning paradise!'
                   : 'Welcome to your learning dashboard!'}
               </p>
               <div className="flex items-center space-x-2" style={{
@@ -502,6 +530,7 @@ export default function StudentDashboard() {
                   : theme === 'cricketverse' ? 'rgb(226, 232, 240)'
                   : theme === 'bounceworld' ? 'rgb(0, 0, 0)'
                   : theme === 'avengers' ? 'rgb(226, 232, 240)'
+                  : theme === 'ponyville' ? 'rgb(255, 245, 251)'
                   : 'rgb(226, 232, 240)'
               }}>
                 <span className="text-sm font-medium">{getMelbourneDateTime()}</span>
@@ -524,6 +553,8 @@ export default function StudentDashboard() {
             ? 'bg-gradient-to-r from-white via-[#1D428A]/20 to-white border-[#1D428A]'
             : theme === 'avengers'
             ? 'bg-gradient-to-r from-[#2C1267]/50 to-[#4F2C8D]/50'
+            : theme === 'ponyville'
+            ? 'bg-gradient-to-r from-[#f1aed5]/50 via-[#e13690]/30 to-[#ff2e9f]/50'
             : 'bg-gradient-to-r from-blue-400 to-indigo-500'
         }`}>
             <div className="flex items-start space-x-4 relative z-10">
@@ -545,6 +576,8 @@ export default function StudentDashboard() {
                     ? "Remember, every bounce back from a challenge makes you stronger and higher!"
                     : theme === 'avengers'
                     ? "Remember, like the Avengers, your learning powers grow stronger when you practice together!"
+                    : theme === 'ponyville'
+                    ? "Remember, like Ponyville's magic, every learning adventure brings joy and discovery!"
                     : "Stay focused and consistent. Success comes from small steps taken every day!"}
                 </p>
                 <div className={`mt-4 flex items-center space-x-4 text-sm ${theme === 'bounceworld' ? 'text-black' : 'text-black'}`}>
@@ -604,6 +637,8 @@ export default function StudentDashboard() {
               ? 'bg-gradient-to-br from-white to-[#1D428A]/20 border-[#1D428A]'
               : theme === 'avengers'
               ? 'bg-gradient-to-br from-[#604AC7]/30 to-[#C88DA5]/30'
+              : theme === 'ponyville'
+              ? 'bg-gradient-to-br from-[#f1aed5] to-[#ff2e9f]'
               : 'bg-gradient-to-br from-blue-400 to-blue-600'
           }`}>
             <div className="flex items-center justify-between">
@@ -640,6 +675,8 @@ export default function StudentDashboard() {
               ? 'bg-gradient-to-br from-white to-[#1D428A]/20 border-l-8 border-l-[#C8102E] border-r-8 border-r-[#1D428A]'
               : theme === 'avengers'
               ? 'bg-gradient-to-br from-[#604AC7]/30 to-[#C88DA5]/30'
+              : theme === 'ponyville'
+              ? 'bg-gradient-to-br from-[#f1aed5] to-[#ff2e9f]'
               : 'bg-gradient-to-br from-blue-400 to-blue-600'
           }`}>
             <div className="flex items-center justify-between">
@@ -726,6 +763,8 @@ export default function StudentDashboard() {
               ? 'bg-gradient-to-br from-white to-[#1D428A]/20'
               : theme === 'avengers'
               ? 'bg-gradient-to-br from-[#604AC7]/30 to-[#C88DA5]/30'
+              : theme === 'ponyville'
+              ? 'bg-gradient-to-br from-[#f1aed5] to-[#ff2e9f]'
               : 'bg-gradient-to-br from-blue-400 to-blue-600'
           }`}>
             <div className="flex items-center justify-between">
@@ -805,6 +844,8 @@ export default function StudentDashboard() {
               ? 'bg-gradient-to-br from-white to-[#1D428A]/20'
               : theme === 'avengers'
               ? 'bg-gradient-to-br from-[#604AC7]/30 to-[#C88DA5]/30'
+              : theme === 'ponyville'
+              ? 'bg-gradient-to-br from-[#f1aed5] to-[#ff2e9f]'
               : 'bg-gradient-to-br from-blue-400 to-blue-600'
           }`}>
             <div className="flex items-center justify-between">
@@ -905,6 +946,8 @@ export default function StudentDashboard() {
               ? 'bg-gradient-to-br from-white via-[#1D428A]/20 to-white'
               : theme === 'avengers'
               ? 'bg-gradient-to-br from-[#2C1267]/20 via-[#604AC7]/30 to-[#C88DA5]/20'
+              : theme === 'ponyville'
+              ? 'bg-gradient-to-br from-[#fff5fb] via-[#f1aed5] to-[#ff2e9f]'
               : 'bg-gradient-to-br from-blue-300 via-indigo-500 to-blue-400'
           }`}>
             <h3 className="text-xl font-black text-black mb-6 flex items-center">
@@ -1050,6 +1093,8 @@ export default function StudentDashboard() {
               ? 'bg-gradient-to-br from-white via-[#1D428A]/20 to-white'
               : theme === 'avengers'
               ? 'bg-gradient-to-br from-[#2C1267]/20 via-[#604AC7]/30 to-[#C88DA5]/20'
+              : theme === 'ponyville'
+              ? 'bg-gradient-to-br from-[#fff5fb] via-[#f1aed5] to-[#ff2e9f]'
               : 'bg-gradient-to-br from-indigo-400 to-blue-600'
           }`}>
             <h3 className="mb-6 flex items-center text-xl font-black" style={{
@@ -1299,6 +1344,8 @@ export default function StudentDashboard() {
               ? 'from-white via-[#1D428A]/20 to-white'
               : theme === 'avengers'
               ? 'from-[#2C1267]/30 via-[#604AC7]/20 to-[#C88DA5]/30'
+              : theme === 'ponyville'
+              ? 'from-[#f1aed5] via-[#e13690] to-[#ff2e9f]'
               : 'from-blue-400 via-indigo-500 to-blue-500'
           }`}>
             <h3 className={`text-2xl font-black mb-6 flex items-center ${theme === 'bounceworld' ? 'text-black' : 'text-black'}`}>
@@ -1387,16 +1434,19 @@ export default function StudentDashboard() {
               ? 'from-white via-[#1D428A]/20 to-white'
               : theme === 'avengers'
               ? 'from-[#2C1267]/30 via-[#604AC7]/20 to-[#C88DA5]/30'
+              : theme === 'ponyville'
+              ? 'from-[#f1aed5] via-[#e13690] to-[#ff2e9f]'
               : 'from-blue-400 via-indigo-500 to-blue-500'
           }`}>
             <h3 className={`text-xl font-black mb-6 flex items-center ${theme === 'bounceworld' ? 'text-black' : 'text-white'}`}>
-              {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'cricketverse' || theme === 'bounceworld' || theme === 'avengers') && 
+              {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'cricketverse' || theme === 'bounceworld' || theme === 'avengers' || theme === 'ponyville') && 
                 <span className="text-6xl mr-2 ">
                   {theme === 'ben10' ? '🦸‍♂️' 
                     : theme === 'tinkerbell' ? '🧚‍♀️'
                     : theme === 'cricketverse' ? '🏏'
                     : theme === 'bounceworld' ? '⚽'
                     : theme === 'avengers' ? '🛡️'
+                    : theme === 'ponyville' ? '🦄'
                     : '🦸‍♂️'}
                 </span>}
               Student Profile

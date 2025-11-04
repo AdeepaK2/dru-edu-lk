@@ -1,4 +1,4 @@
-export type ThemeType = 'ben10' | 'tinkerbell' | 'cricketverse' | 'bounceworld' | 'avengers';
+export type ThemeType = 'ben10' | 'tinkerbell' | 'cricketverse' | 'bounceworld' | 'avengers' | 'ponyville';
 
 export interface ThemeConfig {
   id: ThemeType;
@@ -110,6 +110,24 @@ export const THEMES: Record<ThemeType, ThemeConfig> = {
     characterName: 'Avengers Hero',
     characterDescription: 'Assemble your knowledge like a true hero! 🦸‍♂️',
   },
+  ponyville: {
+    id: 'ponyville',
+    name: 'Ponyville Funland',
+    description: 'Playful pink theme inspired by Ponyville — bright, fun and cheerful',
+    icon: '🦄',
+    emoji: '🩷',
+    colors: {
+      primary: '#e13690',      // main vibrant pink
+      primaryLight: '#ff2e9f', // bright pink
+      primaryDark: '#f1aed5',  // soft pastel pink
+      secondary: '#ffffff',    // white for accents
+      accent: '#ff2e9f',       // bright accent
+      bgLight: '#fff5fb',      // very light pink background
+      bgDark: '#5a0033',       // deep complementary dark (used rarely)
+    },
+    characterName: 'Ponyville Funland',
+    characterDescription: 'Gallop into learning with cotton-candy colors and smiles! 🦄',
+  },
 };
 
 export const THEME_GRADIENT_MAP: Record<ThemeType, string> = {
@@ -118,6 +136,7 @@ export const THEME_GRADIENT_MAP: Record<ThemeType, string> = {
   cricketverse: 'from-blue-400 to-indigo-600',
   bounceworld: 'from-[#1D428A] to-[#C8102E]',
   avengers: 'from-[#2C1267] to-[#4F2C8D]',
+  ponyville: 'from-[#f1aed5] to-[#ff2e9f]',
 };
 
 export const THEME_HEADER_MAP: Record<ThemeType, string> = {
@@ -126,6 +145,7 @@ export const THEME_HEADER_MAP: Record<ThemeType, string> = {
   cricketverse: 'from-blue-500 to-indigo-600',
   bounceworld: 'from-[#1D428A] via-white to-[#C8102E]',
   avengers: 'from-[#2C1267] via-[#604AC7] to-[#0F0826]',
+  ponyville: 'from-[#f1aed5] via-[#ff2e9f] to-[#e13690]',
 };
 
 export const THEME_BORDER_MAP: Record<ThemeType, string> = {
@@ -134,6 +154,7 @@ export const THEME_BORDER_MAP: Record<ThemeType, string> = {
   cricketverse: 'border-blue-400',
   bounceworld: 'border-[#1D428A]',
   avengers: 'border-[#2C1267]',
+  ponyville: 'border-[#e13690]',
 };
 
 export const THEME_BG_MAP: Record<ThemeType, string> = {
@@ -142,6 +163,7 @@ export const THEME_BG_MAP: Record<ThemeType, string> = {
   cricketverse: 'from-blue-300 via-indigo-400 to-indigo-600',
   bounceworld: 'from-white via-[#1D428A] to-[#C8102E]',
   avengers: 'from-[#604AC7] via-[#2C1267] to-[#0F0826]',
+  ponyville: 'from-[#fff5fb] via-[#f1aed5] to-[#ff2e9f]',
 };
 
 export const THEME_BUTTON_MAP: Record<ThemeType, string> = {
@@ -150,6 +172,7 @@ export const THEME_BUTTON_MAP: Record<ThemeType, string> = {
   cricketverse: 'bg-blue-500 hover:bg-blue-600',
   bounceworld: 'bg-[#1D428A] hover:bg-[#C8102E]',
   avengers: 'bg-[#2C1267] hover:bg-[#604AC7]',
+  ponyville: 'bg-[#e13690] hover:bg-[#ff2e9f]',
 };
 
 export const THEME_SUCCESS_MAP: Record<ThemeType, string> = {
@@ -158,4 +181,5 @@ export const THEME_SUCCESS_MAP: Record<ThemeType, string> = {
   cricketverse: 'from-blue-300 to-indigo-300',
   bounceworld: 'from-[#1D428A] to-white',
   avengers: 'from-[#604AC7] to-[#C88DA5]',
+  ponyville: 'from-[#ff2e9f] to-[#f1aed5]',
 };
