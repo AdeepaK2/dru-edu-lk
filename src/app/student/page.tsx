@@ -406,7 +406,7 @@ export default function StudentDashboard() {
             : theme === 'avengers'
             ? 'bg-gradient-to-r from-[#2C1267] to-[#4F2C8D]'
             : theme === 'ponyville'
-            ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690] to-[#ff2e9f]'
+            ? 'bg-gradient-to-r from-[#f58bc9] via-[#e13690] to-[#ff2e9f]'
             : 'bg-gradient-to-r from-blue-500 to-indigo-600'
         }`}>
           {/* Themed background elements */}
@@ -440,7 +440,7 @@ export default function StudentDashboard() {
                         : theme === 'cricketverse' ? '/CricketVerse.avif'
                         : theme === 'avengers' ? '/avengers/Iron Man.png'
                         : theme === 'bounceworld' ? '/bounce_world.jpg'
-                        : theme === 'ponyville' ? '/Ponyville Funland.jpg'
+                        : theme === 'ponyville' ? '/Ponyville.webp'
                         : '/welcome.png'} 
                     alt="Welcome" 
                     className={`${
@@ -554,14 +554,14 @@ export default function StudentDashboard() {
             : theme === 'avengers'
             ? 'bg-gradient-to-r from-[#2C1267]/50 to-[#4F2C8D]/50'
             : theme === 'ponyville'
-            ? 'bg-gradient-to-r from-[#f1aed5]/50 via-[#e13690]/30 to-[#ff2e9f]/50'
+            ? 'bg-gradient-to-r from-[#f1aed5] via-[#ec79b6] to-[#fe9fd2]'
             : 'bg-gradient-to-r from-blue-400 to-indigo-500'
         }`}>
             <div className="flex items-start space-x-4 relative z-10">
               <div className="relative">
               </div>
               <div className="flex-1">
-                <h3 className={`text-2xl font-bold mb-2 flex items-center ${theme === 'bounceworld' ? 'text-black' : 'text-white'}`}>
+                <h3 className={`text-2xl font-bold mb-2 flex items-center ${theme === 'ponyville' ? 'text-black' : theme === 'bounceworld' ? 'text-black' : 'text-white'}`}>
                   {getMotivationalMessage().message}
                  
                 </h3>
@@ -582,7 +582,7 @@ export default function StudentDashboard() {
                 </p>
                 <div className={`mt-4 flex items-center space-x-4 text-sm ${theme === 'bounceworld' ? 'text-black' : 'text-black'}`}>
                   <div className="flex items-center space-x-1">
-                    <span className="text-lg">{theme === 'ben10' ? '📊' : theme === 'tinkerbell' ? '📈' : theme === 'cricketverse' ? '🏏' : theme === 'bounceworld' ? '⚽' : theme === 'avengers' ? '�️' : '�📈'}</span>
+                    <span className="text-lg">{theme === 'ben10' ? '📊' : theme === 'tinkerbell' ? '📈' : theme === 'cricketverse' ? '🏏' : theme === 'bounceworld' ? '⚽' : theme === 'avengers' ? '' : '📈'}</span>
                     <span>Grade: <strong style={{
                       color: theme === 'ben10' ? 'rgb(100, 204, 79)' 
                         : theme === 'tinkerbell' ? 'rgb(0, 138, 4)'
@@ -1122,6 +1122,7 @@ export default function StudentDashboard() {
                       : theme === 'cricketverse' ? 'rgb(255,255,255)'
                       : theme === 'bounceworld' ? 'rgb(0,0,0)'
                       : theme === 'avengers' ? 'rgb(255,255,255)'
+                      : theme === 'ponyville' ? 'rgb(0,0,0)'
                       : 'rgb(255,255,255)'
                   }}> {theme === 'ben10' ? 'Complete 20 Tests' 
                     : theme === 'tinkerbell' ? 'Complete 20 Quizzes' 
@@ -1135,6 +1136,7 @@ export default function StudentDashboard() {
                       : theme === 'cricketverse' ? 'rgb(255,255,255)'
                       : theme === 'bounceworld' ? 'rgb(0,0,0)'
                       : theme === 'avengers' ? 'rgb(255,255,255)'
+                      : theme === 'ponyville' ? 'rgb(0,0,0)'
                       : 'rgb(255, 255, 255)'
                   }}>
                     {dashboardStats.completedTests}/20
@@ -1171,19 +1173,24 @@ export default function StudentDashboard() {
                       : theme === 'cricketverse' ? 'rgb(255,255,255)'
                       : theme === 'bounceworld' ? 'rgb(0,0,0)'
                       : theme === 'avengers' ? 'rgb(255,255,255)'
+                      : theme === 'ponyville' ? 'rgb(0,0,0)'
                       : 'rgb(255,255,255)'
-                  }}> {theme === 'ben10' ? 'Reach 85% Average' 
+                  }}>
+                    {theme === 'ben10' ? 'Reach 85% Average' 
                     : theme === 'tinkerbell' ? 'Reach 85% Average'
                     : theme === 'cricketverse' ? 'Score 85% Average'
                     : theme === 'bounceworld' ? 'Achieve 85% Score'
                     : theme === 'avengers' ? 'Maintain 85% Power'
-                    : 'Reach 85% Average'}</span>
+                    : 'Reach 85% Average'}
+                  </span>
                   <span className="font-black" style={{
                     color: theme === 'ben10' ? 'rgb(255,255,255)' 
                       : theme === 'tinkerbell' ? 'rgb(255, 255, 255)'
                       : theme === 'cricketverse' ? 'rgb(255,255,255)'
                       : theme === 'bounceworld' ? 'rgb(0,0,0)'
                       : theme === 'avengers' ? 'rgb(255,255,255)'
+                      : theme === 'ponyville' ? 'rgb(0,0,0)'
+                      
                       : 'rgb(255, 255, 255)'
                   }}>
                     {dashboardStats.currentGrade}%
@@ -1229,10 +1236,11 @@ export default function StudentDashboard() {
                 <div className="flex justify-between text-sm">
                   <span className="font-bold" style={{
                     color: theme === 'ben10' ? 'rgb(255,255,255)' 
-                      : theme === 'tinkerbell' ? 'rgb(255, 255, 255)'
+                      : theme === 'tinkerbell' ? 'rgb(255,255,255)'
                       : theme === 'cricketverse' ? 'rgb(255,255,255)'
                       : theme === 'bounceworld' ? 'rgb(0,0,0)'
                       : theme === 'avengers' ? 'rgb(255,255,255)'
+                      : theme === 'ponyville' ? 'rgb(0,0,0)'
                       : 'rgb(255, 255, 255)'
                   }}>{theme === 'ben10' ? 'Study 50 Materials' 
                     : theme === 'tinkerbell' ? 'Explore 50 Resources'
@@ -1246,6 +1254,7 @@ export default function StudentDashboard() {
                       : theme === 'cricketverse' ? 'rgb(255,255,255)'
                       : theme === 'bounceworld' ? 'rgb(0,0,0)'
                       : theme === 'avengers' ? 'rgb(255,255,255)'
+                      : theme === 'ponyville' ? 'rgb(0,0,0)'
                       : 'rgb(255, 255, 255)'
                   }}>
                     {dashboardStats.studyMaterials}/50

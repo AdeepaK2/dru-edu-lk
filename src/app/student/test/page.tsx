@@ -989,26 +989,30 @@ export default function StudentTests() {
            
 
             <div className="flex items-center space-x-4 relative z-10">
-              {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-6xl">📝</div>}
+              {theme === 'ponyville' ? (
+                <img src="/ponyville/sweetybelle.png" alt="Sweetybelle" className="w-24 h-24 object-contain" />
+              ) : (theme === 'ben10' || theme === 'tinkerbell') && (
+                <div className="text-6xl">📝</div>
+              )}
               <div>
                 <h1 className="text-4xl font-black text-white mb-2 flex items-center">
                   <span>My</span>
                   <span className={`ml-2 font-black text-5xl ${theme === 'ben10' ? 'text-[#b2e05b]' : theme === 'tinkerbell' ? 'text-pink-200' : theme === 'cricketverse' ? 'text-blue-200' : theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-[#C88DA5]' : 'text-blue-200'}`}>Tests</span>
                 </h1>
                 <p className="text-white font-bold text-lg">
-                  Challenge yourself with epic tests and grow! 
+                  {theme === 'ponyville' ? 'Challenge yourself with magical tests and grow! ✨' : 'Challenge yourself with epic tests and grow!'} 
                 </p>
               </div>
             </div>
           </div>
           {/* No Tests Message */}
-          <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#C8102E]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} p-12 text-center ${theme === 'ben10' ? 'from-[#b2e05b] via-black to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-green-300 via-black to-green-300' : theme === 'bounceworld' ? 'from-white via-[#1D428A]/20 to-white border-[#1D428A]' : theme === 'avengers' ? 'from-[#604AC7]/30 via-[#2C1267]/30 to-[#0F0826]/30 border-[#2C1267]' : theme === 'ponyville' ? 'from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]/20 border-[#e13690]' : 'from-blue-300 via-indigo-500 to-blue-300'}`}>
-            {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-8xl mb-6">{theme === 'ponyville' ? '🦄' : '📚'}</div>}
+          <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#C8102E]' : theme === 'ponyville' ? 'border-black' : 'border-black'} p-12 text-center ${theme === 'ben10' ? 'from-[#b2e05b] via-black to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-green-300 via-black to-green-300' : theme === 'bounceworld' ? 'from-white via-[#1D428A]/20 to-white border-[#1D428A]' : theme === 'avengers' ? 'from-[#604AC7]/30 via-[#2C1267]/30 to-[#0F0826]/30 border-[#2C1267]' : theme === 'ponyville' ? 'from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]/20 border-black' : 'from-blue-300 via-indigo-500 to-blue-300'}`}>
+            {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-8xl mb-6">{theme === 'ponyville' ? '📚' : '📚'}</div>}
             <h2 className="text-3xl font-black text-white mb-4">
               {theme === 'ponyville' ? 'No Magical Tests Yet' : 'No Tests Yet'}
             </h2>
             <p className="text-white font-bold text-lg mb-6">
-              {theme === 'ponyville' ? "You haven't enrolled in any magical classes yet. Contact your magical teacher to start taking tests! 🦄✨" : "You haven't enrolled in any classes yet. Contact your teacher to start taking tests!"}
+              {theme === 'ponyville' ? "You haven't enrolled in any magical classes yet. Contact your magical teacher to start taking tests! ✨📚" : "You haven't enrolled in any classes yet. Contact your teacher to start taking tests!"}
             </p>
             <Button
               onClick={() => router.push('/student/dashboard')}
@@ -1119,7 +1123,7 @@ export default function StudentTests() {
                 {theme === 'ponyville' ? 'Summoning Magical Tests...' : 'Loading Tests...'}
               </h2>
               <p className="text-gray-600 font-medium">
-                {theme === 'ponyville' ? 'Getting your magical challenges ready! 🦄✨' : 'Getting your tests ready!'}
+                {theme === 'ponyville' ? 'Getting your magical challenges ready! 📚✨' : 'Getting your tests ready!'}
               </p>
             </div>
           </div>
@@ -1143,20 +1147,20 @@ export default function StudentTests() {
        
          <div className="flex items-center justify-between relative z-10">
             <div className="flex items-center space-x-4">
-              {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-6xl">{theme === 'ponyville' ? '🦄' : '📝'}</div>}
+              {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-6xl">{theme === 'ponyville' ? '📝' : '📝'}</div>}
               <div>
                 <h1 className="text-5xl font-black text-black mb-2 flex items-center">
                   <span>My</span>
                   <span className={`ml-2 font-black text-5xl ${theme === 'ben10' ? 'text-[#b2e05b]' : theme === 'tinkerbell' ? 'text-pink-200' : theme === 'cricketverse' ? 'text-blue-200' : theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-[#C88DA5]' : theme === 'ponyville' ? 'text-[#e13690]' : 'text-blue-200'}`}>Tests</span>
                 </h1>
                 <p className="text-white font-bold text-lg">
-                  {theme === 'ponyville' ? 'Challenge yourself with magical unicorn tests and grow! 🦄✨' : 'Challenge yourself with epic tests and grow!'}
+                  {theme === 'ponyville' ? 'Challenge yourself with magical tests and grow! ✨📚' : 'Challenge yourself with epic tests and grow!'}
                 </p>
               </div>
             </div>
             <div className={`bg-white border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} rounded-2xl p-4 shadow-lg`}>
               <div className="flex items-center space-x-3">
-                {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-4xl">{theme === 'ponyville' ? '🦄' : '📚'}</div>}
+                {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-4xl">{theme === 'ponyville' ? '📚' : '📚'}</div>}
                 <div className="text-center">
                   <div className="text-3xl font-black text-black">{enrollments?.length || 0}</div>
                   <div className="text-sm font-bold text-gray-700">{theme === 'ponyville' ? 'Magical Classes' : 'Classes'}</div>
@@ -1170,7 +1174,7 @@ export default function StudentTests() {
         {error && (
           <div className={`rounded-xl border-4 ${theme === 'bounceworld' ? 'border-[#C8102E]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} p-4 shadow-lg ${theme === 'ben10' ? 'bg-gradient-to-r from-red-400 to-red-600' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-red-300 to-pink-300' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] to-[#e13690]' : 'bg-gradient-to-r from-red-400 to-red-500'}`}>
             <div className="flex items-center space-x-3">
-              <div className="text-2xl">{theme === 'ponyville' ? '🦄' : '⚠️'}</div>
+              <div className="text-2xl">{theme === 'ponyville' ? '📝' : '⚠️'}</div>
               <div>
                 <p className="font-bold text-black text-lg">
                   {theme === 'ponyville' ? 'Magical Error Occurred!' : 'Error: Something went wrong!'}
@@ -1184,7 +1188,7 @@ export default function StudentTests() {
         {/* Search Controls */}
         <div className={`rounded-2xl shadow-xl border-4 ${theme === 'bounceworld' ? 'border-[#C8102E]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} p-6 mb-6 ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 via-green-400 to-yellow-300' : theme === 'bounceworld' ? 'bg-gradient-to-r from-white via-[#1D428A]/20 to-white border-[#1D428A]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7]/20 via-[#2C1267]/20 to-[#0F0826]/20 border-[#2C1267]' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]/20 border-[#e13690]' : 'bg-gradient-to-r from-blue-300 via-indigo-400 to-blue-300'}`}>
           <div className="flex items-center space-x-3 mb-4">
-            {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-3xl">{theme === 'ponyville' ? '🦄' : '🔍'}</div>}
+            {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-3xl">{theme === 'ponyville' ? '🔍' : '🔍'}</div>}
             <h2 className="text-2xl font-black text-black">{theme === 'ponyville' ? 'Search Magical Tests' : 'Search Tests'}</h2>
           
           </div>
@@ -1193,7 +1197,7 @@ export default function StudentTests() {
             {/* Search */}
             <div className="flex-1">
               <div className="relative">
-                {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-2xl">{theme === 'ponyville' ? '🦄' : '🔍'}</div>}
+                {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-2xl">{theme === 'ponyville' ? '🔍' : '🔍'}</div>}
                 <Input
                   type="text"
                   placeholder={theme === 'ponyville' ? "Search for magical tests..." : "Search for tests..."}
@@ -1224,28 +1228,28 @@ export default function StudentTests() {
           {/* Test Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-6">
             <div className={`bg-white border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all`}>
-              {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-4xl mb-2">{theme === 'ponyville' ? '🦄' : '📚'}</div>}
+              {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-4xl mb-2">{theme === 'ponyville' ? '📚' : '📚'}</div>}
               <div className="text-3xl font-black text-black mb-1">
                 {Object.keys(testsByClass).length}
               </div>
               <div className="text-sm font-bold text-black">{theme === 'ponyville' ? 'Magical Classes' : 'Classes'}</div>
             </div>
             <div className={`bg-white border-4 ${theme === 'bounceworld' ? 'border-[#C8102E]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all`}>
-              {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-4xl mb-2">{theme === 'ponyville' ? '🦄' : '🎯'}</div>}
+              {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-4xl mb-2">{theme === 'ponyville' ? '⏳' : '🎯'}</div>}
               <div className="text-3xl font-black text-black mb-1">
                 {Object.values(testsByClass).reduce((acc, classData) => acc + classData.groupedTests.live.length, 0) + groupedCustomTests.live.length}
               </div>
               <div className="text-sm font-bold text-black">{theme === 'ponyville' ? 'Live Quests' : 'Live Missions'}</div>
             </div>
             <div className={`bg-white border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all`}>
-              {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-4xl mb-2">{theme === 'ponyville' ? '🦄' : '⏰'}</div>}
+              {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-4xl mb-2">{theme === 'ponyville' ? '⏰' : '⏰'}</div>}
               <div className="text-3xl font-black text-black mb-1">
                 {Object.values(testsByClass).reduce((acc, classData) => acc + classData.groupedTests.upcoming.length, 0) + groupedCustomTests.upcoming.length}
               </div>
               <div className="text-sm font-bold text-black">{theme === 'ponyville' ? 'Future Adventures' : 'Upcoming Quests'}</div>
             </div>
             <div className={`bg-white border-4 ${theme === 'bounceworld' ? 'border-[#C8102E]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all`}>
-              {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-4xl mb-2">{theme === 'ponyville' ? '🦄' : '📝'}</div>}
+              {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-4xl mb-2">{theme === 'ponyville' ? '✅' : '📝'}</div>}
               <div className="text-3xl font-black text-black mb-1">
                 {filteredTests.length}
               </div>
@@ -1271,7 +1275,7 @@ export default function StudentTests() {
                   )}
                   <div>
                     <h2 className="text-2xl font-black text-black flex items-center">
-                      {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <span className="text-3xl mr-2">{theme === 'ponyville' ? '🦄' : '📝'}</span>}
+                      {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <span className="text-3xl mr-2">{theme === 'ponyville' ? '📝' : '📝'}</span>}
                       {theme === 'ponyville' ? 'My Magical Custom Tests' : 'My Custom Tests'}
                       {(groupedCustomTests.live.length > 0 || groupedCustomTests.upcoming.length > 0 || groupedCustomTests.available.length > 0) && (
                         <span className={`ml-3 inline-flex items-center px-3 py-1 rounded-full text-sm font-black text-black border-2 border-black ${theme === 'ben10' ? 'bg-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-yellow-400' : theme === 'bounceworld' ? 'bg-[#C8102E]' : theme === 'avengers' ? 'bg-[#C88DA5]' : theme === 'ponyville' ? 'bg-[#e13690]' : 'bg-blue-400'}`}>
@@ -1280,7 +1284,7 @@ export default function StudentTests() {
                       )}
                     </h2>
                     <p className="text-black font-bold text-lg">
-                      {theme === 'ponyville' ? 'Tests assigned specifically to you by your magical teacher! 🦄✨' : 'Tests assigned specifically to you by your teacher!'}
+                      {theme === 'ponyville' ? 'Tests assigned specifically to you by your magical teacher! ✨📚' : 'Tests assigned specifically to you by your teacher!'}
                     </p>
                   </div>
                 </div>
@@ -1317,7 +1321,7 @@ export default function StudentTests() {
                   <>
                     <div className={`px-6 py-4 border-b-4 border-black ${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] via-black to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A]/10 to-[#C8102E]/10' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7]/30 via-[#2C1267]/30 to-[#0F0826]/30' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]/20' : 'bg-gradient-to-r from-blue-300 via-indigo-400 to-blue-300'}`}>
                       <div className="flex items-center">
-                        {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-2xl mr-3">{theme === 'ponyville' ? '🦄' : '🎯'}</div>}
+                        {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-2xl mr-3">{theme === 'ponyville' ? '📚' : '🎯'}</div>}
                         <span className="text-lg font-black text-black">
                           {theme === 'ponyville' ? `Live Quests (${groupedCustomTests.live.length})` : `Live Now (${groupedCustomTests.live.length})`}
                         </span>
@@ -1333,7 +1337,7 @@ export default function StudentTests() {
                           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                             <div className="mb-4 md:mb-0">
                               <div className="flex items-center space-x-3">
-                                {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-3xl">{theme === 'ponyville' ? '🦄' : '📝'}</div>}
+                                {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-3xl">{theme === 'ponyville' ? '📄' : '📝'}</div>}
                                 <h3 className="text-xl font-black text-black">
                                   {test.title}
                                 </h3>
@@ -1394,7 +1398,7 @@ export default function StudentTests() {
                   <>
                     <div className={`px-6 py-4 border-b-4 border-black ${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 to-pink-300' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A]/10 to-[#C8102E]/10' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7]/30 via-[#2C1267]/30 to-[#0F0826]/30' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]/20' : 'bg-gradient-to-r from-purple-300 to-pink-300'}`}>
                       <div className="flex items-center">
-                        <div className="text-2xl mr-3">{theme === 'ponyville' ? '🦄' : '⏰'}</div>
+                        <div className="text-2xl mr-3">{theme === 'ponyville' ? '⏰' : '⏰'}</div>
                         <span className="text-lg font-black text-black">
                           {theme === 'ponyville' ? `Future Adventures (${groupedCustomTests.upcoming.length})` : `Upcoming (${groupedCustomTests.upcoming.length})`}
                         </span>
@@ -1410,7 +1414,7 @@ export default function StudentTests() {
                           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                             <div>
                               <div className="flex items-center space-x-3">
-                                {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-3xl">{theme === 'ponyville' ? '🦄' : '📅'}</div>}
+                                {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-3xl">{theme === 'ponyville' ? '📅' : '📅'}</div>}
                                 <h3 className="text-xl font-black text-black">
                                   {test.title}
                                 </h3>
@@ -1478,7 +1482,7 @@ export default function StudentTests() {
                   <>
                     <div className={`px-6 py-4 border-b-4 border-black ${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 to-green-300' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A]/10 to-[#C8102E]/10' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7]/30 via-[#2C1267]/30 to-[#0F0826]/30' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]/20' : 'bg-gradient-to-r from-blue-300 to-cyan-300'}`}>
                       <div className="flex items-center">
-                        {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-2xl mr-3">{theme === 'ponyville' ? '🦄' : '🎯'}</div>}
+                        {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-2xl mr-3">{theme === 'ponyville' ? '📚' : '🎯'}</div>}
                         <span className="text-lg font-black text-black">
                           {theme === 'ponyville' ? `Magical Available (${groupedCustomTests.available.length})` : `Available (${groupedCustomTests.available.length})`}
                         </span>
@@ -1588,7 +1592,7 @@ export default function StudentTests() {
                   <>
                     <div className={`px-6 py-4 border-b-4 border-black ${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 to-pink-300' : theme === 'avengers' ? 'bg-gradient-to-r from-[#C88DA5]/30 to-[#604AC7]/30' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]/20' : 'bg-gradient-to-r from-blue-300 to-indigo-300'}`}>
                       <div className="flex items-center">
-                        {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-2xl mr-3">{theme === 'ponyville' ? '🦄' : '✅'}</div>}
+                        {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-2xl mr-3">{theme === 'ponyville' ? '✅' : '✅'}</div>}
                         <span className="text-lg font-black text-black">
                           {theme === 'ponyville' ? `Magical Completed (${groupedCustomTests.completed.length})` : `Completed (${groupedCustomTests.completed.length})`}
                         </span>

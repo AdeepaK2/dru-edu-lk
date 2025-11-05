@@ -881,7 +881,7 @@ export default function StudentStudyPage() {
                 theme === 'ben10'
                   ? 'border-green-400 from-green-400 to-green-500'
                   : theme === 'ponyville'
-                  ? 'border-[#f1aed5] from-[#f1aed5] to-[#e13690]'
+                  ? 'border-black from-[#f1aed5] to-[#e13690]'
                   : 'border-yellow-400 from-yellow-400 to-green-500'
               }`}></div>
               <p className="text-white font-black text-xl">
@@ -1069,7 +1069,7 @@ export default function StudentStudyPage() {
                                 : 'border-gray-200 hover:border-gray-300 dark:hover:border-gray-600'
                             }`}>
                               <div className="flex items-center space-x-3 flex-1">
-                                <div className={`w-8 h-8 bg-white dark:bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0 border ${theme === 'ponyville' ? 'border-[#e13690]' : ''}`}>
+                                <div className={`w-8 h-8 bg-white dark:bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0 border ${theme === 'ponyville' ? 'border-black' : ''}`}>
                                   {getFileIcon(material.fileType)}
                                 </div>
                                 <div className="flex-1 min-w-0">
@@ -1180,7 +1180,7 @@ export default function StudentStudyPage() {
     }`} style={theme === 'ben10' ? { background: 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))' } : undefined}>
       <div className="max-w-6xl mx-auto">
         {/* Theme-aware Hero Header */}
-        <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#604AC7]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} p-8 mb-8 relative overflow-hidden ${
+        <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#604AC7]' : theme === 'ponyville' ? 'border-black' : 'border-black'} p-8 mb-8 relative overflow-hidden ${
           theme === 'ben10'
             ? 'from-[#64cc4f] to-[#222222]'
             : theme === 'tinkerbell'
@@ -1225,7 +1225,7 @@ export default function StudentStudyPage() {
 
       {/* Overall Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#604AC7]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} p-6 ${
+        <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#604AC7]' : theme === 'ponyville' ? 'border-black' : 'border-black'} p-6 ${
           theme === 'ben10'
             ? 'from-[#64cc4f] to-[#3e7e19]'
             : theme === 'tinkerbell'
@@ -1267,7 +1267,7 @@ export default function StudentStudyPage() {
           </div>
         </div>
 
-        <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#C8102E]' : theme === 'avengers' ? 'border-[#604AC7]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} p-6 ${
+        <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#C8102E]' : theme === 'avengers' ? 'border-[#604AC7]' : theme === 'ponyville' ? 'border-black' : 'border-black'} p-6 ${
           theme === 'ben10'
             ? 'from-[#64cc4f] to-[#3e7e19]'
             : theme === 'tinkerbell'
@@ -1301,7 +1301,7 @@ export default function StudentStudyPage() {
           </div>
         </div>
 
-        <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 ${theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} p-6 ${
+        <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 ${theme === 'ponyville' ? 'border-black' : 'border-black'} p-6 ${
           theme === 'ben10'
             ? 'from-[#64cc4f] to-[#3e7e19]'
             : theme === 'tinkerbell'
@@ -1325,7 +1325,7 @@ export default function StudentStudyPage() {
           </div>
         </div>
 
-        <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#604AC7]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} p-6 ${
+        <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#604AC7]' : theme === 'ponyville' ? 'border-black' : 'border-black'} p-6 ${
           theme === 'ben10'
             ? 'from-[#64cc4f] to-[#3e7e19]'
             : theme === 'tinkerbell'
@@ -1354,7 +1354,7 @@ export default function StudentStudyPage() {
 
       {/* Classes Grid */}
       <div className="mb-8">
-        <h2 className={`text-3xl font-black text-black mb-6 text-center rounded-3xl p-4 border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#604AC7]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} shadow-2xl ${
+        <h2 className={`text-3xl font-black text-black mb-6 text-center rounded-3xl p-4 border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#604AC7]' : theme === 'ponyville' ? 'border-black' : 'border-black'} shadow-2xl ${
           theme === 'ben10'
             ? 'bg-gradient-to-r from-[#64cc4f] to-[#3e7e19]'
             : theme === 'tinkerbell'
@@ -1371,7 +1371,7 @@ export default function StudentStudyPage() {
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {classes.map((classItem) => (
-            <div key={classItem.id} className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#C8102E]' : theme === 'avengers' ? 'border-[#604AC7]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} hover:shadow-3xl transition-all duration-300 cursor-pointer hover:scale-105 ${
+            <div key={classItem.id} className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#C8102E]' : theme === 'avengers' ? 'border-[#604AC7]' : theme === 'ponyville' ? 'border-black' : 'border-black'} hover:shadow-3xl transition-all duration-300 cursor-pointer hover:scale-105 ${
               theme === 'ben10'
                 ? 'from-[#64cc4f] to-[#3e7e19]'
                 : theme === 'tinkerbell'
@@ -1443,7 +1443,7 @@ export default function StudentStudyPage() {
       </div>
 
       {classes.length === 0 && (
-        <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 ${theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} text-center py-12 ${
+        <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 ${theme === 'ponyville' ? 'border-black' : 'border-black'} text-center py-12 ${
           theme === 'ben10'
             ? 'from-green-500 to-green-600'
             : theme === 'tinkerbell'
