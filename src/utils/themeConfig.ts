@@ -1,4 +1,4 @@
-export type ThemeType = 'ben10' | 'tinkerbell' | 'cricketverse' | 'bounceworld' | 'avengers' | 'ponyville';
+export type ThemeType = 'default' | 'ben10' | 'tinkerbell' | 'cricketverse' | 'bounceworld' | 'avengers' | 'ponyville';
 
 export interface ThemeConfig {
   id: ThemeType;
@@ -20,6 +20,24 @@ export interface ThemeConfig {
 }
 
 export const THEMES: Record<ThemeType, ThemeConfig> = {
+  default: {
+    id: 'default',
+    name: 'Default',
+    description: 'Clean black and white professional theme',
+    icon: '⚪',
+    emoji: '⚫',
+    colors: {
+      primary: '#0284c7',      // Primary blue (teacher-style)
+      primaryLight: '#60a5fa', // Light blue
+      primaryDark: '#0369a1',  // Dark blue
+      secondary: '#475569',    // Gray
+      accent: '#0ea5e9',       // Accent blue
+      bgLight: '#ffffff',      // White background
+      bgDark: '#1e293b',       // Dark slate background
+    },
+    characterName: 'Default Mode',
+    characterDescription: 'Clean, professional black and white design',
+  },
   ben10: {
     id: 'ben10',
     name: 'Ben 10 Hero',
@@ -131,6 +149,7 @@ export const THEMES: Record<ThemeType, ThemeConfig> = {
 };
 
 export const THEME_GRADIENT_MAP: Record<ThemeType, string> = {
+  default: 'from-blue-600 to-indigo-600',
   ben10: 'from-[#64cc4f] to-[#222222]',
   tinkerbell: 'from-pink-400 to-purple-600',
   cricketverse: 'from-blue-400 to-indigo-600',
@@ -140,6 +159,7 @@ export const THEME_GRADIENT_MAP: Record<ThemeType, string> = {
 };
 
 export const THEME_HEADER_MAP: Record<ThemeType, string> = {
+  default: 'from-blue-600 via-indigo-700 to-indigo-900',
   ben10: 'from-[#64cc4f] via-[#b2e05b] to-[#222222]',
   tinkerbell: 'from-pink-500 via-pink-600 to-purple-700',
   cricketverse: 'from-blue-500 to-indigo-600',
@@ -149,6 +169,7 @@ export const THEME_HEADER_MAP: Record<ThemeType, string> = {
 };
 
 export const THEME_BORDER_MAP: Record<ThemeType, string> = {
+  default: 'border-gray-200',
   ben10: 'border-[#64cc4f]',
   tinkerbell: 'border-pink-400',
   cricketverse: 'border-blue-400',
@@ -158,6 +179,7 @@ export const THEME_BORDER_MAP: Record<ThemeType, string> = {
 };
 
 export const THEME_BG_MAP: Record<ThemeType, string> = {
+  default: 'from-blue-400 to-indigo-600',
   ben10: 'from-[#b2e05b] via-[#64cc4f] to-[#222222]',
   tinkerbell: 'from-pink-300 via-pink-400 to-purple-600',
   cricketverse: 'from-blue-300 via-indigo-400 to-indigo-600',
@@ -167,6 +189,7 @@ export const THEME_BG_MAP: Record<ThemeType, string> = {
 };
 
 export const THEME_BUTTON_MAP: Record<ThemeType, string> = {
+  default: 'bg-primary-600 hover:bg-primary-700',
   ben10: 'bg-[#64cc4f] hover:bg-[#b2e05b]',
   tinkerbell: 'bg-pink-500 hover:bg-pink-600',
   cricketverse: 'bg-blue-500 hover:bg-blue-600',
@@ -176,6 +199,7 @@ export const THEME_BUTTON_MAP: Record<ThemeType, string> = {
 };
 
 export const THEME_SUCCESS_MAP: Record<ThemeType, string> = {
+  default: 'from-blue-300 to-indigo-300',
   ben10: 'from-[#64cc4f] to-[#b2e05b]',
   tinkerbell: 'from-pink-300 to-purple-300',
   cricketverse: 'from-blue-300 to-indigo-300',

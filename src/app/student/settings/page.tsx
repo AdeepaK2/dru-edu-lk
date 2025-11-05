@@ -801,11 +801,27 @@ export default function StudentSettingsPage() {
       } rounded-xl shadow-lg border-4 ${
         theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'
       } p-6`}>
-        <div className="flex items-center space-x-3 mb-6">
-        
-          <h2 className={`text-2xl font-black ${
-            theme === 'bounceworld' ? 'text-[#1D428A]' : theme === 'avengers' ? 'text-white' : theme === 'ponyville' ? 'text-[#e13690]' : 'text-black'
-          }`}>Choose Your Learning Theme! </h2>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-3">
+            <h2 className={`text-2xl font-black ${
+              theme === 'bounceworld' ? 'text-[#1D428A]' : theme === 'avengers' ? 'text-white' : theme === 'ponyville' ? 'text-[#e13690]' : 'text-black'
+            }`}>Choose Your Learning Theme! </h2>
+          </div>
+          <button
+            type="button"
+            onClick={() => handleThemeChange('default')}
+            className={`inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 shadow-sm ${
+              selectedTheme === 'default'
+                ? 'bg-primary-600 hover:bg-primary-700 text-white focus:ring-primary-500 border border-primary-600'
+                : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600 focus:ring-gray-500'
+            }`}
+            title="Reset to default theme"
+          >
+            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Reset to Default
+          </button>
         </div>
 
         <div className="grid md:grid-cols-3 gap-3">

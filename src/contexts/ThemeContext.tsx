@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-export type ThemeType = 'ben10' | 'tinkerbell' | 'cricketverse' | 'bounceworld' | 'avengers' | 'ponyville';
+export type ThemeType = 'default' | 'ben10' | 'tinkerbell' | 'cricketverse' | 'bounceworld' | 'avengers' | 'ponyville';
 
 interface ThemeContextType {
   theme: ThemeType;
@@ -12,14 +12,14 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<ThemeType>('ben10');
+  const [theme, setThemeState] = useState<ThemeType>('default');
   const [isClient, setIsClient] = useState(false);
 
   // Load theme from localStorage on mount
   useEffect(() => {
     setIsClient(true);
     const savedTheme = localStorage.getItem('student-theme') as ThemeType | null;
-    if (savedTheme === 'ben10' || savedTheme === 'tinkerbell' || savedTheme === 'cricketverse' || savedTheme === 'bounceworld' || savedTheme === 'avengers' || savedTheme === 'ponyville') {
+    if (savedTheme === 'default' || savedTheme === 'ben10' || savedTheme === 'tinkerbell' || savedTheme === 'cricketverse' || savedTheme === 'bounceworld' || savedTheme === 'avengers' || savedTheme === 'ponyville') {
       setThemeState(savedTheme);
       applyTheme(savedTheme);
     } else {
@@ -29,7 +29,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem('student-theme', 'cricketverse');
         applyTheme('cricketverse');
       } else {
-        applyTheme('ben10');
+        applyTheme('default');
       }
     }
   }, []);
@@ -42,8 +42,17 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const applyTheme = (selectedTheme: ThemeType) => {
     const root = document.documentElement;
-    
-    if (selectedTheme === 'ben10') {
+
+    if (selectedTheme === 'default') {
+      // Default Theme - Clean Black and White (Teacher-style)
+      root.style.setProperty('--theme-primary-light', '#60a5fa');
+      root.style.setProperty('--theme-primary', '#0284c7');
+      root.style.setProperty('--theme-primary-dark', '#0369a1');
+      root.style.setProperty('--theme-secondary', '#475569');
+      root.style.setProperty('--theme-accent', '#0ea5e9');
+      root.style.setProperty('--theme-bg-light', '#ffffff');
+      root.style.setProperty('--theme-bg-dark', '#1e293b');
+    } else if (selectedTheme === 'ben10') {
       // Ben10 Theme - Green and Black
       root.style.setProperty('--theme-primary-light', '#4ade80');
       root.style.setProperty('--theme-primary', '#22c55e');

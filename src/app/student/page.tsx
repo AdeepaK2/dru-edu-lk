@@ -282,8 +282,8 @@ export default function StudentDashboard() {
   // Show loading state while data is being fetched
   if (loading) {
     return (
-      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f]  to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : theme === 'cricketverse' ? 'from-blue-400 to-indigo-600' : theme === 'bounceworld' ? 'from-white via-[#1D428A]/10 to-white' : theme === 'avengers' ? 'from-[#2C1267]/20 to-[#4F2C8D]/20' : theme === 'ponyville' ? 'from-[#fff5fb] via-[#f1aed5] to-[#ff2e9f]' : 'from-blue-400 to-indigo-600'} flex items-center justify-center`}>
-        <div className={`${theme === 'bounceworld' ? 'bg-white border-4 border-[#1D428A]' : theme === 'ponyville' ? 'bg-white border-4 border-[#e13690]' : 'bg-white border-4 border-black'} rounded-3xl p-8 shadow-2xl`}>
+      <div className={`min-h-screen bg-gradient-to-br ${theme === 'default' ? 'from-gray-50 to-gray-100' : theme === 'ben10' ? 'from-[#64cc4f]  to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : theme === 'cricketverse' ? 'from-blue-400 to-indigo-600' : theme === 'bounceworld' ? 'from-white via-[#1D428A]/10 to-white' : theme === 'avengers' ? 'from-[#2C1267]/20 to-[#4F2C8D]/20' : theme === 'ponyville' ? 'from-[#fff5fb] via-[#f1aed5] to-[#ff2e9f]' : 'from-gray-50 to-gray-100'} flex items-center justify-center`}>
+        <div className={`${theme === 'default' ? 'bg-white border-4 border-black' : theme === 'bounceworld' ? 'bg-white border-4 border-[#1D428A]' : theme === 'ponyville' ? 'bg-white border-4 border-[#e13690]' : 'bg-white border-4 border-black'} rounded-3xl p-8 shadow-2xl`}>
           {/* Theme-Specific Loading Animation */}
           <div className="relative mb-6 flex flex-col items-center">
             {/* Tinkerbell Loading GIF */}
@@ -361,8 +361,8 @@ export default function StudentDashboard() {
             {/* Default Theme Spinner with Loading Text */}
             {!['tinkerbell', 'ben10', 'cricketverse', 'bounceworld', 'avengers', 'ponyville'].includes(theme) && (
               <div className="flex flex-col items-center">
-                <div className="w-24 h-24 border-4 border-blue-400 border-t-blue-600 rounded-full animate-spin"></div>
-                <span className="text-2xl font-bold text-blue-600 mt-4">Loading</span>
+                <div className="w-24 h-24 border-4 border-gray-300 border-t-black rounded-full animate-spin"></div>
+                <span className="text-2xl font-bold text-black mt-4">Loading</span>
               </div>
             )}
           </div>
@@ -378,7 +378,9 @@ export default function StudentDashboard() {
   return (
     <>
       <div className="min-h-screen p-6" style={{
-        background: theme === 'ben10'
+        background: theme === 'default'
+          ? 'linear-gradient(to bottom right, rgb(249, 250, 251), rgb(243, 244, 246), rgb(249, 250, 251))'
+          : theme === 'ben10'
           ? 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))'
           : theme === 'tinkerbell'
           ? 'linear-gradient(to bottom right, rgb(134, 239, 172), rgb(202, 138, 4), rgb(134, 239, 172))'
@@ -390,12 +392,14 @@ export default function StudentDashboard() {
           ? 'linear-gradient(to bottom right, rgba(44, 18, 103, 0.3), rgba(79, 44, 141, 0.2), rgba(44, 18, 103, 0.3))'
           : theme === 'ponyville'
           ? 'linear-gradient(to bottom right, rgb(255, 245, 251), rgb(241, 174, 213), rgb(255, 46, 159))'
-          : 'linear-gradient(to bottom right, rgb(96, 165, 250), rgb(79, 70, 229), rgb(96, 165, 250))'
+          : 'linear-gradient(to bottom right, rgb(249, 250, 251), rgb(243, 244, 246), rgb(249, 250, 251))'
       }}>
         <div className="space-y-6">
         {/* Welcome Header - Dynamic Theme */}
-        <div className={`rounded-2xl text-white p-8 relative overflow-hidden border-4 border-black ${
-          theme === 'ben10'
+        <div className={`rounded-2xl text-white p-8 relative overflow-hidden border-4 ${theme === 'default' ? 'border-black' : theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} ${
+          theme === 'default'
+            ? 'bg-gradient-to-r from-blue-600 via-indigo-700 to-indigo-900'
+            : theme === 'ben10'
             ? 'bg-gradient-to-br from-[#64cc4f] to-[#222222]'
             : theme === 'tinkerbell'
             ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500'
@@ -407,21 +411,23 @@ export default function StudentDashboard() {
             ? 'bg-gradient-to-r from-[#2C1267] to-[#4F2C8D]'
             : theme === 'ponyville'
             ? 'bg-gradient-to-r from-[#f58bc9] via-[#e13690] to-[#ff2e9f]'
-            : 'bg-gradient-to-r from-blue-500 to-indigo-600'
+            : 'bg-gradient-to-r from-blue-600 via-indigo-700 to-indigo-900'
         }`}>
           {/* Themed background elements */}
           <div className="absolute top-0 right-0 w-32 h-32 rounded-full -translate-y-16 translate-x-16  opacity-20" style={{
-            backgroundColor: theme === 'ben10' ? 'rgb(178, 224, 91)' 
-              : theme === 'tinkerbell' ? 'rgb(202, 138, 4)' 
+            backgroundColor: theme === 'default' ? 'rgb(96, 165, 250)'
+              : theme === 'ben10' ? 'rgb(178, 224, 91)'
+              : theme === 'tinkerbell' ? 'rgb(202, 138, 4)'
               : theme === 'cricketverse' ? 'rgb(147, 197, 253)'
               : theme === 'bounceworld' ? 'rgb(200, 16, 46)'
               : theme === 'avengers' ? 'rgb(96, 74, 199)'
               : theme === 'ponyville' ? 'rgb(255, 46, 159)'
-              : 'rgb(147, 197, 253)'
+              : 'rgb(96, 165, 250)'
           }}></div>
           <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full translate-y-12 -translate-x-12  opacity-20" style={{
-            backgroundColor: theme === 'ben10' ? 'rgb(34, 34, 34)' 
-              : theme === 'tinkerbell' ? 'rgb(0, 0, 0)' 
+            backgroundColor: theme === 'default' ? 'rgb(55, 65, 81)'
+              : theme === 'ben10' ? 'rgb(34, 34, 34)'
+              : theme === 'tinkerbell' ? 'rgb(0, 0, 0)'
               : theme === 'cricketverse' ? 'rgb(55, 65, 81)'
               : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
               : theme === 'avengers' ? 'rgb(44, 18, 103)'
@@ -433,30 +439,33 @@ export default function StudentDashboard() {
           <div className="flex items-center justify-between relative z-10">
             <div className="flex-1">
               <div className="flex items-center space-x-4 mb-2">
-                {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'cricketverse' || theme === 'avengers' || theme === 'bounceworld' || theme === 'ponyville') && (
+                {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'cricketverse' || theme === 'avengers' || theme === 'bounceworld' || theme === 'ponyville' || theme === 'default') && (
                   <img
-                    src={theme === 'ben10' ? '/ben10-welcome.png'
+                    src={theme === 'default' ? '/Logo.png'
+                        : theme === 'ben10' ? '/ben10-welcome.png'
                         : theme === 'tinkerbell' ? '/tinkerbell-welcome.png'
                         : theme === 'cricketverse' ? '/cricketverse.png'
                         : theme === 'avengers' ? '/avengers/thor.png'
                         : theme === 'bounceworld' ? '/bounce_world.jpg'
                         : theme === 'ponyville' ? '/Ponyville.webp'
-                        : '/welcome.png'}
+                        : '/Logo.png'}
                     alt="Welcome"
                     className={`${
-                      theme === 'avengers' ? 'w-48 h-48'
+                      theme === 'default' ? 'w-32 h-32'
+                      : theme === 'avengers' ? 'w-48 h-48'
                       : theme === 'bounceworld' ? 'w-48 h-48'
                       : theme === 'ponyville' ? 'w-48 h-48'
                       : 'w-40 h-40'
                     } ${
                       theme === 'avengers' ? '' : 'rounded-full'
                     } ${
-                      theme === 'ben10' ? 'ring-4 ring-[#64cc4f] border-4 border-black'
+                      theme === 'default' ? 'ring-4 ring-blue-500 border-4 border-black'
+                      : theme === 'ben10' ? 'ring-4 ring-[#64cc4f] border-4 border-black'
                       : theme === 'tinkerbell' ? 'ring-4 ring-green-600 border-4 border-black'
                       : theme === 'cricketverse' ? 'ring-4 ring-blue-500 border-4 border-black'
                       : theme === 'bounceworld' ? 'ring-4 ring-[#1D428A] border-4 border-black'
                       : theme === 'ponyville' ? 'ring-4 ring-[#e13690] border-4 border-black'
-                      : ''
+                      : 'ring-4 ring-blue-500 border-4 border-black'
                     }`}
                     onError={(e) => {
                       // Fallback to generic welcome image if theme image not found
@@ -465,10 +474,11 @@ export default function StudentDashboard() {
                   />
                 )}
                 <div>
-                  <h1 className={`text-3xl font-bold ${theme === 'bounceworld' ? 'text-black' : ''}`}>
+                  <h1 className={`text-3xl font-bold ${theme === 'bounceworld' || theme === 'default' ? 'text-black' : ''}`}>
                     Hey, {student?.name}! Ready to {
-                      theme === 'ben10' ? 'transform' 
-                      : theme === 'tinkerbell' ? 'enchant' 
+                      theme === 'default' ? 'excel in'
+                      : theme === 'ben10' ? 'transform'
+                      : theme === 'tinkerbell' ? 'enchant'
                       : theme === 'cricketverse' ? 'score big in'
                       : theme === 'bounceworld' ? 'bounce into'
                       : theme === 'ponyville' ? 'gallop into'
@@ -477,16 +487,19 @@ export default function StudentDashboard() {
                     } your learning?
                   </h1>
                   <p className="text-lg font-semibold mt-2" style={{
-                    color: theme === 'ben10' ? 'rgb(178, 224, 91)' 
-                      : theme === 'tinkerbell' ? 'rgb(0, 0, 30)' 
+                    color: theme === 'default' ? 'rgb(255, 255, 255)'
+                      : theme === 'ben10' ? 'rgb(178, 224, 91)'
+                      : theme === 'tinkerbell' ? 'rgb(0, 0, 30)'
                       : theme === 'cricketverse' ? 'rgb(191, 219, 254)'
                       : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
                       : theme === 'avengers' ? 'rgb(200, 138, 165)'
                       : theme === 'ponyville' ? 'rgb(255, 245, 251)'
-                      : 'rgb(191, 219, 254)'
+                      : 'rgb(255, 255, 255)'
                   }}>
-                    {theme === 'ben10' 
-                      ? "Let's make learning heroic with Ben 10's power!" 
+                    {theme === 'default'
+                      ? "Let's focus on your educational goals!"
+                      : theme === 'ben10'
+                      ? "Let's make learning heroic with Ben 10's power!"
                       : theme === 'tinkerbell'
                       ? "Let's sprinkle some fairy magic into learning!"
                       : theme === 'cricketverse'
@@ -502,16 +515,19 @@ export default function StudentDashboard() {
                 </div>
               </div>
               <p className="mb-4 text-base" style={{
-                color: theme === 'ben10' ? 'rgb(178, 224, 91)' 
-                  : theme === 'tinkerbell' ? 'rgb(0, 100, 8)' 
+                color: theme === 'default' ? 'rgb(255, 255, 255)'
+                  : theme === 'ben10' ? 'rgb(178, 224, 91)'
+                  : theme === 'tinkerbell' ? 'rgb(0, 100, 8)'
                   : theme === 'cricketverse' ? 'rgb(191, 219, 254)'
                   : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
                   : theme === 'avengers' ? 'rgb(200, 138, 165)'
                   : theme === 'ponyville' ? 'rgb(255, 245, 251)'
-                  : 'rgb(191, 219, 254)'
+                  : 'rgb(255, 255, 255)'
               }}>
-                {theme === 'ben10' 
-                  ? 'Welcome to your alien learning headquarters!' 
+                {theme === 'default'
+                  ? 'Welcome to your learning dashboard!'
+                  : theme === 'ben10'
+                  ? 'Welcome to your alien learning headquarters!'
                   : theme === 'tinkerbell'
                   ? 'Welcome to your enchanted learning sanctuary!'
                   : theme === 'cricketverse'
@@ -525,13 +541,14 @@ export default function StudentDashboard() {
                   : 'Welcome to your learning dashboard!'}
               </p>
               <div className="flex items-center space-x-2" style={{
-                color: theme === 'ben10' ? 'rgb(0,0,0)' 
-                  : theme === 'tinkerbell' ? 'rgb(0, 0, 8)' 
+                color: theme === 'default' ? 'rgb(255, 255, 255)'
+                  : theme === 'ben10' ? 'rgb(0,0,0)'
+                  : theme === 'tinkerbell' ? 'rgb(0, 0, 8)'
                   : theme === 'cricketverse' ? 'rgb(226, 232, 240)'
                   : theme === 'bounceworld' ? 'rgb(0, 0, 0)'
                   : theme === 'avengers' ? 'rgb(226, 232, 240)'
                   : theme === 'ponyville' ? 'rgb(255, 245, 251)'
-                  : 'rgb(226, 232, 240)'
+                  : 'rgb(255, 255, 255)'
               }}>
                 <span className="text-sm font-medium">{getMelbourneDateTime()}</span>
               </div>
@@ -542,8 +559,10 @@ export default function StudentDashboard() {
 
         {/* Motivational Message - Dynamic Theme */}
         {!loading && dashboardStats.currentGrade > 0 && (
-        <div className={`border-4 border-black rounded-xl p-6 animate-fade-in relative overflow-hidden ${
-          theme === 'ben10'
+        <div className={`border-4 ${theme === 'default' ? 'border-black' : theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} rounded-xl p-6 animate-fade-in relative overflow-hidden ${
+          theme === 'default'
+            ? 'bg-white'
+            : theme === 'ben10'
             ? 'bg-gradient-to-br from-[#64cc4f] to-[#222222]'
             : theme === 'tinkerbell'
             ? 'bg-gradient-to-r from-green-300 via-yellow-500 to-green-300'
@@ -555,18 +574,20 @@ export default function StudentDashboard() {
             ? 'bg-gradient-to-r from-[#2C1267]/50 to-[#4F2C8D]/50'
             : theme === 'ponyville'
             ? 'bg-gradient-to-r from-[#f1aed5] via-[#ec79b6] to-[#fe9fd2]'
-            : 'bg-gradient-to-r from-blue-400 to-indigo-500'
+            : 'bg-white'
         }`}>
             <div className="flex items-start space-x-4 relative z-10">
               <div className="relative">
               </div>
               <div className="flex-1">
-                <h3 className={`text-2xl font-bold mb-2 flex items-center ${theme === 'ponyville' ? 'text-black' : theme === 'bounceworld' ? 'text-black' : 'text-white'}`}>
+                <h3 className={`text-2xl font-bold mb-2 flex items-center ${theme === 'default' || theme === 'ponyville' || theme === 'bounceworld' ? 'text-black' : 'text-white'}`}>
                   {getMotivationalMessage().message}
-                 
+
                 </h3>
-                <p className={`text-base leading-relaxed font-medium ${theme === 'bounceworld' ? 'text-black' : 'text-black'}`}>
-                  {theme === 'ben10'
+                <p className={`text-base leading-relaxed font-medium text-black`}>
+                  {theme === 'default'
+                    ? "Stay focused and consistent. Success comes from small steps taken every day!"
+                    : theme === 'ben10'
                     ? "Remember, just like Ben 10's transformations, every great achievement starts with a single power-up!"
                     : theme === 'tinkerbell'
                     ? "Remember, like Tinkerbell's magic, every learning moment sparkles with possibility!"
@@ -580,38 +601,41 @@ export default function StudentDashboard() {
                     ? "Remember, like Ponyville's magic, every learning adventure brings joy and discovery!"
                     : "Stay focused and consistent. Success comes from small steps taken every day!"}
                 </p>
-                <div className={`mt-4 flex items-center space-x-4 text-sm ${theme === 'bounceworld' ? 'text-black' : 'text-black'}`}>
+                <div className={`mt-4 flex items-center space-x-4 text-sm text-black`}>
                   <div className="flex items-center space-x-1">
-                    <span className="text-lg">{theme === 'ben10' ? '📊' : theme === 'tinkerbell' ? '📈' : theme === 'cricketverse' ? '🏏' : theme === 'bounceworld' ? '⚽' : theme === 'avengers' ? '' : '📈'}</span>
+                    <span className="text-lg">{theme === 'default' ? '📊' : theme === 'ben10' ? '📊' : theme === 'tinkerbell' ? '📈' : theme === 'cricketverse' ? '🏏' : theme === 'bounceworld' ? '⚽' : theme === 'avengers' ? '' : '📈'}</span>
                     <span>Grade: <strong style={{
-                      color: theme === 'ben10' ? 'rgb(100, 204, 79)' 
+                      color: theme === 'default' ? 'rgb(37, 99, 235)'
+                        : theme === 'ben10' ? 'rgb(100, 204, 79)'
                         : theme === 'tinkerbell' ? 'rgb(0, 138, 4)'
                         : theme === 'cricketverse' ? 'rgb(59, 130, 246)'
                         : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
                         : theme === 'avengers' ? 'rgb(96, 74, 199)'
-                        : 'rgb(0, 138, 4)'
+                        : 'rgb(37, 99, 235)'
                     }}>{dashboardStats.currentGrade}%</strong></span>
                   </div>
                   <div className="flex items-center space-x-1">
                     <span className="text-lg">📝</span>
                     <span>Tests: <strong style={{
-                      color: theme === 'ben10' ? 'rgb(100, 204, 79)' 
+                      color: theme === 'default' ? 'rgb(37, 99, 235)'
+                        : theme === 'ben10' ? 'rgb(100, 204, 79)'
                         : theme === 'tinkerbell' ? 'rgb(0, 138, 4)'
                         : theme === 'cricketverse' ? 'rgb(59, 130, 246)'
                         : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
                         : theme === 'avengers' ? 'rgb(96, 74, 199)'
-                        : 'rgb(0, 138, 4)'
+                        : 'rgb(37, 99, 235)'
                     }}>{dashboardStats.completedTests}</strong></span>
                   </div>
                   <div className="flex items-center space-x-1">
-                    
+
                     <span>Classes: <strong style={{
-                      color: theme === 'ben10' ? 'rgb(100, 204, 79)' 
+                      color: theme === 'default' ? 'rgb(37, 99, 235)'
+                        : theme === 'ben10' ? 'rgb(100, 204, 79)'
                         : theme === 'tinkerbell' ? 'rgb(0, 138, 4)'
                         : theme === 'cricketverse' ? 'rgb(59, 130, 246)'
                         : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
                         : theme === 'avengers' ? 'rgb(96, 74, 199)'
-                        : 'rgb(0, 138, 4)'
+                        : 'rgb(37, 99, 235)'
                     }}>{dashboardStats.totalClasses}</strong></span>
                   </div>
                 </div>
@@ -626,8 +650,10 @@ export default function StudentDashboard() {
 
         {/* Stats Cards - Dynamic Theme */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className={`rounded-xl shadow-lg border-4 ${theme === 'bounceworld' ? 'border-[#C8102E]' : 'border-black'} p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105 ${
-            theme === 'ben10'
+          <div className={`rounded-xl shadow-lg border-4 border-black p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105 ${
+            theme === 'default'
+              ? 'bg-white'
+              : theme === 'ben10'
               ? 'bg-gradient-to-br from-[#64cc4f] to-[#b2e05b]'
               : theme === 'tinkerbell'
               ? 'bg-gradient-to-br from-green-400 to-yellow-500'
@@ -639,18 +665,18 @@ export default function StudentDashboard() {
               ? 'bg-gradient-to-br from-[#604AC7]/30 to-[#C88DA5]/30'
               : theme === 'ponyville'
               ? 'bg-gradient-to-br from-[#f1aed5] to-[#ff2e9f]'
-              : 'bg-gradient-to-br from-blue-400 to-blue-600'
+              : 'bg-white'
           }`}>
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <p className="text-black text-sm font-bold mb-2">My Classes</p>
-                <p className="text-4xl font-black text-white mt-2 ">
+                <p className={`text-4xl font-black mt-2 ${theme === 'default' ? 'text-blue-600' : 'text-white'}`}>
                   {dashboardStats.totalClasses}
                 </p>
                 <p className="text-black mt-1 font-semibold">Active courses</p>
                 <div className="mt-3 bg-black/30 rounded-full h-3">
                   <div
-                    className="bg-white h-3 rounded-full transition-all duration-1000 ease-out shadow-lg"
+                    className={`h-3 rounded-full transition-all duration-1000 ease-out shadow-lg ${theme === 'default' ? 'bg-blue-600' : 'bg-white'}`}
                     style={{ width: `${getProgressPercentage(dashboardStats.totalClasses, 10)}%` }}
                   ></div>
                 </div>
@@ -658,14 +684,16 @@ export default function StudentDashboard() {
                   {dashboardStats.totalClasses}/10 goal {theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : ''}
                 </p>
               </div>
-              <div className="w-16 h-16 bg-black rounded-full flex items-center justify-center border-4 border-white transform hover:rotate-12 transition-transform">
+              <div className={`w-16 h-16 rounded-full flex items-center justify-center border-4 transform hover:rotate-12 transition-transform ${theme === 'default' ? 'bg-blue-600 border-blue-800' : 'bg-black border-white'}`}>
                 <Users className="w-8 h-8 text-white" />
               </div>
             </div>
           </div>
 
-          <div className={`rounded-xl shadow-lg border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105 ${
-            theme === 'ben10'
+          <div className={`rounded-xl shadow-lg border-4 border-black p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105 ${
+            theme === 'default'
+              ? 'bg-white'
+              : theme === 'ben10'
               ? 'bg-gradient-to-br from-[#64cc4f] to-[#b2e05b]'
               : theme === 'tinkerbell'
               ? 'bg-gradient-to-br from-green-400 to-yellow-600'
@@ -677,25 +705,19 @@ export default function StudentDashboard() {
               ? 'bg-gradient-to-br from-[#604AC7]/30 to-[#C88DA5]/30'
               : theme === 'ponyville'
               ? 'bg-gradient-to-br from-[#f1aed5] to-[#ff2e9f]'
-              : 'bg-gradient-to-br from-blue-400 to-blue-600'
+              : 'bg-white'
           }`}>
             <div className="flex items-center justify-between">
               <div className="flex-1">
-                <p className="text-sm font-bold mb-2" style={{
-                  color: theme === 'ben10' ? 'rgb(0,0,0)' 
-                    : theme === 'tinkerbell' ? 'rgb(0, 0, 0)' 
-                    : theme === 'cricketverse' ? 'rgb(0, 0, 0)'
-                    : theme === 'bounceworld' ? 'rgb(0, 0, 0)'
-                    : theme === 'avengers' ? 'rgb(0, 0, 0)'
-                    : 'rgb(0, 0, 0)'
-                }}>Tests Completed</p>
+                <p className="text-sm font-bold mb-2 text-black">Tests Completed</p>
                 <p className="text-4xl font-black mt-2" style={{
-                  color: theme === 'ben10' ? 'rgb(255,255,255)' 
+                  color: theme === 'default' ? 'rgb(37, 99, 235)'
+                    : theme === 'ben10' ? 'rgb(255,255,255)'
                     : theme === 'tinkerbell' ? 'rgb(255, 255, 255)'
                     : theme === 'cricketverse' ? 'rgb(255, 255, 255)'
                     : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
                     : theme === 'avengers' ? 'rgb(255, 255, 255)'
-                    : 'rgb(255, 255, 255)'
+                    : 'rgb(37, 99, 235)'
                 }}>
                   {dashboardStats.completedTests}
                 </p>
@@ -739,21 +761,24 @@ export default function StudentDashboard() {
                   {dashboardStats.completedTests}/20 goal {theme === 'ben10' ? '🎯' : theme === 'tinkerbell' ? '🎯' : theme === 'cricketverse' ? '🏏' : theme === 'bounceworld' ? '⚽' : theme === 'avengers' ? '🛡️' : '🎯'}
                 </p>
               </div>
-              <div className="w-16 h-16 rounded-full flex items-center justify-center border-4 border-white transform hover:rotate-12 transition-transform" style={{
-                backgroundColor: theme === 'ben10' ? 'rgb(0,0,0)' 
+              <div className={`w-16 h-16 rounded-full flex items-center justify-center border-4 transform hover:rotate-12 transition-transform ${theme === 'default' ? 'bg-blue-600 border-blue-800' : 'border-white'}`} style={{
+                backgroundColor: theme === 'default' ? 'rgb(37, 99, 235)'
+                  : theme === 'ben10' ? 'rgb(0,0,0)'
                   : theme === 'tinkerbell' ? 'rgb(0, 0, 5)'
                   : theme === 'cricketverse' ? 'rgb(0, 0, 0)'
                   : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
                   : theme === 'avengers' ? 'rgb(44, 18, 103)'
-                  : 'rgb(0, 0, 5)'
+                  : 'rgb(37, 99, 235)'
               }}>
                 <FileText className="w-8 h-8 text-white" />
               </div>
             </div>
           </div>
 
-          <div className={`rounded-xl shadow-lg border-4 ${theme === 'bounceworld' ? 'border-[#C8102E]' : 'border-black'} p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105 ${
-            theme === 'ben10'
+          <div className={`rounded-xl shadow-lg border-4 border-black p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105 ${
+            theme === 'default'
+              ? 'bg-white'
+              : theme === 'ben10'
               ? 'bg-gradient-to-br from-[#64cc4f] to-[#b2e05b]'
               : theme === 'tinkerbell'
               ? 'bg-gradient-to-br from-green-400 to-yellow-600'
@@ -765,18 +790,19 @@ export default function StudentDashboard() {
               ? 'bg-gradient-to-br from-[#604AC7]/30 to-[#C88DA5]/30'
               : theme === 'ponyville'
               ? 'bg-gradient-to-br from-[#f1aed5] to-[#ff2e9f]'
-              : 'bg-gradient-to-br from-blue-400 to-blue-600'
+              : 'bg-white'
           }`}>
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <p className="text-black text-sm font-bold mb-2">Study Materials</p>
                 <p className="text-4xl font-black mt-2 " style={{
-                  color: theme === 'ben10' ? 'rgb(255,255,255)' 
+                  color: theme === 'default' ? 'rgb(37, 99, 235)'
+                    : theme === 'ben10' ? 'rgb(255,255,255)'
                     : theme === 'tinkerbell' ? 'rgb(255, 255, 255)'
                     : theme === 'cricketverse' ? 'rgb(255, 255, 255)'
                     : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
                     : theme === 'avengers' ? 'rgb(255, 255, 255)'
-                    : 'rgb(255, 255, 255)'
+                    : 'rgb(37, 99, 235)'
                 }}>
                   {dashboardStats.studyMaterials}
                 </p>
@@ -820,21 +846,24 @@ export default function StudentDashboard() {
                   {dashboardStats.studyMaterials}/50 goal {theme === 'ben10' ? '📚' : theme === 'tinkerbell' ? '📚' : theme === 'cricketverse' ? '📖' : theme === 'bounceworld' ? '📖' : theme === 'avengers' ? '📖' : '📚'}
                 </p>
               </div>
-              <div className="w-16 h-16 rounded-full flex items-center justify-center border-4 border-white transform hover:rotate-12 transition-transform" style={{
-                backgroundColor: theme === 'ben10' ? 'rgb(0,0,5)' 
+              <div className={`w-16 h-16 rounded-full flex items-center justify-center border-4 transform hover:rotate-12 transition-transform ${theme === 'default' ? 'bg-blue-600 border-blue-800' : 'border-white'}`} style={{
+                backgroundColor: theme === 'default' ? 'rgb(37, 99, 235)'
+                  : theme === 'ben10' ? 'rgb(0,0,5)'
                   : theme === 'tinkerbell' ? 'rgb(0, 0, 5)'
                   : theme === 'cricketverse' ? 'rgb(0, 0, 0)'
                   : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
                   : theme === 'avengers' ? 'rgb(44, 18, 103)'
-                  : 'rgb(0, 0, 5)'
+                  : 'rgb(37, 99, 235)'
               }}>
                 <BookOpenCheck className="w-8 h-8 text-white" />
               </div>
             </div>
           </div>
 
-          <div className={`rounded-xl shadow-lg border-4 ${theme === 'bounceworld' ? 'border-[#C8102E]' : 'border-black'} p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105 ${
-            theme === 'ben10'
+          <div className={`rounded-xl shadow-lg border-4 border-black p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105 ${
+            theme === 'default'
+              ? 'bg-white'
+              : theme === 'ben10'
               ? 'bg-gradient-to-br from-[#64cc4f] to-[#b2e05b]'
               : theme === 'tinkerbell'
               ? 'bg-gradient-to-br from-green-400 to-yellow-600'
@@ -846,18 +875,19 @@ export default function StudentDashboard() {
               ? 'bg-gradient-to-br from-[#604AC7]/30 to-[#C88DA5]/30'
               : theme === 'ponyville'
               ? 'bg-gradient-to-br from-[#f1aed5] to-[#ff2e9f]'
-              : 'bg-gradient-to-br from-blue-400 to-blue-600'
+              : 'bg-white'
           }`}>
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <p className="text-black text-sm font-bold mb-2">Current Grade</p>
                 <p className="text-4xl font-black mt-2 " style={{
-                  color: theme === 'ben10' ? 'rgb(255,255,255)' 
+                  color: theme === 'default' ? 'rgb(37, 99, 235)'
+                    : theme === 'ben10' ? 'rgb(255,255,255)'
                     : theme === 'tinkerbell' ? 'rgb(255, 255, 255)'
                     : theme === 'cricketverse' ? 'rgb(255, 255, 255)'
                     : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
                     : theme === 'avengers' ? 'rgb(255, 255, 255)'
-                    : 'rgb(255, 255, 255)'
+                    : 'rgb(37, 99, 235)'
                 }}>
                   {dashboardStats.currentGrade}%
                 </p>
@@ -918,13 +948,14 @@ export default function StudentDashboard() {
                   Target: 85% {theme === 'ben10' ? '🎓' : theme === 'tinkerbell' ? '🎓' : theme === 'cricketverse' ? '🏆' : theme === 'bounceworld' ? '🎯' : theme === 'avengers' ? '🛡️' : '🎓'}
                 </p>
               </div>
-              <div className="w-16 h-16 rounded-full flex items-center justify-center border-4 border-white transform hover:rotate-12 transition-transform" style={{
-                backgroundColor: theme === 'ben10' ? 'rgb(0,0,0)' 
+              <div className={`w-16 h-16 rounded-full flex items-center justify-center border-4 transform hover:rotate-12 transition-transform ${theme === 'default' ? 'bg-blue-600 border-blue-800' : 'border-white'}`} style={{
+                backgroundColor: theme === 'default' ? 'rgb(37, 99, 235)'
+                  : theme === 'ben10' ? 'rgb(0,0,0)'
                   : theme === 'tinkerbell' ? 'rgb(0, 0, 4)'
                   : theme === 'cricketverse' ? 'rgb(0, 0, 0)'
                   : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
                   : theme === 'avengers' ? 'rgb(44, 18, 103)'
-                  : 'rgb(0, 0, 4)'
+                  : 'rgb(37, 99, 235)'
               }}>
                 <BarChart3 className="w-8 h-8 text-white" />
               </div>
@@ -935,8 +966,10 @@ export default function StudentDashboard() {
         {/* Recent Activity & Updates */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Recent Activity - Dynamic Theme */}
-          <div className={`rounded-xl shadow-lg border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} p-6 ${
-            theme === 'ben10'
+          <div className={`rounded-xl shadow-lg border-4 border-black p-6 ${
+            theme === 'default'
+              ? 'bg-white'
+              : theme === 'ben10'
               ? 'bg-gradient-to-br from-[#b2e05b] via-[#222222] to-[#64cc4f]'
               : theme === 'tinkerbell'
               ? 'bg-gradient-to-br from-yellow-300 via-green-500 to-yellow-400'
@@ -948,7 +981,7 @@ export default function StudentDashboard() {
               ? 'bg-gradient-to-br from-[#2C1267]/20 via-[#604AC7]/30 to-[#C88DA5]/20'
               : theme === 'ponyville'
               ? 'bg-gradient-to-br from-[#fff5fb] via-[#f1aed5] to-[#ff2e9f]'
-              : 'bg-gradient-to-br from-blue-300 via-indigo-500 to-blue-400'
+              : 'bg-white'
           }`}>
             <h3 className="text-xl font-black text-black mb-6 flex items-center">
        
@@ -1095,7 +1128,7 @@ export default function StudentDashboard() {
               ? 'bg-gradient-to-br from-[#2C1267]/20 via-[#604AC7]/30 to-[#C88DA5]/20'
               : theme === 'ponyville'
               ? 'bg-gradient-to-br from-[#fff5fb] via-[#f1aed5] to-[#ff2e9f]'
-              : 'bg-gradient-to-br from-indigo-400 to-blue-600'
+              : 'bg-white'
           }`}>
             <h3 className="mb-6 flex items-center text-xl font-black" style={{
               color: theme === 'ben10' ? 'rgb(0,0,0)' 
@@ -1342,7 +1375,7 @@ export default function StudentDashboard() {
 
         <div className="grid grid-cols-1 gap-6">
           {/* Quick Actions - Dynamic Theme */}
-          <div className={`bg-gradient-to-r rounded-xl shadow-lg border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} p-6 ${
+          <div className={`${theme === 'default' ? 'bg-white' : 'bg-gradient-to-r'} rounded-xl shadow-lg border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} p-6 ${
             theme === 'ben10'
               ? 'from-[#64cc4f] via-[#222222] to-[#b2e05b]'
               : theme === 'tinkerbell'
@@ -1355,9 +1388,9 @@ export default function StudentDashboard() {
               ? 'from-[#2C1267]/30 via-[#604AC7]/20 to-[#C88DA5]/30'
               : theme === 'ponyville'
               ? 'from-[#f1aed5] via-[#e13690] to-[#ff2e9f]'
-              : 'from-blue-400 via-indigo-500 to-blue-500'
+              : ''
           }`}>
-            <h3 className={`text-2xl font-black mb-6 flex items-center ${theme === 'bounceworld' ? 'text-black' : 'text-black'}`}>
+            <h3 className={`text-2xl font-black mb-6 flex items-center ${theme === 'default' ? 'text-black' : theme === 'bounceworld' ? 'text-black' : 'text-black'}`}>
           
               {theme === 'ben10' ? "Quick Actions" 
                 : theme === 'tinkerbell' ? "Quick Actions"
@@ -1432,7 +1465,7 @@ export default function StudentDashboard() {
 
         {/* Account Information - Dynamic Theme */}
         {student && (
-          <div className={`bg-gradient-to-r rounded-xl shadow-lg border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} p-6 ${
+          <div className={`${theme === 'default' ? 'bg-white' : 'bg-gradient-to-r'} rounded-xl shadow-lg border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} p-6 ${
             theme === 'ben10'
               ? 'from-[#64cc4f] via-[#222222] to-[#b2e05b]'
               : theme === 'tinkerbell'
@@ -1445,9 +1478,9 @@ export default function StudentDashboard() {
               ? 'from-[#2C1267]/30 via-[#604AC7]/20 to-[#C88DA5]/30'
               : theme === 'ponyville'
               ? 'from-[#f1aed5] via-[#e13690] to-[#ff2e9f]'
-              : 'from-blue-400 via-indigo-500 to-blue-500'
+              : ''
           }`}>
-            <h3 className={`text-xl font-black mb-6 flex items-center ${theme === 'bounceworld' ? 'text-black' : 'text-white'}`}>
+            <h3 className={`text-xl font-black mb-6 flex items-center ${theme === 'default' ? 'text-black' : theme === 'bounceworld' ? 'text-black' : 'text-white'}`}>
               {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'cricketverse' || theme === 'bounceworld' || theme === 'avengers' || theme === 'ponyville') && 
                 <span className="text-6xl mr-2 ">
                   {theme === 'ben10' ? '🦸‍♂️' 
