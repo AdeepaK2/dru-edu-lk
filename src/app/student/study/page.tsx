@@ -356,7 +356,7 @@ export default function StudentStudyPage() {
   if (loading) {
     return (
       <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A] to-[#C8102E]' : theme === 'avengers' ? 'from-[#604AC7] via-[#2C1267] to-[#0F0826]' : theme === 'ponyville' ? 'from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : 'from-blue-400 to-indigo-600'} flex items-center justify-center`}>
-        <div className={`bg-white border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} rounded-3xl p-8 shadow-2xl`}>
+        <div className={`bg-white border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : theme === 'ponyville' ? 'border-black' : 'border-black'} rounded-3xl p-8 shadow-2xl`}>
           {/* Theme-Specific Loading Animation */}
           <div className="relative mb-6 flex flex-col items-center">
             {/* Tinkerbell Loading GIF */}
@@ -442,7 +442,7 @@ export default function StudentStudyPage() {
           <div className="text-center">
             <h2 className="text-2xl font-black text-black mb-2">Loading Study Materials...</h2>
             <p className={`text-gray-600 font-medium ${theme === 'bounceworld' ? 'text-[#1D428A]' : theme === 'ponyville' ? 'text-[#e13690]' : ''}`}>
-              {theme === 'bounceworld' ? 'Get ready to score big with your studies! 🏀' : theme === 'ponyville' ? '🦄 Get ready for magical learning adventures!' : 'Get ready to transform your learning!'}
+              {theme === 'bounceworld' ? 'Get ready to score big with your studies! 🏀' : theme === 'ponyville' ? '✨ Get ready for magical learning adventures!' : 'Get ready to transform your learning!'}
             </p>
           </div>
         </div>
@@ -888,7 +888,7 @@ export default function StudentStudyPage() {
                 {theme === 'ben10'
                   ? `Loading  materials...`
                   : theme === 'ponyville'
-                  ? `🦄 Loading magical materials...`
+                  ? `✨ Loading magical materials...`
                   : 'Loading  materials...'}
               </p>
             </div>
@@ -1190,13 +1190,17 @@ export default function StudentStudyPage() {
             : theme === 'avengers'
             ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]'
             : theme === 'ponyville'
-            ? 'from-[#f1aed5] via-[#e13690] to-[#ff2e9f]'
+            ? 'from-[#f1aed5] via-[#f46eb5] to-[#f55eaf]'
             : 'from-blue-500 to-indigo-600'
         }`}>
          
 
           <div className="flex items-center space-x-4 relative z-10">
-            <div className="text-6xl">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'bounceworld' ? '🏀' : theme === 'avengers' ? '🦸‍♂️' : theme === 'ponyville' ? '🦄' : ''}</div>
+            {theme === 'ponyville' ? (
+              <img src="/ponyville/rainbow-dash.png" alt="Rainbow Dash" className="w-24 h-24 object-contain" />
+            ) : (
+              <div className="text-6xl">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'bounceworld' ? '🏀' : theme === 'avengers' ? '🦸‍♂️' : ''}</div>
+            )}
             <div>
               <h1 className="text-4xl font-black text-black mb-2 flex items-center">
                 <span>Your</span>
@@ -1210,7 +1214,7 @@ export default function StudentStudyPage() {
                   : theme === 'avengers'
                   ? `Welcome back, ${student.name}! Assemble your knowledge! 🦸‍♂️`
                   : theme === 'ponyville'
-                  ? `Welcome back, ${student.name}! Let's cast some magical study spells! ✨🦄`
+                  ? `Welcome back, ${student.name}! Let's cast some magical study spells! ✨`
                   : theme === 'ben10'
                   ? `Welcome back, ${student.name}! Access your study materials!`
                   : `Welcome back, ${student.name}! Access your study materials!`}
@@ -1253,7 +1257,7 @@ export default function StudentStudyPage() {
                 </Badge>
               </div>
             </div>
-            <div className="text-4xl">{theme === 'ben10' ? '📈' : theme === 'tinkerbell' ? '📊' : theme === 'bounceworld' ? '🏀' : theme === 'avengers' ? '🦸‍♂️' : theme === 'ponyville' ? '🦄' : '📚'}</div>
+            <div className="text-4xl">{theme === 'ben10' ? '📈' : theme === 'tinkerbell' ? '📊' : theme === 'bounceworld' ? '🏀' : theme === 'avengers' ? '🦸‍♂️' : theme === 'ponyville' ? '✨' : '📚'}</div>
           </div>
           <div className="mt-4 bg-white/20 rounded-full h-2 border-2 border-black">
             <div 
@@ -1360,10 +1364,10 @@ export default function StudentStudyPage() {
             : theme === 'avengers'
             ? 'bg-gradient-to-r from-[#2C1267] via-[#604AC7] to-[#0F0826]'
             : theme === 'ponyville'
-            ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690] to-[#ff2e9f]'
+            ? 'bg-gradient-to-r from-[#fb91cf] via-[#f18ac6] to-[#f596cd]'
             : 'bg-gradient-to-r from-blue-500 to-indigo-600'
         }`}>
-          {theme === 'bounceworld' ? '🏀 Your Classes 🏀' : theme === 'ponyville' ? '🦄 Your Magical Classes 🦄' : theme === 'ben10' ? ' Your Classes ' : ' Your Classes '}
+          {theme === 'bounceworld' ? '🏀 Your Classes 🏀' : theme === 'ponyville' ? '✨ Your Magical Classes ✨' : theme === 'ben10' ? ' Your Classes ' : ' Your Classes '}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {classes.map((classItem) => (
@@ -1377,7 +1381,7 @@ export default function StudentStudyPage() {
                 : theme === 'avengers'
                 ? 'from-[#2C1267] to-[#604AC7]'
                 : theme === 'ponyville'
-                ? 'from-[#f1aed5] to-[#e13690]'
+                ? 'from-[#f1aed5] to-[#f1aed5]'
                 : 'from-blue-500 to-indigo-600'
             }`}>
               <div className="p-6">
@@ -1429,7 +1433,7 @@ export default function StudentStudyPage() {
                     onClick={() => loadClassMaterials(classItem.id)}
                     className="w-full mt-4 bg-black text-white font-black py-3 px-6 rounded-2xl border-2 border-white hover:bg-white hover:text-black transition-all duration-300 shadow-lg"
                   >
-                    {theme === 'ben10' ? ' View Materials ' : theme === 'ponyville' ? '🦄 View Magical Materials 🦄' : ' View Materials '}
+                    {theme === 'ben10' ? ' View Materials ' : theme === 'ponyville' ? '✨ View Magical Materials ✨' : ' View Materials '}
                   </button>
                 </div>
               </div>
@@ -1451,9 +1455,9 @@ export default function StudentStudyPage() {
             : 'from-blue-500 to-indigo-600'
         }`}>
           <div className="p-8">
-            <div className="text-6xl mb-4">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'avengers' ? '🦸‍♂️' : theme === 'ponyville' ? '🦄' : ''}</div>
+            <div className="text-6xl mb-4">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'avengers' ? '🦸‍♂️' : theme === 'ponyville' ? '✨' : ''}</div>
             <h3 className="text-2xl font-black text-white mb-4">
-              {theme === 'ben10' ? 'No Classes Yet!' : theme === 'avengers' ? 'No Classes Yet!' : theme === 'ponyville' ? '🦄 No Magical Classes Yet! 🦄' : 'No Classes Yet!'}
+              {theme === 'ben10' ? 'No Classes Yet!' : theme === 'avengers' ? 'No Classes Yet!' : theme === 'ponyville' ? '✨ No Magical Classes Yet! ✨' : 'No Classes Yet!'}
             </h3>
             <p className="text-white/90 font-black mb-6">
               {theme === 'ben10'
@@ -1463,14 +1467,14 @@ export default function StudentStudyPage() {
                 : theme === 'avengers'
                 ? 'Ready to become a learning hero? Enroll in your first class and assemble your knowledge!'
                 : theme === 'ponyville'
-                ? '🦄 Ready to become a magical learner? Enroll in your first class and start casting study spells! ✨'
+                ? 'Ready to become a magical learner? Enroll in your first class and start casting study spells! ✨'
                 : 'Ready to become an enriching learner? Enroll in your first class and start your learning journey!'}
             </p>
             <button
               onClick={() => router.push('/enroll')}
               className="bg-black text-white font-black py-4 px-8 rounded-2xl border-2 border-white hover:bg-white hover:text-black transition-all duration-300 shadow-lg text-lg"
             >
-              {theme === 'ben10' ? ' Browse Classes ' : theme === 'ponyville' ? '🦄 Browse Magical Classes 🦄' : ' Browse Classes '}
+              {theme === 'ben10' ? ' Browse Classes ' : theme === 'ponyville' ? '✨ Browse Magical Classes ✨' : ' Browse Classes '}
             </button>
           </div>
         </div>
