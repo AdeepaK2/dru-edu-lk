@@ -991,6 +991,8 @@ export default function StudentTests() {
             <div className="flex items-center space-x-4 relative z-10">
               {theme === 'ponyville' ? (
                 <img src="/ponyville/sweetybelle.png" alt="Sweetybelle" className="w-24 h-24 object-contain" />
+              ) : theme === 'avengers' ? (
+                <img src="/avengers/wonder-women.png" alt="Wonder Woman" className="w-24 h-24 object-contain" />
               ) : (theme === 'ben10' || theme === 'tinkerbell') && (
                 <div className="text-6xl">📝</div>
               )}
@@ -1000,7 +1002,7 @@ export default function StudentTests() {
                   <span className={`ml-2 font-black text-5xl ${theme === 'ben10' ? 'text-[#b2e05b]' : theme === 'tinkerbell' ? 'text-pink-200' : theme === 'cricketverse' ? 'text-blue-200' : theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-[#C88DA5]' : 'text-blue-200'}`}>Tests</span>
                 </h1>
                 <p className="text-white font-bold text-lg">
-                  {theme === 'ponyville' ? 'Challenge yourself with magical tests and grow! ✨' : 'Challenge yourself with epic tests and grow!'} 
+                  {theme === 'ponyville' ? 'Challenge yourself with magical tests and grow! ✨' : 'Challenge yourself with epic tests and grow!'}
                 </p>
               </div>
             </div>
@@ -1147,7 +1149,13 @@ export default function StudentTests() {
        
          <div className="flex items-center justify-between relative z-10">
             <div className="flex items-center space-x-4">
-              {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-6xl">{theme === 'ponyville' ? '📝' : '📝'}</div>}
+              {theme === 'ponyville' ? (
+                <img src="/ponyville/sweetybelle.png" alt="Sweetybelle" className="w-24 h-24 object-contain" />
+              ) : theme === 'avengers' ? (
+                <img src="/avengers/wonder-women.png" alt="Wonder Woman" className="w-24 h-24 object-contain" />
+              ) : (theme === 'ben10' || theme === 'tinkerbell') ? (
+                <div className="text-6xl">📝</div>
+              ) : null}
               <div>
                 <h1 className="text-5xl font-black text-black mb-2 flex items-center">
                   <span>My</span>

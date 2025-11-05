@@ -154,7 +154,7 @@ export const THEME_BORDER_MAP: Record<ThemeType, string> = {
   cricketverse: 'border-blue-400',
   bounceworld: 'border-[#1D428A]',
   avengers: 'border-[#2C1267]',
-  ponyville: 'border-[#e13690]',
+  ponyville: 'border-black',
 };
 
 export const THEME_BG_MAP: Record<ThemeType, string> = {

@@ -1180,7 +1180,7 @@ export default function StudentStudyPage() {
     }`} style={theme === 'ben10' ? { background: 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))' } : undefined}>
       <div className="max-w-6xl mx-auto">
         {/* Theme-aware Hero Header */}
-        <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#604AC7]' : theme === 'ponyville' ? 'border-black' : 'border-black'} p-8 mb-8 relative overflow-hidden ${
+        <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-black' : theme === 'ponyville' ? 'border-black' : 'border-black'} p-8 mb-8 relative overflow-hidden ${
           theme === 'ben10'
             ? 'from-[#64cc4f] to-[#222222]'
             : theme === 'tinkerbell'
@@ -1198,8 +1198,10 @@ export default function StudentStudyPage() {
           <div className="flex items-center space-x-4 relative z-10">
             {theme === 'ponyville' ? (
               <img src="/ponyville/rainbow-dash.png" alt="Rainbow Dash" className="w-24 h-24 object-contain" />
+            ) : theme === 'avengers' ? (
+              <img src="/avengers/pngegg.png" alt="Avengers Hero" className="w-24 h-24 object-contain" />
             ) : (
-              <div className="text-6xl">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'bounceworld' ? '🏀' : theme === 'avengers' ? '🦸‍♂️' : ''}</div>
+              <div className="text-6xl">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'bounceworld' ? '🏀' : ''}</div>
             )}
             <div>
               <h1 className="text-4xl font-black text-black mb-2 flex items-center">
@@ -1225,7 +1227,7 @@ export default function StudentStudyPage() {
 
       {/* Overall Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#604AC7]' : theme === 'ponyville' ? 'border-black' : 'border-black'} p-6 ${
+        <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-black' : theme === 'ponyville' ? 'border-black' : 'border-black'} p-6 ${
           theme === 'ben10'
             ? 'from-[#64cc4f] to-[#3e7e19]'
             : theme === 'tinkerbell'
@@ -1260,14 +1262,14 @@ export default function StudentStudyPage() {
             <div className="text-4xl">{theme === 'ben10' ? '📈' : theme === 'tinkerbell' ? '📊' : theme === 'bounceworld' ? '🏀' : theme === 'avengers' ? '🦸‍♂️' : theme === 'ponyville' ? '✨' : '📚'}</div>
           </div>
           <div className="mt-4 bg-white/20 rounded-full h-2 border-2 border-black">
-            <div 
-              className="bg-white h-2 rounded-full transition-all duration-300" 
+            <div
+              className="bg-white h-2 rounded-full transition-all duration-300"
               style={{ width: `${overallProgress}%` }}
             ></div>
           </div>
         </div>
 
-        <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#C8102E]' : theme === 'avengers' ? 'border-[#604AC7]' : theme === 'ponyville' ? 'border-black' : 'border-black'} p-6 ${
+        <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#C8102E]' : theme === 'avengers' ? 'border-black' : theme === 'ponyville' ? 'border-black' : 'border-black'} p-6 ${
           theme === 'ben10'
             ? 'from-[#64cc4f] to-[#3e7e19]'
             : theme === 'tinkerbell'
@@ -1275,7 +1277,7 @@ export default function StudentStudyPage() {
             : theme === 'bounceworld'
             ? 'from-white via-[#C8102E]/20 to-white'
             : theme === 'avengers'
-            ? 'from-[#604AC7] to-[#2C1267]'
+            ? 'from-[#2C1267] to-[#604AC7]'
             : theme === 'ponyville'
             ? 'from-[#f1aed5] to-[#e13690]'
             : 'from-blue-500 to-indigo-600'
@@ -1294,20 +1296,22 @@ export default function StudentStudyPage() {
             <div className="text-4xl">🏆</div>
           </div>
           <div className="mt-4 bg-white/20 rounded-full h-2 border-2 border-black">
-            <div 
-              className="bg-white h-2 rounded-full transition-all duration-300" 
+            <div
+              className="bg-white h-2 rounded-full transition-all duration-300"
               style={{ width: `${requiredProgress}%` }}
             ></div>
           </div>
         </div>
 
-        <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 ${theme === 'ponyville' ? 'border-black' : 'border-black'} p-6 ${
+        <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-black' : theme === 'ponyville' ? 'border-black' : 'border-black'} p-6 ${
           theme === 'ben10'
             ? 'from-[#64cc4f] to-[#3e7e19]'
             : theme === 'tinkerbell'
             ? 'from-green-400 to-yellow-500'
+            : theme === 'bounceworld'
+            ? 'from-white via-[#1D428A]/20 to-white'
             : theme === 'avengers'
-            ? 'from-[#0F0826] to-[#C88DA5]'
+            ? 'from-[#2C1267] to-[#604AC7]'
             : theme === 'ponyville'
             ? 'from-[#f1aed5] to-[#e13690]'
             : 'from-blue-500 to-indigo-600'
@@ -1321,11 +1325,11 @@ export default function StudentStudyPage() {
                 {classes.length}
               </p>
             </div>
-           
+
           </div>
         </div>
 
-        <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#604AC7]' : theme === 'ponyville' ? 'border-black' : 'border-black'} p-6 ${
+        <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-black' : theme === 'ponyville' ? 'border-black' : 'border-black'} p-6 ${
           theme === 'ben10'
             ? 'from-[#64cc4f] to-[#3e7e19]'
             : theme === 'tinkerbell'
@@ -1333,7 +1337,7 @@ export default function StudentStudyPage() {
             : theme === 'bounceworld'
             ? 'from-white via-[#1D428A]/20 to-white'
             : theme === 'avengers'
-            ? 'from-[#C88DA5] to-[#0F0826]'
+            ? 'from-[#2C1267] to-[#604AC7]'
             : theme === 'ponyville'
             ? 'from-[#f1aed5] to-[#e13690]'
             : 'from-blue-500 to-indigo-600'
@@ -1354,7 +1358,7 @@ export default function StudentStudyPage() {
 
       {/* Classes Grid */}
       <div className="mb-8">
-        <h2 className={`text-3xl font-black text-black mb-6 text-center rounded-3xl p-4 border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#604AC7]' : theme === 'ponyville' ? 'border-black' : 'border-black'} shadow-2xl ${
+        <h2 className={`text-3xl font-black text-black mb-6 text-center rounded-3xl p-4 border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-black' : theme === 'ponyville' ? 'border-black' : 'border-black'} shadow-2xl ${
           theme === 'ben10'
             ? 'bg-gradient-to-r from-[#64cc4f] to-[#3e7e19]'
             : theme === 'tinkerbell'
@@ -1371,7 +1375,7 @@ export default function StudentStudyPage() {
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {classes.map((classItem) => (
-            <div key={classItem.id} className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#C8102E]' : theme === 'avengers' ? 'border-[#604AC7]' : theme === 'ponyville' ? 'border-black' : 'border-black'} hover:shadow-3xl transition-all duration-300 cursor-pointer hover:scale-105 ${
+            <div key={classItem.id} className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#C8102E]' : theme === 'avengers' ? 'border-black' : theme === 'ponyville' ? 'border-black' : 'border-black'} hover:shadow-3xl transition-all duration-300 cursor-pointer hover:scale-105 ${
               theme === 'ben10'
                 ? 'from-[#64cc4f] to-[#3e7e19]'
                 : theme === 'tinkerbell'

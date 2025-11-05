@@ -251,12 +251,12 @@ export default function StudentDocumentsPage() {
         {/* Theme-aware Header */}
         <div className="text-center mb-8">
           <div className="flex justify-center items-center space-x-8 mb-4">
-            <div className={`text-6xl ${theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-white' : theme === 'ponyville' ? 'text-white' : ''}`}>{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'bounceworld' ? '🏀' : theme === 'avengers' ? '🦸‍♂️' : theme === 'ponyville' ? ' ' : ''}</div>
+            <div className={`text-6xl ${theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-white' : theme === 'ponyville' ? 'text-white' : ''}`}>{theme === 'ben10' ? '🦸' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'bounceworld' ? '🏀' : theme === 'avengers' ? ' ' : theme === 'ponyville' ? ' ' : ''}</div>
           </div>
           <h1 className="text-5xl font-black text-black mb-2 drop-shadow-lg">
             📄 Documents
           </h1>
-          <p className={`text-xl font-bold ${theme === 'ben10' ? 'text-white' : theme === 'tinkerbell' ? 'text-white' : theme === 'bounceworld' ? 'text-[#1D428A]' : theme === 'avengers' ? 'text-[#C88DA5]' : theme === 'ponyville' ? 'text-white' : 'text-blue-100'}`}>
+          <p className={`text-xl font-bold ${theme === 'ben10' ? 'text-white' : theme === 'tinkerbell' ? 'text-white' : theme === 'bounceworld' ? 'text-[#1D428A]' : theme === 'avengers' ? 'text-[#302f2f]' : theme === 'ponyville' ? 'text-white' : 'text-blue-100'}`}>
             {theme === 'bounceworld' ? 'Slam dunk your document uploads here! 🏀' : theme === 'avengers' ? 'Assemble your document uploads here! 🦸‍♂️' : theme === 'ponyville' ? 'Cast magical document spells here! ✨🦄' : 'Upload your documents here!'}
           </p>
         </div>

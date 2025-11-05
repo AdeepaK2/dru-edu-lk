@@ -360,7 +360,7 @@ export default function StudentResults() {
           <div className="text-center">
             <h2 className="text-2xl font-black text-black mb-2">Loading Results...</h2>
             <p className={`text-gray-600 font-medium ${theme === 'bounceworld' ? 'text-[#1D428A]' : theme === 'avengers' ? 'text-[#2C1267]' : theme === 'ponyville' ? 'text-[#e13690]' : ''}`}>
-              {theme === 'bounceworld' ? 'Get ready to slam dunk your progress analysis! 🏀' : theme === 'avengers' ? 'Assemble your progress analysis! 🦸‍♂️' : theme === 'ponyville' ? 'Get ready to transform your learning with magical results! 🦄' : 'Get ready to transform your learning!'}
+              {theme === 'bounceworld' ? 'Get ready to slam dunk your progress analysis! 🏀' : theme === 'avengers' ? 'Assemble your progress analysis! 🛡️' : theme === 'ponyville' ? 'Get ready to transform your learning with magical results! 🦄' : 'Get ready to transform your learning!'}
             </p>
           </div>
         </div>
@@ -381,8 +381,14 @@ export default function StudentResults() {
                 alt="Applejack"
                 className="w-24 h-24 object-contain"
               />
+            ) : theme === 'avengers' ? (
+              <img
+                src="/avengers/captain-america.png"
+                alt="Captain America"
+                className="w-24 h-24 object-contain"
+              />
             ) : (
-              <div className="text-6xl">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'bounceworld' ? '🏀' : theme === 'avengers' ? '🦸‍♂️' : ''}</div>
+              <div className="text-6xl">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'bounceworld' ? '🏀' : ''}</div>
             )}
             <div>
               <h1 className="text-4xl font-black text-black mb-2 flex items-center">
@@ -401,7 +407,7 @@ export default function StudentResults() {
                   : theme === 'tinkerbell'
                   ? `Welcome back, ${student?.name}! Let's see how magical your learning journey has been!`
                   : theme === 'avengers'
-                  ? `Welcome back, ${student?.name}! Assemble your progress analysis! 🦸‍♂️`
+                  ? `Welcome back, ${student?.name}! Assemble your progress analysis! 🛡️`
                   : theme === 'ponyville'
                   ? `Welcome back, ${student?.name}! Let's cast magical spells on your learning results! ✨🦄`
                   : `Welcome back, ${student?.name}! Let's see how your learning journey has been!`}
@@ -496,7 +502,7 @@ export default function StudentResults() {
                   {theme === 'bounceworld' ? 'My Classes' : theme === 'ponyville' ? 'My Magical Classes' : 'My Classes'}
                 </h2>
                 <p className={`font-bold text-sm ${theme === 'ben10' ? 'text-green-100' : theme === 'tinkerbell' ? 'text-yellow-100' : theme === 'bounceworld' ? 'text-[#1D428A]' : theme === 'avengers' ? 'text-[#C88DA5]' : theme === 'ponyville' ? 'text-white' : 'text-blue-200'}`}>
-                  {theme === 'bounceworld' ? 'Select a class to slam dunk your detailed results! 🏀' : theme === 'avengers' ? 'Select a class to assemble your detailed results! 🦸‍♂️' : theme === 'ponyville' ? 'Select a class to cast magical spells on your results! ✨🦄' : 'Select a class to view your detailed results!'}
+                  {theme === 'bounceworld' ? 'Select a class to slam dunk your detailed results! 🏀' : theme === 'avengers' ? 'Select a class to assemble your detailed results! 🛡️' : theme === 'ponyville' ? 'Select a class to cast magical spells on your results! ✨🦄' : 'Select a class to view your detailed results!'}
                 </p>
               </div>
               
@@ -560,7 +566,7 @@ export default function StudentResults() {
                     <p className="text-gray-600 font-bold">
                       {searchTerm
                         ? `Try adjusting your search to find your classes! 🔍`
-                        : (theme === 'bounceworld' ? `You haven't enrolled in any classes yet. Time to start your slam dunk learning journey! 🏀` : theme === 'avengers' ? `You haven't enrolled in any classes yet. Time to assemble your team and start your hero learning journey! 🦸‍♂️` : theme === 'ponyville' ? `You haven't enrolled in any classes yet. Time to start your magical learning journey and cast your first spells! ✨🦄` : `You haven't enrolled in any classes yet. Time to start your ${theme === 'ben10' ? 'hero' : 'magical'} learning journey!`)
+                        : (theme === 'bounceworld' ? `You haven't enrolled in any classes yet. Time to start your slam dunk learning journey! 🏀` : theme === 'avengers' ? `You haven't enrolled in any classes yet. Time to assemble your team and start your hero learning journey! 🛡️` : theme === 'ponyville' ? `You haven't enrolled in any classes yet. Time to start your magical learning journey and cast your first spells! ✨🦄` : `You haven't enrolled in any classes yet. Time to start your ${theme === 'ben10' ? 'hero' : 'magical'} learning journey!`)
                       }
                     </p>
                   </div>
@@ -581,7 +587,7 @@ export default function StudentResults() {
                       {theme === 'bounceworld' ? 'Test Results' : theme === 'ponyville' ? 'Magical Test Results' : 'Test Results'}
                     </h2>
                     <p className={`font-bold text-sm ${theme === 'ben10' ? 'text-green-100' : theme === 'tinkerbell' ? 'text-yellow-100' : theme === 'bounceworld' ? 'text-[#1D428A]' : theme === 'avengers' ? 'text-[#C88DA5]' : theme === 'ponyville' ? 'text-white' : 'text-blue-200'}`}>
-                      {theme === 'bounceworld' ? 'Your best slam dunk performance for each test! 🏀' : theme === 'avengers' ? 'Your best heroic performance for each test! 🦸‍♂️' : theme === 'ponyville' ? 'Your best magical performance for each test! ✨🦄' : `Your best ${theme === 'ben10' ? 'heroic' : 'magical'} performance for each test.`}
+                      {theme === 'bounceworld' ? 'Your best slam dunk performance for each test! 🏀' : theme === 'avengers' ? 'Your best heroic performance for each test! 🛡️' : theme === 'ponyville' ? 'Your best magical performance for each test! ✨🦄' : `Your best ${theme === 'ben10' ? 'heroic' : 'magical'} performance for each test.`}
                     </p>
                   </div>
                   
@@ -661,7 +667,7 @@ export default function StudentResults() {
                           No Test Results Yet
                         </h3>
                         <p className="text-gray-600 font-bold">
-                          {theme === 'bounceworld' ? 'Complete some tests to see your slam dunk results here! 🏀' : theme === 'avengers' ? 'Complete some tests to see your heroic results here! 🦸‍♂️' : theme === 'ponyville' ? 'Complete some tests to see your magical results here! ✨🦄' : `Complete some ${theme === 'ben10' ? 'hero' : 'magical'} tests to see your results here!`}
+                          {theme === 'bounceworld' ? 'Complete some tests to see your slam dunk results here! 🏀' : theme === 'avengers' ? 'Complete some tests to see your heroic results here! 🛡️' : theme === 'ponyville' ? 'Complete some tests to see your magical results here! ✨🦄' : `Complete some ${theme === 'ben10' ? 'hero' : 'magical'} tests to see your results here!`}
                         </p>
                       </div>
                     )}
@@ -677,7 +683,7 @@ export default function StudentResults() {
                         {theme === 'bounceworld' ? 'Topics to Improve' : theme === 'ponyville' ? 'Magical Topics to Improve' : 'Topics to Improve'}
                       </h2>
                       <p className={`font-bold text-sm ${theme === 'ben10' ? 'text-green-100' : theme === 'tinkerbell' ? 'text-yellow-100' : theme === 'bounceworld' ? 'text-[#1D428A]' : theme === 'avengers' ? 'text-[#C88DA5]' : theme === 'ponyville' ? 'text-white' : 'text-blue-200'}`}>
-                        {theme === 'bounceworld' ? 'Areas where you need more practice to slam dunk your skills! 🏀' : theme === 'avengers' ? 'Areas where you need more heroic practice to assemble your skills! 🦸‍♂️' : theme === 'ponyville' ? 'Areas where you need more magical practice to cast perfect spells! ✨🦄' : `Areas where you need more ${theme === 'ben10' ? 'heroic' : 'magical'} practice to boost your skills!`}
+                        {theme === 'bounceworld' ? 'Areas where you need more practice to slam dunk your skills! 🏀' : theme === 'avengers' ? 'Areas where you need more heroic practice to assemble your skills! 🛡️' : theme === 'ponyville' ? 'Areas where you need more magical practice to cast perfect spells! ✨🦄' : `Areas where you need more ${theme === 'ben10' ? 'heroic' : 'magical'} practice to boost your skills!`}
                       </p>
                     </div>
                     
@@ -719,7 +725,7 @@ export default function StudentResults() {
                             {analysis.improvementNeeded && (
                               <div className="mt-3 p-3 bg-gradient-to-r from-red-100 to-pink-100 rounded-xl border-2 border-red-300">
                                 <p className="text-red-700 font-black text-sm">
-                                  💡 Focus on this topic - accuracy below 60%! Let's make it {theme === 'bounceworld' ? 'slam dunk worthy' : theme === 'ben10' ? 'heroic' : theme === 'avengers' ? 'assemble-worthy' : theme === 'ponyville' ? 'magical' : 'magical'}! {theme === 'bounceworld' ? '🏀' : theme === 'avengers' ? '🦸‍♂️' : theme === 'ponyville' ? '✨🦄' : ''}
+                                  💡 Focus on this topic - accuracy below 60%! Let's make it {theme === 'bounceworld' ? 'slam dunk worthy' : theme === 'ben10' ? 'heroic' : theme === 'avengers' ? 'assemble-worthy' : theme === 'ponyville' ? 'magical' : 'magical'}! {theme === 'bounceworld' ? '🏀' : theme === 'avengers' ? '🛡️' : theme === 'ponyville' ? '✨🦄' : ''}
                                 </p>
                               </div>
                             )}
@@ -749,7 +755,7 @@ export default function StudentResults() {
                   Select a Class
                 </h3>
                 <p className="text-black font-bold text-lg">
-                  {theme === 'bounceworld' ? 'Choose a class from the left to slam dunk your detailed results! 🏀' : theme === 'avengers' ? 'Choose a class from the left to assemble your detailed results! 🦸‍♂️' : theme === 'ponyville' ? 'Choose a class from the left to cast your magical results! ✨🦄' : 'Choose a class from the left to view your detailed test results and progress analysis!'}
+                  {theme === 'bounceworld' ? 'Choose a class from the left to slam dunk your detailed results! 🏀' : theme === 'avengers' ? 'Choose a class from the left to assemble your detailed results! 🛡️' : theme === 'ponyville' ? 'Choose a class from the left to cast your magical results! ✨🦄' : 'Choose a class from the left to view your detailed test results and progress analysis!'}
                 </p>
               </div>
             )}

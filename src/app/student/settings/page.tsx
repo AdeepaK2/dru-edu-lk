@@ -1020,7 +1020,7 @@ export default function StudentSettingsPage() {
           : theme === 'tinkerbell'
           ? 'from-yellow-300 via-green-400 to-yellow-500'
           : theme === 'bounceworld'
-          ? 'from-[#1D428A] via-white to-[#C8102E]'
+          ? 'from-white via-[#1D428A] to-[#C8102E]'
           : theme === 'avengers'
           ? 'from-[#604AC7] via-[#2C1267] to-[#0F0826]'
           : theme === 'ponyville'

@@ -747,21 +747,29 @@ const ClassVideoCard: React.FC<ClassVideoCardProps> = ({ video, onAccess, theme 
       {/* Video Info */}
       <div className="p-4">
         <div className="mb-3">
-          <h3 className="text-lg font-semibold text-gray-900  mb-1 line-clamp-2">
+          <h3 className={`text-lg font-semibold mb-1 line-clamp-2 ${
+            theme === 'ponyville' ? 'text-black' : 'text-gray-900'
+          }`}>
             {video.title}
           </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-100 line-clamp-2">
+          <p className={`text-sm line-clamp-2 ${
+            theme === 'ponyville' ? 'text-black' : 'text-gray-600 dark:text-gray-100'
+          }`}>
             {video.description}
           </p>
         </div>
 
         {/* Video Meta */}
         <div className="space-y-1 mb-4">
-          <div className="flex items-center text-xs text-gray-500 dark:text-gray-100">
+          <div className={`flex items-center text-xs ${
+            theme === 'ponyville' ? 'text-black' : 'text-gray-500 dark:text-gray-100'
+          }`}>
             <Users className="w-3 h-3 mr-1" />
             <span>{video.teacherName}</span>
           </div>
-          <div className="flex items-center text-xs text-gray-500 dark:text-gray-100">
+          <div className={`flex items-center text-xs ${
+            theme === 'ponyville' ? 'text-black' : 'text-gray-500 dark:text-gray-100'
+          }`}>
             <BookOpen className="w-3 h-3 mr-1" />
             <span>{video.lessonName || 'Lesson Content'}</span>
           </div>
@@ -769,7 +777,9 @@ const ClassVideoCard: React.FC<ClassVideoCardProps> = ({ video, onAccess, theme 
 
         {/* Subject Badge */}
         <div className="mb-4">
-          <span className="inline-flex px-2 py-1 text-black text-xs font-medium rounded-full bg-purple-100 dark:bg-purple-900/20  dark:text-black">
+          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full bg-purple-100 dark:bg-purple-900/20 ${
+            theme === 'ponyville' ? 'text-black' : 'text-black dark:text-black'
+          }`}>
             {video.subjectName}
           </span>
         </div>
@@ -789,7 +799,7 @@ const ClassVideoCard: React.FC<ClassVideoCardProps> = ({ video, onAccess, theme 
                 : theme === 'avengers'
                 ? 'bg-[#604AC7] hover:bg-[#2C1267] text-white'
                 : theme === 'ponyville'
-                ? 'bg-[#f1aed5] hover:bg-[#e13690] text-white'
+                ? 'bg-black hover:bg-gray-800 text-white'
                 : 'bg-blue-600 hover:bg-blue-700 text-white'
               : theme === 'ben10'
                 ? 'bg-[#b2e05b] hover:bg-[#64cc4f] text-[#222222]'
@@ -800,7 +810,7 @@ const ClassVideoCard: React.FC<ClassVideoCardProps> = ({ video, onAccess, theme 
                 : theme === 'avengers'
                 ? 'bg-[#2C1267] hover:bg-[#604AC7] text-white'
                 : theme === 'ponyville'
-                ? 'bg-[#e13690] hover:bg-[#ff2e9f] text-white'
+                ? 'bg-black hover:bg-gray-800 text-white'
                 : 'bg-green-600 hover:bg-green-700 text-white'
           }`}
           size="sm"

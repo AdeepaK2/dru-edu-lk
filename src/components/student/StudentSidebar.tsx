@@ -285,14 +285,14 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
         fixed inset-y-0 left-0 z-50 w-64 shadow-2xl transform transition-transform duration-300 ease-in-out border-r-4 border-black
         lg:translate-x-0 lg:static lg:inset-0 lg:w-64
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-        ${theme === 'ben10' 
-          ? 'bg-gradient-to-b from-[#64cc4f] via-[#222222] to-[#b2e05b]' 
+        ${theme === 'ben10'
+          ? 'bg-gradient-to-b from-[#64cc4f] via-[#222222] to-[#b2e05b]'
           : theme === 'tinkerbell'
           ? 'bg-gradient-to-br from-green-400 to-yellow-600'
           : theme === 'cricketverse'
           ? 'bg-gradient-to-b from-blue-500 via-indigo-500 to-indigo-600'
           : theme === 'bounceworld'
-          ? 'bg-white'
+          ? 'bg-gradient-to-b from-white via-[#1D428A]/80 to-[#C8102E]/100'
           : theme === 'avengers'
           ? 'bg-gradient-to-b from-[#2C1267] to-[#4F2C8D]'
           : theme === 'ponyville'
@@ -417,7 +417,7 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
                 href={item.href}
                 className={`
                   flex items-center justify-between px-4 py-3 text-sm font-black rounded-2xl transition-all transform hover:scale-105 border-2
-                  ${isActive 
+                  ${isActive
                     ? (theme === 'ben10'
                         ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222] text-white border-black shadow-lg'
                         : theme === 'tinkerbell'
@@ -425,7 +425,7 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
                         : theme === 'cricketverse'
                         ? 'bg-gradient-to-r from-blue-400 to-indigo-600 text-white border-indigo-700 shadow-lg'
                         : theme === 'bounceworld'
-                        ? 'bg-white text-[#1D428A] border-[#1D428A] shadow-lg'
+                        ? 'bg-gradient-to-r from-[#1D428A] to-[#C8102E] text-white border-[#1D428A] shadow-lg'
                         : theme === 'avengers'
                         ? 'bg-gradient-to-r from-[#2C1267] to-[#4F2C8D] text-white border-black shadow-lg'
                         : theme === 'ponyville'
@@ -439,7 +439,7 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
                           : theme === 'cricketverse'
                           ? 'hover:from-blue-300 hover:to-indigo-500 hover:text-white'
                           : theme === 'bounceworld'
-                          ? 'hover:from-white hover:to-[#1D428A] hover:text-[#1D428A]'
+                          ? 'hover:from-[#1D428A] hover:to-[#C8102E] hover:text-white'
                           : theme === 'avengers'
                           ? 'hover:from-[#604AC7] hover:to-[#2C1267] hover:text-white'
                           : theme === 'ponyville'

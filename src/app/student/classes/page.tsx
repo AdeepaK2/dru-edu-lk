@@ -475,6 +475,8 @@ export default function StudentClassesPage() {
                       window.location.href = `/student/test`;
                     }}
                     className={`text-black font-black border-4 border-black rounded-2xl transform hover:scale-110 transition-all shadow-lg hover:rotate-3 flex flex-col items-center py-3 ${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#b2e05b] hover:from-[#b2e05b] hover:to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 to-amber-400 hover:from-yellow-500 hover:to-amber-500' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] to-[#C8102E] hover:from-[#C8102E] hover:to-[#1D428A]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7] to-[#C88DA5] hover:from-[#C88DA5] hover:to-[#604AC7]' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] to-[#e13690] hover:from-[#e13690] hover:to-[#f1aed5]' : 'bg-gradient-to-r from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-600'}`}>
+                    <span className="text-2xl mb-1">📝</span>
+                    <span className="text-xs text-black">Test</span>
                   </Button>
                   <Button
                     variant="outline"
