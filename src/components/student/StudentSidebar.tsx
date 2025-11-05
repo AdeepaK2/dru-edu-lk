@@ -222,11 +222,24 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
       siraj: '/cricketverse/MOHAMMED SIRAJ.avif'
     };
 
+    // Ponyville avatars (Magical unicorns and ponies)
+    const ponyvilleMap: Record<string, string> = {
+      twilight: '/ponyville/twilight-sparkle.png',
+      rainbow: '/ponyville/rainbow-dash.png',
+      fluttershy: '/ponyville/fluttershy.png',
+      pinkie: '/ponyville/pinkie-pie.png',
+      rarity: '/ponyville/rarity.png',
+      applejack: '/ponyville/applejack.png',
+      spike: '/ponyville/spike.png',
+      starlight: '/ponyville/starlight-glimmer.png'
+    };
+
     if (ben10Map[avatarId]) return ben10Map[avatarId];
     if (tinkerMap[avatarId]) return tinkerMap[avatarId];
     if (avengersMap[avatarId]) return avengersMap[avatarId];
     if (bounceWorldMap[avatarId]) return bounceWorldMap[avatarId];
     if (cricketVerseMap[avatarId]) return cricketVerseMap[avatarId];
+    if (ponyvilleMap[avatarId]) return ponyvilleMap[avatarId];
 
     // If avatarId looks like a path, return it directly
     if (avatarId.startsWith('/') || avatarId.includes('.png') || avatarId.includes('.jpg') || avatarId.includes('.avif') || avatarId.includes('.webp')) {
@@ -261,6 +274,8 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
               ? 'bg-white/80'
               : theme === 'avengers'
               ? 'bg-gradient-to-br from-[#2C1267]/80 to-[#4F2C8D]/80'
+              : theme === 'ponyville'
+              ? 'bg-gradient-to-br from-[#f1aed5]/80 via-[#e13690]/80 to-[#ff2e9f]/80'
               : 'bg-gradient-to-br from-blue-400/80 via-indigo-400/80 to-indigo-600/80'
           }`}
           onClick={onToggle}
@@ -282,6 +297,8 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
           ? 'bg-white'
           : theme === 'avengers'
           ? 'bg-gradient-to-b from-[#2C1267] to-[#4F2C8D]'
+          : theme === 'ponyville'
+          ? 'bg-gradient-to-b from-[#f1aed5] via-[#e13690] to-[#ff2e9f]'
           : 'bg-gradient-to-b from-blue-500 via-indigo-500 to-indigo-600'}
       `}>
         {/* Header */}
@@ -296,6 +313,8 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
               ? 'bg-white border-b-2 border-[#1D428A]'
               : theme === 'avengers'
               ? 'bg-gradient-to-r from-[#2C1267] to-[#4F2C8D]'
+              : theme === 'ponyville'
+              ? 'bg-gradient-to-r from-[#f1aed5] to-[#e13690]'
               : 'bg-gradient-to-r from-blue-600 to-indigo-700'
           }`}>
             <div className="flex items-center space-x-3">
@@ -321,6 +340,8 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
                   ? 'hover:text-blue-400 hover:bg-indigo-700'
                   : theme === 'avengers'
                   ? 'hover:text-[#604AC7] hover:bg-[#2C1267]'
+                  : theme === 'ponyville'
+                  ? 'hover:text-[#ff2e9f] hover:bg-[#f1aed5]'
                   : ''
               }`}
             >
@@ -341,6 +362,8 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
               ? 'bg-white'
               : theme === 'avengers'
               ? 'bg-gradient-to-r from-[#2C1267] to-[#4F2C8D]'
+              : theme === 'ponyville'
+              ? 'bg-gradient-to-r from-[#f1aed5] to-[#e13690]'
               : 'bg-gradient-to-r from-indigo-600 to-blue-500'
           }`}>
             <div className="flex items-center space-x-2">
@@ -348,7 +371,7 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
               <div className="flex-shrink-0 overflow-hidden">
                 {(() => {
                   const avatarPath = getAvatarImagePath((student as any)?.avatar);
-                  if (avatarPath && (theme === 'ben10' || theme === 'tinkerbell' || theme === 'avengers' || theme === 'bounceworld' || theme === 'cricketverse')) {
+                  if (avatarPath && (theme === 'ben10' || theme === 'tinkerbell' || theme === 'avengers' || theme === 'bounceworld' || theme === 'cricketverse' || theme === 'ponyville')) {
                     return (
                       <Image 
                         key={`avatar-${avatarKey}-${(student as any)?.avatar || 'default'}`} 
@@ -363,7 +386,7 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
 
                   return (
                     <span className="text-3xl font-black">
-                      {theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'bounceworld' ? '🏀' : theme === 'cricketverse' ? '🏏' : theme === 'avengers' ? '🦸‍♂️' : '📚'}
+                      {theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'bounceworld' ? '🏀' : theme === 'cricketverse' ? '🏏' : theme === 'avengers' ? '🦸‍♂️' : theme === 'ponyville' ? '🦄' : '📚'}
                     </span>
                   );
                 })()}
@@ -407,6 +430,8 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
                         ? 'bg-white text-[#1D428A] border-[#1D428A] shadow-lg'
                         : theme === 'avengers'
                         ? 'bg-gradient-to-r from-[#2C1267] to-[#4F2C8D] text-white border-black shadow-lg'
+                        : theme === 'ponyville'
+                        ? 'bg-gradient-to-r from-[#f1aed5] to-[#e13690] text-white border-[#ff2e9f] shadow-lg'
                         : 'bg-gradient-to-r from-blue-400 to-indigo-600 text-white border-indigo-700 shadow-lg')
                     : `bg-white text-black hover:bg-gradient-to-r border-gray-300 hover:border-black ${
                         theme === 'ben10'
@@ -419,6 +444,8 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
                           ? 'hover:from-white hover:to-[#1D428A] hover:text-[#1D428A]'
                           : theme === 'avengers'
                           ? 'hover:from-[#604AC7] hover:to-[#2C1267] hover:text-white'
+                          : theme === 'ponyville'
+                          ? 'hover:from-[#f1aed5] hover:to-[#e13690] hover:text-white'
                           : 'hover:from-blue-300 hover:to-indigo-500 hover:text-white'
                       }`
                   }
@@ -440,6 +467,8 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
                       ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222]'
                       : theme === 'tinkerbell'
                       ? 'bg-gradient-to-r from-yellow-400 to-green-500'
+                      : theme === 'ponyville'
+                      ? 'bg-gradient-to-r from-[#f1aed5] to-[#e13690]'
                       : 'bg-gradient-to-r from-blue-400 to-indigo-600'
                   }`}>
                     {item.badge}
@@ -465,6 +494,8 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
             ? 'bg-white'
             : theme === 'avengers'
             ? 'bg-gradient-to-r from-[#2C1267] to-[#4F2C8D]'
+            : theme === 'ponyville'
+            ? 'bg-gradient-to-r from-[#f1aed5] to-[#e13690]'
             : 'bg-gradient-to-r from-blue-600 to-indigo-700'
         }`}>
           <Button

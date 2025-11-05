@@ -135,7 +135,7 @@ export default function StudentDocumentsPage() {
   if (authLoading) {
     return (
       <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A] to-[#C8102E]' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]' : theme === 'ponyville' ? 'from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : 'from-blue-400 to-indigo-600'} flex items-center justify-center`}>
-        <div className={`bg-white border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : 'border-black'} rounded-3xl p-8 shadow-2xl`}>
+        <div className={`bg-white border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} rounded-3xl p-8 shadow-2xl`}>
           {/* Theme-Specific Loading Animation */}
           <div className="relative mb-6 flex flex-col items-center">
             {/* Tinkerbell Loading GIF */}
@@ -201,7 +201,11 @@ export default function StudentDocumentsPage() {
             {/* Ponyville Loading Animation */}
             {theme === 'ponyville' && (
               <div className="flex flex-col items-center">
-                <div className="text-6xl mb-4">🦄</div>
+                <img
+                  src="/ponyville-loading.gif"
+                  alt="Ponyville Loading"
+                  className="w-32 h-32 object-contain"
+                />
                 <span className="text-2xl font-bold text-[#e13690] mt-4">Casting Magic</span>
               </div>
             )}

@@ -195,7 +195,11 @@ export default function StudentSheetsPage() {
             {/* Ponyville Loading Animation */}
             {theme === 'ponyville' && (
               <div className="flex flex-col items-center">
-                <div className="text-6xl animate-bounce">🦄</div>
+                <img
+                  src="/ponyville-loading.gif"
+                  alt="Ponyville Loading"
+                  className="w-32 h-32 object-contain"
+                />
                 <span className="text-2xl font-bold text-[#e13690] mt-4">Casting Magic</span>
               </div>
             )}
