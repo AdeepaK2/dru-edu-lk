@@ -343,59 +343,45 @@ const cricketverseAvatars = [
 // Ponyville themed avatars - Magical Unicorns
 const ponyvilleAvatars = [
   {
-    id: 'twilight',
-    name: 'Twilight Sparkle',
-    image: '/ponyville/Twilight Sparkle.png',
-    description: 'The Princess of Friendship — magical scholar and leader!',
-    colors: 'from-[#f1aed5] to-[#e13690]'
-  },
-  {
-    id: 'rainbow',
-    name: 'Rainbow Dash',
-    image: '/ponyville/Rainbow Dash.png',
-    description: 'The Fastest Flyer — loyal and adventurous pegasus!',
+    id: 'applejack',
+    name: 'Applejack',
+    image: '/ponyville/applejack.png',
+    description: 'The Honest Farmer — hardworking and dependable earth pony!',
     colors: 'from-[#f1aed5] to-[#e13690]'
   },
   {
     id: 'pinkie',
     name: 'Pinkie Pie',
-    image: '/ponyville/Pinkie Pie.png',
+    image: '/ponyville/pinky pie.png',
     description: 'The Party Pony — brings joy and laughter everywhere!',
+    colors: 'from-[#f1aed5] to-[#e13690]'
+  },
+  {
+    id: 'luna',
+    name: 'Princess Luna',
+    image: '/ponyville/princesluna.png',
+    description: 'The Princess of the Night — guardian of dreams and magic!',
+    colors: 'from-[#f1aed5] to-[#e13690]'
+  },
+  {
+    id: 'rainbow',
+    name: 'Rainbow Dash',
+    image: '/ponyville/rainbow-dash.png',
+    description: 'The Fastest Flyer — loyal and adventurous pegasus!',
     colors: 'from-[#f1aed5] to-[#e13690]'
   },
   {
     id: 'rarity',
     name: 'Rarity',
-    image: '/ponyville/Rarity.png',
+    image: '/ponyville/rarity.png',
     description: 'The Fashionista — elegant and generous unicorn!',
     colors: 'from-[#f1aed5] to-[#e13690]'
   },
   {
-    id: 'applejack',
-    name: 'Applejack',
-    image: '/ponyville/Applejack.png',
-    description: 'The Honest Farmer — hardworking and dependable earth pony!',
-    colors: 'from-[#f1aed5] to-[#e13690]'
-  },
-  {
-    id: 'fluttershy',
-    name: 'Fluttershy',
-    image: '/ponyville/Fluttershy.png',
-    description: 'The Kind Animal Lover — gentle and caring pegasus!',
-    colors: 'from-[#f1aed5] to-[#e13690]'
-  },
-  {
-    id: 'spike',
-    name: 'Spike',
-    image: '/ponyville/Spike.png',
-    description: 'The Loyal Dragon — Twilight\'s faithful assistant!',
-    colors: 'from-[#f1aed5] to-[#e13690]'
-  },
-  {
-    id: 'starlight',
-    name: 'Starlight Glimmer',
-    image: '/ponyville/Starlight Glimmer.png',
-    description: 'The Reformed Villain — magical prodigy and friend!',
+    id: 'sweetie',
+    name: 'Sweetie Belle',
+    image: '/ponyville/sweetybelle.png',
+    description: 'The Young Unicorn — aspiring fashion designer and friend!',
     colors: 'from-[#f1aed5] to-[#e13690]'
   }
 ];

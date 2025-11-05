@@ -224,14 +224,12 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
 
     // Ponyville avatars (Magical unicorns and ponies)
     const ponyvilleMap: Record<string, string> = {
-      twilight: '/ponyville/twilight-sparkle.png',
-      rainbow: '/ponyville/rainbow-dash.png',
-      fluttershy: '/ponyville/fluttershy.png',
-      pinkie: '/ponyville/pinkie-pie.png',
-      rarity: '/ponyville/rarity.png',
       applejack: '/ponyville/applejack.png',
-      spike: '/ponyville/spike.png',
-      starlight: '/ponyville/starlight-glimmer.png'
+      pinkie: '/ponyville/pinky pie.png',
+      luna: '/ponyville/princesluna.png',
+      rainbow: '/ponyville/rainbow-dash.png',
+      rarity: '/ponyville/rarity.png',
+      sweetie: '/ponyville/sweetybelle.png'
     };
 
     if (ben10Map[avatarId]) return ben10Map[avatarId];
