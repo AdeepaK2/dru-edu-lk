@@ -1200,16 +1200,18 @@ export default function StudentStudyPage() {
               <img src="/ponyville/rainbow-dash.png" alt="Rainbow Dash" className="w-24 h-24 object-contain" />
             ) : theme === 'avengers' ? (
               <img src="/avengers/pngegg.png" alt="Avengers Hero" className="w-24 h-24 object-contain" />
+            ) : theme === 'bounceworld' ? (
+              <img src="/bounce-world.png" alt="Bounce World" className="w-32 h-32 object-contain" />
             ) : (
-              <div className="text-6xl">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'bounceworld' ? '🏀' : ''}</div>
+              <div className="text-6xl">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : ''}</div>
             )}
             <div>
               <h1 className="text-4xl font-black text-black mb-2 flex items-center">
                 <span>Your</span>
-                <span className={`ml-2 font-black text-4xl ${theme === 'bounceworld' ? 'text-white' : 'text-black'}`}>Study</span>
+                <span className={`ml-2 font-black text-4xl ${theme === 'bounceworld' ? 'text-[#1D428A]' : 'text-black'}`}>Study</span>
               </h1>
               <p className={`font-bold text-lg ${
-                theme === 'ben10' ? 'text-green-200' : theme === 'tinkerbell' ? 'text-white' : theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-[#C88DA5]' : theme === 'ponyville' ? 'text-white' : 'text-blue-100'
+                theme === 'ben10' ? 'text-green-200' : theme === 'tinkerbell' ? 'text-white' : theme === 'bounceworld' ? 'text-[#1D428A]' : theme === 'avengers' ? 'text-[#C88DA5]' : theme === 'ponyville' ? 'text-white' : 'text-blue-100'
               }`}>
                 {theme === 'bounceworld'
                   ? `Welcome back, ${student.name}! Score big with your studies! 🏀`
@@ -1233,7 +1235,7 @@ export default function StudentStudyPage() {
             : theme === 'tinkerbell'
             ? 'from-green-400 to-yellow-500'
             : theme === 'bounceworld'
-            ? 'from-white via-[#1D428A]/20 to-white'
+            ? 'from-[#1D428A] via-white to-[#C8102E]'
             : theme === 'avengers'
             ? 'from-[#2C1267] to-[#604AC7]'
             : theme === 'ponyville'
@@ -1242,11 +1244,11 @@ export default function StudentStudyPage() {
         }`}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-black text-white">
+              <p className="text-sm font-black text-black">
                 Overall Progress
               </p>
               <div className="flex items-center space-x-2 mt-2">
-                <span className="text-2xl font-black text-white">
+                <span className="text-2xl font-black text-black">
                   {Math.round(overallProgress)}%
                 </span>
                 <Badge className={`font-black border-2 border-black ${
@@ -1275,7 +1277,7 @@ export default function StudentStudyPage() {
             : theme === 'tinkerbell'
             ? 'from-green-400 to-yellow-500'
             : theme === 'bounceworld'
-            ? 'from-white via-[#C8102E]/20 to-white'
+            ? 'from-[#1D428A] via-white to-[#C8102E]'
             : theme === 'avengers'
             ? 'from-[#2C1267] to-[#604AC7]'
             : theme === 'ponyville'
@@ -1284,11 +1286,11 @@ export default function StudentStudyPage() {
         }`}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-black text-white">
+              <p className="text-sm font-black text-black">
                 Required Materials
               </p>
               <div className="flex items-center space-x-2 mt-2">
-                <span className="text-2xl font-black text-white">
+                <span className="text-2xl font-black text-black">
                   {Math.round(requiredProgress)}%
                 </span>
               </div>
@@ -1309,7 +1311,7 @@ export default function StudentStudyPage() {
             : theme === 'tinkerbell'
             ? 'from-green-400 to-yellow-500'
             : theme === 'bounceworld'
-            ? 'from-white via-[#1D428A]/20 to-white'
+            ? 'from-[#1D428A] via-white to-[#C8102E]'
             : theme === 'avengers'
             ? 'from-[#2C1267] to-[#604AC7]'
             : theme === 'ponyville'
@@ -1318,10 +1320,10 @@ export default function StudentStudyPage() {
         }`}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-black text-white">
+              <p className="text-sm font-black text-black">
                 {theme === 'ben10' ? 'Your Classes' : 'Your Classes'}
               </p>
-              <p className="text-3xl font-black text-white mt-2">
+              <p className="text-3xl font-black text-black mt-2">
                 {classes.length}
               </p>
             </div>
@@ -1335,7 +1337,7 @@ export default function StudentStudyPage() {
             : theme === 'tinkerbell'
             ? 'from-green-400 to-yellow-500'
             : theme === 'bounceworld'
-            ? 'from-white via-[#1D428A]/20 to-white'
+            ? 'from-[#1D428A] via-white to-[#C8102E]'
             : theme === 'avengers'
             ? 'from-[#2C1267] to-[#604AC7]'
             : theme === 'ponyville'
@@ -1344,10 +1346,10 @@ export default function StudentStudyPage() {
         }`}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-black text-white">
+              <p className="text-sm font-black text-black">
                 New This Week
               </p>
-              <p className="text-3xl font-black text-white mt-2">
+              <p className="text-3xl font-black text-black mt-2">
                 {classes.reduce((sum, cls) => sum + cls.recentMaterials, 0)}
               </p>
             </div>
@@ -1371,7 +1373,7 @@ export default function StudentStudyPage() {
             ? 'bg-gradient-to-r from-[#fb91cf] via-[#f18ac6] to-[#f596cd]'
             : 'bg-gradient-to-r from-blue-500 to-indigo-600'
         }`}>
-          {theme === 'bounceworld' ? '🏀 Your Classes 🏀' : theme === 'ponyville' ? '✨ Your Magical Classes ✨' : theme === 'ben10' ? ' Your Classes ' : ' Your Classes '}
+          {theme === 'bounceworld' ? 'Your Classes' : theme === 'ponyville' ? '✨ Your Magical Classes ✨' : theme === 'ben10' ? ' Your Classes ' : ' Your Classes '}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {classes.map((classItem) => (
@@ -1381,7 +1383,7 @@ export default function StudentStudyPage() {
                 : theme === 'tinkerbell'
                 ? 'from-green-400 to-yellow-500'
                 : theme === 'bounceworld'
-                ? 'from-white via-[#1D428A]/20 to-white'
+                ? 'from-[#1D428A]  to-[#C8102E]'
                 : theme === 'avengers'
                 ? 'from-[#2C1267] to-[#604AC7]'
                 : theme === 'ponyville'

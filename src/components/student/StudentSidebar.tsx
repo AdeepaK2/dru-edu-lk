@@ -292,7 +292,7 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
           : theme === 'cricketverse'
           ? 'bg-gradient-to-b from-blue-500 via-indigo-500 to-indigo-600'
           : theme === 'bounceworld'
-          ? 'bg-gradient-to-b from-white via-[#1D428A]/80 to-[#C8102E]/100'
+          ? 'bg-gradient-to-b  from-[#1D428A]/70 to-[#C8102E]/100'
           : theme === 'avengers'
           ? 'bg-gradient-to-b from-[#2C1267] to-[#4F2C8D]'
           : theme === 'ponyville'
