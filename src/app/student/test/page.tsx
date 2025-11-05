@@ -989,13 +989,15 @@ export default function StudentTests() {
            
 
             <div className="flex items-center space-x-4 relative z-10">
-              {theme === 'ponyville' ? (
+              {theme === 'cricketverse' ? (
+                <img src="/batman3.png" alt="Batman" className="w-24 h-24 object-contain" />
+              ) : theme === 'ponyville' ? (
                 <img src="/ponyville/sweetybelle.png" alt="Sweetybelle" className="w-24 h-24 object-contain" />
               ) : theme === 'avengers' ? (
                 <img src="/avengers/wonder-women.png" alt="Wonder Woman" className="w-24 h-24 object-contain" />
-              ) : (theme === 'ben10' || theme === 'tinkerbell') && (
+              ) : theme === 'ben10' || theme === 'tinkerbell' ? (
                 <div className="text-6xl">📝</div>
-              )}
+              ) : null}
               <div>
                 <h1 className="text-4xl font-black text-white mb-2 flex items-center">
                   <span>My</span>

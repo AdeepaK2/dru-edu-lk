@@ -595,7 +595,13 @@ export default function StudentMeetingPage() {
 
           <div className="flex items-center justify-between relative z-10">
             <div className="flex items-center space-x-4">
-              {theme === 'ponyville' ? (
+              {theme === 'cricketverse' ? (
+                <img
+                  src="/batman4.png"
+                  alt="Batman"
+                  className="w-24 h-24 object-contain"
+                />
+              ) : theme === 'ponyville' ? (
                 <img
                   src="/ponyville/sweetybelle.png"
                   alt="Sweetie Belle"

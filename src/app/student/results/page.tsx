@@ -375,7 +375,13 @@ export default function StudentResults() {
         <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#5ab34a] via-[#64cc4f] to-[#111511]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A]  to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#2C1267] via-[#604AC7] to-[#0F0826]' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : 'bg-gradient-to-r from-blue-500 to-indigo-600'} rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : theme === 'ponyville' ? 'border-[#ff2e9f]' : 'border-black'} p-8 relative overflow-hidden`}>
          
           <div className="flex items-center space-x-4 relative z-10">
-            {theme === 'ponyville' ? (
+            {theme === 'cricketverse' ? (
+              <img
+                src="/batman1.png"
+                alt="Batman"
+                className="w-24 h-24 object-contain"
+              />
+            ) : theme === 'ponyville' ? (
               <img
                 src="/ponyville/applejack.png"
                 alt="Applejack"

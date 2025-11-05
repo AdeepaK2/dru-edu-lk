@@ -231,7 +231,13 @@ export default function StudentVideos() {
         
 
         <div className="flex items-center space-x-4 relative z-10">
-          {theme === 'ponyville' ? (
+          {theme === 'cricketverse' ? (
+            <img
+              src="/batman3.png"
+              alt="Batman"
+              className="w-24 h-24 object-contain"
+            />
+          ) : theme === 'ponyville' ? (
             <img
               src="/ponyville/rarity.png"
               alt="Rarity"

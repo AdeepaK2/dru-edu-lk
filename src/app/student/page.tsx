@@ -437,7 +437,7 @@ export default function StudentDashboard() {
                   <img
                     src={theme === 'ben10' ? '/ben10-welcome.png'
                         : theme === 'tinkerbell' ? '/tinkerbell-welcome.png'
-                        : theme === 'cricketverse' ? '/CricketVerse.avif'
+                        : theme === 'cricketverse' ? '/cricketverse.png'
                         : theme === 'avengers' ? '/avengers/thor.png'
                         : theme === 'bounceworld' ? '/bounce_world.jpg'
                         : theme === 'ponyville' ? '/Ponyville.webp'

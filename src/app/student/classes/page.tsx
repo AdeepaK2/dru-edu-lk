@@ -216,7 +216,8 @@ export default function StudentClassesPage() {
       
           <div className="flex items-center justify-between relative z-10">
             <div className="flex items-center space-x-4">
-             
+              <img src="/batman4.png" alt="Batman" className="w-32 h-32 object-contain" />
+              
               <div>
                 <h1 className="text-4xl font-black text-black mb-2 flex items-center">
                   <span>My</span>
@@ -244,9 +245,7 @@ export default function StudentClassesPage() {
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Search and Filter */}
+        </div>        {/* Search and Filter */}
         <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'from-white via-[#1D428A]/20 to-white border-[#1D428A]' : theme === 'avengers' ? 'from-[#604AC7]/20 via-[#2C1267]/20 to-[#0F0826]/20 border-[#2C1267]' : theme === 'ponyville' ? 'from-[#f1aed5]/20 via-[#e13690]/20 to-[#ff2e9f]/20 border-[#f1aed5]' : 'from-blue-300 via-indigo-400 to-indigo-500'} rounded-2xl shadow-xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} p-6 mb-6`}>
           <div className="flex items-center space-x-3 mb-4">
             <div className="text-3xl">🔍</div>
