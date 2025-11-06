@@ -282,7 +282,7 @@ export default function StudentDashboard() {
   // Show loading state while data is being fetched
   if (loading) {
     return (
-      <div className={`min-h-screen bg-gradient-to-br ${theme === 'default' ? 'from-gray-50 to-gray-100' : theme === 'ben10' ? 'from-[#64cc4f]  to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : theme === 'cricketverse' ? 'from-blue-400 to-indigo-600' : theme === 'bounceworld' ? 'from-white via-[#1D428A]/10 to-white' : theme === 'avengers' ? 'from-[#2C1267]/20 to-[#4F2C8D]/20' : theme === 'ponyville' ? 'from-[#fff5fb] via-[#f1aed5] to-[#ff2e9f]' : 'from-gray-50 to-gray-100'} flex items-center justify-center`}>
+      <div className={`min-h-screen ${theme === 'default' ? 'bg-gradient-to-br from-gray-50 to-gray-100' : theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : theme === 'cricketverse' ? 'bg-gradient-to-br from-blue-400 to-indigo-600' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A] to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-br from-[#2C1267]/20 to-[#4F2C8D]/20' : theme === 'ponyville' ? 'bg-gradient-to-br from-[#fff5fb] via-[#f1aed5] to-[#ff2e9f]' : 'bg-gradient-to-br from-gray-50 to-gray-100'} flex items-center justify-center`}>
         <div className={`${theme === 'default' ? 'bg-white border-4 border-black' : theme === 'bounceworld' ? 'bg-white border-4 border-[#1D428A]' : theme === 'ponyville' ? 'bg-white border-4 border-[#e13690]' : 'bg-white border-4 border-black'} rounded-3xl p-8 shadow-2xl`}>
           {/* Theme-Specific Loading Animation */}
           <div className="relative mb-6 flex flex-col items-center">
@@ -387,7 +387,7 @@ export default function StudentDashboard() {
           : theme === 'cricketverse'
           ? 'linear-gradient(to bottom right, rgb(96, 165, 250), rgb(79, 70, 229), rgb(96, 165, 250))'
           : theme === 'bounceworld'
-          ? 'linear-gradient(to bottom right, rgb(255, 255, 255), rgba(29, 66, 138, 0.1), rgb(255, 255, 255))'
+          ? 'linear-gradient(to bottom right, rgb(255, 255, 255), rgb(29, 66, 138), rgb(200, 16, 46))'
           : theme === 'avengers'
           ? 'linear-gradient(to bottom right, rgba(44, 18, 103, 0.3), rgba(79, 44, 141, 0.2), rgba(44, 18, 103, 0.3))'
           : theme === 'ponyville'
@@ -491,7 +491,7 @@ export default function StudentDashboard() {
                       : theme === 'ben10' ? 'rgb(178, 224, 91)'
                       : theme === 'tinkerbell' ? 'rgb(0, 0, 30)'
                       : theme === 'cricketverse' ? 'rgb(191, 219, 254)'
-                      : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
+                      : theme === 'bounceworld' ? 'rgb(0, 0, 0)'
                       : theme === 'avengers' ? 'rgb(200, 138, 165)'
                       : theme === 'ponyville' ? 'rgb(255, 245, 251)'
                       : 'rgb(255, 255, 255)'

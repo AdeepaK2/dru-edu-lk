@@ -314,7 +314,7 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
               : theme === 'cricketverse'
               ? 'bg-gradient-to-r from-blue-600 to-indigo-700'
               : theme === 'bounceworld'
-              ? 'bg-white border-b-2 border-[#1D428A]'
+              ? 'bg-gradient-to-r from-[#1D428A] to-[#C8102E]'
               : theme === 'avengers'
               ? 'bg-gradient-to-r from-[#2C1267] to-[#4F2C8D]'
               : theme === 'ponyville'
@@ -328,7 +328,7 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
                 className="w-10 h-10 rounded-2xl border-2 border-black shadow-lg"
               />
               <div className="hidden lg:block">
-                  <h1 className={`text-lg font-black drop-shadow-lg ${theme === 'bounceworld' ? 'text-black' : 'text-white'}`}>
+                  <h1 className={`text-lg font-black drop-shadow-lg ${theme === 'bounceworld' ? 'text-white' : 'text-white'}`}>
                     Dr. U Education
                   </h1>
                 </div>
