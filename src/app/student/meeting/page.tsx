@@ -474,7 +474,7 @@ export default function StudentMeetingPage() {
   // Show loading spinner while authenticating or loading data
   if (authLoading || loading) {
     return (
-      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A] to-[#C8102E]' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]' : theme === 'ponyville' ? 'from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : 'from-blue-400 to-indigo-600'} flex items-center justify-center`}>
+      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A] to-[#C8102E]' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]' : theme === 'ponyville' ? 'from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : 'from-gray-100 to-white'} flex items-center justify-center`}>
         <div className={`bg-white border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} rounded-3xl p-8 shadow-2xl`}>
           {/* Theme-Specific Loading Animation */}
           <div className="relative mb-6 flex flex-col items-center">
@@ -534,7 +534,7 @@ export default function StudentMeetingPage() {
                   alt="CricketVerse Loading"
                   className="w-32 h-32 object-contain"
                 />
-                <span className="text-2xl font-bold text-blue-600 mt-4">Loading</span>
+                <span className="text-2xl font-bold text-black mt-4">Loading</span>
               </div>
             )}
 
@@ -553,8 +553,8 @@ export default function StudentMeetingPage() {
             {/* Default Theme Spinner with Loading Text */}
             {theme !== 'tinkerbell' && theme !== 'ben10' && theme !== 'bounceworld' && theme !== 'avengers' && theme !== 'cricketverse' && theme !== 'ponyville' && (
               <div className="flex flex-col items-center">
-                <div className="w-24 h-24 border-4 border-blue-400 border-t-blue-600 rounded-full animate-spin"></div>
-                <span className="text-2xl font-bold text-blue-600 mt-4">Loading</span>
+                <div className="w-24 h-24 border-4 border-gray-400 border-t-gray-600 rounded-full animate-spin"></div>
+                <span className="text-2xl font-bold text-black mt-4">Loading</span>
               </div>
             )}
           </div>
@@ -572,7 +572,7 @@ export default function StudentMeetingPage() {
   // Show error if not authenticated
   if (!student) {
     return (
-      <div className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : 'bg-gradient-to-br from-blue-600 via-indigo-700 to-slate-900'} p-6`}>
+      <div className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : 'bg-gradient-to-br from-gray-100 via-gray-200 to-gray-300'} p-6`}>
         <div className="flex items-center justify-center py-12">
           <div className="bg-gradient-to-r from-red-200 to-pink-200 rounded-3xl shadow-2xl border-4 border-black p-8">
             <div className="text-center">
@@ -587,10 +587,10 @@ export default function StudentMeetingPage() {
   }
 
   return (
-    <div key={`meeting-${theme}`} className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A]/20 to-[#C8102E]/20' : theme === 'avengers' ? 'bg-gradient-to-br from-[#2C1267] via-[#604AC7]/20 to-[#0F0826]' : theme === 'ponyville' ? 'bg-gradient-to-br from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]' : 'bg-gradient-to-br from-blue-600 via-indigo-700 to-slate-900'} p-6`}>
+    <div key={`meeting-${theme}`} className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A]/20 to-[#C8102E]/20' : theme === 'avengers' ? 'bg-gradient-to-br from-[#2C1267] via-[#604AC7]/20 to-[#0F0826]' : theme === 'ponyville' ? 'bg-gradient-to-br from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]' : 'bg-gradient-to-br from-gray-100 via-gray-200 to-gray-300'} p-6`}>
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Theme-aware Header */}
-        <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-lime-800' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A]  to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#2C1267] via-[#604AC7] to-[#0F0826]' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : 'bg-gradient-to-r from-blue-600 via-indigo-700 to-slate-800'} rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} p-8 relative overflow-hidden`}>
+        <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-lime-800' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A]  to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#2C1267] via-[#604AC7] to-[#0F0826]' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : 'bg-gradient-to-r from-gray-200 via-gray-300 to-gray-400'} rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} p-8 relative overflow-hidden`}>
           
 
           <div className="flex items-center justify-between relative z-10">
@@ -624,7 +624,7 @@ export default function StudentMeetingPage() {
                   <span className={`ml-2 text-4xl ${theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-white' : theme === 'ponyville' ? 'text-white' : 'text-black'}`}>Scheduler</span>
                  
                 </h1>
-                <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-white' : theme === 'tinkerbell' ? 'text-yellow-100' : theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-[#C88DA5]' : theme === 'ponyville' ? 'text-white' : 'text-blue-100'}`}>
+                <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-white' : theme === 'tinkerbell' ? 'text-yellow-100' : theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-[#C88DA5]' : theme === 'ponyville' ? 'text-white' : 'text-black'}`}>
                   {theme === 'bounceworld'
                     ? `Welcome back, ${student?.name}! Schedule your personalized learning sessions with teachers! 📚`
                     : theme === 'ben10'
@@ -781,7 +781,7 @@ export default function StudentMeetingPage() {
                   <span className="text-3xl mr-3">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'bounceworld' ? '👨‍🏫' : theme === 'avengers' ? '🦸‍♂️' : theme === 'ponyville' ? ' ' : '👨‍🏫'}</span>
                   Available Teachers
                 </h2>
-                <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-white' : theme === 'tinkerbell' ? 'text-yellow-100' : theme === 'bounceworld' ? 'text-[#1D428A]' : theme === 'avengers' ? 'text-[#C88DA5]' : theme === 'ponyville' ? 'text-white' : 'text-blue-100'}`}>
+                <p className={`font-bold text-lg ${theme === 'default' ? 'text-black' : theme === 'ben10' ? 'text-white' : theme === 'tinkerbell' ? 'text-yellow-100' : theme === 'bounceworld' ? 'text-[#1D428A]' : theme === 'avengers' ? 'text-[#C88DA5]' : theme === 'ponyville' ? 'text-white' : 'text-black'}`}>
                   {theme === 'bounceworld' ? 'Click on a teacher to select your preferred time slot! 👨‍🏫' : theme === 'avengers' ? 'Click on a teacher to assemble your time slot selection! 🦸‍♂️' : theme === 'ponyville' ? 'Click on a teacher to cast magical time slot spells! ✨🦄' : 'Click on a teacher to see their time slots'}
                 </p>
               </div>
@@ -864,7 +864,7 @@ export default function StudentMeetingPage() {
                                     >
                                       <div className="space-y-3 mb-4">
                                         <div className="flex items-center text-sm text-gray-600 font-bold">
-                                          <Calendar className="w-5 h-5 mr-2 text-blue-600" />
+                                          <Calendar className="w-5 h-5 mr-2 text-black" />
                                           {formatDate(slot.date)}
                                         </div>
                                         <div className="flex items-center text-sm text-gray-600 font-bold">
@@ -946,7 +946,7 @@ export default function StudentMeetingPage() {
                               </h4>
                               <span className={`px-3 py-1 text-sm font-black rounded-full border-2 border-black ${
                                 meeting.status === 'upcoming'
-                                  ? 'bg-blue-100 text-blue-800'
+                                  ? 'bg-gray-100 text-gray-800'
                                   : meeting.status === 'completed'
                                   ? theme === 'ben10'
                                     ? 'bg-[#64cc4f]/20 text-[#222222]'
@@ -963,7 +963,7 @@ export default function StudentMeetingPage() {
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm text-gray-600 font-bold">
                             <div className="flex items-center">
-                              <Calendar className="w-5 h-5 mr-2 text-blue-600" />
+                              <Calendar className="w-5 h-5 mr-2 text-black" />
                               {formatDate(meeting.date)}
                             </div>
                             <div className="flex items-center">
