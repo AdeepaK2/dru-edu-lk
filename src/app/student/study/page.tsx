@@ -480,12 +480,12 @@ export default function StudentStudyPage() {
 
           <div className="flex h-full">
             {/* Materials Sidebar - narrower */}
-            <div className={`w-72 bg-gradient-to-b ${theme === 'ben10' ? 'from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : theme === 'bounceworld' ? 'from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'from-[#0F0826] via-[#2C1267] to-[#604AC7]' : 'from-blue-500 to-indigo-600'} border-r-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#604AC7]' : 'border-black'} overflow-y-auto shadow-2xl pt-16`}>
+            <div className={`w-72 bg-gradient-to-b ${theme === 'default' ? 'from-gray-100 to-gray-200' : theme === 'ben10' ? 'from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : theme === 'bounceworld' ? 'from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'from-[#0F0826] via-[#2C1267] to-[#604AC7]' : 'from-blue-500 to-indigo-600'} border-r-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#604AC7]' : 'border-black'} overflow-y-auto shadow-2xl pt-16`}>
               <div className={`p-4 border-b-4 ${theme === 'bounceworld' ? 'border-[#C8102E]' : theme === 'avengers' ? 'border-[#604AC7]' : 'border-black'}`}>
-                <h2 className="text-lg font-black text-white text-center">
+                <h2 className={`text-lg font-black ${theme === 'default' ? 'text-black' : 'text-white'} text-center`}>
                   {(theme === 'ben10' || theme === 'tinkerbell') && <span className="text-2xl mr-2">{theme === 'ben10' ? '�‍♂️' : '🧚‍♀️'}</span>}Study Materials 
                 </h2>
-                <p className="text-sm font-black text-white/90 text-center">
+                <p className={`text-sm font-black ${theme === 'default' ? 'text-gray-600' : 'text-white/90'} text-center`}>
                   {currentClass?.name}
                 </p>
               </div>
@@ -632,7 +632,7 @@ export default function StudentStudyPage() {
             </div>
 
             {/* Material Viewer - takes remaining space */}
-            <div className={`flex-1 bg-gradient-to-br from-white ${theme === 'ben10' ? 'to-[#b2e05b]/10' : theme === 'tinkerbell' ? 'to-yellow-50' : theme === 'avengers' ? 'to-[#C88DA5]/10' : theme === 'ponyville' ? 'to-[#f1aed5]/10' : 'to-blue-50'} overflow-hidden`}>
+            <div className={`flex-1 ${theme === 'default' ? 'bg-white' : 'bg-gradient-to-br from-white'} ${theme === 'default' ? '' : theme === 'ben10' ? 'to-[#b2e05b]/10' : theme === 'tinkerbell' ? 'to-yellow-50' : theme === 'avengers' ? 'to-[#C88DA5]/10' : theme === 'ponyville' ? 'to-[#f1aed5]/10' : 'to-blue-50'} overflow-hidden`}>
               <div className="h-full w-full">
                 {activeMaterial.fileType?.toLowerCase() === 'pdf' && activeMaterial.fileUrl && (
                   <PDFViewer
@@ -645,46 +645,46 @@ export default function StudentStudyPage() {
                 )}
                 {activeMaterial.fileType?.toLowerCase() === 'image' && activeMaterial.fileUrl && (
                   <div className="h-full flex flex-col">
-                    <div className={`p-6 border-b-4 border-black bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : theme === 'avengers' ? 'from-[#2C1267] to-[#604AC7]' : theme === 'ponyville' ? 'from-[#f1aed5] to-[#e13690]' : 'from-blue-500 to-indigo-600'}`}>
+                    <div className={`p-6 border-b-4 border-black bg-gradient-to-r ${theme === 'default' ? 'from-gray-100 to-gray-200' : theme === 'ben10' ? 'from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : theme === 'avengers' ? 'from-[#2C1267] to-[#604AC7]' : theme === 'ponyville' ? 'from-[#f1aed5] to-[#e13690]' : 'from-blue-500 to-indigo-600'}`}>
                       <div className="flex items-center justify-between">
-                        <h3 className="text-xl font-black text-white flex items-center">
+                        <h3 className={`text-xl font-black ${theme === 'default' ? 'text-black' : 'text-white'} flex items-center`}>
                           {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <span className="mr-2">🖼️</span>}{activeMaterial.title}
                         </h3>
                         <div className="flex items-center space-x-3">
                           <button
                             onClick={handleZoomOut}
                             disabled={imageZoom <= 0.1}
-                            className="bg-black text-white p-3 rounded-xl border-2 border-white hover:bg-white hover:text-black transition-all duration-300 font-black"
+                            className={`${theme === 'default' ? 'bg-white text-black border-black hover:bg-black hover:text-white' : 'bg-black text-white border-white hover:bg-white hover:text-black'} p-3 rounded-xl border-2 transition-all duration-300 font-black`}
                             title="Zoom Out (-)"
                           >
                             <ZoomOut className="h-5 w-5" />
                           </button>
-                          <span className="text-lg font-black text-white min-w-[70px] text-center bg-black/20 rounded-lg px-3 py-2 border-2 border-white">
+                          <span className={`text-lg font-black ${theme === 'default' ? 'text-black' : 'text-white'} min-w-[70px] text-center ${theme === 'default' ? 'bg-gray-100' : 'bg-black/20'} rounded-lg px-3 py-2 border-2 ${theme === 'default' ? 'border-black' : 'border-white'}`}>
                             {Math.round(imageZoom * 100)}%
                           </span>
                           <button
                             onClick={handleZoomIn}
                             disabled={imageZoom >= 5}
-                            className="bg-black text-white p-3 rounded-xl border-2 border-white hover:bg-white hover:text-black transition-all duration-300 font-black"
+                            className={`${theme === 'default' ? 'bg-white text-black border-black hover:bg-black hover:text-white' : 'bg-black text-white border-white hover:bg-white hover:text-black'} p-3 rounded-xl border-2 transition-all duration-300 font-black`}
                             title="Zoom In (+)"
                           >
                             <ZoomIn className="h-5 w-5" />
                           </button>
                           <button
                             onClick={handleZoomReset}
-                            className="bg-black text-white p-3 rounded-xl border-2 border-white hover:bg-white hover:text-black transition-all duration-300 font-black"
+                            className={`${theme === 'default' ? 'bg-white text-black border-black hover:bg-black hover:text-white' : 'bg-black text-white border-white hover:bg-white hover:text-black'} p-3 rounded-xl border-2 transition-all duration-300 font-black`}
                             title="Reset Zoom (0)"
                           >
                             <RotateCcw className="h-5 w-5" />
                           </button>
                         </div>
                       </div>
-                      <div className="text-sm font-black text-white/90 mt-3 text-center">
+                      <div className={`text-sm font-black ${theme === 'default' ? 'text-black' : 'text-white/90'} mt-3 text-center`}>
                         🖱️ Use mouse to drag when zoomed • ⌨️ Keyboard: + zoom in, - zoom out, 0 reset ⚡
                       </div>
                     </div>
                     <div
-                      className={`flex-1 flex items-center justify-center p-6 bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f]/10 to-white' : theme === 'tinkerbell' ? 'from-yellow-50 to-green-50' : theme === 'avengers' ? 'from-[#C88DA5]/10 to-white' : 'from-blue-50 to-indigo-50'} overflow-hidden relative`}
+                      className={`flex-1 flex items-center justify-center p-6 ${theme === 'default' ? 'bg-white' : 'bg-gradient-to-br'} ${theme === 'default' ? '' : theme === 'ben10' ? 'from-[#64cc4f]/10 to-white' : theme === 'tinkerbell' ? 'from-yellow-50 to-green-50' : theme === 'avengers' ? 'from-[#C88DA5]/10 to-white' : 'from-blue-50 to-indigo-50'} overflow-hidden relative`}
                       onMouseDown={handleMouseDown}
                       onMouseMove={handleMouseMove}
                       onMouseUp={handleMouseUp}
@@ -711,12 +711,12 @@ export default function StudentStudyPage() {
                 )}
                 {activeMaterial.fileType?.toLowerCase() === 'video' && activeMaterial.fileUrl && (
                   <div className="h-full flex flex-col">
-                    <div className={`p-6 border-b-4 border-black bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : theme === 'avengers' ? 'from-[#2C1267] to-[#604AC7]' : theme === 'ponyville' ? 'from-[#f1aed5] to-[#e13690]' : 'from-blue-500 to-indigo-600'}`}>
-                      <h3 className="text-xl font-black text-white flex items-center">
+                    <div className={`p-6 border-b-4 border-black bg-gradient-to-r ${theme === 'default' ? 'from-gray-100 to-gray-200' : theme === 'ben10' ? 'from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : theme === 'avengers' ? 'from-[#2C1267] to-[#604AC7]' : theme === 'ponyville' ? 'from-[#f1aed5] to-[#e13690]' : 'from-blue-500 to-indigo-600'}`}>
+                      <h3 className={`text-xl font-black ${theme === 'default' ? 'text-black' : 'text-white'} flex items-center`}>
                         {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <span className="mr-2">🎥</span>}{activeMaterial.title}
                       </h3>
                     </div>
-                    <div className={`flex-1 flex items-center justify-center p-6 bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f]/10 to-white' : theme === 'avengers' ? 'from-[#C88DA5]/10 to-white' : 'from-green-50 to-white'}`}>
+                    <div className={`flex-1 flex items-center justify-center p-6 ${theme === 'default' ? 'bg-white' : 'bg-gradient-to-br'} ${theme === 'default' ? '' : theme === 'ben10' ? 'from-[#64cc4f]/10 to-white' : theme === 'avengers' ? 'from-[#C88DA5]/10 to-white' : 'from-green-50 to-white'}`}>
                       <video
                         src={activeMaterial.fileUrl}
                         controls
@@ -730,15 +730,15 @@ export default function StudentStudyPage() {
                 )}
                 {activeMaterial.fileType?.toLowerCase() === 'link' && activeMaterial.fileUrl && (
                   <div className="h-full flex flex-col">
-                    <div className={`p-6 border-b-4 border-black bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : theme === 'avengers' ? 'from-[#2C1267] to-[#604AC7]' : theme === 'ponyville' ? 'from-[#f1aed5] to-[#e13690]' : 'from-blue-500 to-indigo-600'}`}>
-                      <h3 className="text-xl font-black text-white flex items-center">
+                    <div className={`p-6 border-b-4 border-black bg-gradient-to-r ${theme === 'default' ? 'from-gray-100 to-gray-200' : theme === 'ben10' ? 'from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : theme === 'avengers' ? 'from-[#2C1267] to-[#604AC7]' : theme === 'ponyville' ? 'from-[#f1aed5] to-[#e13690]' : 'from-blue-500 to-indigo-600'}`}>
+                      <h3 className={`text-xl font-black ${theme === 'default' ? 'text-black' : 'text-white'} flex items-center`}>
                         {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <span className="mr-2">🔗</span>}{activeMaterial.title}
                       </h3>
                     </div>
-                    <div className={`flex-1 flex items-center justify-center p-6 bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f]/10 to-white' : theme === 'avengers' ? 'from-[#C88DA5]/10 to-white' : 'from-green-50 to-white'}`}>
+                    <div className={`flex-1 flex items-center justify-center p-6 ${theme === 'default' ? 'bg-white' : 'bg-gradient-to-br'} ${theme === 'default' ? '' : theme === 'ben10' ? 'from-[#64cc4f]/10 to-white' : theme === 'avengers' ? 'from-[#C88DA5]/10 to-white' : 'from-green-50 to-white'}`}>
                       <div className="text-center space-y-8 max-w-md">
-                        <div className={`w-20 h-20 bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-yellow-400 to-green-500' : theme === 'avengers' ? 'from-[#2C1267] to-[#604AC7]' : theme === 'ponyville' ? 'from-[#f1aed5] to-[#e13690]' : 'from-blue-400 to-indigo-600'} rounded-3xl flex items-center justify-center mx-auto border-4 border-black shadow-2xl`}>
-                          <Link className="h-10 w-10 text-white font-black" />
+                        <div className={`w-20 h-20 ${theme === 'default' ? 'bg-white' : 'bg-gradient-to-r'} ${theme === 'default' ? '' : theme === 'ben10' ? 'from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-yellow-400 to-green-500' : theme === 'avengers' ? 'from-[#2C1267] to-[#604AC7]' : theme === 'ponyville' ? 'from-[#f1aed5] to-[#e13690]' : 'from-blue-400 to-indigo-600'} rounded-3xl flex items-center justify-center mx-auto border-4 border-black shadow-2xl`}>
+                          <Link className={`h-10 w-10 ${theme === 'default' ? 'text-black' : 'text-white'} font-black`} />
                         </div>
                         <div>
                           <h4 className="text-2xl font-black text-gray-900 mb-4"> External Link </h4>
@@ -764,7 +764,7 @@ export default function StudentStudyPage() {
 
     // Normal Materials View
     return (
-      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? '' : theme === 'tinkerbell' ? 'from-green-500 via-yellow-500 to-green-600' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A]/20 to-[#C8102E]/20' : 'from-blue-600 via-indigo-700 to-blue-400'} p-6`} style={theme === 'ben10' ? { background: 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))' } : undefined}>
+      <div className={`min-h-screen bg-gradient-to-br ${theme === 'default' ? 'from-gray-50 via-gray-100 to-gray-50' : theme === 'ben10' ? '' : theme === 'tinkerbell' ? 'from-green-500 via-yellow-500 to-green-600' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A]/20 to-[#C8102E]/20' : 'from-blue-600 via-indigo-700 to-blue-400'} p-6`} style={theme === 'ben10' ? { background: 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))' } : undefined}>
         <div className="max-w-6xl mx-auto">
           <div className="mb-8">
             <button
@@ -777,13 +777,13 @@ export default function StudentStudyPage() {
               ← Back to Dashboard
             </button>
 
-            <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : theme === 'bounceworld' ? 'from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]' : 'from-blue-500 to-indigo-600'} rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#604AC7]' : 'border-black'} p-8 mb-8`}>
+            <div className={`bg-gradient-to-r ${theme === 'default' ? 'from-gray-100 to-gray-200' : theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : theme === 'bounceworld' ? 'from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]' : 'from-blue-500 to-indigo-600'} rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#604AC7]' : 'border-black'} p-8 mb-8`}>
               <div className="flex justify-between items-center mb-6">
                 <div>
                   <h1 className="text-4xl font-black text-black flex items-center">
                      {currentClass?.name} 
                   </h1>
-                  <p className="text-white font-bold text-2xl">{currentClass?.subject}</p>
+                  <p className={`font-bold text-2xl ${theme === 'default' ? 'text-black' : 'text-white'}`}>{currentClass?.subject}</p>
                 </div>
                 <div className="text-right">
                   <div className="text-4xl font-black text-black">
@@ -794,43 +794,43 @@ export default function StudentStudyPage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : theme === 'avengers' ? 'from-[#2C1267] to-[#604AC7]' : 'from-blue-500 to-indigo-600'} rounded-3xl shadow-2xl border-4 border-black p-6`}>
+                <div className={`${theme === 'default' ? 'bg-white' : 'bg-gradient-to-r'} ${theme === 'default' ? '' : theme === 'ben10' ? 'from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : theme === 'avengers' ? 'from-[#2C1267] to-[#604AC7]' : 'from-blue-500 to-indigo-600'} rounded-3xl shadow-2xl border-4 border-black p-6`}>
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-black text-white">Overall Progress</p>
-                      <p className="text-3xl font-black text-white">{Math.round(currentClass?.progress || 0)}%</p>
+                      <p className={`text-sm font-black ${theme === 'default' ? 'text-black' : 'text-white'}`}>Overall Progress</p>
+                      <p className={`text-3xl font-black ${theme === 'default' ? 'text-black' : 'text-white'}`}>{Math.round(currentClass?.progress || 0)}%</p>
                     </div>
                     <div className="text-4xl">{(theme === 'ben10' || theme === 'tinkerbell') && '📈'}</div>
                   </div>
                   <div className="mt-4 bg-white/20 rounded-full h-3 border-2 border-black">
                     <div
-                      className="bg-white h-3 rounded-full transition-all duration-300"
+                      className={`${theme === 'default' ? 'bg-gray-600' : 'bg-white'} h-3 rounded-full transition-all duration-300`}
                       style={{ width: `${currentClass?.progress || 0}%` }}
                     ></div>
                   </div>
                 </div>
 
-                <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-500 to-green-600' : theme === 'avengers' ? 'from-[#604AC7] to-[#2C1267]' : 'from-indigo-700 to-blue-600'} rounded-3xl shadow-2xl border-4 border-black p-6`}>
+                <div className={`${theme === 'default' ? 'bg-white' : 'bg-gradient-to-r'} ${theme === 'default' ? '' : theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-500 to-green-600' : theme === 'avengers' ? 'from-[#604AC7] to-[#2C1267]' : 'from-indigo-700 to-blue-600'} rounded-3xl shadow-2xl border-4 border-black p-6`}>
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-black text-white">Required Materials</p>
-                      <p className="text-3xl font-black text-white">{Math.round(currentClass?.requiredProgress || 0)}%</p>
+                      <p className={`text-sm font-black ${theme === 'default' ? 'text-black' : 'text-white'}`}>Required Materials</p>
+                      <p className={`text-3xl font-black ${theme === 'default' ? 'text-black' : 'text-white'}`}>{Math.round(currentClass?.requiredProgress || 0)}%</p>
                     </div>
                     <div className="text-4xl">{(theme === 'ben10' || theme === 'tinkerbell') && '🏆'}</div>
                   </div>
                   <div className="mt-4 bg-white/20 rounded-full h-3 border-2 border-black">
                     <div
-                      className="bg-white h-3 rounded-full transition-all duration-300"
+                      className={`${theme === 'default' ? 'bg-gray-600' : 'bg-white'} h-3 rounded-full transition-all duration-300`}
                       style={{ width: `${currentClass?.requiredProgress || 0}%` }}
                     ></div>
                   </div>
                 </div>
 
-                <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'from-green-600 to-yellow-600' : theme === 'avengers' ? 'from-[#0F0826] to-[#C88DA5]' : 'from-slate-700 to-indigo-700'} rounded-3xl shadow-2xl border-4 border-black p-6`}>
+                <div className={`${theme === 'default' ? 'bg-white' : 'bg-gradient-to-r'} ${theme === 'default' ? '' : theme === 'ben10' ? 'from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'from-green-600 to-yellow-600' : theme === 'avengers' ? 'from-[#0F0826] to-[#C88DA5]' : 'from-slate-700 to-indigo-700'} rounded-3xl shadow-2xl border-4 border-black p-6`}>
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-black text-white">New This Week</p>
-                      <p className="text-3xl font-black text-white">{currentClass?.recentMaterials || 0}</p>
+                      <p className={`text-sm font-black ${theme === 'default' ? 'text-black' : 'text-white'}`}>New This Week</p>
+                      <p className={`text-3xl font-black ${theme === 'default' ? 'text-black' : 'text-white'}`}>{currentClass?.recentMaterials || 0}</p>
                     </div>
                     
                   </div>
@@ -1419,7 +1419,7 @@ export default function StudentStudyPage() {
                     </div>
                     <div className="bg-white/20 rounded-full h-3 border-2 border-black">
                       <div
-                        className="bg-black h-3 rounded-full transition-all duration-300"
+                        className={`${theme === 'default' ? 'bg-gray-600' : 'bg-black'} h-3 rounded-full transition-all duration-300`}
                         style={{ width: `${classItem.progress}%` }}
                       ></div>
                     </div>
@@ -1432,7 +1432,7 @@ export default function StudentStudyPage() {
                     </div>
                     <div className="bg-white/20 rounded-full h-3 border-2 border-black">
                       <div
-                        className="bg-black h-3 rounded-full transition-all duration-300"
+                        className={`${theme === 'default' ? 'bg-gray-600' : 'bg-black'} h-3 rounded-full transition-all duration-300`}
                         style={{ width: `${classItem.requiredProgress}%` }}
                       ></div>
                     </div>
@@ -1457,8 +1457,8 @@ export default function StudentStudyPage() {
       </div>
 
       {classes.length === 0 && (
-        <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 ${theme === 'ponyville' ? 'border-black' : 'border-black'} text-center py-12 ${
-          theme === 'ben10'
+        <div className={`${theme === 'default' ? 'bg-white' : 'bg-gradient-to-r'} rounded-3xl shadow-2xl border-4 ${theme === 'ponyville' ? 'border-black' : 'border-black'} text-center py-12 ${
+          theme === 'default' ? '' : theme === 'ben10'
             ? 'from-green-500 to-green-600'
             : theme === 'tinkerbell'
             ? 'from-yellow-400 to-green-500'
@@ -1470,10 +1470,10 @@ export default function StudentStudyPage() {
         }`}>
           <div className="p-8">
             <div className="text-6xl mb-4">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'avengers' ? '🦸‍♂️' : theme === 'ponyville' ? '✨' : ''}</div>
-            <h3 className="text-2xl font-black text-white mb-4">
+            <h3 className={`text-2xl font-black ${theme === 'default' ? 'text-black' : 'text-white'} mb-4`}>
               {theme === 'ben10' ? 'No Classes Yet!' : theme === 'avengers' ? 'No Classes Yet!' : theme === 'ponyville' ? '✨ No Magical Classes Yet! ✨' : 'No Classes Yet!'}
             </h3>
-            <p className="text-white/90 font-black mb-6">
+            <p className={`${theme === 'default' ? 'text-gray-600' : 'text-white/90'} font-black mb-6`}>
               {theme === 'ben10'
                 ? 'Ready to become a learning hero? Enroll in your first class and start your adventure!'
                 : theme === 'tinkerbell'

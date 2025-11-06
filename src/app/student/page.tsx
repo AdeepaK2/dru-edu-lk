@@ -745,7 +745,7 @@ export default function StudentDashboard() {
                         : theme === 'cricketverse' ? 'rgb(255, 255, 255)'
                         : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
                         : theme === 'avengers' ? 'rgb(96, 74, 199)'
-                        : 'rgb(255, 255, 255)',
+                        : 'rgb(37, 99, 235)',
                       width: `${getProgressPercentage(dashboardStats.completedTests, 20)}%`
                     }}
                   ></div>
@@ -830,7 +830,7 @@ export default function StudentDashboard() {
                         : theme === 'cricketverse' ? 'rgb(255, 255, 255)'
                         : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
                         : theme === 'avengers' ? 'rgb(96, 74, 199)'
-                        : 'rgb(255, 255, 255)',
+                        : 'rgb(37, 99, 235)',
                       width: `${getProgressPercentage(dashboardStats.studyMaterials, 50)}%`
                     }}
                   ></div>
@@ -1156,7 +1156,7 @@ export default function StudentDashboard() {
                       : theme === 'bounceworld' ? 'rgb(0,0,0)'
                       : theme === 'avengers' ? 'rgb(255,255,255)'
                       : theme === 'ponyville' ? 'rgb(0,0,0)'
-                      : 'rgb(255,255,255)'
+                      : 'rgb(0,0,0)'
                   }}> {theme === 'ben10' ? 'Complete 20 Tests' 
                     : theme === 'tinkerbell' ? 'Complete 20 Quizzes' 
                     : theme === 'cricketverse' ? 'Complete 20 Matches'
@@ -1170,7 +1170,7 @@ export default function StudentDashboard() {
                       : theme === 'bounceworld' ? 'rgb(0,0,0)'
                       : theme === 'avengers' ? 'rgb(255,255,255)'
                       : theme === 'ponyville' ? 'rgb(0,0,0)'
-                      : 'rgb(255, 255, 255)'
+                      : 'rgb(0,0,0)'
                   }}>
                     {dashboardStats.completedTests}/20
                   </span>
@@ -1207,7 +1207,7 @@ export default function StudentDashboard() {
                       : theme === 'bounceworld' ? 'rgb(0,0,0)'
                       : theme === 'avengers' ? 'rgb(255,255,255)'
                       : theme === 'ponyville' ? 'rgb(0,0,0)'
-                      : 'rgb(255,255,255)'
+                      : 'rgb(0,0,0)'
                   }}>
                     {theme === 'ben10' ? 'Reach 85% Average' 
                     : theme === 'tinkerbell' ? 'Reach 85% Average'
@@ -1224,7 +1224,7 @@ export default function StudentDashboard() {
                       : theme === 'avengers' ? 'rgb(255,255,255)'
                       : theme === 'ponyville' ? 'rgb(0,0,0)'
                       
-                      : 'rgb(255, 255, 255)'
+                      : 'rgb(0,0,0)'
                   }}>
                     {dashboardStats.currentGrade}%
                   </span>
@@ -1274,7 +1274,7 @@ export default function StudentDashboard() {
                       : theme === 'bounceworld' ? 'rgb(0,0,0)'
                       : theme === 'avengers' ? 'rgb(255,255,255)'
                       : theme === 'ponyville' ? 'rgb(0,0,0)'
-                      : 'rgb(255, 255, 255)'
+                      : 'rgb(0,0,0)'
                   }}>{theme === 'ben10' ? 'Study 50 Materials' 
                     : theme === 'tinkerbell' ? 'Explore 50 Resources'
                     : theme === 'cricketverse' ? 'Master 50 Strategies'
@@ -1288,7 +1288,7 @@ export default function StudentDashboard() {
                       : theme === 'bounceworld' ? 'rgb(0,0,0)'
                       : theme === 'avengers' ? 'rgb(255,255,255)'
                       : theme === 'ponyville' ? 'rgb(0,0,0)'
-                      : 'rgb(255, 255, 255)'
+                      : 'rgb(0,0,0)'
                   }}>
                     {dashboardStats.studyMaterials}/50
                   </span>
@@ -1414,7 +1414,7 @@ export default function StudentDashboard() {
                         <Icon className="w-6 h-6 text-white group-hover:animate-bounce" />
                       </div>
                       <div className="flex-1">
-                        <h4 className={`font-bold text-black transition-colors duration-300 text-sm ${
+                        <h4 className={`font-bold transition-colors duration-300 text-sm ${theme === 'default' ? 'text-gray-700' : 'text-black'} ${
                           theme === 'ben10' ? 'group-hover:text-[#64cc4f]'
                           : theme === 'tinkerbell' ? 'group-hover:text-green-600'
                           : theme === 'cricketverse' ? 'group-hover:text-blue-600'
@@ -1424,7 +1424,7 @@ export default function StudentDashboard() {
                         }`}>
                           {action.title}
                         </h4>
-                        <p className="text-gray-700 dark:text-gray-300 mt-1 text-xs font-medium">
+                        <p className={`mt-1 text-xs font-medium ${theme === 'default' ? 'text-gray-700' : 'text-gray-700 dark:text-gray-300'}`}>
                           {action.description}
                         </p>
                         <div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">

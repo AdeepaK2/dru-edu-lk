@@ -220,20 +220,20 @@ export default function StudentClassesPage() {
         }
       >
         {/* Header */}
-        <div className={`bg-gradient-to-r ${theme === 'default' ? 'from-blue-600 via-indigo-700 to-indigo-900' : theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-300 via-green-500 to-yellow-400' : theme === 'cricketverse' ? 'from-blue-500 to-indigo-600' : theme === 'bounceworld' ? 'from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826] border-[#2C1267]' : theme === 'ponyville' ? 'from-[#f1aed5] via-[#e13690] to-[#ff2e9f] border-[#f1aed5]' : 'from-blue-400 to-indigo-600'} rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} p-8 mb-6 relative overflow-hidden`}>
+        <div className={`bg-gradient-to-r ${theme === 'default' ? 'from-gray-100 to-gray-200' : theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-300 via-green-500 to-yellow-400' : theme === 'cricketverse' ? 'from-blue-500 to-indigo-600' : theme === 'bounceworld' ? 'from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826] border-[#2C1267]' : theme === 'ponyville' ? 'from-[#f1aed5] via-[#e13690] to-[#ff2e9f] border-[#f1aed5]' : 'from-blue-400 to-indigo-600'} rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} p-8 mb-6 relative overflow-hidden`}>
       
           <div className="flex items-center justify-between relative z-10">
             <div className="flex items-center space-x-4">
-              <img src="/batman4.png" alt="Batman" className="w-32 h-32 object-contain" />
+              {theme !== 'default' && <img src="/batman4.png" alt="Batman" className="w-32 h-32 object-contain" />}
               
               <div>
-                <h1 className="text-4xl font-black text-black mb-2 flex items-center">
+                <h1 className={`text-4xl font-black mb-2 flex items-center ${theme === 'default' ? 'text-black' : 'text-black'}`}>
                   <span>My</span>
                   <span className="ml-2 text-3xl">Classroom</span>
                   {theme === 'bounceworld' && <span className="ml-2 text-4xl">🏀</span>}
                   {theme === 'ponyville' && <span className="ml-2 text-4xl">🦄</span>}
                 </h1>
-                <p className={`font-bold text-lg ${theme === 'default' ? 'text-white' : theme === 'ben10' ? 'text-white' : theme === 'tinkerbell' ? 'text-white' : theme === 'cricketverse' ? 'text-blue-100' : theme === 'bounceworld' ? 'text-[#1D428A]' : theme === 'avengers' ? 'text-white' : theme === 'ponyville' ? 'text-white' : 'text-blue-100'}`}>
+                <p className={`font-bold text-lg ${theme === 'default' ? 'text-black' : theme === 'ben10' ? 'text-white' : theme === 'tinkerbell' ? 'text-white' : theme === 'cricketverse' ? 'text-blue-100' : theme === 'bounceworld' ? 'text-[#1D428A]' : theme === 'avengers' ? 'text-white' : theme === 'ponyville' ? 'text-white' : 'text-blue-100'}`}>
                   {theme === 'default' ? 'Explore all your enrolled classes'
                     : theme === 'ben10' ? 'Transform your learning with amazing adventures!'
                     : theme === 'tinkerbell' ? 'Transform your learning with magical adventures!'
@@ -517,10 +517,10 @@ export default function StudentClassesPage() {
 
         {/* Summary Stats */}
         {filteredEnrollments.length > 0 && (
-          <div className={`bg-gradient-to-r ${theme === 'default' ? 'from-blue-600 via-indigo-700 to-indigo-900' : theme === 'ben10' ? 'from-[#64cc4f] to-[#222222] via-[#64cc4f]' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : theme === 'cricketverse' ? 'from-blue-400 via-indigo-500 to-blue-500' : theme === 'bounceworld' ? 'from-[#1D428A] to-[#C8102E] via-[#1D428A]' : theme === 'avengers' ? 'from-[#604AC7] via-[#2C1267] to-[#0F0826]' : theme === 'ponyville' ? 'from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : 'from-blue-400 via-indigo-500 to-blue-500'} rounded-3xl shadow-2xl border-4 border-black p-8 mt-8`}>
+          <div className={`${theme === 'default' ? 'bg-white' : 'bg-gradient-to-r'} ${theme === 'default' ? '' : theme === 'ben10' ? 'from-[#64cc4f] to-[#222222] via-[#64cc4f]' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : theme === 'cricketverse' ? 'from-blue-400 via-indigo-500 to-blue-500' : theme === 'bounceworld' ? 'from-[#1D428A] to-[#C8102E] via-[#1D428A]' : theme === 'avengers' ? 'from-[#604AC7] via-[#2C1267] to-[#0F0826]' : theme === 'ponyville' ? 'from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : 'from-blue-400 via-indigo-500 to-blue-500'} rounded-3xl shadow-2xl border-4 border-black p-8 mt-8`}>
             <div className="flex items-center justify-center space-x-3 mb-8">
               {(theme === 'default' || theme === 'ben10' || theme === 'tinkerbell' || theme === 'cricketverse' || theme === 'ponyville') && <div className="text-4xl">📊</div>}
-              <h3 className={`text-3xl font-black ${theme === 'default' ? 'text-white' : 'text-black'}`}>Classes Summary</h3>
+              <h3 className={`text-3xl font-black ${theme === 'default' ? 'text-black' : 'text-black'}`}>Classes Summary</h3>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               <div className="bg-white border-4 border-black rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all">
