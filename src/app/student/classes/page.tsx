@@ -224,7 +224,17 @@ export default function StudentClassesPage() {
       
           <div className="flex items-center justify-between relative z-10">
             <div className="flex items-center space-x-4">
-              {theme !== 'default' && <img src="/batman4.png" alt="Batman" className="w-32 h-32 object-contain" />}
+            {theme === 'cricketverse' ? (
+              <img src="/batman2.png" alt="Batman" className="w-24 h-24 object-contain" />
+            ) : theme === 'ponyville' ? (
+              <img src="/ponyville/rainbow-dash.png" alt="Rainbow Dash" className="w-24 h-24 object-contain" />
+            ) : theme === 'avengers' ? (
+              <img src="/avengers/pngegg.png" alt="Avengers Hero" className="w-24 h-24 object-contain" />
+            ) : theme === 'bounceworld' ? (
+              <img src="/bounce-world.png" alt="Bounce World" className="w-32 h-32 object-contain" />
+            ) : (
+              <div className="text-6xl">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : ''}</div>
+            )}
               
               <div>
                 <h1 className={`text-4xl font-black mb-2 flex items-center ${theme === 'default' ? 'text-black' : 'text-black'}`}>
