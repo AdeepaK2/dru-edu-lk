@@ -783,18 +783,38 @@ export default function TestPage() {
   return (
     <StudentLayout>
       <div className={`min-h-screen p-6 ${
-        theme === 'ben10'
+        theme === 'default'
+          ? 'bg-gradient-to-br from-gray-50 to-white'
+          : theme === 'ben10'
           ? 'bg-gradient-to-br from-[#64cc4f] via-black to-[#64cc4f]'
           : theme === 'tinkerbell'
           ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400'
+          : theme === 'cricketverse'
+          ? 'bg-gradient-to-br from-blue-400 via-indigo-600 to-blue-400'
+          : theme === 'bounceworld'
+          ? 'bg-gradient-to-br from-[#1D428A] via-[#C8102E] to-[#1D428A]'
+          : theme === 'avengers'
+          ? 'bg-gradient-to-br from-[#2C1267] via-purple-900 to-[#4F2C8D]'
+          : theme === 'ponyville'
+          ? 'bg-gradient-to-br from-[#f1aed5] via-[#e13690] to-[#ff2e9f]'
           : 'bg-gradient-to-br from-blue-400 via-indigo-600 to-blue-400'
       }`}>
         {/* Ben 10 Hero Header */}
         <div className={`rounded-3xl shadow-2xl border-4 p-8 mb-6 relative overflow-hidden ${
-          theme === 'ben10'
+          theme === 'default'
+            ? 'bg-gradient-to-r from-white to-gray-100 border-gray-300'
+            : theme === 'ben10'
             ? 'bg-gradient-to-r from-[#64cc4f] via-black to-[#64cc4f] border-[#64cc4f]'
             : theme === 'tinkerbell'
             ? 'bg-gradient-to-r from-green-600 via-green-500 to-yellow-500 border-black'
+            : theme === 'cricketverse'
+            ? 'bg-gradient-to-r from-blue-500 via-indigo-600 to-blue-500 border-black'
+            : theme === 'bounceworld'
+            ? 'bg-gradient-to-r from-[#1D428A] via-[#C8102E] to-[#1D428A] border-white'
+            : theme === 'avengers'
+            ? 'bg-gradient-to-r from-[#2C1267] via-[#4F2C8D] to-[#2C1267] border-black'
+            : theme === 'ponyville'
+            ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690] to-[#f1aed5] border-black'
             : 'bg-gradient-to-r from-blue-500 via-indigo-600 to-blue-500 border-black'
         }`}>
           
@@ -803,53 +823,111 @@ export default function TestPage() {
           <div className="flex items-center space-x-4 relative z-10">
             {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-6xl">📝</div>}
             <div>
-              <h1 className="text-4xl font-black text-white mb-2 flex items-center">
-                <span>{theme === 'ben10' ? 'Student' : theme === 'tinkerbell' ? 'Student' : 'Student'}</span>
+              <h1 className={`text-4xl font-black mb-2 flex items-center ${
+                theme === 'default'
+                  ? 'text-black'
+                  : 'text-white'
+              }`}>
+                <span>{theme === 'ben10' ? 'Student' : theme === 'tinkerbell' ? 'Student' : theme === 'default' ? 'Student' : 'Student'}</span>
                 <span className={`ml-2 font-black text-5xl ${
-                  theme === 'ben10'
+                  theme === 'default'
+                    ? 'text-blue-600'
+                    : theme === 'ben10'
                     ? 'text-[#64cc4f]'
                     : theme === 'tinkerbell'
                     ? 'text-yellow-200'
+                    : theme === 'cricketverse'
+                    ? 'text-blue-200'
+                    : theme === 'bounceworld'
+                    ? 'text-white'
+                    : theme === 'avengers'
+                    ? 'text-purple-300'
+                    : theme === 'ponyville'
+                    ? 'text-white'
                     : 'text-blue-200'
-                }`}>{theme === 'ben10' ? 'Academic' : theme === 'tinkerbell' ? 'Academic' : 'Academic'}</span>
-                <span className="ml-2 text-3xl">Test</span>
+                }`}>{theme === 'ben10' ? 'Academic' : theme === 'tinkerbell' ? 'Academic' : theme === 'default' ? 'Academic' : 'Academic'}</span>
+                <span className={`ml-2 text-3xl ${
+                  theme === 'default'
+                    ? 'text-black'
+                    : 'text-white'
+                }`}>Test</span>
               </h1>
               <p className={`text-lg mb-4 ${
-                theme === 'ben10'
+                theme === 'default'
+                  ? 'text-gray-700'
+                  : theme === 'ben10'
                   ? 'text-[#b2e05b]'
                   : theme === 'tinkerbell'
                   ? 'text-green-100'
+                  : theme === 'cricketverse'
+                  ? 'text-blue-100'
+                  : theme === 'bounceworld'
+                  ? 'text-yellow-100'
+                  : theme === 'avengers'
+                  ? 'text-purple-100'
+                  : theme === 'ponyville'
+                  ? 'text-white'
                   : 'text-blue-100'
               }`}>{theme === 'ben10' 
                 ? 'Ready to prove your hero skills? ⚡🦸‍♂️' 
                 : theme === 'tinkerbell'
                 ? 'Ready to cast your magic spells? ✨🧚‍♀️'
+                : theme === 'default'
+                ? 'Ready to showcase your knowledge? 📚'
+                : theme === 'cricketverse'
+                ? 'Ready to score some runs? 🏏'
+                : theme === 'bounceworld'
+                ? 'Ready to make some shots? 🏀'
+                : theme === 'avengers'
+                ? 'Ready to save the world? 🦸'
+                : theme === 'ponyville'
+                ? 'Ready to cast your magic? 🦄'
                 : 'Ready to showcase your knowledge?'
               }</p>
               
               {/* Test Title and Badges */}
               <div className="flex items-center space-x-3 mb-2">
-                <h2 className="text-2xl font-bold text-white">
+                <h2 className={`text-2xl font-bold ${
+                  theme === 'default'
+                    ? 'text-black'
+                    : 'text-white'
+                }`}>
                   {test.title}
                 </h2>
                 {/* Test Type Badge */}
                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border-2 ${
-                  theme === 'ben10'
+                  theme === 'default'
+                    ? 'border-blue-400'
+                    : theme === 'ben10'
                     ? 'border-[#64cc4f]'
                     : theme === 'tinkerbell'
                     ? 'border-yellow-400'
+                    : theme === 'cricketverse'
+                    ? 'border-blue-400'
+                    : theme === 'bounceworld'
+                    ? 'border-white'
+                    : theme === 'avengers'
+                    ? 'border-purple-400'
+                    : theme === 'ponyville'
+                    ? 'border-pink-400'
                     : 'border-blue-400'
                 } ${
                   test.questions?.some(q => q.type === 'essay' || q.questionType === 'essay')
-                    ? theme === 'ben10'
-                      ? 'bg-purple-500 text-white'
-                      : theme === 'tinkerbell'
-                      ? 'bg-purple-500 text-white'
-                      : 'bg-purple-500 text-white'
+                    ? 'bg-purple-500 text-white'
+                    : theme === 'default'
+                    ? 'bg-blue-500 text-white'
                     : theme === 'ben10'
                     ? 'bg-[#64cc4f] text-white'
                     : theme === 'tinkerbell'
                     ? 'bg-yellow-500 text-white'
+                    : theme === 'cricketverse'
+                    ? 'bg-blue-500 text-white'
+                    : theme === 'bounceworld'
+                    ? 'bg-white text-[#1D428A]'
+                    : theme === 'avengers'
+                    ? 'bg-purple-600 text-white'
+                    : theme === 'ponyville'
+                    ? 'bg-pink-500 text-white'
                     : 'bg-blue-500 text-white'
                 }`}>
                   {test.questions?.some(q => q.type === 'essay' || q.questionType === 'essay')
@@ -862,10 +940,20 @@ export default function TestPage() {
                 {/* Late Submission Badge */}
                 {lateSubmissionInfo && lateSubmissionInfo.status === 'approved' && (
                   <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border-2 ${
-                    theme === 'ben10'
+                    theme === 'default'
+                      ? 'border-orange-400'
+                      : theme === 'ben10'
                       ? 'border-[#64cc4f]'
                       : theme === 'tinkerbell'
                       ? 'border-yellow-400'
+                      : theme === 'cricketverse'
+                      ? 'border-blue-400'
+                      : theme === 'bounceworld'
+                      ? 'border-white'
+                      : theme === 'avengers'
+                      ? 'border-purple-400'
+                      : theme === 'ponyville'
+                      ? 'border-pink-400'
                       : 'border-blue-400'
                   } ${
                     isLateSubmissionActive
@@ -878,10 +966,20 @@ export default function TestPage() {
                 )}
               </div>
               <p className={`${
-                theme === 'ben10'
+                theme === 'default'
+                  ? 'text-gray-700'
+                  : theme === 'ben10'
                   ? 'text-[#b2e05b]'
                   : theme === 'tinkerbell'
                   ? 'text-green-200'
+                  : theme === 'cricketverse'
+                  ? 'text-blue-200'
+                  : theme === 'bounceworld'
+                  ? 'text-yellow-100'
+                  : theme === 'avengers'
+                  ? 'text-purple-100'
+                  : theme === 'ponyville'
+                  ? 'text-white'
                   : 'text-blue-200'
               }`}>
                 {test.description || 'No description provided.'}
@@ -891,17 +989,33 @@ export default function TestPage() {
         </div>
         
         <div className={`rounded-3xl shadow-2xl border-4 p-8 mb-6 ${
-          theme === 'ben10'
+          theme === 'default'
+            ? 'bg-gradient-to-r from-white to-gray-50 border-gray-300'
+            : theme === 'ben10'
             ? 'bg-gradient-to-r from-[#4ba539] via-[#3fa32c] to-[#2c761d] border-[#64cc4f]'
             : theme === 'tinkerbell'
             ? 'bg-gradient-to-r from-green-400 via-green-500 to-green-400 border-black'
+            : theme === 'cricketverse'
+            ? 'bg-gradient-to-r from-blue-400 via-blue-500 to-blue-500 border-black'
+            : theme === 'bounceworld'
+            ? 'bg-gradient-to-r from-[#1D428A] via-[#C8102E] to-[#1D428A] border-white'
+            : theme === 'avengers'
+            ? 'bg-gradient-to-r from-[#2C1267] via-[#4F2C8D] to-[#2C1267] border-black'
+            : theme === 'ponyville'
+            ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690] to-[#f1aed5] border-black'
             : 'bg-gradient-to-r from-blue-400 via-blue-500 to-blue-500 border-black'
         }`}>
-          <h2 className="text-2xl font-black text-black mb-6 flex items-center">
+          <h2 className={`text-2xl font-black mb-6 flex items-center ${
+            theme === 'default'
+              ? 'text-black'
+              : 'text-black'
+          }`}>
             {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-4xl mr-3">📊</div>}
             {theme === 'ben10' 
               ? 'Test Information'
               : theme === 'tinkerbell'
+              ? 'Test Information'
+              : theme === 'default'
               ? 'Test Information'
               : 'Test Information'
             }
@@ -910,139 +1024,139 @@ export default function TestPage() {
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className={`bg-white/10 rounded-xl p-4 border-2 ${
-                theme === 'ben10'
-                  ? 'border-black'
-                  : theme === 'tinkerbell'
-                  ? 'border-black'
+                theme === 'default'
+                  ? 'border-gray-400'
                   : 'border-black'
               }`}>
                 <p className={`text-sm font-medium ${
-                  theme === 'ben10'
-                    ? 'text-black'
-                    : theme === 'tinkerbell'
-                    ? 'text-black'
+                  theme === 'default'
+                    ? 'text-gray-700'
                     : 'text-black'
                 }`}>Subject</p>
-                <p className="mt-1 text-white font-bold text-lg">{test.subjectName || 'Unknown Subject'}</p>
+                <p className={`mt-1 font-bold text-lg ${
+                  theme === 'default'
+                    ? 'text-black'
+                    : 'text-white'
+                }`}>{test.subjectName || 'Unknown Subject'}</p>
               </div>
               <div className={`bg-white/10 rounded-xl p-4 border-2 ${
-                theme === 'ben10'
-                  ? 'border-black'
-                  : theme === 'tinkerbell'
-                  ? 'border-black'
+                theme === 'default'
+                  ? 'border-gray-400'
                   : 'border-black'
               }`}>
                 <p className={`text-sm font-medium ${
-                  theme === 'ben10'
-                    ? 'text-black'
-                    : theme === 'tinkerbell'
-                    ? 'text-black'
+                  theme === 'default'
+                    ? 'text-gray-700'
                     : 'text-black'
                 }`}>Teacher</p>
-                <p className="mt-1 text-white font-bold text-lg">{test.teacherName || 'Unknown Teacher'}</p>
+                <p className={`mt-1 font-bold text-lg ${
+                  theme === 'default'
+                    ? 'text-black'
+                    : 'text-white'
+                }`}>{test.teacherName || 'Unknown Teacher'}</p>
               </div>
               <div className={`bg-white/10 rounded-xl p-4 border-2 ${
-                theme === 'ben10'
-                  ? 'border-black'
-                  : theme === 'tinkerbell'
-                  ? 'border-black'
+                theme === 'default'
+                  ? 'border-gray-400'
                   : 'border-black'
               }`}>
                 <p className={`text-sm font-medium ${
-                  theme === 'ben10'
-                    ? 'text-black'
-                    : theme === 'tinkerbell'
-                    ? 'text-black'
+                  theme === 'default'
+                    ? 'text-gray-700'
                     : 'text-black'
                 }`}>Test Type</p>
-                <p className="mt-1 text-white font-bold text-lg capitalize">{test.type}</p>
+                <p className={`mt-1 font-bold text-lg capitalize ${
+                  theme === 'default'
+                    ? 'text-black'
+                    : 'text-white'
+                }`}>{test.type}</p>
               </div>
               <div className={`bg-white/10 rounded-xl p-4 border-2 ${
-                theme === 'ben10'
-                  ? 'border-black'
-                  : theme === 'tinkerbell'
-                  ? 'border-black'
+                theme === 'default'
+                  ? 'border-gray-400'
                   : 'border-black'
               }`}>
                 <p className={`text-sm font-medium ${
-                  theme === 'ben10'
-                    ? 'text-black'
-                    : theme === 'tinkerbell'
-                    ? 'text-black'
+                  theme === 'default'
+                    ? 'text-gray-700'
                     : 'text-black'
                 }`}>Total Questions</p>
-                <p className="mt-1 text-white font-bold text-lg">{test.questions.length}</p>
+                <p className={`mt-1 font-bold text-lg ${
+                  theme === 'default'
+                    ? 'text-black'
+                    : 'text-white'
+                }`}>{test.questions.length}</p>
               </div>
               <div className={`bg-white/10 rounded-xl p-4 border-2 ${
-                theme === 'ben10'
-                  ? 'border-black'
-                  : theme === 'tinkerbell'
-                  ? 'border-black'
+                theme === 'default'
+                  ? 'border-gray-400'
                   : 'border-black'
               }`}>
                 <p className={`text-sm font-medium ${
-                  theme === 'ben10'
-                    ? 'text-black'
-                    : theme === 'tinkerbell'
-                    ? 'text-black'
+                  theme === 'default'
+                    ? 'text-gray-700'
                     : 'text-black'
                 }`}>Total Marks</p>
-                <p className="mt-1 text-white font-bold text-lg">{test.totalMarks}</p>
+                <p className={`mt-1 font-bold text-lg ${
+                  theme === 'default'
+                    ? 'text-black'
+                    : 'text-white'
+                }`}>{test.totalMarks}</p>
               </div>
               {test.type === 'live' ? (
                 <div className={`bg-white/10 rounded-xl p-4 border-2 ${
-                  theme === 'ben10'
-                    ? 'border-black'
-                    : theme === 'tinkerbell'
-                    ? 'border-black'
+                  theme === 'default'
+                    ? 'border-gray-400'
                     : 'border-black'
                 }`}>
                   <p className={`text-sm font-medium ${
-                    theme === 'ben10'
-                      ? 'text-black'
-                      : theme === 'tinkerbell'
-                      ? 'text-black'
+                    theme === 'default'
+                      ? 'text-gray-700'
                       : 'text-black'
                   }`}>Scheduled Time</p>
-                  <p className="mt-1 text-white font-bold text-lg">
+                  <p className={`mt-1 font-bold text-lg ${
+                    theme === 'default'
+                      ? 'text-black'
+                      : 'text-white'
+                  }`}>
                     {formatDateTime((test as LiveTest).scheduledStartTime)}
                   </p>
                 </div>
               ) : (
                 <div className={`bg-white/10 rounded-xl p-4 border-2 ${
-                  theme === 'ben10'
-                    ? 'border-black'
-                    : theme === 'tinkerbell'
-                    ? 'border-black'
+                  theme === 'default'
+                    ? 'border-gray-400'
                     : 'border-black'
                 }`}>
                   <p className={`text-sm font-medium ${
-                    theme === 'ben10'
-                      ? 'text-black'
-                      : theme === 'tinkerbell'
-                      ? 'text-black'
+                    theme === 'default'
+                      ? 'text-gray-700'
                       : 'text-black'
                   }`}>Available Until</p>
-                  <p className="mt-1 text-white font-bold text-lg">
+                  <p className={`mt-1 font-bold text-lg ${
+                    theme === 'default'
+                      ? 'text-black'
+                      : 'text-white'
+                  }`}>
                     {formatDateTime((test as FlexibleTest).availableTo)}
                   </p>
                 </div>
               )}
               <div className={`bg-white/10 rounded-xl p-4 border-2 ${
-                theme === 'ben10'
-                  ? 'border-black'
-                  : theme === 'tinkerbell'
-                  ? 'border-black'
+                theme === 'default'
+                  ? 'border-gray-400'
                   : 'border-black'
               }`}>
                 <p className={`text-sm font-medium ${
-                  theme === 'ben10'
-                    ? 'text-black'
-                    : theme === 'tinkerbell'
-                    ? 'text-black'
+                  theme === 'default'
+                    ? 'text-gray-700'
                     : 'text-black'
                 }`}>Duration</p>
-                <p className="mt-1 text-white font-bold text-lg">
+                <p className={`mt-1 font-bold text-lg ${
+                  theme === 'default'
+                    ? 'text-black'
+                    : 'text-white'
+                }`}>
                   {test.type === 'live' 
                     ? `${(test as LiveTest).duration} minutes` 
                     : `${(test as FlexibleTest).duration || 'No time limit'} minutes`}
@@ -1052,23 +1166,33 @@ export default function TestPage() {
             
             {test.instructions && (
               <div className={`mt-6 bg-white/10 rounded-xl p-6 border-2 ${
-                theme === 'ben10'
+                theme === 'default'
+                  ? 'border-gray-400'
+                  : theme === 'ben10'
                   ? 'border-[#64cc4f]'
                   : theme === 'tinkerbell'
                   ? 'border-yellow-400'
                   : 'border-blue-400'
               }`}>
-                <h3 className="text-lg font-bold text-white mb-3 flex items-center">
+                <h3 className={`text-lg font-bold mb-3 flex items-center ${
+                  theme === 'default'
+                    ? 'text-black'
+                    : 'text-white'
+                }`}>
                   {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-2xl mr-2">📋</div>}
                   {theme === 'ben10' 
                     ? 'Hero Instructions'
                     : theme === 'tinkerbell'
                     ? 'Fairy Instructions'
+                    : theme === 'default'
+                    ? 'Test Instructions'
                     : 'Test Instructions'
                   }
                 </h3>
                 <div className={`bg-black/30 rounded-lg p-4 border ${
-                  theme === 'ben10'
+                  theme === 'default'
+                    ? 'text-black border-gray-400'
+                    : theme === 'ben10'
                     ? 'text-[#b2e05b] border-[#64cc4f]'
                     : theme === 'tinkerbell'
                     ? 'text-green-100 border-yellow-400'
@@ -1138,24 +1262,34 @@ export default function TestPage() {
               {/* Attempt Information */}
               {attemptInfo && (
                 <div className={`mb-6 bg-white/10 rounded-xl p-6 border-2 ${
-                  theme === 'ben10'
+                  theme === 'default'
+                    ? 'border-gray-400'
+                    : theme === 'ben10'
                     ? 'border-[#64cc4f]'
                     : theme === 'tinkerbell'
                     ? 'border-yellow-400'
                     : 'border-blue-400'
                 }`}>
-                  <h3 className="text-lg font-bold text-white mb-4 flex items-center">
+                  <h3 className={`text-lg font-bold mb-4 flex items-center ${
+                    theme === 'default'
+                      ? 'text-black'
+                      : 'text-white'
+                  }`}>
                     {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-2xl mr-2">🎯</div>}
                     {theme === 'ben10' 
                       ? 'Hero Attempt Information'
                       : theme === 'tinkerbell'
                       ? 'Magic Attempt Information'
+                      : theme === 'default'
+                      ? 'Attempt Information'
                       : 'Attempt Information'
                     }
                   </h3>
                   
                   <div className={`bg-black/30 rounded-lg p-4 border ${
-                    theme === 'ben10'
+                    theme === 'default'
+                      ? 'border-gray-400'
+                      : theme === 'ben10'
                       ? 'border-[#64cc4f]'
                       : theme === 'tinkerbell'
                       ? 'border-yellow-400'
@@ -1163,20 +1297,28 @@ export default function TestPage() {
                   }`}>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className={`bg-white/10 rounded-lg p-3 border ${
-                        theme === 'ben10'
+                        theme === 'default'
+                          ? 'border-gray-400'
+                          : theme === 'ben10'
                           ? 'border-[#64cc4f]'
                           : theme === 'tinkerbell'
                           ? 'border-yellow-400'
                           : 'border-blue-400'
                       }`}>
                         <p className={`text-sm font-medium ${
-                          theme === 'ben10'
+                          theme === 'default'
+                            ? 'text-gray-700'
+                            : theme === 'ben10'
                             ? 'text-[#64cc4f]'
                             : theme === 'tinkerbell'
                             ? 'text-yellow-200'
                             : 'text-blue-200'
                         }`}>Attempts Allowed</p>
-                        <p className="mt-1 text-lg font-bold text-white">
+                        <p className={`mt-1 text-lg font-bold ${
+                          theme === 'default'
+                            ? 'text-black'
+                            : 'text-white'
+                        }`}>
                           {attemptInfo.attemptsAllowed}
                           {isLateSubmissionActive && (
                             <span className="text-sm text-orange-400 ml-1">
@@ -1187,33 +1329,45 @@ export default function TestPage() {
                       </div>
                       
                       <div className={`bg-white/10 rounded-lg p-3 border ${
-                        theme === 'ben10'
+                        theme === 'default'
+                          ? 'border-gray-400'
+                          : theme === 'ben10'
                           ? 'border-[#64cc4f]'
                           : theme === 'tinkerbell'
                           ? 'border-pink-400'
                           : 'border-blue-400'
                       }`}>
                         <p className={`text-sm font-medium ${
-                          theme === 'ben10'
+                          theme === 'default'
+                            ? 'text-gray-700'
+                            : theme === 'ben10'
                             ? 'text-[#64cc4f]'
                             : theme === 'tinkerbell'
                             ? 'text-pink-200'
                             : 'text-blue-200'
                         }`}>Completed Attempts</p>
-                        <p className="mt-1 text-lg font-bold text-white">
+                        <p className={`mt-1 text-lg font-bold ${
+                          theme === 'default'
+                            ? 'text-black'
+                            : 'text-white'
+                        }`}>
                           {attemptInfo.totalAttempts}
                         </p>
                       </div>
                       
                       <div className={`bg-white/10 rounded-lg p-3 border ${
-                        theme === 'ben10'
+                        theme === 'default'
+                          ? 'border-gray-400'
+                          : theme === 'ben10'
                           ? 'border-[#64cc4f]'
                           : theme === 'tinkerbell'
                           ? 'border-pink-400'
                           : 'border-blue-400'
                       }`}>
                         <p className={`text-sm font-medium ${
-                          theme === 'ben10'
+                          theme === 'default'
+                            ? 'text-gray-700'
+                            : theme === 'ben10'
                             ? 'text-[#64cc4f]'
                             : theme === 'tinkerbell'
                             ? 'text-pink-200'
@@ -1243,7 +1397,9 @@ export default function TestPage() {
                     {/* Active attempts indicator */}
                     {(attemptInfo as any).activeAttempts > 0 && (
                       <div className={`mt-4 border-2 rounded-xl p-4 ${
-                        theme === 'ben10'
+                        theme === 'default'
+                          ? 'bg-gray-100 border-gray-300'
+                          : theme === 'ben10'
                           ? 'bg-[#64cc4f]/20 border-[#64cc4f]'
                           : theme === 'tinkerbell'
                           ? 'bg-pink-500/20 border-pink-400'
@@ -1252,16 +1408,12 @@ export default function TestPage() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center">
                             <Clock className={`h-5 w-5 mr-3 ${
-                              theme === 'ben10'
-                                ? 'text-black'
-                                : theme === 'tinkerbell'
+                              theme === 'default'
                                 ? 'text-black'
                                 : 'text-black'
                             }`} />
                             <p className={`text-sm font-medium ${
-                              theme === 'ben10'
-                                ? 'text-black'
-                                : theme === 'tinkerbell'
+                              theme === 'default'
                                 ? 'text-black'
                                 : 'text-black'
                             }`}>
@@ -1269,13 +1421,17 @@ export default function TestPage() {
                                 ? 'You have an active hero test in progress. Click "Resume Test" to continue your hero journey! ⚡'
                                 : theme === 'tinkerbell'
                                 ? 'You have an active magical test in progress. Click "Resume Test" to continue your fairy adventure! ✨'
+                                : theme === 'default'
+                                ? 'You have an active test in progress. Click "Resume Test" to continue! 📚'
                                 : 'You have an active test in progress. Click "Resume Test" to continue your assessment! 📚'
                               }
                             </p>
                           </div>
                           {(attemptInfo as any).activeAttemptRemainingMinutes !== undefined && (
                             <div className={`text-sm font-bold ${
-                              theme === 'ben10'
+                              theme === 'default'
+                                ? 'text-blue-600'
+                                : theme === 'ben10'
                                 ? 'text-[#64cc4f]'
                                 : theme === 'tinkerbell'
                                 ? 'text-pink-300'
@@ -1338,55 +1494,46 @@ export default function TestPage() {
               
               <div className={`p-4 rounded-md flex items-center mb-6 border ${
                 isLateSubmissionActive 
-                  ? theme === 'ben10'
+                  ? theme === 'default'
+                    ? 'bg-orange-50 border-orange-300'
+                    : theme === 'ben10'
                     ? 'bg-gradient-to-r from-[#64cc4f]/40 to-black/60 border-[#64cc4f]/30'
                     : theme === 'tinkerbell'
                     ? 'bg-gradient-to-r from-pink-900/40 to-black/60 border-pink-500/30'
+                    : theme === 'cricketverse'
+                    ? 'bg-gradient-to-r from-blue-900/40 to-black/60 border-blue-500/30'
+                    : theme === 'bounceworld'
+                    ? 'bg-gradient-to-r from-white/40 to-black/60 border-white/30'
+                    : theme === 'avengers'
+                    ? 'bg-gradient-to-r from-purple-900/40 to-black/60 border-purple-500/30'
+                    : theme === 'ponyville'
+                    ? 'bg-gradient-to-r from-pink-900/40 to-black/60 border-pink-500/30'
                     : 'bg-gradient-to-r from-blue-900/40 to-black/60 border-blue-500/30'
+                  : theme === 'default'
+                  ? 'bg-gray-100 border-gray-300'
                   : theme === 'ben10'
                   ? 'bg-gradient-to-r from-[#64cc4f]/30 to-black/50 border-[#64cc4f]/20'
                   : theme === 'tinkerbell'
                   ? 'bg-gradient-to-r from-pink-900/30 to-black/50 border-pink-500/20'
+                  : theme === 'cricketverse'
+                  ? 'bg-gradient-to-r from-blue-900/30 to-black/50 border-blue-500/20'
+                  : theme === 'bounceworld'
+                  ? 'bg-gradient-to-r from-white/30 to-black/50 border-white/20'
+                  : theme === 'avengers'
+                  ? 'bg-gradient-to-r from-purple-900/30 to-black/50 border-purple-500/20'
+                  : theme === 'ponyville'
+                  ? 'bg-gradient-to-r from-pink-900/30 to-black/50 border-pink-500/20'
                   : 'bg-gradient-to-r from-blue-900/30 to-black/50 border-blue-500/20'
               }`}>
                 <Clock className={`h-5 w-5 mr-3 ${
-                  isLateSubmissionActive 
-                    ? theme === 'ben10'
-                      ? 'text-black'
-                      : theme === 'tinkerbell'
-                      ? 'text-black'
-                      : 'text-black'
-                    : theme === 'ben10'
-                    ? 'text-black'
-                    : theme === 'tinkerbell'
-                    ? 'text-black'
-                    : 'text-black'
+                  theme === 'default'
+                    ? 'text-gray-700'
+                    : 'text-white'
                 }`} />
                 <p className={`${
-                  isLateSubmissionActive 
-                    ? theme === 'ben10'
-                      ? 'text-black font-semibold'
-                      : theme === 'tinkerbell'
-                      ? 'text-black font-semibold'
-                      : 'text-black font-semibold'
-                    : theme === 'ben10'
-                    ? 'text-black'
-                    : theme === 'tinkerbell'
-                    ? 'text-black'
-                    : 'text-black'
-                }`} />
-                <p className={`${
-                  isLateSubmissionActive 
-                    ? theme === 'ben10'
-                      ? 'text-black font-semibold'
-                      : theme === 'tinkerbell'
-                      ? 'text-black font-semibold'
-                      : 'text-black font-semibold'
-                    : theme === 'ben10'
-                    ? 'text-black'
-                    : theme === 'tinkerbell'
-                    ? 'text-black'
-                    : 'text-black'
+                  theme === 'default'
+                    ? 'text-gray-800 font-semibold'
+                    : 'text-white font-semibold'
                 }`}>
                   {testStatus}
                 </p>
@@ -1397,9 +1544,19 @@ export default function TestPage() {
                   onClick={handleBack}
                   variant="outline"
                   className={`border transition-all duration-200 ${
-                    theme === 'ben10'
+                    theme === 'default'
+                      ? 'border-gray-400 text-gray-700 hover:bg-gray-200 hover:border-gray-600'
+                      : theme === 'ben10'
                       ? 'border-[#64cc4f]/50 text-[#64cc4f] hover:bg-[#64cc4f]/30 hover:border-[#64cc4f]'
                       : theme === 'tinkerbell'
+                      ? 'border-pink-500/50 text-pink-300 hover:bg-pink-900/30 hover:border-pink-400'
+                      : theme === 'cricketverse'
+                      ? 'border-blue-500/50 text-blue-300 hover:bg-blue-900/30 hover:border-blue-400'
+                      : theme === 'bounceworld'
+                      ? 'border-white/50 text-white hover:bg-white/30 hover:border-white'
+                      : theme === 'avengers'
+                      ? 'border-purple-500/50 text-purple-300 hover:bg-purple-900/30 hover:border-purple-400'
+                      : theme === 'ponyville'
                       ? 'border-pink-500/50 text-pink-300 hover:bg-pink-900/30 hover:border-pink-400'
                       : 'border-blue-500/50 text-blue-300 hover:bg-blue-900/30 hover:border-blue-400'
                   }`}
@@ -1411,14 +1568,34 @@ export default function TestPage() {
                   onClick={handleStartTest}
                   className={`inline-flex items-center border shadow-lg transition-all duration-200 ${
                     isLateSubmissionActive 
-                      ? theme === 'ben10'
+                      ? theme === 'default'
+                        ? 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-500 border-orange-600 hover:shadow-orange-500/25 text-white'
+                        : theme === 'ben10'
                         ? 'bg-gradient-to-r from-[#64cc4f] to-[#b2e05b] hover:from-[#b2e05b] hover:to-[#64cc4f] border-[#64cc4f] hover:shadow-[#64cc4f]/25'
                         : theme === 'tinkerbell'
                         ? 'bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-500 hover:to-orange-600 border-orange-500/50'
+                        : theme === 'cricketverse'
+                        ? 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 border-blue-500/50'
+                        : theme === 'bounceworld'
+                        ? 'bg-gradient-to-r from-white to-gray-100 hover:from-gray-100 hover:to-white border-white text-[#1D428A] font-semibold hover:shadow-white/25'
+                        : theme === 'avengers'
+                        ? 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 border-purple-500/50'
+                        : theme === 'ponyville'
+                        ? 'bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-500 hover:to-orange-600 border-orange-500/50'
                         : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 border-blue-500/50'
+                      : theme === 'default'
+                      ? 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-500 border-blue-600 hover:shadow-blue-500/25 text-white'
                       : theme === 'ben10'
                       ? 'bg-gradient-to-r from-[#64cc4f] to-[#b2e05b] hover:from-[#b2e05b] hover:to-[#64cc4f] border-[#64cc4f]/50 hover:shadow-[#64cc4f]/25'
                       : theme === 'tinkerbell'
+                      ? 'bg-gradient-to-r from-pink-600 to-pink-700 hover:from-pink-500 hover:to-pink-600 border-pink-500/50'
+                      : theme === 'cricketverse'
+                      ? 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 border-blue-500/50'
+                      : theme === 'bounceworld'
+                      ? 'bg-gradient-to-r from-white to-gray-100 hover:from-gray-100 hover:to-white border-white text-[#1D428A] font-semibold hover:shadow-white/25'
+                      : theme === 'avengers'
+                      ? 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 border-purple-500/50'
+                      : theme === 'ponyville'
                       ? 'bg-gradient-to-r from-pink-600 to-pink-700 hover:from-pink-500 hover:to-pink-600 border-pink-500/50'
                       : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 border-blue-500/50'
                   }`}
@@ -1427,7 +1604,7 @@ export default function TestPage() {
                 >
                   {startingTest ? (
                     <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
                       {(attemptInfo as any)?.hasActiveAttempt ? 'Resuming...' : 'Starting...'}
                     </>
                   ) : (attemptInfo as any)?.hasActiveAttempt ? (
