@@ -159,8 +159,8 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
 
   const sidebarItems = buildSidebarItems(upcomingQuizCount);
 
-  const getAvatarImagePath = (avatarId?: string) => {
-    if (!avatarId) return null;
+  const getAvatarImagePath = (avatarId?: string, currentTheme?: string) => {
+    if (!avatarId || !currentTheme) return null;
 
     // Ben10 avatars (ids map to files in /public)
     const ben10Map: Record<string, string> = {
@@ -232,14 +232,15 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
       sweetie: '/ponyville/sweetybelle.png'
     };
 
-    if (ben10Map[avatarId]) return ben10Map[avatarId];
-    if (tinkerMap[avatarId]) return tinkerMap[avatarId];
-    if (avengersMap[avatarId]) return avengersMap[avatarId];
-    if (bounceWorldMap[avatarId]) return bounceWorldMap[avatarId];
-    if (cricketVerseMap[avatarId]) return cricketVerseMap[avatarId];
-    if (ponyvilleMap[avatarId]) return ponyvilleMap[avatarId];
+    // Only return avatar if it belongs to the current theme
+    if (currentTheme === 'ben10' && ben10Map[avatarId]) return ben10Map[avatarId];
+    if (currentTheme === 'tinkerbell' && tinkerMap[avatarId]) return tinkerMap[avatarId];
+    if (currentTheme === 'avengers' && avengersMap[avatarId]) return avengersMap[avatarId];
+    if (currentTheme === 'bounceworld' && bounceWorldMap[avatarId]) return bounceWorldMap[avatarId];
+    if (currentTheme === 'cricketverse' && cricketVerseMap[avatarId]) return cricketVerseMap[avatarId];
+    if (currentTheme === 'ponyville' && ponyvilleMap[avatarId]) return ponyvilleMap[avatarId];
 
-    // If avatarId looks like a path, return it directly
+    // If avatarId looks like a path, return it directly (for backwards compatibility)
     if (avatarId.startsWith('/') || avatarId.includes('.png') || avatarId.includes('.jpg') || avatarId.includes('.avif') || avatarId.includes('.webp')) {
       return avatarId;
     }
@@ -378,7 +379,7 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
               {/* Avatar - No circle, just image visible */}
               <div className="flex-shrink-0 overflow-hidden">
                 {(() => {
-                  const avatarPath = getAvatarImagePath((student as any)?.avatar);
+                  const avatarPath = getAvatarImagePath((student as any)?.avatar, theme);
                   if (avatarPath && theme !== 'default' && (theme === 'ben10' || theme === 'tinkerbell' || theme === 'avengers' || theme === 'bounceworld' || theme === 'cricketverse' || theme === 'ponyville')) {
                     return (
                       <Image 
