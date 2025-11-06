@@ -379,7 +379,7 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
               <div className="flex-shrink-0 overflow-hidden">
                 {(() => {
                   const avatarPath = getAvatarImagePath((student as any)?.avatar);
-                  if (avatarPath && (theme === 'ben10' || theme === 'tinkerbell' || theme === 'avengers' || theme === 'bounceworld' || theme === 'cricketverse' || theme === 'ponyville' || theme === 'default')) {
+                  if (avatarPath && theme !== 'default' && (theme === 'ben10' || theme === 'tinkerbell' || theme === 'avengers' || theme === 'bounceworld' || theme === 'cricketverse' || theme === 'ponyville')) {
                     return (
                       <Image 
                         key={`avatar-${avatarKey}-${(student as any)?.avatar || 'default'}`} 
@@ -394,7 +394,7 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
 
                   return (
                     <span className="text-3xl font-black">
-                      {theme === 'default' ? '📚' : theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'bounceworld' ? '🏀' : theme === 'cricketverse' ? '🏏' : theme === 'avengers' ? '🦸‍♂️' : theme === 'ponyville' ? '🦄' : '📚'}
+                      {theme === 'default' ? '🎓' : theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'bounceworld' ? '🏀' : theme === 'cricketverse' ? '🏏' : theme === 'avengers' ? '🦸‍♂️' : theme === 'ponyville' ? '🦄' : '📚'}
                     </span>
                   );
                 })()}
