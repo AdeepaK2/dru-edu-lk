@@ -1001,7 +1001,7 @@ export default function StudentTests() {
               <div>
                 <h1 className="text-4xl font-black text-white mb-2 flex items-center">
                   <span>My</span>
-                  <span className={`ml-2 font-black text-5xl ${theme === 'ben10' ? 'text-[#b2e05b]' : theme === 'tinkerbell' ? 'text-pink-200' : theme === 'cricketverse' ? 'text-blue-200' : theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-[#C88DA5]' : 'text-blue-200'}`}>Tests</span>
+                  <span className={`ml-2 font-black text-5xl ${theme === 'default' ? 'text-white' : theme === 'ben10' ? 'text-[#b2e05b]' : theme === 'tinkerbell' ? 'text-pink-200' : theme === 'cricketverse' ? 'text-blue-200' : theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-[#C88DA5]' : theme === 'ponyville' ? 'text-[#e13690]' : 'text-blue-200'}`}>Tests</span>
                 </h1>
                 <p className="text-white font-bold text-lg">
                   {theme === 'ponyville' ? 'Challenge yourself with magical tests and grow! ✨' : 'Challenge yourself with epic tests and grow!'}
@@ -1010,7 +1010,7 @@ export default function StudentTests() {
             </div>
           </div>
           {/* No Tests Message */}
-          <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#C8102E]' : theme === 'ponyville' ? 'border-black' : 'border-black'} p-12 text-center ${theme === 'ben10' ? 'from-[#b2e05b] via-black to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-green-300 via-black to-green-300' : theme === 'bounceworld' ? 'from-white via-[#1D428A]/20 to-white border-[#1D428A]' : theme === 'avengers' ? 'from-[#604AC7]/30 via-[#2C1267]/30 to-[#0F0826]/30 border-[#2C1267]' : theme === 'ponyville' ? 'from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]/20 border-black' : 'from-blue-300 via-indigo-500 to-blue-300'}`}>
+          <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#C8102E]' : theme === 'ponyville' ? 'border-black' : 'border-black'} p-12 text-center ${theme === 'default' ? 'from-gray-200 via-gray-300 to-gray-200' : theme === 'ben10' ? 'from-[#b2e05b] via-black to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-green-300 via-black to-green-300' : theme === 'bounceworld' ? 'from-white via-[#1D428A]/20 to-white border-[#1D428A]' : theme === 'avengers' ? 'from-[#604AC7]/30 via-[#2C1267]/30 to-[#0F0826]/30 border-[#2C1267]' : theme === 'ponyville' ? 'from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]/20 border-black' : 'from-blue-300 via-indigo-500 to-blue-300'}`}>
             {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-8xl mb-6">{theme === 'ponyville' ? '📚' : '📚'}</div>}
             <h2 className="text-3xl font-black text-white mb-4">
               {theme === 'ponyville' ? 'No Magical Tests Yet' : 'No Tests Yet'}
@@ -1050,7 +1050,7 @@ export default function StudentTests() {
                     alt="Tinkerbell Loading" 
                     className="w-32 h-32 object-contain"
                   />
-                  <span className={`text-2xl font-bold mt-4 ${theme === 'tinkerbell' ? 'text-yellow-600' : theme === 'ben10' ? 'text-[#64cc4f]' : 'text-blue-600'}`}>Loading</span>
+                  <span className="text-2xl font-bold text-yellow-600 mt-4">Loading</span>
                 </div>
               )}
               
@@ -1117,8 +1117,8 @@ export default function StudentTests() {
               {/* Default Theme Spinner with Loading Text */}
               {(theme === 'default' || (theme !== 'tinkerbell' && theme !== 'ben10' && theme !== 'bounceworld' && theme !== 'avengers' && theme !== 'ponyville' && theme !== 'cricketverse')) && (
                 <div className="flex flex-col items-center">
-                  <div className="w-24 h-24 border-4 border-blue-400 border-t-blue-600 rounded-full animate-spin"></div>
-                  <span className="text-2xl font-bold text-blue-600 mt-4">Loading</span>
+                  <div className="w-24 h-24 border-4 border-gray-400 border-t-gray-600 rounded-full animate-spin"></div>
+                  <span className="text-2xl font-bold text-gray-800 mt-4">Loading</span>
                 </div>
               )}
             </div>
@@ -1269,10 +1269,10 @@ export default function StudentTests() {
 
         {/* Custom Tests Section */}
         {customTests.length > 0 && (
-          <div className={`rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} overflow-hidden ${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] via-black to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 via-green-400 to-yellow-300' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7]/20 via-[#2C1267]/20 to-[#0F0826]/20 border-[#2C1267]' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]/20 border-[#e13690]' : 'bg-gradient-to-r from-blue-300 via-indigo-400 to-blue-300'}`}>
+          <div className={`rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} overflow-hidden ${theme === 'default' ? 'bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200' : theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] via-black to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 via-green-400 to-yellow-300' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7]/20 via-[#2C1267]/20 to-[#0F0826]/20 border-[#2C1267]' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]/20 border-[#e13690]' : 'bg-gradient-to-r from-blue-300 via-indigo-400 to-blue-300'}`}>
             {/* Custom Tests Header */}
             <div
-              className={`p-6 border-b-4 border-black cursor-pointer transition-all ${theme === 'ben10' ? 'bg-[#b2e05b] hover:bg-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-yellow-200 hover:bg-yellow-200' : theme === 'bounceworld' ? 'bg-white hover:bg-gray-50 border-[#1D428A]' : theme === 'avengers' ? 'bg-[#604AC7]/30 hover:bg-[#604AC7]/40' : theme === 'ponyville' ? 'bg-[#f1aed5] hover:bg-[#f1aed5]/80' : 'bg-blue-200 hover:bg-blue-200'}`}
+              className={`p-6 border-b-4 border-black cursor-pointer transition-all ${theme === 'default' ? 'bg-gray-300 hover:bg-gray-300' : theme === 'ben10' ? 'bg-[#b2e05b] hover:bg-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-yellow-200 hover:bg-yellow-200' : theme === 'bounceworld' ? 'bg-white hover:bg-gray-50 border-[#1D428A]' : theme === 'avengers' ? 'bg-[#604AC7]/30 hover:bg-[#604AC7]/40' : theme === 'ponyville' ? 'bg-[#f1aed5] hover:bg-[#f1aed5]/80' : 'bg-blue-200 hover:bg-blue-200'}`}
               onClick={toggleCustomTests}
             >
               <div className="flex items-center justify-between">
@@ -1328,7 +1328,7 @@ export default function StudentTests() {
                 {/* Live Custom Tests */}
                 {groupedCustomTests.live.length > 0 && (
                   <>
-                    <div className={`px-6 py-4 border-b-4 border-black ${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] via-black to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7]/30 via-[#2C1267]/30 to-[#0F0826]/30' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]/20' : 'bg-gradient-to-r from-blue-300 via-indigo-400 to-blue-300'}`}>
+                    <div className={`px-6 py-4 border-b-4 border-black ${theme === 'default' ? 'bg-gradient-to-r from-gray-300 via-gray-400 to-gray-300' : theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] via-black to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7]/30 via-[#2C1267]/30 to-[#0F0826]/30' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]/20' : 'bg-gradient-to-r from-blue-300 via-indigo-400 to-blue-300'}`}>
                       <div className="flex items-center">
                         {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-2xl mr-3">{theme === 'ponyville' ? '📚' : '🎯'}</div>}
                         <span className="text-lg font-black text-black">
@@ -1342,7 +1342,7 @@ export default function StudentTests() {
                       const ButtonIcon = buttonConfig.icon;
 
                       return (
-                        <div key={test.id} className={`p-6 transition-all border-b-2 border-black last:border-b-0 ${theme === 'ben10' ? 'hover:bg-[#b2e05b]/20' : theme === 'tinkerbell' ? 'hover:bg-pink-200/20' : theme === 'bounceworld' ? 'hover:bg-[#1D428A]/10' : theme === 'avengers' ? 'hover:bg-[#604AC7]/10' : theme === 'ponyville' ? 'hover:bg-[#f1aed5]/20' : 'hover:bg-blue-200/20'}`}>
+                        <div key={test.id} className={`p-6 transition-all border-b-2 border-black last:border-b-0 ${theme === 'default' ? 'hover:bg-gray-200/20' : theme === 'ben10' ? 'hover:bg-[#b2e05b]/20' : theme === 'tinkerbell' ? 'hover:bg-pink-200/20' : theme === 'bounceworld' ? 'hover:bg-[#1D428A]/10' : theme === 'avengers' ? 'hover:bg-[#604AC7]/10' : theme === 'ponyville' ? 'hover:bg-[#f1aed5]/20' : 'hover:bg-blue-200/20'}`}>
                           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                             <div className="mb-4 md:mb-0">
                               <div className="flex items-center space-x-3">
@@ -1421,7 +1421,7 @@ export default function StudentTests() {
                         : (test as FlexibleTest).availableFrom;
 
                       return (
-                        <div key={test.id} className={`p-6 transition-all border-b-2 border-black last:border-b-0 ${theme === 'ben10' ? 'hover:bg-[#b2e05b]/20' : theme === 'tinkerbell' ? 'hover:bg-pink-200/20' : theme === 'avengers' ? 'hover:bg-[#604AC7]/10' : theme === 'ponyville' ? 'hover:bg-[#f1aed5]/20' : 'hover:bg-blue-200/20'}`}>
+                        <div key={test.id} className={`p-6 transition-all border-b-2 border-black last:border-b-0 ${theme === 'default' ? 'hover:bg-gray-200/20' : theme === 'ben10' ? 'hover:bg-[#b2e05b]/20' : theme === 'tinkerbell' ? 'hover:bg-pink-200/20' : theme === 'avengers' ? 'hover:bg-[#604AC7]/10' : theme === 'ponyville' ? 'hover:bg-[#f1aed5]/20' : 'hover:bg-blue-200/20'}`}>
                           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                             <div>
                               <div className="flex items-center space-x-3">
@@ -1491,7 +1491,7 @@ export default function StudentTests() {
             {/* Available Custom Tests */}
                 {groupedCustomTests.available.length > 0 && (
                   <>
-                    <div className={`px-6 py-4 border-b-4 border-black ${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 to-green-300' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7]/30 via-[#2C1267]/30 to-[#0F0826]/30' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]/20' : 'bg-gradient-to-r from-blue-300 to-cyan-300'}`}>
+                    <div className={`px-6 py-4 border-b-4 border-black ${theme === 'default' ? 'bg-gradient-to-r from-gray-300 to-gray-400' : theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 to-green-300' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7]/30 via-[#2C1267]/30 to-[#0F0826]/30' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]/20' : 'bg-gradient-to-r from-blue-300 to-cyan-300'}`}>
                       <div className="flex items-center">
                         {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-2xl mr-3">{theme === 'ponyville' ? '📚' : '🎯'}</div>}
                         <span className="text-lg font-black text-black">
@@ -1505,7 +1505,7 @@ export default function StudentTests() {
                       const ButtonIcon = buttonConfig.icon;
 
                       return (
-                        <div key={test.id} className={`p-6 transition-all border-b-2 border-black last:border-b-0 ${theme === 'ben10' ? 'hover:bg-[#b2e05b]/20' : theme === 'tinkerbell' ? 'hover:bg-pink-200/20' : theme === 'bounceworld' ? 'hover:bg-[#1D428A]/10' : theme === 'avengers' ? 'hover:bg-[#604AC7]/10' : 'hover:bg-blue-200/20'}`}>
+                        <div key={test.id} className={`p-6 transition-all border-b-2 border-black last:border-b-0 ${theme === 'default' ? 'hover:bg-gray-200/20' : theme === 'ben10' ? 'hover:bg-[#b2e05b]/20' : theme === 'tinkerbell' ? 'hover:bg-pink-200/20' : theme === 'bounceworld' ? 'hover:bg-[#1D428A]/10' : theme === 'avengers' ? 'hover:bg-[#604AC7]/10' : 'hover:bg-blue-200/20'}`}>
                           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                             <div className="mb-4 md:mb-0">
                               <div className="flex items-center space-x-3">
@@ -1603,7 +1603,7 @@ export default function StudentTests() {
                 {/* Completed Custom Tests */}
                 {groupedCustomTests.completed.length > 0 && (
                   <>
-                    <div className={`px-6 py-4 border-b-4 border-black ${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 to-pink-300' : theme === 'avengers' ? 'bg-gradient-to-r from-[#C88DA5]/30 to-[#604AC7]/30' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]/20' : 'bg-gradient-to-r from-blue-300 to-indigo-300'}`}>
+                    <div className={`px-6 py-4 border-b-4 border-black ${theme === 'default' ? 'bg-gradient-to-r from-gray-300 to-gray-400' : theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 to-pink-300' : theme === 'avengers' ? 'bg-gradient-to-r from-[#C88DA5]/30 to-[#604AC7]/30' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]/20' : 'bg-gradient-to-r from-blue-300 to-indigo-300'}`}>
                       <div className="flex items-center">
                         {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-2xl mr-3">{theme === 'ponyville' ? '✅' : '✅'}</div>}
                         <span className="text-lg font-black text-black">
@@ -1618,7 +1618,7 @@ export default function StudentTests() {
                       const hasAttempted = attempts && attempts.attempts && attempts.attempts.length > 0;
 
                       return (
-                        <div key={test.id} className={`p-6 transition-all border-b-2 border-black last:border-b-0 ${theme === 'ben10' ? 'hover:bg-[#b2e05b]/20' : theme === 'tinkerbell' ? 'hover:bg-pink-200/20' : theme === 'avengers' ? 'hover:bg-[#C88DA5]/10' : 'hover:bg-blue-200/20'}`}>
+                        <div key={test.id} className={`p-6 transition-all border-b-2 border-black last:border-b-0 ${theme === 'default' ? 'hover:bg-gray-200/20' : theme === 'ben10' ? 'hover:bg-[#b2e05b]/20' : theme === 'tinkerbell' ? 'hover:bg-pink-200/20' : theme === 'avengers' ? 'hover:bg-[#C88DA5]/10' : 'hover:bg-blue-200/20'}`}>
                           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                             <div>
                               <div className="flex items-center space-x-3">
@@ -1702,10 +1702,10 @@ export default function StudentTests() {
           const completedCount = classData.groupedTests.completed.length;
 
           return (
-            <div key={classId} className={`rounded-3xl shadow-2xl border-4 border-black overflow-hidden ${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] via-black to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 via-black to-yellow-300' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7] via-[#2C1267] to-[#0F0826]' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]/20 border-[#e13690]' : 'bg-gradient-to-r from-blue-300 via-black to-blue-300'}`}>
+            <div key={classId} className={`rounded-3xl shadow-2xl border-4 border-black overflow-hidden ${theme === 'default' ? 'bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200' : theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] via-black to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 via-black to-yellow-300' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7] via-[#2C1267] to-[#0F0826]' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]/20 border-[#e13690]' : 'bg-gradient-to-r from-blue-300 via-black to-blue-300'}`}>
               {/* Class Header */}
               <div
-                className={`p-6 border-b-4 border-black cursor-pointer transition-all ${theme === 'ben10' ? 'bg-[#b2e05b] hover:bg-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-yellow-200 hover:bg-yellow-200' : theme === 'bounceworld' ? 'bg-white hover:bg-gray-50 border-[#1D428A]' : theme === 'avengers' ? 'bg-[#604AC7]/30 hover:bg-[#604AC7]/40' : theme === 'ponyville' ? 'bg-[#f1aed5] hover:bg-[#f1aed5]/80' : 'bg-blue-200 hover:bg-blue-200'}`}
+                className={`p-6 border-b-4 border-black cursor-pointer transition-all ${theme === 'default' ? 'bg-gray-300 hover:bg-gray-300' : theme === 'ben10' ? 'bg-[#b2e05b] hover:bg-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-yellow-200 hover:bg-yellow-200' : theme === 'bounceworld' ? 'bg-white hover:bg-gray-50 border-[#1D428A]' : theme === 'avengers' ? 'bg-[#604AC7]/30 hover:bg-[#604AC7]/40' : theme === 'ponyville' ? 'bg-[#f1aed5] hover:bg-[#f1aed5]/80' : 'bg-blue-200 hover:bg-blue-200'}`}
                 onClick={() => toggleClass(classId)}
               >
                 <div className="flex items-center justify-between">
@@ -1782,7 +1782,7 @@ export default function StudentTests() {
                             const ButtonIcon = buttonConfig.icon;
 
                             return (
-                              <div key={test.id} className={`p-6 transition-all border-b-2 border-black last:border-b-0 ${theme === 'ben10' ? 'hover:bg-[#b2e05b]/20' : theme === 'tinkerbell' ? 'hover:bg-pink-200/20' : theme === 'avengers' ? 'hover:bg-[#604AC7]/10' : 'hover:bg-blue-200/20'}`}>
+                              <div key={test.id} className={`p-6 transition-all border-b-2 border-black last:border-b-0 ${theme === 'default' ? 'hover:bg-gray-200/20' : theme === 'ben10' ? 'hover:bg-[#b2e05b]/20' : theme === 'tinkerbell' ? 'hover:bg-pink-200/20' : theme === 'avengers' ? 'hover:bg-[#604AC7]/10' : 'hover:bg-blue-200/20'}`}>
                                 <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                                   <div className="mb-4 md:mb-0">
                                     <div className="flex items-center space-x-3">
@@ -1858,7 +1858,7 @@ export default function StudentTests() {
                               : (test as FlexibleTest).availableFrom;
 
                             return (
-                              <div key={test.id} className={`p-6 transition-all border-b-2 border-black last:border-b-0 ${theme === 'ben10' ? 'hover:bg-[#b2e05b]/20' : theme === 'tinkerbell' ? 'hover:bg-pink-200/20' : theme === 'avengers' ? 'hover:bg-[#604AC7]/10' : 'hover:bg-blue-200/20'}`}>
+                              <div key={test.id} className={`p-6 transition-all border-b-2 border-black last:border-b-0 ${theme === 'default' ? 'hover:bg-gray-200/20' : theme === 'ben10' ? 'hover:bg-[#b2e05b]/20' : theme === 'tinkerbell' ? 'hover:bg-pink-200/20' : theme === 'avengers' ? 'hover:bg-[#604AC7]/10' : 'hover:bg-blue-200/20'}`}>
                                 <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                                   <div>
                                     <div className="flex items-center space-x-3">
@@ -1932,7 +1932,7 @@ export default function StudentTests() {
                       {/* Available Tests */}
                       {classData.groupedTests.available.length > 0 && (
                         <>
-                          <div className={`px-6 py-4 border-b-4 border-black ${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 to-green-300' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]/20' : 'bg-gradient-to-r from-blue-300 to-cyan-300'}`}>
+                          <div className={`px-6 py-4 border-b-4 border-black ${theme === 'default' ? 'bg-gradient-to-r from-gray-300 to-gray-400' : theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 to-green-300' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]/20' : 'bg-gradient-to-r from-blue-300 to-cyan-300'}`}>
                             <div className="flex items-center">
                               {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-2xl mr-3">{theme === 'ponyville' ? '🦄' : '🎯'}</div>}
                               <span className="text-lg font-black text-black">
@@ -1946,7 +1946,7 @@ export default function StudentTests() {
                             const ButtonIcon = buttonConfig.icon;
 
                             return (
-                              <div key={test.id} className={`p-6 transition-all border-b-2 border-black last:border-b-0 ${theme === 'ben10' ? 'hover:bg-[#b2e05b]/20' : theme === 'tinkerbell' ? 'hover:bg-pink-200/20' : theme === 'bounceworld' ? 'hover:bg-[#1D428A]/10' : 'hover:bg-blue-200/20'}`}>
+                              <div key={test.id} className={`p-6 transition-all border-b-2 border-black last:border-b-0 ${theme === 'default' ? 'hover:bg-gray-200/20' : theme === 'ben10' ? 'hover:bg-[#b2e05b]/20' : theme === 'tinkerbell' ? 'hover:bg-pink-200/20' : theme === 'bounceworld' ? 'hover:bg-[#1D428A]/10' : 'hover:bg-blue-200/20'}`}>
                                 <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                                   <div className="mb-4 md:mb-0">
                                     <div className="flex items-center space-x-3">
@@ -2042,7 +2042,7 @@ export default function StudentTests() {
                       {/* Completed Tests */}
                       {classData.groupedTests.completed.length > 0 && (
                         <>
-                          <div className={`px-6 py-4 border-b-4 border-black ${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 to-green-300' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#C88DA5]/30 to-[#604AC7]/30' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]/20' : 'bg-gradient-to-r from-blue-300 to-indigo-300'}`}>
+                          <div className={`px-6 py-4 border-b-4 border-black ${theme === 'default' ? 'bg-gradient-to-r from-gray-300 to-gray-400' : theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 to-green-300' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#C88DA5]/30 to-[#604AC7]/30' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]/20' : 'bg-gradient-to-r from-blue-300 to-indigo-300'}`}>
                             <div className="flex items-center justify-between">
                               <div className="flex items-center">
                                 {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-2xl mr-3">{theme === 'ponyville' ? '🦄' : '✅'}</div>}
@@ -2082,7 +2082,7 @@ export default function StudentTests() {
                             const hasAttempted = attempts && attempts.attempts && attempts.attempts.length > 0;
 
                             return (
-                              <div key={test.id} className={`p-6 transition-all border-b-2 border-black last:border-b-0 ${theme === 'ben10' ? 'hover:bg-[#b2e05b]/20' : theme === 'tinkerbell' ? 'hover:bg-yellow-200/20' : theme === 'bounceworld' ? 'hover:bg-[#1D428A]/10' : theme === 'avengers' ? 'hover:bg-[#C88DA5]/10' : 'hover:bg-blue-200/20'}`}>
+                              <div key={test.id} className={`p-6 transition-all border-b-2 border-black last:border-b-0 ${theme === 'default' ? 'hover:bg-gray-200/20' : theme === 'ben10' ? 'hover:bg-[#b2e05b]/20' : theme === 'tinkerbell' ? 'hover:bg-yellow-200/20' : theme === 'bounceworld' ? 'hover:bg-[#1D428A]/10' : theme === 'avengers' ? 'hover:bg-[#C88DA5]/10' : 'hover:bg-blue-200/20'}`}>
                                 <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                                   <div>
                                     <div className="flex items-center space-x-3">

@@ -355,7 +355,7 @@ export default function StudentStudyPage() {
 
   if (loading) {
     return (
-      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A] to-[#C8102E]' : theme === 'avengers' ? 'from-[#604AC7] via-[#2C1267] to-[#0F0826]' : theme === 'ponyville' ? 'from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : 'from-blue-400 to-indigo-600'} flex items-center justify-center`}>
+      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A] to-[#C8102E]' : theme === 'avengers' ? 'from-[#604AC7] via-[#2C1267] to-[#0F0826]' : theme === 'ponyville' ? 'from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : 'from-gray-100 to-white'} flex items-center justify-center`}>
         <div className={`bg-white border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : theme === 'ponyville' ? 'border-black' : 'border-black'} rounded-3xl p-8 shadow-2xl`}>
           {/* Theme-Specific Loading Animation */}
           <div className="relative mb-6 flex flex-col items-center">
@@ -434,8 +434,8 @@ export default function StudentStudyPage() {
             {/* Default Theme Spinner with Loading Text */}
             {theme !== 'tinkerbell' && theme !== 'ben10' && theme !== 'bounceworld' && theme !== 'avengers' && theme !== 'cricketverse' && theme !== 'ponyville' && (
               <div className="flex flex-col items-center">
-                <div className="w-24 h-24 border-4 border-blue-400 border-t-blue-600 rounded-full animate-spin"></div>
-                <span className="text-2xl font-bold text-blue-600 mt-4">Loading</span>
+                <div className="w-24 h-24 border-4 border-gray-400 border-t-gray-600 rounded-full animate-spin"></div>
+                <span className="text-2xl font-bold text-gray-600 mt-4">Loading</span>
               </div>
             )}
           </div>
@@ -467,7 +467,7 @@ export default function StudentStudyPage() {
     if (isViewingMaterial && activeMaterial) {
       // PDF Viewing Layout - Full screen without top space
       return (
-        <div className={`fixed inset-0 bg-gradient-to-br ${theme === 'ben10' ? '' : theme === 'tinkerbell' ? 'from-green-500 via-yellow-500 to-green-600' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A] to-[#C8102E]' : theme === 'avengers' ? 'from-[#604AC7] via-[#2C1267] to-[#0F0826]' : 'from-blue-600 via-indigo-700 to-blue-400'} z-50`} style={theme === 'ben10' ? { background: 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))' } : undefined}>
+        <div className={`fixed inset-0 bg-gradient-to-br ${theme === 'ben10' ? '' : theme === 'tinkerbell' ? 'from-green-500 via-yellow-500 to-green-600' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A] to-[#C8102E]' : theme === 'avengers' ? 'from-[#604AC7] via-[#2C1267] to-[#0F0826]' : 'from-gray-100 to-white'} z-50`} style={theme === 'ben10' ? { background: 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))' } : undefined}>
           {/* Minimal Back Button - positioned absolutely */}
           <div className="absolute top-4 left-4 z-10">
             <button
@@ -1176,7 +1176,7 @@ export default function StudentStudyPage() {
         ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]'
         : theme === 'ponyville'
         ? 'from-[#f1aed5] via-[#e13690] to-[#ff2e9f]'
-        : 'from-blue-600 via-indigo-600 to-blue-400'
+        : 'from-gray-100 to-white'
     }`} style={theme === 'ben10' ? { background: 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))' } : undefined}>
       <div className="max-w-6xl mx-auto">
         {/* Theme-aware Hero Header */}
@@ -1191,7 +1191,7 @@ export default function StudentStudyPage() {
             ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]'
             : theme === 'ponyville'
             ? 'from-[#f1aed5] via-[#f46eb5] to-[#f55eaf]'
-            : 'from-blue-500 to-indigo-600'
+            : 'from-gray-100 to-gray-200'
         }`}>
          
 
@@ -1213,7 +1213,7 @@ export default function StudentStudyPage() {
                 <span className={`ml-2 font-black text-4xl ${theme === 'bounceworld' ? 'text-[#1D428A]' : 'text-black'}`}>Study</span>
               </h1>
               <p className={`font-bold text-lg ${
-                theme === 'ben10' ? 'text-green-200' : theme === 'tinkerbell' ? 'text-white' : theme === 'bounceworld' ? 'text-[#1D428A]' : theme === 'avengers' ? 'text-[#C88DA5]' : theme === 'ponyville' ? 'text-white' : 'text-blue-100'
+                theme === 'ben10' ? 'text-green-200' : theme === 'tinkerbell' ? 'text-white' : theme === 'bounceworld' ? 'text-[#1D428A]' : theme === 'avengers' ? 'text-[#C88DA5]' : theme === 'ponyville' ? 'text-white' : 'text-gray-700'
               }`}>
                 {theme === 'bounceworld'
                   ? `Welcome back, ${student.name}! Score big with your studies! 🏀`
@@ -1242,7 +1242,7 @@ export default function StudentStudyPage() {
             ? 'from-[#2C1267] to-[#604AC7]'
             : theme === 'ponyville'
             ? 'from-[#f1aed5] to-[#e13690]'
-            : 'from-blue-500 to-indigo-600'
+            : 'from-gray-100 to-gray-200'
         }`}>
           <div className="flex items-center justify-between">
             <div>
@@ -1267,7 +1267,9 @@ export default function StudentStudyPage() {
           </div>
           <div className="mt-4 bg-white/20 rounded-full h-2 border-2 border-black">
             <div
-              className="bg-white h-2 rounded-full transition-all duration-300"
+              className={`h-2 rounded-full transition-all duration-300 ${
+                theme === 'ben10' ? 'bg-white' : theme === 'tinkerbell' ? 'bg-white' : theme === 'bounceworld' ? 'bg-white' : theme === 'avengers' ? 'bg-white' : theme === 'ponyville' ? 'bg-white' : 'bg-gray-500'
+              }`}
               style={{ width: `${overallProgress}%` }}
             ></div>
           </div>
@@ -1284,7 +1286,7 @@ export default function StudentStudyPage() {
             ? 'from-[#2C1267] to-[#604AC7]'
             : theme === 'ponyville'
             ? 'from-[#f1aed5] to-[#e13690]'
-            : 'from-blue-500 to-indigo-600'
+            : 'from-gray-100 to-gray-200'
         }`}>
           <div className="flex items-center justify-between">
             <div>
@@ -1301,7 +1303,9 @@ export default function StudentStudyPage() {
           </div>
           <div className="mt-4 bg-white/20 rounded-full h-2 border-2 border-black">
             <div
-              className="bg-white h-2 rounded-full transition-all duration-300"
+              className={`h-2 rounded-full transition-all duration-300 ${
+                theme === 'ben10' ? 'bg-white' : theme === 'tinkerbell' ? 'bg-white' : theme === 'bounceworld' ? 'bg-white' : theme === 'avengers' ? 'bg-white' : theme === 'ponyville' ? 'bg-white' : 'bg-gray-500'
+              }`}
               style={{ width: `${requiredProgress}%` }}
             ></div>
           </div>
@@ -1318,7 +1322,7 @@ export default function StudentStudyPage() {
             ? 'from-[#2C1267] to-[#604AC7]'
             : theme === 'ponyville'
             ? 'from-[#f1aed5] to-[#e13690]'
-            : 'from-blue-500 to-indigo-600'
+            : 'from-gray-100 to-gray-200'
         }`}>
           <div className="flex items-center justify-between">
             <div>
@@ -1344,7 +1348,7 @@ export default function StudentStudyPage() {
             ? 'from-[#2C1267] to-[#604AC7]'
             : theme === 'ponyville'
             ? 'from-[#f1aed5] to-[#e13690]'
-            : 'from-blue-500 to-indigo-600'
+            : 'from-gray-100 to-gray-200'
         }`}>
           <div className="flex items-center justify-between">
             <div>
@@ -1373,7 +1377,7 @@ export default function StudentStudyPage() {
             ? 'bg-gradient-to-r from-[#2C1267] via-[#604AC7] to-[#0F0826]'
             : theme === 'ponyville'
             ? 'bg-gradient-to-r from-[#fb91cf] via-[#f18ac6] to-[#f596cd]'
-            : 'bg-gradient-to-r from-blue-500 to-indigo-600'
+            : 'bg-gradient-to-r from-gray-100 to-gray-200'
         }`}>
           {theme === 'bounceworld' ? 'Your Classes' : theme === 'ponyville' ? '✨ Your Magical Classes ✨' : theme === 'ben10' ? ' Your Classes ' : ' Your Classes '}
         </h2>
@@ -1390,7 +1394,7 @@ export default function StudentStudyPage() {
                 ? 'from-[#2C1267] to-[#604AC7]'
                 : theme === 'ponyville'
                 ? 'from-[#f1aed5] to-[#f1aed5]'
-                : 'from-blue-500 to-indigo-600'
+                : 'from-gray-100 to-gray-200'
             }`}>
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
@@ -1403,7 +1407,9 @@ export default function StudentStudyPage() {
                     </Badge>
                   )}
                 </div>
-                <p className="text-3xl font-black text-white/90 mb-4">{classItem.subject}</p>
+                <p className={`text-3xl font-black mb-4 ${
+                  theme === 'ben10' ? 'text-white/90' : theme === 'tinkerbell' ? 'text-white/90' : theme === 'bounceworld' ? 'text-white/90' : theme === 'avengers' ? 'text-white/90' : theme === 'ponyville' ? 'text-white/90' : 'text-gray-600'
+                }`}>{classItem.subject}</p>
 
                 <div className="space-y-4">
                   <div>
