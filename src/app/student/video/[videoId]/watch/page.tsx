@@ -125,7 +125,7 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
 
   if (loading) {
     return (
-      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : theme === 'bounceworld' ? 'from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]' : theme === 'ponyville' ? 'from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : 'from-blue-400 to-indigo-600'} p-6`}>
+      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : theme === 'bounceworld' ? 'from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]' : theme === 'ponyville' ? 'from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : theme === 'default' ? 'from-gray-50 to-white' : 'from-blue-400 to-indigo-600'} p-6`}>
         <div className="flex items-center justify-center min-h-[400px]">
           <div className={`text-center bg-white border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#604AC7]' : 'border-black'} rounded-3xl p-8 shadow-2xl`}>
             <div className="w-16 h-16 border-t-4 border-blue-600 border-solid rounded-full animate-spin mx-auto"></div>
@@ -138,7 +138,7 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
 
   if (error) {
     return (
-      <div className={`max-w-4xl mx-auto py-8 bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : theme === 'bounceworld' ? 'from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]' : theme === 'ponyville' ? 'from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : 'from-blue-400 to-indigo-600'} p-6`}>
+      <div className={`max-w-4xl mx-auto py-8 bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : theme === 'bounceworld' ? 'from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]' : theme === 'ponyville' ? 'from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : theme === 'default' ? 'from-gray-50 to-white' : 'from-blue-400 to-indigo-600'} p-6`}>
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
             <div className="flex items-center">
               <AlertCircle className="h-6 w-6 text-red-400 mr-3" />
@@ -206,6 +206,8 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
           ? 'bg-gradient-to-br from-blue-400 via-indigo-500 to-indigo-600'
           : theme === 'ponyville'
           ? 'bg-gradient-to-br from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]'
+          : theme === 'default'
+          ? 'bg-gradient-to-br from-gray-50 to-white'
           : 'bg-gradient-to-br from-blue-400 via-indigo-500 to-indigo-600'
       }`}
       style={theme === 'ben10' ? {
@@ -229,6 +231,8 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                 ? 'bg-[#604AC7] hover:bg-[#4F2C8D] text-white'
                 : theme === 'ponyville'
                 ? 'bg-[#e13690] hover:bg-[#ff2e9f] text-white'
+                : theme === 'default'
+                ? 'bg-gray-800 hover:bg-gray-900 text-white'
                 : 'bg-blue-500 hover:bg-blue-600 text-white'
             }`}
           >
@@ -253,6 +257,8 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                 ? 'bg-gradient-to-br from-[#2C1267]/10 to-[#604AC7]/10'
                 : theme === 'ponyville'
                 ? 'bg-gradient-to-br from-[#f1aed5]/10 to-[#e13690]/10'
+                : theme === 'default'
+                ? 'bg-gradient-to-br from-white to-gray-50'
                 : 'bg-gradient-to-br from-blue-900 via-indigo-800 to-indigo-800'
             }`}>
               {/* Video Player Container */}
@@ -303,6 +309,8 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                     ? 'text-black'
                     : theme === 'ponyville'
                     ? 'text-black'
+                    : theme === 'default'
+                    ? 'text-black'
                     : 'text-black dark:text-white'
                 }`}>
                   {video.title}
@@ -319,6 +327,8 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                     ? 'text-black/80'
                     : theme === 'ponyville'
                     ? 'text-black/70'
+                    : theme === 'default'
+                    ? 'text-black/80'
                     : 'text-black/70 dark:text-gray-400'
                 }`}>
                   <div className="flex items-center">
@@ -349,6 +359,8 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                       ? 'bg-gradient-to-r from-[#2C1267]/15 to-[#604AC7]/15 border-2 border-[#604AC7]/40'
                       : theme === 'ponyville'
                       ? 'bg-gradient-to-r from-[#f1aed5]/15 to-[#e13690]/15 border-2 border-black'
+                      : theme === 'default'
+                      ? 'bg-gray-100 border-2 border-gray-300'
                       : 'bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-800'
                   } rounded-lg p-4 mb-4`}>
                     <div className="flex items-center">
@@ -377,6 +389,8 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                             ? 'text-black'
                             : theme === 'ponyville'
                             ? 'text-[#e13690]'
+                            : theme === 'default'
+                            ? 'text-black'
                             : 'text-blue-800 dark:text-blue-200'
                         }`}>
                           You own this video
@@ -392,6 +406,8 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                             ? 'text-black/80'
                             : theme === 'ponyville'
                             ? 'text-[#ff2e9f]'
+                            : theme === 'default'
+                            ? 'text-black/70'
                             : 'text-blue-600 dark:text-blue-300'
                         }`}>
                           Purchased on {purchase.purchasedAt?.toDate().toLocaleDateString()}
@@ -415,6 +431,8 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                       ? 'text-[#604AC7]'
                       : theme === 'ponyville'
                       ? 'text-[#e13690]'
+                      : theme === 'default'
+                      ? 'text-black'
                       : 'text-black dark:text-white'
                   }`}>
                     Description
@@ -430,6 +448,8 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                       ? 'text-[#604AC7]/80'
                       : theme === 'ponyville'
                       ? 'text-[#e13690]/80'
+                      : theme === 'default'
+                      ? 'text-black/80'
                       : 'text-black/80 dark:text-gray-300'
                   }`}>
                     {video.description}
@@ -454,6 +474,8 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                   ? 'bg-gradient-to-br from-[#2C1267]/10 to-[#604AC7]/10 border-2 border-[#604AC7]/30'
                   : theme === 'ponyville'
                   ? 'bg-gradient-to-br from-[#f1aed5]/10 to-[#e13690]/10 border-2 border-black'
+                  : theme === 'default'
+                  ? 'bg-white border-2 border-gray-300'
                   : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700'
               }`}>
                 <h3 className={`font-semibold mb-4 ${
@@ -466,6 +488,8 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                     : theme === 'avengers'
                     ? 'text-black'
                     : theme === 'ponyville'
+                    ? 'text-black'
+                    : theme === 'default'
                     ? 'text-black'
                     : 'text-black dark:text-white'
                 }`}>
@@ -484,6 +508,8 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                         ? 'text-black/60'
                         : theme === 'ponyville'
                         ? 'text-[#e13690]/60'
+                        : theme === 'default'
+                        ? 'text-black/60'
                         : 'text-black/70 dark:text-gray-400'
                     }`}>Subject:</span>
                     <p className={`font-medium ${
@@ -497,6 +523,8 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                         ? 'text-black'
                         : theme === 'ponyville'
                         ? 'text-[#e13690]'
+                        : theme === 'default'
+                        ? 'text-black'
                         : 'text-black dark:text-white'
                     }`}>
                       {video.subjectName}
@@ -516,6 +544,8 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                           ? 'text-black/60'
                           : theme === 'ponyville'
                           ? 'text-[#e13690]/60'
+                          : theme === 'default'
+                          ? 'text-black/60'
                           : 'text-black/70 dark:text-gray-400'
                       }`}>Lesson:</span>
                       <p className={`font-medium ${
@@ -529,6 +559,8 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                           ? 'text-black'
                           : theme === 'ponyville'
                           ? 'text-[#e13690]'
+                          : theme === 'default'
+                          ? 'text-black'
                           : 'text-black dark:text-white'
                       }`}>
                         {video.lessonName}
@@ -545,6 +577,8 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                         : theme === 'bounceworld'
                         ? 'text-black/60'
                         : theme === 'avengers'
+                        ? 'text-black/60'
+                        : theme === 'default'
                         ? 'text-black/60'
                         : 'text-black/70 dark:text-gray-400'
                     }`}>Status:</span>
@@ -572,6 +606,8 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                         : theme === 'bounceworld'
                         ? 'text-black/60'
                         : theme === 'avengers'
+                        ? 'text-black/60'
+                        : theme === 'default'
                         ? 'text-black/60'
                         : 'text-black/70 dark:text-gray-400'
                     }`}>Visibility:</span>
@@ -611,6 +647,8 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                           ? 'text-black/60'
                           : theme === 'ponyville'
                           ? 'text-[#e13690]/60'
+                          : theme === 'default'
+                          ? 'text-black/60'
                           : 'text-black/70 dark:text-gray-400'
                       }`}>Price:</span>
                       <p className={`font-medium ${
@@ -624,6 +662,8 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                           ? 'text-black'
                           : theme === 'ponyville'
                           ? 'text-[#e13690]'
+                          : theme === 'default'
+                          ? 'text-black'
                           : 'text-black dark:text-white'
                       }`}>
                         ${video.price}
@@ -644,6 +684,8 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                     ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E] border-2 border-[#1D428A]'
                     : theme === 'avengers'
                     ? 'bg-gradient-to-br from-[#2C1267]/10 to-[#604AC7]/10 border-2 border-[#604AC7]/30'
+                    : theme === 'default'
+                    ? 'bg-white border-2 border-gray-300'
                     : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700'
                 }`}>
                   <h3 className={`font-semibold mb-3 ${
@@ -657,6 +699,8 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                       ? 'text-black'
                       : theme === 'ponyville'
                       ? 'text-[#e13690]'
+                      : theme === 'default'
+                      ? 'text-black'
                       : 'text-black dark:text-white'
                   }`}>
                     Tags
@@ -698,6 +742,8 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                   ? 'bg-gradient-to-r from-[#2C1267]/10 to-[#604AC7]/10 border-2 border-[#604AC7]/30'
                   : theme === 'ponyville'
                   ? 'bg-gradient-to-r from-[#f1aed5]/10 to-[#e13690]/10 border-2 border-black/30'
+                  : theme === 'default'
+                  ? 'bg-gray-100 border-2 border-gray-300'
                   : 'bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-800'
               }`}>
                 <h3 className={`font-semibold mb-2 ${
@@ -711,6 +757,8 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                     ? 'text-black'
                     : theme === 'ponyville'
                     ? 'text-[#e13690]'
+                    : theme === 'default'
+                    ? 'text-black'
                     : 'text-black dark:text-white'
                 }`}>
                   Access Information
@@ -726,6 +774,8 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
                     ? 'text-black/80'
                     : theme === 'ponyville'
                     ? 'text-[#e13690]/80'
+                    : theme === 'default'
+                    ? 'text-black/80'
                     : 'text-black/80 dark:text-gray-300'
                 }`}>
                   {video.price && video.price > 0 ? (

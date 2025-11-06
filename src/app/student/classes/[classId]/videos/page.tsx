@@ -270,6 +270,8 @@ export default function ClassVideos({ params }: ClassVideoProps) {
           ? 'bg-gradient-to-br from-[#2C1267]/10 via-[#604AC7]/10 to-[#0F0826]/10'
           : theme === 'ponyville'
           ? 'bg-gradient-to-br from-[#fff5fb] via-[#f1aed5] to-[#ff2e9f]'
+          : theme === 'default'
+          ? 'bg-gradient-to-br from-gray-50 to-white'
           : 'bg-gradient-to-br from-blue-400 via-indigo-500 to-indigo-600'
       }`}
       style={theme === 'ben10' ? {
@@ -378,6 +380,8 @@ export default function ClassVideos({ params }: ClassVideoProps) {
           ? 'bg-gradient-to-br from-[#2C1267]/10 via-[#604AC7]/10 to-[#0F0826]/10'
           : theme === 'ponyville'
           ? 'bg-gradient-to-br from-[#fff5fb] via-[#f1aed5] to-[#ff2e9f]'
+          : theme === 'default'
+          ? 'bg-gradient-to-br from-gray-50 to-white'
           : 'bg-gradient-to-br from-blue-400 via-indigo-500 to-indigo-600'
       }`}
       style={theme === 'ben10' ? {
@@ -397,6 +401,8 @@ export default function ClassVideos({ params }: ClassVideoProps) {
             ? 'bg-gradient-to-r from-[#2C1267] via-[#604AC7] to-[#0F0826] border-[#2C1267]'
             : theme === 'ponyville'
             ? 'bg-gradient-to-r from-[#f1aed5] to-[#e13690] border-[#ff2e9f]'
+            : theme === 'default'
+            ? 'bg-gradient-to-r from-white to-gray-100 border-gray-300 text-black'
             : 'bg-gradient-to-r from-blue-400 to-indigo-600'
         }`}>
         <div className="flex items-center justify-between">
@@ -415,6 +421,8 @@ export default function ClassVideos({ params }: ClassVideoProps) {
                 ? 'text-white'
                 : theme === 'ponyville'
                 ? 'text-white'
+                : theme === 'default'
+                ? 'text-black'
                 : 'text-blue-100'
             }`}>
               {classInfo?.subject} • Grade {classInfo?.grade} • {classInfo?.teacherName}
@@ -445,6 +453,8 @@ export default function ClassVideos({ params }: ClassVideoProps) {
           ? 'bg-gradient-to-br from-[#604AC7]/30 via-[#2C1267]/30 to-[#0F0826]/30'
           : theme === 'ponyville'
           ? 'bg-gradient-to-br from-[#fff5fb] via-[#f1aed5]/30 to-[#ff2e9f]/30'
+          : theme === 'default'
+          ? 'bg-gradient-to-br from-white to-gray-50'
           : 'bg-gradient-to-br from-blue-50 to-indigo-100 dark:bg-gray-800'
       }`}>
         <div>
@@ -463,6 +473,8 @@ export default function ClassVideos({ params }: ClassVideoProps) {
                     ? 'border-[#604AC7] text-[#2C1267]'
                     : theme === 'ponyville'
                     ? 'border-[#e13690] text-[#e13690]'
+                    : theme === 'default'
+                    ? 'border-gray-800 text-black'
                     : 'border-blue-500 text-blue-600 dark:text-blue-400'
                   : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
               }`}
@@ -490,6 +502,8 @@ export default function ClassVideos({ params }: ClassVideoProps) {
                     ? 'border-[#604AC7] text-[#2C1267]'
                     : theme === 'ponyville'
                     ? 'border-[#e13690] text-[#e13690]'
+                    : theme === 'default'
+                    ? 'border-gray-800 text-black'
                     : 'border-blue-500 text-blue-600 dark:text-blue-400'
                   : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
               }`}
@@ -517,6 +531,8 @@ export default function ClassVideos({ params }: ClassVideoProps) {
                     ? 'border-[#604AC7] text-[#2C1267]'
                     : theme === 'ponyville'
                     ? 'border-[#e13690] text-[#e13690]'
+                    : theme === 'default'
+                    ? 'border-gray-800 text-black'
                     : 'border-blue-500 text-blue-600 dark:text-blue-400'
                   : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
               }`}
@@ -598,6 +614,8 @@ export default function ClassVideos({ params }: ClassVideoProps) {
               ? 'bg-gradient-to-br from-[#604AC7]/30 via-[#2C1267]/30 to-[#0F0826]/30'
               : theme === 'ponyville'
               ? 'bg-gradient-to-br from-[#fff5fb] via-[#f1aed5]/30 to-[#ff2e9f]/30'
+              : theme === 'default'
+              ? 'bg-gradient-to-br from-gray-100 to-white'
               : 'bg-gradient-to-br from-blue-400 via-indigo-500 to-indigo-600'
           }`}>
             {activeTab === 'class' && (
@@ -649,6 +667,8 @@ export default function ClassVideos({ params }: ClassVideoProps) {
               ? 'bg-gradient-to-br from-[#604AC7]/30 via-[#2C1267]/30 to-[#0F0826]/30'
               : theme === 'ponyville'
               ? 'bg-gradient-to-br from-[#fff5fb] via-[#f1aed5]/30 to-[#ff2e9f]/30'
+              : theme === 'default'
+              ? 'bg-gradient-to-br from-gray-100 to-white'
               : 'bg-gradient-to-br from-blue-400 via-indigo-500 to-indigo-600'
           }`}>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -689,6 +709,8 @@ const ClassVideoCard: React.FC<ClassVideoCardProps> = ({ video, onAccess, theme 
         ? 'bg-gradient-to-br from-[#604AC7]/30 via-[#2C1267]/30 to-[#0F0826]/30'
         : theme === 'ponyville'
         ? 'bg-gradient-to-br from-[#fff5fb] via-[#f1aed5]/30 to-[#ff2e9f]/30'
+        : theme === 'default'
+        ? 'bg-gradient-to-br from-white to-gray-50'
         : 'bg-gradient-to-br from-blue-400 via-indigo-500 to-indigo-600'
     }`}>
       {/* Video Thumbnail */}
@@ -748,12 +770,12 @@ const ClassVideoCard: React.FC<ClassVideoCardProps> = ({ video, onAccess, theme 
       <div className="p-4">
         <div className="mb-3">
           <h3 className={`text-lg font-semibold mb-1 line-clamp-2 ${
-            theme === 'ponyville' ? 'text-black' : 'text-gray-900'
+            theme === 'ponyville' ? 'text-black' : theme === 'default' ? 'text-black' : 'text-gray-900'
           }`}>
             {video.title}
           </h3>
           <p className={`text-sm line-clamp-2 ${
-            theme === 'ponyville' ? 'text-black' : 'text-gray-600 dark:text-gray-100'
+            theme === 'ponyville' ? 'text-black' : theme === 'default' ? 'text-black' : 'text-gray-600 dark:text-gray-100'
           }`}>
             {video.description}
           </p>
@@ -762,13 +784,13 @@ const ClassVideoCard: React.FC<ClassVideoCardProps> = ({ video, onAccess, theme 
         {/* Video Meta */}
         <div className="space-y-1 mb-4">
           <div className={`flex items-center text-xs ${
-            theme === 'ponyville' ? 'text-black' : 'text-gray-500 dark:text-gray-100'
+            theme === 'ponyville' ? 'text-black' : theme === 'default' ? 'text-black' : 'text-gray-500 dark:text-gray-100'
           }`}>
             <Users className="w-3 h-3 mr-1" />
             <span>{video.teacherName}</span>
           </div>
           <div className={`flex items-center text-xs ${
-            theme === 'ponyville' ? 'text-black' : 'text-gray-500 dark:text-gray-100'
+            theme === 'ponyville' ? 'text-black' : theme === 'default' ? 'text-black' : 'text-gray-500 dark:text-gray-100'
           }`}>
             <BookOpen className="w-3 h-3 mr-1" />
             <span>{video.lessonName || 'Lesson Content'}</span>
@@ -778,7 +800,7 @@ const ClassVideoCard: React.FC<ClassVideoCardProps> = ({ video, onAccess, theme 
         {/* Subject Badge */}
         <div className="mb-4">
           <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full bg-purple-100 dark:bg-purple-900/20 ${
-            theme === 'ponyville' ? 'text-black' : 'text-black dark:text-black'
+            theme === 'ponyville' ? 'text-black' : theme === 'default' ? 'text-black' : 'text-black dark:text-black'
           }`}>
             {video.subjectName}
           </span>
@@ -800,6 +822,8 @@ const ClassVideoCard: React.FC<ClassVideoCardProps> = ({ video, onAccess, theme 
                 ? 'bg-[#604AC7] hover:bg-[#2C1267] text-white'
                 : theme === 'ponyville'
                 ? 'bg-black hover:bg-gray-800 text-white'
+                : theme === 'default'
+                ? 'bg-gray-800 hover:bg-gray-900 text-white'
                 : 'bg-blue-600 hover:bg-blue-700 text-white'
               : theme === 'ben10'
                 ? 'bg-[#b2e05b] hover:bg-[#64cc4f] text-[#222222]'
@@ -811,6 +835,8 @@ const ClassVideoCard: React.FC<ClassVideoCardProps> = ({ video, onAccess, theme 
                 ? 'bg-[#2C1267] hover:bg-[#604AC7] text-white'
                 : theme === 'ponyville'
                 ? 'bg-black hover:bg-gray-800 text-white'
+                : theme === 'default'
+                ? 'bg-green-600 hover:bg-green-700 text-white'
                 : 'bg-green-600 hover:bg-green-700 text-white'
           }`}
           size="sm"
