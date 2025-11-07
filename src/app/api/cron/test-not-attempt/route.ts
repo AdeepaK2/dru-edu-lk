@@ -19,14 +19,18 @@ export async function GET(request: NextRequest) {
 
     console.log('🔍 Starting missed test attempt check...');
 
-    // Calculate time range - check tests that ended in the last 2 hours
+    // Calculate time range with grace period
+    // Check tests that ended between 30 minutes and 2 hours ago
+    // Grace period prevents false positives while submissions are still processing
     const now = Timestamp.now();
     const twoHoursAgo = Timestamp.fromMillis(now.toMillis() - (2 * 60 * 60 * 1000));
+    const thirtyMinutesAgo = Timestamp.fromMillis(now.toMillis() - (30 * 60 * 1000)); // 30 min grace period
 
-    console.log('🕒 Checking tests ended between:', twoHoursAgo.toDate(), 'and', now.toDate());
+    console.log('🕒 Checking tests ended between:', twoHoursAgo.toDate(), 'and', thirtyMinutesAgo.toDate());
+    console.log('⏱️  Grace period: 30 minutes (to allow submission processing)');
 
-    // Get tests that ended in the last 2 hours
-    const recentlyEndedTests = await getRecentlyEndedTests(twoHoursAgo, now);
+    // Get tests that ended in the specified time range
+    const recentlyEndedTests = await getRecentlyEndedTests(twoHoursAgo, thirtyMinutesAgo);
     
     console.log(`📊 Found ${recentlyEndedTests.length} recently ended tests`);
 
@@ -185,30 +189,45 @@ async function processTestForMissedAttempts(test: any): Promise<number> {
     );
 
     console.log(`❌ Found ${missedStudents.length} students who missed test ${test.title}`);
+    
+    // Log detailed info for debugging
+    if (missedStudents.length > 0) {
+      console.log('📋 Students who missed the test:', missedStudents.map(s => ({
+        id: s.id,
+        name: s.name,
+        email: s.email,
+        hasParentEmail: !!s.parent?.email
+      })));
+    }
 
     if (missedStudents.length === 0) {
       return 0;
     }
 
     // Send emails to parents of students who missed the test
-    let emailsSent = 0;
-    
-    for (const student of missedStudents) {
-      try {
-        await sendMissedTestEmail(student, test);
-        emailsSent++;
-        console.log(`📧 Sent email to parent of ${student.name}`);
-      } catch (error) {
-        console.error(`❌ Failed to send email for student ${student.name}:`, error);
-      }
-    }
-
-    return emailsSent;
+    return await sendMissedTestEmails(missedStudents, test);
 
   } catch (error) {
     console.error(`Error processing test ${test.id} for missed attempts:`, error);
     return 0;
   }
+}
+
+// Helper function to send emails to multiple students
+async function sendMissedTestEmails(students: any[], test: any): Promise<number> {
+  let emailsSent = 0;
+  
+  for (const student of students) {
+    try {
+      await sendMissedTestEmail(student, test);
+      emailsSent++;
+      console.log(`📧 Sent email to parent of ${student.name}`);
+    } catch (error) {
+      console.error(`❌ Failed to send email for student ${student.name}:`, error);
+    }
+  }
+
+  return emailsSent;
 }
 
 // Get students enrolled in the specified classes
@@ -281,18 +300,44 @@ async function getEnrolledStudents(classIds: string[]): Promise<any[]> {
 // Get all attempts for a specific test
 async function getTestAttempts(testId: string): Promise<any[]> {
   try {
+    // Check BOTH collections to prevent false "didn't attempt" emails
+    // 1. Check testAttempts (primary source - tracks attempt start)
     const attemptsQuery = firebaseAdmin.db
-      .collection('studentSubmissions')
+      .collection('testAttempts')
       .where('testId', '==', testId);
 
     const attemptsSnapshot = await attemptsQuery.get();
-    const attempts: any[] = [];
+    const studentIdsFromAttempts = new Set<string>();
 
     attemptsSnapshot.forEach((doc: any) => {
-      attempts.push({ id: doc.id, ...doc.data() });
+      const data = doc.data();
+      studentIdsFromAttempts.add(data.studentId);
     });
 
-    return attempts;
+    console.log(`📝 Found ${studentIdsFromAttempts.size} attempts in testAttempts collection`);
+
+    // 2. Also check studentSubmissions (fallback - tracks completed submissions)
+    const submissionsQuery = firebaseAdmin.db
+      .collection('studentSubmissions')
+      .where('testId', '==', testId);
+
+    const submissionsSnapshot = await submissionsQuery.get();
+    const studentIdsFromSubmissions = new Set<string>();
+
+    submissionsSnapshot.forEach((doc: any) => {
+      const data = doc.data();
+      studentIdsFromSubmissions.add(data.studentId);
+    });
+
+    console.log(`📝 Found ${studentIdsFromSubmissions.size} submissions in studentSubmissions collection`);
+
+    // Combine both sets - if student appears in EITHER collection, they attempted the test
+    const allAttemptedStudentIds = new Set([...studentIdsFromAttempts, ...studentIdsFromSubmissions]);
+
+    console.log(`✅ Total unique students who attempted: ${allAttemptedStudentIds.size}`);
+
+    // Return as array of objects with studentId for compatibility with existing code
+    return Array.from(allAttemptedStudentIds).map(studentId => ({ studentId }));
 
   } catch (error) {
     console.error(`Error getting test attempts for test ${testId}:`, error);

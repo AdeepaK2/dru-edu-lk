@@ -129,11 +129,27 @@ export class AttemptManagementService {
       const isUntimed = test.type === 'flexible' && (test as any).isUntimed === true;
       
       // Calculate time allowed
-      const timeAllowed = isUntimed 
+      let timeAllowed = isUntimed 
         ? Number.MAX_SAFE_INTEGER // Essentially infinite time per session for untimed tests
         : this.getTestDuration(test) * 60; // Convert to seconds for timed tests
       
       const startTime = Timestamp.now();
+      
+      // 🆕 FLEXIBLE TEST FIX: For timed flexible tests, cap duration by deadline
+      // If student starts at 11:55 with 30-min test, but deadline is 12:00,
+      // they should only get 5 minutes, not 30!
+      if (!isUntimed && test.type === 'flexible' && (test as any).availableTo) {
+        const deadline = (test as any).availableTo;
+        const deadlineSeconds = deadline.seconds || (deadline.toMillis ? deadline.toMillis() / 1000 : 0);
+        const nowSeconds = startTime.seconds;
+        const timeUntilDeadline = Math.max(0, deadlineSeconds - nowSeconds);
+        
+        // Use whichever is LESS: test duration OR time until deadline
+        if (timeUntilDeadline < timeAllowed) {
+          console.log(`⏰ Capping test duration: ${timeAllowed}s requested, but only ${timeUntilDeadline}s until deadline`);
+          timeAllowed = timeUntilDeadline;
+        }
+      }
       
       // For untimed tests, endTime is the test deadline, not duration-based
       const endTime = isUntimed && test.type === 'flexible'
@@ -419,6 +435,12 @@ export class AttemptManagementService {
       }
       
       // EXISTING: Handle timed tests
+      // Get test to check for flexible test deadline
+      const test = await this.getTest(attempt.testId);
+      if (!test) {
+        throw new Error('Test not found');
+      }
+      
       // Calculate time spent in current session (only if online)
       let sessionTime = 0;
       if (state.isOnline && state.sessionStartTime) {
@@ -436,7 +458,23 @@ export class AttemptManagementService {
       // Ensure totalTimeSpent is never null or undefined
       const currentTotalTimeSpent = state.totalTimeSpent ?? 0;
       const newTotalTimeSpent = currentTotalTimeSpent + sessionTime;
-      const newTimeRemaining = Math.max(0, (state.timeRemaining ?? 0) - sessionTime);
+      let newTimeRemaining = Math.max(0, (state.timeRemaining ?? 0) - sessionTime);
+      
+      // 🆕 FLEXIBLE TEST FIX: Check if deadline has passed (for timed flexible tests)
+      // If student starts at 11:55 with 30-min test, but deadline is 12:00,
+      // they should only get 5 minutes, not 30!
+      if (test.type === 'flexible' && (test as any).availableTo) {
+        const deadline = (test as any).availableTo;
+        const deadlineSeconds = deadline.seconds || (deadline.toMillis ? deadline.toMillis() / 1000 : 0);
+        const nowSeconds = Timestamp.now().seconds;
+        const timeUntilDeadline = Math.max(0, deadlineSeconds - nowSeconds);
+        
+        // Use whichever is LESS: remaining duration OR time until deadline
+        if (timeUntilDeadline < newTimeRemaining) {
+          console.log(`⏰ Flexible test deadline constraint: ${timeUntilDeadline}s until deadline vs ${newTimeRemaining}s remaining`);
+          newTimeRemaining = timeUntilDeadline;
+        }
+      }
       
       // Check if attempt should be marked as expired
       const isExpired = newTimeRemaining <= 0;
