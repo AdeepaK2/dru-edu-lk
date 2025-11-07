@@ -12,7 +12,7 @@ export class BackgroundSubmissionService {
   
   // 🛡️ Feature flags for safety
   private static ENABLE_EXTENSION_AWARENESS = process.env.ENABLE_EXTENSION_AWARENESS !== 'false'; // Default: enabled
-  private static ENABLE_ENHANCED_ACTIVITY_CHECK = process.env.ENABLE_ENHANCED_ACTIVITY_CHECK !== 'false'; // Default: enabled
+  // REMOVED: ENABLE_ENHANCED_ACTIVITY_CHECK - no longer doing inactivity-based auto-submit
   
   /**
    * Find and auto-submit all expired attempts
@@ -83,28 +83,23 @@ export class BackgroundSubmissionService {
 
   /**
    * Check if a specific attempt has expired based on test type and timing
-   * Enhanced with recent activity check to prevent auto-submitting active sessions
-   * Now also checks for test extensions to avoid submitting recently extended tests
+   * 
+   * NEW APPROACH: Use SERVER-SIDE timeRemaining from Realtime DB
+   * This is the authoritative source of truth that continues counting even when:
+   * - Chromebook tabs are suspended
+   * - Students switch tabs/apps
+   * - Network drops temporarily
+   * 
+   * Students are auto-submitted when:
+   * 1. Server-calculated timeRemaining <= 0 (duration expired)
+   * 2. Test deadline has passed (flexible tests - availableTo)
+   * 3. Test end time reached (live tests - actualEndTime)
+   * 
+   * NOT submitted based on inactivity (no lastActiveAt check)
    */
   private static async checkIfAttemptExpired(attempt: TestAttempt): Promise<boolean> {
     try {
-      // ✅ First, check if student was recently active (within last 5 minutes)
-      // This prevents auto-submitting attempts where student is actively working
-      if (this.ENABLE_ENHANCED_ACTIVITY_CHECK && attempt.lastActiveAt) {
-        const lastActiveTime = attempt.lastActiveAt.toMillis ? 
-          attempt.lastActiveAt.toMillis() : 
-          attempt.lastActiveAt.seconds * 1000;
-        const timeSinceActivity = Date.now() - lastActiveTime;
-        const fiveMinutesInMs = 5 * 60 * 1000;
-        
-        if (timeSinceActivity < fiveMinutesInMs) {
-          console.log(`⚡ Attempt ${attempt.id} has recent activity (${Math.round(timeSinceActivity/1000)}s ago), not auto-submitting`);
-          return false;
-        }
-      }
-
-      // 🚨 NEW: Check if test was recently extended
-      // If attempt has extension markers, be extra cautious
+      // 🚨 Check if test was recently extended - be cautious
       if (this.ENABLE_EXTENSION_AWARENESS && ((attempt as any).testExtendedAt || (attempt as any).requiresTestDataRefresh)) {
         const extensionTime = (attempt as any).testExtendedAt;
         if (extensionTime) {
@@ -119,7 +114,37 @@ export class BackgroundSubmissionService {
         }
       }
 
-      // Get the test data using admin SDK
+      // ✅ PRIMARY CHECK: Get server-side timeRemaining from Realtime DB
+      // This is calculated by attemptManagementService.updateAttemptTime()
+      // and continues counting even when tabs are suspended
+      try {
+        const { getDatabase } = await import('firebase-admin/database');
+        const rtdb = getDatabase();
+        const attemptRef = rtdb.ref(`testAttempts/${attempt.id}`);
+        const attemptSnapshot = await attemptRef.once('value');
+        
+        if (attemptSnapshot.exists()) {
+          const realtimeState = attemptSnapshot.val();
+          const timeRemaining = realtimeState.timeRemaining;
+          
+          // Check if time has expired based on SERVER calculation
+          if (typeof timeRemaining === 'number' && timeRemaining <= 0) {
+            console.log(`⏰ Attempt ${attempt.id} time expired (server-side timeRemaining: ${timeRemaining})`);
+            return true;
+          }
+          
+          // If time remaining > 0, student still has time - check other conditions
+          if (typeof timeRemaining === 'number' && timeRemaining > 0) {
+            console.log(`⏱️ Attempt ${attempt.id} still has time (${Math.round(timeRemaining)}s remaining)`);
+            // Continue to check deadline/end time below
+          }
+        }
+      } catch (rtError) {
+        console.warn(`⚠️ Could not check Realtime DB timeRemaining for attempt ${attempt.id}:`, rtError);
+        // Continue to test-level checks below
+      }
+
+      // Get the test data using admin SDK for deadline/end-time checks
       const testDoc = await firebaseAdmin.db.collection('tests').doc(attempt.testId).get();
       
       if (!testDoc.exists) {
@@ -145,34 +170,21 @@ export class BackgroundSubmissionService {
 
   /**
    * Check if flexible test attempt has expired
+   * 
+   * Checks deadline (availableTo) - test window expiration
+   * Duration expiration is already checked via server-side timeRemaining above
    */
   private static checkFlexibleTestExpiration(
     attempt: TestAttempt, 
     test: FlexibleTest, 
     now: number
   ): boolean {
-    // Two expiration conditions for flexible tests:
-    // 1. Test duration exceeded (from start time + duration)
-    // 2. Test deadline passed (availableTo)
-
-    // Check duration expiration
-    if (attempt.startedAt && test.duration) {
-      const startTime = attempt.startedAt.toMillis ? attempt.startedAt.toMillis() : attempt.startedAt.seconds * 1000;
-      const durationMs = test.duration * 60 * 1000; // Convert minutes to ms
-      const durationExpiry = startTime + durationMs;
-      
-      if (now > durationExpiry) {
-        console.log(`⏰ Attempt ${attempt.id} expired due to duration (${test.duration} min)`);
-        return true;
-      }
-    }
-
-    // Check deadline expiration
+    // Check deadline expiration (availableTo) - test window closed
     if (test.availableTo) {
       const deadline = test.availableTo.toMillis ? test.availableTo.toMillis() : test.availableTo.seconds * 1000;
       
       if (now > deadline) {
-        console.log(`⏰ Attempt ${attempt.id} expired due to deadline`);
+        console.log(`⏰ Attempt ${attempt.id} expired - flexible test deadline passed`);
         return true;
       }
     }
