@@ -120,7 +120,8 @@ export class BackgroundSubmissionService {
       try {
         const { getDatabase } = await import('firebase-admin/database');
         const rtdb = getDatabase();
-        const attemptRef = rtdb.ref(`testAttempts/${attempt.id}`);
+        // FIX: Use correct path 'activeAttempts' not 'testAttempts'
+        const attemptRef = rtdb.ref(`activeAttempts/${attempt.id}`);
         const attemptSnapshot = await attemptRef.once('value');
         
         if (attemptSnapshot.exists()) {

@@ -147,6 +147,14 @@ export class AttemptManagementService {
         // Use whichever is LESS: test duration OR time until deadline
         if (timeUntilDeadline < timeAllowed) {
           console.log(`⏰ Capping test duration: ${timeAllowed}s requested, but only ${timeUntilDeadline}s until deadline`);
+          
+          // ⚠️ WARNING: Check if there's enough time to reasonably take the test
+          const MIN_TIME_REQUIRED = 60; // At least 1 minute
+          if (timeUntilDeadline < MIN_TIME_REQUIRED) {
+            console.warn(`⚠️ Student attempting to start test with only ${timeUntilDeadline}s remaining (< 1 minute)`);
+            // Allow but log warning - teacher may want to extend deadline
+          }
+          
           timeAllowed = timeUntilDeadline;
         }
       }
@@ -466,8 +474,11 @@ export class AttemptManagementService {
       if (test.type === 'flexible' && (test as any).availableTo) {
         const deadline = (test as any).availableTo;
         const deadlineSeconds = deadline.seconds || (deadline.toMillis ? deadline.toMillis() / 1000 : 0);
-        const nowSeconds = Timestamp.now().seconds;
-        const timeUntilDeadline = Math.max(0, deadlineSeconds - nowSeconds);
+        // Use consistent time source (milliseconds for precision)
+        const nowMillis = now;
+        const deadlineMillis = deadlineSeconds * 1000;
+        const timeUntilDeadlineMs = Math.max(0, deadlineMillis - nowMillis);
+        const timeUntilDeadline = Math.floor(timeUntilDeadlineMs / 1000);
         
         // Use whichever is LESS: remaining duration OR time until deadline
         if (timeUntilDeadline < newTimeRemaining) {
@@ -499,14 +510,22 @@ export class AttemptManagementService {
       
       await update(stateRef, updates);
 
-      // Update Firestore periodically (every 30 seconds)
-      if (now % 30000 < 1000) { // Rough check for 30-second intervals
+      // Update Firestore periodically (improved reliability)
+      // Use lastHeartbeat to track when we last updated Firestore
+      const lastFirestoreUpdate = (state as any).lastFirestoreUpdate || 0;
+      const timeSinceLastFirestoreUpdate = now - lastFirestoreUpdate;
+      const FIRESTORE_UPDATE_INTERVAL = 30000; // 30 seconds
+      
+      if (timeSinceLastFirestoreUpdate >= FIRESTORE_UPDATE_INTERVAL) {
         await updateDoc(doc(firestore, this.COLLECTIONS.ATTEMPTS, attemptId), {
           timeSpent: newTotalTimeSpent,
           timeRemaining: newTimeRemaining,
           lastActiveAt: Timestamp.now(),
           updatedAt: Timestamp.now()
         });
+        
+        // Track when we updated Firestore
+        await update(stateRef, { lastFirestoreUpdate: now });
       }
 
       const timeCalc: TimeCalculation = {
