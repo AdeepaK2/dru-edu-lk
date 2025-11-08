@@ -414,14 +414,21 @@ export class AttemptManagementService {
         
         await update(stateRef, updates);
         
-        // Periodic Firestore update
-        if (now.toMillis() % 30000 < 1000) {
+        // Periodic Firestore update (improved reliability)
+        const lastFirestoreUpdate = (state as any).lastFirestoreUpdate || 0;
+        const timeSinceLastFirestoreUpdate = now.toMillis() - lastFirestoreUpdate;
+        const FIRESTORE_UPDATE_INTERVAL = 30000; // 30 seconds
+        
+        if (timeSinceLastFirestoreUpdate >= FIRESTORE_UPDATE_INTERVAL) {
           await updateDoc(doc(firestore, this.COLLECTIONS.ATTEMPTS, attemptId), {
             totalTimeSpentAcrossSessions: newTotalTimeSpent,
             timeSpent: newTotalTimeSpent,
             lastActiveAt: now,
             updatedAt: now
           });
+          
+          // Track when we updated Firestore
+          await update(stateRef, { lastFirestoreUpdate: now.toMillis() });
         }
         
         const timeCalc: TimeCalculation = {
