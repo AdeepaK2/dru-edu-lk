@@ -996,7 +996,10 @@ export class AttemptManagementService {
         );
 
         const snapshot = await getDocs(attemptsQuery);
-        attempts = snapshot.docs.map(doc => doc.data() as TestAttempt);
+        attempts = snapshot.docs
+          .map(doc => doc.data() as TestAttempt)
+          // Skip attempts marked as expired (timeRemaining = 0)
+          .filter(attempt => attempt.timeRemaining === undefined || attempt.timeRemaining > 0);
       } catch (indexError) {
         console.warn('Compound index not available for active attempt query, using fallback');
         
@@ -1010,7 +1013,11 @@ export class AttemptManagementService {
         const fallbackSnapshot = await getDocs(fallbackQuery);
         attempts = fallbackSnapshot.docs
           .map(doc => doc.data() as TestAttempt)
-          .filter(attempt => ['not_started', 'in_progress', 'paused'].includes(attempt.status))
+          .filter(attempt => 
+            ['not_started', 'in_progress', 'paused'].includes(attempt.status) &&
+            // Skip attempts marked as expired (timeRemaining = 0)
+            (attempt.timeRemaining === undefined || attempt.timeRemaining > 0)
+          )
           .sort((a, b) => b.createdAt.seconds - a.createdAt.seconds)
           .slice(0, 1);
       }
