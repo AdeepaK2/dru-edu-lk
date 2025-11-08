@@ -139,6 +139,8 @@ export class AttemptManagementService {
       // If student starts at 11:55 with 30-min test, but deadline is 12:00,
       // they should only get 5 minutes, not 30!
       // 🆕 LATE SUBMISSION FIX: Check for late submission approval and use new deadline
+      let lateSubmissionApprovalId: string | undefined;
+      
       if (!isUntimed && test.type === 'flexible' && (test as any).availableTo) {
         let effectiveDeadline = (test as any).availableTo;
         
@@ -150,9 +152,11 @@ export class AttemptManagementService {
           if (lateApproval && lateApproval.status === 'approved') {
             // Use the late submission's new deadline instead
             effectiveDeadline = lateApproval.newDeadline;
+            lateSubmissionApprovalId = lateApproval.id; // Store the approval ID
             console.log('🕒 Using late submission deadline:', {
               originalDeadline: (test as any).availableTo.seconds,
-              newDeadline: lateApproval.newDeadline.seconds
+              newDeadline: lateApproval.newDeadline.seconds,
+              approvalId: lateApproval.id
             });
           }
         } catch (error) {
@@ -242,6 +246,9 @@ export class AttemptManagementService {
         questionOrderMapping,
         isShuffled,
         shuffledQuestionIds,
+        
+        // Late submission tracking
+        lateSubmissionApprovalId,
         
         // NEW: Untimed test tracking
         isUntimedTest: isUntimed,
