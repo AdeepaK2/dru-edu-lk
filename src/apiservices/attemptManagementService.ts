@@ -947,9 +947,28 @@ export class AttemptManagementService {
       }
 
       // Calculate summary
-      const totalAttempts = attempts.length;
+      // For late submissions: exclude attempts that were marked as expired but NOT yet submitted
+      // (timeRemaining=0 with status still 'in_progress'). These are zombie attempts that should
+      // be ignored when checking if student can create a new attempt.
+      const validAttempts = attempts.filter(attempt => {
+        // Always include fully submitted attempts (these count as real attempts)
+        if (attempt.status === 'submitted' || attempt.status === 'auto_submitted') {
+          return true;
+        }
+        
+        // For in-progress/paused/not_started attempts:
+        // Exclude if marked as expired (timeRemaining=0)
+        if (attempt.status === 'in_progress' || attempt.status === 'paused' || attempt.status === 'not_started') {
+          return attempt.timeRemaining === undefined || attempt.timeRemaining > 0;
+        }
+        
+        // Include all other statuses
+        return true;
+      });
+      
+      const totalAttempts = validAttempts.length;
       const canCreateNewAttempt = totalAttempts < attemptsAllowed && await this.isTestAvailable(test, studentId);
-      const bestScore = attempts.reduce((max, attempt) => 
+      const bestScore = validAttempts.reduce((max, attempt) => 
         Math.max(max, attempt.percentage || 0), 0
       );
 
@@ -960,9 +979,9 @@ export class AttemptManagementService {
         attemptsAllowed,
         canCreateNewAttempt,
         bestScore: bestScore > 0 ? bestScore : undefined,
-        lastAttemptStatus: attempts[0]?.status,
-        lastAttemptDate: attempts[0]?.submittedAt || attempts[0]?.createdAt,
-        attempts: attempts.map(attempt => ({
+        lastAttemptStatus: validAttempts[0]?.status,
+        lastAttemptDate: validAttempts[0]?.submittedAt || validAttempts[0]?.createdAt,
+        attempts: validAttempts.map(attempt => ({
           attemptNumber: attempt.attemptNumber,
           attemptId: attempt.id,
           status: attempt.status,
