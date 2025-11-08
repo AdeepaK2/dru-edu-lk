@@ -60,6 +60,9 @@ export interface TestAttempt {
   percentage?: number;
   passStatus?: 'passed' | 'failed' | 'pending';
   
+  // Late submission tracking
+  lateSubmissionApprovalId?: string; // ID of the late submission approval if this is a late submission attempt
+  
   // Metadata
   createdAt: Timestamp;
   updatedAt: Timestamp;

@@ -376,6 +376,33 @@ export class SubmissionService {
       const { finalAnswers, mcqResults, autoGradedScore, manualGradingPending } = 
         await this.processAnswers(realtimeSession, test);
 
+      // Check if this is a late submission attempt
+      let lateSubmissionInfo: any = undefined;
+      if (attemptData?.lateSubmissionApprovalId) {
+        try {
+          const { LateSubmissionService } = await import('./lateSubmissionService');
+          const { getDoc: getDocFS, doc: docFS } = await import('firebase/firestore');
+          const approvalDoc = await getDocFS(docFS(firestore, 'lateSubmissionApprovals', attemptData.lateSubmissionApprovalId));
+          
+          if (approvalDoc.exists()) {
+            const approval = approvalDoc.data();
+            lateSubmissionInfo = {
+              isLateSubmission: true,
+              approvalId: attemptData.lateSubmissionApprovalId,
+              approvedBy: approval.approvedBy,
+              approvedByName: approval.approvedByName,
+              originalDeadline: approval.originalDeadline,
+              newDeadline: approval.newDeadline,
+              approvedAt: approval.createdAt,
+              reason: approval.reason
+            };
+            console.log('🕒 Late submission detected for attempt:', attemptId);
+          }
+        } catch (error) {
+          console.warn('⚠️ Could not fetch late submission approval info:', error);
+        }
+      }
+
       // Create submission object
       const submission: StudentSubmission = {
         id: attemptId,
@@ -424,6 +451,9 @@ export class SubmissionService {
         // Grading details
         mcqResults,
         essayResults: [], // Will be populated during manual grading
+        
+        // Late submission info (if applicable)
+        lateSubmission: lateSubmissionInfo,
         
         // Integrity monitoring
         integrityReport: {
