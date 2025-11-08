@@ -378,6 +378,8 @@ export class SubmissionService {
 
       // Check if this is a late submission attempt
       let lateSubmissionInfo: any = undefined;
+      console.log('🔍 Checking for late submission approval. attemptData?.lateSubmissionApprovalId:', attemptData?.lateSubmissionApprovalId);
+      
       if (attemptData?.lateSubmissionApprovalId) {
         try {
           const { LateSubmissionService } = await import('./lateSubmissionService');
@@ -396,11 +398,15 @@ export class SubmissionService {
               approvedAt: approval.createdAt,
               reason: approval.reason
             };
-            console.log('🕒 Late submission detected for attempt:', attemptId);
+            console.log('🕒 Late submission detected for attempt:', attemptId, 'Late submission info:', lateSubmissionInfo);
+          } else {
+            console.warn('⚠️ Late submission approval document not found:', attemptData.lateSubmissionApprovalId);
           }
         } catch (error) {
           console.warn('⚠️ Could not fetch late submission approval info:', error);
         }
+      } else {
+        console.log('ℹ️ Not a late submission - no approval ID in attempt data');
       }
 
       // Create submission object
@@ -452,8 +458,8 @@ export class SubmissionService {
         mcqResults,
         essayResults: [], // Will be populated during manual grading
         
-        // Late submission info (if applicable)
-        lateSubmission: lateSubmissionInfo,
+        // Late submission info (if applicable) - only include if present
+        ...(lateSubmissionInfo && { lateSubmission: lateSubmissionInfo }),
         
         // Integrity monitoring
         integrityReport: {
@@ -471,6 +477,11 @@ export class SubmissionService {
 
       // Save to Firestore with retry logic and verification
       const cleanSubmission = this.removeUndefinedValues(submission);
+      
+      console.log('💾 Saving submission with lateSubmission field:', {
+        hasLateSubmission: !!cleanSubmission.lateSubmission,
+        lateSubmissionData: cleanSubmission.lateSubmission
+      });
       
       // Validate submission before saving
       if (!cleanSubmission.studentId || !cleanSubmission.testId) {
