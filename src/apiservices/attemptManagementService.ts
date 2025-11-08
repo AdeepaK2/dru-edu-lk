@@ -138,9 +138,28 @@ export class AttemptManagementService {
       // 🆕 FLEXIBLE TEST FIX: For timed flexible tests, cap duration by deadline
       // If student starts at 11:55 with 30-min test, but deadline is 12:00,
       // they should only get 5 minutes, not 30!
+      // 🆕 LATE SUBMISSION FIX: Check for late submission approval and use new deadline
       if (!isUntimed && test.type === 'flexible' && (test as any).availableTo) {
-        const deadline = (test as any).availableTo;
-        const deadlineSeconds = deadline.seconds || (deadline.toMillis ? deadline.toMillis() / 1000 : 0);
+        let effectiveDeadline = (test as any).availableTo;
+        
+        // Check for late submission approval with extended deadline
+        try {
+          const { LateSubmissionService } = await import('./lateSubmissionService');
+          const lateApproval = await LateSubmissionService.checkLateSubmissionApproval(testId, studentId);
+          
+          if (lateApproval && lateApproval.status === 'approved') {
+            // Use the late submission's new deadline instead
+            effectiveDeadline = lateApproval.newDeadline;
+            console.log('🕒 Using late submission deadline:', {
+              originalDeadline: (test as any).availableTo.seconds,
+              newDeadline: lateApproval.newDeadline.seconds
+            });
+          }
+        } catch (error) {
+          console.warn('⚠️ Could not check late submission approval:', error);
+        }
+        
+        const deadlineSeconds = effectiveDeadline.seconds || (effectiveDeadline.toMillis ? effectiveDeadline.toMillis() / 1000 : 0);
         const nowSeconds = startTime.seconds;
         const timeUntilDeadline = Math.max(0, deadlineSeconds - nowSeconds);
         
