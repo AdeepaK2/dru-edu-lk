@@ -499,6 +499,7 @@ export class TestService {
           return existingSnapshot.docs[0].id;
         }
         if (existingAttempt.status === 'submitted' || existingAttempt.status === 'auto_submitted') {
+          // Student already completed the test - no retries allowed
           throw new Error('Test already completed');
         }
       }
@@ -516,6 +517,9 @@ export class TestService {
         }
       }
 
+      // Create new attempt (always attempt #1 since students can only attempt once)
+      const attemptNumber = 1;
+
       // Create new attempt
       const attemptData: Omit<TestAttempt, 'id'> = {
         testId,
@@ -523,7 +527,7 @@ export class TestService {
         studentId,
         studentName,
         classId,
-        attemptNumber: 1,
+        attemptNumber,
         status: 'in_progress',
         startTime: Timestamp.now(),
         timeSpent: 0,
