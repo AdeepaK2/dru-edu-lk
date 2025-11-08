@@ -352,11 +352,11 @@ export class SubmissionService {
         }
       }
       
-      // Get the actual attempt to get className
+      // Get the actual attempt to get className and late submission info
       let attemptData = null;
       try {
         const { getDoc: getDocFromFirestore, doc: docFromFirestore } = await import('firebase/firestore');
-        const attemptDoc = await getDocFromFirestore(docFromFirestore(firestore, 'attempts', attemptId));
+        const attemptDoc = await getDocFromFirestore(docFromFirestore(firestore, 'testAttempts', attemptId));
         attemptData = attemptDoc.exists() ? attemptDoc.data() as TestAttempt : null;
       } catch (attemptDocError) {
         console.error('Error getting attempt document:', attemptDocError);
