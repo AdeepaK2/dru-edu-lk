@@ -434,9 +434,13 @@ export class AttemptManagementService {
           timeUntilExpiry: isExpired ? 0 : (deadline.seconds - now.seconds)
         };
         
-        if (isExpired) {
-          console.log('⏰ Untimed test deadline expired');
+        // ⚠️ IMPORTANT: Only mark as expired if student is OFFLINE
+        // If online, return isExpired = true and let CLIENT handle auto-submit
+        if (isExpired && !state.isOnline) {
+          console.log('⏰ Untimed test deadline expired (student offline) - marking for background auto-submit');
           await this.markAttemptAsExpired(attemptId);
+        } else if (isExpired && state.isOnline) {
+          console.log('⏰ Untimed test deadline expired (student online) - letting client handle auto-submit');
         }
         
         return timeCalc;
@@ -546,6 +550,8 @@ export class AttemptManagementService {
   }
 
   // Mark attempt as expired and trigger auto-submission
+  // NOTE: This should ONLY be called when student is OFFLINE or by background job
+  // Do NOT call this when student is actively online - let client-side timer handle it
   static async markAttemptAsExpired(attemptId: string): Promise<void> {
     try {
       const db = getDatabase();
@@ -558,15 +564,17 @@ export class AttemptManagementService {
         expiredAt: Date.now()
       });
       
-      // Update Firestore attempt record
+      // ⚠️ IMPORTANT: Do NOT change Firestore status here!
+      // Only mark timeRemaining = 0 so background job can detect and auto-submit
+      // The actual status change to 'auto_submitted' happens in:
+      // - BackgroundSubmissionService.autoSubmitExpiredAttempt() for offline students
+      // - Client-side handleAutoSubmit() for online students
       await updateDoc(doc(firestore, this.COLLECTIONS.ATTEMPTS, attemptId), {
-        status: 'auto_submitted',
         timeRemaining: 0,
-        submittedAt: Timestamp.now(),
-        isAutoSubmitted: true
+        updatedAt: Timestamp.now()
       });
       
-      console.log('⏰ Attempt marked as expired:', attemptId);
+      console.log('⏰ Attempt marked as expired (timeRemaining = 0)');
     } catch (error) {
       console.error('Error marking attempt as expired:', error);
     }
