@@ -2,9 +2,9 @@
 // Handles automatic submission of expired attempts when students are offline
 
 import firebaseAdmin from '@/utils/firebase-server';
+import { getDatabase as getAdminDatabase } from 'firebase-admin/database';
 import { TestAttempt } from '@/models/attemptSchema';
 import { Test, FlexibleTest, LiveTest } from '@/models/testSchema';
-import { AttemptManagementService } from './attemptManagementService';
 import { RealtimeTestService } from './realtimeTestService';
 import { SubmissionService } from './submissionService';
 
@@ -215,29 +215,127 @@ export class BackgroundSubmissionService {
   }
 
   /**
-   * Auto-submit an expired attempt
+   * Auto-submit an expired attempt (server-side using Admin SDK)
    */
   private static async autoSubmitExpiredAttempt(attempt: TestAttempt): Promise<void> {
     try {
       console.log(`🔄 Auto-submitting expired attempt: ${attempt.id}`);
 
-      // Mark attempt as expired first
-      await AttemptManagementService.markAttemptAsExpired(attempt.id);
+      // Get admin Realtime Database instance
+      const adminRtdb = getAdminDatabase(firebaseAdmin.admin.app());
 
-      // Try to submit test session (may fail if no realtime data exists)
+      // 1. Mark attempt as expired in Firestore (use admin SDK directly)
+      console.log(`📝 Marking attempt as expired in Firestore: ${attempt.id}`);
+      await firebaseAdmin.db
+        .collection('testAttempts')
+        .doc(attempt.id)
+        .update({
+          timeRemaining: 0,
+          updatedAt: new Date()
+        });
+
+      // 2. Update Realtime Database attempt state (using Admin SDK)
+      console.log(`🔄 Updating activeAttempts in Realtime DB: ${attempt.id}`);
       try {
-        await RealtimeTestService.submitTestSession(attempt.id, true);
-      } catch (realtimeError) {
-        console.warn(`⚠️ Realtime submission failed for ${attempt.id}, continuing with backup submission`);
+        await adminRtdb.ref(`activeAttempts/${attempt.id}`).update({
+          timeRemaining: 0,
+          isOnline: false,
+          lastUpdate: Date.now()
+        });
+      } catch (rtdbError) {
+        console.warn(`⚠️ Could not update activeAttempts for ${attempt.id}:`, rtdbError);
       }
 
-      // Process submission (this will handle missing realtime data gracefully)
-      await SubmissionService.processSubmission(attempt.id, true);
+      // 3. Mark test session as submitted in Realtime DB (using Admin SDK)
+      console.log(`📤 Marking session as submitted: ${attempt.id}`);
+      try {
+        const sessionRef = adminRtdb.ref(`testSessions/${attempt.id}`);
+        const sessionSnapshot = await sessionRef.get();
+        
+        if (sessionSnapshot.exists()) {
+          await sessionRef.update({
+            isSubmitted: true,
+            submittedAt: Date.now(),
+            isAutoSubmitted: true
+          });
+        } else {
+          console.warn(`⚠️ No realtime session found for ${attempt.id}, will create minimal submission`);
+        }
+      } catch (sessionError) {
+        console.warn(`⚠️ Could not update testSession for ${attempt.id}:`, sessionError);
+      }
+
+      // 4. Update attempt status to auto_submitted in Firestore
+      console.log(`✅ Updating attempt status to auto_submitted: ${attempt.id}`);
+      await firebaseAdmin.db
+        .collection('testAttempts')
+        .doc(attempt.id)
+        .update({
+          status: 'auto_submitted',
+          submittedAt: new Date(),
+          updatedAt: new Date()
+        });
+
+      // 5. Create submission record (this requires processSubmission logic)
+      console.log(`📋 Creating submission record: ${attempt.id}`);
+      try {
+        // Get session data from Realtime DB
+        const sessionSnapshot = await adminRtdb.ref(`testSessions/${attempt.id}`).get();
+        const sessionData = sessionSnapshot.val();
+
+        if (sessionData) {
+          // Call SubmissionService which should work since we've updated everything
+          await SubmissionService.processSubmission(attempt.id, true);
+        } else {
+          // Create minimal submission without session data
+          await this.createMinimalSubmission(attempt);
+        }
+      } catch (submissionError) {
+        console.error(`❌ Error creating submission for ${attempt.id}:`, submissionError);
+        // Create fallback submission
+        await this.createMinimalSubmission(attempt);
+      }
 
       console.log(`✅ Successfully auto-submitted expired attempt: ${attempt.id}`);
 
     } catch (error) {
       console.error(`❌ Failed to auto-submit attempt ${attempt.id}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create a minimal submission when session data is missing
+   */
+  private static async createMinimalSubmission(attempt: TestAttempt): Promise<void> {
+    console.log(`📝 Creating minimal submission for: ${attempt.id}`);
+    
+    try {
+      const submissionData = {
+        attemptId: attempt.id,
+        testId: attempt.testId,
+        studentId: attempt.studentId,
+        status: 'auto_submitted' as const,
+        isAutoSubmitted: true,
+        submittedAt: new Date(),
+        answers: {}, // No answers available
+        score: 0,
+        totalQuestions: 0,
+        correctAnswers: 0,
+        incorrectAnswers: 0,
+        unansweredQuestions: 0,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      await firebaseAdmin.db
+        .collection('studentSubmissions')
+        .doc(attempt.id)
+        .set(submissionData);
+
+      console.log(`✅ Created minimal submission for ${attempt.id}`);
+    } catch (error) {
+      console.error(`❌ Failed to create minimal submission for ${attempt.id}:`, error);
       throw error;
     }
   }
