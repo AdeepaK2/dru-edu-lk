@@ -47,7 +47,7 @@ function initializeFirebaseAdmin() {
 
       admin.initializeApp({
         credential: cert(serviceAccount as admin.ServiceAccount),
-        // databaseURL: 'https://dru-edu-default-rtdb.asia-southeast1.firebasedatabase.app',
+        databaseURL: process.env.FIREBASE_DATABASE_URL || 'https://dru-edu-default-rtdb.asia-southeast1.firebasedatabase.app',
         storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
       });
       console.log('Firebase Admin initialized successfully');

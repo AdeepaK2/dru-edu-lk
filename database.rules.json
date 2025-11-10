@@ -1,6 +1,20 @@
 {
   "rules": {
-    ".read": "auth != null",
-    ".write": "auth != null"
+    "activeAttempts": {
+      "$attemptId": {
+        ".read": true,
+        ".write": true
+      }
+    },
+    "testSessions": {
+      "$attemptId": {
+        ".read": true,
+        ".write": true
+      }
+    },
+    "$other": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    }
   }
 }
