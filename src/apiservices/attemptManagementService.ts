@@ -665,7 +665,28 @@ export class AttemptManagementService {
       const isExpired = currentTimeRemaining <= 0;
       
       if (isExpired) {
-        console.log('⏰ Test expired while student was offline');
+        console.log('⏰ Test expired while student was offline - checking Firestore status');
+        
+        // Check if already auto-submitted by background job
+        const attemptDoc = await getDoc(doc(firestore, this.COLLECTIONS.ATTEMPTS, attemptId));
+        if (attemptDoc.exists()) {
+          const attemptData = attemptDoc.data() as TestAttempt;
+          
+          if (attemptData.status === 'submitted' || attemptData.status === 'auto_submitted') {
+            console.log('✅ Test already submitted - cannot continue');
+            return {
+              totalTimeAllowed: currentTotalTimeSpent + currentTimeRemaining,
+              timeSpent: currentTotalTimeSpent,
+              timeRemaining: 0,
+              offlineTime: offlineTime,
+              isExpired: true,
+              canContinue: false,
+              timeUntilExpiry: 0
+            };
+          }
+        }
+        
+        // Not yet submitted by background job - mark as expired but let background job handle submission
         await this.markAttemptAsExpired(attemptId);
         
         return {
