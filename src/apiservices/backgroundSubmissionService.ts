@@ -149,7 +149,31 @@ export class BackgroundSubmissionService {
       const testDoc = await firebaseAdmin.db.collection('tests').doc(attempt.testId).get();
       
       if (!testDoc.exists) {
-        console.warn(`Test not found for attempt: ${attempt.id}`);
+        console.warn(`⚠️ Test not found for attempt ${attempt.id}, marking as orphaned and cleaning up`);
+        
+        // Clean up orphaned attempt (test was deleted)
+        try {
+          // Mark attempt as cancelled in Firestore
+          await firebaseAdmin.db
+            .collection('testAttempts')
+            .doc(attempt.id)
+            .update({
+              status: 'cancelled',
+              updatedAt: new Date(),
+              cancellationReason: 'Test was deleted'
+            });
+          
+          // Clean up Realtime DB data
+          const { getDatabase } = await import('firebase-admin/database');
+          const rtdb = getDatabase();
+          await rtdb.ref(`activeAttempts/${attempt.id}`).remove();
+          await rtdb.ref(`testSessions/${attempt.id}`).remove();
+          
+          console.log(`✅ Cleaned up orphaned attempt: ${attempt.id}`);
+        } catch (cleanupError) {
+          console.error(`❌ Failed to cleanup orphaned attempt ${attempt.id}:`, cleanupError);
+        }
+        
         return false;
       }
 
