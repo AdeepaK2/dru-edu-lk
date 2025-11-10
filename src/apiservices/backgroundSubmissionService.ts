@@ -276,16 +276,16 @@ export class BackgroundSubmissionService {
           updatedAt: new Date()
         });
 
-      // 5. Create submission record (this requires processSubmission logic)
+      // 5. Create submission record using server-side logic
       console.log(`📋 Creating submission record: ${attempt.id}`);
       try {
         // Get session data from Realtime DB
         const sessionSnapshot = await adminRtdb.ref(`testSessions/${attempt.id}`).get();
         const sessionData = sessionSnapshot.val();
 
-        if (sessionData) {
-          // Call SubmissionService which should work since we've updated everything
-          await SubmissionService.processSubmission(attempt.id, true);
+        if (sessionData && sessionData.answers) {
+          // Create full submission with answers
+          await this.createFullSubmission(attempt, sessionData);
         } else {
           // Create minimal submission without session data
           await this.createMinimalSubmission(attempt);
@@ -337,6 +337,78 @@ export class BackgroundSubmissionService {
     } catch (error) {
       console.error(`❌ Failed to create minimal submission for ${attempt.id}:`, error);
       throw error;
+    }
+  }
+
+  /**
+   * Create a full submission with answers from session data
+   */
+  private static async createFullSubmission(attempt: TestAttempt, sessionData: any): Promise<void> {
+    console.log(`📝 Creating full submission with answers for: ${attempt.id}`);
+    
+    try {
+      // Get test data to calculate score
+      const testDoc = await firebaseAdmin.db.collection('tests').doc(attempt.testId).get();
+      if (!testDoc.exists) {
+        console.warn(`⚠️ Test not found for ${attempt.testId}, creating minimal submission`);
+        await this.createMinimalSubmission(attempt);
+        return;
+      }
+
+      const testData = testDoc.data() as any;
+      const answers = sessionData.answers || {};
+      
+      // Calculate score
+      let correctAnswers = 0;
+      let incorrectAnswers = 0;
+      let unansweredQuestions = 0;
+      const totalQuestions = testData.questions?.length || 0;
+
+      if (testData.questions) {
+        for (const question of testData.questions) {
+          const studentAnswer = answers[question.id];
+          
+          if (!studentAnswer || studentAnswer.selectedOption === undefined || studentAnswer.selectedOption === null) {
+            unansweredQuestions++;
+          } else if (studentAnswer.selectedOption === question.correctAnswer) {
+            correctAnswers++;
+          } else {
+            incorrectAnswers++;
+          }
+        }
+      }
+
+      const score = totalQuestions > 0 ? (correctAnswers / totalQuestions) * 100 : 0;
+
+      const submissionData = {
+        attemptId: attempt.id,
+        testId: attempt.testId,
+        studentId: attempt.studentId,
+        status: 'auto_submitted' as const,
+        isAutoSubmitted: true,
+        submittedAt: new Date(),
+        answers: answers,
+        score: Math.round(score * 100) / 100, // Round to 2 decimal places
+        totalQuestions,
+        correctAnswers,
+        incorrectAnswers,
+        unansweredQuestions,
+        timePerQuestion: sessionData.timePerQuestion || {},
+        questionsVisited: sessionData.questionsVisited || [],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      await firebaseAdmin.db
+        .collection('studentSubmissions')
+        .doc(attempt.id)
+        .set(submissionData);
+
+      console.log(`✅ Created full submission for ${attempt.id} - Score: ${score}%, Correct: ${correctAnswers}/${totalQuestions}`);
+    } catch (error) {
+      console.error(`❌ Failed to create full submission for ${attempt.id}:`, error);
+      // Fallback to minimal submission
+      await this.createMinimalSubmission(attempt);
     }
   }
 
