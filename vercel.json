@@ -15,10 +15,6 @@
     {
       "path": "/api/cron/precompute-analytics",
       "schedule": "0 2 * * *"
-    },
-    {
-      "path": "/api/background/submissions",
-      "schedule": "*/10 * * * *"
     }
   ]
 }
