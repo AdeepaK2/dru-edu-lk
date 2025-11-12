@@ -129,11 +129,58 @@ export class AttemptManagementService {
       const isUntimed = test.type === 'flexible' && (test as any).isUntimed === true;
       
       // Calculate time allowed
-      const timeAllowed = isUntimed 
+      let timeAllowed = isUntimed 
         ? Number.MAX_SAFE_INTEGER // Essentially infinite time per session for untimed tests
         : this.getTestDuration(test) * 60; // Convert to seconds for timed tests
       
       const startTime = Timestamp.now();
+      
+      // 🆕 FLEXIBLE TEST FIX: For timed flexible tests, cap duration by deadline
+      // If student starts at 11:55 with 30-min test, but deadline is 12:00,
+      // they should only get 5 minutes, not 30!
+      // 🆕 LATE SUBMISSION FIX: Check for late submission approval and use new deadline
+      let lateSubmissionApprovalId: string | undefined;
+      
+      if (!isUntimed && test.type === 'flexible' && (test as any).availableTo) {
+        let effectiveDeadline = (test as any).availableTo;
+        
+        // Check for late submission approval with extended deadline
+        try {
+          const { LateSubmissionService } = await import('./lateSubmissionService');
+          const lateApproval = await LateSubmissionService.checkLateSubmissionApproval(testId, studentId);
+          
+          if (lateApproval && lateApproval.status === 'approved') {
+            // Use the late submission's new deadline instead
+            effectiveDeadline = lateApproval.newDeadline;
+            lateSubmissionApprovalId = lateApproval.id; // Store the approval ID
+            console.log('🕒 Using late submission deadline:', {
+              originalDeadline: (test as any).availableTo.seconds,
+              newDeadline: lateApproval.newDeadline.seconds,
+              approvalId: lateApproval.id
+            });
+          }
+        } catch (error) {
+          console.warn('⚠️ Could not check late submission approval:', error);
+        }
+        
+        const deadlineSeconds = effectiveDeadline.seconds || (effectiveDeadline.toMillis ? effectiveDeadline.toMillis() / 1000 : 0);
+        const nowSeconds = startTime.seconds;
+        const timeUntilDeadline = Math.max(0, deadlineSeconds - nowSeconds);
+        
+        // Use whichever is LESS: test duration OR time until deadline
+        if (timeUntilDeadline < timeAllowed) {
+          console.log(`⏰ Capping test duration: ${timeAllowed}s requested, but only ${timeUntilDeadline}s until deadline`);
+          
+          // ⚠️ WARNING: Check if there's enough time to reasonably take the test
+          const MIN_TIME_REQUIRED = 60; // At least 1 minute
+          if (timeUntilDeadline < MIN_TIME_REQUIRED) {
+            console.warn(`⚠️ Student attempting to start test with only ${timeUntilDeadline}s remaining (< 1 minute)`);
+            // Allow but log warning - teacher may want to extend deadline
+          }
+          
+          timeAllowed = timeUntilDeadline;
+        }
+      }
       
       // For untimed tests, endTime is the test deadline, not duration-based
       const endTime = isUntimed && test.type === 'flexible'
@@ -199,6 +246,9 @@ export class AttemptManagementService {
         questionOrderMapping,
         isShuffled,
         shuffledQuestionIds,
+        
+        // Late submission tracking
+        lateSubmissionApprovalId,
         
         // NEW: Untimed test tracking
         isUntimedTest: isUntimed,
@@ -390,14 +440,21 @@ export class AttemptManagementService {
         
         await update(stateRef, updates);
         
-        // Periodic Firestore update
-        if (now.toMillis() % 30000 < 1000) {
+        // Periodic Firestore update (improved reliability)
+        const lastFirestoreUpdate = (state as any).lastFirestoreUpdate || 0;
+        const timeSinceLastFirestoreUpdate = now.toMillis() - lastFirestoreUpdate;
+        const FIRESTORE_UPDATE_INTERVAL = 30000; // 30 seconds
+        
+        if (timeSinceLastFirestoreUpdate >= FIRESTORE_UPDATE_INTERVAL) {
           await updateDoc(doc(firestore, this.COLLECTIONS.ATTEMPTS, attemptId), {
             totalTimeSpentAcrossSessions: newTotalTimeSpent,
             timeSpent: newTotalTimeSpent,
             lastActiveAt: now,
             updatedAt: now
           });
+          
+          // Track when we updated Firestore
+          await update(stateRef, { lastFirestoreUpdate: now.toMillis() });
         }
         
         const timeCalc: TimeCalculation = {
@@ -410,15 +467,25 @@ export class AttemptManagementService {
           timeUntilExpiry: isExpired ? 0 : (deadline.seconds - now.seconds)
         };
         
-        if (isExpired) {
-          console.log('⏰ Untimed test deadline expired');
+        // ⚠️ IMPORTANT: Only mark as expired if student is OFFLINE
+        // If online, return isExpired = true and let CLIENT handle auto-submit
+        if (isExpired && !state.isOnline) {
+          console.log('⏰ Untimed test deadline expired (student offline) - marking for background auto-submit');
           await this.markAttemptAsExpired(attemptId);
+        } else if (isExpired && state.isOnline) {
+          console.log('⏰ Untimed test deadline expired (student online) - letting client handle auto-submit');
         }
         
         return timeCalc;
       }
       
       // EXISTING: Handle timed tests
+      // Get test to check for flexible test deadline
+      const test = await this.getTest(attempt.testId);
+      if (!test) {
+        throw new Error('Test not found');
+      }
+      
       // Calculate time spent in current session (only if online)
       let sessionTime = 0;
       if (state.isOnline && state.sessionStartTime) {
@@ -436,7 +503,26 @@ export class AttemptManagementService {
       // Ensure totalTimeSpent is never null or undefined
       const currentTotalTimeSpent = state.totalTimeSpent ?? 0;
       const newTotalTimeSpent = currentTotalTimeSpent + sessionTime;
-      const newTimeRemaining = Math.max(0, (state.timeRemaining ?? 0) - sessionTime);
+      let newTimeRemaining = Math.max(0, (state.timeRemaining ?? 0) - sessionTime);
+      
+      // 🆕 FLEXIBLE TEST FIX: Check if deadline has passed (for timed flexible tests)
+      // If student starts at 11:55 with 30-min test, but deadline is 12:00,
+      // they should only get 5 minutes, not 30!
+      if (test.type === 'flexible' && (test as any).availableTo) {
+        const deadline = (test as any).availableTo;
+        const deadlineSeconds = deadline.seconds || (deadline.toMillis ? deadline.toMillis() / 1000 : 0);
+        // Use consistent time source (milliseconds for precision)
+        const nowMillis = now;
+        const deadlineMillis = deadlineSeconds * 1000;
+        const timeUntilDeadlineMs = Math.max(0, deadlineMillis - nowMillis);
+        const timeUntilDeadline = Math.floor(timeUntilDeadlineMs / 1000);
+        
+        // Use whichever is LESS: remaining duration OR time until deadline
+        if (timeUntilDeadline < newTimeRemaining) {
+          console.log(`⏰ Flexible test deadline constraint: ${timeUntilDeadline}s until deadline vs ${newTimeRemaining}s remaining`);
+          newTimeRemaining = timeUntilDeadline;
+        }
+      }
       
       // Check if attempt should be marked as expired
       const isExpired = newTimeRemaining <= 0;
@@ -461,14 +547,22 @@ export class AttemptManagementService {
       
       await update(stateRef, updates);
 
-      // Update Firestore periodically (every 30 seconds)
-      if (now % 30000 < 1000) { // Rough check for 30-second intervals
+      // Update Firestore periodically (improved reliability)
+      // Use lastHeartbeat to track when we last updated Firestore
+      const lastFirestoreUpdate = (state as any).lastFirestoreUpdate || 0;
+      const timeSinceLastFirestoreUpdate = now - lastFirestoreUpdate;
+      const FIRESTORE_UPDATE_INTERVAL = 30000; // 30 seconds
+      
+      if (timeSinceLastFirestoreUpdate >= FIRESTORE_UPDATE_INTERVAL) {
         await updateDoc(doc(firestore, this.COLLECTIONS.ATTEMPTS, attemptId), {
           timeSpent: newTotalTimeSpent,
           timeRemaining: newTimeRemaining,
           lastActiveAt: Timestamp.now(),
           updatedAt: Timestamp.now()
         });
+        
+        // Track when we updated Firestore
+        await update(stateRef, { lastFirestoreUpdate: now });
       }
 
       const timeCalc: TimeCalculation = {
@@ -489,6 +583,8 @@ export class AttemptManagementService {
   }
 
   // Mark attempt as expired and trigger auto-submission
+  // NOTE: This should ONLY be called when student is OFFLINE or by background job
+  // Do NOT call this when student is actively online - let client-side timer handle it
   static async markAttemptAsExpired(attemptId: string): Promise<void> {
     try {
       const db = getDatabase();
@@ -501,15 +597,17 @@ export class AttemptManagementService {
         expiredAt: Date.now()
       });
       
-      // Update Firestore attempt record
+      // ⚠️ IMPORTANT: Do NOT change Firestore status here!
+      // Only mark timeRemaining = 0 so background job can detect and auto-submit
+      // The actual status change to 'auto_submitted' happens in:
+      // - BackgroundSubmissionService.autoSubmitExpiredAttempt() for offline students
+      // - Client-side handleAutoSubmit() for online students
       await updateDoc(doc(firestore, this.COLLECTIONS.ATTEMPTS, attemptId), {
-        status: 'auto_submitted',
         timeRemaining: 0,
-        submittedAt: Timestamp.now(),
-        isAutoSubmitted: true
+        updatedAt: Timestamp.now()
       });
       
-      console.log('⏰ Attempt marked as expired:', attemptId);
+      console.log('⏰ Attempt marked as expired (timeRemaining = 0)');
     } catch (error) {
       console.error('Error marking attempt as expired:', error);
     }
@@ -567,7 +665,28 @@ export class AttemptManagementService {
       const isExpired = currentTimeRemaining <= 0;
       
       if (isExpired) {
-        console.log('⏰ Test expired while student was offline');
+        console.log('⏰ Test expired while student was offline - checking Firestore status');
+        
+        // Check if already auto-submitted by background job
+        const attemptDoc = await getDoc(doc(firestore, this.COLLECTIONS.ATTEMPTS, attemptId));
+        if (attemptDoc.exists()) {
+          const attemptData = attemptDoc.data() as TestAttempt;
+          
+          if (attemptData.status === 'submitted' || attemptData.status === 'auto_submitted') {
+            console.log('✅ Test already submitted - cannot continue');
+            return {
+              totalTimeAllowed: currentTotalTimeSpent + currentTimeRemaining,
+              timeSpent: currentTotalTimeSpent,
+              timeRemaining: 0,
+              offlineTime: offlineTime,
+              isExpired: true,
+              canContinue: false,
+              timeUntilExpiry: 0
+            };
+          }
+        }
+        
+        // Not yet submitted by background job - mark as expired but let background job handle submission
         await this.markAttemptAsExpired(attemptId);
         
         return {
@@ -875,9 +994,28 @@ export class AttemptManagementService {
       }
 
       // Calculate summary
-      const totalAttempts = attempts.length;
+      // For late submissions: exclude attempts that were marked as expired but NOT yet submitted
+      // (timeRemaining=0 with status still 'in_progress'). These are zombie attempts that should
+      // be ignored when checking if student can create a new attempt.
+      const validAttempts = attempts.filter(attempt => {
+        // Always include fully submitted attempts (these count as real attempts)
+        if (attempt.status === 'submitted' || attempt.status === 'auto_submitted') {
+          return true;
+        }
+        
+        // For in-progress/paused/not_started attempts:
+        // Exclude if marked as expired (timeRemaining=0)
+        if (attempt.status === 'in_progress' || attempt.status === 'paused' || attempt.status === 'not_started') {
+          return attempt.timeRemaining === undefined || attempt.timeRemaining > 0;
+        }
+        
+        // Include all other statuses
+        return true;
+      });
+      
+      const totalAttempts = validAttempts.length;
       const canCreateNewAttempt = totalAttempts < attemptsAllowed && await this.isTestAvailable(test, studentId);
-      const bestScore = attempts.reduce((max, attempt) => 
+      const bestScore = validAttempts.reduce((max, attempt) => 
         Math.max(max, attempt.percentage || 0), 0
       );
 
@@ -888,9 +1026,9 @@ export class AttemptManagementService {
         attemptsAllowed,
         canCreateNewAttempt,
         bestScore: bestScore > 0 ? bestScore : undefined,
-        lastAttemptStatus: attempts[0]?.status,
-        lastAttemptDate: attempts[0]?.submittedAt || attempts[0]?.createdAt,
-        attempts: attempts.map(attempt => ({
+        lastAttemptStatus: validAttempts[0]?.status,
+        lastAttemptDate: validAttempts[0]?.submittedAt || validAttempts[0]?.createdAt,
+        attempts: validAttempts.map(attempt => ({
           attemptNumber: attempt.attemptNumber,
           attemptId: attempt.id,
           status: attempt.status,
@@ -924,7 +1062,10 @@ export class AttemptManagementService {
         );
 
         const snapshot = await getDocs(attemptsQuery);
-        attempts = snapshot.docs.map(doc => doc.data() as TestAttempt);
+        attempts = snapshot.docs
+          .map(doc => doc.data() as TestAttempt)
+          // Skip attempts marked as expired (timeRemaining = 0)
+          .filter(attempt => attempt.timeRemaining === undefined || attempt.timeRemaining > 0);
       } catch (indexError) {
         console.warn('Compound index not available for active attempt query, using fallback');
         
@@ -938,7 +1079,11 @@ export class AttemptManagementService {
         const fallbackSnapshot = await getDocs(fallbackQuery);
         attempts = fallbackSnapshot.docs
           .map(doc => doc.data() as TestAttempt)
-          .filter(attempt => ['not_started', 'in_progress', 'paused'].includes(attempt.status))
+          .filter(attempt => 
+            ['not_started', 'in_progress', 'paused'].includes(attempt.status) &&
+            // Skip attempts marked as expired (timeRemaining = 0)
+            (attempt.timeRemaining === undefined || attempt.timeRemaining > 0)
+          )
           .sort((a, b) => b.createdAt.seconds - a.createdAt.seconds)
           .slice(0, 1);
       }

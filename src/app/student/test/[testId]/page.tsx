@@ -456,7 +456,10 @@ export default function TestPage() {
           // ✅ Add explicit check for submission timestamp
           const hasNotBeenSubmitted = !attemptData.submittedAt || attemptData.submittedAt.seconds === 0;
           
-          if (isActiveStatus && hasNotBeenSubmitted) {
+          // ✅ Skip attempts with timeRemaining = 0 (marked as expired)
+          const hasTimeRemaining = attemptData.timeRemaining > 0;
+          
+          if (isActiveStatus && hasNotBeenSubmitted && hasTimeRemaining) {
             // Check if still within time limits
             let isWithinTime = true;
             if (attemptData.endTime) {

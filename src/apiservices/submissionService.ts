@@ -352,11 +352,11 @@ export class SubmissionService {
         }
       }
       
-      // Get the actual attempt to get className
+      // Get the actual attempt to get className and late submission info
       let attemptData = null;
       try {
         const { getDoc: getDocFromFirestore, doc: docFromFirestore } = await import('firebase/firestore');
-        const attemptDoc = await getDocFromFirestore(docFromFirestore(firestore, 'attempts', attemptId));
+        const attemptDoc = await getDocFromFirestore(docFromFirestore(firestore, 'testAttempts', attemptId));
         attemptData = attemptDoc.exists() ? attemptDoc.data() as TestAttempt : null;
       } catch (attemptDocError) {
         console.error('Error getting attempt document:', attemptDocError);
@@ -375,6 +375,39 @@ export class SubmissionService {
       // Process answers and calculate scores
       const { finalAnswers, mcqResults, autoGradedScore, manualGradingPending } = 
         await this.processAnswers(realtimeSession, test);
+
+      // Check if this is a late submission attempt
+      let lateSubmissionInfo: any = undefined;
+      console.log('🔍 Checking for late submission approval. attemptData?.lateSubmissionApprovalId:', attemptData?.lateSubmissionApprovalId);
+      
+      if (attemptData?.lateSubmissionApprovalId) {
+        try {
+          const { LateSubmissionService } = await import('./lateSubmissionService');
+          const { getDoc: getDocFS, doc: docFS } = await import('firebase/firestore');
+          const approvalDoc = await getDocFS(docFS(firestore, 'lateSubmissionApprovals', attemptData.lateSubmissionApprovalId));
+          
+          if (approvalDoc.exists()) {
+            const approval = approvalDoc.data();
+            lateSubmissionInfo = {
+              isLateSubmission: true,
+              approvalId: attemptData.lateSubmissionApprovalId,
+              approvedBy: approval.approvedBy,
+              approvedByName: approval.approvedByName,
+              originalDeadline: approval.originalDeadline,
+              newDeadline: approval.newDeadline,
+              approvedAt: approval.createdAt,
+              reason: approval.reason
+            };
+            console.log('🕒 Late submission detected for attempt:', attemptId, 'Late submission info:', lateSubmissionInfo);
+          } else {
+            console.warn('⚠️ Late submission approval document not found:', attemptData.lateSubmissionApprovalId);
+          }
+        } catch (error) {
+          console.warn('⚠️ Could not fetch late submission approval info:', error);
+        }
+      } else {
+        console.log('ℹ️ Not a late submission - no approval ID in attempt data');
+      }
 
       // Create submission object
       const submission: StudentSubmission = {
@@ -425,6 +458,9 @@ export class SubmissionService {
         mcqResults,
         essayResults: [], // Will be populated during manual grading
         
+        // Late submission info (if applicable) - only include if present
+        ...(lateSubmissionInfo && { lateSubmission: lateSubmissionInfo }),
+        
         // Integrity monitoring
         integrityReport: {
           tabSwitches: realtimeSession.tabSwitchCount || 0,
@@ -441,6 +477,11 @@ export class SubmissionService {
 
       // Save to Firestore with retry logic and verification
       const cleanSubmission = this.removeUndefinedValues(submission);
+      
+      console.log('💾 Saving submission with lateSubmission field:', {
+        hasLateSubmission: !!cleanSubmission.lateSubmission,
+        lateSubmissionData: cleanSubmission.lateSubmission
+      });
       
       // Validate submission before saving
       if (!cleanSubmission.studentId || !cleanSubmission.testId) {
@@ -598,19 +639,28 @@ export class SubmissionService {
             });
             if (selectedOptionIndex === -1) {
               console.warn(`Selected option ID ${answer.selectedOption} not found in question options`);
-              selectedOptionIndex = 0; // Default to first option
+              selectedOptionIndex = 0; // Default to first option if not found
             }
+          } else if (answer.selectedOption === null) {
+            // ⚠️ IMPORTANT: Student did not answer - mark as -1 (unanswered)
+            selectedOptionIndex = -1;
           } else {
             // If it's already a number, use it directly
             selectedOptionIndex = answer.selectedOption as number;
           }
           
-          const isCorrect = selectedOptionIndex === correctOptionIndex;
+          // Check if question was answered or left blank
+          const isAnswered = selectedOptionIndex !== -1;
+          const isCorrect = isAnswered && selectedOptionIndex === correctOptionIndex;
           const marksAwarded = isCorrect ? (question.marks || 0) : 0;
           
           finalAnswer.isCorrect = isCorrect;
           finalAnswer.marksAwarded = marksAwarded;
-          autoGradedScore += marksAwarded;
+          
+          // Only add to score if answered
+          if (isAnswered) {
+            autoGradedScore += marksAwarded;
+          }
 
           // Create MCQ result with proper option text handling
           const options = question.questionData?.options || question.options || [];
@@ -618,9 +668,9 @@ export class SubmissionService {
             questionId: question.id || '',
             questionText: questionData.questionText || '',
             selectedOption: selectedOptionIndex,
-            selectedOptionText: options[selectedOptionIndex] 
+            selectedOptionText: isAnswered && options[selectedOptionIndex] 
               ? getOptionText(options[selectedOptionIndex], selectedOptionIndex)
-              : 'No answer selected',
+              : 'Not answered',
             correctOption: correctOptionIndex,
             correctOptionText: options[correctOptionIndex] 
               ? getOptionText(options[correctOptionIndex], correctOptionIndex)
