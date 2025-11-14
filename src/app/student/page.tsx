@@ -455,6 +455,7 @@ export default function StudentDashboard() {
                       : theme === 'avengers' ? 'w-48 h-48'
                       : theme === 'bounceworld' ? 'w-48 h-48'
                       : theme === 'ponyville' ? 'w-48 h-48'
+                      : theme === 'cricketverse' ? 'w-48 h-48'
                       : 'w-40 h-40'
                     } ${
                       theme === 'avengers' ? '' : 'rounded-full'

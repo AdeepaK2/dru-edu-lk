@@ -210,16 +210,19 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
 
     // CricketVerse avatars (Cricket players)
     const cricketVerseMap: Record<string, string> = {
-      virat: '/cricketverse/VIRAT KOHLI.avif',
-      rohit: '/cricketverse/ROHIT SHARMA.avif',
-      shubman: '/cricketverse/SHUBMAN GILL.avif',
-      klrahul: '/cricketverse/KL RAHUL.avif',
-      rishabh: '/cricketverse/RISHABH PANT.avif',
-      hardik: '/cricketverse/HARDIK PANDYA.avif',
-      jadeja: '/cricketverse/RAVINDRA JADEJAavif.avif',
-      bumrah: '/cricketverse/JASPRIT BUMRAH.avif',
-      shami: '/cricketverse/MOHAMMAD SHAMI.avif',
-      siraj: '/cricketverse/MOHAMMED SIRAJ.avif'
+      'adam-zampa': '/cricketverse/Adam Zampa.webp',
+      'alex-carey': '/cricketverse/Alex Carey.webp',
+      'cameron-green': '/cricketverse/Cameron Green.webp',
+      'glenn-maxwell': '/cricketverse/Glenn Maxwell.webp',
+      'josh-hazlewood': '/cricketverse/Josh Hazlewood.webp',
+      'josh-inglis': '/cricketverse/Josh Inglis.webp',
+      'lance-morris': '/cricketverse/Lance Morris.webp',
+      'matthew-short': '/cricketverse/Matthew Short.webp',
+      'mitchell-starc': '/cricketverse/Mitchell Starc.webp',
+      'nathan-ellis': '/cricketverse/Nathan Ellis.webp',
+      'travis-head': '/cricketverse/Travis Head.webp',
+      'usman-khawaja': '/cricketverse/Usman Khawaja.webp',
+      'xavier-bartlett': '/cricketverse/Xavier Bartlett.webp'
     };
 
     // Ponyville avatars (Magical unicorns and ponies)

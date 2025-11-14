@@ -269,73 +269,94 @@ const avengersAvatars = [
 // CricketVerse themed avatars - Cricket Champions
 const cricketverseAvatars = [
   {
-    id: 'virat',
-    name: 'Virat Kohli',
-    image: '/cricketverse/VIRAT KOHLI.avif',
-    description: 'The King of Cricket — chase master and run machine!',
+    id: 'adam-zampa',
+    name: 'Adam Zampa',
+    image: '/cricketverse/Adam Zampa.webp',
+    description: 'The Spin Wizard — leg-spinner extraordinaire!',
     colors: 'from-blue-500 to-indigo-600'
   },
   {
-    id: 'rohit',
-    name: 'Rohit Sharma',
-    image: '/cricketverse/ROHIT SHARMA.avif',
-    description: 'Hitman — opener extraordinaire and captain cool!',
+    id: 'alex-carey',
+    name: 'Alex Carey',
+    image: '/cricketverse/Alex Carey.webp',
+    description: 'The Wicketkeeper — agile and explosive batsman!',
     colors: 'from-blue-500 to-indigo-600'
   },
   {
-    id: 'shubman',
-    name: 'Shubman Gill',
-    image: '/cricketverse/SHUBMAN GILL.avif',
-    description: 'The Gill-man — elegant batsman and future star!',
+    id: 'cameron-green',
+    name: 'Cameron Green',
+    image: '/cricketverse/Cameron Green.webp',
+    description: 'The All-rounder — powerful batsman and bowler!',
     colors: 'from-blue-500 to-indigo-600'
   },
   {
-    id: 'klrahul',
-    name: 'KL Rahul',
-    image: '/cricketverse/KL RAHUL.avif',
-    description: 'The Wall — dependable opener and wicketkeeper!',
+    id: 'glenn-maxwell',
+    name: 'Glenn Maxwell',
+    image: '/cricketverse/Glenn Maxwell.webp',
+    description: 'The Big Show — finisher and six-hitter!',
     colors: 'from-blue-500 to-indigo-600'
   },
   {
-    id: 'rishabh',
-    name: 'Rishabh Pant',
-    image: '/cricketverse/RISHABH PANT.avif',
-    description: 'The Destroyer — aggressive finisher and keeper!',
+    id: 'josh-hazlewood',
+    name: 'Josh Hazlewood',
+    image: '/cricketverse/Josh Hazlewood.webp',
+    description: 'The Pacer — relentless fast bowler!',
     colors: 'from-blue-500 to-indigo-600'
   },
   {
-    id: 'hardik',
-    name: 'Hardik Pandya',
-    image: '/cricketverse/HARDIK PANDYA.avif',
-    description: 'All-rounder supreme — bowler, batsman, fielder!',
+    id: 'josh-inglis',
+    name: 'Josh Inglis',
+    image: '/cricketverse/Josh Inglis.webp',
+    description: 'The Opener — aggressive top-order batsman!',
     colors: 'from-blue-500 to-indigo-600'
   },
   {
-    id: 'jadeja',
-    name: 'Ravindra Jadeja',
-    image: '/cricketverse/RAVINDRA JADEJAavif.avif',
-    description: 'Sir Jadeja — magician with ball and bat!',
+    id: 'lance-morris',
+    name: 'Lance Morris',
+    image: '/cricketverse/Lance Morris.webp',
+    description: 'The Speedster — rising pace sensation!',
     colors: 'from-blue-500 to-indigo-600'
   },
   {
-    id: 'bumrah',
-    name: 'Jasprit Bumrah',
-    image: '/cricketverse/JASPRIT BUMRAH.avif',
-    description: 'Bumrah Bhai — death bowler and yorker king!',
+    id: 'matthew-short',
+    name: 'Matthew Short',
+    image: '/cricketverse/Matthew Short.webp',
+    description: 'The Batsman — solid middle-order player!',
     colors: 'from-blue-500 to-indigo-600'
   },
   {
-    id: 'shami',
-    name: 'Mohammad Shami',
-    image: '/cricketverse/MOHAMMAD SHAMI.avif',
-    description: 'The Speedster — express pace and lethal swing!',
+    id: 'mitchell-starc',
+    name: 'Mitchell Starc',
+    image: '/cricketverse/Mitchell Starc.webp',
+    description: 'The Left-armer — swing king and yorker master!',
     colors: 'from-blue-500 to-indigo-600'
   },
   {
-    id: 'siraj',
-    name: 'Mohammed Siraj',
-    image: '/cricketverse/MOHAMMED SIRAJ.avif',
-    description: 'Siraj Bhai — rising pace sensation!',
+    id: 'nathan-ellis',
+    name: 'Nathan Ellis',
+    image: '/cricketverse/Nathan Ellis.webp',
+    description: 'The Fast Bowler — pace and bounce specialist!',
+    colors: 'from-blue-500 to-indigo-600'
+  },
+  {
+    id: 'travis-head',
+    name: 'Travis Head',
+    image: '/cricketverse/Travis Head.webp',
+    description: 'The Opener — dynamic and destructive batsman!',
+    colors: 'from-blue-500 to-indigo-600'
+  },
+  {
+    id: 'usman-khawaja',
+    name: 'Usman Khawaja',
+    image: '/cricketverse/Usman Khawaja.webp',
+    description: 'The Test Specialist — technically sound batsman!',
+    colors: 'from-blue-500 to-indigo-600'
+  },
+  {
+    id: 'xavier-bartlett',
+    name: 'Xavier Bartlett',
+    image: '/cricketverse/Xavier Bartlett.webp',
+    description: 'The Newcomer — promising pace bowler!',
     colors: 'from-blue-500 to-indigo-600'
   }
 ];
@@ -728,10 +749,10 @@ export default function StudentSettingsPage() {
   }
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br p-6 ${theme === 'ben10' ? '' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'from-white via-[#1D428A]/10 to-[#C8102E]/10' : theme === 'avengers' ? 'from-[#2C1267]/10 via-[#604AC7]/10 to-[#0F0826]/10' : theme === 'ponyville' ? 'from-[#fff5fb] via-[#f1aed5] to-[#ff2e9f]' : 'from-gray-100 to-gray-200'}`} style={theme === 'ben10' ? { background: 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))' } : undefined}>
+    <div className={`min-h-screen bg-gradient-to-br p-6 ${theme === 'ben10' ? '' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'from-white via-[#1D428A]/10 to-[#C8102E]/10' : theme === 'avengers' ? 'from-[#2C1267]/10 via-[#604AC7]/10 to-[#0F0826]/10' : theme === 'ponyville' ? 'from-[#fff5fb] via-[#f1aed5] to-[#ff2e9f]' : theme === 'cricketverse' ? 'from-blue-400 to-indigo-600' : 'from-gray-100 to-gray-200'}`} style={theme === 'ben10' ? { background: 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))' } : undefined}>
       <div className="space-y-8 max-w-6xl mx-auto">
       {/* Page Header - Theme Aware */}
-      <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-500 via-yellow-500 to-green-600' : theme === 'bounceworld' ? 'from-[#1D428A] to-[#C8102E]' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]' : theme === 'ponyville' ? 'from-[#f1aed5] to-[#e13690]' : 'from-gray-100 to-gray-200'} rounded-2xl text-white p-8 border-2 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : theme === 'ponyville' ? 'border-[#ff2e9f]' : 'border-black'} relative overflow-hidden`}>
+      <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-500 via-yellow-500 to-green-600' : theme === 'bounceworld' ? 'from-[#1D428A] to-[#C8102E]' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]' : theme === 'ponyville' ? 'from-[#f1aed5] to-[#e13690]' : theme === 'cricketverse' ? 'from-blue-400 to-indigo-600' : 'from-gray-100 to-gray-200'} rounded-2xl text-white p-8 border-2 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : theme === 'ponyville' ? 'border-[#ff2e9f]' : theme === 'cricketverse' ? 'border-blue-600' : 'border-black'} relative overflow-hidden`}>
 
         
    
@@ -741,10 +762,10 @@ export default function StudentSettingsPage() {
             <div className="flex items-center space-x-4 mb-2">
               
               <div>
-                <h1 className={`text-3xl font-bold ${theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-white' : theme === 'ponyville' ? 'text-white' : 'text-black'}`}>
+                <h1 className={`text-3xl font-bold ${theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-white' : theme === 'ponyville' ? 'text-white' : theme === 'cricketverse' ? 'text-white' : 'text-black'}`}>
                   {theme === 'avengers' ? '🦸 Avengers Command Center' : theme === 'ponyville' ? '🦄 Ponyville Funland Settings' : 'Setting Page'}
                 </h1>
-                <p className={`${theme === 'ben10' ? 'text-black' : theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-white' : theme === 'ponyville' ? 'text-white' : 'text-black'} text-lg font-semibold mt-2`}>
+                <p className={`${theme === 'ben10' ? 'text-black' : theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-white' : theme === 'ponyville' ? 'text-white' : theme === 'cricketverse' ? 'text-white' : 'text-black'} text-lg font-semibold mt-2`}>
                   {theme === 'avengers' ? 'Assemble your perfect learning experience!' : theme === 'ponyville' ? 'Transform your learning with magical settings!' : 'Customize your learning profile!'}
                 </p>
               </div>
@@ -782,7 +803,23 @@ export default function StudentSettingsPage() {
             </div>
             <div>
               <p className={`font-bold ${theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-white' : 'text-black'} text-lg`}>
-                {message.type === 'success' ? (theme === 'bounceworld' ? '🏀 Slam Dunk Success!' : theme === 'avengers' ? '🦸 Avengers Assemble Success!' : 'Ben 10 Says: Hero Success!') : theme === 'bounceworld' ? '🏀 Oops! Airball!' : theme === 'avengers' ? '🦸 Avengers Assemble Error!' : 'Oops! Ben 10 Says: Try Again!'}
+                {message.type === 'success' ? (
+                  theme === 'bounceworld' ? '🏀 Slam Dunk Success!' :
+                  theme === 'avengers' ? '🦸 Avengers Assemble Success!' :
+                  theme === 'ben10' ? '⚡ Ben 10 Says: Hero Success!' :
+                  theme === 'tinkerbell' ? '✨ Tinkerbell Says: Magic Success!' :
+                  theme === 'cricketverse' ? '🏏 CricketVerse Says: Century Success!' :
+                  theme === 'ponyville' ? '🦄 Ponyville Says: Magical Success!' :
+                  '🎉 Success!'
+                ) : (
+                  theme === 'bounceworld' ? '🏀 Oops! Airball!' :
+                  theme === 'avengers' ? '🦸 Avengers Assemble Error!' :
+                  theme === 'ben10' ? '⚡ Ben 10 Says: Try Again!' :
+                  theme === 'tinkerbell' ? '✨ Tinkerbell Says: Magic Mishap!' :
+                  theme === 'cricketverse' ? '🏏 CricketVerse Says: Play On!' :
+                  theme === 'ponyville' ? '🦄 Ponyville Says: Try Again!' :
+                  '😅 Oops! Try Again!'
+                )}
               </p>
               <p className={`${theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-white' : 'text-black'} font-medium`}>{message.text}</p>
             </div>
@@ -902,7 +939,7 @@ export default function StudentSettingsPage() {
           >
             <div className="relative w-full h-24 mb-2 rounded-lg overflow-hidden border-2 border-black bg-white">
               <Image
-                src="/CricketVerse.avif"
+                src="/CricketVerse.webp"
                 alt="CricketVerse Theme"
                 fill
                 className="object-cover"
@@ -1278,10 +1315,10 @@ export default function StudentSettingsPage() {
                   ? 'from-[#f1aed5] to-[#e13690]'
                   : 'from-gray-100 to-gray-200'
               } border-4 border-black rounded-xl p-6 shadow-lg`}>
-                <h4 className="text-lg font-bold text-black mb-3 flex items-center">
+                <h4 className={`text-lg font-bold ${selectedTheme === 'bounceworld' ? 'text-white' : 'text-black'} mb-3 flex items-center`}>
                   {selectedTheme === 'ben10' ? '💡 Did You Know?' : selectedTheme === 'tinkerbell' ? '💡 Did You Know?' : selectedTheme === 'bounceworld' ? '🏀 Slam Dunk Fact!' : selectedTheme === 'avengers' ? '🦸 Avengers Assembly Fact!' : selectedTheme === 'ponyville' ? '🦄 Magical Pony Fact!' : '💡 Did You Know?'}
                 </h4>
-                <p className="text-black font-medium text-sm leading-relaxed">
+                <p className={`${selectedTheme === 'bounceworld' ? 'text-white' : 'text-black'} font-medium text-sm leading-relaxed`}>
                   {selectedTheme === 'ben10'
                     ? 'Ben 10 first appeared in 2005 and has transformed into over 70 different alien heroes. Choosing a Ben 10 avatar links you to the Omnitrix legacy — wear it proudly!'
                     : selectedTheme === 'tinkerbell'

@@ -140,7 +140,7 @@ export default function StudentSheetsPage() {
 
   if (authLoading || loading) {
     return (
-      <div className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-green-400 via-green-500 to-yellow-600' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A] to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-br from-[#2C1267] via-[#604AC7] to-[#0F0826]' : theme === 'ponyville' ? 'bg-gradient-to-br from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : 'bg-gradient-to-br from-gray-100 to-gray-200'} flex items-center justify-center`}>
+      <div className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-green-400 via-green-500 to-yellow-600' : theme === 'cricketverse' ? 'bg-gradient-to-br from-blue-400 to-indigo-600' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A] to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-br from-[#2C1267] via-[#604AC7] to-[#0F0826]' : theme === 'ponyville' ? 'bg-gradient-to-br from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : 'bg-gradient-to-br from-gray-100 to-gray-200'} flex items-center justify-center`}>
         <div className={`bg-white border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : theme === 'ponyville' ? 'border-black' : 'border-black'} rounded-3xl p-8 shadow-2xl`}>
           {/* Theme-Specific Loading Animation */}
           <div className="relative mb-6 flex flex-col items-center">
@@ -236,10 +236,10 @@ export default function StudentSheetsPage() {
   }
 
   return (
-    <div key={`sheets-${theme}`} className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A]/20 to-[#C8102E]/20' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]' : theme === 'ponyville' ? 'from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : 'from-gray-100 via-gray-200 to-gray-300'} p-6`}>
+    <div key={`sheets-${theme}`} className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : theme === 'cricketverse' ? 'from-blue-400 to-indigo-600' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A]/20 to-[#C8102E]/20' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]' : theme === 'ponyville' ? 'from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : 'from-gray-100 via-gray-200 to-gray-300'} p-6`}>
       <div className="max-w-4xl mx-auto">
         {/* Theme-aware Header */}
-        <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : theme === 'bounceworld' ? 'from-[#1D428A]  to-[#C8102E]' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]' : theme === 'ponyville' ? 'from-[#f166b7] via-[#f35fae] to-[#fe9fd2]' : 'from-gray-100 to-gray-200'} rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-black' : theme === 'ponyville' ? 'border-black' : 'border-black'} p-8 mb-8 relative overflow-hidden`}>
+        <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : theme === 'cricketverse' ? 'from-blue-400 to-indigo-600' : theme === 'bounceworld' ? 'from-[#1D428A]  to-[#C8102E]' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]' : theme === 'ponyville' ? 'from-[#f166b7] via-[#f35fae] to-[#fe9fd2]' : 'from-gray-100 to-gray-200'} rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-black' : theme === 'ponyville' ? 'border-black' : theme === 'cricketverse' ? 'border-blue-600' : 'border-black'} p-8 mb-8 relative overflow-hidden`}>
          
 
           <div className="flex items-center space-x-4 relative z-10">
@@ -249,6 +249,8 @@ export default function StudentSheetsPage() {
               <img src="/avengers/spiderman.png" alt="Spiderman" className="w-24 h-24 object-contain" />
             ) : theme === 'bounceworld' ? (
               <img src="/bounce-world.png" alt="Bounce World" className="w-32 h-32 object-contain" />
+            ) : theme === 'cricketverse' ? (
+              <img src="/batman3.png" alt="Batman" className="w-48 h-32" />
             ) : (
               <div className="text-6xl">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : ''}</div>
             )}
@@ -258,7 +260,7 @@ export default function StudentSheetsPage() {
                 <span className={`ml-2 font-black text-5xl ${theme === 'bounceworld' ? 'text-white' : 'text-black'}`}> My Sheets</span>
        
               </h1>
-              <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-white' : theme === 'tinkerbell' ? 'text-white' : theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-[#C88DA5]' : theme === 'ponyville' ? 'text-white' : 'text-gray-700'}`}>
+              <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-white' : theme === 'tinkerbell' ? 'text-white' : theme === 'cricketverse' ? 'text-white' : theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-[#C88DA5]' : theme === 'ponyville' ? 'text-white' : 'text-gray-700'}`}>
                 {theme === 'bounceworld'
                   ? `Welcome back, ${student?.name}! Slam dunk your Google Sheets assignments! 🏀`
                   : theme === 'ben10'
@@ -267,6 +269,8 @@ export default function StudentSheetsPage() {
                   ? `Welcome back, ${student?.name}! Assemble your Google Sheets assignments! 🦸‍♂️`
                   : theme === 'ponyville'
                   ? `Welcome back, ${student?.name}! Let's cast magical spreadsheet spells! ✨`
+                  : theme === 'cricketverse'
+                  ? `Welcome back, ${student?.name}! Hit a century with your spreadsheets! 🏏`
                   : `Welcome back, ${student?.name}! Access your Google Sheets assignments!`}
               </p>
             </div>
