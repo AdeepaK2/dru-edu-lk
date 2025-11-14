@@ -4,7 +4,7 @@ import React from 'react';
 import { Loader2 } from 'lucide-react';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'danger' | 'success' | 'warning' | 'outline';
+  variant?: 'primary' | 'secondary' | 'danger' | 'success' | 'warning' | 'outline' | 'custom';
   size?: 'sm' | 'md' | 'lg';
   isLoading?: boolean;
   leftIcon?: React.ReactNode;
@@ -32,7 +32,8 @@ export default function Button({
     danger: 'bg-red-600 hover:bg-red-700 text-white focus:ring-red-500',
     success: 'bg-[#64cc4f] hover:bg-[#b2e05b] text-white focus:ring-[#64cc4f]',
     warning: 'bg-yellow-600 hover:bg-yellow-700 text-white focus:ring-yellow-500',
-    outline: 'border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 focus:ring-gray-500'
+    outline: 'border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 focus:ring-gray-500',
+    custom: '' // No default styles for custom variant
   };
 
   const sizeClasses = {
@@ -47,7 +48,7 @@ export default function Button({
 
   return (
     <button
-      className={`${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${widthClass} ${className}`}
+      className={`${baseClasses} ${sizeClasses[size]} ${widthClass} ${variantClasses[variant]} ${className}`}
       disabled={isDisabled}
       {...props}
     >

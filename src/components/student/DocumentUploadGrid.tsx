@@ -20,6 +20,7 @@ import {
 import { DocumentInfo, DocumentType } from '@/models/studentSchema';
 import Button from '@/components/ui/Button';
 import DocumentPreviewModal from './DocumentPreviewModal';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface DocumentUploadGridProps {
   documents: DocumentInfo[];
@@ -65,39 +66,39 @@ const getFileIcon = (filename: string) => {
   return FileText;
 };
 
-const getStatusConfig = (status: string) => {
+const getStatusConfig = (status: string, theme?: string) => {
   switch (status) {
     case 'Verified':
       return {
         icon: CheckCircle2,
         color: 'text-green-600',
-        bgColor: 'bg-gradient-to-r from-green-400 to-emerald-500',
-        borderColor: 'border-black',
+        bgColor: theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] to-[#C8102E]' : 'bg-gradient-to-r from-green-400 to-emerald-500',
+        borderColor: theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black',
         textColor: 'text-white'
       };
     case 'Rejected':
       return {
         icon: XCircle,
         color: 'text-red-600',
-        bgColor: 'bg-gradient-to-r from-red-400 to-pink-500',
-        borderColor: 'border-black',
+        bgColor: theme === 'bounceworld' ? 'bg-gradient-to-r from-[#C8102E] to-[#1D428A]' : 'bg-gradient-to-r from-red-400 to-pink-500',
+        borderColor: theme === 'bounceworld' ? 'border-[#C8102E]' : 'border-black',
         textColor: 'text-white'
       };
     case 'Pending':
       return {
         icon: Clock,
         color: 'text-yellow-600',
-        bgColor: 'bg-gradient-to-r from-yellow-400 to-orange-500',
-        borderColor: 'border-black',
-        textColor: 'text-black'
+        bgColor: theme === 'bounceworld' ? 'bg-white' : 'bg-gradient-to-r from-yellow-400 to-orange-500',
+        borderColor: theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black',
+        textColor: theme === 'bounceworld' ? 'text-black' : 'text-black'
       };
     default:
       return {
         icon: Upload,
         color: 'text-gray-600',
-        bgColor: 'bg-gradient-to-r from-gray-400 to-gray-500',
-        borderColor: 'border-black',
-        textColor: 'text-white'
+        bgColor: theme === 'bounceworld' ? 'bg-white' : 'bg-gradient-to-r from-gray-400 to-gray-500',
+        borderColor: theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black',
+        textColor: theme === 'bounceworld' ? 'text-black' : 'text-white'
       };
   }
 };
@@ -118,6 +119,7 @@ export default function DocumentUploadGrid({
   loading = false,
   disabled = false
 }: DocumentUploadGridProps) {
+  const { theme } = useTheme();
   const [uploadState, setUploadState] = useState<UploadState>({});
   const [dragOver, setDragOver] = useState<DocumentType | null>(null);
   const [previewDocument, setPreviewDocument] = useState<DocumentInfo | null>(null);
@@ -205,7 +207,7 @@ export default function DocumentUploadGrid({
           const config = DOCUMENT_CONFIGS[docType];
           const existingDoc = getDocumentByType(docType);
           const selectedFile = uploadState[docType];
-          const statusConfig = getStatusConfig(existingDoc?.status || 'Not Submitted');
+          const statusConfig = getStatusConfig(existingDoc?.status || 'Not Submitted', theme);
           const IconComponent = config.icon;
           const StatusIcon = statusConfig.icon;
           const FileIcon = existingDoc ? getFileIcon(existingDoc.filename) : Upload;
@@ -224,29 +226,29 @@ export default function DocumentUploadGrid({
               onDrop={handleDrop(docType)}
             >
               {/* Header */}
-              <div className="p-6 border-b-4 border-black">
+              <div className={`p-6 border-b-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'}`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-400 rounded-2xl flex items-center justify-center border-2 border-black">
-                      <IconComponent className="w-6 h-6 text-black" />
+                    <div className={`w-12 h-12 ${theme === 'bounceworld' ? 'bg-gradient-to-br from-[#1D428A] to-[#C8102E]' : 'bg-gradient-to-br from-yellow-400 to-orange-400'} rounded-2xl flex items-center justify-center border-2 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'}`}>
+                      <IconComponent className={`w-6 h-6 ${theme === 'bounceworld' ? 'text-white' : 'text-black'}`} />
                     </div>
                     <div>
-                      <h3 className="font-black text-black text-lg">
+                      <h3 className={`font-black ${theme === 'bounceworld' ? 'text-[#1D428A]' : 'text-black'} text-lg`}>
                         {config.title}
                       </h3>
-                      <p className="text-black font-bold text-sm">
+                      <p className={`text-black font-bold text-sm`}>
                         {config.description}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <StatusIcon className="w-8 h-8 text-black" />
+                    <StatusIcon className={`w-8 h-8 ${theme === 'bounceworld' ? 'text-[#1D428A]' : 'text-black'}`} />
                   </div>
                 </div>
               </div>
 
               {/* Content */}
-              <div className="p-6 bg-white">
+              <div className={`p-6 ${theme === 'bounceworld' ? 'bg-white' : 'bg-white'}`}>
                 {existingDoc ? (
                   // Existing document display
                   <div className="space-y-4">
@@ -257,7 +259,7 @@ export default function DocumentUploadGrid({
                       </span>
                     </div>
                     
-                    <div className={`inline-flex items-center px-4 py-2 text-sm font-black rounded-full border-2 border-black ${statusConfig.bgColor} ${statusConfig.textColor}`}>
+                    <div className={`inline-flex items-center px-4 py-2 text-sm font-black rounded-full border-2 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} ${statusConfig.bgColor} ${statusConfig.textColor}`}>
                       <StatusIcon className="w-4 h-4 mr-2" />
                       {existingDoc.status}
                     </div>
@@ -269,7 +271,7 @@ export default function DocumentUploadGrid({
                     )}
 
                     {existingDoc.notes && existingDoc.status === 'Rejected' && (
-                      <div className="bg-gradient-to-r from-red-400 to-pink-500 p-3 rounded-2xl text-sm text-white font-bold border-2 border-black">
+                      <div className={`p-3 rounded-2xl text-sm text-white font-bold border-2 ${theme === 'bounceworld' ? 'border-[#C8102E] bg-gradient-to-r from-[#C8102E] to-[#1D428A]' : 'border-black bg-gradient-to-r from-red-400 to-pink-500'}`}>
                         <strong>💬 Reason:</strong> {existingDoc.notes}
                       </div>
                     )}
@@ -281,7 +283,7 @@ export default function DocumentUploadGrid({
                           size="sm"
                           variant="outline"
                           onClick={() => onDownload(existingDoc)}
-                          className="flex items-center space-x-2 text-sm bg-gradient-to-r from-[#64cc4f] to-[#b2e05b] hover:from-[#b2e05b] hover:to-[#64cc4f] text-white font-black border-2 border-black rounded-full px-4 py-2 transform hover:scale-105 transition-all"
+                          className={`flex items-center space-x-2 text-sm ${theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] to-[#C8102E] hover:from-[#C8102E] hover:to-[#1D428A] text-white border-[#1D428A]' : 'bg-gradient-to-r from-[#64cc4f] to-[#b2e05b] hover:from-[#b2e05b] hover:to-[#64cc4f] text-white border-black'} font-black rounded-full px-4 py-2 transform hover:scale-105 transition-all`}
                         >
                           <Download className="w-4 h-4" />
                           <span>📥 Download</span>
@@ -308,7 +310,7 @@ export default function DocumentUploadGrid({
                             size="sm"
                             onClick={() => fileInputRefs.current[docType]?.click()}
                             disabled={loading}
-                            className="flex items-center space-x-2 text-sm bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white font-black border-2 border-black rounded-full px-4 py-2 transform hover:scale-105 transition-all"
+                            className={`flex items-center space-x-2 text-sm ${theme === 'bounceworld' ? 'bg-gradient-to-r from-[#C8102E] to-[#1D428A] hover:from-[#1D428A] hover:to-[#C8102E] text-white border-[#C8102E]' : 'bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white border-black'} font-black rounded-full px-4 py-2 transform hover:scale-105 transition-all`}
                           >
                             <RefreshCw className="w-4 h-4" />
                             <span>🔄 Re-upload</span>
@@ -336,7 +338,7 @@ export default function DocumentUploadGrid({
                           size="sm"
                           variant="outline"
                           onClick={() => setUploadState(prev => ({ ...prev, [docType]: null }))}
-                          className="w-full bg-gradient-to-r from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600 text-white font-black border-2 border-black rounded-full py-2 transform hover:scale-105 transition-all"
+                          className={`w-full ${theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] to-[#C8102E] hover:from-[#C8102E] hover:to-[#1D428A] text-white border-[#1D428A]' : 'bg-gradient-to-r from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600 text-white border-black'} font-black rounded-full py-2 transform hover:scale-105 transition-all`}
                         >
                           <X className="w-4 h-4 mr-2" />
                           ❌ Remove File
@@ -371,7 +373,7 @@ export default function DocumentUploadGrid({
                               document.getElementById(`file-input-${docType}`)?.click();
                             }}
                             disabled={loading || disabled}
-                            className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-black border-2 border-black rounded-full px-6 py-3 transform hover:scale-105 transition-all"
+                            className={`bg-gradient-to-r ${theme === 'bounceworld' ? 'from-[#1D428A] to-[#C8102E] hover:from-[#C8102E] hover:to-[#1D428A] text-white border-[#1D428A]' : 'from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-black'} font-black rounded-full px-6 py-3 transform hover:scale-105 transition-all`}
                           >
                             📂 Choose File
                           </Button>
@@ -395,7 +397,7 @@ export default function DocumentUploadGrid({
           <Button
             onClick={handleUploadAll}
             disabled={loading}
-            className="bg-gradient-to-r from-[#64cc4f] to-[#b2e05b] hover:from-[#b2e05b] hover:to-[#64cc4f] text-white px-8 py-4 rounded-full font-black text-lg flex items-center space-x-3 transform hover:scale-105 transition-all border-4 border-black shadow-2xl"
+            className={`bg-gradient-to-r ${theme === 'bounceworld' ? 'from-[#1D428A] to-[#C8102E] hover:from-[#C8102E] hover:to-[#1D428A] text-white border-[#1D428A]' : 'from-[#64cc4f] to-[#b2e05b] hover:from-[#b2e05b] hover:to-[#64cc4f] text-white border-black'} px-8 py-4 rounded-full font-black text-lg flex items-center space-x-3 transform hover:scale-105 transition-all border-4 shadow-2xl`}
           >
             {loading ? (
               <>
@@ -414,7 +416,7 @@ export default function DocumentUploadGrid({
 
       {/* Upload Progress */}
       {loading && (
-        <div className="bg-gradient-to-r from-blue-400 to-purple-500 border-4 border-black rounded-3xl p-6 shadow-2xl">
+        <div className={`bg-gradient-to-r ${theme === 'bounceworld' ? 'from-[#1D428A] to-[#C8102E]' : 'from-blue-400 to-purple-500'} border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} rounded-3xl p-6 shadow-2xl`}>
           <div className="flex items-center space-x-4">
             <RefreshCw className="w-8 h-8 text-white animate-spin" />
             <div>

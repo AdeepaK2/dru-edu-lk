@@ -259,10 +259,91 @@ export default function ClassVideos({ params }: ClassVideoProps) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="w-16 h-16 border-t-4 border-blue-600 border-solid rounded-full animate-spin mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-300 font-medium">Loading class videos...</p>
+      <div className={`min-h-screen flex items-center justify-center p-6 ${
+        theme === 'tinkerbell'
+          ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400'
+          : theme === 'ben10'
+          ? ''
+          : theme === 'bounceworld'
+          ? 'bg-gradient-to-br from-white via-[#1D428A]/10 to-[#C8102E]/10'
+          : theme === 'avengers'
+          ? 'bg-gradient-to-br from-[#2C1267]/10 via-[#604AC7]/10 to-[#0F0826]/10'
+          : theme === 'ponyville'
+          ? 'bg-gradient-to-br from-[#fff5fb] via-[#f1aed5] to-[#ff2e9f]'
+          : theme === 'default'
+          ? 'bg-gradient-to-br from-gray-50 to-white'
+          : 'bg-gradient-to-br from-blue-400 via-indigo-500 to-indigo-600'
+      }`}
+      style={theme === 'ben10' ? {
+        background: 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))'
+      } : undefined}
+      >
+        <div className={`bg-white border-4 rounded-3xl p-8 shadow-2xl ${
+          theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'
+        }`}>
+          {/* Theme-specific loading animations */}
+          {theme === 'tinkerbell' && (
+            <div className="flex flex-col items-center">
+              <img
+                src="/tinkerbell-loading.gif"
+                alt="Tinkerbell Loading"
+                className="w-32 h-32 object-contain"
+              />
+              <span className="text-2xl font-bold text-yellow-600 mt-4">Loading magical videos...</span>
+            </div>
+          )}
+
+          {theme === 'ben10' && (
+            <div className="flex flex-col items-center">
+              <img
+                src="/ben10-loading.gif"
+                alt="Ben 10 Loading"
+                className="w-32 h-32 object-contain"
+              />
+              <span className="text-2xl font-bold text-[#64cc4f] mt-4">Loading hero videos...</span>
+            </div>
+          )}
+
+          {theme === 'bounceworld' && (
+            <div className="flex flex-col items-center">
+              <img
+                src="/bounceworld.gif"
+                alt="BounceWorld Loading"
+                className="w-32 h-32 object-contain"
+              />
+              <span className="text-2xl font-bold text-[#1D428A] mt-4">Loading bounce videos...</span>
+            </div>
+          )}
+
+          {theme === 'avengers' && (
+            <div className="flex flex-col items-center">
+              <img
+                src="/avenger.gif"
+                alt="Avengers Loading"
+                className="w-32 h-32 object-contain"
+              />
+              <span className="text-2xl font-bold text-[#2C1267] mt-4">Assembling videos...</span>
+            </div>
+          )}
+
+          {theme === 'ponyville' && (
+            <div className="flex flex-col items-center">
+              <img
+                src="/ponyville-loading.gif"
+                alt="Ponyville Loading"
+                className="w-32 h-32 object-contain"
+              />
+              <span className="text-2xl font-bold text-[#e13690] mt-4">Loading magical videos...</span>
+            </div>
+          )}
+
+          {/* Default loading spinner */}
+          {theme !== 'tinkerbell' && theme !== 'ben10' && theme !== 'bounceworld' && theme !== 'avengers' && theme !== 'ponyville' && (
+            <div className="flex flex-col items-center">
+              <div className="w-24 h-24 border-4 border-blue-400 border-t-blue-600 rounded-full animate-spin"></div>
+              <span className="text-2xl font-bold text-blue-600 mt-4">Loading class videos...</span>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -293,6 +374,14 @@ export default function ClassVideos({ params }: ClassVideoProps) {
           ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400'
           : theme === 'ben10'
           ? ''
+          : theme === 'bounceworld'
+          ? 'bg-gradient-to-br from-white via-[#1D428A]/10 to-[#C8102E]/10'
+          : theme === 'avengers'
+          ? 'bg-gradient-to-br from-[#2C1267]/10 via-[#604AC7]/10 to-[#0F0826]/10'
+          : theme === 'ponyville'
+          ? 'bg-gradient-to-br from-[#fff5fb] via-[#f1aed5] to-[#ff2e9f]'
+          : theme === 'default'
+          ? 'bg-gradient-to-br from-gray-50 to-white'
           : 'bg-gradient-to-br from-blue-400 via-indigo-500 to-indigo-600'
       }`}
       style={theme === 'ben10' ? {
@@ -306,6 +395,14 @@ export default function ClassVideos({ params }: ClassVideoProps) {
             ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222]'
             : theme === 'tinkerbell'
             ? 'bg-gradient-to-r from-green-300 via-green-500 to-yellow-400'
+            : theme === 'bounceworld'
+            ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E] border-[#1D428A]'
+            : theme === 'avengers'
+            ? 'bg-gradient-to-r from-[#2C1267] via-[#604AC7] to-[#0F0826] border-[#2C1267]'
+            : theme === 'ponyville'
+            ? 'bg-gradient-to-r from-[#f1aed5] to-[#e13690] border-[#ff2e9f]'
+            : theme === 'default'
+            ? 'bg-gradient-to-r from-white to-gray-100 border-gray-300 text-black'
             : 'bg-gradient-to-r from-blue-400 to-indigo-600'
         }`}>
         <div className="flex items-center justify-between">
@@ -318,6 +415,14 @@ export default function ClassVideos({ params }: ClassVideoProps) {
                 ? 'text-white'
                 : theme === 'tinkerbell'
                 ? 'text-white'
+                : theme === 'bounceworld'
+                ? 'text-[#1D428A]'
+                : theme === 'avengers'
+                ? 'text-white'
+                : theme === 'ponyville'
+                ? 'text-white'
+                : theme === 'default'
+                ? 'text-black'
                 : 'text-blue-100'
             }`}>
               {classInfo?.subject} • Grade {classInfo?.grade} • {classInfo?.teacherName}
@@ -342,6 +447,14 @@ export default function ClassVideos({ params }: ClassVideoProps) {
           ? 'bg-gradient-to-br from-[#64cc4f]/20 to-[#b2e05b]/20'
           : theme === 'tinkerbell'
           ? 'bg-gradient-to-br from-yellow-100 to-green-50'
+          : theme === 'bounceworld'
+          ? 'bg-gradient-to-br from-white via-[#1D428A]/20 to-[#C8102E]/20'
+          : theme === 'avengers'
+          ? 'bg-gradient-to-br from-[#604AC7]/30 via-[#2C1267]/30 to-[#0F0826]/30'
+          : theme === 'ponyville'
+          ? 'bg-gradient-to-br from-[#fff5fb] via-[#f1aed5]/30 to-[#ff2e9f]/30'
+          : theme === 'default'
+          ? 'bg-gradient-to-br from-white to-gray-50'
           : 'bg-gradient-to-br from-blue-50 to-indigo-100 dark:bg-gray-800'
       }`}>
         <div>
@@ -354,6 +467,14 @@ export default function ClassVideos({ params }: ClassVideoProps) {
                     ? 'border-[#64cc4f] text-[#222222]'
                     : theme === 'tinkerbell'
                     ? 'border-yellow-500 text-black'
+                    : theme === 'bounceworld'
+                    ? 'border-[#1D428A] text-[#1D428A]'
+                    : theme === 'avengers'
+                    ? 'border-[#604AC7] text-[#2C1267]'
+                    : theme === 'ponyville'
+                    ? 'border-[#e13690] text-[#e13690]'
+                    : theme === 'default'
+                    ? 'border-gray-800 text-black'
                     : 'border-blue-500 text-blue-600 dark:text-blue-400'
                   : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
               }`}
@@ -375,6 +496,14 @@ export default function ClassVideos({ params }: ClassVideoProps) {
                     ? 'border-[#64cc4f] text-[#222222]'
                     : theme === 'tinkerbell'
                     ? 'border-yellow-500 text-black'
+                    : theme === 'bounceworld'
+                    ? 'border-[#1D428A] text-[#1D428A]'
+                    : theme === 'avengers'
+                    ? 'border-[#604AC7] text-[#2C1267]'
+                    : theme === 'ponyville'
+                    ? 'border-[#e13690] text-[#e13690]'
+                    : theme === 'default'
+                    ? 'border-gray-800 text-black'
                     : 'border-blue-500 text-blue-600 dark:text-blue-400'
                   : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
               }`}
@@ -396,6 +525,14 @@ export default function ClassVideos({ params }: ClassVideoProps) {
                     ? 'border-[#64cc4f] text-[#222222]'
                     : theme === 'tinkerbell'
                     ? 'border-yellow-500 text-black'
+                    : theme === 'bounceworld'
+                    ? 'border-[#1D428A] text-[#1D428A]'
+                    : theme === 'avengers'
+                    ? 'border-[#604AC7] text-[#2C1267]'
+                    : theme === 'ponyville'
+                    ? 'border-[#e13690] text-[#e13690]'
+                    : theme === 'default'
+                    ? 'border-gray-800 text-black'
                     : 'border-blue-500 text-blue-600 dark:text-blue-400'
                   : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
               }`}
@@ -471,6 +608,14 @@ export default function ClassVideos({ params }: ClassVideoProps) {
               ? 'bg-gradient-to-br from-[#64cc4f]/10 to-[#b2e05b]/10'
               : theme === 'tinkerbell'
               ? 'bg-gradient-to-br from-yellow-100 to-green-50'
+              : theme === 'bounceworld'
+              ? 'bg-gradient-to-br from-white via-[#1D428A]/20 to-[#C8102E]/20'
+              : theme === 'avengers'
+              ? 'bg-gradient-to-br from-[#604AC7]/30 via-[#2C1267]/30 to-[#0F0826]/30'
+              : theme === 'ponyville'
+              ? 'bg-gradient-to-br from-[#fff5fb] via-[#f1aed5]/30 to-[#ff2e9f]/30'
+              : theme === 'default'
+              ? 'bg-gradient-to-br from-gray-100 to-white'
               : 'bg-gradient-to-br from-blue-400 via-indigo-500 to-indigo-600'
           }`}>
             {activeTab === 'class' && (
@@ -516,6 +661,14 @@ export default function ClassVideos({ params }: ClassVideoProps) {
               ? 'bg-gradient-to-br from-[#64cc4f]/10 to-[#b2e05b]/10'
               : theme === 'tinkerbell'
               ? 'bg-gradient-to-br from-yellow-100 to-green-50'
+              : theme === 'bounceworld'
+              ? 'bg-gradient-to-br from-white via-[#1D428A]/20 to-[#C8102E]/20'
+              : theme === 'avengers'
+              ? 'bg-gradient-to-br from-[#604AC7]/30 via-[#2C1267]/30 to-[#0F0826]/30'
+              : theme === 'ponyville'
+              ? 'bg-gradient-to-br from-[#fff5fb] via-[#f1aed5]/30 to-[#ff2e9f]/30'
+              : theme === 'default'
+              ? 'bg-gradient-to-br from-gray-100 to-white'
               : 'bg-gradient-to-br from-blue-400 via-indigo-500 to-indigo-600'
           }`}>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -540,7 +693,7 @@ export default function ClassVideos({ params }: ClassVideoProps) {
 interface ClassVideoCardProps {
   video: ClassVideoData;
   onAccess: (video: ClassVideoData) => void;
-  theme: 'ben10' | 'tinkerbell' | 'normal';
+  theme: 'default' | 'ben10' | 'tinkerbell' | 'cricketverse' | 'bounceworld' | 'avengers' | 'ponyville';
 }
 
 const ClassVideoCard: React.FC<ClassVideoCardProps> = ({ video, onAccess, theme }) => {
@@ -550,6 +703,14 @@ const ClassVideoCard: React.FC<ClassVideoCardProps> = ({ video, onAccess, theme 
         ? 'bg-gradient-to-br from-[#64cc4f]/20 to-[#b2e05b]/20'
         : theme === 'tinkerbell'
         ? 'bg-gradient-to-br from-yellow-50 to-green-100'
+        : theme === 'bounceworld'
+        ? 'bg-gradient-to-r from-[#1D428A]  to-[#C8102E]'
+        : theme === 'avengers'
+        ? 'bg-gradient-to-br from-[#604AC7]/30 via-[#2C1267]/30 to-[#0F0826]/30'
+        : theme === 'ponyville'
+        ? 'bg-gradient-to-br from-[#fff5fb] via-[#f1aed5]/30 to-[#ff2e9f]/30'
+        : theme === 'default'
+        ? 'bg-gradient-to-br from-white to-gray-50'
         : 'bg-gradient-to-br from-blue-400 via-indigo-500 to-indigo-600'
     }`}>
       {/* Video Thumbnail */}
@@ -608,21 +769,29 @@ const ClassVideoCard: React.FC<ClassVideoCardProps> = ({ video, onAccess, theme 
       {/* Video Info */}
       <div className="p-4">
         <div className="mb-3">
-          <h3 className="text-lg font-semibold text-gray-900  mb-1 line-clamp-2">
+          <h3 className={`text-lg font-semibold mb-1 line-clamp-2 ${
+            theme === 'ponyville' ? 'text-black' : theme === 'default' ? 'text-black' : 'text-gray-900'
+          }`}>
             {video.title}
           </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-100 line-clamp-2">
+          <p className={`text-sm line-clamp-2 ${
+            theme === 'ponyville' ? 'text-black' : theme === 'default' ? 'text-black' : 'text-gray-600 dark:text-gray-100'
+          }`}>
             {video.description}
           </p>
         </div>
 
         {/* Video Meta */}
         <div className="space-y-1 mb-4">
-          <div className="flex items-center text-xs text-gray-500 dark:text-gray-100">
+          <div className={`flex items-center text-xs ${
+            theme === 'ponyville' ? 'text-black' : theme === 'default' ? 'text-black' : 'text-gray-500 dark:text-gray-100'
+          }`}>
             <Users className="w-3 h-3 mr-1" />
             <span>{video.teacherName}</span>
           </div>
-          <div className="flex items-center text-xs text-gray-500 dark:text-gray-100">
+          <div className={`flex items-center text-xs ${
+            theme === 'ponyville' ? 'text-black' : theme === 'default' ? 'text-black' : 'text-gray-500 dark:text-gray-100'
+          }`}>
             <BookOpen className="w-3 h-3 mr-1" />
             <span>{video.lessonName || 'Lesson Content'}</span>
           </div>
@@ -630,7 +799,9 @@ const ClassVideoCard: React.FC<ClassVideoCardProps> = ({ video, onAccess, theme 
 
         {/* Subject Badge */}
         <div className="mb-4">
-          <span className="inline-flex px-2 py-1 text-black text-xs font-medium rounded-full bg-purple-100 dark:bg-purple-900/20  dark:text-black">
+          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full bg-purple-100 dark:bg-purple-900/20 ${
+            theme === 'ponyville' ? 'text-black' : theme === 'default' ? 'text-black' : 'text-black dark:text-black'
+          }`}>
             {video.subjectName}
           </span>
         </div>
@@ -638,17 +809,34 @@ const ClassVideoCard: React.FC<ClassVideoCardProps> = ({ video, onAccess, theme 
         {/* Action Button */}
         <Button
           onClick={() => onAccess(video)}
+          variant="custom"
           className={`w-full flex items-center justify-center space-x-2 font-bold ${
             video.canAccess 
               ? theme === 'ben10'
                 ? 'bg-[#64cc4f] hover:bg-[#b2e05b] text-[#222222]'
                 : theme === 'tinkerbell'
                 ? 'bg-yellow-400 hover:bg-yellow-500 text-yellow-900'
+                : theme === 'bounceworld'
+                ? 'bg-gradient-to-r from-[#1D428A] to-[#C8102E] hover:from-[#C8102E] hover:to-[#1D428A] text-white'
+                : theme === 'avengers'
+                ? 'bg-[#604AC7] hover:bg-[#2C1267] text-white'
+                : theme === 'ponyville'
+                ? 'bg-black hover:bg-gray-800 text-white'
+                : theme === 'default'
+                ? 'bg-gray-800 hover:bg-gray-900 text-white'
                 : 'bg-blue-600 hover:bg-blue-700 text-white'
               : theme === 'ben10'
                 ? 'bg-[#b2e05b] hover:bg-[#64cc4f] text-[#222222]'
                 : theme === 'tinkerbell'
                 ? 'bg-green-500 hover:bg-green-600 text-white'
+                : theme === 'bounceworld'
+                ? 'bg-gradient-to-r from-[#C8102E] to-[#1D428A] hover:from-[#1D428A] hover:to-[#C8102E] text-white'
+                : theme === 'avengers'
+                ? 'bg-[#2C1267] hover:bg-[#604AC7] text-white'
+                : theme === 'ponyville'
+                ? 'bg-black hover:bg-gray-800 text-white'
+                : theme === 'default'
+                ? 'bg-green-600 hover:bg-green-700 text-white'
                 : 'bg-green-600 hover:bg-green-700 text-white'
           }`}
           size="sm"
