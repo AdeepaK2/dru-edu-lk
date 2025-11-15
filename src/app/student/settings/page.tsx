@@ -939,7 +939,7 @@ export default function StudentSettingsPage() {
           >
             <div className="relative w-full h-24 mb-2 rounded-lg overflow-hidden border-2 border-black bg-white">
               <Image
-                src="/CricketVerse.webp"
+                src="/cricketverse.jpeg"
                 alt="CricketVerse Theme"
                 fill
                 className="object-cover"
