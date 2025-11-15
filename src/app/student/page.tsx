@@ -447,7 +447,7 @@ export default function StudentDashboard() {
                         : theme === 'cricketverse' ? '/cricketverse.png'
                         : theme === 'avengers' ? '/avengers/thor.png'
                         : theme === 'bounceworld' ? '/bounce_world.jpg'
-                        : theme === 'ponyville' ? '/Ponyville.webp'
+                        : theme === 'ponyville' ? '/ponyville.webp'
                         : '/Logo.png'}
                     alt="Welcome"
                     className={`${
@@ -455,7 +455,7 @@ export default function StudentDashboard() {
                       : theme === 'avengers' ? 'w-48 h-48'
                       : theme === 'bounceworld' ? 'w-48 h-48'
                       : theme === 'ponyville' ? 'w-48 h-48'
-                      : theme === 'cricketverse' ? 'w-48 h-48'
+                      : theme === 'cricketverse' ? 'w-56 h-48'
                       : 'w-40 h-40'
                     } ${
                       theme === 'avengers' ? '' : 'rounded-full'
