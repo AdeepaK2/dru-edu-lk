@@ -23,6 +23,13 @@ export class ExamPDFService {
   static async generateExamPDF(options: ExamPDFOptions): Promise<Blob> {
     const { title, testNumber, className, date, questions, imageSettings } = options;
 
+    // Extract numeric test number from displayNumber (e.g., "Math Test #5" -> "5")
+    let numericTestNumber = testNumber;
+    const hashMatch = testNumber.match(/#(\d+)/);
+    if (hashMatch) {
+      numericTestNumber = hashMatch[1];
+    }
+
     // Image settings with defaults - Much larger images
     const imgSettings = {
       maxImageHeight: imageSettings?.maxImageHeight || (imageSettings?.largeImageMode ? 280 : 150), // Increased from 200:80 to 280:150
@@ -33,6 +40,7 @@ export class ExamPDFService {
     console.log('📄 Starting PDF generation with options:', {
       title,
       testNumber,
+      numericTestNumber,
       className,
       date,
       questionCount: questions.length,
@@ -99,7 +107,7 @@ export class ExamPDFService {
     pdf.setFontSize(13);
     pdf.setFont('helvetica', 'bold');
     pdf.setTextColor(0, 0, 0);
-    const testNumberText = `Test No: ${testNumber}`;
+    const testNumberText = `Test No: ${numericTestNumber}`;
     pdf.text(testNumberText, leftStartX, headerTop + 10);
 
     // Subject code (subtitle)
@@ -284,17 +292,7 @@ export class ExamPDFService {
                   const startY = margin + 30; // Reduced from 50 to 30
                   
                   pdf.addImage(imgData, 'JPEG', centerX, startY, imgWidth, imgHeight);
-                  
-                  // Add a note about the image
-                  pdf.setFontSize(10);
-                  pdf.setFont('helvetica', 'italic');
-                  pdf.setTextColor(100, 100, 100);
-                  const imageNote = `Question ${i + 1} - Image (Full Page Display)`;
-                  const noteWidth = pdf.getTextWidth(imageNote);
-                  pdf.text(imageNote, (pageWidth - noteWidth) / 2, startY + imgHeight + 15);
-                  pdf.setTextColor(51, 51, 51);
-                  pdf.setFont('helvetica', 'normal');
-                  
+
                   console.log(`✅ Full-page image loaded successfully for question ${i + 1}`);
                 } else {
                   // Standard mode with much larger sizing

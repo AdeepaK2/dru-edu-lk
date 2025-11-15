@@ -1,4 +1,4 @@
-export type ThemeType = 'ben10' | 'tinkerbell' | 'normal';
+export type ThemeType = 'default' | 'ben10' | 'tinkerbell' | 'cricketverse' | 'bounceworld' | 'avengers' | 'ponyville';
 
 export interface ThemeConfig {
   id: ThemeType;
@@ -20,6 +20,24 @@ export interface ThemeConfig {
 }
 
 export const THEMES: Record<ThemeType, ThemeConfig> = {
+  default: {
+    id: 'default',
+    name: 'Default',
+    description: 'Clean black and white professional theme',
+    icon: '⚪',
+    emoji: '⚫',
+    colors: {
+      primary: '#0284c7',      // Primary blue (teacher-style)
+      primaryLight: '#60a5fa', // Light blue
+      primaryDark: '#0369a1',  // Dark blue
+      secondary: '#475569',    // Gray
+      accent: '#0ea5e9',       // Accent blue
+      bgLight: '#ffffff',      // White background
+      bgDark: '#1e293b',       // Dark slate background
+    },
+    characterName: 'Default Mode',
+    characterDescription: 'Clean, professional black and white design',
+  },
   ben10: {
     id: 'ben10',
     name: 'Ben 10 Hero',
@@ -56,12 +74,12 @@ export const THEMES: Record<ThemeType, ThemeConfig> = {
     characterName: 'Tinkerbell - Fairy',
     characterDescription: 'Sprinkle some magic into your learning! ✨',
   },
-  normal: {
-    id: 'normal',
-    name: 'Professional',
-    description: 'Clean and professional blue theme without characters',
-    icon: '🎓',
-    emoji: '💼',
+  cricketverse: {
+    id: 'cricketverse',
+    name: 'CricketVerse',
+    description: 'Cricket-inspired blue theme for sports enthusiasts',
+    icon: '�',
+    emoji: '🏏',
     colors: {
       primary: '#3b82f6',
       primaryLight: '#60a5fa',
@@ -71,43 +89,121 @@ export const THEMES: Record<ThemeType, ThemeConfig> = {
       bgLight: '#f8fafc',
       bgDark: '#1e293b',
     },
-    characterName: 'Professional Mode',
-    characterDescription: 'Focus on learning with a clean, professional interface! 🎓',
+    characterName: 'CricketVerse Champion',
+    characterDescription: 'Hit a six in your learning journey! 🏏',
+  },
+  bounceworld: {
+    id: 'bounceworld',
+    name: 'BounceWorld',
+    description: 'Energetic theme with blue and red bounce-inspired colors',
+    icon: '🏀',
+    emoji: '🏀',
+    colors: {
+      primary: '#1D428A',
+      primaryLight: '#3B82F6',
+      primaryDark: '#1e3a8a',
+      secondary: '#C8102E',
+      accent: '#ef4444',
+      bgLight: '#ffffff',
+      bgDark: '#1D428A',
+    },
+    characterName: 'BounceWorld Explorer',
+    characterDescription: 'Bounce your way to knowledge! 🏀',
+  },
+  avengers: {
+    id: 'avengers',
+    name: 'Avengers',
+    description: 'Heroic theme with midnight blue and mystical colors',
+    icon: '🦸‍♂️',
+    emoji: '⚡',
+    colors: {
+      primary: '#2C1267',
+      primaryLight: '#604AC7',
+      primaryDark: '#0F0826',
+      secondary: '#C88DA5',
+      accent: '#4F2C8D',
+      bgLight: '#f8fafc',
+      bgDark: '#0F0826',
+    },
+    characterName: 'Avengers Hero',
+    characterDescription: 'Assemble your knowledge like a true hero! 🦸‍♂️',
+  },
+  ponyville: {
+    id: 'ponyville',
+    name: 'Ponyville Funland',
+    description: 'Playful pink theme inspired by Ponyville — bright, fun and cheerful',
+    icon: '🦄',
+    emoji: '🩷',
+    colors: {
+      primary: '#e13690',      // main vibrant pink
+      primaryLight: '#ff2e9f', // bright pink
+      primaryDark: '#f1aed5',  // soft pastel pink
+      secondary: '#ffffff',    // white for accents
+      accent: '#ff2e9f',       // bright accent
+      bgLight: '#fff5fb',      // very light pink background
+      bgDark: '#5a0033',       // deep complementary dark (used rarely)
+    },
+    characterName: 'Ponyville Funland',
+    characterDescription: 'Gallop into learning with cotton-candy colors and smiles! 🦄',
   },
 };
 
 export const THEME_GRADIENT_MAP: Record<ThemeType, string> = {
+  default: 'from-blue-600 to-indigo-600',
   ben10: 'from-[#64cc4f] to-[#222222]',
   tinkerbell: 'from-pink-400 to-purple-600',
-  normal: 'from-blue-400 to-indigo-600',
+  cricketverse: 'from-blue-400 to-indigo-600',
+  bounceworld: 'from-[#1D428A] to-[#C8102E]',
+  avengers: 'from-[#2C1267] to-[#4F2C8D]',
+  ponyville: 'from-[#f1aed5] to-[#ff2e9f]',
 };
 
 export const THEME_HEADER_MAP: Record<ThemeType, string> = {
+  default: 'from-blue-600 via-indigo-700 to-indigo-900',
   ben10: 'from-[#64cc4f] via-[#b2e05b] to-[#222222]',
   tinkerbell: 'from-pink-500 via-pink-600 to-purple-700',
-  normal: 'from-blue-500 to-indigo-600',
+  cricketverse: 'from-blue-500 to-indigo-600',
+  bounceworld: 'from-[#1D428A] via-white to-[#C8102E]',
+  avengers: 'from-[#2C1267] via-[#604AC7] to-[#0F0826]',
+  ponyville: 'from-[#f1aed5] via-[#ff2e9f] to-[#e13690]',
 };
 
 export const THEME_BORDER_MAP: Record<ThemeType, string> = {
+  default: 'border-gray-200',
   ben10: 'border-[#64cc4f]',
   tinkerbell: 'border-pink-400',
-  normal: 'border-blue-400',
+  cricketverse: 'border-blue-400',
+  bounceworld: 'border-[#1D428A]',
+  avengers: 'border-[#2C1267]',
+  ponyville: 'border-black',
 };
 
 export const THEME_BG_MAP: Record<ThemeType, string> = {
+  default: 'from-blue-400 to-indigo-600',
   ben10: 'from-[#b2e05b] via-[#64cc4f] to-[#222222]',
   tinkerbell: 'from-pink-300 via-pink-400 to-purple-600',
-  normal: 'from-blue-300 via-indigo-400 to-indigo-600',
+  cricketverse: 'from-blue-300 via-indigo-400 to-indigo-600',
+  bounceworld: 'from-white via-[#1D428A] to-[#C8102E]',
+  avengers: 'from-[#604AC7] via-[#2C1267] to-[#0F0826]',
+  ponyville: 'from-[#fff5fb] via-[#f1aed5] to-[#ff2e9f]',
 };
 
 export const THEME_BUTTON_MAP: Record<ThemeType, string> = {
+  default: 'bg-primary-600 hover:bg-primary-700',
   ben10: 'bg-[#64cc4f] hover:bg-[#b2e05b]',
   tinkerbell: 'bg-pink-500 hover:bg-pink-600',
-  normal: 'bg-blue-500 hover:bg-blue-600',
+  cricketverse: 'bg-blue-500 hover:bg-blue-600',
+  bounceworld: 'bg-[#1D428A] hover:bg-[#C8102E]',
+  avengers: 'bg-[#2C1267] hover:bg-[#604AC7]',
+  ponyville: 'bg-[#e13690] hover:bg-[#ff2e9f]',
 };
 
 export const THEME_SUCCESS_MAP: Record<ThemeType, string> = {
+  default: 'from-blue-300 to-indigo-300',
   ben10: 'from-[#64cc4f] to-[#b2e05b]',
   tinkerbell: 'from-pink-300 to-purple-300',
-  normal: 'from-blue-300 to-indigo-300',
+  cricketverse: 'from-blue-300 to-indigo-300',
+  bounceworld: 'from-[#1D428A] to-white',
+  avengers: 'from-[#604AC7] to-[#C88DA5]',
+  ponyville: 'from-[#ff2e9f] to-[#f1aed5]',
 };

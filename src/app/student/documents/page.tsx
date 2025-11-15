@@ -134,8 +134,8 @@ export default function StudentDocumentsPage() {
 
   if (authLoading) {
     return (
-      <div className={`min-h-screen bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : 'from-blue-400 to-indigo-600'} flex items-center justify-center`}>
-        <div className="bg-white border-4 border-black rounded-3xl p-8 shadow-2xl">
+      <div className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A] to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-br from-[#2C1267] via-[#604AC7] to-[#0F0826]' : theme === 'ponyville' ? 'bg-gradient-to-br from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : theme === 'cricketverse' ? 'bg-gradient-to-br from-blue-400 to-indigo-600' : 'bg-gradient-to-br from-gray-100 to-gray-200'} flex items-center justify-center`}>
+        <div className={`bg-white border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : theme === 'ponyville' ? 'border-[#e13690]' : theme === 'cricketverse' ? 'border-blue-600' : 'border-black'} rounded-3xl p-8 shadow-2xl`}>
           {/* Theme-Specific Loading Animation */}
           <div className="relative mb-6 flex flex-col items-center">
             {/* Tinkerbell Loading GIF */}
@@ -161,18 +161,68 @@ export default function StudentDocumentsPage() {
                 <span className="text-2xl font-bold text-[#64cc4f] mt-4">Loading</span>
               </div>
             )}
+
+            {/* BounceWorld Loading Animation */}
+            {theme === 'bounceworld' && (
+              <div className="flex flex-col items-center">
+                <img
+                  src="/bounceworld.gif"
+                  alt="BounceWorld Loading"
+                  className="w-32 h-32 object-contain"
+                />
+                <span className="text-2xl font-bold text-[#1D428A] mt-4">Loading</span>
+              </div>
+            )}
+
+            {/* Avengers Loading Animation */}
+            {theme === 'avengers' && (
+              <div className="flex flex-col items-center">
+                <img
+                  src="/avenger.gif"
+                  alt="Avengers Loading"
+                  className="w-32 h-32 object-contain"
+                />
+                <span className="text-2xl font-bold text-[#2C1267] mt-4">Assembling</span>
+              </div>
+            )}
+
+            {/* CricketVerse Loading GIF */}
+            {theme === 'cricketverse' && (
+              <div className="flex flex-col items-center">
+                <img
+                  src="/batsman.gif"
+                  alt="CricketVerse Loading"
+                  className="w-32 h-32 object-contain"
+                />
+                <span className="text-2xl font-bold text-black mt-4">Loading</span>
+              </div>
+            )}
+
+            {/* Ponyville Loading Animation */}
+            {theme === 'ponyville' && (
+              <div className="flex flex-col items-center">
+                <img
+                  src="/ponyville-loading.gif"
+                  alt="Ponyville Loading"
+                  className="w-32 h-32 object-contain"
+                />
+                <span className="text-2xl font-bold text-[#e13690] mt-4">Casting Magic</span>
+              </div>
+            )}
             
             {/* Default Theme Spinner with Loading Text */}
-            {theme !== 'tinkerbell' && theme !== 'ben10' && (
+            {theme !== 'tinkerbell' && theme !== 'ben10' && theme !== 'bounceworld' && theme !== 'avengers' && theme !== 'cricketverse' && theme !== 'ponyville' && (
               <div className="flex flex-col items-center">
-                <div className="w-24 h-24 border-4 border-blue-400 border-t-blue-600 rounded-full animate-spin"></div>
-                <span className="text-2xl font-bold text-blue-600 mt-4">Loading</span>
+                <div className="w-24 h-24 border-4 border-gray-400 border-t-gray-600 rounded-full animate-spin"></div>
+                <span className="text-2xl font-bold text-black mt-4">Loading</span>
               </div>
             )}
           </div>
           <div className="text-center">
             <h2 className="text-2xl font-black text-black mb-2">Loading Documents...</h2>
-            <p className="text-gray-600 font-medium">Get ready to transform your learning! </p>
+            <p className={`text-gray-600 font-medium ${theme === 'bounceworld' ? 'text-[#1D428A]' : theme === 'avengers' ? 'text-[#2C1267]' : theme === 'ponyville' ? 'text-[#e13690]' : ''}`}>
+              {theme === 'bounceworld' ? 'Get ready to slam dunk your document uploads! 🏀' : theme === 'avengers' ? 'Assemble your document uploads! 🦸‍♂️' : theme === 'ponyville' ? 'Get ready to cast magical document spells! ✨🦄' : 'Get ready to transform your learning!'}
+            </p>
           </div>
         </div>
       </div>
@@ -181,13 +231,13 @@ export default function StudentDocumentsPage() {
 
   if (!student) {
     return (
-      <div className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : 'bg-gradient-to-br from-blue-600 via-indigo-700 to-blue-400'} p-8`}>
+      <div className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A]/20 to-[#C8102E]/20' : theme === 'cricketverse' ? 'bg-gradient-to-br from-blue-400 via-indigo-600 to-blue-800' : 'bg-gradient-to-br from-blue-600 via-indigo-700 to-slate-900'} p-8`}>
         <div className="flex items-center justify-center py-12">
-          <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-600 to-indigo-600'} rounded-3xl shadow-2xl border-4 border-black p-8 text-center`}>
+          <div className={`${theme === 'bounceworld' ? 'bg-white border-4 border-[#1D428A]' : theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : theme === 'cricketverse' ? 'bg-gradient-to-r from-blue-400 to-indigo-600' : 'bg-gradient-to-r from-gray-100 to-gray-200'} rounded-3xl shadow-2xl p-8 text-center`}>
             <div className="text-6xl mb-4">🚫</div>
-            <h2 className="text-2xl font-black text-white mb-2">Access Denied</h2>
-            <p className={`font-bold ${theme === 'ben10' ? 'text-[#b2e05b]' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-100'}`}>
-              You need to be logged in to access this page! {theme === 'ben10' ? '⚡' : theme === 'tinkerbell' ? '✨' : '📚'}
+            <h2 className={`text-2xl font-black mb-2 ${theme === 'bounceworld' ? 'text-black' : theme === 'cricketverse' ? 'text-white' : 'text-white'}`}>Access Denied</h2>
+            <p className={`font-bold ${theme === 'bounceworld' ? 'text-black' : theme === 'ben10' ? 'text-[#b2e05b]' : theme === 'tinkerbell' ? 'text-yellow-100' : theme === 'cricketverse' ? 'text-white' : 'text-black'}`}>
+              You need to be logged in to access this page! {theme === 'ben10' ? '⚡' : theme === 'tinkerbell' ? '✨' : theme === 'bounceworld' ? '' : '📚'}
             </p>
           </div>
         </div>
@@ -196,29 +246,31 @@ export default function StudentDocumentsPage() {
   }
 
   return (
-    <div key={`documents-${theme}`} className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : 'bg-gradient-to-br from-blue-600 via-indigo-700 to-blue-400'} p-8`}>
+    <div key={`documents-${theme}`} className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A]/20 to-[#C8102E]/20' : theme === 'avengers' ? 'bg-gradient-to-br from-[#2C1267] via-[#604AC7]/20 to-[#0F0826]' : theme === 'ponyville' ? 'bg-gradient-to-br from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]' : theme === 'cricketverse' ? 'bg-gradient-to-br from-blue-400 via-indigo-600 to-blue-800' : 'bg-gradient-to-br from-gray-100 via-gray-200 to-white'} p-8`}>
       <div className="max-w-7xl mx-auto">
         {/* Theme-aware Header */}
         <div className="text-center mb-8">
           <div className="flex justify-center items-center space-x-8 mb-4">
-            
+            <div className={`text-6xl ${theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-white' : theme === 'ponyville' ? 'text-white' : theme === 'cricketverse' ? 'text-white' : ''}`}>{theme === 'ben10' ? '🦸' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'bounceworld' ? '' : theme === 'avengers' ? ' ' : theme === 'ponyville' ? ' ' : theme === 'cricketverse' ? '' : ''}</div>
           </div>
           <h1 className="text-5xl font-black text-black mb-2 drop-shadow-lg">
             📄 Documents
           </h1>
-          <p className={`text-xl font-bold ${theme === 'ben10' ? 'text-white' : theme === 'tinkerbell' ? 'text-white' : 'text-blue-100'}`}>
-            Upload your documents here! 
+          <p className={`text-xl font-bold ${theme === 'ben10' ? 'text-white' : theme === 'tinkerbell' ? 'text-white' : theme === 'bounceworld' ? 'text-[#1D428A]' : theme === 'avengers' ? 'text-[#302f2f]' : theme === 'ponyville' ? 'text-white' : theme === 'cricketverse' ? 'text-white' : 'text-black'}`}>
+            {theme === 'bounceworld' ? 'Slam dunk your document uploads here! 🏀' : theme === 'avengers' ? 'Assemble your document uploads here! 🦸‍♂️' : theme === 'ponyville' ? 'Cast magical document spells here! ✨🦄' : theme === 'cricketverse' ? 'Upload your documents here!' : 'Upload your documents here!'}
           </p>
         </div>
 
         {/* Theme-aware Document Upload Section */}
-        <div className="bg-white rounded-3xl shadow-2xl border-4 border-black overflow-hidden">
-          <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-600 to-indigo-600'} text-white p-6 pb-8 border-b-4 border-black`}>
+        <div className={`bg-white rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} overflow-hidden`}>
+          <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#2C1267] via-[#604AC7] to-[#0F0826]' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : theme === 'cricketverse' ? 'bg-gradient-to-r from-blue-400 via-indigo-600 to-blue-800' : 'bg-gradient-to-r from-gray-100 to-gray-200'} text-white p-6 pb-8 border-b-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#C88DA5]' : theme === 'ponyville' ? 'border-[#e13690]' : theme === 'cricketverse' ? 'border-blue-600' : 'border-black'}`}>
             <div className="flex items-center space-x-4">
               
               <div>
                 <h2 className="text-3xl text-black font-black">Required Documents</h2>
-                <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-white' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-100'}`}>Complete your enrollment with these documents!</p>
+                <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-white' : theme === 'tinkerbell' ? 'text-yellow-100' : theme === 'bounceworld' ? 'text-[#1D428A]' : theme === 'avengers' ? 'text-[#C88DA5]' : theme === 'ponyville' ? 'text-white' : theme === 'cricketverse' ? 'text-white' : 'text-black'}`}>
+                  {theme === 'bounceworld' ? 'Complete your enrollment and slam dunk your documents! 🏀' : theme === 'avengers' ? 'Complete your enrollment and assemble your documents! 🦸‍♂️' : theme === 'ponyville' ? 'Complete your enrollment and cast magical document spells! ✨🦄' : theme === 'cricketverse' ? 'Complete your enrollment with these documents!' : 'Complete your enrollment with these documents!'}
+                </p>
               </div>
             </div>
           </div>
@@ -281,12 +333,12 @@ export default function StudentDocumentsPage() {
 
           {/* Theme-aware Success Message */}
           {allDocumentsVerified() && (
-            <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-600 to-indigo-600'} rounded-2xl border-4 border-black p-6 shadow-lg`}>
+            <div className={`${theme === 'bounceworld' ? 'bg-white border-4 border-[#1D428A]' : theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : theme === 'avengers' ? 'bg-gradient-to-r from-[#2C1267] via-[#604AC7] to-[#0F0826] border-4 border-[#C88DA5]' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690] to-[#ff2e9f] border-4 border-[#e13690]' : theme === 'cricketverse' ? 'bg-gradient-to-r from-blue-400 via-indigo-600 to-blue-800 border-4 border-blue-600' : 'bg-gradient-to-r from-gray-100 to-gray-200'} rounded-2xl p-6 shadow-lg`}>
               <div className="flex items-start">
                 <span className="text-4xl mr-4">✅</span>
                 <div>
-                  <h4 className="text-xl font-black text-white mb-2"> Documents Verified!</h4>
-                  <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-[#b2e05b]' : theme === 'tinkerbell' ? 'text-yellow-100' : 'text-blue-100'}`}>
+                  <h4 className={`text-xl font-black mb-2 ${theme === 'bounceworld' ? 'text-black' : theme === 'avengers' ? 'text-white' : theme === 'ponyville' ? 'text-white' : 'text-white'}`}> Documents Verified!</h4>
+                  <p className={`font-bold text-lg ${theme === 'bounceworld' ? 'text-black' : theme === 'ben10' ? 'text-[#b2e05b]' : theme === 'tinkerbell' ? 'text-yellow-100' : theme === 'avengers' ? 'text-[#C88DA5]' : theme === 'ponyville' ? 'text-white' : 'text-black'}`}>
                     All your required documents have been verified and approved by our admin team!
                     You can download them using the download buttons above. 
                   </p>
@@ -296,12 +348,12 @@ export default function StudentDocumentsPage() {
           )}
           
           {/* Theme-aware Important Information */}
-          <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : 'bg-gradient-to-r from-blue-600 to-indigo-600'} rounded-2xl border-4 border-black p-6 shadow-lg`}>
+          <div className={`${theme === 'bounceworld' ? 'bg-white border-4 border-[#1D428A]' : theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : theme === 'avengers' ? 'bg-gradient-to-r from-[#2C1267] via-[#604AC7] to-[#0F0826] border-4 border-[#C88DA5]' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690] to-[#ff2e9f] border-4 border-[#e13690]' : theme === 'cricketverse' ? 'bg-gradient-to-r from-blue-400 via-indigo-600 to-blue-800 border-4 border-blue-600' : 'bg-gray-600'} rounded-2xl p-6 shadow-lg`}>
             <div className="flex items-start">
               <span className="text-4xl mr-4">🛡️</span>
               <div>
-                <h4 className="text-xl font-black text-white mb-2">Important Information</h4>
-                <p className={`font-bold text-lg text-black`}>
+                <h4 className={`text-xl font-black mb-2 ${theme === 'bounceworld' ? 'text-black' : theme === 'avengers' ? 'text-white' : theme === 'ponyville' ? 'text-white' : theme === 'cricketverse' ? 'text-white' : 'text-white'}`}>Important Information</h4>
+                <p className={`font-bold text-lg ${theme === 'bounceworld' ? 'text-black' : theme === 'avengers' ? 'text-white' : theme === 'ponyville' ? 'text-white' : theme === 'cricketverse' ? 'text-white' : 'text-black'}`}>
                   These documents are required for your enrollment. Please upload clear, legible copies in PDF, DOC, or image format.
                   Our admin team will verify your documents within 1-2 business days! 
                 </p>
