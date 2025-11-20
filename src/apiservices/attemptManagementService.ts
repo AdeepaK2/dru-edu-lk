@@ -656,42 +656,20 @@ export class AttemptManagementService {
       // Calculate offline time (time student was disconnected)
       const offlineTime = state.disconnectedAt ? Math.floor((now - state.disconnectedAt) / 1000) : 0;
       
-      // The time remaining should be the same as when they disconnected
-      // (we don't subtract offline time from remaining time)
-      const currentTimeRemaining = state.timeRemaining ?? 0;
-      const currentTotalTimeSpent = state.totalTimeSpent ?? 0;
+      // Get attempt and test data to check actual deadline
+      const attemptDoc = await getDoc(doc(firestore, this.COLLECTIONS.ATTEMPTS, attemptId));
+      if (!attemptDoc.exists()) {
+        throw new Error('Attempt not found in Firestore');
+      }
       
-      // Check if test has expired based on absolute time
-      const isExpired = currentTimeRemaining <= 0;
+      const attemptData = attemptDoc.data() as TestAttempt;
       
-      if (isExpired) {
-        console.log('⏰ Test expired while student was offline - checking Firestore status');
-        
-        // Check if already auto-submitted by background job
-        const attemptDoc = await getDoc(doc(firestore, this.COLLECTIONS.ATTEMPTS, attemptId));
-        if (attemptDoc.exists()) {
-          const attemptData = attemptDoc.data() as TestAttempt;
-          
-          if (attemptData.status === 'submitted' || attemptData.status === 'auto_submitted') {
-            console.log('✅ Test already submitted - cannot continue');
-            return {
-              totalTimeAllowed: currentTotalTimeSpent + currentTimeRemaining,
-              timeSpent: currentTotalTimeSpent,
-              timeRemaining: 0,
-              offlineTime: offlineTime,
-              isExpired: true,
-              canContinue: false,
-              timeUntilExpiry: 0
-            };
-          }
-        }
-        
-        // Not yet submitted by background job - mark as expired but let background job handle submission
-        await this.markAttemptAsExpired(attemptId);
-        
+      // Check if already submitted
+      if (attemptData.status === 'submitted' || attemptData.status === 'auto_submitted') {
+        console.log('✅ Test already submitted - cannot continue');
         return {
-          totalTimeAllowed: currentTotalTimeSpent + currentTimeRemaining,
-          timeSpent: currentTotalTimeSpent,
+          totalTimeAllowed: attemptData.totalTimeAllowed || 0,
+          timeSpent: attemptData.timeSpent || 0,
           timeRemaining: 0,
           offlineTime: offlineTime,
           isExpired: true,
@@ -700,32 +678,91 @@ export class AttemptManagementService {
         };
       }
       
-      // Update state for reconnection
+      // Get test to check deadline
+      const test = await this.getTest(attemptData.testId);
+      if (!test) {
+        throw new Error('Test not found');
+      }
+      
+      // Calculate actual time remaining based on DEADLINE, not timer countdown
+      let actualTimeRemaining = state.timeRemaining ?? 0;
+      let isExpiredByDeadline = false;
+      
+      if (test.type === 'flexible') {
+        const flexTest = test as any;
+        if (flexTest.availableTo) {
+          const deadline = flexTest.availableTo;
+          const deadlineMs = deadline.seconds ? deadline.seconds * 1000 : (deadline.toMillis ? deadline.toMillis() : 0);
+          const timeUntilDeadlineMs = Math.max(0, deadlineMs - now);
+          const timeUntilDeadline = Math.floor(timeUntilDeadlineMs / 1000);
+          
+          // Use whichever is LESS: timer countdown OR time until deadline
+          actualTimeRemaining = Math.min(state.timeRemaining ?? 0, timeUntilDeadline);
+          isExpiredByDeadline = timeUntilDeadline <= 0;
+          
+          console.log('🔌 Reconnection check - Timer:', state.timeRemaining, 's, Deadline:', timeUntilDeadline, 's, Using:', actualTimeRemaining, 's');
+        }
+      } else if (test.type === 'live') {
+        const liveTest = test as any;
+        if (liveTest.actualEndTime) {
+          const endTime = liveTest.actualEndTime;
+          const endTimeMs = endTime.seconds ? endTime.seconds * 1000 : (endTime.toMillis ? endTime.toMillis() : 0);
+          const timeUntilEndMs = Math.max(0, endTimeMs - now);
+          const timeUntilEnd = Math.floor(timeUntilEndMs / 1000);
+          
+          actualTimeRemaining = Math.min(state.timeRemaining ?? 0, timeUntilEnd);
+          isExpiredByDeadline = timeUntilEnd <= 0;
+          
+          console.log('🔌 Reconnection check - Timer:', state.timeRemaining, 's, End time:', timeUntilEnd, 's, Using:', actualTimeRemaining, 's');
+        }
+      }
+      
+      // Check if test has truly expired (past deadline)
+      const isExpired = actualTimeRemaining <= 0 || isExpiredByDeadline;
+      
+      if (isExpired) {
+        console.log('⏰ Test expired (past deadline) - marking as expired');
+        await this.markAttemptAsExpired(attemptId);
+        
+        return {
+          totalTimeAllowed: attemptData.totalTimeAllowed || 0,
+          timeSpent: state.totalTimeSpent ?? 0,
+          timeRemaining: 0,
+          offlineTime: offlineTime,
+          isExpired: true,
+          canContinue: false,
+          timeUntilExpiry: 0
+        };
+      }
+      
+      // Update state for reconnection with corrected time
       await update(stateRef, {
         isOnline: true,
         disconnectedAt: null,
         status: 'in_progress',
         sessionStartTime: now,
-        lastHeartbeat: now
+        lastHeartbeat: now,
+        timeRemaining: actualTimeRemaining  // Update with deadline-aware time
       });
 
       // Log reconnect event
       await this.logConnectionEvent(attemptId, 'connect', offlineTime, {
         reason: 'Reconnected',
-        offlineTime: offlineTime
+        offlineTime: offlineTime,
+        timeRemainingRestored: actualTimeRemaining
       });
 
       console.log('🔌 Reconnected successfully. Offline time:', offlineTime, 'seconds');
-      console.log('🔌 Time remaining:', currentTimeRemaining, 'seconds');
+      console.log('🔌 Time remaining (deadline-aware):', actualTimeRemaining, 'seconds');
       
       return {
-        totalTimeAllowed: currentTotalTimeSpent + currentTimeRemaining,
-        timeSpent: currentTotalTimeSpent,
-        timeRemaining: currentTimeRemaining,
+        totalTimeAllowed: attemptData.totalTimeAllowed || 0,
+        timeSpent: state.totalTimeSpent ?? 0,
+        timeRemaining: actualTimeRemaining,
         offlineTime: offlineTime,
         isExpired: false,
         canContinue: true,
-        timeUntilExpiry: currentTimeRemaining
+        timeUntilExpiry: actualTimeRemaining
       };
     } catch (error) {
       console.error('Error handling reconnection:', error);
