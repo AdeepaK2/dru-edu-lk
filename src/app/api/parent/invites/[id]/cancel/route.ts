@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminFirestore } from '@/utils/firebase-admin';
 
+type RouteContext = {
+  params: Promise<{ id: string }>;
+};
+
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context: RouteContext
 ) {
   try {
-    const { id: inviteId } = await params;
+    const { id: inviteId } = await context.params;
 
     const inviteRef = adminFirestore.collection('parentInvites').doc(inviteId);
     const inviteDoc = await inviteRef.get();
