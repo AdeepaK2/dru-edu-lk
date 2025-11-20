@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebase-admin';
+import { adminFirestore } from '@/utils/firebase-admin';
 
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const status = searchParams.get('status'); // pending, accepted, expired, cancelled
 
-    let query = adminDb.collection('parentInvites').orderBy('sentAt', 'desc');
+    let query = adminFirestore.collection('parentInvites').orderBy('sentAt', 'desc');
 
     if (status) {
       query = query.where('inviteStatus', '==', status) as any;

@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebase-admin';
-import { generateInviteToken } from '@/utils/invite-helpers';
+import { adminFirestore } from '@/utils/firebase-admin';
+import crypto from 'crypto';
+
+function generateInviteToken(): string {
+  return crypto.randomBytes(32).toString('hex');
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,7 +21,7 @@ export async function POST(request: NextRequest) {
     // Fetch student details
     const studentsData = await Promise.all(
       studentIds.map(async (id: string) => {
-        const studentDoc = await adminDb.collection('students').doc(id).get();
+        const studentDoc = await adminFirestore.collection('students').doc(id).get();
         if (!studentDoc.exists) {
           throw new Error(`Student with ID ${id} not found`);
         }
@@ -44,13 +48,13 @@ export async function POST(request: NextRequest) {
       relationship: relationship || 'guardian',
       inviteStatus: 'pending',
       inviteToken,
-      inviteLink: `${process.env.NEXT_PUBLIC_MOBILE_APP_URL || 'https://parent-app.example.com'}/invite/${inviteToken}`,
+      inviteLink: `${process.env.NEXT_PUBLIC_MOBILE_APP_URL || 'druedu://invite'}/${inviteToken}`,
       sentAt: new Date().toISOString(),
       expiresAt: expiresAt.toISOString(),
       createdAt: new Date(),
     };
 
-    const inviteRef = await adminDb.collection('parentInvites').add(inviteData);
+    const inviteRef = await adminFirestore.collection('parentInvites').add(inviteData);
 
     // TODO: Send email notification to parent
     // await sendInviteEmail(parentEmail, inviteData);

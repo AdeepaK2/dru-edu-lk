@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebase-admin';
+import { adminFirestore } from '@/utils/firebase-admin';
 
 export async function POST(
   request: NextRequest,
@@ -8,7 +8,7 @@ export async function POST(
   try {
     const inviteId = params.id;
 
-    const inviteRef = adminDb.collection('parentInvites').doc(inviteId);
+    const inviteRef = adminFirestore.collection('parentInvites').doc(inviteId);
     const inviteDoc = await inviteRef.get();
 
     if (!inviteDoc.exists) {

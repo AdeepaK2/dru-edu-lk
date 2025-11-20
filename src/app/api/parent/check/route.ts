@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebase-admin';
+import { adminFirestore } from '@/utils/firebase-admin';
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,13 +14,13 @@ export async function GET(request: NextRequest) {
     }
 
     // Check for existing parent accounts
-    const parentsSnapshot = await adminDb
+    const parentsSnapshot = await adminFirestore
       .collection('parents')
       .where('email', '==', email)
       .get();
 
     // Check for pending/accepted invites
-    const invitesSnapshot = await adminDb
+    const invitesSnapshot = await adminFirestore
       .collection('parentInvites')
       .where('parentEmail', '==', email)
       .where('inviteStatus', 'in', ['pending', 'accepted'])
