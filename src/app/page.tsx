@@ -542,7 +542,7 @@ export default function Home() {
             </div>
 
             <div className="grid md:grid-cols-3 gap-8">
-              <div className="group text-center p-8 rounded-2xl border border-gray-100 hover:border-[#0088e0]/30 hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 bg-gradient-to-br from-white to-gray-50/50">
+              <div className="group text-center p-8 rounded-2xl border border-gray-100 hover:border-[#0088e0]/30 hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 bg-gradient-to-br from-white to-gray-50/50 animate-fadeInUp" style={{ animationDelay: '0.1s' }}>
                 <div className="w-20 h-20 bg-gradient-to-br from-[#0088e0] to-[#00b4d8] rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 shadow-lg">
                   <svg
                     className="w-10 h-10 text-white"
@@ -655,7 +655,7 @@ export default function Home() {
               {display2024.map((student, index) => (
                 <div
                   key={index}
-                  className="bg-white/10 backdrop-blur-sm p-4 rounded-xl border border-white/20 hover:bg-white/15 hover:border-white/40 transition-all duration-500 transform hover:-translate-y-2 hover:shadow-xl"
+                  className="bg-white/10 backdrop-blur-sm p-4 rounded-xl border border-white/20 hover:bg-white/15 hover:border-white/40 transition-all duration-500 transform hover:-translate-y-2 hover:shadow-xl animate-fadeInUp"
                   style={{ animationDelay: `${index * 0.05}s` }}
                 >
                   <div className="mb-3">
