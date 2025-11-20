@@ -358,7 +358,7 @@ export default function Home() {
         <section className="relative pt-2 pb-8 px-4 sm:px-6 lg:px-8">
           <div className="max-w-7xl mx-auto text-center relative z-10">
             <div className="mb-4 animate-fadeInUp">
-              <span className="inline-block bg-white/20 backdrop-blur-sm text-white px-6 py-2 rounded-full text-sm font-medium border border-white/30 animate-pulse">
+              <span className="inline-block bg-white/20 backdrop-blur-sm text-white px-6 py-2 rounded-full text-sm font-medium border border-white/30 hover:bg-white/30 transition-all duration-300 hover:scale-105">
                 🏆 Melbourne's Premier Education Centre
               </span>
             </div>
@@ -377,12 +377,13 @@ export default function Home() {
             <div className="flex justify-center animate-fadeInUp delay-800">
               <Link
                 href="/enroll"
-                className="group bg-gradient-to-r from-[#0088e0] to-[#00b4d8] hover:from-[#0066b3] hover:to-[#0088e0] text-white font-semibold py-4 px-10 rounded-full transition-all duration-300 transform hover:scale-105 shadow-2xl hover:shadow-[#0088e0]/25"
+                className="group bg-gradient-to-r from-[#0088e0] to-[#00b4d8] hover:from-[#0066b3] hover:to-[#0088e0] text-white font-semibold py-4 px-10 rounded-full transition-all duration-300 transform hover:scale-105 shadow-2xl hover:shadow-[#0088e0]/50 animate-pulse"
+                style={{ animationDuration: '3s' }}
               >
                 <span className="flex items-center space-x-2">
                   <span>Enroll Now</span>
                   <svg
-                    className="w-5 h-5 transition-transform group-hover:translate-x-1"
+                    className="w-5 h-5 transition-transform group-hover:translate-x-1 duration-300"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -423,8 +424,8 @@ export default function Home() {
 
             <div className="grid md:grid-cols-3 gap-12">
               {/* Study Materials & Homework Support */}
-              <div className="group text-center">
-                <div className="relative mb-8 overflow-hidden rounded-2xl shadow-2xl transform transition-all duration-300 hover:scale-105">
+              <div className="group text-center animate-fadeInUp" style={{ animationDelay: '0.2s' }}>
+                <div className="relative mb-8 overflow-hidden rounded-2xl shadow-2xl transform transition-all duration-500 hover:scale-105 hover:rotate-1">
                   <Image
                     src="/images/1.png"
                     alt="Digital Study Support Materials"
@@ -457,8 +458,8 @@ export default function Home() {
               </div>
 
               {/* Regular Testing & Progress Monitoring */}
-              <div className="group text-center">
-                <div className="relative mb-8 overflow-hidden rounded-2xl shadow-2xl transform transition-all duration-300 hover:scale-105">
+              <div className="group text-center animate-fadeInUp" style={{ animationDelay: '0.4s' }}>
+                <div className="relative mb-8 overflow-hidden rounded-2xl shadow-2xl transform transition-all duration-500 hover:scale-105 hover:rotate-1">
                   <Image
                     src="/images/2.png"
                     alt="Online Tests and Progress Monitoring"
@@ -490,8 +491,8 @@ export default function Home() {
               </div>
 
               {/* Video Classes & Additional Support */}
-              <div className="group text-center">
-                <div className="relative mb-8 overflow-hidden rounded-2xl shadow-2xl transform transition-all duration-300 hover:scale-105">
+              <div className="group text-center animate-fadeInUp" style={{ animationDelay: '0.6s' }}>
+                <div className="relative mb-8 overflow-hidden rounded-2xl shadow-2xl transform transition-all duration-500 hover:scale-105 hover:rotate-1">
                   <Image
                     src="/images/3.png"
                     alt="Video Classes and Online Support"
@@ -541,8 +542,8 @@ export default function Home() {
             </div>
 
             <div className="grid md:grid-cols-3 gap-8">
-              <div className="group text-center p-8 rounded-2xl border border-gray-100 hover:border-[#0088e0]/30 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 bg-gradient-to-br from-white to-gray-50/50">
-                <div className="w-20 h-20 bg-gradient-to-br from-[#0088e0] to-[#00b4d8] rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
+              <div className="group text-center p-8 rounded-2xl border border-gray-100 hover:border-[#0088e0]/30 hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 bg-gradient-to-br from-white to-gray-50/50">
+                <div className="w-20 h-20 bg-gradient-to-br from-[#0088e0] to-[#00b4d8] rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 shadow-lg">
                   <svg
                     className="w-10 h-10 text-white"
                     fill="none"
@@ -654,7 +655,8 @@ export default function Home() {
               {display2024.map((student, index) => (
                 <div
                   key={index}
-                  className="bg-white/10 backdrop-blur-sm p-4 rounded-xl border border-white/20 hover:bg-white/15 transition-all duration-300 transform hover:-translate-y-1"
+                  className="bg-white/10 backdrop-blur-sm p-4 rounded-xl border border-white/20 hover:bg-white/15 hover:border-white/40 transition-all duration-500 transform hover:-translate-y-2 hover:shadow-xl"
+                  style={{ animationDelay: `${index * 0.05}s` }}
                 >
                   <div className="mb-3">
                     <h3 className="text-sm font-bold text-white mb-1">
@@ -722,7 +724,8 @@ export default function Home() {
                     student.highlight
                       ? "border-[#0088e0] bg-gradient-to-br from-[#0088e0]/20 to-white/10"
                       : "border-white/20"
-                  } hover:bg-white/15 transition-all duration-300 transform hover:-translate-y-1`}
+                  } hover:bg-white/15 hover:border-white/40 transition-all duration-500 transform hover:-translate-y-2 hover:shadow-xl animate-fadeInUp`}
+                  style={{ animationDelay: `${index * 0.05}s` }}
                 >
                   <div className="mb-3">
                     <h3 className="text-sm font-bold text-white mb-1">
@@ -791,7 +794,8 @@ export default function Home() {
               {display2022.map((student, index) => (
                 <div
                   key={index}
-                  className="relative bg-gradient-to-br from-[#0088e0]/20 to-white/10 backdrop-blur-sm p-4 rounded-xl border border-[#0088e0]/50 hover:from-[#0088e0]/30 hover:to-white/15 transition-all duration-300 transform hover:-translate-y-1"
+                  className="relative bg-gradient-to-br from-[#0088e0]/20 to-white/10 backdrop-blur-sm p-4 rounded-xl border border-[#0088e0]/50 hover:from-[#0088e0]/30 hover:to-white/15 hover:border-[#0088e0]/70 transition-all duration-500 transform hover:-translate-y-2 hover:shadow-xl"
+                  style={{ animationDelay: `${index * 0.1}s` }}
                 >
                   <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-br from-[#0088e0] to-[#00b4d8] rounded-full flex items-center justify-center text-white font-bold text-xs shadow-lg">
                     {student.rank}
@@ -897,12 +901,13 @@ export default function Home() {
               ].map((subject, index) => (
                 <div
                   key={index}
-                  className="group bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100 hover:border-[#0088e0]/30"
+                  className="group bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 border border-gray-100 hover:border-[#0088e0]/30"
+                  style={{ animationDelay: `${index * 0.05}s` }}
                 >
                   <div
-                    className={`w-16 h-16 bg-gradient-to-br ${subject.color} rounded-xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg`}
+                    className={`w-16 h-16 bg-gradient-to-br ${subject.color} rounded-xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 group-hover:rotate-12 transition-all duration-500 shadow-lg`}
                   >
-                    <span className="text-3xl">{subject.icon}</span>
+                    <span className="text-3xl group-hover:scale-110 transition-transform duration-300">{subject.icon}</span>
                   </div>
                   <h3 className="text-lg font-bold text-[#01143d] text-center group-hover:text-[#0088e0] transition-colors">
                     {subject.name}
@@ -927,13 +932,13 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
               <Link
                 href="/enroll"
-                className="bg-[#0088e0] hover:bg-[#0066b3] text-white font-semibold py-4 px-8 rounded-full transition-all duration-300 transform hover:scale-105 relative z-20 cursor-pointer"
+                className="bg-[#0088e0] hover:bg-[#0066b3] text-white font-semibold py-4 px-8 rounded-full transition-all duration-300 transform hover:scale-110 hover:shadow-2xl relative z-20 cursor-pointer"
               >
                 Enroll Now
               </Link>
               <a
                 href="tel:+61478716402"
-                className="border-2 border-white hover:bg-white hover:text-[#01143d] text-white font-semibold py-4 px-8 rounded-full transition-all duration-300 relative z-20 cursor-pointer"
+                className="border-2 border-white hover:bg-white hover:text-[#01143d] text-white font-semibold py-4 px-8 rounded-full transition-all duration-300 transform hover:scale-110 hover:shadow-2xl relative z-20 cursor-pointer"
               >
                 Call Us Today
               </a>
