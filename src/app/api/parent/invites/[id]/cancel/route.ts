@@ -3,10 +3,10 @@ import { adminFirestore } from '@/utils/firebase-admin';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const inviteId = params.id;
+    const { id: inviteId } = await params;
 
     const inviteRef = adminFirestore.collection('parentInvites').doc(inviteId);
     const inviteDoc = await inviteRef.get();
