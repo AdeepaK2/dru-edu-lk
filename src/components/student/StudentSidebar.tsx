@@ -240,7 +240,7 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
     if (currentTheme === 'tinkerbell' && tinkerMap[avatarId]) return tinkerMap[avatarId];
     if (currentTheme === 'avengers' && avengersMap[avatarId]) return avengersMap[avatarId];
     if (currentTheme === 'bounceworld' && bounceWorldMap[avatarId]) return bounceWorldMap[avatarId];
-    if (currentTheme === 'cricketverse' && cricketVerseMap[avatarId]) return cricketVerseMap[avatarId];
+    if ((currentTheme === 'cricketverse' || currentTheme === 'cricketverse-australian') && cricketVerseMap[avatarId]) return cricketVerseMap[avatarId];
     if (currentTheme === 'ponyville' && ponyvilleMap[avatarId]) return ponyvilleMap[avatarId];
 
     // If avatarId looks like a path, return it directly (for backwards compatibility)
@@ -274,6 +274,8 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
               ? 'bg-gradient-to-br from-green-400/80 via-yellow-400/80 to-yellow-600/80'
               : theme === 'cricketverse'
               ? 'bg-gradient-to-br from-blue-400/80 via-indigo-400/80 to-indigo-600/80'
+              : theme === 'cricketverse-australian'
+              ? 'bg-gradient-to-br from-[#ffe000]/80 via-[#ffd700]/80 to-[#b38f00]/80'
               : theme === 'bounceworld'
               ? 'bg-white/80'
               : theme === 'avengers'
@@ -299,6 +301,8 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
           ? 'bg-gradient-to-br from-green-400 to-yellow-600'
           : theme === 'cricketverse'
           ? 'bg-gradient-to-b from-blue-500 via-indigo-500 to-indigo-600'
+          : theme === 'cricketverse-australian'
+          ? 'bg-gradient-to-b from-[#ffe000] via-[#ffd700] to-[#b38f00]'
           : theme === 'bounceworld'
           ? 'bg-gradient-to-b  from-[#1D428A]/70 to-[#C8102E]/100'
           : theme === 'avengers'
@@ -317,6 +321,8 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
               ? 'bg-gradient-to-r from-yellow-500 to-green-600'
               : theme === 'cricketverse'
               ? 'bg-gradient-to-r from-blue-600 to-indigo-700'
+              : theme === 'cricketverse-australian'
+              ? 'bg-gradient-to-r from-[#b38f00] to-[#8b6914]'
               : theme === 'bounceworld'
               ? 'bg-gradient-to-r from-[#1D428A] to-[#C8102E]'
               : theme === 'avengers'
@@ -404,7 +410,7 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
                 })()}
               </div>
               <div className="flex-1 min-w-0">
-                <p className={`text-sm font-black ${theme === 'bounceworld' || theme === 'default' ? 'text-black' : 'text-white'} truncate`}>
+                <p className={`text-sm font-black ${theme === 'bounceworld' || theme === 'default' || theme === 'cricketverse-australian' ? 'text-black' : 'text-white'} truncate`}>
                   {student.name}
                 </p>
                 <p className="text-xs font-bold text-black" style={{
@@ -440,6 +446,8 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
                         ? 'bg-gradient-to-r from-yellow-400 to-green-500 text-white border-black shadow-lg'
                         : theme === 'cricketverse'
                         ? 'bg-gradient-to-r from-blue-400 to-indigo-600 text-white border-indigo-700 shadow-lg'
+                        : theme === 'cricketverse-australian'
+                        ? 'bg-gradient-to-r from-[#b38f00] to-[#8b6914] text-black border-[#b38f00] shadow-lg'
                         : theme === 'bounceworld'
                         ? 'bg-gradient-to-r from-[#1D428A] to-[#C8102E] text-white border-[#1D428A] shadow-lg'
                         : theme === 'avengers'
@@ -456,6 +464,8 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
                           ? 'hover:from-yellow-300 hover:to-green-400 hover:text-white'
                           : theme === 'cricketverse'
                           ? 'hover:from-blue-300 hover:to-indigo-500 hover:text-white'
+                          : theme === 'cricketverse-australian'
+                          ? 'hover:from-[#b38f00] hover:to-[#8b6914] hover:text-black'
                           : theme === 'bounceworld'
                           ? 'hover:from-[#1D428A] hover:to-[#C8102E] hover:text-white'
                           : theme === 'avengers'
@@ -474,7 +484,7 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
                 }}
               >
                 <div className="flex items-center space-x-3">
-                  <Icon className={`w-6 h-6 ${isActive ? (theme === 'default' ? 'text-blue-600' : 'text-white') : 'text-black'}`} />
+                  <Icon className={`w-6 h-6 ${isActive ? (theme === 'default' ? 'text-blue-600' : theme === 'cricketverse-australian' ? 'text-black' : 'text-white') : 'text-black'}`} />
                   <span>{item.label}</span>
                 </div>
                 {item.badge && (
@@ -493,7 +503,7 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
                   </span>
                 )}
                 {isActive && (
-                  <ChevronRight className={`w-5 h-5 ${theme === 'default' ? 'text-blue-600' : 'text-white'}`} />
+                  <ChevronRight className={`w-5 h-5 ${theme === 'default' ? 'text-blue-600' : theme === 'cricketverse-australian' ? 'text-black' : 'text-white'}`} />
                 )}
               </Link>
             );

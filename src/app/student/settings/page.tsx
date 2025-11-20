@@ -452,6 +452,7 @@ export default function StudentSettingsPage() {
   // Theme state
   const { theme, setTheme } = useTheme();
   const [selectedTheme, setSelectedTheme] = useState<ThemeType>(theme);
+  const [showCricketVersePopup, setShowCricketVersePopup] = useState(false);
 
   // Clear message after 5 seconds
   useEffect(() => {
@@ -476,8 +477,8 @@ export default function StudentSettingsPage() {
         defaultAvatar = student.avatar || 'lebron';
       } else if (selectedTheme === 'avengers' || theme === 'avengers') {
         defaultAvatar = student.avatar || 'ironman'; // Default to Iron Man for Avengers theme
-      } else if (selectedTheme === 'cricketverse' || theme === 'cricketverse') {
-        defaultAvatar = student.avatar || 'virat'; // Default to Virat Kohli for CricketVerse theme
+      } else if (selectedTheme === 'cricketverse' || theme === 'cricketverse' || selectedTheme === 'cricketverse-australian' || theme === 'cricketverse-australian') {
+        defaultAvatar = student.avatar || 'travis-head'; // Default to Travis Head for Australian CricketVerse theme
       } else if (selectedTheme === 'ponyville' || theme === 'ponyville') {
         defaultAvatar = student.avatar || 'twilight'; // Default to Twilight Sparkle for Ponyville theme
       } else {
@@ -531,7 +532,7 @@ export default function StudentSettingsPage() {
     if (selectedTheme === 'ben10' || theme === 'ben10') return ben10Avatars;
     if (selectedTheme === 'bounceworld' || theme === 'bounceworld') return bounceworldAvatars;
     if (selectedTheme === 'avengers' || theme === 'avengers') return avengersAvatars;
-    if (selectedTheme === 'cricketverse' || theme === 'cricketverse') return cricketverseAvatars;
+    if (selectedTheme === 'cricketverse' || theme === 'cricketverse' || selectedTheme === 'cricketverse-australian' || theme === 'cricketverse-australian') return cricketverseAvatars;
     if (selectedTheme === 'ponyville' || theme === 'ponyville') return ponyvilleAvatars;
     return [];
   };
@@ -542,9 +543,21 @@ export default function StudentSettingsPage() {
   };
 
   const handleThemeChange = (newTheme: ThemeType) => {
+    if (newTheme === 'cricketverse') {
+      setShowCricketVersePopup(true);
+      return;
+    }
     setSelectedTheme(newTheme);
     setTheme(newTheme);
     setMessage({ type: 'success', text: `Theme changed to ${THEMES[newTheme].name}! 🎨` });
+  };
+
+  const handleCricketVerseVariantSelect = (variant: 'indian' | 'australian') => {
+    const themeToSet = variant === 'indian' ? 'cricketverse' : 'cricketverse-australian';
+    setSelectedTheme(themeToSet);
+    setTheme(themeToSet);
+    setShowCricketVersePopup(false);
+    setMessage({ type: 'success', text: `Theme changed to ${THEMES[themeToSet].name}! 🏏` });
   };
 
   const handleProfileInputChange = (field: keyof StudentProfileData, value: string) => {
@@ -698,7 +711,7 @@ export default function StudentSettingsPage() {
             )}
 
             {/* CricketVerse Loading GIF */}
-            {theme === 'cricketverse' && (
+            {(theme === 'cricketverse' || theme === 'cricketverse-australian') && (
               <div className="flex flex-col items-center">
                 <img
                   src="/batsman.gif"
@@ -749,10 +762,10 @@ export default function StudentSettingsPage() {
   }
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br p-6 ${theme === 'ben10' ? '' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'from-white via-[#1D428A]/10 to-[#C8102E]/10' : theme === 'avengers' ? 'from-[#2C1267]/10 via-[#604AC7]/10 to-[#0F0826]/10' : theme === 'ponyville' ? 'from-[#fff5fb] via-[#f1aed5] to-[#ff2e9f]' : theme === 'cricketverse' ? 'from-blue-400 to-indigo-600' : 'from-gray-100 to-gray-200'}`} style={theme === 'ben10' ? { background: 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))' } : undefined}>
+    <div className={`min-h-screen bg-gradient-to-br p-6 ${theme === 'ben10' ? '' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'from-white via-[#1D428A]/10 to-[#C8102E]/10' : theme === 'avengers' ? 'from-[#2C1267]/10 via-[#604AC7]/10 to-[#0F0826]/10' : theme === 'ponyville' ? 'from-[#fff5fb] via-[#f1aed5] to-[#ff2e9f]' : theme === 'cricketverse' ? 'from-blue-400 to-indigo-600' : theme === 'cricketverse-australian' ? 'from-[#ffe000] via-[#ffd700] to-[#b38f00]' : 'from-gray-100 to-gray-200'}`} style={theme === 'ben10' ? { background: 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))' } : undefined}>
       <div className="space-y-8 max-w-6xl mx-auto">
       {/* Page Header - Theme Aware */}
-      <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-500 via-yellow-500 to-green-600' : theme === 'bounceworld' ? 'from-[#1D428A] to-[#C8102E]' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]' : theme === 'ponyville' ? 'from-[#f1aed5] to-[#e13690]' : theme === 'cricketverse' ? 'from-blue-400 to-indigo-600' : 'from-gray-100 to-gray-200'} rounded-2xl text-white p-8 border-2 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : theme === 'ponyville' ? 'border-[#ff2e9f]' : theme === 'cricketverse' ? 'border-blue-600' : 'border-black'} relative overflow-hidden`}>
+      <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-500 via-yellow-500 to-green-600' : theme === 'bounceworld' ? 'from-[#1D428A] to-[#C8102E]' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]' : theme === 'ponyville' ? 'from-[#f1aed5] to-[#e13690]' : theme === 'cricketverse' ? 'from-blue-400 to-indigo-600' : theme === 'cricketverse-australian' ? 'from-[#b38f00] via-[#ffd700] to-[#8b6914]' : 'from-gray-100 to-gray-200'} rounded-2xl text-white p-8 border-2 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : theme === 'ponyville' ? 'border-[#ff2e9f]' : theme === 'cricketverse' ? 'border-blue-600' : theme === 'cricketverse-australian' ? 'border-black' : 'border-black'} relative overflow-hidden`}>
 
         
    
@@ -762,10 +775,10 @@ export default function StudentSettingsPage() {
             <div className="flex items-center space-x-4 mb-2">
               
               <div>
-                <h1 className={`text-3xl font-bold ${theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-white' : theme === 'ponyville' ? 'text-white' : theme === 'cricketverse' ? 'text-white' : 'text-black'}`}>
+                <h1 className={`text-3xl font-bold ${theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-white' : theme === 'ponyville' ? 'text-white' : theme === 'cricketverse' ? 'text-white' : theme === 'cricketverse-australian' ? 'text-black' : 'text-black'}`}>
                   {theme === 'avengers' ? '🦸 Avengers Command Center' : theme === 'ponyville' ? '🦄 Ponyville Funland Settings' : 'Setting Page'}
                 </h1>
-                <p className={`${theme === 'ben10' ? 'text-black' : theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-white' : theme === 'ponyville' ? 'text-white' : theme === 'cricketverse' ? 'text-white' : 'text-black'} text-lg font-semibold mt-2`}>
+                <p className={`${theme === 'ben10' ? 'text-black' : theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-white' : theme === 'ponyville' ? 'text-white' : theme === 'cricketverse' ? 'text-white' : theme === 'cricketverse-australian' ? 'text-black' : 'text-black'} text-lg font-semibold mt-2`}>
                   {theme === 'avengers' ? 'Assemble your perfect learning experience!' : theme === 'ponyville' ? 'Transform your learning with magical settings!' : 'Customize your learning profile!'}
                 </p>
               </div>
@@ -792,9 +805,9 @@ export default function StudentSettingsPage() {
 
       {/* Success/Error Messages - Theme Aware */}
       {message && (
-        <div className={`rounded-xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : 'border-black'} p-4 shadow-lg ${
+        <div className={`rounded-xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : theme === 'cricketverse-australian' ? 'border-black' : 'border-black'} p-4 shadow-lg ${
           message.type === 'success' 
-            ? `${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 to-green-300' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7] to-[#2C1267]' : 'bg-gradient-to-r from-gray-100 to-gray-200'}` 
+            ? `${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 to-green-300' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7] to-[#2C1267]' : theme === 'cricketverse-australian' ? 'bg-gradient-to-r from-[#b38f00] to-[#ffd700]' : 'bg-gradient-to-r from-gray-100 to-gray-200'}` 
             : 'bg-gradient-to-r from-red-300 to-pink-300'
         }`}>
           <div className="flex items-center space-x-3">
@@ -802,13 +815,14 @@ export default function StudentSettingsPage() {
               {message.type === 'success' ? '🎉' : '😅'}
             </div>
             <div>
-              <p className={`font-bold ${theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-white' : 'text-black'} text-lg`}>
+              <p className={`font-bold ${theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-white' : theme === 'cricketverse-australian' ? 'text-black' : 'text-black'} text-lg`}>
                 {message.type === 'success' ? (
                   theme === 'bounceworld' ? '🏀 Slam Dunk Success!' :
                   theme === 'avengers' ? '🦸 Avengers Assemble Success!' :
                   theme === 'ben10' ? '⚡ Ben 10 Says: Hero Success!' :
                   theme === 'tinkerbell' ? '✨ Tinkerbell Says: Magic Success!' :
                   theme === 'cricketverse' ? '🏏 CricketVerse Says: Century Success!' :
+                  theme === 'cricketverse-australian' ? '🇦🇺 Australian CricketVerse Says: Six Success!' :
                   theme === 'ponyville' ? '🦄 Ponyville Says: Magical Success!' :
                   '🎉 Success!'
                 ) : (
@@ -817,6 +831,7 @@ export default function StudentSettingsPage() {
                   theme === 'ben10' ? '⚡ Ben 10 Says: Try Again!' :
                   theme === 'tinkerbell' ? '✨ Tinkerbell Says: Magic Mishap!' :
                   theme === 'cricketverse' ? '🏏 CricketVerse Says: Play On!' :
+                  theme === 'cricketverse-australian' ? '🇦🇺 Australian CricketVerse Says: Keep Batting!' :
                   theme === 'ponyville' ? '🦄 Ponyville Says: Try Again!' :
                   '😅 Oops! Try Again!'
                 )}
@@ -832,11 +847,12 @@ export default function StudentSettingsPage() {
         theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' :
         theme === 'tinkerbell' ? 'from-yellow-200 via-green-200 to-yellow-300' :
         theme === 'cricketverse' ? 'from-blue-200 via-indigo-200 to-purple-300' :
+        theme === 'cricketverse-australian' ? 'from-[#ffe000]/60 via-[#ffd700]/60 to-[#b38f00]/60' :
         theme === 'bounceworld' ? 'from-white via-[#1D428A]/30 to-[#C8102E]/30' :
         theme === 'avengers' ? 'from-[#604AC7]/20 via-[#2C1267]/20 to-[#0F0826]/20' :
         theme === 'ponyville' ? 'from-[#fff5fb] via-[#f1aed5] to-[#ff2e9f]' : 'from-gray-100 via-gray-200 to-gray-300'
       } rounded-xl shadow-lg border-4 ${
-        theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'
+        theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : theme === 'ponyville' ? 'border-[#e13690]' : theme === 'cricketverse-australian' ? 'border-black' : 'border-black'
       } p-6`}>
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3">
@@ -932,7 +948,7 @@ export default function StudentSettingsPage() {
             type="button"
             onClick={() => handleThemeChange('cricketverse')}
             className={`p-3 rounded-xl border-4 transition-all transform hover:scale-105 ${
-              selectedTheme === 'cricketverse'
+              (selectedTheme === 'cricketverse' || selectedTheme === 'cricketverse-australian')
                 ? 'border-blue-600 bg-blue-100 shadow-lg scale-105'
                 : 'border-black bg-white hover:border-blue-400'
             }`}
@@ -953,7 +969,7 @@ export default function StudentSettingsPage() {
               <div className="w-5 h-5 bg-indigo-600 rounded-full border-2 border-black"></div>
               <div className="w-5 h-5 bg-white rounded-full border-2 border-black"></div>
             </div>
-            {selectedTheme === 'cricketverse' && (
+            {(selectedTheme === 'cricketverse' || selectedTheme === 'cricketverse-australian') && (
               <div className="mt-2 flex items-center justify-center">
                 <span className="text-xs font-bold text-black">✓ Selected</span>
               </div>
@@ -1066,6 +1082,50 @@ export default function StudentSettingsPage() {
         </div>
       </div>
 
+      {/* CricketVerse Variant Selection Popup */}
+      {showCricketVersePopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl border-4 border-blue-500 p-6 max-w-md mx-4">
+            <h3 className="text-xl font-bold text-black mb-4 text-center">Choose CricketVerse Variant 🏏</h3>
+            <p className="text-sm text-gray-600 mb-6 text-center">
+              Select your preferred cricket theme variant
+            </p>
+            <div className="space-y-3">
+              <button
+                onClick={() => handleCricketVerseVariantSelect('indian')}
+                className="w-full p-4 bg-blue-500 hover:bg-blue-600 text-white rounded-lg border-2 border-blue-600 transition-all transform hover:scale-105"
+              >
+                <div className="flex items-center space-x-3">
+                  <span className="text-2xl">🇮🇳</span>
+                  <div className="text-left">
+                    <div className="font-bold">Indian CricketVerse</div>
+                    <div className="text-sm opacity-90">Blue & White Theme</div>
+                  </div>
+                </div>
+              </button>
+              <button
+                onClick={() => handleCricketVerseVariantSelect('australian')}
+                className="w-full p-4 bg-[#b38f00] hover:bg-[#daa520] text-white rounded-lg border-2 border-[#b38f00] transition-all transform hover:scale-105"
+              >
+                <div className="flex items-center space-x-3">
+                  <span className="text-2xl">🇦🇺</span>
+                  <div className="text-left">
+                    <div className="font-bold">Australian CricketVerse</div>
+                    <div className="text-sm opacity-90">Gold & Yellow Theme</div>
+                  </div>
+                </div>
+              </button>
+            </div>
+            <button
+              onClick={() => setShowCricketVersePopup(false)}
+              className="w-full mt-4 p-2 bg-gray-200 hover:bg-gray-300 text-black rounded-lg border-2 border-gray-400 transition-all"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Profile Settings - Theme Aware */}
       <div className={`bg-gradient-to-r ${
         theme === 'ben10'
@@ -1078,13 +1138,15 @@ export default function StudentSettingsPage() {
           ? 'from-[#604AC7] via-[#2C1267] to-[#0F0826]'
           : theme === 'ponyville'
           ? 'from-[#f1aed5] via-[#e13690] to-[#ff2e9f]'
+          : theme === 'cricketverse-australian'
+          ? 'from-[#ffe000] via-[#ffd700] to-[#b38f00]'
           : 'from-gray-100 via-gray-200 to-gray-300'
       } rounded-xl shadow-lg border-4 ${
         theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : theme === 'ponyville' ? 'border-[#f1aed5]' : 'border-black'
       } p-6`}>
         <div className="flex items-center space-x-3 mb-6">
           <h2 className={`text-2xl font-black ${
-            theme === 'bounceworld' ? 'text-[#1D428A]' : theme === 'avengers' ? 'text-white' : theme === 'ponyville' ? 'text-white' : 'text-black'
+            theme === 'bounceworld' ? 'text-[#1D428A]' : theme === 'avengers' ? 'text-white' : theme === 'ponyville' ? 'text-white' : theme === 'cricketverse-australian' ? 'text-black' : 'text-black'
           }`}>Profile Studio</h2>
         </div>
 
@@ -1136,14 +1198,14 @@ export default function StudentSettingsPage() {
                           onClick={() => handleAvatarSelect(avatar.id)}
                           className={`p-3 rounded-xl border-4 transition-all transform hover:scale-105 ${
                             selectedAvatar === avatar.id
-                              ? (selectedTheme === 'tinkerbell' ? 'border-yellow-400 bg-yellow-50 shadow-lg' : selectedTheme === 'bounceworld' ? 'border-[#1D428A] bg-blue-50 shadow-lg' : selectedTheme === 'avengers' ? 'border-[#604AC7] bg-purple-50 shadow-lg' : selectedTheme === 'ponyville' ? 'border-[#f1aed5] bg-[#f1aed5]/10 shadow-lg' : 'border-[#64cc4f] bg-[#b2e05b]/10 shadow-lg')
+                              ? (selectedTheme === 'tinkerbell' ? 'border-yellow-400 bg-yellow-50 shadow-lg' : selectedTheme === 'bounceworld' ? 'border-[#1D428A] bg-blue-50 shadow-lg' : selectedTheme === 'avengers' ? 'border-[#604AC7] bg-purple-50 shadow-lg' : selectedTheme === 'ponyville' ? 'border-[#f1aed5] bg-[#f1aed5]/10 shadow-lg' : selectedTheme === 'cricketverse-australian' ? 'border-[#b38f00] bg-[#ffd700]/10 shadow-lg' : 'border-[#64cc4f] bg-[#b2e05b]/10 shadow-lg')
                               : 'border-black bg-white hover:border-green-400'
                           }`}>
                           <div className={`relative w-12 h-12 rounded-full overflow-hidden mx-auto mb-2 bg-white border-2 border-black flex items-center justify-center`}>
                             <Image src={avatar.image || '/images/1.png'} alt={avatar.name} fill className="object-contain object-center" />
                           </div>
-                          <h5 className="text-sm font-bold text-black text-center">{avatar.name}</h5>
-                          <p className="text-xs text-gray-600 text-center mt-1">{avatar.description}</p>
+                          <h5 className={`text-sm font-bold ${selectedTheme === 'cricketverse-australian' ? 'text-black' : 'text-black'} text-center`}>{avatar.name}</h5>
+                          <p className={`text-xs ${selectedTheme === 'cricketverse-australian' ? 'text-black' : 'text-gray-600'} text-center mt-1`}>{avatar.description}</p>
                         </button>
                       ))}
                     </div>

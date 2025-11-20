@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-export type ThemeType = 'default' | 'ben10' | 'tinkerbell' | 'cricketverse' | 'bounceworld' | 'avengers' | 'ponyville';
+export type ThemeType = 'default' | 'ben10' | 'tinkerbell' | 'cricketverse' | 'cricketverse-australian' | 'bounceworld' | 'avengers' | 'ponyville';
 
 interface ThemeContextType {
   theme: ThemeType;
@@ -19,7 +19,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setIsClient(true);
     const savedTheme = localStorage.getItem('student-theme') as ThemeType | null;
-    if (savedTheme === 'default' || savedTheme === 'ben10' || savedTheme === 'tinkerbell' || savedTheme === 'cricketverse' || savedTheme === 'bounceworld' || savedTheme === 'avengers' || savedTheme === 'ponyville') {
+    if (savedTheme === 'default' || savedTheme === 'ben10' || savedTheme === 'tinkerbell' || savedTheme === 'cricketverse' || savedTheme === 'cricketverse-australian' || savedTheme === 'bounceworld' || savedTheme === 'avengers' || savedTheme === 'ponyville') {
       setThemeState(savedTheme);
       applyTheme(savedTheme);
     } else {
@@ -79,6 +79,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.style.setProperty('--theme-accent', '#6366f1');
       root.style.setProperty('--theme-bg-light', '#f8fafc');
       root.style.setProperty('--theme-bg-dark', '#1e293b');
+    } else if (selectedTheme === 'cricketverse-australian') {
+      // CricketVerse Australian Theme - Gold and Yellow
+      root.style.setProperty('--theme-primary-light', '#ffd700');
+      root.style.setProperty('--theme-primary', '#b38f00');
+      root.style.setProperty('--theme-primary-dark', '#8b6914');
+      root.style.setProperty('--theme-secondary', '#ffe000');
+      root.style.setProperty('--theme-accent', '#daa520');
+      root.style.setProperty('--theme-bg-light', '#fff8dc');
+      root.style.setProperty('--theme-bg-dark', '#b38f00');
     } else if (selectedTheme === 'bounceworld') {
       // BounceWorld Theme - White, Blue (#1D428A), and Red (#C8102E)
       root.style.setProperty('--theme-primary-light', '#3B82F6');

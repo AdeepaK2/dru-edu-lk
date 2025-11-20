@@ -281,9 +281,11 @@ export default function StudentDashboard() {
 
   // Show loading state while data is being fetched
   if (loading) {
+    const loadingBgClass = theme === 'default' ? 'bg-gradient-to-br from-gray-50 to-gray-100' : theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : theme === 'cricketverse' ? 'bg-gradient-to-br from-blue-400 to-indigo-600' : theme === 'cricketverse-australian' ? 'bg-gradient-to-br from-[#fff800] via-[#fff800] to-[#fff800]' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A] to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-br from-[#2C1267]/20 to-[#4F2C8D]/20' : theme === 'ponyville' ? 'bg-gradient-to-br from-[#fff5fb] via-[#f1aed5] to-[#ff2e9f]' : 'bg-gradient-to-br from-gray-50 to-gray-100';
+    const loadingBoxClass = theme === 'default' ? 'bg-white border-4 border-black' : theme === 'bounceworld' ? 'bg-white border-4 border-[#1D428A]' : theme === 'ponyville' ? 'bg-white border-4 border-[#e13690]' : 'bg-white border-4 border-black';
     return (
-      <div className={`min-h-screen ${theme === 'default' ? 'bg-gradient-to-br from-gray-50 to-gray-100' : theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : theme === 'cricketverse' ? 'bg-gradient-to-br from-blue-400 to-indigo-600' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A] to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-br from-[#2C1267]/20 to-[#4F2C8D]/20' : theme === 'ponyville' ? 'bg-gradient-to-br from-[#fff5fb] via-[#f1aed5] to-[#ff2e9f]' : 'bg-gradient-to-br from-gray-50 to-gray-100'} flex items-center justify-center`}>
-        <div className={`${theme === 'default' ? 'bg-white border-4 border-black' : theme === 'bounceworld' ? 'bg-white border-4 border-[#1D428A]' : theme === 'ponyville' ? 'bg-white border-4 border-[#e13690]' : 'bg-white border-4 border-black'} rounded-3xl p-8 shadow-2xl`}>
+      <div className={'min-h-screen ' + loadingBgClass + ' flex items-center justify-center'}>
+        <div className={loadingBoxClass + ' rounded-3xl p-8 shadow-2xl'}>
           {/* Theme-Specific Loading Animation */}
           <div className="relative mb-6 flex flex-col items-center">
             {/* Tinkerbell Loading GIF */}
@@ -311,7 +313,7 @@ export default function StudentDashboard() {
             )}
             
             {/* CricketVerse Loading */}
-            {theme === 'cricketverse' && (
+            {(theme === 'cricketverse' || theme === 'cricketverse-australian') && (
               <div className="flex flex-col items-center">
                 <img
                   src="/batsman.gif"
@@ -359,7 +361,7 @@ export default function StudentDashboard() {
             )}
             
             {/* Default Theme Spinner with Loading Text */}
-            {!['tinkerbell', 'ben10', 'cricketverse', 'bounceworld', 'avengers', 'ponyville'].includes(theme) && (
+            {!['tinkerbell', 'ben10', 'cricketverse', 'cricketverse-australian', 'bounceworld', 'avengers', 'ponyville'].includes(theme) && (
               <div className="flex flex-col items-center">
                 <div className="w-24 h-24 border-4 border-gray-300 border-t-black rounded-full animate-spin"></div>
                 <span className="text-2xl font-bold text-black mt-4">Loading</span>
@@ -386,6 +388,8 @@ export default function StudentDashboard() {
           ? 'linear-gradient(to bottom right, rgb(134, 239, 172), rgb(202, 138, 4), rgb(134, 239, 172))'
           : theme === 'cricketverse'
           ? 'linear-gradient(to bottom right, rgb(96, 165, 250), rgb(79, 70, 229), rgb(96, 165, 250))'
+          : theme === 'cricketverse-australian'
+          ? 'linear-gradient(to bottom right, rgb(255, 255, 65), rgb(255, 255, 65), rgb(255, 255, 65))'
           : theme === 'bounceworld'
           ? 'linear-gradient(to bottom right, rgb(255, 255, 255), rgb(29, 66, 138), rgb(200, 16, 46))'
           : theme === 'avengers'
@@ -396,7 +400,7 @@ export default function StudentDashboard() {
       }}>
         <div className="space-y-6">
         {/* Welcome Header - Dynamic Theme */}
-        <div className={`rounded-2xl text-white p-8 relative overflow-hidden border-4 ${theme === 'default' ? 'border-black' : theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} ${
+        <div className={`rounded-2xl text-white p-8 relative overflow-hidden border-4 ${theme === 'default' ? 'border-black' : theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'cricketverse-australian' ? 'border-black' : 'border-black'} ${
           theme === 'default'
             ? 'bg-gradient-to-r from-blue-600 via-indigo-700 to-indigo-900'
             : theme === 'ben10'
@@ -405,6 +409,8 @@ export default function StudentDashboard() {
             ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500'
             : theme === 'cricketverse'
             ? 'bg-gradient-to-r from-blue-500 to-indigo-600'
+            : theme === 'cricketverse-australian'
+            ? 'bg-gradient-to-r from-[#fff800] via-[#fff800] to-[#fff800]'
             : theme === 'bounceworld'
             ? 'bg-gradient-to-r from-white via-[#1D428A] to-[#C8102E] text-black border-[#1D428A]'
             : theme === 'avengers'
@@ -419,6 +425,7 @@ export default function StudentDashboard() {
               : theme === 'ben10' ? 'rgb(178, 224, 91)'
               : theme === 'tinkerbell' ? 'rgb(202, 138, 4)'
               : theme === 'cricketverse' ? 'rgb(147, 197, 253)'
+              : theme === 'cricketverse-australian' ? 'rgb(255, 248, 0)'
               : theme === 'bounceworld' ? 'rgb(200, 16, 46)'
               : theme === 'avengers' ? 'rgb(96, 74, 199)'
               : theme === 'ponyville' ? 'rgb(255, 46, 159)'
@@ -429,6 +436,7 @@ export default function StudentDashboard() {
               : theme === 'ben10' ? 'rgb(34, 34, 34)'
               : theme === 'tinkerbell' ? 'rgb(0, 0, 0)'
               : theme === 'cricketverse' ? 'rgb(55, 65, 81)'
+              : theme === 'cricketverse-australian' ? 'rgb(255, 248, 0)'
               : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
               : theme === 'avengers' ? 'rgb(44, 18, 103)'
               : theme === 'ponyville' ? 'rgb(241, 174, 213)'
@@ -439,12 +447,12 @@ export default function StudentDashboard() {
           <div className="flex items-center justify-between relative z-10">
             <div className="flex-1">
               <div className="flex items-center space-x-4 mb-2">
-                {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'cricketverse' || theme === 'avengers' || theme === 'bounceworld' || theme === 'ponyville' || theme === 'default') && (
+                {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'cricketverse' || theme === 'cricketverse-australian' || theme === 'avengers' || theme === 'bounceworld' || theme === 'ponyville' || theme === 'default') && (
                   <img
                     src={theme === 'default' ? '/Logo.png'
                         : theme === 'ben10' ? '/ben10-welcome.png'
                         : theme === 'tinkerbell' ? '/tinkerbell-welcome.png'
-                        : theme === 'cricketverse' ? '/cricketverse.png'
+                        : (theme === 'cricketverse' || theme === 'cricketverse-australian') ? '/cricketverse.png'
                         : theme === 'avengers' ? '/avengers/thor.png'
                         : theme === 'bounceworld' ? '/bounce_world.jpg'
                         : theme === 'ponyville' ? '/ponyville.webp'
@@ -455,7 +463,7 @@ export default function StudentDashboard() {
                       : theme === 'avengers' ? 'w-48 h-48'
                       : theme === 'bounceworld' ? 'w-48 h-48'
                       : theme === 'ponyville' ? 'w-48 h-48'
-                      : theme === 'cricketverse' ? 'w-56 h-48'
+                      : (theme === 'cricketverse' || theme === 'cricketverse-australian') ? 'w-56 h-48'
                       : 'w-40 h-40'
                     } ${
                       theme === 'avengers' ? '' : 'rounded-full'
@@ -464,6 +472,7 @@ export default function StudentDashboard() {
                       : theme === 'ben10' ? 'ring-4 ring-[#64cc4f] border-4 border-black'
                       : theme === 'tinkerbell' ? 'ring-4 ring-green-600 border-4 border-black'
                       : theme === 'cricketverse' ? 'ring-4 ring-blue-500 border-4 border-black'
+                      : theme === 'cricketverse-australian' ? 'ring-4 ring-[#fff800] border-4 border-black'
                       : theme === 'bounceworld' ? 'ring-4 ring-[#1D428A] border-4 border-black'
                       : theme === 'ponyville' ? 'ring-4 ring-[#e13690] border-4 border-black'
                       : 'ring-4 ring-blue-500 border-4 border-black'
@@ -475,12 +484,13 @@ export default function StudentDashboard() {
                   />
                 )}
                 <div>
-                  <h1 className={`text-3xl font-bold ${theme === 'bounceworld' || theme === 'default' ? 'text-black' : ''}`}>
+                  <h1 className={`text-3xl font-bold ${theme === 'bounceworld' || theme === 'default' || theme === 'cricketverse-australian' ? 'text-black' : ''}`}>
                     Hey, {student?.name}! Ready to {
                       theme === 'default' ? 'excel in'
                       : theme === 'ben10' ? 'transform'
                       : theme === 'tinkerbell' ? 'enchant'
                       : theme === 'cricketverse' ? 'score big in'
+                      : theme === 'cricketverse-australian' ? 'smash boundaries in'
                       : theme === 'bounceworld' ? 'bounce into'
                       : theme === 'ponyville' ? 'gallop into'
                       : theme === 'avengers' ? 'assemble for'
@@ -492,6 +502,7 @@ export default function StudentDashboard() {
                       : theme === 'ben10' ? 'rgb(178, 224, 91)'
                       : theme === 'tinkerbell' ? 'rgb(0, 0, 30)'
                       : theme === 'cricketverse' ? 'rgb(191, 219, 254)'
+                      : theme === 'cricketverse-australian' ? 'rgb(0, 0, 0)'
                       : theme === 'bounceworld' ? 'rgb(0, 0, 0)'
                       : theme === 'avengers' ? 'rgb(200, 138, 165)'
                       : theme === 'ponyville' ? 'rgb(255, 245, 251)'
@@ -505,6 +516,8 @@ export default function StudentDashboard() {
                       ? "Let's sprinkle some fairy magic into learning!"
                       : theme === 'cricketverse'
                       ? "Let's hit learning for six in the CricketVerse!"
+                      : theme === 'cricketverse-australian'
+                      ? "Let's smash learning boundaries, Aussie style!"
                       : theme === 'bounceworld'
                       ? "Let's bounce into exciting learning adventures!"
                       : theme === 'avengers'
@@ -520,6 +533,7 @@ export default function StudentDashboard() {
                   : theme === 'ben10' ? 'rgb(178, 224, 91)'
                   : theme === 'tinkerbell' ? 'rgb(0, 100, 8)'
                   : theme === 'cricketverse' ? 'rgb(191, 219, 254)'
+                  : theme === 'cricketverse-australian' ? 'rgb(0, 0, 0)'
                   : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
                   : theme === 'avengers' ? 'rgb(200, 138, 165)'
                   : theme === 'ponyville' ? 'rgb(255, 245, 251)'
@@ -533,6 +547,8 @@ export default function StudentDashboard() {
                   ? 'Welcome to your enchanted learning sanctuary!'
                   : theme === 'cricketverse'
                   ? 'Welcome to your CricketVerse learning ground!'
+                  : theme === 'cricketverse-australian'
+                  ? 'Welcome to your Australian CricketVerse learning pitch!'
                   : theme === 'bounceworld'
                   ? 'Welcome to your BounceWorld learning arena!'
                   : theme === 'avengers'
@@ -546,6 +562,7 @@ export default function StudentDashboard() {
                   : theme === 'ben10' ? 'rgb(0,0,0)'
                   : theme === 'tinkerbell' ? 'rgb(0, 0, 8)'
                   : theme === 'cricketverse' ? 'rgb(226, 232, 240)'
+                  : theme === 'cricketverse-australian' ? 'rgb(0, 0, 0)'
                   : theme === 'bounceworld' ? 'rgb(0, 0, 0)'
                   : theme === 'avengers' ? 'rgb(226, 232, 240)'
                   : theme === 'ponyville' ? 'rgb(255, 245, 251)'
@@ -569,6 +586,8 @@ export default function StudentDashboard() {
             ? 'bg-gradient-to-r from-green-300 via-yellow-500 to-green-300'
             : theme === 'cricketverse'
             ? 'bg-gradient-to-r from-blue-400 to-indigo-500'
+            : theme === 'cricketverse-australian'
+            ? 'bg-gradient-to-r from-[#fff800] via-[#fff800] to-[#fff800]'
             : theme === 'bounceworld'
             ? 'bg-gradient-to-r from-white via-[#1D428A]/20 to-white border-[#1D428A]'
             : theme === 'avengers'
@@ -581,7 +600,7 @@ export default function StudentDashboard() {
               <div className="relative">
               </div>
               <div className="flex-1">
-                <h3 className={`text-2xl font-bold mb-2 flex items-center ${theme === 'default' || theme === 'ponyville' || theme === 'bounceworld' ? 'text-black' : 'text-white'}`}>
+                <h3 className={`text-2xl font-bold mb-2 flex items-center ${theme === 'default' || theme === 'ponyville' || theme === 'bounceworld' || theme === 'cricketverse-australian' ? 'text-black' : 'text-white'}`}>
                   {getMotivationalMessage().message}
 
                 </h3>
@@ -594,6 +613,8 @@ export default function StudentDashboard() {
                     ? "Remember, like Tinkerbell's magic, every learning moment sparkles with possibility!"
                     : theme === 'cricketverse'
                     ? "Remember, like a perfect cricket match, every learning session is a chance to score big!"
+                    : theme === 'cricketverse-australian'
+                    ? "Remember, like the Australian cricket legends, every learning session is your chance to dominate!"
                     : theme === 'bounceworld'
                     ? "Remember, every bounce back from a challenge makes you stronger and higher!"
                     : theme === 'avengers'
@@ -604,12 +625,13 @@ export default function StudentDashboard() {
                 </p>
                 <div className={`mt-4 flex items-center space-x-4 text-sm text-black`}>
                   <div className="flex items-center space-x-1">
-                    <span className="text-lg">{theme === 'default' ? '📊' : theme === 'ben10' ? '📊' : theme === 'tinkerbell' ? '📈' : theme === 'cricketverse' ? '🏏' : theme === 'bounceworld' ? '⚽' : theme === 'avengers' ? '' : '📈'}</span>
+                    <span className="text-lg">{theme === 'default' ? '📊' : theme === 'ben10' ? '📊' : theme === 'tinkerbell' ? '📈' : theme === 'cricketverse' ? '🏏' : theme === 'cricketverse-australian' ? '🇦🇺' : theme === 'bounceworld' ? '⚽' : theme === 'avengers' ? '' : '📈'}</span>
                     <span>Grade: <strong style={{
                       color: theme === 'default' ? 'rgb(37, 99, 235)'
                         : theme === 'ben10' ? 'rgb(100, 204, 79)'
                         : theme === 'tinkerbell' ? 'rgb(0, 138, 4)'
                         : theme === 'cricketverse' ? 'rgb(59, 130, 246)'
+                        : theme === 'cricketverse-australian' ? 'rgb(255, 248, 0)'
                         : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
                         : theme === 'avengers' ? 'rgb(96, 74, 199)'
                         : 'rgb(37, 99, 235)'
@@ -622,6 +644,7 @@ export default function StudentDashboard() {
                         : theme === 'ben10' ? 'rgb(100, 204, 79)'
                         : theme === 'tinkerbell' ? 'rgb(0, 138, 4)'
                         : theme === 'cricketverse' ? 'rgb(59, 130, 246)'
+                        : theme === 'cricketverse-australian' ? 'rgb(255, 248, 0)'
                         : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
                         : theme === 'avengers' ? 'rgb(96, 74, 199)'
                         : 'rgb(37, 99, 235)'
@@ -634,6 +657,7 @@ export default function StudentDashboard() {
                         : theme === 'ben10' ? 'rgb(100, 204, 79)'
                         : theme === 'tinkerbell' ? 'rgb(0, 138, 4)'
                         : theme === 'cricketverse' ? 'rgb(59, 130, 246)'
+                        : theme === 'cricketverse-australian' ? 'rgb(255, 248, 0)'
                         : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
                         : theme === 'avengers' ? 'rgb(96, 74, 199)'
                         : 'rgb(37, 99, 235)'
@@ -660,6 +684,8 @@ export default function StudentDashboard() {
               ? 'bg-gradient-to-br from-green-400 to-yellow-500'
               : theme === 'cricketverse'
               ? 'bg-gradient-to-br from-blue-400 to-blue-600'
+              : theme === 'cricketverse-australian'
+              ? 'bg-gradient-to-br from-[#ffe000] to-[#b38f00]'
               : theme === 'bounceworld'
               ? 'bg-gradient-to-br from-white to-[#1D428A]/20 border-[#1D428A]'
               : theme === 'avengers'
@@ -671,13 +697,13 @@ export default function StudentDashboard() {
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <p className="text-black text-sm font-bold mb-2">My Classes</p>
-                <p className={`text-4xl font-black mt-2 ${theme === 'default' ? 'text-blue-600' : 'text-white'}`}>
+                <p className={`text-4xl font-black mt-2 ${theme === 'default' ? 'text-blue-600' : theme === 'cricketverse-australian' ? 'text-black' : 'text-white'}`}>
                   {dashboardStats.totalClasses}
                 </p>
                 <p className="text-black mt-1 font-semibold">Active courses</p>
                 <div className="mt-3 bg-black/30 rounded-full h-3">
                   <div
-                    className={`h-3 rounded-full transition-all duration-1000 ease-out shadow-lg ${theme === 'default' ? 'bg-blue-600' : 'bg-white'}`}
+                    className={`h-3 rounded-full transition-all duration-1000 ease-out shadow-lg ${theme === 'default' ? 'bg-blue-600' : theme === 'cricketverse-australian' ? 'bg-black' : 'bg-white'}`}
                     style={{ width: `${getProgressPercentage(dashboardStats.totalClasses, 10)}%` }}
                   ></div>
                 </div>
@@ -700,6 +726,8 @@ export default function StudentDashboard() {
               ? 'bg-gradient-to-br from-green-400 to-yellow-600'
               : theme === 'cricketverse'
               ? 'bg-gradient-to-br from-blue-400 to-blue-600'
+              : theme === 'cricketverse-australian'
+              ? 'bg-gradient-to-br from-[#ffe000] to-[#b38f00]'
               : theme === 'bounceworld'
               ? 'bg-gradient-to-br from-white to-[#1D428A]/20 border-l-8 border-l-[#C8102E] border-r-8 border-r-[#1D428A]'
               : theme === 'avengers'
@@ -716,6 +744,7 @@ export default function StudentDashboard() {
                     : theme === 'ben10' ? 'rgb(255,255,255)'
                     : theme === 'tinkerbell' ? 'rgb(255, 255, 255)'
                     : theme === 'cricketverse' ? 'rgb(255, 255, 255)'
+                    : theme === 'cricketverse-australian' ? 'rgb(0, 0, 0)'
                     : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
                     : theme === 'avengers' ? 'rgb(255, 255, 255)'
                     : 'rgb(37, 99, 235)'
@@ -726,6 +755,7 @@ export default function StudentDashboard() {
                   color: theme === 'ben10' ? 'rgb(0,0,0)' 
                     : theme === 'tinkerbell' ? 'rgb(0, 0, 4)'
                     : theme === 'cricketverse' ? 'rgb(0, 0, 0)'
+                    : theme === 'cricketverse-australian' ? 'rgb(0, 0, 0)'
                     : theme === 'bounceworld' ? 'rgb(0, 0, 0)'
                     : theme === 'avengers' ? 'rgb(0, 0, 0)'
                     : 'rgb(0, 0, 4)'
@@ -734,6 +764,7 @@ export default function StudentDashboard() {
                   backgroundColor: theme === 'ben10' ? 'rgba(0,0,0, 0.3)' 
                     : theme === 'tinkerbell' ? 'rgba(0, 0, 0, 0.3)'
                     : theme === 'cricketverse' ? 'rgba(0, 0, 0, 0.3)'
+                    : theme === 'cricketverse-australian' ? 'rgba(255, 248, 0, 0.3)'
                     : theme === 'bounceworld' ? 'rgba(29, 66, 138, 0.3)'
                     : theme === 'avengers' ? 'rgba(44, 18, 103, 0.3)'
                     : 'rgba(0, 0, 0, 0.3)'
@@ -755,11 +786,12 @@ export default function StudentDashboard() {
                   color: theme === 'ben10' ? 'rgb(0,0,0)' 
                     : theme === 'tinkerbell' ? 'rgb(0, 0, 8)'
                     : theme === 'cricketverse' ? 'rgb(0, 0, 0)'
+                    : theme === 'cricketverse-australian' ? 'rgb(0, 0, 0)'
                     : theme === 'bounceworld' ? 'rgb(0, 0, 0)'
                     : theme === 'avengers' ? 'rgb(0, 0, 0)'
                     : 'rgb(0, 0, 8)'
                 }}>
-                  {dashboardStats.completedTests}/20 goal {theme === 'ben10' ? '🎯' : theme === 'tinkerbell' ? '🎯' : theme === 'cricketverse' ? '🏏' : theme === 'bounceworld' ? '⚽' : theme === 'avengers' ? '🛡️' : '🎯'}
+                  {dashboardStats.completedTests}/20 goal {theme === 'ben10' ? '🎯' : theme === 'tinkerbell' ? '🎯' : theme === 'cricketverse' ? '🏏' : theme === 'cricketverse-australian' ? '🇦🇺' : theme === 'bounceworld' ? '⚽' : theme === 'avengers' ? '🛡️' : '🎯'}
                 </p>
               </div>
               <div className={`w-16 h-16 rounded-full flex items-center justify-center border-4 transform hover:rotate-12 transition-transform ${theme === 'default' ? 'bg-blue-600 border-blue-800' : 'border-white'}`} style={{
@@ -767,6 +799,7 @@ export default function StudentDashboard() {
                   : theme === 'ben10' ? 'rgb(0,0,0)'
                   : theme === 'tinkerbell' ? 'rgb(0, 0, 5)'
                   : theme === 'cricketverse' ? 'rgb(0, 0, 0)'
+                  : theme === 'cricketverse-australian' ? 'rgb(255, 248, 0)'
                   : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
                   : theme === 'avengers' ? 'rgb(44, 18, 103)'
                   : 'rgb(37, 99, 235)'
@@ -785,6 +818,8 @@ export default function StudentDashboard() {
               ? 'bg-gradient-to-br from-green-400 to-yellow-600'
               : theme === 'cricketverse'
               ? 'bg-gradient-to-br from-blue-400 to-blue-600'
+              : theme === 'cricketverse-australian'
+              ? 'bg-gradient-to-br from-[#ffe000] to-[#b38f00]'
               : theme === 'bounceworld'
               ? 'bg-gradient-to-br from-white to-[#1D428A]/20'
               : theme === 'avengers'
@@ -801,6 +836,7 @@ export default function StudentDashboard() {
                     : theme === 'ben10' ? 'rgb(255,255,255)'
                     : theme === 'tinkerbell' ? 'rgb(255, 255, 255)'
                     : theme === 'cricketverse' ? 'rgb(255, 255, 255)'
+                    : theme === 'cricketverse-australian' ? 'rgb(0, 0, 0)'
                     : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
                     : theme === 'avengers' ? 'rgb(255, 255, 255)'
                     : 'rgb(37, 99, 235)'
@@ -819,6 +855,7 @@ export default function StudentDashboard() {
                   backgroundColor: theme === 'ben10' ? 'rgba(0,0,0, 0.3)' 
                     : theme === 'tinkerbell' ? 'rgba(0, 0, 4, 0.3)'
                     : theme === 'cricketverse' ? 'rgba(0, 0, 0, 0.3)'
+                    : theme === 'cricketverse-australian' ? 'rgba(255, 248, 0, 0.3)'
                     : theme === 'bounceworld' ? 'rgba(29, 66, 138, 0.3)'
                     : theme === 'avengers' ? 'rgba(44, 18, 103, 0.3)'
                     : 'rgba(0, 0, 4, 0.3)'
@@ -840,11 +877,12 @@ export default function StudentDashboard() {
                   color: theme === 'ben10' ? 'rgb(0,0,4)' 
                     : theme === 'tinkerbell' ? 'rgb(0, 0, 4)'
                     : theme === 'cricketverse' ? 'rgb(0, 0, 0)'
+                    : theme === 'cricketverse-australian' ? 'rgb(0, 0, 0)'
                     : theme === 'bounceworld' ? 'rgb(0, 0, 0)'
                     : theme === 'avengers' ? 'rgb(0, 0, 0)'
                     : 'rgb(0, 0, 4)'
                 }}>
-                  {dashboardStats.studyMaterials}/50 goal {theme === 'ben10' ? '📚' : theme === 'tinkerbell' ? '📚' : theme === 'cricketverse' ? '📖' : theme === 'bounceworld' ? '📖' : theme === 'avengers' ? '📖' : '📚'}
+                  {dashboardStats.studyMaterials}/50 goal {theme === 'ben10' ? '📚' : theme === 'tinkerbell' ? '📚' : theme === 'cricketverse' ? '📖' : theme === 'cricketverse-australian' ? '🇦🇺' : theme === 'bounceworld' ? '📖' : theme === 'avengers' ? '📖' : '📚'}
                 </p>
               </div>
               <div className={`w-16 h-16 rounded-full flex items-center justify-center border-4 transform hover:rotate-12 transition-transform ${theme === 'default' ? 'bg-blue-600 border-blue-800' : 'border-white'}`} style={{
@@ -852,6 +890,7 @@ export default function StudentDashboard() {
                   : theme === 'ben10' ? 'rgb(0,0,5)'
                   : theme === 'tinkerbell' ? 'rgb(0, 0, 5)'
                   : theme === 'cricketverse' ? 'rgb(0, 0, 0)'
+                  : theme === 'cricketverse-australian' ? 'rgb(255, 248, 0)'
                   : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
                   : theme === 'avengers' ? 'rgb(44, 18, 103)'
                   : 'rgb(37, 99, 235)'
@@ -870,6 +909,8 @@ export default function StudentDashboard() {
               ? 'bg-gradient-to-br from-green-400 to-yellow-600'
               : theme === 'cricketverse'
               ? 'bg-gradient-to-br from-blue-400 to-blue-600'
+              : theme === 'cricketverse-australian'
+              ? 'bg-gradient-to-br from-[#ffe000] to-[#b38f00]'
               : theme === 'bounceworld'
               ? 'bg-gradient-to-br from-white to-[#1D428A]/20'
               : theme === 'avengers'
@@ -886,6 +927,7 @@ export default function StudentDashboard() {
                     : theme === 'ben10' ? 'rgb(255,255,255)'
                     : theme === 'tinkerbell' ? 'rgb(255, 255, 255)'
                     : theme === 'cricketverse' ? 'rgb(255, 255, 255)'
+                    : theme === 'cricketverse-australian' ? 'rgb(0, 0, 0)'
                     : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
                     : theme === 'avengers' ? 'rgb(255, 255, 255)'
                     : 'rgb(37, 99, 235)'
@@ -913,6 +955,7 @@ export default function StudentDashboard() {
                           theme === 'ben10' ? 'rgb(100, 204, 79)' 
                           : theme === 'tinkerbell' ? 'rgb(202, 138, 4)' 
                           : theme === 'cricketverse' ? 'rgb(34, 197, 94)'
+                          : theme === 'cricketverse-australian' ? 'rgb(255, 248, 0)'
                           : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
                           : theme === 'avengers' ? 'rgb(96, 74, 199)'
                           : 'rgb(34, 197, 94)'
@@ -921,6 +964,7 @@ export default function StudentDashboard() {
                           theme === 'ben10' ? 'rgb(178, 224, 91)' 
                           : theme === 'tinkerbell' ? 'rgb(202, 138, 4)' 
                           : theme === 'cricketverse' ? 'rgb(34, 197, 94)'
+                          : theme === 'cricketverse-australian' ? 'rgb(255, 248, 0)'
                           : theme === 'bounceworld' ? 'rgb(200, 16, 46)'
                           : theme === 'avengers' ? 'rgb(200, 138, 165)'
                           : 'rgb(34, 197, 94)'
@@ -929,6 +973,7 @@ export default function StudentDashboard() {
                           theme === 'ben10' ? 'rgb(100, 204, 79)' 
                           : theme === 'tinkerbell' ? 'rgb(202, 138, 4)' 
                           : theme === 'cricketverse' ? 'rgb(96, 165, 250)'
+                          : theme === 'cricketverse-australian' ? 'rgb(255, 248, 0)'
                           : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
                           : theme === 'avengers' ? 'rgb(96, 74, 199)'
                           : 'rgb(96, 165, 250)'
@@ -946,7 +991,7 @@ export default function StudentDashboard() {
                     : theme === 'avengers' ? 'rgb(0, 0, 0)'
                     : 'rgb(0, 0, 4)'
                 }}>
-                  Target: 85% {theme === 'ben10' ? '🎓' : theme === 'tinkerbell' ? '🎓' : theme === 'cricketverse' ? '🏆' : theme === 'bounceworld' ? '🎯' : theme === 'avengers' ? '🛡️' : '🎓'}
+                  Target: 85% {theme === 'ben10' ? '🎓' : theme === 'tinkerbell' ? '🎓' : theme === 'cricketverse' ? '🏆' : theme === 'cricketverse-australian' ? '🇦🇺' : theme === 'bounceworld' ? '🎯' : theme === 'avengers' ? '🛡️' : '🎓'}
                 </p>
               </div>
               <div className={`w-16 h-16 rounded-full flex items-center justify-center border-4 transform hover:rotate-12 transition-transform ${theme === 'default' ? 'bg-blue-600 border-blue-800' : 'border-white'}`} style={{
@@ -954,6 +999,7 @@ export default function StudentDashboard() {
                   : theme === 'ben10' ? 'rgb(0,0,0)'
                   : theme === 'tinkerbell' ? 'rgb(0, 0, 4)'
                   : theme === 'cricketverse' ? 'rgb(0, 0, 0)'
+                  : theme === 'cricketverse-australian' ? 'rgb(255, 248, 0)'
                   : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
                   : theme === 'avengers' ? 'rgb(44, 18, 103)'
                   : 'rgb(37, 99, 235)'
@@ -976,6 +1022,8 @@ export default function StudentDashboard() {
               ? 'bg-gradient-to-br from-yellow-300 via-green-500 to-yellow-400'
               : theme === 'cricketverse'
               ? 'bg-gradient-to-br from-blue-300 via-indigo-500 to-blue-400'
+              : theme === 'cricketverse-australian'
+              ? 'bg-gradient-to-br from-[#ffe000] via-[#ffd700] to-[#b38f00]'
               : theme === 'bounceworld'
               ? 'bg-gradient-to-br from-white via-[#1D428A]/20 to-white'
               : theme === 'avengers'
@@ -1032,6 +1080,7 @@ export default function StudentDashboard() {
                       color: theme === 'ben10' ? 'rgb(0,0,0)' 
                         : theme === 'tinkerbell' ? 'rgb(0,0,0)'
                         : theme === 'cricketverse' ? 'rgb(255,255,255)'
+                        : theme === 'cricketverse-australian' ? 'rgb(255,255,255)'
                         : theme === 'bounceworld' ? 'rgb(255,255,255)'
                         : theme === 'avengers' ? 'rgb(255,255,255)'
                         : 'rgb(0,0,0)'
@@ -1042,6 +1091,7 @@ export default function StudentDashboard() {
                       {theme === 'ben10' ? '🔄 Class Transformer' 
                         : theme === 'tinkerbell' ? '🌙 Learning Dreamer' 
                         : theme === 'cricketverse' ? '🏏 Cricket Scholar'
+                        : theme === 'cricketverse-australian' ? '🇦🇺 Australian Cricket Legend'
                         : theme === 'bounceworld' ? '⚽ Learning Striker'
                         : theme === 'avengers' ? '🛡️ Knowledge Guardian'
                         : 'Academic Achiever'}!
@@ -1050,6 +1100,7 @@ export default function StudentDashboard() {
                       You're enrolled in {dashboardStats.totalClasses} class{dashboardStats.totalClasses !== 1 ? 'es' : ''} - {theme === 'ben10' ? "What an alien adventure! 👽" 
                         : theme === 'tinkerbell' ? "Welcome to the enchanted realm! 🏰" 
                         : theme === 'cricketverse' ? "Ready for the learning pitch! 🏏"
+                        : theme === 'cricketverse-australian' ? "Time to dominate the learning field, Aussie style! 🇦🇺"
                         : theme === 'bounceworld' ? "Time to bounce higher in learning! ⚽"
                         : theme === 'avengers' ? "Assemble your knowledge team! 🦸‍♂️"
                         : "Your learning community!"}
@@ -1097,6 +1148,7 @@ export default function StudentDashboard() {
                     borderColor: theme === 'ben10' ? 'rgb(100, 204, 79)' 
                       : theme === 'tinkerbell' ? 'rgb(244, 114, 182)'
                       : theme === 'cricketverse' ? 'rgb(59, 130, 246)'
+                      : theme === 'cricketverse-australian' ? 'rgb(255, 248, 0)'
                       : theme === 'bounceworld' ? 'rgb(29, 66, 138)'
                       : theme === 'avengers' ? 'rgb(96, 74, 199)'
                       : 'rgb(244, 114, 182)',
@@ -1106,6 +1158,7 @@ export default function StudentDashboard() {
                     Loading {theme === 'ben10' ? "Ben 10's power... ⚡" 
                       : theme === 'tinkerbell' ? "Tinkerbell's magic... ✨" 
                       : theme === 'cricketverse' ? "CricketVerse data... 🏏"
+                      : theme === 'cricketverse-australian' ? "Australian CricketVerse data... 🇦🇺"
                       : theme === 'bounceworld' ? "BounceWorld stats... ⚽"
                       : theme === 'avengers' ? "Avengers intel... 🛡️"
                       : "your data..."}
@@ -1123,6 +1176,8 @@ export default function StudentDashboard() {
               ? 'bg-gradient-to-br from-green-400 to-yellow-600'
               : theme === 'cricketverse'
               ? 'bg-gradient-to-br from-indigo-400 to-blue-600'
+              : theme === 'cricketverse-australian'
+              ? 'bg-gradient-to-br from-[#fff800] via-[#ffd700] to-[#fff800]'
               : theme === 'bounceworld'
               ? 'bg-gradient-to-br from-white via-[#1D428A]/20 to-white'
               : theme === 'avengers'
@@ -1135,6 +1190,7 @@ export default function StudentDashboard() {
               color: theme === 'ben10' ? 'rgb(0,0,0)' 
                 : theme === 'tinkerbell' ? 'rgb(0,0,0)'
                 : theme === 'cricketverse' ? 'rgb(0,0,0)'
+                : theme === 'cricketverse-australian' ? 'rgb(0,0,0)'
                 : theme === 'bounceworld' ? 'rgb(0,0,0)'
                 : theme === 'avengers' ? 'rgb(0,0,0)'
                 : 'rgb(0,0,0)'
@@ -1154,6 +1210,7 @@ export default function StudentDashboard() {
                     color: theme === 'ben10' ? 'rgb(255,255,255)' 
                       : theme === 'tinkerbell' ? 'rgb(255,255,255)'
                       : theme === 'cricketverse' ? 'rgb(255,255,255)'
+                      : theme === 'cricketverse-australian' ? 'rgb(0,0,0)'
                       : theme === 'bounceworld' ? 'rgb(0,0,0)'
                       : theme === 'avengers' ? 'rgb(255,255,255)'
                       : theme === 'ponyville' ? 'rgb(0,0,0)'
@@ -1161,6 +1218,7 @@ export default function StudentDashboard() {
                   }}> {theme === 'ben10' ? 'Complete 20 Tests' 
                     : theme === 'tinkerbell' ? 'Complete 20 Quizzes' 
                     : theme === 'cricketverse' ? 'Complete 20 Matches'
+                    : theme === 'cricketverse-australian' ? 'Complete 20 Aussie Battles'
                     : theme === 'bounceworld' ? 'Complete 20 Challenges'
                     : theme === 'avengers' ? 'Complete 20 Missions'
                     : 'Complete 20 Assessments'}</span>
