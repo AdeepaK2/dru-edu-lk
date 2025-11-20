@@ -26,6 +26,7 @@ export default function TestPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [startingTest, setStartingTest] = useState(false);
+  const [theme] = useState<'default' | 'ben10' | 'tinkerbell' | 'cricketverse' | 'bounceworld' | 'avengers' | 'ponyville'>('default');
 
   // Load test data
   useEffect(() => {
