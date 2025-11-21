@@ -447,36 +447,11 @@ export default function StudentDashboard() {
           <div className="flex items-center justify-between relative z-10">
             <div className="flex-1">
               <div className="flex items-center space-x-4 mb-2">
-                {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'cricketverse' || theme === 'cricketverse-australian' || theme === 'avengers' || theme === 'bounceworld' || theme === 'ponyville' || theme === 'default') && (
+                {theme === 'cricketverse-australian' && (
                   <img
-                    src={theme === 'default' ? '/Logo.png'
-                        : theme === 'ben10' ? '/ben10-welcome.png'
-                        : theme === 'tinkerbell' ? '/tinkerbell-welcome.png'
-                        : (theme === 'cricketverse' || theme === 'cricketverse-australian') ? '/cricketverse.png'
-                        : theme === 'avengers' ? '/avengers/thor.png'
-                        : theme === 'bounceworld' ? '/bounce_world.jpg'
-                        : theme === 'ponyville' ? '/ponyville.webp'
-                        : '/Logo.png'}
+                    src='/cricketverse.png'
                     alt="Welcome"
-                    className={`${
-                      theme === 'default' ? 'w-32 h-32'
-                      : theme === 'avengers' ? 'w-48 h-48'
-                      : theme === 'bounceworld' ? 'w-48 h-48'
-                      : theme === 'ponyville' ? 'w-48 h-48'
-                      : (theme === 'cricketverse' || theme === 'cricketverse-australian') ? 'w-56 h-48'
-                      : 'w-40 h-40'
-                    } ${
-                      theme === 'avengers' ? '' : 'rounded-full'
-                    } ${
-                      theme === 'default' ? 'ring-4 ring-blue-500 border-4 border-black'
-                      : theme === 'ben10' ? 'ring-4 ring-[#64cc4f] border-4 border-black'
-                      : theme === 'tinkerbell' ? 'ring-4 ring-green-600 border-4 border-black'
-                      : theme === 'cricketverse' ? 'ring-4 ring-blue-500 border-4 border-black'
-                      : theme === 'cricketverse-australian' ? 'ring-4 ring-[#fff800] border-4 border-black'
-                      : theme === 'bounceworld' ? 'ring-4 ring-[#1D428A] border-4 border-black'
-                      : theme === 'ponyville' ? 'ring-4 ring-[#e13690] border-4 border-black'
-                      : 'ring-4 ring-blue-500 border-4 border-black'
-                    }`}
+                    className="w-56 h-48"
                     onError={(e) => {
                       // Fallback to generic welcome image if theme image not found
                       (e.target as HTMLImageElement).src = '/welcome.png';

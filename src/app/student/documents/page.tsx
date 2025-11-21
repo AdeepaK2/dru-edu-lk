@@ -134,7 +134,23 @@ export default function StudentDocumentsPage() {
 
   if (authLoading) {
     return (
-      <div className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A] to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-br from-[#2C1267] via-[#604AC7] to-[#0F0826]' : theme === 'ponyville' ? 'bg-gradient-to-br from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : theme === 'cricketverse' ? 'bg-gradient-to-br from-blue-400 to-indigo-600' : theme === 'cricketverse-australian' ? 'bg-[#ffff2a]' : 'bg-gradient-to-br from-gray-100 to-gray-200'} flex items-center justify-center`}>
+      <div className="min-h-screen flex items-center justify-center" style={{
+        background: theme === 'ben10'
+          ? 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(34, 34, 34))'
+          : theme === 'tinkerbell'
+          ? 'linear-gradient(to bottom right, rgb(253, 224, 71), rgb(34, 197, 94), rgb(253, 224, 71))'
+          : theme === 'bounceworld'
+          ? 'linear-gradient(to bottom right, rgb(255, 255, 255), rgb(29, 66, 138), rgb(200, 16, 46))'
+          : theme === 'avengers'
+          ? 'linear-gradient(to bottom right, rgb(44, 18, 103), rgb(79, 44, 141), rgb(15, 8, 38))'
+          : theme === 'ponyville'
+          ? 'linear-gradient(to bottom right, rgb(255, 245, 251), rgb(241, 174, 213), rgb(255, 46, 159))'
+          : theme === 'cricketverse'
+          ? 'linear-gradient(to bottom right, rgb(96, 165, 250), rgb(79, 70, 229))'
+          : theme === 'cricketverse-australian'
+          ? 'linear-gradient(to bottom right, rgb(134, 250, 92) 0%, rgb(255, 255, 42) 40%, rgb(255, 255, 42) 60%, rgb(134, 250, 92) 100%)'
+          : 'linear-gradient(to bottom right, rgb(249, 250, 251), rgb(243, 244, 246))'
+      }}>
         <div className={`bg-white border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : theme === 'ponyville' ? 'border-[#e13690]' : theme === 'cricketverse' ? 'border-blue-600' : theme === 'cricketverse-australian' ? 'border-[#b38f00]' : 'border-black'} rounded-3xl p-8 shadow-2xl`}>
           {/* Theme-Specific Loading Animation */}
           <div className="relative mb-6 flex flex-col items-center">
@@ -243,7 +259,19 @@ export default function StudentDocumentsPage() {
 
   if (!student) {
     return (
-      <div className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A]/20 to-[#C8102E]/20' : theme === 'cricketverse' ? 'bg-gradient-to-br from-blue-400 via-indigo-600 to-blue-800' : theme === 'cricketverse-australian' ? 'bg-[#ffff2a]' : 'bg-gradient-to-br from-blue-600 via-indigo-700 to-slate-900'} p-8`}>
+      <div className="min-h-screen p-8" style={{
+        background: theme === 'ben10'
+          ? 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))'
+          : theme === 'tinkerbell'
+          ? 'linear-gradient(to bottom right, rgb(253, 224, 71), rgb(34, 197, 94), rgb(253, 224, 71))'
+          : theme === 'bounceworld'
+          ? 'linear-gradient(to bottom right, rgb(255, 255, 255), rgb(29, 66, 138), rgb(200, 16, 46))'
+          : theme === 'cricketverse'
+          ? 'linear-gradient(to bottom right, rgb(96, 165, 250), rgb(79, 70, 229), rgb(30, 58, 138))'
+          : theme === 'cricketverse-australian'
+          ? 'linear-gradient(to bottom right, rgb(134, 250, 92) 0%, rgb(255, 255, 42) 40%, rgb(255, 255, 42) 60%, rgb(134, 250, 92) 100%)'
+          : 'linear-gradient(to bottom right, rgb(37, 99, 235), rgb(67, 56, 202), rgb(51, 65, 85))'
+      }}>
         <div className="flex items-center justify-center py-12">
           <div className={`${theme === 'bounceworld' ? 'bg-white border-4 border-[#1D428A]' : theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : theme === 'cricketverse' ? 'bg-gradient-to-r from-blue-400 to-indigo-600' : theme === 'cricketverse-australian' ? 'bg-white border-4 border-[#b38f00]' : 'bg-gradient-to-r from-gray-100 to-gray-200'} rounded-3xl shadow-2xl p-8 text-center`}>
             <div className="text-6xl mb-4">🚫</div>
@@ -258,7 +286,23 @@ export default function StudentDocumentsPage() {
   }
 
   return (
-    <div key={`documents-${theme}`} className={`min-h-screen ${theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A]/20 to-[#C8102E]/20' : theme === 'avengers' ? 'bg-gradient-to-br from-[#2C1267] via-[#604AC7]/20 to-[#0F0826]' : theme === 'ponyville' ? 'bg-gradient-to-br from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]' : theme === 'cricketverse' ? 'bg-gradient-to-br from-blue-400 via-indigo-600 to-blue-800' : theme === 'cricketverse-australian' ? 'bg-[#ffff2a]' : 'bg-gradient-to-br from-gray-100 via-gray-200 to-white'} p-8`}>
+    <div key={`documents-${theme}`} className="min-h-screen p-8" style={{
+      background: theme === 'ben10'
+        ? 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))'
+        : theme === 'tinkerbell'
+        ? 'linear-gradient(to bottom right, rgb(253, 224, 71), rgb(34, 197, 94), rgb(253, 224, 71))'
+        : theme === 'bounceworld'
+        ? 'linear-gradient(to bottom right, rgb(255, 255, 255), rgb(29, 66, 138), rgb(200, 16, 46))'
+        : theme === 'avengers'
+        ? 'linear-gradient(to bottom right, rgb(44, 18, 103), rgb(79, 44, 141), rgb(15, 8, 38))'
+        : theme === 'ponyville'
+        ? 'linear-gradient(to bottom right, rgb(255, 245, 251), rgb(241, 174, 213), rgb(255, 46, 159))'
+        : theme === 'cricketverse'
+        ? 'linear-gradient(to bottom right, rgb(96, 165, 250), rgb(79, 70, 229), rgb(30, 58, 138))'
+        : theme === 'cricketverse-australian'
+        ? 'linear-gradient(to bottom right, rgb(134, 250, 92) 0%, rgb(255, 255, 42) 40%, rgb(255, 255, 42) 60%, rgb(134, 250, 92) 100%)'
+        : 'linear-gradient(to bottom right, rgb(249, 250, 251), rgb(243, 244, 246), rgb(255, 255, 255))'
+    }}>
       <div className="max-w-7xl mx-auto">
         {/* Theme-aware Header */}
         <div className="text-center mb-8">

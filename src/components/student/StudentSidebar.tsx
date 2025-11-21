@@ -265,52 +265,54 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
       {/* Mobile overlay */}
       {isOpen && (
         <div
-          className={`fixed inset-0 z-40 backdrop-blur-sm lg:hidden ${
-            theme === 'default'
-              ? 'bg-black/80'
+          className="fixed inset-0 z-40 backdrop-blur-sm lg:hidden"
+          style={{
+            background: theme === 'default'
+              ? 'rgba(0, 0, 0, 0.8)'
               : theme === 'ben10'
-              ? 'bg-gradient-to-br from-[#64cc4f]/80 via-[#222222]/80 to-[#b2e05b]/80'
+              ? 'linear-gradient(to bottom right, rgba(100, 204, 79, 0.8), rgba(34, 34, 34, 0.8), rgba(178, 224, 91, 0.8))'
               : theme === 'tinkerbell'
-              ? 'bg-gradient-to-br from-green-400/80 via-yellow-400/80 to-yellow-600/80'
+              ? 'linear-gradient(to bottom right, rgba(34, 197, 94, 0.8), rgba(253, 224, 71, 0.8), rgba(253, 224, 71, 0.8))'
               : theme === 'cricketverse'
-              ? 'bg-gradient-to-br from-blue-400/80 via-indigo-400/80 to-indigo-600/80'
+              ? 'linear-gradient(to bottom right, rgba(96, 165, 250, 0.8), rgba(79, 70, 229, 0.8), rgba(79, 70, 229, 0.8))'
               : theme === 'cricketverse-australian'
-              ? 'bg-[#ffff2a]/80'
+              ? 'linear-gradient(to bottom right, rgba(134, 250, 92, 0.8) 0%, rgba(255, 255, 42, 0.8) 40%, rgba(255, 255, 42, 0.8) 60%, rgba(134, 250, 92, 0.8) 100%)'
               : theme === 'bounceworld'
-              ? 'bg-white/80'
+              ? 'rgba(255, 255, 255, 0.8)'
               : theme === 'avengers'
-              ? 'bg-gradient-to-br from-[#2C1267]/80 to-[#4F2C8D]/80'
+              ? 'linear-gradient(to bottom right, rgba(44, 18, 103, 0.8), rgba(79, 44, 141, 0.8))'
               : theme === 'ponyville'
-              ? 'bg-gradient-to-br from-[#f1aed5]/80 via-[#e13690]/80 to-[#ff2e9f]/80'
-              : 'bg-black/80'
-          }`}
+              ? 'linear-gradient(to bottom right, rgba(241, 174, 213, 0.8), rgba(225, 54, 144, 0.8), rgba(255, 46, 159, 0.8))'
+              : 'rgba(0, 0, 0, 0.8)'
+          }}
           onClick={onToggle}
         />
       )}
 
       {/* Sidebar */}
-      <div className={`
+      <div className="
         fixed inset-y-0 left-0 z-50 w-64 shadow-2xl transform transition-transform duration-300 ease-in-out border-r-4 border-black
         lg:translate-x-0 lg:static lg:inset-0 lg:w-64
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-        ${theme === 'default'
-          ? 'bg-white'
+        " style={{
+        background: theme === 'default'
+          ? 'rgb(255, 255, 255)'
           : theme === 'ben10'
-          ? 'bg-gradient-to-b from-[#64cc4f] via-[#222222] to-[#b2e05b]'
+          ? 'linear-gradient(to bottom, rgb(100, 204, 79), rgb(34, 34, 34), rgb(178, 224, 91))'
           : theme === 'tinkerbell'
-          ? 'bg-gradient-to-br from-green-400 to-yellow-600'
+          ? 'linear-gradient(to bottom right, rgb(34, 197, 94), rgb(253, 224, 71))'
           : theme === 'cricketverse'
-          ? 'bg-gradient-to-b from-blue-500 via-indigo-500 to-indigo-600'
+          ? 'linear-gradient(to bottom, rgb(59, 130, 246), rgb(79, 70, 229), rgb(79, 70, 229))'
           : theme === 'cricketverse-australian'
-          ? 'bg-[#ffff2a]'
+          ? 'linear-gradient(to bottom right, rgb(134, 250, 92) 0%, rgb(255, 255, 42) 40%, rgb(255, 255, 42) 60%, rgb(134, 250, 92) 100%)'
           : theme === 'bounceworld'
-          ? 'bg-gradient-to-b  from-[#1D428A]/70 to-[#C8102E]/100'
+          ? 'linear-gradient(to bottom, rgba(29, 66, 138, 0.7), rgb(200, 16, 46))'
           : theme === 'avengers'
-          ? 'bg-gradient-to-b from-[#2C1267] to-[#4F2C8D]'
+          ? 'linear-gradient(to bottom, rgb(44, 18, 103), rgb(79, 44, 141))'
           : theme === 'ponyville'
-          ? 'bg-gradient-to-b from-[#f1aed5] via-[#e13690] to-[#ff2e9f]'
-          : 'bg-white'}
-      `}>
+          ? 'linear-gradient(to bottom, rgb(241, 174, 213), rgb(225, 54, 144), rgb(255, 46, 159))'
+          : 'rgb(255, 255, 255)'
+      }}>
         {/* Header */}
           <div className={`flex items-center justify-between px-6 py-3 ${
             theme === 'default'
