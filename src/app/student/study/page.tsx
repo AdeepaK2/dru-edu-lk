@@ -194,10 +194,10 @@ export default function StudentStudyPage() {
   };
 
   const getProgressColor = (progress: number) => {
-    if (progress >= 80) return theme === 'ben10' ? 'bg-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-green-400' : theme === 'avengers' ? 'bg-[#604AC7]' : theme === 'ponyville' ? 'bg-[#e13690]' : 'bg-blue-500';
-    if (progress >= 60) return theme === 'ben10' ? 'bg-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-yellow-500' : theme === 'avengers' ? 'bg-[#2C1267]' : theme === 'ponyville' ? 'bg-[#f1aed5]' : 'bg-indigo-500';
-    if (progress >= 40) return theme === 'ben10' ? 'bg-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-green-300' : theme === 'avengers' ? 'bg-[#0F0826]' : theme === 'ponyville' ? 'bg-[#ff2e9f]' : 'bg-yellow-500';
-    return theme === 'ben10' ? 'bg-red-500' : theme === 'tinkerbell' ? 'bg-red-400' : theme === 'avengers' ? 'bg-red-500' : theme === 'ponyville' ? 'bg-red-500' : 'bg-red-500';
+    if (progress >= 80) return theme === 'ben10' ? 'bg-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-green-400' : theme === 'cricketverse-australian' ? 'bg-[#b38f00]' : theme === 'avengers' ? 'bg-[#604AC7]' : theme === 'ponyville' ? 'bg-[#e13690]' : 'bg-blue-500';
+    if (progress >= 60) return theme === 'ben10' ? 'bg-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-yellow-500' : theme === 'cricketverse-australian' ? 'bg-[#ffd700]' : theme === 'avengers' ? 'bg-[#2C1267]' : theme === 'ponyville' ? 'bg-[#f1aed5]' : 'bg-indigo-500';
+    if (progress >= 40) return theme === 'ben10' ? 'bg-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-green-300' : theme === 'cricketverse-australian' ? 'bg-yellow-500' : theme === 'avengers' ? 'bg-[#0F0826]' : theme === 'ponyville' ? 'bg-[#ff2e9f]' : 'bg-yellow-500';
+    return theme === 'ben10' ? 'bg-red-500' : theme === 'tinkerbell' ? 'bg-red-400' : theme === 'cricketverse-australian' ? 'bg-red-500' : theme === 'avengers' ? 'bg-red-500' : theme === 'ponyville' ? 'bg-red-500' : 'bg-red-500';
   };
 
   const getProgressText = (progress: number) => {
@@ -492,7 +492,7 @@ export default function StudentStudyPage() {
 
           <div className="flex h-full">
             {/* Materials Sidebar - narrower */}
-            <div className={`w-72 bg-gradient-to-b ${theme === 'default' ? 'from-gray-100 to-gray-200' : theme === 'ben10' ? 'from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : theme === 'cricketverse-australian' ? 'bg-[#fff800]' : theme === 'bounceworld' ? 'from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'from-[#0F0826] via-[#2C1267] to-[#604AC7]' : theme === 'ponyville' ? 'from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : 'from-blue-500 to-indigo-600'} border-r-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#604AC7]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} overflow-y-auto shadow-2xl pt-16`}>
+            <div className={`w-72 bg-gradient-to-b ${theme === 'default' ? 'from-gray-100 to-gray-200' : theme === 'ben10' ? 'from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : theme === 'cricketverse-australian' ? 'bg-white' : theme === 'bounceworld' ? 'from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'from-[#0F0826] via-[#2C1267] to-[#604AC7]' : theme === 'ponyville' ? 'from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : 'from-blue-500 to-indigo-600'} border-r-4 ${theme === 'cricketverse-australian' ? 'border-[#b38f00]' : theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#604AC7]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} overflow-y-auto shadow-2xl pt-16`}>
               <div className={`p-4 border-b-4 ${theme === 'bounceworld' ? 'border-[#C8102E]' : theme === 'avengers' ? 'border-[#604AC7]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'}`}>
                 <h2 className={`text-lg font-black ${theme === 'default' ? 'text-black' : 'text-white'} text-center`}>
                   {(theme === 'ben10' || theme === 'tinkerbell') && <span className="text-2xl mr-2">{theme === 'ben10' ? '�‍♂️' : '🧚‍♀️'}</span>}Study Materials 
@@ -530,7 +530,7 @@ export default function StudentStudyPage() {
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex items-start space-x-3 flex-1">
-                            <div className={`w-8 h-8 ${theme === 'ben10' ? 'bg-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-yellow-500' : theme === 'bounceworld' ? 'bg-[#1D428A]' : theme === 'avengers' ? 'bg-[#604AC7]' : theme === 'ponyville' ? 'bg-[#e13690]' : 'bg-blue-500'} rounded-xl flex items-center justify-center flex-shrink-0 border-2 ${theme === 'bounceworld' ? 'border-[#C8102E]' : theme === 'avengers' ? 'border-[#604AC7]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'}`}>
+                            <div className={`w-8 h-8 ${theme === 'ben10' ? 'bg-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-yellow-500' : theme === 'cricketverse-australian' ? 'bg-[#b38f00]' : theme === 'bounceworld' ? 'bg-[#1D428A]' : theme === 'avengers' ? 'bg-[#604AC7]' : theme === 'ponyville' ? 'bg-[#e13690]' : 'bg-blue-500'} rounded-xl flex items-center justify-center flex-shrink-0 border-2 ${theme === 'cricketverse-australian' ? 'border-[#ffd700]' : theme === 'bounceworld' ? 'border-[#C8102E]' : theme === 'avengers' ? 'border-[#604AC7]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'}`}>
                               {group.isGroup ? (
                                 <div className="text-white font-black text-sm">
                                   {group.totalFiles}
@@ -595,7 +595,7 @@ export default function StudentStudyPage() {
                                   onClick={() => material.fileUrl && viewMaterial(material)}
                                 >
                                   <div className="flex items-center space-x-3 flex-1">
-                                    <div className={`w-6 h-6 ${theme === 'ben10' ? 'bg-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-yellow-500' : theme === 'bounceworld' ? 'bg-[#1D428A]' : theme === 'avengers' ? 'bg-[#604AC7]' : theme === 'ponyville' ? 'bg-[#e13690]' : 'bg-blue-500'} rounded-lg flex items-center justify-center flex-shrink-0 border-2 border-black`}>
+                                    <div className={`w-6 h-6 ${theme === 'ben10' ? 'bg-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-yellow-500' : theme === 'cricketverse-australian' ? 'bg-[#b38f00]' : theme === 'bounceworld' ? 'bg-[#1D428A]' : theme === 'avengers' ? 'bg-[#604AC7]' : theme === 'ponyville' ? 'bg-[#e13690]' : 'bg-blue-500'} rounded-lg flex items-center justify-center flex-shrink-0 border-2 border-black`}>
                                       {getFileIcon(material.fileType)}
                                     </div>
                                     <div className="flex-1 min-w-0">
@@ -669,9 +669,9 @@ export default function StudentStudyPage() {
                 )}
                 {activeMaterial.fileType?.toLowerCase() === 'image' && activeMaterial.fileUrl && (
                   <div className="h-full flex flex-col">
-                    <div className={`p-6 border-b-4 border-black bg-gradient-to-r ${theme === 'default' ? 'from-gray-100 to-gray-200' : theme === 'ben10' ? 'from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : theme === 'bounceworld' ? 'from-[#1D428A] to-[#C8102E]' : theme === 'avengers' ? 'from-[#2C1267] to-[#604AC7]' : theme === 'ponyville' ? 'from-[#f1aed5] to-[#e13690]' : 'from-blue-500 to-indigo-600'}`}>
+                    <div className={`p-6 border-b-4 bg-gradient-to-r ${theme === 'cricketverse-australian' ? 'border-[#b38f00] bg-white' : theme === 'default' ? 'border-black from-gray-100 to-gray-200' : theme === 'ben10' ? 'border-black from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'border-black from-green-400 to-yellow-500' : theme === 'bounceworld' ? 'border-black from-[#1D428A] to-[#C8102E]' : theme === 'avengers' ? 'border-black from-[#2C1267] to-[#604AC7]' : theme === 'ponyville' ? 'border-black from-[#f1aed5] to-[#e13690]' : 'border-black from-blue-500 to-indigo-600'}`}>
                       <div className="flex items-center justify-between">
-                        <h3 className={`text-xl font-black ${theme === 'default' ? 'text-black' : 'text-white'} flex items-center`}>
+                        <h3 className={`text-xl font-black ${theme === 'default' || theme === 'cricketverse-australian' ? 'text-black' : 'text-white'} flex items-center`}>
                           {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville' || theme === 'bounceworld') && <span className="mr-2">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'ponyville' ? '🦄' : theme === 'bounceworld' ? '🏀' : ''}</span>}{activeMaterial.title}
                         </h3>
                         <div className="flex items-center space-x-3">
@@ -735,8 +735,8 @@ export default function StudentStudyPage() {
                 )}
                 {activeMaterial.fileType?.toLowerCase() === 'video' && activeMaterial.fileUrl && (
                   <div className="h-full flex flex-col">
-                    <div className={`p-6 border-b-4 border-black bg-gradient-to-r ${theme === 'default' ? 'from-gray-100 to-gray-200' : theme === 'ben10' ? 'from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : theme === 'avengers' ? 'from-[#2C1267] to-[#604AC7]' : theme === 'ponyville' ? 'from-[#f1aed5] to-[#e13690]' : 'from-blue-500 to-indigo-600'}`}>
-                      <h3 className={`text-xl font-black ${theme === 'default' ? 'text-black' : 'text-white'} flex items-center`}>
+                    <div className={`p-6 border-b-4 bg-gradient-to-r ${theme === 'cricketverse-australian' ? 'border-[#b38f00] bg-white' : theme === 'default' ? 'border-black from-gray-100 to-gray-200' : theme === 'ben10' ? 'border-black from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'border-black from-green-400 to-yellow-500' : theme === 'avengers' ? 'border-black from-[#2C1267] to-[#604AC7]' : theme === 'ponyville' ? 'border-black from-[#f1aed5] to-[#e13690]' : 'border-black from-blue-500 to-indigo-600'}`}>
+                      <h3 className={`text-xl font-black ${theme === 'default' || theme === 'cricketverse-australian' ? 'text-black' : 'text-white'} flex items-center`}>
                         {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <span className="mr-2">🎥</span>}{activeMaterial.title}
                       </h3>
                     </div>
@@ -754,8 +754,8 @@ export default function StudentStudyPage() {
                 )}
                 {activeMaterial.fileType?.toLowerCase() === 'link' && activeMaterial.fileUrl && (
                   <div className="h-full flex flex-col">
-                    <div className={`p-6 border-b-4 border-black bg-gradient-to-r ${theme === 'default' ? 'from-gray-100 to-gray-200' : theme === 'ben10' ? 'from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-green-400 to-yellow-500' : theme === 'avengers' ? 'from-[#2C1267] to-[#604AC7]' : theme === 'ponyville' ? 'from-[#f1aed5] to-[#e13690]' : 'from-blue-500 to-indigo-600'}`}>
-                      <h3 className={`text-xl font-black ${theme === 'default' ? 'text-black' : 'text-white'} flex items-center`}>
+                    <div className={`p-6 border-b-4 bg-gradient-to-r ${theme === 'cricketverse-australian' ? 'border-[#b38f00] bg-white' : theme === 'default' ? 'border-black from-gray-100 to-gray-200' : theme === 'ben10' ? 'border-black from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'border-black from-green-400 to-yellow-500' : theme === 'avengers' ? 'border-black from-[#2C1267] to-[#604AC7]' : theme === 'ponyville' ? 'border-black from-[#f1aed5] to-[#e13690]' : 'border-black from-blue-500 to-indigo-600'}`}>
+                      <h3 className={`text-xl font-black ${theme === 'default' || theme === 'cricketverse-australian' ? 'text-black' : 'text-white'} flex items-center`}>
                         {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <span className="mr-2">🔗</span>}{activeMaterial.title}
                       </h3>
                     </div>
@@ -770,7 +770,7 @@ export default function StudentStudyPage() {
                         </div>
                         <button
                           onClick={() => window.open(activeMaterial.fileUrl, '_blank')}
-                          className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-500 to-green-600 hover:from-green-600 hover:to-green-700' : theme === 'tinkerbell' ? 'from-yellow-400 to-green-500 hover:from-green-500 hover:to-yellow-500' : theme === 'ponyville' ? 'from-[#f1aed5] to-[#e13690] hover:from-[#e13690] hover:to-[#ff2e9f]' : 'from-blue-500 to-indigo-600 hover:from-indigo-600 hover:to-blue-700'} text-white font-black px-8 py-4 rounded-2xl border-4 border-black shadow-2xl hover:shadow-3xl transition-all duration-300 text-lg`}
+                          className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-green-500 to-green-600 hover:from-green-600 hover:to-green-700' : theme === 'tinkerbell' ? 'from-yellow-400 to-green-500 hover:from-green-500 hover:to-yellow-500' : theme === 'cricketverse-australian' ? 'from-[#b38f00] to-[#ffd700] hover:from-[#ffd700] hover:to-[#b38f00]' : theme === 'ponyville' ? 'from-[#f1aed5] to-[#e13690] hover:from-[#e13690] hover:to-[#ff2e9f]' : 'from-blue-500 to-indigo-600 hover:from-indigo-600 hover:to-blue-700'} text-white font-black px-8 py-4 rounded-2xl border-4 border-black shadow-2xl hover:shadow-3xl transition-all duration-300 text-lg`}
                         >
                           <ExternalLink className="h-5 w-5 mr-2 inline" />
                           Open Link 
@@ -993,7 +993,7 @@ export default function StudentStudyPage() {
                               </span>
                             )}
                             {group.lessonName && (
-                              <span className="bg-blue-500 text-white font-black text-sm px-3 py-1 rounded-lg border border-black">
+                              <span className={`text-white font-black text-sm px-3 py-1 rounded-lg border border-black ${theme === 'cricketverse-australian' ? 'bg-[#b38f00]' : 'bg-blue-500'}`}>
                                 📚 {group.lessonName}
                               </span>
                             )}
@@ -1051,7 +1051,7 @@ export default function StudentStudyPage() {
                                   openLink(group.materials[0].externalUrl || '');
                                 }}
                                 size="sm"
-                                className="bg-blue-600 hover:bg-blue-700"
+                                className={theme === 'cricketverse-australian' ? 'bg-[#b38f00] hover:bg-[#ffd700]' : 'bg-blue-600 hover:bg-blue-700'}
                               >
                                 <ExternalLink className="w-4 h-4" />
                               </Button>
@@ -1142,7 +1142,7 @@ export default function StudentStudyPage() {
                                   <Button
                                     onClick={() => openLink(material.externalUrl || '')}
                                     size="sm"
-                                    className="bg-blue-600 hover:bg-blue-700"
+                                    className={theme === 'cricketverse-australian' ? 'bg-[#b38f00] hover:bg-[#ffd700]' : 'bg-blue-600 hover:bg-blue-700'}
                                   >
                                     <ExternalLink className="w-4 h-4" />
                                   </Button>
@@ -1451,7 +1451,7 @@ export default function StudentStudyPage() {
                   <h3 className="text-xl font-black text-black">{classItem.name}</h3>
                   {classItem.recentMaterials > 0 && (
                     <Badge className={`font-black border-2 border-black ${
-                      theme === 'ben10' ? 'bg-yellow-400 text-black' : theme === 'tinkerbell' ? 'bg-green-400 text-black' : theme === 'bounceworld' ? 'bg-[#C8102E] text-white' : theme === 'avengers' ? 'bg-[#604AC7] text-white' : 'bg-blue-300 text-white'
+                      theme === 'ben10' ? 'bg-yellow-400 text-black' : theme === 'tinkerbell' ? 'bg-green-400 text-black' : theme === 'cricketverse-australian' ? 'bg-[#ffd700] text-black' : theme === 'bounceworld' ? 'bg-[#C8102E] text-white' : theme === 'avengers' ? 'bg-[#604AC7] text-white' : 'bg-blue-300 text-white'
                     }`}>
                        {classItem.recentMaterials} new
                     </Badge>
