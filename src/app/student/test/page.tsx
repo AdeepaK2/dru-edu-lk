@@ -1013,7 +1013,7 @@ export default function StudentTests() {
                   <span className={`ml-2 font-black text-5xl ${theme === 'cricketverse-australian' ? 'text-black' : theme === 'default' ? 'text-white' : theme === 'ben10' ? 'text-[#b2e05b]' : theme === 'tinkerbell' ? 'text-pink-200' : theme === 'cricketverse' ? 'text-blue-200' : theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-[#C88DA5]' : theme === 'ponyville' ? 'text-[#e13690]' : 'text-blue-200'}`}>Tests</span>
                 </h1>
                 <p className={`font-bold text-lg ${theme === 'cricketverse-australian' ? 'text-black' : 'text-white'}`}>
-                  {theme === 'cricketverse-australian' ? 'Smash your test goals, Aussie style! 🏏🇦🇺' : theme === 'ponyville' ? 'Challenge yourself with magical tests and grow! ✨' : 'Challenge yourself with epic tests and grow!'}
+                  {theme === 'cricketverse-australian' ? 'Challenge yourself with epic tests and grow!' : theme === 'ponyville' ? 'Challenge yourself with magical tests and grow! ✨' : 'Challenge yourself with epic tests and grow!'}
                 </p>
               </div>
             </div>
@@ -1024,23 +1024,24 @@ export default function StudentTests() {
             style={theme === 'cricketverse-australian' ? { background: '#fff800' } : undefined}
           >
             <div className={theme !== 'cricketverse-australian' ? `bg-gradient-to-r ${theme === 'default' ? 'from-gray-200 via-gray-300 to-gray-200' : theme === 'ben10' ? 'from-[#b2e05b] via-black to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-green-300 via-black to-green-300' : theme === 'bounceworld' ? 'from-white via-[#1D428A]/20 to-white border-[#1D428A]' : theme === 'avengers' ? 'from-[#604AC7]/30 via-[#2C1267]/30 to-[#0F0826]/30 border-[#2C1267]' : theme === 'ponyville' ? 'from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]/20 border-black' : 'from-blue-300 via-indigo-500 to-blue-300'}` : ''}>
-            {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville' || theme === 'cricketverse-australian') && <div className="text-8xl mb-6">{theme === 'cricketverse-australian' ? '🏏' : theme === 'ponyville' ? '📚' : '📚'}</div>}
+            {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville' || theme === 'cricketverse-australian') && <div className="text-8xl mb-6">{theme === 'cricketverse-australian' ? '📚' : theme === 'ponyville' ? '📚' : '📚'}</div>}
             <h2 className={`text-3xl font-black mb-4 ${theme === 'cricketverse-australian' ? 'text-black' : 'text-white'}`}>
-              {theme === 'cricketverse-australian' ? 'No Tests Yet, Mate! 🇦🇺' : theme === 'ponyville' ? 'No Magical Tests Yet' : 'No Tests Yet'}
+              {theme === 'cricketverse-australian' ? 'No Tests Yet' : theme === 'ponyville' ? 'No Magical Tests Yet' : 'No Tests Yet'}
             </h2>
             <p className={`font-bold text-lg mb-6 ${theme === 'cricketverse-australian' ? 'text-black' : 'text-white'}`}>
-              {theme === 'cricketverse-australian' ? "You haven't enrolled in any classes yet. Contact your teacher to start smashing tests, Aussie style! 🏏" : theme === 'ponyville' ? "You haven't enrolled in any magical classes yet. Contact your magical teacher to start taking tests! ✨📚" : "You haven't enrolled in any classes yet. Contact your teacher to start taking tests!"}
+              {theme === 'cricketverse-australian' ? "You haven't enrolled in any classes yet. Contact your teacher to start taking tests!" : theme === 'ponyville' ? "You haven't enrolled in any magical classes yet. Contact your magical teacher to start taking tests! ✨📚" : "You haven't enrolled in any classes yet. Contact your teacher to start taking tests!"}
             </p>
             <Button
               onClick={() => router.push('/student/dashboard')}
               className={`px-8 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} flex items-center space-x-3 ${theme === 'cricketverse-australian' ? 'bg-black text-white hover:bg-gray-800' : theme === 'default' ? 'bg-gradient-to-r from-black to-gray-800 hover:from-gray-800 hover:to-black text-white' : theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222] hover:from-[#b2e05b] hover:to-[#222222] text-white' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] to-[#C8102E] hover:from-[#C8102E] hover:to-[#1D428A] text-white' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7] to-[#2C1267] hover:from-[#2C1267] hover:to-[#0F0826] text-white' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] to-[#e13690] hover:from-[#e13690] hover:to-[#ff2e9f] text-white' : 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white'}`}
             >
               <BookOpen className="w-5 h-5" />
-              <span>{theme === 'cricketverse-australian' ? 'Return to Dashboard 🇦🇺' : theme === 'ponyville' ? 'Return to Magical Dashboard' : 'Return to Dashboard'}</span>
+              <span>{theme === 'ponyville' ? 'Return to Magical Dashboard' : 'Return to Dashboard'}</span>
             </Button>
             </div>
           </div>
           </div>
+        </div>
         </div>
       </StudentLayout>
     );
@@ -1152,10 +1153,10 @@ export default function StudentTests() {
             </div>
             <div className="text-center">
               <h2 className="text-2xl font-black text-black mb-2">
-                {theme === 'cricketverse-australian' ? 'Loading Your Tests, Mate! 🏏' : theme === 'ponyville' ? 'Summoning Magical Tests...' : 'Loading Tests...'}
+                {theme === 'cricketverse-australian' ? 'Loading Tests...' : theme === 'ponyville' ? 'Summoning Magical Tests...' : 'Loading Tests...'}
               </h2>
               <p className="text-gray-600 font-medium">
-                {theme === 'cricketverse-australian' ? 'Getting your challenges ready, Aussie style! 🇦🇺' : theme === 'ponyville' ? 'Getting your magical challenges ready! 📚✨' : 'Getting your tests ready!'}
+                {theme === 'cricketverse-australian' ? 'Getting your tests ready!' : theme === 'ponyville' ? 'Getting your magical challenges ready! 📚✨' : 'Getting your tests ready!'}
               </p>
             </div>
           </div>
@@ -1202,7 +1203,7 @@ export default function StudentTests() {
                   <span className={`ml-2 font-black text-5xl ${theme === 'cricketverse-australian' ? 'text-black' : theme === 'default' ? 'text-white' : theme === 'ben10' ? 'text-[#b2e05b]' : theme === 'tinkerbell' ? 'text-pink-200' : theme === 'cricketverse' ? 'text-blue-200' : theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-[#C88DA5]' : theme === 'ponyville' ? 'text-[#e13690]' : 'text-blue-200'}`}>Tests</span>
                 </h1>
                 <p className={`font-bold text-lg ${theme === 'cricketverse-australian' ? 'text-black' : 'text-white'}`}>
-                  {theme === 'cricketverse-australian' ? 'Smash your test goals, Aussie style! 🏏🇦🇺' : theme === 'ponyville' ? 'Challenge yourself with magical tests and grow! ✨📚' : 'Challenge yourself with epic tests and grow!'}
+                  {theme === 'cricketverse-australian' ? 'Challenge yourself with epic tests and grow!' : theme === 'ponyville' ? 'Challenge yourself with magical tests and grow! ✨📚' : 'Challenge yourself with epic tests and grow!'}
                 </p>
               </div>
             </div>
@@ -1211,7 +1212,7 @@ export default function StudentTests() {
                 {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville' || theme === 'cricketverse-australian') && <div className="text-4xl">{theme === 'cricketverse-australian' ? '🏏' : theme === 'ponyville' ? '📚' : '📚'}</div>}
                 <div className="text-center">
                   <div className="text-3xl font-black text-black">{enrollments?.length || 0}</div>
-                  <div className="text-sm font-bold text-gray-700">{theme === 'cricketverse-australian' ? 'Classes 🇦🇺' : theme === 'ponyville' ? 'Magical Classes' : 'Classes'}</div>
+                  <div className="text-sm font-bold text-gray-700">{theme === 'ponyville' ? 'Magical Classes' : 'Classes'}</div>
                 </div>
               </div>
             </div>
@@ -1227,10 +1228,10 @@ export default function StudentTests() {
           >
             <div className={theme !== 'cricketverse-australian' ? `bg-gradient-to-r ${theme === 'default' ? 'from-red-400 to-red-500' : theme === 'ben10' ? 'from-red-400 to-red-600' : theme === 'tinkerbell' ? 'from-red-300 to-pink-300' : theme === 'cricketverse' ? 'from-red-400 to-red-500' : theme === 'ponyville' ? 'from-[#f1aed5] to-[#e13690]' : 'from-red-400 to-red-500'}` : ''}>
             <div className="flex items-center space-x-3">
-              <div className="text-2xl">{theme === 'cricketverse-australian' ? '🏏' : theme === 'ponyville' ? '📝' : '⚠️'}</div>
+              <div className="text-2xl">{theme === 'ponyville' ? '📝' : '⚠️'}</div>
               <div>
                 <p className="font-bold text-black text-lg">
-                  {theme === 'cricketverse-australian' ? 'Error Occurred, Mate!' : theme === 'ponyville' ? 'Magical Error Occurred!' : 'Error: Something went wrong!'}
+                  {theme === 'ponyville' ? 'Magical Error Occurred!' : 'Error: Something went wrong!'}
                 </p>
                 <p className="text-black font-medium">{error}</p>
               </div>
@@ -1246,21 +1247,21 @@ export default function StudentTests() {
         >
           <div className={theme !== 'cricketverse-australian' ? `${theme === 'default' ? 'bg-gradient-to-r from-gray-100 to-gray-200' : theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 via-green-400 to-yellow-300' : theme === 'cricketverse' ? 'bg-gradient-to-r from-blue-300 via-indigo-400 to-blue-300' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7]/20 via-[#2C1267]/20 to-[#0F0826]/20 border-[#2C1267]' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]/20 border-[#e13690]' : 'bg-gradient-to-r from-blue-300 via-indigo-400 to-blue-300'}` : ''}>
           <div className="flex items-center space-x-3 mb-4">
-            {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville' || theme === 'cricketverse-australian') && <div className="text-3xl">{theme === 'cricketverse-australian' ? '🔍' : theme === 'ponyville' ? '🔍' : '🔍'}</div>}
-            <h2 className="text-2xl font-black text-black">{theme === 'cricketverse-australian' ? 'Search Tests 🇦🇺' : theme === 'ponyville' ? 'Search Magical Tests' : 'Search Tests'}</h2> 
+            {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-3xl">{theme === 'ponyville' ? '🔍' : '🔍'}</div>}
+            <h2 className="text-2xl font-black text-black">{theme === 'ponyville' ? 'Search Magical Tests' : 'Search Tests'}</h2> 
           </div>
 
           <div className="flex flex-col lg:flex-row gap-6">
             {/* Search */}
             <div className="flex-1">
               <div className="relative">
-                {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville' || theme === 'cricketverse-australian') && <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-2xl">{theme === 'cricketverse-australian' ? '🔍' : theme === 'ponyville' ? '🔍' : '🔍'}</div>}
+                {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-2xl">{theme === 'ponyville' ? '🔍' : '🔍'}</div>}
                 <Input
                   type="text"
-                  placeholder={theme === 'cricketverse-australian' ? "Search for tests, mate..." : theme === 'ponyville' ? "Search for magical tests..." : "Search for tests..."}
+                  placeholder={theme === 'ponyville' ? "Search for magical tests..." : "Search for tests..."}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className={`pl-12 pr-4 py-3 text-lg border-4 ${theme === 'bounceworld' ? 'border-[#C8102E]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} rounded-2xl bg-white text-black placeholder-gray-500 focus:outline-none shadow-lg ${theme === 'cricketverse-australian' ? 'focus:ring-4 focus:ring-black' : theme === 'ben10' ? 'focus:ring-4 focus:ring-[#64cc4f]' : theme === 'tinkerbell' ? 'focus:ring-4 focus:ring-yellow-400' : theme === 'bounceworld' ? 'focus:ring-4 focus:ring-[#C8102E]' : theme === 'avengers' ? 'focus:ring-4 focus:ring-[#604AC7]' : theme === 'ponyville' ? 'focus:ring-4 focus:ring-[#e13690]' : theme === 'default' ? 'focus:ring-4 focus:ring-gray-600' : 'focus:ring-4 focus:ring-blue-400'}`}
+                  className={`pl-12 pr-4 py-3 text-lg border-4 ${theme === 'bounceworld' ? 'border-[#C8102E]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} rounded-2xl bg-white text-black placeholder-gray-500 focus:outline-none shadow-lg ${theme === 'ben10' ? 'focus:ring-4 focus:ring-[#64cc4f]' : theme === 'tinkerbell' ? 'focus:ring-4 focus:ring-yellow-400' : theme === 'bounceworld' ? 'focus:ring-4 focus:ring-[#C8102E]' : theme === 'avengers' ? 'focus:ring-4 focus:ring-[#604AC7]' : theme === 'ponyville' ? 'focus:ring-4 focus:ring-[#e13690]' : theme === 'default' ? 'focus:ring-4 focus:ring-gray-600' : 'focus:ring-4 focus:ring-blue-400'}`}
                 />
               </div>
             </div>
@@ -1272,7 +1273,7 @@ export default function StudentTests() {
                 onChange={(e) => setSelectedSubjectId(e.target.value)}
                 className={`border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} rounded-2xl px-6 py-3 bg-white text-black font-bold text-lg focus:outline-none shadow-lg hover:bg-gray-50 transition-all w-full ${theme === 'cricketverse-australian' ? 'focus:ring-4 focus:ring-black' : theme === 'ben10' ? 'focus:ring-4 focus:ring-[#64cc4f]' : theme === 'tinkerbell' ? 'focus:ring-4 focus:ring-yellow-400' : theme === 'bounceworld' ? 'focus:ring-4 focus:ring-[#1D428A]' : theme === 'avengers' ? 'focus:ring-4 focus:ring-[#604AC7]' : theme === 'ponyville' ? 'focus:ring-4 focus:ring-[#e13690]' : theme === 'default' ? 'focus:ring-4 focus:ring-gray-600' : 'focus:ring-4 focus:ring-blue-400'}`}
               >
-                <option value="all">{theme === 'cricketverse-australian' ? 'All Subjects 🇦🇺' : theme === 'ponyville' ? 'All Magical Subjects' : 'All Subjects'}</option>
+                <option value="all">{theme === 'ponyville' ? 'All Magical Subjects' : 'All Subjects'}</option>
                 {subjects.map((subject) => (
                   <option key={subject.id} value={subject.id}>
                      {subject.name}
@@ -1285,32 +1286,32 @@ export default function StudentTests() {
           {/* Test Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-6">
             <div className={`bg-white border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all`}>
-              {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville' || theme === 'cricketverse-australian') && <div className="text-4xl mb-2">{theme === 'cricketverse-australian' ? '🏏' : theme === 'ponyville' ? '📚' : '📚'}</div>}
+              {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-4xl mb-2">{theme === 'ponyville' ? '📚' : '📚'}</div>}
               <div className="text-3xl font-black text-black mb-1">
                 {Object.keys(testsByClass).length}
               </div>
-              <div className="text-sm font-bold text-black">{theme === 'cricketverse-australian' ? 'Classes' : theme === 'ponyville' ? 'Magical Classes' : 'Classes'}</div>
+              <div className="text-sm font-bold text-black">{theme === 'ponyville' ? 'Magical Classes' : 'Classes'}</div>
             </div>
             <div className={`bg-white border-4 ${theme === 'bounceworld' ? 'border-[#C8102E]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all`}>
-              {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville' || theme === 'cricketverse-australian') && <div className="text-4xl mb-2">{theme === 'cricketverse-australian' ? '🏏' : theme === 'ponyville' ? '⏳' : '🎯'}</div>}
+              {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-4xl mb-2">{theme === 'ponyville' ? '⏳' : '🎯'}</div>}
               <div className="text-3xl font-black text-black mb-1">
                 {Object.values(testsByClass).reduce((acc, classData) => acc + classData.groupedTests.live.length, 0) + groupedCustomTests.live.length}
               </div>
-              <div className="text-sm font-bold text-black">{theme === 'cricketverse-australian' ? 'Live Now' : theme === 'ponyville' ? 'Live Quests' : 'Live Missions'}</div>
+              <div className="text-sm font-bold text-black">{theme === 'ponyville' ? 'Live Quests' : 'Live Missions'}</div>
             </div>
             <div className={`bg-white border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all`}>
-              {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville' || theme === 'cricketverse-australian') && <div className="text-4xl mb-2">{theme === 'cricketverse-australian' ? '⏰' : theme === 'ponyville' ? '⏰' : '⏰'}</div>}
+              {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-4xl mb-2">{theme === 'ponyville' ? '⏰' : '⏰'}</div>}
               <div className="text-3xl font-black text-black mb-1">
                 {Object.values(testsByClass).reduce((acc, classData) => acc + classData.groupedTests.upcoming.length, 0) + groupedCustomTests.upcoming.length}
               </div>
-              <div className="text-sm font-bold text-black">{theme === 'cricketverse-australian' ? 'Upcoming' : theme === 'ponyville' ? 'Future Adventures' : 'Upcoming Quests'}</div>
+              <div className="text-sm font-bold text-black">{theme === 'ponyville' ? 'Future Adventures' : 'Upcoming Quests'}</div>
             </div>
             <div className={`bg-white border-4 ${theme === 'bounceworld' ? 'border-[#C8102E]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all`}>
-              {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville' || theme === 'cricketverse-australian') && <div className="text-4xl mb-2">{theme === 'cricketverse-australian' ? '📝' : theme === 'ponyville' ? '✅' : '📝'}</div>}
+              {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-4xl mb-2">{theme === 'ponyville' ? '✅' : '📝'}</div>}
               <div className="text-3xl font-black text-black mb-1">
                 {filteredTests.length}
               </div>
-              <div className="text-sm font-bold text-black">{theme === 'cricketverse-australian' ? 'Total Tests' : theme === 'ponyville' ? 'Magical Tests' : 'Total Tests'}</div>
+              <div className="text-sm font-bold text-black">{theme === 'ponyville' ? 'Magical Tests' : 'Total Tests'}</div>
             </div>
           </div>
           </div>
@@ -1337,8 +1338,8 @@ export default function StudentTests() {
                   )}
                   <div>
                     <h2 className="text-2xl font-black text-black flex items-center">
-                      {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville' || theme === 'cricketverse-australian') && <span className="text-3xl mr-2">{theme === 'cricketverse-australian' ? '🏏' : theme === 'ponyville' ? '📝' : '📝'}</span>}
-                      {theme === 'cricketverse-australian' ? 'My Custom Tests 🇦🇺' : theme === 'ponyville' ? 'My Magical Custom Tests' : 'My Custom Tests'}
+                      {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <span className="text-3xl mr-2">{theme === 'ponyville' ? '📝' : '📝'}</span>}
+                      {theme === 'ponyville' ? 'My Magical Custom Tests' : 'My Custom Tests'}
                       {(groupedCustomTests.live.length > 0 || groupedCustomTests.upcoming.length > 0 || groupedCustomTests.available.length > 0) && (
                         <span className={`ml-3 inline-flex items-center px-3 py-1 rounded-full text-sm font-black text-black border-2 border-black ${theme === 'cricketverse-australian' ? 'bg-black text-white' : theme === 'ben10' ? 'bg-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-yellow-400' : theme === 'bounceworld' ? 'bg-[#C8102E]' : theme === 'avengers' ? 'bg-[#C88DA5]' : theme === 'ponyville' ? 'bg-[#e13690]' : 'bg-blue-400'}`}>
                           New!
