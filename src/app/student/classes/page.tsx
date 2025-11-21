@@ -258,9 +258,9 @@ export default function StudentClassesPage() {
           <div className="flex items-center justify-between relative z-10">
             <div className="flex items-center space-x-4">
             {theme === 'cricketverse' ? (
-              <img src="/batman2.png" alt="Batman" className="w-40 h-32 object-contain" />
+              <img src="/indian/batman2.png" alt="Batman" className="w-40 h-32 object-contain" />
             ) : theme === 'cricketverse-australian' ? (
-              <img src="/cricketverse/australian/australian-flag.png" alt="Australian Cricket" className="w-40 h-32 object-contain" />
+              <img src="/australian/batman2.png" alt="Australian Cricket" className="w-40 h-32 object-contain" />
             ) : theme === 'ponyville' ? (
               <img src="/ponyville/rainbow-dash.png" alt="Rainbow Dash" className="w-24 h-24 object-contain" />
             ) : theme === 'avengers' ? (

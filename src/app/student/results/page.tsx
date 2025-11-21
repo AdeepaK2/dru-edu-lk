@@ -439,9 +439,9 @@ export default function StudentResults() {
               />
             ) : theme === 'cricketverse-australian' ? (
               <img
-                src="/batman1.png"
+                src="/australian/batman1.png"
                 alt="Batman"
-                className="w-24 h-24 object-contain"
+                className="w-28 h-28 object-contain"
               />
             ) : theme === 'ponyville' ? (
               <img

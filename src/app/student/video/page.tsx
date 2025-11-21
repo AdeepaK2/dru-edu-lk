@@ -277,13 +277,13 @@ export default function StudentVideos() {
         <div className="flex items-center space-x-4 relative z-10">
           {theme === 'cricketverse' ? (
             <img
-              src="/batman4.png"
+              src="/indian/batman4.png"
               alt="Batman"
               className="w-40 h-32 object-contain"
             />
           ) : theme === 'cricketverse-australian' ? (
             <img
-              src="/batman4.png"
+              src="/australian/batman4.png"
               alt="Batman"
               className="w-40 h-32 object-contain"
             />

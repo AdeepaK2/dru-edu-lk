@@ -1189,7 +1189,9 @@ export default function StudentTests() {
          <div className="flex items-center justify-between relative z-10">
             <div className="flex items-center space-x-4">
               {theme === 'cricketverse-australian' ? (
-                <img src="/cricketverse/australian/australian-cricket.gif" alt="Australian Cricket" className="w-24 h-24 object-contain" />
+                <img src="/australian/batman4.png" alt="Australian Cricket" className="w-24 h-24 object-contain" />
+              ) : theme === 'cricketverse-indian' ? (
+                <img src="/indian/batmant2.png" alt="Indian Cricket" className="w-24 h-24 object-contain" />
               ) : theme === 'ponyville' ? (
                 <img src="/ponyville/sweetybelle.png" alt="Sweetybelle" className="w-24 h-24 object-contain" />
               ) : theme === 'avengers' ? (

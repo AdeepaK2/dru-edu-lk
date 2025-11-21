@@ -294,9 +294,9 @@ export default function StudentSheetsPage() {
             ) : theme === 'bounceworld' ? (
               <img src="/bounce-world.png" alt="Bounce World" className="w-32 h-32 object-contain" />
             ) : theme === 'cricketverse' ? (
-              <img src="/batman3.png" alt="Batman" className="w-48 h-32" />
+              <img src="/indian/batman3.png" alt="Batman" className="w-48 h-32" />
             ) : theme === 'cricketverse-australian' ? (
-              <img src="/batman3.png" alt="Batman" className="w-48 h-32" />
+              <img src="/australian/batman3.png" alt="Batman" className="w-48 h-32" />
             ) : (
               <div className="text-6xl">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : ''}</div>
             )}
