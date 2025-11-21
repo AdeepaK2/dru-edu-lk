@@ -868,7 +868,7 @@ export default function StudentSettingsPage() {
     <div className={`min-h-screen bg-gradient-to-br p-6 ${theme === 'ben10' ? '' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'from-white via-[#1D428A]/10 to-[#C8102E]/10' : theme === 'avengers' ? 'from-[#2C1267]/10 via-[#604AC7]/10 to-[#0F0826]/10' : theme === 'ponyville' ? 'from-[#fff5fb] via-[#f1aed5] to-[#ff2e9f]' : theme === 'cricketverse' ? 'from-blue-400 to-indigo-600' : theme === 'cricketverse-australian' ? '' : 'from-gray-100 to-gray-200'}`} style={theme === 'ben10' ? { background: 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))' } : theme === 'cricketverse-australian' ? { background: 'linear-gradient(to bottom right, rgb(134, 250, 92) 0%, rgb(255, 255, 42) 40%, rgb(255, 255, 42) 60%, rgb(134, 250, 92) 100%)' } : undefined}>
       <div className="space-y-8 max-w-6xl mx-auto">
       {/* Page Header - Theme Aware */}
-      <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-500 via-yellow-500 to-green-600' : theme === 'bounceworld' ? 'from-[#1D428A] to-[#C8102E]' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]' : theme === 'ponyville' ? 'from-[#f1aed5] to-[#e13690]' : theme === 'cricketverse' ? 'from-blue-400 to-indigo-600' : theme === 'cricketverse-australian' ? ' from-[#ffff2a] via-[#f6f672] to-[#ffff2a]' : 'from-gray-100 to-gray-200'} rounded-2xl text-white p-8 border-2 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : theme === 'ponyville' ? 'border-[#ff2e9f]' : theme === 'cricketverse' ? 'border-blue-600' : theme === 'cricketverse-australian' ? 'border-black' : 'border-black'} relative overflow-hidden`}>
+      <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#4e9158]' : theme === 'tinkerbell' ? 'from-green-500 via-yellow-500 to-green-600' : theme === 'bounceworld' ? 'from-[#1D428A] to-[#C8102E]' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]' : theme === 'ponyville' ? 'from-[#f1aed5] to-[#e13690]' : theme === 'cricketverse' ? 'from-blue-400 to-indigo-600' : theme === 'cricketverse-australian' ? ' from-[#ffff2a] via-[#f6f672] to-[#ffff2a]' : 'from-gray-100 to-gray-200'} rounded-2xl text-white p-8 border-2 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : theme === 'ponyville' ? 'border-[#ff2e9f]' : theme === 'cricketverse' ? 'border-blue-600' : theme === 'cricketverse-australian' ? 'border-black' : 'border-black'} relative overflow-hidden`}>
 
         
    
@@ -947,7 +947,7 @@ export default function StudentSettingsPage() {
 
       {/* Theme Selector Section */}
       <div className={`bg-gradient-to-r ${
-        theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' :
+        theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#44a750]' :
         theme === 'tinkerbell' ? 'from-yellow-200 via-green-200 to-yellow-300' :
         theme === 'cricketverse' ? 'from-blue-200 via-indigo-200 to-purple-300' :
         theme === 'cricketverse-australian' ? 'from-white via-[#f6f672] to-[#ffff2a]' :
@@ -1232,7 +1232,7 @@ export default function StudentSettingsPage() {
       {/* Profile Settings - Theme Aware */}
       <div className={`bg-gradient-to-r ${
         theme === 'ben10'
-          ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]'
+          ? 'from-[#64cc4f] via-[#b2e05b] to-[#46b44b]'
           : theme === 'tinkerbell'
           ? 'from-yellow-300 via-green-400 to-yellow-500'
           : theme === 'bounceworld'
@@ -1468,7 +1468,7 @@ export default function StudentSettingsPage() {
               {/* Fun Fact */}
               <div className={`bg-gradient-to-r ${
                 selectedTheme === 'ben10'
-                  ? 'from-[#64cc4f] to-[#222222]'
+                  ? 'from-[#64cc4f] to-[#58a059]'
                   : selectedTheme === 'tinkerbell'
                   ? 'from-yellow-300 to-green-500'
                   : selectedTheme === 'bounceworld'
@@ -1524,7 +1524,7 @@ export default function StudentSettingsPage() {
       {/* Password Settings - Theme Aware */}
       <div className={`bg-gradient-to-r ${
         theme === 'ben10'
-          ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]'
+          ? 'from-[#64cc4f] via-[#b2e05b] to-[#59ba50]'
           : theme === 'tinkerbell'
           ? 'from-green-400 via-yellow-500 to-green-600'
           : theme === 'bounceworld'

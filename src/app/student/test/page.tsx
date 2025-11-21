@@ -1178,7 +1178,7 @@ export default function StudentTests() {
       >
         {/* Tests Header */}
         <div 
-          className={`rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} p-8 mb-6 relative overflow-hidden ${theme !== 'cricketverse-australian' ? `${theme === 'default' ? 'bg-gradient-to-r from-black via-gray-800 to-white' : theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-500 via-green-500 to-yellow-500' : theme === 'cricketverse' ? 'bg-gradient-to-r from-blue-500 via-indigo-600 to-blue-500' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7] via-[#865bea] to-[#9376f3]' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : 'bg-gradient-to-r from-blue-500 via-indigo-600 to-blue-500'}` : ''}`}
+          className={`rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} p-8 mb-6 relative overflow-hidden ${theme !== 'cricketverse-australian' ? `${theme === 'default' ? 'bg-gradient-to-r from-black via-gray-800 to-white' : theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] to-[#397d3d]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-500 via-green-500 to-yellow-500' : theme === 'cricketverse' ? 'bg-gradient-to-r from-blue-500 via-indigo-600 to-blue-500' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7] via-[#865bea] to-[#9376f3]' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : 'bg-gradient-to-r from-blue-500 via-indigo-600 to-blue-500'}` : ''}`}
           style={theme === 'cricketverse-australian' ? { background: 'white' } : undefined}
         >
          <div className="flex items-center justify-between relative z-10">
@@ -1376,7 +1376,7 @@ export default function StudentTests() {
                 {/* Live Custom Tests */}
                 {groupedCustomTests.live.length > 0 && (
                   <>
-                    <div className={`px-6 py-4 border-b-4 border-black ${theme === 'default' ? 'bg-gradient-to-r from-gray-300 via-gray-400 to-gray-300' : theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] via-black to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7]/30 via-[#2C1267]/30 to-[#0F0826]/30' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]/20' : 'bg-gradient-to-r from-blue-300 via-indigo-400 to-blue-300'}`}>
+                    <div className={`px-6 py-4 border-b-4 border-black ${theme === 'default' ? 'bg-gradient-to-r from-gray-300 via-gray-400 to-gray-300' : theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b]  to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7]/30 via-[#2C1267]/30 to-[#0F0826]/30' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]/20' : 'bg-gradient-to-r from-blue-300 via-indigo-400 to-blue-300'}`}>
                       <div className="flex items-center">
                         {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-2xl mr-3">{theme === 'ponyville' ? '📚' : '🎯'}</div>}
                         <span className={`text-lg font-black ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
@@ -1430,7 +1430,7 @@ export default function StudentTests() {
                                     ? theme === 'default'
                                       ? 'bg-gradient-to-r from-black to-gray-800 hover:from-gray-800 hover:to-black text-white'
                                       : theme === 'ben10'
-                                      ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222] hover:from-[#b2e05b] hover:to-[#222222] text-white'
+                                      ? 'bg-gradient-to-r from-[#64cc4f] to-[#428c52] hover:from-[#b2e05b] hover:to-[#222222] text-white'
                                       : theme === 'tinkerbell'
                                       ? 'bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 text-white'
                                       : theme === 'avengers'

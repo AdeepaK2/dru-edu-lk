@@ -1212,7 +1212,7 @@ export default function StudentStudyPage() {
         {/* Theme-aware Hero Header */}
         <div className={`bg-gradient-to-r rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-black' : theme === 'ponyville' ? 'border-black' : theme === 'cricketverse' ? 'border-blue-600' : 'border-black'} p-8 mb-8 relative overflow-hidden ${
           theme === 'ben10'
-            ? 'from-[#64cc4f] to-[#222222]'
+            ? 'from-[#64cc4f] to-[#4dac55]'
             : theme === 'tinkerbell'
             ? 'from-green-400 via-green-500 to-yellow-500'
             : theme === 'cricketverse'
