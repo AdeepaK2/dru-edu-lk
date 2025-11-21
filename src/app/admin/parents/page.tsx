@@ -57,6 +57,7 @@ export default function ParentManagementPage() {
   const [invites, setInvites] = useState<ParentInvite[]>([]);
   const [activeTab, setActiveTab] = useState<'create' | 'invites'>('create');
   const [message, setMessage] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
+  const [parentGroups, setParentGroups] = useState<Map<string, Student[]>>(new Map());
 
   useEffect(() => {
     loadStudents();
@@ -68,7 +69,21 @@ export default function ParentManagementPage() {
       const response = await fetch('/api/student');
       if (response.ok) {
         const data = await response.json();
-        setStudents(data.students || []);
+        const allStudents = data.students || [];
+        setStudents(allStudents);
+        
+        // Group students by parent email
+        const groups = new Map<string, Student[]>();
+        allStudents.forEach((student: Student) => {
+          if (student.parent?.email) {
+            const email = student.parent.email.toLowerCase();
+            if (!groups.has(email)) {
+              groups.set(email, []);
+            }
+            groups.get(email)!.push(student);
+          }
+        });
+        setParentGroups(groups);
       }
     } catch (error) {
       console.error('Error loading students:', error);
@@ -121,9 +136,33 @@ export default function ParentManagementPage() {
       if (prev.includes(studentId)) {
         return prev.filter(id => id !== studentId);
       } else {
+        // Auto-fill parent info from first selected student
+        if (prev.length === 0) {
+          const student = students.find(s => s.id === studentId);
+          if (student?.parent?.email) {
+            setParentEmail(student.parent.email);
+            if (student.parent.name) setParentName(student.parent.name);
+            if (student.parent.phone) setParentPhone(student.parent.phone);
+            checkExistingParent(student.parent.email);
+          }
+        }
         return [...prev, studentId];
       }
     });
+  };
+
+  const selectAllSiblings = (parentEmail: string) => {
+    const siblings = parentGroups.get(parentEmail.toLowerCase()) || [];
+    const siblingIds = siblings.map(s => s.id);
+    setSelectedStudents(siblingIds);
+    
+    // Auto-fill parent info
+    if (siblings.length > 0 && siblings[0].parent) {
+      setParentEmail(siblings[0].parent.email);
+      if (siblings[0].parent.name) setParentName(siblings[0].parent.name);
+      if (siblings[0].parent.phone) setParentPhone(siblings[0].parent.phone);
+      checkExistingParent(siblings[0].parent.email);
+    }
   };
 
   const handleSendInvite = async () => {
@@ -200,8 +239,24 @@ export default function ParentManagementPage() {
 
   const filteredStudents = students.filter(student =>
     student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    student.email.toLowerCase().includes(searchTerm.toLowerCase())
+    student.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    student.parent?.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Group filtered students by parent email for display
+  const filteredParentGroups = new Map<string, Student[]>();
+  filteredStudents.forEach(student => {
+    if (student.parent?.email) {
+      const email = student.parent.email.toLowerCase();
+      if (!filteredParentGroups.has(email)) {
+        filteredParentGroups.set(email, []);
+      }
+      filteredParentGroups.get(email)!.push(student);
+    } else {
+      // Students without parent email go into individual group
+      filteredParentGroups.set(`no-parent-${student.id}`, [student]);
+    }
+  });
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -388,37 +443,82 @@ export default function ParentManagementPage() {
               </div>
 
               <div className="max-h-96 overflow-y-auto space-y-2">
-                {filteredStudents.map((student) => {
-                  const isAlreadyLinked = existingParentInfo?.linkedStudents.some(s => s.studentId === student.id);
+                {Array.from(filteredParentGroups.entries()).map(([groupKey, groupStudents]) => {
+                  const isNoParent = groupKey.startsWith('no-parent-');
+                  const parentEmail = isNoParent ? null : groupKey;
+                  const hasMultipleChildren = groupStudents.length > 1;
                   
                   return (
-                    <label
-                      key={student.id}
-                      className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                        selectedStudents.includes(student.id)
-                          ? 'border-blue-500 bg-blue-50'
-                          : isAlreadyLinked
-                          ? 'border-gray-200 bg-gray-50 cursor-not-allowed'
-                          : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedStudents.includes(student.id)}
-                        onChange={() => !isAlreadyLinked && handleStudentSelection(student.id)}
-                        disabled={isAlreadyLinked}
-                        className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-                      />
-                      <div className="flex-1">
-                        <p className="font-medium text-gray-900">{student.name}</p>
-                        <p className="text-sm text-gray-500">{student.email}</p>
-                        {isAlreadyLinked && (
-                          <p className="text-xs text-blue-600 mt-1">Already linked to this parent</p>
-                        )}
+                    <div key={groupKey} className="border border-gray-200 rounded-lg overflow-hidden">
+                      {/* Parent Group Header */}
+                      {parentEmail && (
+                        <div className="bg-blue-50 px-3 py-2 border-b border-blue-200 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Users className="w-4 h-4 text-blue-600" />
+                            <span className="text-sm font-medium text-blue-900">{parentEmail}</span>
+                            {hasMultipleChildren && (
+                              <span className="text-xs bg-blue-200 text-blue-800 px-2 py-0.5 rounded-full">
+                                {groupStudents.length} children
+                              </span>
+                            )}
+                          </div>
+                          {hasMultipleChildren && (
+                            <button
+                              onClick={() => selectAllSiblings(parentEmail)}
+                              className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md transition-colors"
+                            >
+                              Select All
+                            </button>
+                          )}
+                        </div>
+                      )}
+                      
+                      {/* Students in this group */}
+                      <div className="divide-y divide-gray-100">
+                        {groupStudents.map((student) => {
+                          const isAlreadyLinked = existingParentInfo?.linkedStudents.some(s => s.studentId === student.id);
+                          
+                          return (
+                            <label
+                              key={student.id}
+                              className={`flex items-center gap-3 p-3 cursor-pointer transition-colors ${
+                                selectedStudents.includes(student.id)
+                                  ? 'bg-blue-50'
+                                  : isAlreadyLinked
+                                  ? 'bg-gray-50 cursor-not-allowed'
+                                  : 'hover:bg-gray-50'
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={selectedStudents.includes(student.id)}
+                                onChange={() => !isAlreadyLinked && handleStudentSelection(student.id)}
+                                disabled={isAlreadyLinked}
+                                className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                              />
+                              <div className="flex-1">
+                                <p className="font-medium text-gray-900">{student.name}</p>
+                                <p className="text-sm text-gray-500">{student.email}</p>
+                                {isNoParent && (
+                                  <p className="text-xs text-amber-600 mt-1">⚠️ No parent email on record</p>
+                                )}
+                                {isAlreadyLinked && (
+                                  <p className="text-xs text-blue-600 mt-1">Already linked to this parent</p>
+                                )}
+                              </div>
+                            </label>
+                          );
+                        })}
                       </div>
-                    </label>
+                    </div>
                   );
                 })}
+                {filteredParentGroups.size === 0 && (
+                  <div className="text-center py-12 text-gray-500">
+                    <Users className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                    <p>No students found</p>
+                  </div>
+                )}
               </div>
             </div>
 
