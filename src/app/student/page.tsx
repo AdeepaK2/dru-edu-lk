@@ -381,7 +381,7 @@ export default function StudentDashboard() {
     <>
       <div className="min-h-screen p-6" style={{
         background: theme === 'default'
-          ? 'linear-gradient(to bottom right, rgb(134, 239, 172), rgb(243, 244, 246), rgb(134, 239, 172))'
+          ? 'rgb(255, 255, 255)'
           : theme === 'ben10'
           ? 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))'
           : theme === 'tinkerbell'
@@ -389,14 +389,14 @@ export default function StudentDashboard() {
           : theme === 'cricketverse'
           ? 'linear-gradient(to bottom right, rgb(96, 165, 250), rgb(79, 70, 229), rgb(96, 165, 250))'
           : theme === 'cricketverse-australian'
-          ? 'linear-gradient(to bottom right, rgb(255, 255, 65), rgb(255, 255, 65), rgb(255, 255, 65))'
+          ? 'linear-gradient(to bottom right, rgb(134, 250, 92) 0%, rgb(255, 255, 42) 40%, rgb(255, 255, 42) 60%, rgb(134, 250, 92) 100%)'
           : theme === 'bounceworld'
           ? 'linear-gradient(to bottom right, rgb(255, 255, 255), rgb(29, 66, 138), rgb(200, 16, 46))'
           : theme === 'avengers'
           ? 'linear-gradient(to bottom right, rgba(44, 18, 103, 0.3), rgba(79, 44, 141, 0.2), rgba(44, 18, 103, 0.3))'
           : theme === 'ponyville'
           ? 'linear-gradient(to bottom right, rgb(255, 245, 251), rgb(241, 174, 213), rgb(255, 46, 159))'
-          : 'linear-gradient(to bottom right, rgb(134, 239, 172), rgb(243, 244, 246), rgb(134, 239, 172))'
+          : 'rgb(255, 255, 255)'
       }}>
         <div className="space-y-6">
         {/* Welcome Header - Dynamic Theme */}
@@ -410,7 +410,7 @@ export default function StudentDashboard() {
             : theme === 'cricketverse'
             ? 'bg-gradient-to-r from-blue-500 to-indigo-600'
             : theme === 'cricketverse-australian'
-            ? 'bg-gradient-to-br from-white via-[#f6f672] to-[#ffff2a]'
+            ? 'bg-gradient-to-br from-[#ffff2a] via-[#86fa5c] to-[#ffff2a]'
             : theme === 'bounceworld'
             ? 'bg-gradient-to-r from-white via-[#1D428A] to-[#C8102E] text-black border-[#1D428A]'
             : theme === 'avengers'
@@ -1160,7 +1160,7 @@ export default function StudentDashboard() {
                     Loading {theme === 'ben10' ? "Ben 10's power... ⚡" 
                       : theme === 'tinkerbell' ? "Tinkerbell's magic... ✨" 
                       : theme === 'cricketverse' ? "CricketVerse data... 🏏"
-                      : theme === 'cricketverse-australian' ? "Australian CricketVerse data... 🇦🇺"
+                      : theme === 'cricketverse-australian' ? "Australian CricketVerse data... "
                       : theme === 'bounceworld' ? "BounceWorld stats... ⚽"
                       : theme === 'avengers' ? "Avengers intel... 🛡️"
                       : "your data..."}

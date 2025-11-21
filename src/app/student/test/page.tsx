@@ -990,7 +990,7 @@ export default function StudentTests() {
         {/* Tests Header */}
         <div 
           className={`rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} p-8 mb-6 relative overflow-hidden`}
-          style={theme === 'cricketverse-australian' ? { background: '#fff800' } : undefined}
+          style={theme === 'cricketverse-australian' ? { background: 'linear-gradient(to bottom right, rgb(134, 250, 92) 0%, rgb(255, 255, 42) 40%, rgb(255, 255, 42) 60%, rgb(134, 250, 92) 100%)' } : undefined}
         >
           <div className={theme !== 'cricketverse-australian' ? `bg-gradient-to-r ${theme === 'default' ? 'from-black via-gray-800 to-white' : theme === 'ben10' ? 'from-[#64cc4f] via-black to-[#64cc4f]' : theme === 'tinkerbell' ? 'from-pink-500 via-pink-600 to-purple-700' : theme === 'cricketverse' ? 'from-blue-500 to-indigo-600' : theme === 'bounceworld' ? 'from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]' : theme === 'ponyville' ? 'from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : 'from-blue-500 to-indigo-600'}` : ''}>
            
@@ -1021,7 +1021,7 @@ export default function StudentTests() {
           {/* No Tests Message */}
           <div 
             className={`rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#C8102E]' : theme === 'ponyville' ? 'border-black' : 'border-black'} p-12 text-center`}
-            style={theme === 'cricketverse-australian' ? { background: '#fff800' } : undefined}
+            style={theme === 'cricketverse-australian' ? { background: 'linear-gradient(to bottom right, rgb(134, 250, 92) 0%, rgb(255, 255, 42) 40%, rgb(255, 255, 42) 60%, rgb(134, 250, 92) 100%)' } : undefined}
           >
             <div className={theme !== 'cricketverse-australian' ? `bg-gradient-to-r ${theme === 'default' ? 'from-gray-200 via-gray-300 to-gray-200' : theme === 'ben10' ? 'from-[#b2e05b] via-black to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-green-300 via-black to-green-300' : theme === 'bounceworld' ? 'from-white via-[#1D428A]/20 to-white border-[#1D428A]' : theme === 'avengers' ? 'from-[#604AC7]/30 via-[#2C1267]/30 to-[#0F0826]/30 border-[#2C1267]' : theme === 'ponyville' ? 'from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]/20 border-black' : 'from-blue-300 via-indigo-500 to-blue-300'}` : ''}>
             {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville' || theme === 'cricketverse-australian') && <div className="text-8xl mb-6">{theme === 'cricketverse-australian' ? '📚' : theme === 'ponyville' ? '📚' : '📚'}</div>}
@@ -1053,7 +1053,7 @@ export default function StudentTests() {
       <StudentLayout>
         <div
           className="min-h-screen p-6 flex items-center justify-center"
-          style={theme === 'cricketverse-australian' ? { background: '#ffff2a' } : undefined}
+          style={theme === 'cricketverse-australian' ? { background: 'linear-gradient(to bottom right, rgb(134, 250, 92) 0%, rgb(255, 255, 42) 40%, rgb(255, 255, 42) 60%, rgb(134, 250, 92) 100%)' } : undefined}
         >
           <div className={theme !== 'cricketverse-australian' ? `min-h-screen flex items-center justify-center ${theme === 'default' ? 'bg-gradient-to-br from-white to-gray-100' : theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : theme === 'cricketverse' ? 'bg-gradient-to-br from-blue-400 to-indigo-600' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A] to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-br from-[#604AC7] via-[#2C1267] to-[#0F0826]' : theme === 'ponyville' ? 'bg-gradient-to-br from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : 'bg-gradient-to-br from-blue-400 to-indigo-600'}` : ''}>
           <div className={`bg-white border-4 ${theme === 'bounceworld' ? 'border-[#C8102E]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} rounded-3xl p-8 shadow-2xl`}>
@@ -1174,7 +1174,7 @@ export default function StudentTests() {
           theme === 'ben10'
             ? { background: 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))' }
             : theme === 'cricketverse-australian'
-            ? { background: '#ffff2a' }
+            ? { background: 'linear-gradient(to bottom right, rgb(255, 255, 42) 0%, rgb(255, 255, 42) 40%, rgb(134, 250, 92) 60%, rgb(255, 255, 42) 100%)' }
             : undefined
         }
       >
@@ -1182,7 +1182,7 @@ export default function StudentTests() {
         {/* Tests Header */}
         <div 
           className={`rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} p-8 mb-6 relative overflow-hidden`}
-          style={theme === 'cricketverse-australian' ? { background: '#fff800' } : undefined}
+          style={theme === 'cricketverse-australian' ? { background: 'white' } : undefined}
         >
           <div className={theme !== 'cricketverse-australian' ? `${theme === 'default' ? 'bg-gradient-to-r from-black via-gray-800 to-white' : theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-500 via-green-500 to-yellow-500' : theme === 'cricketverse' ? 'bg-gradient-to-r from-blue-500 via-indigo-600 to-blue-500' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7] via-[#2C1267] to-[#0F0826]' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : 'bg-gradient-to-r from-blue-500 via-indigo-600 to-blue-500'}` : ''}>
        
