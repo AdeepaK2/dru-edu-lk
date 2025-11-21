@@ -1496,7 +1496,7 @@ export default function StudentTests() {
                               </p>
                               {/* Show deadline for flexible tests */}
                               {test.type === 'flexible' && (
-                                <div className="mt-4 p-4 bg-gradient-to-r from-blue-200 to-cyan-200 border-4 border-black rounded-2xl">
+                                <div className={`mt-4 p-4 border-4 border-black rounded-2xl ${theme === 'cricketverse-australian' ? 'bg-gradient-to-r from-[#ffd700]/30 to-[#b38f00]/30' : 'bg-gradient-to-r from-blue-200 to-cyan-200'}`}>
                                   <div className="flex items-center justify-between">
                                     <div className="flex items-center space-x-2">
                                       {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-2xl">📅</div>}
@@ -1579,7 +1579,7 @@ export default function StudentTests() {
                                 Duration: {flexTest.duration || 'No time limit'} minutes
                               </p>
                               {/* Current Deadline */}
-                              <div className={`mt-4 p-4 border-4 border-black rounded-2xl ${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-200 to-green-200' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7]/20 to-[#2C1267]/20' : 'bg-gradient-to-r from-blue-200 to-cyan-200'}`}>
+                              <div className={`mt-4 p-4 border-4 border-black rounded-2xl ${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-200 to-green-200' : theme === 'cricketverse-australian' ? 'bg-gradient-to-r from-[#ffd700]/30 to-[#b38f00]/30' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7]/20 to-[#2C1267]/20' : 'bg-gradient-to-r from-blue-200 to-cyan-200'}`}>
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center space-x-2">
                                     {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-2xl">📅</div>}
@@ -1657,7 +1657,7 @@ export default function StudentTests() {
                 {/* Completed Custom Tests */}
                 {groupedCustomTests.completed.length > 0 && (
                   <>
-                    <div className={`px-6 py-4 border-b-4 border-black ${theme === 'default' ? 'bg-gradient-to-r from-gray-300 to-gray-400' : theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 to-pink-300' : theme === 'avengers' ? 'bg-gradient-to-r from-[#C88DA5]/30 to-[#604AC7]/30' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]/20' : 'bg-gradient-to-r from-blue-300 to-indigo-300'}`}>
+                    <div className={`px-6 py-4 border-b-4 border-black ${theme === 'default' ? 'bg-gradient-to-r from-gray-300 to-gray-400' : theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 to-pink-300' : theme === 'cricketverse-australian' ? 'bg-gradient-to-r from-[#ffd700] to-[#b38f00]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#C88DA5]/30 to-[#604AC7]/30' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]/20' : 'bg-gradient-to-r from-blue-300 to-indigo-300'}`}>
                       <div className="flex items-center">
                         {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-2xl mr-3">{theme === 'ponyville' ? '✅' : '✅'}</div>}
                         <span className="text-lg font-black text-black">
@@ -1809,7 +1809,7 @@ export default function StudentTests() {
               {isExpanded && (
                 <div className="divide-y divide-gray-200 dark:divide-gray-700">
                   {!hasTests ? (
-                    <div className={`p-8 text-center rounded-2xl border-4 border-black m-4 ${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] via-black to-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-100 via-black to-yellow-100' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7]/20 via-[#2C1267]/20 to-[#0F0826]/20' : 'bg-gradient-to-r from-blue-100 via-black to-blue-100'}`}>
+                    <div className={`p-8 text-center rounded-2xl border-4 border-black m-4 ${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] via-black to-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-100 via-black to-yellow-100' : theme === 'cricketverse-australian' ? 'bg-gradient-to-r from-[#ffd700] via-[#8b6914] to-[#ffd700]' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7]/20 via-[#2C1267]/20 to-[#0F0826]/20' : 'bg-gradient-to-r from-blue-100 via-black to-blue-100'}`}>
                       {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-6xl mb-4">📚</div>}
                       <h3 className="text-2xl font-black text-white mb-2">
                         No Tests Yet
@@ -1881,7 +1881,7 @@ export default function StudentTests() {
                                         buttonConfig.variant === 'primary' && !buttonConfig.disabled
                                           ? theme === 'default'
                                             ? 'bg-gradient-to-r from-black to-gray-800 hover:from-gray-800 hover:to-black text-white'
-                                            : `${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222] hover:from-[#b2e05b] hover:to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7] to-[#2C1267] hover:from-[#2C1267] hover:to-[#0F0826]' : 'bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600'} text-white`
+                                            : `${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222] hover:from-[#b2e05b] hover:to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600' : theme === 'cricketverse-australian' ? 'bg-gradient-to-r from-[#ffd700] to-[#b38f00] hover:from-[#b38f00] hover:to-[#8b6914]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7] to-[#2C1267] hover:from-[#2C1267] hover:to-[#0F0826]' : 'bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600'} text-white`
                                           : 'bg-gradient-to-r from-gray-400 to-gray-500 text-white'
                                       }`}
                                     >
@@ -1943,7 +1943,7 @@ export default function StudentTests() {
                                     </p>
                                     {/* Show deadline for flexible tests */}
                                     {test.type === 'flexible' && (
-                                      <div className={`mt-4 p-4 border-4 border-black rounded-2xl ${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-200 to-green-200' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7]/20 to-[#2C1267]/20' : 'bg-gradient-to-r from-blue-200 to-cyan-200'}`}>
+                                      <div className={`mt-4 p-4 border-4 border-black rounded-2xl ${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-200 to-green-200' : theme === 'cricketverse-australian' ? 'bg-gradient-to-r from-[#ffd700]/30 to-[#b38f00]/30' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7]/20 to-[#2C1267]/20' : 'bg-gradient-to-r from-blue-200 to-cyan-200'}`}>
                                         <div className="flex items-center justify-between">
                                           <div className="flex items-center space-x-2">
                                             {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-2xl">📅</div>}
@@ -2030,7 +2030,7 @@ export default function StudentTests() {
                                       Duration: {flexTest.duration || 'No time limit'} minutes
                                     </p>
                                     {/* Current Deadline */}
-                                    <div className={`mt-4 p-4 border-4 border-black rounded-2xl ${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-200 to-green-200' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7]/20 to-[#2C1267]/20' : 'bg-gradient-to-r from-blue-200 to-cyan-200'}`}>
+                                    <div className={`mt-4 p-4 border-4 border-black rounded-2xl ${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-200 to-green-200' : theme === 'cricketverse-australian' ? 'bg-gradient-to-r from-[#ffd700]/30 to-[#b38f00]/30' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7]/20 to-[#2C1267]/20' : 'bg-gradient-to-r from-blue-200 to-cyan-200'}`}>
                                       <div className="flex items-center justify-between">
                                         <div className="flex items-center space-x-2">
                                           {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-2xl">📅</div>}
@@ -2079,7 +2079,7 @@ export default function StudentTests() {
                                         buttonConfig.variant === 'primary' && !buttonConfig.disabled
                                           ? theme === 'default'
                                             ? 'bg-gradient-to-r from-black to-gray-800 hover:from-gray-800 hover:to-black text-white'
-                                            : `${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222] hover:from-[#b2e05b] hover:to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7] to-[#2C1267] hover:from-[#2C1267] hover:to-[#0F0826]' : 'bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600'} text-white`
+                                            : `${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222] hover:from-[#b2e05b] hover:to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600' : theme === 'cricketverse-australian' ? 'bg-gradient-to-r from-[#ffd700] to-[#b38f00] hover:from-[#b38f00] hover:to-[#8b6914]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7] to-[#2C1267] hover:from-[#2C1267] hover:to-[#0F0826]' : 'bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600'} text-white`
                                           : 'bg-gradient-to-r from-gray-400 to-gray-500 text-white'
                                       }`}
                                     >
@@ -2097,7 +2097,7 @@ export default function StudentTests() {
                       {/* Completed Tests */}
                       {classData.groupedTests.completed.length > 0 && (
                         <>
-                          <div className={`px-6 py-4 border-b-4 border-black ${theme === 'default' ? 'bg-gradient-to-r from-gray-300 to-gray-400' : theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 to-green-300' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#C88DA5]/30 to-[#604AC7]/30' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]/20' : 'bg-gradient-to-r from-blue-300 to-indigo-300'}`}>
+                          <div className={`px-6 py-4 border-b-4 border-black ${theme === 'default' ? 'bg-gradient-to-r from-gray-300 to-gray-400' : theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 to-green-300' : theme === 'cricketverse-australian' ? 'bg-gradient-to-r from-[#ffd700] to-[#b38f00]' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#C88DA5]/30 to-[#604AC7]/30' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]/20' : 'bg-gradient-to-r from-blue-300 to-indigo-300'}`}>
                             <div className="flex items-center justify-between">
                               <div className="flex items-center">
                                 {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-2xl mr-3">{theme === 'ponyville' ? '🦄' : '✅'}</div>}
@@ -2191,7 +2191,7 @@ export default function StudentTests() {
                                         buttonConfig.variant === 'primary' && !buttonConfig.disabled
                                           ? theme === 'default'
                                             ? 'bg-gradient-to-r from-black to-gray-800 hover:from-gray-800 hover:to-black text-white'
-                                            : `${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222] hover:from-[#b2e05b] hover:to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7] to-[#2C1267] hover:from-[#2C1267] hover:to-[#0F0826]' : 'bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600'} text-white`
+                                            : `${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222] hover:from-[#b2e05b] hover:to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600' : theme === 'cricketverse-australian' ? 'bg-gradient-to-r from-[#ffd700] to-[#b38f00] hover:from-[#b38f00] hover:to-[#8b6914]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7] to-[#2C1267] hover:from-[#2C1267] hover:to-[#0F0826]' : 'bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600'} text-white`
                                           : 'bg-gradient-to-r from-gray-400 to-gray-500 text-white'
                                       }`}
                                     >

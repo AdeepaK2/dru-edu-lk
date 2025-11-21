@@ -338,7 +338,7 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
                 className="w-10 h-10 rounded-2xl border-2 border-black shadow-lg"
               />
               <div className="hidden lg:block">
-                  <h1 className={`text-lg font-black drop-shadow-lg ${theme === 'bounceworld' ? 'text-white' : 'text-white'}`}>
+                  <h1 className={`text-lg font-black drop-shadow-lg ${theme === 'bounceworld' ? 'text-white' : theme === 'cricketverse-australian' ? 'text-black' : 'text-white'}`}>
                     Dr. U Education
                   </h1>
                 </div>

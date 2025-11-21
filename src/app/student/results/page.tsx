@@ -826,7 +826,7 @@ export default function StudentResults() {
               : theme === 'cricketverse'
               ? 'bg-gradient-to-r from-blue-400 to-indigo-600'
               : theme === 'cricketverse-australian'
-              ? 'bg-[#fff800]'
+              ? 'bg-white'
               : 'bg-gradient-to-r from-gray-200 via-gray-300 to-gray-400'
           } rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : theme === 'ponyville' ? 'border-[#e13690]' : theme === 'cricketverse' ? 'border-blue-600' : theme === 'cricketverse-australian' ? 'border-black' : 'border-black'} p-8`}>
             <div className="flex items-start space-x-6">
@@ -844,7 +844,7 @@ export default function StudentResults() {
                   : theme === 'cricketverse'
                   ? 'bg-gradient-to-br from-blue-400 to-indigo-600'
                   : theme === 'cricketverse-australian'
-                  ? 'bg-[#ffff2a]'
+                  ? 'bg-[#ebeb3d]'
                   : 'bg-gradient-to-br from-gray-400 to-gray-600'
               } rounded-3xl flex items-center justify-center border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : theme === 'ponyville' ? 'border-[#e13690]' : theme === 'cricketverse' ? 'border-blue-600' : theme === 'cricketverse-australian' ? 'border-black' : 'border-black'} shadow-lg flex-shrink-0`}>
                 <Award className="w-10 h-10 text-white" />

@@ -765,7 +765,7 @@ export default function StudentSettingsPage() {
     <div className={`min-h-screen bg-gradient-to-br p-6 ${theme === 'ben10' ? '' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'from-white via-[#1D428A]/10 to-[#C8102E]/10' : theme === 'avengers' ? 'from-[#2C1267]/10 via-[#604AC7]/10 to-[#0F0826]/10' : theme === 'ponyville' ? 'from-[#fff5fb] via-[#f1aed5] to-[#ff2e9f]' : theme === 'cricketverse' ? 'from-blue-400 to-indigo-600' : theme === 'cricketverse-australian' ? '' : 'from-gray-100 to-gray-200'}`} style={theme === 'ben10' ? { background: 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))' } : theme === 'cricketverse-australian' ? { background: '#ffff2a' } : undefined}>
       <div className="space-y-8 max-w-6xl mx-auto">
       {/* Page Header - Theme Aware */}
-      <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-500 via-yellow-500 to-green-600' : theme === 'bounceworld' ? 'from-[#1D428A] to-[#C8102E]' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]' : theme === 'ponyville' ? 'from-[#f1aed5] to-[#e13690]' : theme === 'cricketverse' ? 'from-blue-400 to-indigo-600' : theme === 'cricketverse-australian' ? 'from-[#b38f00] via-[#ffd700] to-[#8b6914]' : 'from-gray-100 to-gray-200'} rounded-2xl text-white p-8 border-2 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : theme === 'ponyville' ? 'border-[#ff2e9f]' : theme === 'cricketverse' ? 'border-blue-600' : theme === 'cricketverse-australian' ? 'border-black' : 'border-black'} relative overflow-hidden`}>
+      <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-500 via-yellow-500 to-green-600' : theme === 'bounceworld' ? 'from-[#1D428A] to-[#C8102E]' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]' : theme === 'ponyville' ? 'from-[#f1aed5] to-[#e13690]' : theme === 'cricketverse' ? 'from-blue-400 to-indigo-600' : theme === 'cricketverse-australian' ? ' from-[#ffff2a] via-[#f6f672] to-[#ffff2a]' : 'from-gray-100 to-gray-200'} rounded-2xl text-white p-8 border-2 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : theme === 'ponyville' ? 'border-[#ff2e9f]' : theme === 'cricketverse' ? 'border-blue-600' : theme === 'cricketverse-australian' ? 'border-black' : 'border-black'} relative overflow-hidden`}>
 
         
    
@@ -795,7 +795,7 @@ export default function StudentSettingsPage() {
                   <Image src={getSelectedAvatarData().image || '/images/1.png'} alt={getSelectedAvatarData().name} fill className="object-contain object-center" />
                 </div>
                 <div className="text-center mt-5">
-                  <span className="text-white font-bold text-sm">{getSelectedAvatarData().name}</span>
+                  <span className={`${theme === 'cricketverse-australian' ? 'text-black' : 'text-white'} font-bold text-sm`}>{getSelectedAvatarData().name}</span>
                 </div>
               </div>
             )}
@@ -847,7 +847,7 @@ export default function StudentSettingsPage() {
         theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' :
         theme === 'tinkerbell' ? 'from-yellow-200 via-green-200 to-yellow-300' :
         theme === 'cricketverse' ? 'from-blue-200 via-indigo-200 to-purple-300' :
-        theme === 'cricketverse-australian' ? 'from-[#ffe000]/60 via-[#ffd700]/60 to-[#b38f00]/60' :
+        theme === 'cricketverse-australian' ? 'from-white via-[#f6f672] to-[#ffff2a]' :
         theme === 'bounceworld' ? 'from-white via-[#1D428A]/30 to-[#C8102E]/30' :
         theme === 'avengers' ? 'from-[#604AC7]/20 via-[#2C1267]/20 to-[#0F0826]/20' :
         theme === 'ponyville' ? 'from-[#fff5fb] via-[#f1aed5] to-[#ff2e9f]' : 'from-gray-100 via-gray-200 to-gray-300'
@@ -1139,7 +1139,7 @@ export default function StudentSettingsPage() {
           : theme === 'ponyville'
           ? 'from-[#f1aed5] via-[#e13690] to-[#ff2e9f]'
           : theme === 'cricketverse-australian'
-          ? 'from-[#ffe000] via-[#ffd700] to-[#b38f00]'
+          ? 'from-white via-[#f6f672] to-[#ffff2a]'
           : 'from-gray-100 via-gray-200 to-gray-300'
       } rounded-xl shadow-lg border-4 ${
         theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : theme === 'ponyville' ? 'border-[#f1aed5]' : 'border-black'
@@ -1431,6 +1431,8 @@ export default function StudentSettingsPage() {
           ? 'from-[#604AC7] via-[#2C1267] to-[#0F0826]'
           : theme === 'ponyville'
           ? 'from-[#f1aed5] via-[#e13690] to-[#ff2e9f]'
+          : theme === 'cricketverse-australian'
+          ? 'from-white via-[#f6f672] to-[#ffff2a]'
           : 'from-gray-100 via-gray-200 to-gray-300'
       } rounded-xl shadow-lg border-4 ${
         theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : theme === 'ponyville' ? 'border-[#f1aed5]' : 'border-black'
