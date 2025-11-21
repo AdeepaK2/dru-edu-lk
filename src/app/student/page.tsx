@@ -381,7 +381,7 @@ export default function StudentDashboard() {
     <>
       <div className="min-h-screen p-6" style={{
         background: theme === 'default'
-          ? 'linear-gradient(to bottom right, rgb(249, 250, 251), rgb(243, 244, 246), rgb(249, 250, 251))'
+          ? 'linear-gradient(to bottom right, rgb(134, 239, 172), rgb(243, 244, 246), rgb(134, 239, 172))'
           : theme === 'ben10'
           ? 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))'
           : theme === 'tinkerbell'
@@ -396,7 +396,7 @@ export default function StudentDashboard() {
           ? 'linear-gradient(to bottom right, rgba(44, 18, 103, 0.3), rgba(79, 44, 141, 0.2), rgba(44, 18, 103, 0.3))'
           : theme === 'ponyville'
           ? 'linear-gradient(to bottom right, rgb(255, 245, 251), rgb(241, 174, 213), rgb(255, 46, 159))'
-          : 'linear-gradient(to bottom right, rgb(249, 250, 251), rgb(243, 244, 246), rgb(249, 250, 251))'
+          : 'linear-gradient(to bottom right, rgb(134, 239, 172), rgb(243, 244, 246), rgb(134, 239, 172))'
       }}>
         <div className="space-y-6">
         {/* Welcome Header - Dynamic Theme */}
