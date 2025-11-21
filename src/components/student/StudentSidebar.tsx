@@ -210,19 +210,31 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
 
     // CricketVerse avatars (Cricket players)
     const cricketVerseMap: Record<string, string> = {
-      'adam-zampa': '/cricketverse/Adam Zampa.webp',
-      'alex-carey': '/cricketverse/Alex Carey.webp',
-      'cameron-green': '/cricketverse/Cameron Green.webp',
-      'glenn-maxwell': '/cricketverse/Glenn Maxwell.webp',
-      'josh-hazlewood': '/cricketverse/Josh Hazlewood.webp',
-      'josh-inglis': '/cricketverse/Josh Inglis.webp',
-      'lance-morris': '/cricketverse/Lance Morris.webp',
-      'matthew-short': '/cricketverse/Matthew Short.webp',
-      'mitchell-starc': '/cricketverse/Mitchell Starc.webp',
-      'nathan-ellis': '/cricketverse/Nathan Ellis.webp',
-      'travis-head': '/cricketverse/Travis Head.webp',
-      'usman-khawaja': '/cricketverse/Usman Khawaja.webp',
-      'xavier-bartlett': '/cricketverse/Xavier Bartlett.webp'
+      // Indian Cricket Players
+      'virat-kohli': '/cricketverse/indian/VIRAT KOHLI.avif',
+      'rohit-sharma': '/cricketverse/indian/ROHIT SHARMA.avif',
+      'shubman-gill': '/cricketverse/indian/SHUBMAN GILL.avif',
+      'kl-rahul': '/cricketverse/indian/KL RAHUL.avif',
+      'rishabh-pant': '/cricketverse/indian/RISHABH PANT.avif',
+      'hardik-pandya': '/cricketverse/indian/HARDIK PANDYA.avif',
+      'ravindra-jadeja': '/cricketverse/indian/RAVINDRA JADEJA.avif',
+      'jasprit-bumrah': '/cricketverse/indian/JASPRIT BUMRAH.avif',
+      'mohammed-shami': '/cricketverse/indian/MOHAMMAD SHAMI.avif',
+      'mohammed-siraj': '/cricketverse/indian/MOHAMMED SIRAJ.avif',
+      // Australian Cricket Players
+      'adam-zampa': '/cricketverse/australian/Adam Zampa.webp',
+      'alex-carey': '/cricketverse/australian/Alex Carey.webp',
+      'cameron-green': '/cricketverse/australian/Cameron Green.webp',
+      'glenn-maxwell': '/cricketverse/australian/Glenn Maxwell.webp',
+      'josh-hazlewood': '/cricketverse/australian/Josh Hazlewood.webp',
+      'josh-inglis': '/cricketverse/australian/Josh Inglis.webp',
+      'lance-morris': '/cricketverse/australian/Lance Morris.webp',
+      'matthew-short': '/cricketverse/australian/Matthew Short.webp',
+      'mitchell-starc': '/cricketverse/australian/Mitchell Starc.webp',
+      'nathan-ellis': '/cricketverse/australian/Nathan Ellis.webp',
+      'travis-head': '/cricketverse/australian/Travis Head.webp',
+      'usman-khawaja': '/cricketverse/australian/Usman Khawaja.webp',
+      'xavier-bartlett': '/cricketverse/australian/Xavier Bartlett.webp'
     };
 
     // Ponyville avatars (Magical unicorns and ponies)

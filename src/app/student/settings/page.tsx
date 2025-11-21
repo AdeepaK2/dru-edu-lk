@@ -266,97 +266,171 @@ const avengersAvatars = [
   }
 ];
 
-// CricketVerse themed avatars - Cricket Champions
+// CricketVerse themed avatars - Indian Cricket Champions
 const cricketverseAvatars = [
+  {
+    id: 'virat-kohli',
+    name: 'Virat Kohli',
+    image: '/cricketverse/indian/VIRAT KOHLI.avif',
+    description: 'The Run Machine — chase master and captain! 🇮🇳',
+    colors: 'from-blue-500 to-indigo-600'
+  },
+  {
+    id: 'rohit-sharma',
+    name: 'Rohit Sharma',
+    image: '/cricketverse/indian/ROHIT SHARMA.avif',
+    description: 'The Hitman — opener and six-hitter extraordinaire! 🇮🇳',
+    colors: 'from-blue-500 to-indigo-600'
+  },
+  {
+    id: 'shubman-gill',
+    name: 'Shubman Gill',
+    image: '/cricketverse/indian/SHUBMAN GILL.avif',
+    description: 'The Young Prodigy — elegant left-handed batsman! 🇮🇳',
+    colors: 'from-blue-500 to-indigo-600'
+  },
+  {
+    id: 'kl-rahul',
+    name: 'KL Rahul',
+    image: '/cricketverse/indian/KL RAHUL.avif',
+    description: 'The Wall — technically sound wicketkeeper-batsman! 🇮🇳',
+    colors: 'from-blue-500 to-indigo-600'
+  },
+  {
+    id: 'rishabh-pant',
+    name: 'Rishabh Pant',
+    image: '/cricketverse/indian/RISHABH PANT.avif',
+    description: 'The Finisher — explosive wicketkeeper-batsman! 🇮🇳',
+    colors: 'from-blue-500 to-indigo-600'
+  },
+  {
+    id: 'hardik-pandya',
+    name: 'Hardik Pandya',
+    image: '/cricketverse/indian/HARDIK PANDYA.avif',
+    description: 'The All-rounder — powerful batsman and bowler! 🇮🇳',
+    colors: 'from-blue-500 to-indigo-600'
+  },
+  {
+    id: 'ravindra-jadeja',
+    name: 'Ravindra Jadeja',
+    image: '/cricketverse/indian/RAVINDRA JADEJA.avif',
+    description: 'Sir Jadeja — versatile all-rounder and fielder! 🇮🇳',
+    colors: 'from-blue-500 to-indigo-600'
+  },
+  {
+    id: 'jasprit-bumrah',
+    name: 'Jasprit Bumrah',
+    image: '/cricketverse/indian/JASPRIT BUMRAH.avif',
+    description: 'The Yorker King — deadly fast bowler! 🇮🇳',
+    colors: 'from-blue-500 to-indigo-600'
+  },
+  {
+    id: 'mohammed-shami',
+    name: 'Mohammed Shami',
+    image: '/cricketverse/indian/MOHAMMAD SHAMI.avif',
+    description: 'The Speed Merchant — express pace bowler! 🇮🇳',
+    colors: 'from-blue-500 to-indigo-600'
+  },
+  {
+    id: 'mohammed-siraj',
+    name: 'Mohammed Siraj',
+    image: '/cricketverse/indian/MOHAMMED SIRAJ.avif',
+    description: 'The Rising Star — skillful right-arm pacer! 🇮🇳',
+    colors: 'from-blue-500 to-indigo-600'
+  }
+];
+
+// Australian CricketVerse themed avatars - Australian Cricket Champions
+const cricketverseAustralianAvatars = [
   {
     id: 'adam-zampa',
     name: 'Adam Zampa',
-    image: '/cricketverse/Adam Zampa.webp',
-    description: 'The Spin Wizard — leg-spinner extraordinaire!',
+    image: '/cricketverse/australian/Adam Zampa.webp',
+    description: 'The Spin Wizard — leg-spinner extraordinaire! 🇦🇺',
     colors: 'from-blue-500 to-indigo-600'
   },
   {
     id: 'alex-carey',
     name: 'Alex Carey',
-    image: '/cricketverse/Alex Carey.webp',
-    description: 'The Wicketkeeper — agile and explosive batsman!',
+    image: '/cricketverse/australian/Alex Carey.webp',
+    description: 'The Wicketkeeper — agile and explosive batsman! 🇦🇺',
     colors: 'from-blue-500 to-indigo-600'
   },
   {
     id: 'cameron-green',
     name: 'Cameron Green',
-    image: '/cricketverse/Cameron Green.webp',
-    description: 'The All-rounder — powerful batsman and bowler!',
+    image: '/cricketverse/australian/Cameron Green.webp',
+    description: 'The All-rounder — powerful batsman and bowler! 🇦🇺',
     colors: 'from-blue-500 to-indigo-600'
   },
   {
     id: 'glenn-maxwell',
     name: 'Glenn Maxwell',
-    image: '/cricketverse/Glenn Maxwell.webp',
-    description: 'The Big Show — finisher and six-hitter!',
+    image: '/cricketverse/australian/Glenn Maxwell.webp',
+    description: 'The Big Show — finisher and six-hitter! 🇦🇺',
     colors: 'from-blue-500 to-indigo-600'
   },
   {
     id: 'josh-hazlewood',
     name: 'Josh Hazlewood',
-    image: '/cricketverse/Josh Hazlewood.webp',
-    description: 'The Pacer — relentless fast bowler!',
+    image: '/cricketverse/australian/Josh Hazlewood.webp',
+    description: 'The Pacer — relentless fast bowler! 🇦🇺',
     colors: 'from-blue-500 to-indigo-600'
   },
   {
     id: 'josh-inglis',
     name: 'Josh Inglis',
-    image: '/cricketverse/Josh Inglis.webp',
-    description: 'The Opener — aggressive top-order batsman!',
+    image: '/cricketverse/australian/Josh Inglis.webp',
+    description: 'The Opener — aggressive top-order batsman! 🇦🇺',
     colors: 'from-blue-500 to-indigo-600'
   },
   {
     id: 'lance-morris',
     name: 'Lance Morris',
-    image: '/cricketverse/Lance Morris.webp',
-    description: 'The Speedster — rising pace sensation!',
+    image: '/cricketverse/australian/Lance Morris.webp',
+    description: 'The Speedster — rising pace sensation! 🇦🇺',
     colors: 'from-blue-500 to-indigo-600'
   },
   {
     id: 'matthew-short',
     name: 'Matthew Short',
-    image: '/cricketverse/Matthew Short.webp',
-    description: 'The Batsman — solid middle-order player!',
+    image: '/cricketverse/australian/Matthew Short.webp',
+    description: 'The Batsman — solid middle-order player! 🇦🇺',
     colors: 'from-blue-500 to-indigo-600'
   },
   {
     id: 'mitchell-starc',
     name: 'Mitchell Starc',
-    image: '/cricketverse/Mitchell Starc.webp',
-    description: 'The Left-armer — swing king and yorker master!',
+    image: '/cricketverse/australian/Mitchell Starc.webp',
+    description: 'The Left-armer — swing king and yorker master! 🇦🇺',
     colors: 'from-blue-500 to-indigo-600'
   },
   {
     id: 'nathan-ellis',
     name: 'Nathan Ellis',
-    image: '/cricketverse/Nathan Ellis.webp',
-    description: 'The Fast Bowler — pace and bounce specialist!',
+    image: '/cricketverse/australian/Nathan Ellis.webp',
+    description: 'The Fast Bowler — pace and bounce specialist! 🇦🇺',
     colors: 'from-blue-500 to-indigo-600'
   },
   {
     id: 'travis-head',
     name: 'Travis Head',
-    image: '/cricketverse/Travis Head.webp',
-    description: 'The Opener — dynamic and destructive batsman!',
+    image: '/cricketverse/australian/Travis Head.webp',
+    description: 'The Opener — dynamic and destructive batsman! 🇦🇺',
     colors: 'from-blue-500 to-indigo-600'
   },
   {
     id: 'usman-khawaja',
     name: 'Usman Khawaja',
-    image: '/cricketverse/Usman Khawaja.webp',
-    description: 'The Test Specialist — technically sound batsman!',
+    image: '/cricketverse/australian/Usman Khawaja.webp',
+    description: 'The Test Specialist — technically sound batsman! 🇦🇺',
     colors: 'from-blue-500 to-indigo-600'
   },
   {
     id: 'xavier-bartlett',
     name: 'Xavier Bartlett',
-    image: '/cricketverse/Xavier Bartlett.webp',
-    description: 'The Newcomer — promising pace bowler!',
+    image: '/cricketverse/australian/Xavier Bartlett.webp',
+    description: 'The Newcomer — promising pace bowler! 🇦🇺',
     colors: 'from-blue-500 to-indigo-600'
   }
 ];
@@ -477,7 +551,9 @@ export default function StudentSettingsPage() {
         defaultAvatar = student.avatar || 'lebron';
       } else if (selectedTheme === 'avengers' || theme === 'avengers') {
         defaultAvatar = student.avatar || 'ironman'; // Default to Iron Man for Avengers theme
-      } else if (selectedTheme === 'cricketverse' || theme === 'cricketverse' || selectedTheme === 'cricketverse-australian' || theme === 'cricketverse-australian') {
+      } else if (selectedTheme === 'cricketverse' || theme === 'cricketverse') {
+        defaultAvatar = student.avatar || 'virat-kohli'; // Default to Virat Kohli for CricketVerse theme
+      } else if (selectedTheme === 'cricketverse-australian' || theme === 'cricketverse-australian') {
         defaultAvatar = student.avatar || 'travis-head'; // Default to Travis Head for Australian CricketVerse theme
       } else if (selectedTheme === 'ponyville' || theme === 'ponyville') {
         defaultAvatar = student.avatar || 'twilight'; // Default to Twilight Sparkle for Ponyville theme
@@ -532,7 +608,8 @@ export default function StudentSettingsPage() {
     if (selectedTheme === 'ben10' || theme === 'ben10') return ben10Avatars;
     if (selectedTheme === 'bounceworld' || theme === 'bounceworld') return bounceworldAvatars;
     if (selectedTheme === 'avengers' || theme === 'avengers') return avengersAvatars;
-    if (selectedTheme === 'cricketverse' || theme === 'cricketverse' || selectedTheme === 'cricketverse-australian' || theme === 'cricketverse-australian') return cricketverseAvatars;
+    if (selectedTheme === 'cricketverse' || theme === 'cricketverse') return cricketverseAvatars;
+    if (selectedTheme === 'cricketverse-australian' || theme === 'cricketverse-australian') return cricketverseAustralianAvatars;
     if (selectedTheme === 'ponyville' || theme === 'ponyville') return ponyvilleAvatars;
     return [];
   };
@@ -1208,7 +1285,6 @@ export default function StudentSettingsPage() {
                   </div>
                 </div>
 
-                {/* Avatar Selector */}
                 {/* Avatar Selector */}
                 {showAvatarSelector && getAvailableAvatars().length > 0 && (
                   <div className="border-t-4 border-black pt-4">
