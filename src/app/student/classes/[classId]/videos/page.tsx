@@ -408,7 +408,7 @@ export default function ClassVideos({ params }: ClassVideoProps) {
             : theme === 'avengers'
             ? 'bg-gradient-to-r from-[#2C1267] via-[#604AC7] to-[#0F0826] border-[#2C1267]'
             : theme === 'cricketverse-australian'
-            ? 'bg-gradient-to-r from-[#b38f00] via-[#ffd700] to-[#8b6914] border-[#b38f00]'
+            ? 'bg-white border-[#b38f00] text-black'
             : theme === 'ponyville'
             ? 'bg-gradient-to-r from-[#f1aed5] to-[#e13690] border-[#ff2e9f]'
             : theme === 'default'
@@ -429,6 +429,8 @@ export default function ClassVideos({ params }: ClassVideoProps) {
                 ? 'text-[#1D428A]'
                 : theme === 'avengers'
                 ? 'text-white'
+                : theme === 'cricketverse-australian'
+                ? 'text-black'
                 : theme === 'ponyville'
                 ? 'text-white'
                 : theme === 'default'
@@ -730,7 +732,7 @@ const ClassVideoCard: React.FC<ClassVideoCardProps> = ({ video, onAccess, theme 
         : theme === 'avengers'
         ? 'bg-gradient-to-br from-[#604AC7]/30 via-[#2C1267]/30 to-[#0F0826]/30'
         : theme === 'cricketverse-australian'
-        ? 'bg-gradient-to-br from-[#b38f00]/20 to-[#ffd700]/20'
+        ? 'bg-white'
         : theme === 'ponyville'
         ? 'bg-gradient-to-br from-[#fff5fb] via-[#f1aed5]/30 to-[#ff2e9f]/30'
         : theme === 'default'
@@ -794,12 +796,12 @@ const ClassVideoCard: React.FC<ClassVideoCardProps> = ({ video, onAccess, theme 
       <div className="p-4">
         <div className="mb-3">
           <h3 className={`text-lg font-semibold mb-1 line-clamp-2 ${
-            theme === 'ponyville' ? 'text-black' : theme === 'default' ? 'text-black' : 'text-gray-900'
+            theme === 'ponyville' ? 'text-black' : theme === 'cricketverse-australian' ? 'text-black' : theme === 'default' ? 'text-black' : 'text-gray-900'
           }`}>
             {video.title}
           </h3>
           <p className={`text-sm line-clamp-2 ${
-            theme === 'ponyville' ? 'text-black' : theme === 'default' ? 'text-black' : 'text-gray-600 dark:text-gray-100'
+            theme === 'ponyville' ? 'text-black' : theme === 'cricketverse-australian' ? 'text-black' : theme === 'default' ? 'text-black' : 'text-gray-600 dark:text-gray-100'
           }`}>
             {video.description}
           </p>
@@ -808,13 +810,13 @@ const ClassVideoCard: React.FC<ClassVideoCardProps> = ({ video, onAccess, theme 
         {/* Video Meta */}
         <div className="space-y-1 mb-4">
           <div className={`flex items-center text-xs ${
-            theme === 'ponyville' ? 'text-black' : theme === 'default' ? 'text-black' : 'text-gray-500 dark:text-gray-100'
+            theme === 'ponyville' ? 'text-black' : theme === 'cricketverse-australian' ? 'text-black' : theme === 'default' ? 'text-black' : 'text-gray-500 dark:text-gray-100'
           }`}>
             <Users className="w-3 h-3 mr-1" />
             <span>{video.teacherName}</span>
           </div>
           <div className={`flex items-center text-xs ${
-            theme === 'ponyville' ? 'text-black' : theme === 'default' ? 'text-black' : 'text-gray-500 dark:text-gray-100'
+            theme === 'ponyville' ? 'text-black' : theme === 'cricketverse-australian' ? 'text-black' : theme === 'default' ? 'text-black' : 'text-gray-500 dark:text-gray-100'
           }`}>
             <BookOpen className="w-3 h-3 mr-1" />
             <span>{video.lessonName || 'Lesson Content'}</span>
@@ -824,7 +826,7 @@ const ClassVideoCard: React.FC<ClassVideoCardProps> = ({ video, onAccess, theme 
         {/* Subject Badge */}
         <div className="mb-4">
           <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full bg-purple-100 dark:bg-purple-900/20 ${
-            theme === 'ponyville' ? 'text-black' : theme === 'default' ? 'text-black' : 'text-black dark:text-black'
+            theme === 'ponyville' ? 'text-black' : theme === 'cricketverse-australian' ? 'text-black' : theme === 'default' ? 'text-black' : 'text-black dark:text-black'
           }`}>
             {video.subjectName}
           </span>
