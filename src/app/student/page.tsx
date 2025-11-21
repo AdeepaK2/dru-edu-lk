@@ -424,7 +424,7 @@ export default function StudentDashboard() {
             : theme === 'cricketverse-australian'
             ? 'bg-gradient-to-br from-[#ffff2a] via-[#86fa5c] to-[#ffff2a]'
             : theme === 'bounceworld'
-            ? 'bg-gradient-to-r from-white via-[#1D428A] to-[#C8102E] text-black border-[#1D428A]'
+            ? 'bg-gradient-to-r from-[#628feb]  via-[#3760b3] to-[#C8102E] text-white border-[#1D428A]'
             : theme === 'avengers'
             ? 'bg-gradient-to-r from-[#2C1267] to-[#4F2C8D]'
             : theme === 'ponyville'
@@ -576,7 +576,7 @@ export default function StudentDashboard() {
             : theme === 'cricketverse-australian'
             ? 'bg-gradient-to-br from-white via-[#f6f672] to-[#ffff2a]'
             : theme === 'bounceworld'
-            ? 'bg-gradient-to-r from-white via-[#1D428A]/20 to-white border-[#1D428A]'
+            ? 'bg-gradient-to-r from-white via-[#8eb0f5] to-[#8eb0f5] border-[#1D428A]'
             : theme === 'avengers'
             ? 'bg-gradient-to-r from-[#2C1267]/50 to-[#4F2C8D]/50'
             : theme === 'ponyville'
@@ -684,13 +684,13 @@ export default function StudentDashboard() {
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <p className="text-black text-sm font-bold mb-2">My Classes</p>
-                <p className={`text-4xl font-black mt-2 ${theme === 'default' ? 'text-blue-600' : theme === 'cricketverse-australian' ? 'text-black' : 'text-white'}`}>
+                <p className={`text-4xl font-black mt-2 ${theme === 'default' ? 'text-blue-600' : theme === 'cricketverse-australian' ? 'text-black' :theme==="bounceworld" ? 'text-blue-600' :   'text-white'}`}>
                   {dashboardStats.totalClasses}
                 </p>
                 <p className="text-black mt-1 font-semibold">Active courses</p>
                 <div className="mt-3 bg-black/30 rounded-full h-3">
                   <div
-                    className={`h-3 rounded-full transition-all duration-1000 ease-out shadow-lg ${theme === 'default' ? 'bg-blue-600' : theme === 'cricketverse-australian' ? 'bg-black' : 'bg-white'}`}
+                    className={`h-3 rounded-full transition-all duration-1000 ease-out shadow-lg ${theme === 'default' ? 'bg-blue-600' : theme === 'cricketverse-australian' ? 'bg-black' :theme==="bounceworld" ? 'bg-blue-600' :   'bg-white'}`}
                     style={{ width: `${getProgressPercentage(dashboardStats.totalClasses, 10)}%` }}
                   ></div>
                 </div>
@@ -716,7 +716,7 @@ export default function StudentDashboard() {
               : theme === 'cricketverse-australian'
               ? 'bg-gradient-to-br from-white to-[#ffff2a]'
               : theme === 'bounceworld'
-              ? 'bg-gradient-to-br from-white to-[#1D428A]/20 border-l-8 border-l-[#C8102E] border-r-8 border-r-[#1D428A]'
+              ? 'bg-gradient-to-br from-white to-[#1D428A]/20  '
               : theme === 'avengers'
               ? 'bg-gradient-to-br from-[#604AC7]/30 to-[#C88DA5]/30'
               : theme === 'ponyville'
@@ -1014,7 +1014,7 @@ export default function StudentDashboard() {
               : theme === 'cricketverse-australian'
               ? 'bg-gradient-to-br from-white via-[#f6f672] to-[#ffff2a]'
               : theme === 'bounceworld'
-              ? 'bg-gradient-to-br from-white via-[#1D428A]/20 to-white'
+              ? 'bg-gradient-to-br from-white via-[#99b6ef] to-white'
               : theme === 'avengers'
               ? 'bg-gradient-to-br from-[#2C1267]/20 via-[#604AC7]/30 to-[#C88DA5]/20'
               : theme === 'ponyville'
@@ -1168,7 +1168,7 @@ export default function StudentDashboard() {
               : theme === 'cricketverse-australian'
               ? 'bg-gradient-to-br from-white via-[#f6f672] to-[#ffff2a]'
               : theme === 'bounceworld'
-              ? 'bg-gradient-to-br from-white via-[#1D428A]/20 to-white'
+              ? 'bg-gradient-to-br from-white via-[#abc4f6] to-white'
               : theme === 'avengers'
               ? 'bg-gradient-to-br from-[#2C1267]/20 via-[#604AC7]/30 to-[#C88DA5]/20'
               : theme === 'ponyville'
@@ -1521,7 +1521,7 @@ export default function StudentDashboard() {
               : theme === 'cricketverse'
               ? 'from-blue-400 via-indigo-500 to-blue-500'
               : theme === 'bounceworld'
-              ? 'from-white via-[#1D428A]/20 to-white'
+              ? 'from-white via-[#8eb0f5] to-white'
               : theme === 'avengers'
               ? 'from-[#2C1267]/30 via-[#604AC7]/20 to-[#C88DA5]/30'
               : theme === 'ponyville'

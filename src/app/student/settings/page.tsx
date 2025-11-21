@@ -960,7 +960,7 @@ export default function StudentSettingsPage() {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3">
             <h2 className={`text-2xl font-black ${
-              theme === 'bounceworld' ? 'text-[#1D428A]' : theme === 'avengers' ? 'text-white' : theme === 'ponyville' ? 'text-[#e13690]' : 'text-black'
+              theme === 'bounceworld' ? 'text-[#1D428A]' : theme === 'avengers' ? 'text-black' : theme === 'ponyville' ? 'text-[#e13690]' : 'text-black'
             }`}>Choose Your Learning Theme! </h2>
           </div>
           <button
@@ -1479,10 +1479,10 @@ export default function StudentSettingsPage() {
                   ? 'from-[#f1aed5] to-[#e13690]'
                   : 'from-gray-100 to-gray-200'
               } border-4 border-black rounded-xl p-6 shadow-lg`}>
-                <h4 className={`text-lg font-bold ${selectedTheme === 'bounceworld' ? 'text-white' : 'text-black'} mb-3 flex items-center`}>
+                <h4 className={`text-lg font-bold ${selectedTheme === 'avengers' ? 'text-white' : selectedTheme === 'bounceworld' ? 'text-white' : 'text-black'} mb-3 flex items-center`}>
                   {selectedTheme === 'ben10' ? '💡 Did You Know?' : selectedTheme === 'tinkerbell' ? '💡 Did You Know?' : selectedTheme === 'bounceworld' ? '🏀 Slam Dunk Fact!' : selectedTheme === 'avengers' ? '🦸 Avengers Assembly Fact!' : selectedTheme === 'ponyville' ? '🦄 Magical Pony Fact!' : '💡 Did You Know?'}
                 </h4>
-                <p className={`${selectedTheme === 'bounceworld' ? 'text-white' : 'text-black'} font-medium text-sm leading-relaxed`}>
+                <p className={`${selectedTheme === 'avengers' ? 'text-white' : selectedTheme === 'bounceworld' ? 'text-white' : 'text-black'} font-medium text-sm leading-relaxed`}>
                   {selectedTheme === 'ben10'
                     ? 'Ben 10 first appeared in 2005 and has transformed into over 70 different alien heroes. Choosing a Ben 10 avatar links you to the Omnitrix legacy — wear it proudly!'
                     : selectedTheme === 'tinkerbell'

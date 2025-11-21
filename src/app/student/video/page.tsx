@@ -309,10 +309,10 @@ export default function StudentVideos() {
             <div className="text-6xl">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : ''}</div>
           )}
           <div>
-            <h1 className="text-4xl font-black text-black mb-2 flex items-center">
+            <h1 className={`text-4xl font-black mb-2 flex items-center ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
               
-              <span className={`text-4xl ${theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-black' : theme === 'ponyville' ? 'text-white' : theme === 'cricketverse' ? 'text-white' : theme === 'cricketverse-australian' ? 'text-black' : 'text-black'}`}>Video</span>
-              <span className={`ml-2 text-4xl ${theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-black' : theme === 'ponyville' ? 'text-white' : theme === 'cricketverse' ? 'text-white' : theme === 'cricketverse-australian' ? 'text-black' : 'text-black'}`}>Library</span>
+              <span className={`text-4xl ${theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-white' : theme === 'ponyville' ? 'text-white' : theme === 'cricketverse' ? 'text-white' : theme === 'cricketverse-australian' ? 'text-black' : 'text-black'}`}>Video</span>
+              <span className={`ml-2 text-4xl ${theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-white' : theme === 'ponyville' ? 'text-white' : theme === 'cricketverse' ? 'text-white' : theme === 'cricketverse-australian' ? 'text-black' : 'text-black'}`}>Library</span>
               
             </h1>
             <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-[#314603]' : theme === 'tinkerbell' ? 'text-yellow-100' : theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-[#C88DA5]' : theme === 'ponyville' ? 'text-[#f8e8f1]' : theme === 'cricketverse' ? 'text-white' : theme === 'cricketverse-australian' ? 'text-black' : 'text-gray-700'}`}>

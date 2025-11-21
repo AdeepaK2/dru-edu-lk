@@ -168,7 +168,7 @@ export default function ClassSheetsPage() {
 
   if (authLoading || loading) {
     return (
-      <div className={`min-h-screen ${theme === 'cricketverse-australian' ? 'bg-[#ffff2a]' : `bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : theme === 'bounceworld' ? 'from-white via-[#1D428A]/20 to-[#C8102E]/20' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]' : theme === 'ponyville' ? 'from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : theme === 'default' ? 'from-gray-50 to-white' : 'from-blue-400 to-indigo-600'}`} p-6`}>
+      <div className={`min-h-screen ${theme === 'cricketverse-australian' ? 'bg-[#ffff2a]' : `bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : theme === 'bounceworld' ? 'from-white via-[#1D428A]/20 to-[#C8102E]/20' : theme === 'avengers' ? 'from-[#a987f7] via-[#937df6] to-[#a087f2]' : theme === 'ponyville' ? 'from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : theme === 'default' ? 'from-gray-50 to-white' : 'from-blue-400 to-indigo-600'}`} p-6`}>
         <div className="flex items-center justify-center py-12">
           <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#b2e05b]' : theme === 'tinkerbell' ? 'from-yellow-400 to-green-500' : theme === 'bounceworld' ? 'from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]' : theme === 'cricketverse-australian' ? 'from-[#b38f00] via-[#ffd700] to-[#8b6914]' : theme === 'ponyville' ? 'from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : 'from-blue-500 to-purple-500'} rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#604AC7]' : theme === 'cricketverse-australian' ? 'border-[#b38f00]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} p-8`}>
             <div className="flex items-center space-x-4">
@@ -205,7 +205,7 @@ export default function ClassSheetsPage() {
   }
 
   return (
-    <div className={`min-h-screen ${theme === 'cricketverse-australian' ? 'bg-[#ffff2a]' : `bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : theme === 'bounceworld' ? 'from-white via-[#1D428A]/20 to-[#C8102E]/20' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]' : theme === 'ponyville' ? 'from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]' : theme === 'default' ? 'from-gray-50 to-white' : 'from-blue-600 via-indigo-700 to-slate-900'}`} p-6`}>
+    <div className={`min-h-screen ${theme === 'cricketverse-australian' ? 'bg-[#ffff2a]' : `bg-gradient-to-br ${theme === 'ben10' ? 'from-[#64cc4f] via-[#b2e05b] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : theme === 'bounceworld' ? 'from-white via-[#1D428A]/20 to-[#C8102E]/20' : theme === 'avengers' ? 'from-[#916aec] via-[#917bf2] to-[#9f85f5]' : theme === 'ponyville' ? 'from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]' : theme === 'default' ? 'from-gray-50 to-white' : 'from-blue-600 via-indigo-700 to-slate-900'}`} p-6`}>
       {/* Header */}
       <div className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-[#64cc4f] to-[#486b05] ' : theme === 'tinkerbell' ? 'from-green-400 via-green-500 to-yellow-600' : theme === 'bounceworld' ? 'from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826]' : theme === 'cricketverse-australian' ? 'from-[#b38f00] via-[#ffd700] to-[#8b6914]' : theme === 'ponyville' ? 'from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : theme === 'default' ? 'from-white to-gray-100' : 'from-blue-500 via-indigo-600 to-slate-800'} rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#604AC7]' : theme === 'cricketverse-australian' ? 'border-[#b38f00]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} p-8 mb-8 relative overflow-hidden`}>
 
@@ -224,7 +224,7 @@ export default function ClassSheetsPage() {
             <div className="text-6xl">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'avengers' ? '🦸‍♂️' : theme === 'ponyville' ? '' : ''}</div>
           )}
           <div>
-            <h1 className="text-4xl font-black text-black mb-2 flex items-center">
+            <h1 className={`text-4xl font-black mb-2 flex items-center ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
               <span>{className}</span>
               <span className="ml-2 text-white font-black text-5xl">Sheets</span>
             </h1>
@@ -249,7 +249,7 @@ export default function ClassSheetsPage() {
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {classSheets.map(({ allocation, sheet }) => (
-            <div key={allocation.id} className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-white to-[#b2e05b]/10' : theme === 'tinkerbell' ? 'from-white to-yellow-100' : theme === 'bounceworld' ? 'from-white via-[#1D428A]/10 to-[#C8102E]/10' : theme === 'avengers' ? 'from-white via-[#604AC7]/10 to-[#2C1267]/10' : theme === 'ponyville' ? 'from-[#f1aed5]/10 to-[#e13690]/10' : theme === 'default' ? 'from-white to-gray-50' : 'from-white to-blue-100'} rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#604AC7]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} p-6 hover:scale-105 transition-all`}>
+            <div key={allocation.id} className={`bg-gradient-to-r ${theme === 'ben10' ? 'from-white to-[#b2e05b]/10' : theme === 'tinkerbell' ? 'from-white to-yellow-100' : theme === 'bounceworld' ? 'from-white via-[#1D428A]/10 to-[#C8102E]/10' : theme === 'avengers' ? 'from-[#604AC7]/10 via-[#604AC7]/10 to-[#2C1267]/10' : theme === 'ponyville' ? 'from-[#f1aed5]/10 to-[#e13690]/10' : theme === 'default' ? 'from-white to-gray-50' : 'from-white to-blue-100'} rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#604AC7]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} p-6 hover:scale-105 transition-all`}>
               <div className="flex items-center space-x-3 mb-4">
                 <div className="text-4xl">📊</div>
                 <h3 className="text-xl font-black text-black truncate">

@@ -429,7 +429,7 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
                 <p className={`text-sm font-black ${theme === 'bounceworld' || theme === 'default' || theme === 'cricketverse-australian' ? 'text-black' : 'text-white'} truncate`}>
                   {student.name}
                 </p>
-                <p className="text-xs font-bold text-black" style={{
+                <p className={`text-xs font-bold ${theme === 'avengers' ? 'text-white' : 'text-black'}`} style={{
                   opacity: 0.9
                 }}>
                   {student.status === 'Active' 

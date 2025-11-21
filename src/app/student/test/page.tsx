@@ -1046,7 +1046,7 @@ export default function StudentTests() {
     return (
       <StudentLayout>
         <div
-          className={`min-h-screen p-6 flex items-center justify-center ${theme === 'default' ? 'bg-gradient-to-br from-white to-gray-100' : theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A] to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-br from-[#2C1267] to-[#4F2C8D]' : theme === 'ponyville' ? 'bg-gradient-to-br from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : 'bg-gradient-to-br from-blue-400 to-indigo-600'}`}
+          className={`min-h-screen p-6 flex items-center justify-center ${theme === 'default' ? 'bg-gradient-to-br from-white to-gray-100' : theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A] to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-br from-[#987add] to-[#775ba7]' : theme === 'ponyville' ? 'bg-gradient-to-br from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : 'bg-gradient-to-br from-blue-400 to-indigo-600'}`}
           style={
             theme === 'cricketverse-australian'
               ? { background: 'linear-gradient(to bottom right, rgb(134, 250, 92) 0%, rgb(255, 255, 42) 40%, rgb(255, 255, 42) 60%, rgb(134, 250, 92) 100%)' }
@@ -1167,7 +1167,7 @@ export default function StudentTests() {
   return (
     <StudentLayout>
       <div
-        className={`min-h-screen p-6 ${theme === 'default' ? 'bg-gradient-to-br from-white via-gray-50 to-black' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-300' : theme === 'cricketverse' ? 'bg-gradient-to-br from-blue-400 via-indigo-500 to-blue-400' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A]/10 to-[#C8102E]/10' : theme === 'avengers' ? 'bg-gradient-to-br from-[#2C1267] to-[#4F2C8D]' : theme === 'ponyville' ? 'bg-gradient-to-br from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : 'bg-gradient-to-br from-blue-400 via-indigo-500 to-blue-400'}`}
+        className={`min-h-screen p-6 ${theme === 'default' ? 'bg-gradient-to-br from-white via-gray-50 to-black' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-300' : theme === 'cricketverse' ? 'bg-gradient-to-br from-blue-400 via-indigo-500 to-blue-400' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A]/10 to-[#C8102E]/10' : theme === 'avengers' ? 'bg-gradient-to-br from-[#7946ef] to-[#4F2C8D]' : theme === 'ponyville' ? 'bg-gradient-to-br from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : 'bg-gradient-to-br from-blue-400 via-indigo-500 to-blue-400'}`}
         style={
           theme === 'ben10'
             ? { background: 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))' }
@@ -1178,7 +1178,7 @@ export default function StudentTests() {
       >
         {/* Tests Header */}
         <div 
-          className={`rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} p-8 mb-6 relative overflow-hidden ${theme !== 'cricketverse-australian' ? `${theme === 'default' ? 'bg-gradient-to-r from-black via-gray-800 to-white' : theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-500 via-green-500 to-yellow-500' : theme === 'cricketverse' ? 'bg-gradient-to-r from-blue-500 via-indigo-600 to-blue-500' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7] via-[#2C1267] to-[#0F0826]' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : 'bg-gradient-to-r from-blue-500 via-indigo-600 to-blue-500'}` : ''}`}
+          className={`rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} p-8 mb-6 relative overflow-hidden ${theme !== 'cricketverse-australian' ? `${theme === 'default' ? 'bg-gradient-to-r from-black via-gray-800 to-white' : theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-500 via-green-500 to-yellow-500' : theme === 'cricketverse' ? 'bg-gradient-to-r from-blue-500 via-indigo-600 to-blue-500' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7] via-[#865bea] to-[#9376f3]' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : 'bg-gradient-to-r from-blue-500 via-indigo-600 to-blue-500'}` : ''}`}
           style={theme === 'cricketverse-australian' ? { background: 'white' } : undefined}
         >
          <div className="flex items-center justify-between relative z-10">
@@ -1204,7 +1204,7 @@ export default function StudentTests() {
                 </p>
               </div>
             </div>
-            <div className={`bg-white border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} rounded-2xl p-4 shadow-lg`}>
+            <div className={`${theme === 'avengers' ? 'bg-transparent' : 'bg-white'} border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} rounded-2xl p-4 shadow-lg`}>
               <div className="flex items-center space-x-3">
                 {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville' || theme === 'cricketverse-australian') && <div className="text-4xl">{theme === 'cricketverse-australian' ? '🏏' : theme === 'ponyville' ? '📚' : '📚'}</div>}
                 <div className="text-center">
@@ -1226,10 +1226,10 @@ export default function StudentTests() {
             <div className="flex items-center space-x-3">
               <div className="text-2xl">{theme === 'ponyville' ? '📝' : '⚠️'}</div>
               <div>
-                <p className="font-bold text-black text-lg">
+                <p className={`font-bold text-lg ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                   {theme === 'ponyville' ? 'Magical Error Occurred!' : 'Error: Something went wrong!'}
                 </p>
-                <p className="text-black font-medium">{error}</p>
+                <p className={`font-medium ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>{error}</p>
               </div>
             </div>
             </div>
@@ -1243,7 +1243,7 @@ export default function StudentTests() {
         >
           <div className="flex items-center space-x-3 mb-4">
             {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-3xl">{theme === 'ponyville' ? '🔍' : '🔍'}</div>}
-            <h2 className="text-2xl font-black text-black">{theme === 'ponyville' ? 'Search Magical Tests' : 'Search Tests'}</h2> 
+            <h2 className={`text-2xl font-black ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>{theme === 'ponyville' ? 'Search Magical Tests' : 'Search Tests'}</h2> 
           </div>
 
           <div className="flex flex-col lg:flex-row gap-6">
@@ -1326,25 +1326,21 @@ export default function StudentTests() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
                   {expandedCustomTests ? (
-                    <ChevronDown className="h-6 w-6 text-black mr-3" />
+                    <ChevronDown className={`h-6 w-6 mr-3 ${theme === 'avengers' ? 'text-white' : 'text-black'}`} />
                   ) : (
-                    <ChevronRight className="h-6 w-6 text-black mr-3" />
+                    <ChevronRight className={`h-6 w-6 mr-3 ${theme === 'avengers' ? 'text-white' : 'text-black'}`} />
                   )}
                   <div>
-                    <h2 className="text-2xl font-black text-black flex items-center">
+                    <h2 className={`text-2xl font-black flex items-center ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                       {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <span className="text-3xl mr-2">{theme === 'ponyville' ? '📝' : '📝'}</span>}
                       {theme === 'ponyville' ? 'My Magical Custom Tests' : 'My Custom Tests'}
                       {(groupedCustomTests.live.length > 0 || groupedCustomTests.upcoming.length > 0 || groupedCustomTests.available.length > 0) && (
-                        <span className={`ml-3 inline-flex items-center px-3 py-1 rounded-full text-sm font-black text-black border-2 border-black ${theme === 'cricketverse-australian' ? 'bg-black text-white' : theme === 'ben10' ? 'bg-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-yellow-400' : theme === 'bounceworld' ? 'bg-[#C8102E]' : theme === 'avengers' ? 'bg-[#C88DA5]' : theme === 'ponyville' ? 'bg-[#e13690]' : 'bg-blue-400'}`}>
+                        <span className={`ml-3 inline-flex items-center px-3 py-1 rounded-full text-sm font-black border-2 border-black ${theme === 'cricketverse-australian' ? 'bg-black text-white' : theme === 'ben10' ? 'bg-[#64cc4f] text-white' : theme === 'tinkerbell' ? 'bg-yellow-400 text-black' : theme === 'bounceworld' ? 'bg-[#C8102E] text-white' : theme === 'avengers' ? 'bg-[#C88DA5] text-white' : theme === 'ponyville' ? 'bg-[#e13690] text-white' : 'bg-blue-400 text-white'}`}>
                           New!
                         </span>
                       )}
                     </h2>
-                    <p className={`font-bold text-lg ${
-                      theme === 'cricketverse-australian'
-                        ? 'text-black'
-                        : 'text-black'
-                    }`}>
+                    <p className={`font-bold text-lg ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                       {theme === 'ponyville' ? 'Tests assigned specifically to you by your magical teacher! ✨📚' : 'Tests assigned specifically to you by your teacher!'}
                     </p>
                   </div>
@@ -1383,7 +1379,7 @@ export default function StudentTests() {
                     <div className={`px-6 py-4 border-b-4 border-black ${theme === 'default' ? 'bg-gradient-to-r from-gray-300 via-gray-400 to-gray-300' : theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] via-black to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7]/30 via-[#2C1267]/30 to-[#0F0826]/30' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]/20' : 'bg-gradient-to-r from-blue-300 via-indigo-400 to-blue-300'}`}>
                       <div className="flex items-center">
                         {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-2xl mr-3">{theme === 'ponyville' ? '📚' : '🎯'}</div>}
-                        <span className="text-lg font-black text-black">
+                        <span className={`text-lg font-black ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                           {theme === 'ponyville' ? `Live Quests (${groupedCustomTests.live.length})` : `Live Now (${groupedCustomTests.live.length})`}
                         </span>
                       </div>
@@ -1397,9 +1393,9 @@ export default function StudentTests() {
                         <div key={test.id} className={`p-6 transition-all border-b-2 border-black last:border-b-0 ${theme === 'default' ? 'hover:bg-gray-200/20' : theme === 'ben10' ? 'hover:bg-[#b2e05b]/20' : theme === 'tinkerbell' ? 'hover:bg-pink-200/20' : theme === 'bounceworld' ? 'hover:bg-[#1D428A]/10' : theme === 'avengers' ? 'hover:bg-[#604AC7]/10' : theme === 'ponyville' ? 'hover:bg-[#f1aed5]/20' : 'hover:bg-blue-200/20'}`}>
                           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                             <div className="mb-4 md:mb-0">
-                              <div className="flex items-center space-x-3">
+                            <div className="flex items-center space-x-3">
                                 {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-3xl">{theme === 'ponyville' ? '📄' : '📝'}</div>}
-                                <h3 className="text-xl font-black text-black">
+                                <h3 className={`text-xl font-black ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                   {test.title}
                                 </h3>
                                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-black text-white border-2 border-black ${theme === 'ben10' ? 'bg-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-yellow-500' : theme === 'bounceworld' ? 'bg-[#C8102E]' : theme === 'avengers' ? 'bg-[#604AC7]' : theme === 'ponyville' ? 'bg-[#e13690]' : 'bg-blue-500'}`}>
@@ -1410,16 +1406,16 @@ export default function StudentTests() {
                                 </span>
                                 {renderLateSubmissionBadge(test)}
                               </div>
-                              <p className="text-black font-bold mt-2">
+                              <p className={`font-bold mt-2 ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                 Duration: {liveTest.duration} minutes • Ends at {formatDateTime(liveTest.actualEndTime)}
                               </p>
                               {test.totalAssignedStudents && (
-                                <p className="text-sm text-black font-bold mt-1">
+                                <p className={`text-sm font-bold mt-1 ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                   Assigned to {test.totalAssignedStudents} selected students
                                 </p>
                               )}
                               {testAttempts[test.id] && (
-                                <p className="text-sm text-black font-bold mt-1">
+                                <p className={`text-sm font-bold mt-1 ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                   {canAttemptTest(test).reason}
                                 </p>
                               )}
@@ -1462,7 +1458,7 @@ export default function StudentTests() {
                     <div className={`px-6 py-4 border-b-4 border-black ${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 to-pink-300' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7]/30 via-[#2C1267]/30 to-[#0F0826]/30' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]/20' : 'bg-gradient-to-r from-purple-300 to-pink-300'}`}>
                       <div className="flex items-center">
                         <div className="text-2xl mr-3">{theme === 'ponyville' ? '⏰' : '⏰'}</div>
-                        <span className="text-lg font-black text-black">
+                        <span className={`text-lg font-black ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                           {theme === 'ponyville' ? `Future Adventures (${groupedCustomTests.upcoming.length})` : `Upcoming (${groupedCustomTests.upcoming.length})`}
                         </span>
                       </div>
@@ -1478,7 +1474,7 @@ export default function StudentTests() {
                             <div>
                               <div className="flex items-center space-x-3">
                                 {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-3xl">{theme === 'ponyville' ? '📅' : '📅'}</div>}
-                                <h3 className="text-xl font-black text-black">
+                                <h3 className={`text-xl font-black ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                   {test.title}
                                 </h3>
                                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-black text-white border-2 border-black ${theme === 'ben10' ? 'bg-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-yellow-500' : theme === 'avengers' ? 'bg-[#604AC7]' : theme === 'ponyville' ? 'bg-[#e13690]' : 'bg-blue-500'}`}>
@@ -1489,7 +1485,7 @@ export default function StudentTests() {
                                 </span>
                                 {renderLateSubmissionBadge(test)}
                               </div>
-                              <p className="text-black font-bold mt-2">
+                              <p className={`font-bold mt-2 ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                 {test.type === 'live' ? 'Scheduled for' : 'Opens on'} {formatDateTime(startTime)}
                               </p>
                               {/* Show deadline for flexible tests */}
@@ -1498,7 +1494,7 @@ export default function StudentTests() {
                                   <div className="flex items-center justify-between">
                                     <div className="flex items-center space-x-2">
                                       {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-2xl">📅</div>}
-                                      <span className="text-lg font-black text-black">
+                                      <span className={`text-lg font-black ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                         Deadline
                                       </span>
                                       {(test as FlexibleTest).isExtended && (
@@ -1508,28 +1504,28 @@ export default function StudentTests() {
                                       )}
                                     </div>
                                     <div className="text-right">
-                                      <div className="text-lg text-black font-black">
+                                      <div className={`text-lg font-black ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                         {formatDateTime((test as FlexibleTest).availableTo)}
                                       </div>
-                                      <div className="text-sm text-black font-bold">
+                                      <div className={`text-sm font-bold ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                         {calculateTimeUntilDeadline(test as FlexibleTest)}
                                       </div>
                                     </div>
                                   </div>
                                   {(test as FlexibleTest).isExtended && (test as FlexibleTest).originalAvailableTo && (
-                                    <div className="mt-2 text-sm text-black font-bold">
+                                    <div className={`mt-2 text-sm font-bold ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                       Originally: {formatDateTime((test as FlexibleTest).originalAvailableTo)}
                                     </div>
                                   )}
                                 </div>
                               )}
                               {test.totalAssignedStudents && (
-                                <p className="text-sm text-black font-bold mt-1">
+                                <p className={`text-sm font-bold mt-1 ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                   Assigned to {test.totalAssignedStudents} selected students
                                 </p>
                               )}
                             </div>
-                            <div className="mt-4 md:mt-0 flex items-center text-black font-bold">
+                            <div className={`mt-4 md:mt-0 flex items-center font-bold ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                               <div className="text-2xl mr-2">⏰</div>
                               <span className="text-lg">Starts in {calculateTimeRemaining(startTime)}</span>
                             </div>
@@ -1546,7 +1542,7 @@ export default function StudentTests() {
                     <div className={`px-6 py-4 border-b-4 border-black ${theme === 'default' ? 'bg-gradient-to-r from-gray-300 to-gray-400' : theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 to-green-300' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7]/30 via-[#2C1267]/30 to-[#0F0826]/30' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]/20' : 'bg-gradient-to-r from-blue-300 to-cyan-300'}`}>
                       <div className="flex items-center">
                         {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-2xl mr-3">{theme === 'ponyville' ? '📚' : '🎯'}</div>}
-                        <span className="text-lg font-black text-black">
+                        <span className={`text-lg font-black ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                           {theme === 'ponyville' ? `Magical Available (${groupedCustomTests.available.length})` : `Available (${groupedCustomTests.available.length})`}
                         </span>
                       </div>
@@ -1562,7 +1558,7 @@ export default function StudentTests() {
                             <div className="mb-4 md:mb-0">
                               <div className="flex items-center space-x-3">
                                 {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-3xl">📝</div>}
-                                <h3 className="text-xl font-black text-black">
+                                <h3 className={`text-xl font-black ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                   {test.title}
                                 </h3>
                                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-black text-white border-2 border-black ${theme === 'ben10' ? 'bg-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-yellow-500' : theme === 'bounceworld' ? 'bg-[#C8102E]' : theme === 'avengers' ? 'bg-[#604AC7]' : 'bg-blue-500'}`}>
@@ -1573,7 +1569,7 @@ export default function StudentTests() {
                                 </span>
                                 {renderLateSubmissionBadge(test)}
                               </div>
-                              <p className="text-black font-bold mt-2">
+                              <p className={`font-bold mt-2 ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                 Duration: {flexTest.duration || 'No time limit'} minutes
                               </p>
                               {/* Current Deadline */}
@@ -1581,7 +1577,7 @@ export default function StudentTests() {
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center space-x-2">
                                     {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-2xl">📅</div>}
-                                    <span className="text-lg font-black text-black">
+                                    <span className={`text-lg font-black ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                       Deadline
                                     </span>
                                     {flexTest.isExtended && (
@@ -1591,34 +1587,34 @@ export default function StudentTests() {
                                     )}
                                   </div>
                                   <div className="text-right">
-                                    <div className="text-lg text-black font-black">
+                                    <div className={`text-lg font-black ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                       {formatDateTime(flexTest.availableTo)}
                                     </div>
-                                    <div className="text-sm text-black font-bold">
+                                    <div className={`text-sm font-bold ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                       {calculateTimeUntilDeadline(flexTest)}
                                     </div>
                                   </div>
                                 </div>
                                 {flexTest.isExtended && flexTest.originalAvailableTo && (
-                                  <div className="mt-2 text-sm text-black font-bold">
+                                  <div className={`mt-2 text-sm font-bold ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                     Originally: {formatDateTime(flexTest.originalAvailableTo)}
                                   </div>
                                 )}
                               </div>
                               {/* Extension indicator */}
                               {getExtensionInfo(test) && (
-                                <p className="text-sm text-black font-bold mt-2 flex items-center">
+                                <p className={`text-sm font-bold mt-2 flex items-center ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                   {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-xl mr-1">📅</div>}
                                   {getExtensionInfo(test)}
                                 </p>
                               )}
                               {test.totalAssignedStudents && (
-                                <p className="text-sm text-black font-bold mt-1">
+                                <p className={`text-sm font-bold mt-1 ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                   Assigned to {test.totalAssignedStudents} selected students
                                 </p>
                               )}
                               {testAttempts[test.id] && (
-                                <p className="text-sm text-black font-bold mt-1">
+                                <p className={`text-sm font-bold mt-1 ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                   {canAttemptTest(test).reason}
                                 </p>
                               )}
@@ -1660,7 +1656,7 @@ export default function StudentTests() {
                     <div className={`px-6 py-4 border-b-4 border-black ${theme === 'default' ? 'bg-gradient-to-r from-gray-300 to-gray-400' : theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 to-pink-300' : theme === 'cricketverse-australian' ? 'bg-white' : theme === 'avengers' ? 'bg-gradient-to-r from-[#C88DA5]/30 to-[#604AC7]/30' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]/20' : 'bg-gradient-to-r from-blue-300 to-indigo-300'}`}>
                       <div className="flex items-center">
                         {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-2xl mr-3">{theme === 'ponyville' ? '✅' : '✅'}</div>}
-                        <span className="text-lg font-black text-black">
+                        <span className={`text-lg font-black ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                           {theme === 'ponyville' ? `Magical Completed (${groupedCustomTests.completed.length})` : `Completed (${groupedCustomTests.completed.length})`}
                         </span>
                       </div>
@@ -1677,7 +1673,7 @@ export default function StudentTests() {
                             <div>
                               <div className="flex items-center space-x-3">
                                 {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-3xl">📝</div>}
-                                <h3 className="text-xl font-black text-black">
+                                <h3 className={`text-xl font-black ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                   {test.title}
                                 </h3>
                                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-black text-white border-2 border-black ${theme === 'ben10' ? 'bg-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-yellow-500' : theme === 'avengers' ? 'bg-[#604AC7]' : 'bg-blue-500'}`}>
@@ -1694,12 +1690,12 @@ export default function StudentTests() {
                                 )}
                               </div>
                               {test.totalAssignedStudents && (
-                                <p className="text-sm text-black font-bold mt-1">
+                                <p className={`text-sm font-bold mt-1 ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                   Assigned to {test.totalAssignedStudents} selected students
                                 </p>
                               )}
                               {testAttempts[test.id] && (
-                                <p className="text-sm text-black font-bold mt-1">
+                                <p className={`text-sm font-bold mt-1 ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                   Best Score: {testAttempts[test.id].bestScore || 0} • {testAttempts[test.id].completedAttempts?.length || 0} completed attempt{(testAttempts[test.id].completedAttempts?.length || 0) !== 1 ? 's' : ''}
                                   {testAttempts[test.id].activeAttempts?.length > 0 && (
                                     <span> • {testAttempts[test.id].activeAttempts.length} in progress</span>
@@ -1707,7 +1703,7 @@ export default function StudentTests() {
                                 </p>
                               )}
                               {test.description && (
-                                <p className="text-lg text-black font-bold mt-2">
+                                <p className={`text-lg font-bold mt-2 ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                   {test.description}
                                 </p>
                               )}
@@ -1766,20 +1762,16 @@ export default function StudentTests() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
                     {isExpanded ? (
-                      <ChevronDown className="h-6 w-6 text-black mr-3" />
+                      <ChevronDown className={`h-6 w-6 mr-3 ${theme === 'avengers' ? 'text-white' : 'text-black'}`} />
                     ) : (
-                      <ChevronRight className="h-6 w-6 text-black mr-3" />
+                      <ChevronRight className={`h-6 w-6 mr-3 ${theme === 'avengers' ? 'text-white' : 'text-black'}`} />
                     )}
                     <div>
-                      <h2 className="text-2xl font-black text-black flex items-center">
+                      <h2 className={`text-2xl font-black flex items-center ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                         <span className="text-3xl mr-2">🏫</span>
                         {classData.enrollment.className}
                       </h2>
-                      <p className={`font-bold text-lg ${
-                        theme === 'cricketverse-australian'
-                          ? 'text-black'
-                          : 'text-black'
-                      }`}>
+                      <p className={`font-bold text-lg ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                         {classData.enrollment.subject} • Learning Adventures! 
                       </p>
                     </div>
@@ -1830,7 +1822,7 @@ export default function StudentTests() {
                           <div className={`px-6 py-4 border-b-4 border-black ${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#64cc4f]' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7]/30 via-[#2C1267]/30 to-[#0F0826]/30' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]/20' : 'bg-gradient-to-r from-green-300 to-yellow-300'}`}>
                             <div className="flex items-center">
                               <div className="text-2xl mr-3">🎯</div>
-                              <span className="text-lg font-black text-black">
+                              <span className={`text-lg font-black ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                 Live Now ({classData.groupedTests.live.length})
                               </span>
                             </div>
@@ -1846,7 +1838,7 @@ export default function StudentTests() {
                                   <div className="mb-4 md:mb-0">
                                     <div className="flex items-center space-x-3">
                                       {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-3xl">📝</div>}
-                                      <h3 className="text-xl font-black text-black">
+                                      <h3 className={`text-xl font-black ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                         {test.title}
                                       </h3>
                                       {/* Test Type Badge */}
@@ -1867,11 +1859,11 @@ export default function StudentTests() {
                                       </span>
                                       {renderLateSubmissionBadge(test)}
                                     </div>
-                                    <p className="text-black font-bold mt-2">
+                                    <p className={`font-bold mt-2 ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                       Duration: {liveTest.duration} minutes • Ends at {formatDateTime(liveTest.actualEndTime)}
                                     </p>
                                     {testAttempts[test.id] && (
-                                      <p className="text-sm text-black font-bold mt-1">
+                                      <p className={`text-sm font-bold mt-1 ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                         {canAttemptTest(test).reason}
                                       </p>
                                     )}
@@ -1906,7 +1898,7 @@ export default function StudentTests() {
                           <div className={`px-6 py-4 border-b-4 border-black ${theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 to-pink-300' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7]/30 via-[#2C1267]/30 to-[#0F0826]/30' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]/20' : 'bg-gradient-to-r from-purple-300 to-pink-300'}`}>
                             <div className="flex items-center">
                               <div className="text-2xl mr-3">⏰</div>
-                              <span className="text-lg font-black text-black">
+                              <span className={`text-lg font-black ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                 Upcoming ({classData.groupedTests.upcoming.length})
                               </span>
                             </div>
@@ -1922,7 +1914,7 @@ export default function StudentTests() {
                                   <div>
                                     <div className="flex items-center space-x-3">
                                       {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-3xl">📅</div>}
-                                      <h3 className="text-xl font-black text-black">
+                                      <h3 className={`text-xl font-black ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                         {test.title}
                                       </h3>
                                       {/* Test Type Badge */}
@@ -1942,7 +1934,7 @@ export default function StudentTests() {
                                         Upcoming
                                       </span>
                                     </div>
-                                    <p className="text-black font-bold mt-2">
+                                    <p className={`font-bold mt-2 ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                       {test.type === 'live' ? 'Scheduled for' : 'Opens on'} {formatDateTime(startTime)}
                                     </p>
                                     {/* Show deadline for flexible tests */}
@@ -1951,7 +1943,7 @@ export default function StudentTests() {
                                         <div className="flex items-center justify-between">
                                           <div className="flex items-center space-x-2">
                                             {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-2xl">📅</div>}
-                                            <span className="text-lg font-black text-black">
+                                            <span className={`text-lg font-black ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                               Deadline
                                             </span>
                                             {(test as FlexibleTest).isExtended && (
@@ -1961,23 +1953,23 @@ export default function StudentTests() {
                                             )}
                                           </div>
                                           <div className="text-right">
-                                            <div className="text-lg text-black font-black">
+                                            <div className={`text-lg font-black ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                               {formatDateTime((test as FlexibleTest).availableTo)}
                                             </div>
-                                            <div className="text-sm text-black font-bold">
+                                            <div className={`text-sm font-bold ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                               {calculateTimeUntilDeadline(test as FlexibleTest)}
                                             </div>
                                           </div>
                                         </div>
                                         {(test as FlexibleTest).isExtended && (test as FlexibleTest).originalAvailableTo && (
-                                          <div className="mt-2 text-sm text-black font-bold">
+                                          <div className={`mt-2 text-sm font-bold ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                             Originally: {formatDateTime((test as FlexibleTest).originalAvailableTo)}
                                           </div>
                                         )}
                                       </div>
                                     )}
                                   </div>
-                                  <div className="mt-4 md:mt-0 flex items-center text-black font-bold">
+                                  <div className={`mt-4 md:mt-0 flex items-center font-bold ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                     <div className="text-2xl mr-2">⏰</div>
                                     <span className="text-lg">Starts in {calculateTimeRemaining(startTime)}</span>
                                   </div>
@@ -1994,7 +1986,7 @@ export default function StudentTests() {
                           <div className={`px-6 py-4 border-b-4 border-black ${theme === 'default' ? 'bg-gradient-to-r from-gray-300 to-gray-400' : theme === 'ben10' ? 'bg-gradient-to-r from-[#b2e05b] to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-300 to-green-300' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7]/30 via-[#2C1267]/30 to-[#0F0826]/30' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690]/20 to-[#ff2e9f]/20' : 'bg-gradient-to-r from-blue-300 to-cyan-300'}`}>
                             <div className="flex items-center">
                               {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-2xl mr-3">{theme === 'ponyville' ? '🦄' : '🎯'}</div>}
-                              <span className="text-lg font-black text-black">
+                              <span className={`text-lg font-black ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                 {theme === 'ponyville' ? `Magical Available (${classData.groupedTests.available.length})` : `Available (${classData.groupedTests.available.length})`}
                               </span>
                             </div>
@@ -2010,7 +2002,7 @@ export default function StudentTests() {
                                   <div className="mb-4 md:mb-0">
                                     <div className="flex items-center space-x-3">
                                       {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-3xl">📝</div>}
-                                      <h3 className="text-xl font-black text-black">
+                                      <h3 className={`text-xl font-black ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                         {test.title}
                                       </h3>
                                       {/* Test Type Badge */}
@@ -2030,7 +2022,7 @@ export default function StudentTests() {
                                         Available
                                       </span>
                                     </div>
-                                    <p className="text-black font-bold mt-2">
+                                    <p className={`font-bold mt-2 ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                       Duration: {flexTest.duration || 'No time limit'} minutes
                                     </p>
                                     {/* Current Deadline */}
@@ -2038,7 +2030,7 @@ export default function StudentTests() {
                                       <div className="flex items-center justify-between">
                                         <div className="flex items-center space-x-2">
                                           {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-2xl">📅</div>}
-                                          <span className="text-lg font-black text-black">
+                                          <span className={`text-lg font-black ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                             Deadline
                                           </span>
                                           {flexTest.isExtended && (
@@ -2048,29 +2040,29 @@ export default function StudentTests() {
                                           )}
                                         </div>
                                         <div className="text-right">
-                                          <div className="text-lg text-black font-black">
+                                          <div className={`text-lg font-black ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                             {formatDateTime(flexTest.availableTo)}
                                           </div>
-                                          <div className="text-sm text-black font-bold">
+                                          <div className={`text-sm font-bold ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                             {calculateTimeUntilDeadline(flexTest)}
                                           </div>
                                         </div>
                                       </div>
                                       {flexTest.isExtended && flexTest.originalAvailableTo && (
-                                        <div className="mt-2 text-sm text-black font-bold">
+                                        <div className={`mt-2 text-sm font-bold ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                           Originally: {formatDateTime(flexTest.originalAvailableTo)}
                                         </div>
                                       )}
                                     </div>
                                     {/* Extension indicator */}
                                     {getExtensionInfo(test) && (
-                                      <p className="text-sm text-black font-bold mt-2 flex items-center">
+                                      <p className={`text-sm font-bold mt-2 flex items-center ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                         {(theme === 'ben10' || theme === 'tinkerbell') && <div className="text-xl mr-1">📅</div>}
                                         {getExtensionInfo(test)}
                                       </p>
                                     )}
                                     {testAttempts[test.id] && (
-                                      <p className="text-sm text-black font-bold mt-1">
+                                      <p className={`text-sm font-bold mt-1 ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                         {canAttemptTest(test).reason}
                                       </p>
                                     )}
@@ -2105,14 +2097,14 @@ export default function StudentTests() {
                             <div className="flex items-center justify-between">
                               <div className="flex items-center">
                                 {(theme === 'ben10' || theme === 'tinkerbell' || theme === 'ponyville') && <div className="text-2xl mr-3">{theme === 'ponyville' ? '🦄' : '✅'}</div>}
-                                <span className="text-lg font-black text-black">
+                                <span className={`text-lg font-black ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                   {theme === 'ponyville' ? `Magical Completed (${classData.groupedTests.completed.length})` : `Completed (${classData.groupedTests.completed.length})`}
                                 </span>
                               </div>
                               {classData.groupedTests.completed.length > 3 && (
                                 <button
                                   onClick={() => toggleCompletedSection(classId)}
-                                  className="text-lg text-black font-black hover:text-gray-700 flex items-center px-4 py-2 rounded-full bg-white border-2 border-black transform hover:scale-105 transition-all"
+                                  className={`text-lg ${theme === 'avengers' ? 'text-white' : 'text-black'} font-black hover:text-gray-700 flex items-center px-4 py-2 rounded-full bg-white border-2 border-black transform hover:scale-105 transition-all`}
                                 >
                                   {expandedCompletedSections.has(classId) ? (
                                     <>
@@ -2146,7 +2138,7 @@ export default function StudentTests() {
                                   <div>
                                     <div className="flex items-center space-x-3">
                                       <div className="text-3xl">📝</div>
-                                      <h3 className="text-xl font-black text-black">
+                                      <h3 className={`text-xl font-black ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                         {test.title}
                                       </h3>
                                       {/* Test Type Badge */}
@@ -2173,7 +2165,7 @@ export default function StudentTests() {
                                       )}
                                     </div>
                                     {testAttempts[test.id] && (
-                                      <p className="text-sm text-black font-bold mt-2">
+                                      <p className={`text-sm ${theme === 'avengers' ? 'text-white' : 'text-black'} font-bold mt-2`}>
                                         Best Score: {testAttempts[test.id].bestScore || 0} • {testAttempts[test.id].completedAttempts?.length || 0} completed attempt{(testAttempts[test.id].completedAttempts?.length || 0) !== 1 ? 's' : ''}
                                         {testAttempts[test.id].activeAttempts?.length > 0 && (
                                           <span> • {testAttempts[test.id].activeAttempts.length} in progress</span>
@@ -2182,7 +2174,7 @@ export default function StudentTests() {
                                     )}
                                     {/* Test Description */}
                                     {test.description && (
-                                      <p className="text-lg text-black font-bold mt-2">
+                                      <p className={`text-lg ${theme === 'avengers' ? 'text-white' : 'text-black'} font-bold mt-2`}>
                                         {test.description}
                                       </p>
                                     )}

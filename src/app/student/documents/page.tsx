@@ -309,10 +309,10 @@ export default function StudentDocumentsPage() {
           <div className="flex justify-center items-center space-x-8 mb-4">
             <div className={`text-6xl ${theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-white' : theme === 'ponyville' ? 'text-white' : theme === 'cricketverse' ? 'text-white' : ''}`}>{theme === 'ben10' ? '🦸' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'bounceworld' ? '' : theme === 'avengers' ? ' ' : theme === 'ponyville' ? ' ' : theme === 'cricketverse' ? '' : ''}</div>
           </div>
-          <h1 className="text-5xl font-black text-black mb-2 drop-shadow-lg">
+          <h1 className={`text-5xl font-black ${theme === 'avengers' ? 'text-white' : 'text-black'} mb-2 drop-shadow-lg`}>
             📄 Documents
           </h1>
-          <p className={`text-xl font-bold ${theme === 'ben10' ? 'text-white' : theme === 'tinkerbell' ? 'text-white' : theme === 'bounceworld' ? 'text-[#1D428A]' : theme === 'avengers' ? 'text-[#302f2f]' : theme === 'ponyville' ? 'text-white' : theme === 'cricketverse' ? 'text-white' : theme === 'cricketverse-australian' ? 'text-[#b38f00]' : 'text-black'}`}>
+          <p className={`text-xl font-bold ${theme === 'ben10' ? 'text-white' : theme === 'tinkerbell' ? 'text-white' : theme === 'bounceworld' ? 'text-[#1D428A]' : theme === 'avengers' ? 'text-white' : theme === 'ponyville' ? 'text-white' : theme === 'cricketverse' ? 'text-white' : theme === 'cricketverse-australian' ? 'text-[#b38f00]' : 'text-black'}`}>
             {theme === 'bounceworld' ? 'Slam dunk your document uploads here! 🏀' : theme === 'avengers' ? 'Assemble your document uploads here! 🦸‍♂️' : theme === 'ponyville' ? 'Cast magical document spells here! ✨🦄' : theme === 'cricketverse' ? 'Upload your documents here!' : theme === 'cricketverse-australian' ? 'Hit a six down under with your documents!' : 'Upload your documents here!'}
           </p>
         </div>
@@ -323,8 +323,8 @@ export default function StudentDocumentsPage() {
             <div className="flex items-center space-x-4">
               
               <div>
-                <h2 className="text-3xl text-black font-black">Required Documents</h2>
-                <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-white' : theme === 'tinkerbell' ? 'text-yellow-100' : theme === 'bounceworld' ? 'text-[#1D428A]' : theme === 'avengers' ? 'text-[#C88DA5]' : theme === 'ponyville' ? 'text-white' : theme === 'cricketverse' ? 'text-white' : theme === 'cricketverse-australian' ? 'text-black' : 'text-black'}`}>
+                <h2 className={`text-3xl font-black ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>Required Documents</h2>
+                <p className={`font-bold text-lg ${theme === 'ben10' ? 'text-white' : theme === 'tinkerbell' ? 'text-yellow-100' : theme === 'bounceworld' ? 'text-black' : theme === 'avengers' ? 'text-[#C88DA5]' : theme === 'ponyville' ? 'text-white' : theme === 'cricketverse' ? 'text-white' : theme === 'cricketverse-australian' ? 'text-black' : 'text-black'}`}>
                   {theme === 'bounceworld' ? 'Complete your enrollment and slam dunk your documents! 🏀' : theme === 'avengers' ? 'Complete your enrollment and assemble your documents! 🦸‍♂️' : theme === 'ponyville' ? 'Complete your enrollment and cast magical document spells! ✨🦄' : theme === 'cricketverse' ? 'Complete your enrollment with these documents!' : theme === 'cricketverse-australian' ? 'Complete your enrollment and hit a six down under!' : 'Complete your enrollment with these documents!'}
                 </p>
               </div>

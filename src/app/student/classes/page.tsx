@@ -99,7 +99,7 @@ export default function StudentClassesPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{
+      <div className={`${theme === 'avengers' ? 'min-h-screen flex items-center justify-center bg-gradient-to-br from-[#2C1267]/20 to-[#4F2C8D]/20' : 'min-h-screen flex items-center justify-center'}`} style={theme === 'avengers' ? {} : {
         background: theme === 'default'
           ? 'linear-gradient(to bottom right, rgb(249, 250, 251), rgb(243, 244, 246))'
           : theme === 'ben10'
@@ -112,13 +112,11 @@ export default function StudentClassesPage() {
           ? 'linear-gradient(to bottom right, rgb(134, 250, 92) 0%, rgb(255, 255, 42) 40%, rgb(255, 255, 42) 60%, rgb(134, 250, 92) 100%)'
           : theme === 'bounceworld'
           ? 'linear-gradient(to bottom right, rgb(255, 255, 255), rgb(29, 66, 138), rgb(200, 16, 46))'
-          : theme === 'avengers'
-          ? 'linear-gradient(to bottom right, rgb(44, 18, 103), rgb(79, 44, 141), rgb(15, 8, 38))'
           : theme === 'ponyville'
           ? 'linear-gradient(to bottom right, rgb(255, 245, 251), rgb(241, 174, 213), rgb(255, 46, 159))'
           : 'linear-gradient(to bottom right, rgb(96, 165, 250), rgb(79, 70, 229))'
       }}>
-        <div className={`${theme === 'default' ? 'bg-white border-4 border-black' : theme === 'bounceworld' ? 'bg-white border-4 border-[#1D428A]' : theme === 'avengers' ? 'bg-gradient-to-br from-[#604AC7] to-[#2C1267] border-4 border-[#2C1267]' : theme === 'ponyville' ? 'bg-gradient-to-br from-[#f1aed5] to-[#e13690] border-4 border-[#f1aed5]' : 'bg-white border-4 border-black'} rounded-3xl p-8 shadow-2xl`}>
+        <div className={`${theme === 'default' ? 'bg-white border-4 border-black' : theme === 'bounceworld' ? 'bg-white border-4 border-[#1D428A]' : theme === 'avengers' ? 'bg-gradient-to-br from-[#2C1267]/20 to-[#4F2C8D]/20 border-4 border-[#2C1267]' : theme === 'ponyville' ? 'bg-gradient-to-br from-[#f1aed5] to-[#e13690] border-4 border-[#f1aed5]' : 'bg-white border-4 border-black'} rounded-3xl p-8 shadow-2xl`}>
           {/* Theme-Specific Loading Animation */}
           <div className="relative mb-6 flex flex-col items-center">
             {/* Tinkerbell Loading GIF */}
@@ -253,7 +251,7 @@ export default function StudentClassesPage() {
         }
       >
         {/* Header */}
-        <div className={`bg-gradient-to-r ${theme === 'default' ? 'from-gray-100 to-gray-200' : theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-300 via-green-500 to-yellow-400' : theme === 'cricketverse' ? 'from-blue-500 to-indigo-600' : theme === 'cricketverse-australian' ? 'bg-gradient-to-br from-[#f9f9bb] via-[#f6f672] to-[#ffff2a]' : theme === 'bounceworld' ? 'from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#0F0826] border-[#2C1267]' : theme === 'ponyville' ? 'from-[#f1aed5] via-[#e13690] to-[#ff2e9f] border-[#f1aed5]' : 'from-blue-400 to-indigo-600'} rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} p-8 mb-6 relative overflow-hidden`}>
+        <div className={`bg-gradient-to-r ${theme === 'default' ? 'from-gray-100 to-gray-200' : theme === 'ben10' ? 'from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'from-green-300 via-green-500 to-yellow-400' : theme === 'cricketverse' ? 'from-blue-500 to-indigo-600' : theme === 'cricketverse-australian' ? 'bg-gradient-to-br from-[#f9f9bb] via-[#f6f672] to-[#ffff2a]' : theme === 'bounceworld' ? 'from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'from-[#2C1267] via-[#604AC7] to-[#604AC7] border-[#2C1267]' : theme === 'ponyville' ? 'from-[#f1aed5] via-[#e13690] to-[#ff2e9f] border-[#f1aed5]' : 'from-blue-400 to-indigo-600'} rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} p-8 mb-6 relative overflow-hidden`}>
       
           <div className="flex items-center justify-between relative z-10">
             <div className="flex items-center space-x-4">
@@ -272,7 +270,7 @@ export default function StudentClassesPage() {
             )}
               
               <div>
-                <h1 className={`text-4xl font-black mb-2 flex items-center ${theme === 'default' ? 'text-black' : 'text-black'}`}>
+                <h1 className={`text-4xl font-black mb-2 flex items-center ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                   <span>My</span>
                   <span className="ml-2 text-3xl">Classroom</span>
                   {theme === 'cricketverse-australian' && <span className="ml-2 text-4xl"></span>}
@@ -374,10 +372,10 @@ export default function StudentClassesPage() {
                       <div className="text-3xl">📚</div>
                     </div>
                     <div>
-                      <h3 className="font-black text-black text-xl mb-1">
+                      <h3 className={`font-black text-xl mb-1 ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                         {enrollment.className}
                       </h3>
-                      <p className={`text-black font-bold text-sm rounded-full px-3 py-1 border-2 border-black ${theme === 'default' ? 'bg-blue-100' : theme === 'ben10' ? 'bg-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-yellow-200' : theme === 'cricketverse' ? 'bg-blue-200' : theme === 'cricketverse-australian' ? 'bg-[#ffff2a]' : theme === 'bounceworld' ? 'bg-[#C8102E]/20' : theme === 'avengers' ? 'bg-[#604AC7]/30' : theme === 'ponyville' ? 'bg-[#e13690]/20' : 'bg-blue-200'}`}>
+                      <p className={`text-black font-bold text-sm rounded-full px-3 py-1 border-2 border-black ${theme === 'default' ? 'bg-blue-100' : theme === 'ben10' ? 'bg-[#b2e05b]' : theme === 'tinkerbell' ? 'bg-yellow-200' : theme === 'cricketverse' ? 'bg-blue-200' : theme === 'cricketverse-australian' ? 'bg-[#ffff2a]' : theme === 'bounceworld' ? 'bg-[#C8102E]/20' : theme === 'avengers' ? 'bg-[#604AC7]/30 text-white' : theme === 'ponyville' ? 'bg-[#e13690]/20' : 'bg-blue-200'}`}>
                         {enrollment.subject}
                       </p>
                     </div>
@@ -533,7 +531,7 @@ export default function StudentClassesPage() {
                     }}
                     className={`text-black font-black border-4 border-black rounded-2xl transform hover:scale-110 transition-all shadow-lg hover:rotate-3 flex flex-col items-center py-3 ${theme === 'default' ? 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700' : theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#b2e05b] hover:from-[#b2e05b] hover:to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 to-amber-400 hover:from-yellow-500 hover:to-amber-500' : theme === 'cricketverse' ? 'bg-gradient-to-r from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-600' : theme === 'cricketverse-australian' ? 'bg-gradient-to-r from-[#fff800] to-[#ffff2a] hover:from-[#ffff2a] hover:to-[#fff800]' :theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] to-[#C8102E] hover:from-[#C8102E] hover:to-[#1D428A]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7] to-[#C88DA5] hover:from-[#C88DA5] hover:to-[#604AC7]' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] to-[#e13690] hover:from-[#e13690] hover:to-[#f1aed5]' : 'bg-gradient-to-r from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-600'}`}>
                     <span className="text-2xl mb-1">📝</span>
-                    <span className="text-xs text-black">Test</span>
+                    <span className={`text-xs ${theme === 'bounceworld' ? 'text-white' : 'text-black'}`}>Test</span>
                   </Button>
                   <Button
                     variant="outline"
@@ -544,7 +542,7 @@ export default function StudentClassesPage() {
                     }}
                     className={`text-black font-black border-4 border-black rounded-2xl transform hover:scale-110 transition-all shadow-lg hover:-rotate-3 flex flex-col items-center py-3 ${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#b2e05b] hover:from-[#b2e05b] hover:to-[#64cc4f]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 to-amber-400 hover:from-yellow-500 hover:to-amber-500' : theme === 'cricketverse-australian' ? 'bg-gradient-to-r from-[#fff800] to-[#ffff2a] hover:from-[#ffff2a] hover:to-[#fff800]' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] to-[#C8102E] hover:from-[#C8102E] hover:to-[#1D428A]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7] to-[#C88DA5] hover:from-[#C88DA5] hover:to-[#604AC7]' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] to-[#e13690] hover:from-[#e13690] hover:to-[#f1aed5]' : 'bg-gradient-to-r from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-600'}`}>
                     <span className="text-2xl mb-1">📚</span>
-                    <span className="text-xs text-black">Study</span>
+                    <span className={`text-xs ${theme === 'bounceworld' ? 'text-white' : 'text-black'}`}>Study</span>
                   </Button>
                   <Button
                     variant="outline"
@@ -555,7 +553,7 @@ export default function StudentClassesPage() {
                     }}
                     className={`text-black font-black border-4 border-black rounded-2xl transform hover:scale-110 transition-all shadow-lg hover:rotate-3 flex flex-col items-center py-3 ${theme === 'default' ? 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700' : theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#b2e05b] hover:from-[#b2e05b] hover:to-[#64cc4f]' : theme === 'cricketverse-australian' ? 'bg-gradient-to-br from-[#ffff2a] via-[#f6f672] to-[#ffff2a]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 to-amber-400 hover:from-yellow-500 hover:to-amber-500' : theme === 'cricketverse' ? 'bg-gradient-to-r from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-600' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] to-[#C8102E] hover:from-[#C8102E] hover:to-[#1D428A]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7] to-[#C88DA5] hover:from-[#C88DA5] hover:to-[#604AC7]' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] to-[#e13690] hover:from-[#e13690] hover:to-[#f1aed5]' : 'bg-gradient-to-r from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-600'}`}>
                     <span className="text-2xl mb-1">🎬</span>
-                    <span className="text-xs text-black">Videos</span>
+                    <span className={`text-xs ${theme === 'bounceworld' ? 'text-white' : 'text-black'}`}>Videos</span>
                   </Button>
                 </div>
               </div>
@@ -568,7 +566,7 @@ export default function StudentClassesPage() {
           <div className={`${theme === 'default' ? 'bg-white' : 'bg-gradient-to-r'} ${theme === 'default' ? '' : theme === 'ben10' ? 'from-[#64cc4f] to-[#222222] via-[#64cc4f]' : theme === 'tinkerbell' ? 'from-yellow-300 via-green-400 to-yellow-400' : theme === 'cricketverse' ? 'from-blue-400 via-indigo-500 to-blue-500' : theme === 'cricketverse-australian' ? 'bg-gradient-to-r from-[#fff800] to-[#ffff2a] hover:from-[#ffff2a] hover:to-[#fff800]'  : theme === 'bounceworld' ? 'from-[#1D428A] to-[#C8102E] via-[#1D428A]' : theme === 'avengers' ? 'from-[#604AC7] via-[#2C1267] to-[#0F0826]' : theme === 'ponyville' ? 'from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : 'from-blue-400 via-indigo-500 to-blue-500'} rounded-3xl shadow-2xl border-4 border-black p-8 mt-8`}>
             <div className="flex items-center justify-center space-x-3 mb-8">
               {(theme === 'default' || theme === 'ben10' || theme === 'tinkerbell' || theme === 'cricketverse' || theme === 'ponyville') && <div className="text-4xl">📊</div>}
-              <h3 className={`text-3xl font-black ${theme === 'default' ? 'text-black' : 'text-black'}`}>Classes Summary</h3>
+              <h3 className={`text-3xl font-black ${theme === 'avengers' ? 'text-white' :theme === 'bounceworld' ? 'text-white' : 'text-black'}`}>Classes Summary</h3>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               <div className="bg-white border-4 border-black rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition-all">

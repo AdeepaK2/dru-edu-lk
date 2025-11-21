@@ -587,7 +587,7 @@ export default function StudentMeetingPage() {
             )}
           </div>
           <div className="text-center">
-            <h2 className="text-2xl font-black text-black mb-2">Loading Meetings...</h2>
+            <h2 className={`text-2xl font-black mb-2 ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>Loading Meetings...</h2>
             <p className={`text-gray-600 font-medium ${theme === 'bounceworld' ? 'text-[#1D428A]' : theme === 'avengers' ? 'text-[#2C1267]' : theme === 'ponyville' ? 'text-[#e13690]' : theme === 'cricketverse' ? 'text-blue-600' : theme === 'cricketverse-australian' ? 'text-black' : ''}`}>
               {theme === 'bounceworld' ? 'Get ready to schedule your personalized learning sessions! 📅' : theme === 'avengers' ? 'Assemble your meeting schedule! 🦸‍♂️' : theme === 'ponyville' ? 'Get ready to cast magical meeting spells! ✨🦄' : theme === 'cricketverse' ? 'Get ready to schedule your learning sessions!' : theme === 'cricketverse-australian' ? 'Get ready to schedule your learning sessions!' : 'Get ready to transform your learning!'}
             </p>
@@ -669,7 +669,7 @@ export default function StudentMeetingPage() {
                 <div className={`text-6xl ${theme === 'avengers' ? 'text-white' : ''}`}>{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'avengers' ? '🦸‍♂️' : ''}</div>
               )}
               <div>
-                <h1 className="text-4xl font-black text-black mb-2 flex items-center">
+                <h1 className={`text-4xl font-black mb-2 flex items-center ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
           
           
                   <span className={`ml-2 text-4xl ${theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-white' : theme === 'cricketverse' ? 'text-white' : theme === 'cricketverse-australian' ? 'text-black' : theme === 'ponyville' ? 'text-white' : 'text-black'}`}>Meeting</span>
@@ -737,8 +737,8 @@ export default function StudentMeetingPage() {
               <div className="flex items-center space-x-4">
                 <div className="text-4xl">🎉</div>
                 <div>
-                  <h3 className="text-xl font-black text-black mb-2">Success!</h3>
-                  <p className="text-black font-bold">{successMessage}</p>
+                  <h3 className={`text-xl font-black mb-2 ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>Success!</h3>
+                  <p className={`font-bold ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>{successMessage}</p>
                 </div>
               </div>
             </div>
@@ -841,7 +841,7 @@ export default function StudentMeetingPage() {
             {/* Theme-aware Teachers List */}
             <div className={`bg-white rounded-3xl shadow-2xl border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : theme === 'ponyville' ? 'border-[#e13690]' : theme === 'cricketverse' ? 'border-blue-600' : theme === 'cricketverse-australian' ? 'border-black' : 'border-black'} overflow-hidden`}>
               <div className={`${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-400 via-green-500 to-yellow-500' : theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#2C1267] via-[#604AC7] to-[#0F0826]' : theme === 'ponyville' ? 'bg-gradient-to-r from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : theme === 'cricketverse' ? 'bg-gradient-to-r from-blue-400 to-indigo-600' : theme === 'cricketverse-australian' ? 'bg-[#fff800]' : 'bg-gradient-to-r from-blue-600 to-indigo-600'} text-white p-6 border-b-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : theme === 'ponyville' ? 'border-[#e13690]' : theme === 'cricketverse' ? 'border-blue-600' : theme === 'cricketverse-australian' ? 'border-black' : 'border-black'}`}>
-                <h2 className="text-2xl text-black font-black flex items-center">
+                <h2 className={`text-2xl font-black flex items-center ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                   <span className="text-3xl mr-3">{theme === 'ben10' ? '🦸‍♂️' : theme === 'tinkerbell' ? '🧚‍♀️' : theme === 'bounceworld' ? '👨‍🏫' : theme === 'avengers' ? '🦸‍♂️' : theme === 'ponyville' ? ' ' : theme === 'cricketverse' ? '👨‍🏫' : theme === 'cricketverse-australian' ? '👨‍🏫' : '👨‍🏫'}</span>
                   Available Teachers
                 </h2>
@@ -880,12 +880,12 @@ export default function StudentMeetingPage() {
                             <div className="flex items-center justify-between">
                               <div className="flex items-center space-x-4">
                                 <div className={`w-16 h-16 ${theme === 'bounceworld' ? 'bg-gradient-to-br from-[#1D428A] to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-br from-[#2C1267] to-[#604AC7]' : theme === 'ponyville' ? 'bg-gradient-to-br from-[#f1aed5] to-[#e13690]' : theme === 'cricketverse-australian' ? 'bg-white' : 'bg-gradient-to-br from-yellow-400 to-orange-400'} rounded-3xl flex items-center justify-center border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'avengers' ? 'border-[#2C1267]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} shadow-lg`}>
-                                  <span className={`text-2xl font-black ${theme === 'bounceworld' ? 'text-white' : theme === 'ponyville' ? 'text-white' : theme === 'cricketverse-australian' ? 'text-black' : 'text-black'}`}>
+                                  <span className={`text-2xl font-black ${theme === 'bounceworld' ? 'text-white' : theme === 'avengers' ? 'text-white' : theme === 'ponyville' ? 'text-white' : theme === 'cricketverse-australian' ? 'text-black' : 'text-black'}`}>
                                     {teacher.name.charAt(0)}
                                   </span>
                                 </div>
                                 <div>
-                                  <h3 className="text-2xl font-black text-black mb-1">
+                                  <h3 className={`text-2xl font-black ${theme === 'avengers' ? 'text-white' : theme === 'bounceworld' ? 'text-white' : 'text-black'} mb-1`}>
                                     {teacher.name}
                                   </h3>
                                   <p className={`${theme === 'bounceworld' ? 'text-white' : theme === 'ponyville' ? 'text-white' : theme === 'cricketverse-australian' ? 'text-black' : 'text-indigo-100'} font-bold text-lg`}>
