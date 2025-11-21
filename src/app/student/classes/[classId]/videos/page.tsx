@@ -268,6 +268,8 @@ export default function ClassVideos({ params }: ClassVideoProps) {
           ? 'bg-gradient-to-br from-white via-[#1D428A]/10 to-[#C8102E]/10'
           : theme === 'avengers'
           ? 'bg-gradient-to-br from-[#2C1267]/10 via-[#604AC7]/10 to-[#0F0826]/10'
+          : theme === 'cricketverse-australian'
+          ? ''
           : theme === 'ponyville'
           ? 'bg-gradient-to-br from-[#fff5fb] via-[#f1aed5] to-[#ff2e9f]'
           : theme === 'default'
@@ -276,10 +278,12 @@ export default function ClassVideos({ params }: ClassVideoProps) {
       }`}
       style={theme === 'ben10' ? {
         background: 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))'
+      } : theme === 'cricketverse-australian' ? {
+        background: '#ffff2a'
       } : undefined}
       >
         <div className={`bg-white border-4 rounded-3xl p-8 shadow-2xl ${
-          theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'
+          theme === 'ponyville' ? 'border-[#e13690]' : theme === 'cricketverse-australian' ? 'border-[#b38f00]' : 'border-black'
         }`}>
           {/* Theme-specific loading animations */}
           {theme === 'tinkerbell' && (
@@ -368,7 +372,7 @@ export default function ClassVideos({ params }: ClassVideoProps) {
   const tabVideos = getTabVideos();
 
   return (
-    <div 
+    <div
       className={`min-h-screen p-6 ${
         theme === 'tinkerbell'
           ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400'
@@ -378,6 +382,8 @@ export default function ClassVideos({ params }: ClassVideoProps) {
           ? 'bg-gradient-to-br from-white via-[#1D428A]/10 to-[#C8102E]/10'
           : theme === 'avengers'
           ? 'bg-gradient-to-br from-[#2C1267]/10 via-[#604AC7]/10 to-[#0F0826]/10'
+          : theme === 'cricketverse-australian'
+          ? ''
           : theme === 'ponyville'
           ? 'bg-gradient-to-br from-[#fff5fb] via-[#f1aed5] to-[#ff2e9f]'
           : theme === 'default'
@@ -386,6 +392,8 @@ export default function ClassVideos({ params }: ClassVideoProps) {
       }`}
       style={theme === 'ben10' ? {
         background: 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))'
+      } : theme === 'cricketverse-australian' ? {
+        background: '#ffff2a'
       } : undefined}
     >
       <div className="max-w-7xl mx-auto space-y-6">
@@ -399,6 +407,8 @@ export default function ClassVideos({ params }: ClassVideoProps) {
             ? 'bg-gradient-to-r from-[#1D428A] via-white to-[#C8102E] border-[#1D428A]'
             : theme === 'avengers'
             ? 'bg-gradient-to-r from-[#2C1267] via-[#604AC7] to-[#0F0826] border-[#2C1267]'
+            : theme === 'cricketverse-australian'
+            ? 'bg-gradient-to-r from-[#b38f00] via-[#ffd700] to-[#8b6914] border-[#b38f00]'
             : theme === 'ponyville'
             ? 'bg-gradient-to-r from-[#f1aed5] to-[#e13690] border-[#ff2e9f]'
             : theme === 'default'
@@ -429,11 +439,11 @@ export default function ClassVideos({ params }: ClassVideoProps) {
             </p>
           </div>
           <div className="flex items-center space-x-4">
-            <div className="bg-white border-4 border-black rounded-2xl p-4 shadow-lg text-center">
+            <div className={`bg-white border-4 rounded-2xl p-4 shadow-lg text-center ${theme === 'cricketverse-australian' ? 'border-[#b38f00]' : 'border-black'}`}>
               <div className="text-3xl font-black text-black">{videos.length}</div>
               <div className="text-sm font-bold text-gray-700">Total Videos</div>
             </div>
-            <div className="bg-white border-4 border-black rounded-2xl p-4 shadow-lg text-center">
+            <div className={`bg-white border-4 rounded-2xl p-4 shadow-lg text-center ${theme === 'cricketverse-australian' ? 'border-[#b38f00]' : 'border-black'}`}>
               <div className="text-3xl font-black text-black">{tabCounts.purchased}</div>
               <div className="text-sm font-bold text-gray-700">Purchased</div>
             </div>
@@ -442,7 +452,7 @@ export default function ClassVideos({ params }: ClassVideoProps) {
       </div>
 
       {/* Navigation Tabs */}
-      <div className={`rounded-2xl shadow-xl border-4 border-black ${
+      <div className={`rounded-2xl shadow-xl border-4 ${theme === 'cricketverse-australian' ? 'border-[#b38f00]' : 'border-black'} ${
         theme === 'ben10'
           ? 'bg-gradient-to-br from-[#64cc4f]/20 to-[#b2e05b]/20'
           : theme === 'tinkerbell'
@@ -451,6 +461,8 @@ export default function ClassVideos({ params }: ClassVideoProps) {
           ? 'bg-gradient-to-br from-white via-[#1D428A]/20 to-[#C8102E]/20'
           : theme === 'avengers'
           ? 'bg-gradient-to-br from-[#604AC7]/30 via-[#2C1267]/30 to-[#0F0826]/30'
+          : theme === 'cricketverse-australian'
+          ? 'bg-gradient-to-br from-[#b38f00]/10 to-[#ffd700]/10'
           : theme === 'ponyville'
           ? 'bg-gradient-to-br from-[#fff5fb] via-[#f1aed5]/30 to-[#ff2e9f]/30'
           : theme === 'default'
@@ -471,6 +483,8 @@ export default function ClassVideos({ params }: ClassVideoProps) {
                     ? 'border-[#1D428A] text-[#1D428A]'
                     : theme === 'avengers'
                     ? 'border-[#604AC7] text-[#2C1267]'
+                    : theme === 'cricketverse-australian'
+                    ? 'border-[#b38f00] text-[#b38f00]'
                     : theme === 'ponyville'
                     ? 'border-[#e13690] text-[#e13690]'
                     : theme === 'default'
@@ -500,6 +514,8 @@ export default function ClassVideos({ params }: ClassVideoProps) {
                     ? 'border-[#1D428A] text-[#1D428A]'
                     : theme === 'avengers'
                     ? 'border-[#604AC7] text-[#2C1267]'
+                    : theme === 'cricketverse-australian'
+                    ? 'border-[#b38f00] text-[#b38f00]'
                     : theme === 'ponyville'
                     ? 'border-[#e13690] text-[#e13690]'
                     : theme === 'default'
@@ -529,6 +545,8 @@ export default function ClassVideos({ params }: ClassVideoProps) {
                     ? 'border-[#1D428A] text-[#1D428A]'
                     : theme === 'avengers'
                     ? 'border-[#604AC7] text-[#2C1267]'
+                    : theme === 'cricketverse-australian'
+                    ? 'border-[#b38f00] text-[#b38f00]'
                     : theme === 'ponyville'
                     ? 'border-[#e13690] text-[#e13690]'
                     : theme === 'default'
@@ -603,7 +621,7 @@ export default function ClassVideos({ params }: ClassVideoProps) {
       {/* Videos Grid */}
       <div>
         {tabVideos.length === 0 ? (
-          <div className={`rounded-2xl shadow-xl border-4 border-black p-12 text-center ${
+          <div className={`rounded-2xl shadow-xl border-4 ${theme === 'cricketverse-australian' ? 'border-[#b38f00]' : 'border-black'} p-12 text-center ${
             theme === 'ben10'
               ? 'bg-gradient-to-br from-[#64cc4f]/10 to-[#b2e05b]/10'
               : theme === 'tinkerbell'
@@ -612,6 +630,8 @@ export default function ClassVideos({ params }: ClassVideoProps) {
               ? 'bg-gradient-to-br from-white via-[#1D428A]/20 to-[#C8102E]/20'
               : theme === 'avengers'
               ? 'bg-gradient-to-br from-[#604AC7]/30 via-[#2C1267]/30 to-[#0F0826]/30'
+              : theme === 'cricketverse-australian'
+              ? 'bg-gradient-to-br from-[#b38f00]/10 to-[#ffd700]/10'
               : theme === 'ponyville'
               ? 'bg-gradient-to-br from-[#fff5fb] via-[#f1aed5]/30 to-[#ff2e9f]/30'
               : theme === 'default'
@@ -656,7 +676,7 @@ export default function ClassVideos({ params }: ClassVideoProps) {
             )}
           </div>
         ) : (
-          <div className={`rounded-2xl shadow-xl border-4 border-black p-6 ${
+          <div className={`rounded-2xl shadow-xl border-4 ${theme === 'cricketverse-australian' ? 'border-[#b38f00]' : 'border-black'} p-6 ${
             theme === 'ben10'
               ? 'bg-gradient-to-br from-[#64cc4f]/10 to-[#b2e05b]/10'
               : theme === 'tinkerbell'
@@ -665,6 +685,8 @@ export default function ClassVideos({ params }: ClassVideoProps) {
               ? 'bg-gradient-to-br from-white via-[#1D428A]/20 to-[#C8102E]/20'
               : theme === 'avengers'
               ? 'bg-gradient-to-br from-[#604AC7]/30 via-[#2C1267]/30 to-[#0F0826]/30'
+              : theme === 'cricketverse-australian'
+              ? 'bg-gradient-to-br from-[#b38f00]/10 to-[#ffd700]/10'
               : theme === 'ponyville'
               ? 'bg-gradient-to-br from-[#fff5fb] via-[#f1aed5]/30 to-[#ff2e9f]/30'
               : theme === 'default'
@@ -693,12 +715,12 @@ export default function ClassVideos({ params }: ClassVideoProps) {
 interface ClassVideoCardProps {
   video: ClassVideoData;
   onAccess: (video: ClassVideoData) => void;
-  theme: 'default' | 'ben10' | 'tinkerbell' | 'cricketverse' | 'bounceworld' | 'avengers' | 'ponyville';
+  theme: 'default' | 'ben10' | 'tinkerbell' | 'cricketverse' | 'cricketverse-australian' | 'bounceworld' | 'avengers' | 'ponyville';
 }
 
 const ClassVideoCard: React.FC<ClassVideoCardProps> = ({ video, onAccess, theme }) => {
   return (
-    <div className={`rounded-2xl shadow-lg border-4 border-black overflow-hidden hover:shadow-2xl transition-shadow ${
+    <div className={`rounded-2xl shadow-lg border-4 ${theme === 'cricketverse-australian' ? 'border-[#b38f00]' : 'border-black'} overflow-hidden hover:shadow-2xl transition-shadow ${
       theme === 'ben10'
         ? 'bg-gradient-to-br from-[#64cc4f]/20 to-[#b2e05b]/20'
         : theme === 'tinkerbell'
@@ -707,6 +729,8 @@ const ClassVideoCard: React.FC<ClassVideoCardProps> = ({ video, onAccess, theme 
         ? 'bg-gradient-to-r from-[#1D428A]  to-[#C8102E]'
         : theme === 'avengers'
         ? 'bg-gradient-to-br from-[#604AC7]/30 via-[#2C1267]/30 to-[#0F0826]/30'
+        : theme === 'cricketverse-australian'
+        ? 'bg-gradient-to-br from-[#b38f00]/20 to-[#ffd700]/20'
         : theme === 'ponyville'
         ? 'bg-gradient-to-br from-[#fff5fb] via-[#f1aed5]/30 to-[#ff2e9f]/30'
         : theme === 'default'
@@ -811,7 +835,7 @@ const ClassVideoCard: React.FC<ClassVideoCardProps> = ({ video, onAccess, theme 
           onClick={() => onAccess(video)}
           variant="custom"
           className={`w-full flex items-center justify-center space-x-2 font-bold ${
-            video.canAccess 
+            video.canAccess
               ? theme === 'ben10'
                 ? 'bg-[#64cc4f] hover:bg-[#b2e05b] text-[#222222]'
                 : theme === 'tinkerbell'
@@ -820,6 +844,8 @@ const ClassVideoCard: React.FC<ClassVideoCardProps> = ({ video, onAccess, theme 
                 ? 'bg-gradient-to-r from-[#1D428A] to-[#C8102E] hover:from-[#C8102E] hover:to-[#1D428A] text-white'
                 : theme === 'avengers'
                 ? 'bg-[#604AC7] hover:bg-[#2C1267] text-white'
+                : theme === 'cricketverse-australian'
+                ? 'bg-[#b38f00] hover:bg-[#daa520] text-white'
                 : theme === 'ponyville'
                 ? 'bg-black hover:bg-gray-800 text-white'
                 : theme === 'default'
@@ -833,6 +859,8 @@ const ClassVideoCard: React.FC<ClassVideoCardProps> = ({ video, onAccess, theme 
                 ? 'bg-gradient-to-r from-[#C8102E] to-[#1D428A] hover:from-[#1D428A] hover:to-[#C8102E] text-white'
                 : theme === 'avengers'
                 ? 'bg-[#2C1267] hover:bg-[#604AC7] text-white'
+                : theme === 'cricketverse-australian'
+                ? 'bg-[#ffd700] hover:bg-[#b38f00] text-black'
                 : theme === 'ponyville'
                 ? 'bg-black hover:bg-gray-800 text-white'
                 : theme === 'default'
