@@ -1231,7 +1231,7 @@ export default function StudentStudyPage() {
 
           <div className="flex items-center space-x-4 relative z-10">
             {theme === 'cricketverse' ? (
-              <img src="/batman1.png" alt="Batman" className="w-40 h-32 object-contain" />
+              <img src="/indian/batman1.png" alt="Batman" className="w-40 h-32 object-contain" />
             ) : theme === 'ponyville' ? (
               <img src="/ponyville/rainbow-dash.png" alt="Rainbow Dash" className="w-24 h-24 object-contain" />
             ) : theme === 'avengers' ? (
