@@ -725,7 +725,7 @@ export default function StudentSettingsPage() {
             )}
 
             {/* CricketVerse Loading GIF */}
-            {(theme === 'cricketverse' || theme === 'cricketverse-australian') && (
+            {theme === 'cricketverse' && (
               <div className="flex flex-col items-center">
                 <img
                   src="/batsman.gif"
@@ -733,6 +733,18 @@ export default function StudentSettingsPage() {
                   className="w-32 h-32 object-contain"
                 />
                 <span className="text-2xl font-bold text-blue-600 mt-4">Loading</span>
+              </div>
+            )}
+
+            {/* Australian CricketVerse Loading GIF */}
+            {theme === 'cricketverse-australian' && (
+              <div className="flex flex-col items-center">
+                <img
+                  src="/cricketverse-australian.gif"
+                  alt="Australian CricketVerse Loading"
+                  className="w-32 h-32 object-contain"
+                />
+                <span className="text-2xl font-bold text-[#fff800] mt-4">Loading</span>
               </div>
             )}
 

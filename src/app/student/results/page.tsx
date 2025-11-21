@@ -381,11 +381,11 @@ export default function StudentResults() {
             {theme === 'cricketverse-australian' && (
               <div className="flex flex-col items-center">
                 <img
-                  src="/batsman.gif"
-                  alt="CricketVerse Australian Loading"
+                  src="/cricketverse-australian.gif"
+                  alt="Australian CricketVerse Loading"
                   className="w-32 h-32 object-contain"
                 />
-                <span className="text-2xl font-bold text-black mt-4">Loading</span>
+                <span className="text-2xl font-bold text-[#fff800] mt-4">Loading</span>
               </div>
             )}
 

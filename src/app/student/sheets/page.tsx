@@ -231,9 +231,21 @@ export default function StudentSheetsPage() {
                 <span className="text-2xl font-bold text-blue-600 mt-4">Loading</span>
               </div>
             )}
+
+            {/* Australian CricketVerse Loading GIF */}
+            {theme === 'cricketverse-australian' && (
+              <div className="flex flex-col items-center">
+                <img
+                  src="/cricketverse-australian.gif"
+                  alt="Australian CricketVerse Loading"
+                  className="w-32 h-32 object-contain"
+                />
+                <span className="text-2xl font-bold text-[#fff800] mt-4">Loading</span>
+              </div>
+            )}
             
             {/* Default Theme Spinner with Loading Text */}
-            {theme !== 'tinkerbell' && theme !== 'ben10' && theme !== 'bounceworld' && theme !== 'avengers' && theme !== 'cricketverse' && theme !== 'ponyville' && (
+            {theme !== 'tinkerbell' && theme !== 'ben10' && theme !== 'bounceworld' && theme !== 'avengers' && theme !== 'cricketverse' && theme !== 'cricketverse-australian' && theme !== 'ponyville' && (
               <div className="flex flex-col items-center">
                 <div className="w-24 h-24 border-4 border-gray-400 border-t-gray-600 rounded-full animate-spin"></div>
                 <span className="text-2xl font-bold text-gray-600 mt-4">Loading</span>
