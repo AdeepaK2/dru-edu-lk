@@ -210,19 +210,31 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
 
     // CricketVerse avatars (Cricket players)
     const cricketVerseMap: Record<string, string> = {
-      'adam-zampa': '/cricketverse/Adam Zampa.webp',
-      'alex-carey': '/cricketverse/Alex Carey.webp',
-      'cameron-green': '/cricketverse/Cameron Green.webp',
-      'glenn-maxwell': '/cricketverse/Glenn Maxwell.webp',
-      'josh-hazlewood': '/cricketverse/Josh Hazlewood.webp',
-      'josh-inglis': '/cricketverse/Josh Inglis.webp',
-      'lance-morris': '/cricketverse/Lance Morris.webp',
-      'matthew-short': '/cricketverse/Matthew Short.webp',
-      'mitchell-starc': '/cricketverse/Mitchell Starc.webp',
-      'nathan-ellis': '/cricketverse/Nathan Ellis.webp',
-      'travis-head': '/cricketverse/Travis Head.webp',
-      'usman-khawaja': '/cricketverse/Usman Khawaja.webp',
-      'xavier-bartlett': '/cricketverse/Xavier Bartlett.webp'
+      // Indian Cricket Players
+      'virat-kohli': '/cricketverse/indian/VIRAT KOHLI.avif',
+      'rohit-sharma': '/cricketverse/indian/ROHIT SHARMA.avif',
+      'shubman-gill': '/cricketverse/indian/SHUBMAN GILL.avif',
+      'kl-rahul': '/cricketverse/indian/KL RAHUL.avif',
+      'rishabh-pant': '/cricketverse/indian/RISHABH PANT.avif',
+      'hardik-pandya': '/cricketverse/indian/HARDIK PANDYA.avif',
+      'ravindra-jadeja': '/cricketverse/indian/RAVINDRA JADEJA.avif',
+      'jasprit-bumrah': '/cricketverse/indian/JASPRIT BUMRAH.avif',
+      'mohammed-shami': '/cricketverse/indian/MOHAMMAD SHAMI.avif',
+      'mohammed-siraj': '/cricketverse/indian/MOHAMMED SIRAJ.avif',
+      // Australian Cricket Players
+      'adam-zampa': '/cricketverse/australian/Adam Zampa.webp',
+      'alex-carey': '/cricketverse/australian/Alex Carey.webp',
+      'cameron-green': '/cricketverse/australian/Cameron Green.webp',
+      'glenn-maxwell': '/cricketverse/australian/Glenn Maxwell.webp',
+      'josh-hazlewood': '/cricketverse/australian/Josh Hazlewood.webp',
+      'josh-inglis': '/cricketverse/australian/Josh Inglis.webp',
+      'lance-morris': '/cricketverse/australian/Lance Morris.webp',
+      'matthew-short': '/cricketverse/australian/Matthew Short.webp',
+      'mitchell-starc': '/cricketverse/australian/Mitchell Starc.webp',
+      'nathan-ellis': '/cricketverse/australian/Nathan Ellis.webp',
+      'travis-head': '/cricketverse/australian/Travis Head.webp',
+      'usman-khawaja': '/cricketverse/australian/Usman Khawaja.webp',
+      'xavier-bartlett': '/cricketverse/australian/Xavier Bartlett.webp'
     };
 
     // Ponyville avatars (Magical unicorns and ponies)
@@ -240,7 +252,7 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
     if (currentTheme === 'tinkerbell' && tinkerMap[avatarId]) return tinkerMap[avatarId];
     if (currentTheme === 'avengers' && avengersMap[avatarId]) return avengersMap[avatarId];
     if (currentTheme === 'bounceworld' && bounceWorldMap[avatarId]) return bounceWorldMap[avatarId];
-    if (currentTheme === 'cricketverse' && cricketVerseMap[avatarId]) return cricketVerseMap[avatarId];
+    if ((currentTheme === 'cricketverse' || currentTheme === 'cricketverse-australian') && cricketVerseMap[avatarId]) return cricketVerseMap[avatarId];
     if (currentTheme === 'ponyville' && ponyvilleMap[avatarId]) return ponyvilleMap[avatarId];
 
     // If avatarId looks like a path, return it directly (for backwards compatibility)
@@ -265,58 +277,66 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
       {/* Mobile overlay */}
       {isOpen && (
         <div
-          className={`fixed inset-0 z-40 backdrop-blur-sm lg:hidden ${
-            theme === 'default'
-              ? 'bg-black/80'
+          className="fixed inset-0 z-40 backdrop-blur-sm lg:hidden"
+          style={{
+            background: theme === 'default'
+              ? 'rgba(0, 0, 0, 0.8)'
               : theme === 'ben10'
-              ? 'bg-gradient-to-br from-[#64cc4f]/80 via-[#222222]/80 to-[#b2e05b]/80'
+              ? 'linear-gradient(to bottom right, rgba(100, 204, 79, 0.8), rgba(34, 34, 34, 0.6), rgba(178, 224, 91, 0.8))'
               : theme === 'tinkerbell'
-              ? 'bg-gradient-to-br from-green-400/80 via-yellow-400/80 to-yellow-600/80'
+              ? 'linear-gradient(to bottom right, rgba(34, 197, 94, 0.8), rgba(253, 224, 71, 0.8), rgba(253, 224, 71, 0.8))'
               : theme === 'cricketverse'
-              ? 'bg-gradient-to-br from-blue-400/80 via-indigo-400/80 to-indigo-600/80'
+              ? 'linear-gradient(to bottom right, rgba(96, 165, 250, 0.8), rgba(79, 70, 229, 0.8), rgba(79, 70, 229, 0.8))'
+              : theme === 'cricketverse-australian'
+              ? 'linear-gradient(to bottom right, rgba(134, 250, 92, 0.8) 0%, rgba(255, 255, 42, 0.8) 40%, rgba(255, 255, 42, 0.8) 60%, rgba(134, 250, 92, 0.8) 100%)'
               : theme === 'bounceworld'
-              ? 'bg-white/80'
+              ? 'rgba(255, 255, 255, 0.8)'
               : theme === 'avengers'
-              ? 'bg-gradient-to-br from-[#2C1267]/80 to-[#4F2C8D]/80'
+              ? 'linear-gradient(to bottom right, rgba(44, 18, 103, 0.8), rgba(79, 44, 141, 0.8))'
               : theme === 'ponyville'
-              ? 'bg-gradient-to-br from-[#f1aed5]/80 via-[#e13690]/80 to-[#ff2e9f]/80'
-              : 'bg-black/80'
-          }`}
+              ? 'linear-gradient(to bottom right, rgba(241, 174, 213, 0.8), rgba(225, 54, 144, 0.8), rgba(255, 46, 159, 0.8))'
+              : 'rgba(0, 0, 0, 0.8)'
+          }}
           onClick={onToggle}
         />
       )}
 
       {/* Sidebar */}
-      <div className={`
+      <div className="
         fixed inset-y-0 left-0 z-50 w-64 shadow-2xl transform transition-transform duration-300 ease-in-out border-r-4 border-black
         lg:translate-x-0 lg:static lg:inset-0 lg:w-64
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-        ${theme === 'default'
-          ? 'bg-white'
+        " style={{
+        background: theme === 'default'
+          ? 'rgb(255, 255, 255)'
           : theme === 'ben10'
-          ? 'bg-gradient-to-b from-[#64cc4f] via-[#222222] to-[#b2e05b]'
+          ? 'linear-gradient(to bottom, rgb(100, 204, 79), rgb(94, 194, 94), rgb(178, 224, 91))'
           : theme === 'tinkerbell'
-          ? 'bg-gradient-to-br from-green-400 to-yellow-600'
+          ? 'linear-gradient(to bottom right, rgb(34, 197, 94), rgb(253, 224, 71))'
           : theme === 'cricketverse'
-          ? 'bg-gradient-to-b from-blue-500 via-indigo-500 to-indigo-600'
+          ? 'linear-gradient(to bottom, rgb(59, 130, 246), rgb(79, 70, 229), rgb(79, 70, 229))'
+          : theme === 'cricketverse-australian'
+          ? 'linear-gradient(to bottom right, rgb(134, 250, 92) 0%, rgb(255, 255, 42) 40%, rgb(255, 255, 42) 60%, rgb(134, 250, 92) 100%)'
           : theme === 'bounceworld'
-          ? 'bg-gradient-to-b  from-[#1D428A]/70 to-[#C8102E]/100'
+          ? 'linear-gradient(to bottom, rgba(29, 66, 138, 0.7), rgb(200, 16, 46))'
           : theme === 'avengers'
-          ? 'bg-gradient-to-b from-[#2C1267] to-[#4F2C8D]'
+          ? 'linear-gradient(to bottom, rgb(44, 18, 103), rgb(79, 44, 141))'
           : theme === 'ponyville'
-          ? 'bg-gradient-to-b from-[#f1aed5] via-[#e13690] to-[#ff2e9f]'
-          : 'bg-white'}
-      `}>
+          ? 'linear-gradient(to bottom, rgb(241, 174, 213), rgb(225, 54, 144), rgb(255, 46, 159))'
+          : 'rgb(255, 255, 255)'
+      }}>
         {/* Header */}
           <div className={`flex items-center justify-between px-6 py-3 ${
             theme === 'default'
               ? 'bg-gradient-to-r from-blue-600 via-indigo-700 to-indigo-900 border-b-4 border-black'
               : theme === 'ben10'
-              ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222]'
+              ? 'bg-gradient-to-r from-[#2d871b] to-[#287b34]'
               : theme === 'tinkerbell'
               ? 'bg-gradient-to-r from-yellow-500 to-green-600'
               : theme === 'cricketverse'
               ? 'bg-gradient-to-r from-blue-600 to-indigo-700'
+              : theme === 'cricketverse-australian'
+              ? 'bg-[#fff800]'
               : theme === 'bounceworld'
               ? 'bg-gradient-to-r from-[#1D428A] to-[#C8102E]'
               : theme === 'avengers'
@@ -332,7 +352,7 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
                 className="w-10 h-10 rounded-2xl border-2 border-black shadow-lg"
               />
               <div className="hidden lg:block">
-                  <h1 className={`text-lg font-black drop-shadow-lg ${theme === 'bounceworld' ? 'text-white' : 'text-white'}`}>
+                  <h1 className={`text-lg font-black drop-shadow-lg ${theme === 'bounceworld' ? 'text-white' : theme === 'cricketverse-australian' ? 'text-black' : 'text-white'}`}>
                     Dr. U Education
                   </h1>
                 </div>
@@ -365,11 +385,13 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
             theme === 'default'
               ? 'bg-white'
               : theme === 'ben10'
-              ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222]'
+              ? 'bg-gradient-to-r from-[#64cc4f] to-[#2c9140]'
               : theme === 'tinkerbell'
               ? 'bg-gradient-to-r from-yellow-500 to-green-600'
               : theme === 'cricketverse'
               ? 'bg-gradient-to-r from-indigo-600 to-blue-500'
+              : theme === 'cricketverse-australian'
+              ? 'bg-[#fff800]'
               : theme === 'bounceworld'
               ? 'bg-white'
               : theme === 'avengers'
@@ -404,10 +426,10 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
                 })()}
               </div>
               <div className="flex-1 min-w-0">
-                <p className={`text-sm font-black ${theme === 'bounceworld' || theme === 'default' ? 'text-black' : 'text-white'} truncate`}>
+                <p className={`text-sm font-black ${theme === 'bounceworld' || theme === 'default' || theme === 'cricketverse-australian' ? 'text-black' : 'text-white'} truncate`}>
                   {student.name}
                 </p>
-                <p className="text-xs font-bold text-black" style={{
+                <p className={`text-xs font-bold ${theme === 'avengers' ? 'text-white' : 'text-black'}`} style={{
                   opacity: 0.9
                 }}>
                   {student.status === 'Active' 
@@ -440,6 +462,8 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
                         ? 'bg-gradient-to-r from-yellow-400 to-green-500 text-white border-black shadow-lg'
                         : theme === 'cricketverse'
                         ? 'bg-gradient-to-r from-blue-400 to-indigo-600 text-white border-indigo-700 shadow-lg'
+                        : theme === 'cricketverse-australian'
+                        ? 'bg-[#fff800] text-black border-black shadow-lg'
                         : theme === 'bounceworld'
                         ? 'bg-gradient-to-r from-[#1D428A] to-[#C8102E] text-white border-[#1D428A] shadow-lg'
                         : theme === 'avengers'
@@ -456,6 +480,8 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
                           ? 'hover:from-yellow-300 hover:to-green-400 hover:text-white'
                           : theme === 'cricketverse'
                           ? 'hover:from-blue-300 hover:to-indigo-500 hover:text-white'
+                          : theme === 'cricketverse-australian'
+                          ? 'hover:bg-[#fff800] hover:text-black'
                           : theme === 'bounceworld'
                           ? 'hover:from-[#1D428A] hover:to-[#C8102E] hover:text-white'
                           : theme === 'avengers'
@@ -474,7 +500,7 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
                 }}
               >
                 <div className="flex items-center space-x-3">
-                  <Icon className={`w-6 h-6 ${isActive ? (theme === 'default' ? 'text-blue-600' : 'text-white') : 'text-black'}`} />
+                  <Icon className={`w-6 h-6 ${isActive ? (theme === 'default' ? 'text-blue-600' : theme === 'cricketverse-australian' ? 'text-black' : 'text-white') : 'text-black'}`} />
                   <span>{item.label}</span>
                 </div>
                 {item.badge && (
@@ -493,7 +519,7 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
                   </span>
                 )}
                 {isActive && (
-                  <ChevronRight className={`w-5 h-5 ${theme === 'default' ? 'text-blue-600' : 'text-white'}`} />
+                  <ChevronRight className={`w-5 h-5 ${theme === 'default' ? 'text-blue-600' : theme === 'cricketverse-australian' ? 'text-black' : 'text-white'}`} />
                 )}
               </Link>
             );
@@ -510,6 +536,8 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
             ? 'bg-gradient-to-r from-yellow-500 to-green-600'
             : theme === 'cricketverse'
             ? 'bg-gradient-to-r from-blue-600 to-indigo-700'
+            : theme === 'cricketverse-australian'
+            ? 'bg-[#fff800]'
             : theme === 'bounceworld'
             ? 'bg-white'
             : theme === 'avengers'
