@@ -435,8 +435,9 @@ export async function GET(req: NextRequest) {
     });
 
     // Cache the result
-    cacheUtils.set(cacheKey, students, 300);    
-    return NextResponse.json(students);
+    const response = { students };
+    cacheUtils.set(cacheKey, response, 300);    
+    return NextResponse.json(response);
   } catch (error: any) {
     console.error("Error fetching student(s):", error);
     return NextResponse.json(

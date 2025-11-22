@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { AlertCircle, Clock, ArrowLeft, Target, RefreshCw } from 'lucide-react';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
-import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui';
 import { Test, LiveTest, FlexibleTest } from '@/models/testSchema';
 import { Timestamp } from 'firebase/firestore';
@@ -19,7 +18,6 @@ export default function TestPage() {
   const testId = params?.testId as string;
   
   const { student, loading: authLoading } = useStudentAuth();
-  const { theme } = useTheme();
   
   // States
   const [test, setTest] = useState<Test | null>(null);
@@ -28,6 +26,7 @@ export default function TestPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [startingTest, setStartingTest] = useState(false);
+  const [theme] = useState<'default' | 'ben10' | 'tinkerbell' | 'cricketverse' | 'bounceworld' | 'avengers' | 'ponyville'>('default');
 
   // Load test data
   useEffect(() => {
