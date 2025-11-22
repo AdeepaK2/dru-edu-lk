@@ -140,7 +140,7 @@ export default function TestTakePage() {
     }
   };
   
-  // Track tab visibility for integrity
+  // Track tab visibility for integrity - DO NOT auto-submit on visibility changes
   useEffect(() => {
     const handleVisibilityChange = async () => {
       if (!attemptId) return;
@@ -149,11 +149,19 @@ export default function TestTakePage() {
         const { RealtimeTestService } = await import('@/apiservices/realtimeTestService');
         
         if (document.visibilityState === 'hidden') {
-          // Record tab switch and pause tracking
+          console.log('👁️ Tab/screen hidden - tracking for integrity monitoring');
+          // Record tab switch and pause tracking (for integrity monitoring only)
           await RealtimeTestService.handleVisibilityChange(attemptId, false);
         } else {
+          console.log('👁️ Tab/screen visible - resuming normal operation');
           // Resume tracking when tab becomes visible
           await RealtimeTestService.handleVisibilityChange(attemptId, true);
+          
+          // IMPORTANT: Do NOT check for expiration here
+          // The timer will handle auto-submit when time truly runs out
+          // This allows students to return after power outages, screen locks, etc.
+          // as long as they still have time remaining
+          console.log('✅ Visibility restored - timer will continue from where it left off');
         }
       } catch (error) {
         console.error('Error handling visibility change:', error);
@@ -215,44 +223,43 @@ export default function TestTakePage() {
 
   // Track online/offline status for time management and answer sync
   useEffect(() => {
+    let offlineTimestamp: number | null = null;
+    
     const handleOnline = async () => {
-      console.log('🌐 Connection restored - syncing data...');
+      const offlineDuration = offlineTimestamp ? Date.now() - offlineTimestamp : 0;
+      console.log('🌐 Connection restored after', Math.floor(offlineDuration / 1000), 'seconds offline');
       setIsOnline(true);
       
       if (!attemptId) return;
       
       try {
-        console.log('🔌 Coming back online, checking attempt status...');
-        
-        // First check if the attempt has expired during disconnection
-        const isStillActive = await checkAttemptStatus(attemptId);
-        if (!isStillActive) {
-          console.log('⏰ Test expired while offline, auto-submitting...');
-          return; // checkAttemptStatus will handle auto-submit
-        }
-        
-        // Attempt is still active, handle reconnection
+        // Handle reconnection - this will recalculate time based on server state
         const { AttemptManagementService } = await import('@/apiservices/attemptManagementService');
         const timeCalc = await AttemptManagementService.handleReconnection(attemptId);
         
         if (timeCalc) {
+          console.log('🔌 Reconnection successful:');
+          console.log('  - Time remaining:', timeCalc.timeRemaining, 'seconds');
+          console.log('  - Offline time:', timeCalc.offlineTime, 'seconds');
+          console.log('  - Is expired:', timeCalc.isExpired);
+          
           setRemainingTime(timeCalc.timeRemaining);
           setOfflineTime(timeCalc.offlineTime);
           setWasOffline(timeCalc.offlineTime > 0);
-          console.log('🔌 Reconnected - time remaining:', timeCalc.timeRemaining);
-          console.log('🔌 Offline time:', timeCalc.offlineTime, 'seconds');
-          console.log('🔌 Server time sync completed - ensuring accuracy');
           
-          // Check if time expired during the reconnection process
+          // ONLY auto-submit if the test is truly expired (time ran out)
           if (timeCalc.isExpired) {
-            console.log('⏰ Test expired during reconnection, auto-submitting...');
+            console.log('⏰ Test time has expired - auto-submitting...');
             setTimeExpired(true);
             await handleAutoSubmit();
             return;
+          } else {
+            // Test still has time - allow student to continue!
+            console.log('✅ Test still active - student can continue with', timeCalc.timeRemaining, 'seconds remaining');
           }
         }
         
-        // 🔄 CRITICAL: Sync offline answers and reload from realtime database
+        // Sync offline answers and reload from realtime database
         if (test) {
           console.log('📤 Syncing offline answers...');
           await syncOfflineAnswers();
@@ -262,8 +269,11 @@ export default function TestTakePage() {
         }
         
         console.log('✅ Successfully synced after reconnection');
+        offlineTimestamp = null; // Reset offline timestamp
       } catch (error) {
-        console.error('Error handling online reconnection:', error);
+        console.error('❌ Error handling online reconnection:', error);
+        // Don't auto-submit on errors - let the timer handle it
+        offlineTimestamp = null;
       }
     };
 
@@ -271,13 +281,14 @@ export default function TestTakePage() {
       console.log('📴 Connection lost - entering offline mode...');
       setIsOnline(false);
       setWasOffline(true);
+      offlineTimestamp = Date.now(); // Track when we went offline
       
       if (!attemptId) return;
       
       try {
         const { AttemptManagementService } = await import('@/apiservices/attemptManagementService');
         await AttemptManagementService.handleDisconnection(attemptId);
-        console.log('📴 Gone offline - time tracking paused');
+        console.log('📴 Offline mode activated - time tracking paused');
       } catch (error) {
         console.error('Error handling offline:', error);
       }
@@ -290,7 +301,7 @@ export default function TestTakePage() {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [attemptId]);
+  }, [attemptId, test]);
   
   // Tab switch tracking
   const updateTabSwitchCount = async () => {
