@@ -233,7 +233,7 @@ export default function DocumentUploadGrid({
                       <IconComponent className={`w-6 h-6 ${theme === 'bounceworld' ? 'text-white' : 'text-black'}`} />
                     </div>
                     <div>
-                      <h3 className={`font-black ${theme === 'bounceworld' ? 'text-[#1D428A]' : 'text-black'} text-lg`}>
+                      <h3 className={`font-black ${theme === 'bounceworld' ? 'text-[#0d1015]' : 'text-black'} text-lg`}>
                         {config.title}
                       </h3>
                       <p className={`text-black font-bold text-sm`}>
@@ -242,7 +242,7 @@ export default function DocumentUploadGrid({
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <StatusIcon className={`w-8 h-8 ${theme === 'bounceworld' ? 'text-[#1D428A]' : 'text-black'}`} />
+                    <StatusIcon className={`w-8 h-8 ${theme === 'bounceworld' ? 'text-[#111418]' : 'text-black'}`} />
                   </div>
                 </div>
               </div>
@@ -286,7 +286,7 @@ export default function DocumentUploadGrid({
                           className={`flex items-center space-x-2 text-sm ${theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] to-[#C8102E] hover:from-[#C8102E] hover:to-[#1D428A] text-white border-[#1D428A]' : 'bg-gradient-to-r from-[#64cc4f] to-[#b2e05b] hover:from-[#b2e05b] hover:to-[#64cc4f] text-white border-black'} font-black rounded-full px-4 py-2 transform hover:scale-105 transition-all`}
                         >
                           <Download className="w-4 h-4" />
-                          <span>📥 Download</span>
+                          <span>Download</span>
                         </Button>
                       )}
                       
@@ -313,7 +313,7 @@ export default function DocumentUploadGrid({
                             className={`flex items-center space-x-2 text-sm ${theme === 'bounceworld' ? 'bg-gradient-to-r from-[#C8102E] to-[#1D428A] hover:from-[#1D428A] hover:to-[#C8102E] text-white border-[#C8102E]' : 'bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white border-black'} font-black rounded-full px-4 py-2 transform hover:scale-105 transition-all`}
                           >
                             <RefreshCw className="w-4 h-4" />
-                            <span>🔄 Re-upload</span>
+                            <span> Re-upload</span>
                           </Button>
                         </>
                       )}
@@ -341,7 +341,7 @@ export default function DocumentUploadGrid({
                           className={`w-full ${theme === 'bounceworld' ? 'bg-gradient-to-r from-[#1D428A] to-[#C8102E] hover:from-[#C8102E] hover:to-[#1D428A] text-white border-[#1D428A]' : 'bg-gradient-to-r from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600 text-white border-black'} font-black rounded-full py-2 transform hover:scale-105 transition-all`}
                         >
                           <X className="w-4 h-4 mr-2" />
-                          ❌ Remove File
+                           Remove File
                         </Button>
                       </div>
                     ) : (
@@ -402,12 +402,12 @@ export default function DocumentUploadGrid({
             {loading ? (
               <>
                 <RefreshCw className="w-6 h-6 animate-spin" />
-                <span>🔄 Uploading Magical Documents...</span>
+                <span>uploading Magical Documents...</span>
               </>
             ) : (
               <>
                 <Upload className="w-6 h-6" />
-                <span>🚀 Upload Selected Documents</span>
+                <span> Upload Selected Documents</span>
               </>
             )}
           </Button>
