@@ -274,10 +274,14 @@ export default function ClassVideos({ params }: ClassVideoProps) {
           ? 'bg-gradient-to-br from-[#fff5fb] via-[#f1aed5] to-[#ff2e9f]'
           : theme === 'default'
           ? 'bg-gradient-to-br from-gray-50 to-white'
+          : theme === 'cricketverse'
+          ? 'bg-gradient-to-br from-blue-400 to-indigo-600'
           : 'bg-gradient-to-br from-blue-400 via-indigo-500 to-indigo-600'
       }`}
       style={theme === 'ben10' ? {
         background: 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))'
+      } : theme === 'cricketverse' ? {
+        background: 'linear-gradient(to bottom right, rgb(96, 165, 250), rgba(245, 137, 90, 0.6), rgb(79, 70, 229), rgb(96, 165, 250))'
       } : theme === 'cricketverse-australian' ? {
         background: '#ffff2a'
       } : undefined}
@@ -388,10 +392,14 @@ export default function ClassVideos({ params }: ClassVideoProps) {
           ? 'bg-gradient-to-br from-[#fff5fb] via-[#f1aed5] to-[#ff2e9f]'
           : theme === 'default'
           ? 'bg-gradient-to-br from-gray-50 to-white'
+          : theme === 'cricketverse'
+          ? 'bg-gradient-to-br from-blue-400 to-indigo-600'
           : 'bg-gradient-to-br from-blue-400 via-indigo-500 to-indigo-600'
       }`}
       style={theme === 'ben10' ? {
         background: 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))'
+      } : theme === 'cricketverse' ? {
+        background: 'linear-gradient(to bottom right, rgb(96, 165, 250), rgba(245, 137, 90, 0.6), rgb(79, 70, 229), rgb(96, 165, 250))'
       } : theme === 'cricketverse-australian' ? {
         background: '#ffff2a'
       } : undefined}
