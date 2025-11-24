@@ -1203,7 +1203,7 @@ export default function StudentStudyPage() {
         : theme === 'bounceworld'
         ? 'bg-gradient-to-br from-white via-[#1D428A]/20 to-[#C8102E]/20'
         : theme === 'avengers'
-        ? 'from-[#7843f5] via-[#6241f6] to-[#734fea]'
+        ? 'from-[#b9a2ef] to-[#c9b0f6]'
         : theme === 'ponyville'
         ? 'from-[#f1aed5] via-[#e13690] to-[#ff2e9f]'
         : 'from-gray-100 to-white'

@@ -293,7 +293,7 @@ export default function StudentResults() {
           : theme === 'bounceworld'
           ? 'linear-gradient(to bottom right, rgb(255, 255, 255), rgb(29, 66, 138), rgb(200, 16, 46))'
           : theme === 'avengers'
-          ? 'linear-gradient(to bottom right, rgb(44, 18, 103), rgb(79, 44, 141), rgb(15, 8, 38))'
+          ? 'linear-gradient(to bottom right, rgb(44, 18, 103,0.2), rgb(79, 44, 141,0.2), rgb(15, 8, 38,0.2))'
           : theme === 'ponyville'
           ? 'linear-gradient(to bottom right, rgb(255, 245, 251), rgb(241, 174, 213), rgb(255, 46, 159))'
           : theme === 'cricketverse'
