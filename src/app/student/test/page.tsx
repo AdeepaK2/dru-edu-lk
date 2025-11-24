@@ -981,6 +981,8 @@ export default function StudentTests() {
           style={
             theme === 'ben10'
               ? { background: 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))' }
+              : theme === 'cricketverse'
+              ? { background: 'linear-gradient(to bottom right, rgb(96, 165, 250), rgba(245, 137, 90, 0.6), rgb(79, 70, 229), rgb(96, 165, 250))' }
               : theme === 'cricketverse-australian'
               ? { background: '#ffff2a' }
               : undefined
@@ -1051,7 +1053,7 @@ export default function StudentTests() {
             theme === 'cricketverse-australian'
               ? { background: 'linear-gradient(to bottom right, rgb(134, 250, 92) 0%, rgb(255, 255, 42) 40%, rgb(255, 255, 42) 60%, rgb(134, 250, 92) 100%)' }
               : theme === 'cricketverse'
-              ? { background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }
+              ? { background: 'linear-gradient(to bottom right, rgb(96, 165, 250), rgba(245, 137, 90, 0.6), rgb(79, 70, 229), rgb(96, 165, 250))' }
               : undefined
           }
         >
@@ -1138,7 +1140,7 @@ export default function StudentTests() {
                     alt="CricketVerse Loading"
                     className="w-32 h-32 object-contain"
                   />
-                  <span className="text-2xl font-bold text-white mt-4">Loading</span>
+                  <span className="text-2xl font-bold text-black mt-4">Loading</span>
                 </div>
               )}
               
@@ -1151,10 +1153,10 @@ export default function StudentTests() {
               )}
             </div>
             <div className="text-center">
-              <h2 className={`text-2xl font-black mb-2 ${theme === 'cricketverse' ? 'text-white' : 'text-black'}`}>
+              <h2 className={`text-2xl font-black mb-2 ${theme === 'cricketverse' ? 'text-black' : 'text-black'}`}>
                 {theme === 'cricketverse-australian' ? 'Loading Tests...' : theme === 'cricketverse' ? 'Loading Your Cricket Tests...' : theme === 'ponyville' ? 'Summoning Magical Tests...' : 'Loading Tests...'}
               </h2>
-              <p className={`font-medium ${theme === 'cricketverse' ? 'text-white' : 'text-gray-600'}`}>
+              <p className={`font-medium ${theme === 'cricketverse' ? 'text-black' : 'text-gray-600'}`}>
                 {theme === 'cricketverse-australian' ? 'Getting your tests ready!' : theme === 'cricketverse' ? 'Preparing your cricket challenges! 🏏' : theme === 'ponyville' ? 'Getting your magical challenges ready! 📚✨' : 'Getting your tests ready!'}
               </p>
             </div>
@@ -1171,6 +1173,8 @@ export default function StudentTests() {
         style={
           theme === 'ben10'
             ? { background: 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))' }
+            : theme === 'cricketverse'
+            ? { background: 'linear-gradient(to bottom right, rgb(96, 165, 250), rgba(245, 137, 90, 0.6), rgb(79, 70, 229), rgb(96, 165, 250))' }
             : theme === 'cricketverse-australian'
             ? { background: 'linear-gradient(to bottom right, rgb(255, 255, 42) 0%, rgb(255, 255, 42) 40%, rgb(134, 250, 92) 60%, rgb(255, 255, 42) 100%)' }
             : undefined
@@ -1186,7 +1190,7 @@ export default function StudentTests() {
               {theme === 'cricketverse-australian' ? (
                 <img src="/australian/batman4.png" alt="Australian Cricket" className="w-24 h-24 object-contain" />
               ) : theme === 'cricketverse' ? (
-                <img src="/indian/batmant2.png" alt="Indian Cricket" className="w-24 h-24 object-contain" />
+                <img src="/indian/batman2.png" alt="Indian Cricket" className="w-24 h-24 object-contain" />
               ) : theme === 'ponyville' ? (
                 <img src="/ponyville/sweetybelle.png" alt="Sweetybelle" className="w-24 h-24 object-contain" />
               ) : theme === 'avengers' ? (

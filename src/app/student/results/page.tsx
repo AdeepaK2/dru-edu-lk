@@ -297,7 +297,7 @@ export default function StudentResults() {
           : theme === 'ponyville'
           ? 'linear-gradient(to bottom right, rgb(255, 245, 251), rgb(241, 174, 213), rgb(255, 46, 159))'
           : theme === 'cricketverse'
-          ? 'linear-gradient(to bottom right, rgb(96, 165, 250), rgb(79, 70, 229))'
+          ? 'linear-gradient(to bottom right, rgb(96, 165, 250), rgba(245, 137, 90, 0.6), rgb(79, 70, 229), rgb(96, 165, 250))'
           : theme === 'cricketverse-australian'
           ? 'linear-gradient(to bottom right, rgb(134, 250, 92) 0%, rgb(255, 255, 42) 40%, rgb(255, 255, 42) 60%, rgb(134, 250, 92) 100%)'
           : 'linear-gradient(to bottom right, rgb(249, 250, 251), rgb(255, 255, 255))'
@@ -421,7 +421,7 @@ export default function StudentResults() {
         : theme === 'ponyville'
         ? 'linear-gradient(to bottom right, rgb(255, 245, 251), rgb(241, 174, 213), rgb(255, 46, 159))'
         : theme === 'cricketverse'
-        ? 'linear-gradient(to bottom right, rgb(96, 165, 250), rgb(79, 70, 229))'
+        ? 'linear-gradient(to bottom right, rgb(96, 165, 250), rgba(245, 137, 90, 0.6), rgb(79, 70, 229), rgb(96, 165, 250))'
         : theme === 'cricketverse-australian'
         ? 'linear-gradient(to bottom right, rgb(134, 250, 92) 0%, rgb(255, 255, 42) 40%, rgb(255, 255, 42) 60%, rgb(134, 250, 92) 100%)'
         : 'linear-gradient(to bottom right, rgb(249, 250, 251), rgb(243, 244, 246), rgb(229, 231, 235))'
@@ -433,9 +433,9 @@ export default function StudentResults() {
           <div className="flex items-center space-x-4 relative z-10">
             {theme === 'cricketverse' ? (
               <img
-                src="/batman1.png"
+                src="/indian/batman1.png"
                 alt="Batman"
-                className="w-24 h-24 object-contain"
+                className="w-32 h-32 object-contain"
               />
             ) : theme === 'cricketverse-australian' ? (
               <img
