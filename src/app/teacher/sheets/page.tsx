@@ -10,15 +10,16 @@ import {
   Search,
   Download,
   ChevronRight,
-  Clock
+  Clock,
+  Trash2
 } from 'lucide-react';
 import TeacherLayout from '@/components/teacher/TeacherLayout';
 import { useTeacherAuth } from '@/hooks/useTeacherAuth';
 import { ClassFirestoreService } from '@/apiservices/classFirestoreService';
 import { StudentEnrollmentFirestoreService } from '@/apiservices/studentEnrollmentFirestoreService';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { storage, firestore } from '@/utils/firebase-client';
-import { collection, addDoc, getDocs, query, where, orderBy, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, where, orderBy, serverTimestamp, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 
 interface SheetTemplate {
   id: string;
@@ -55,6 +56,8 @@ export default function SheetManagementPage() {
   const [templatesLoading, setTemplatesLoading] = useState(false);
   const [uploadLoading, setUploadLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string>('');
+  const [deletingTemplateId, setDeletingTemplateId] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && teacher?.id) {
@@ -304,6 +307,61 @@ export default function SheetManagementPage() {
 
   const downloadTemplate = (template: SheetTemplate) => {
     window.open(template.filePath, '_blank');
+  };
+
+  const handleDeleteTemplate = async (template: SheetTemplate) => {
+    if (!teacher?.id) return;
+    
+    try {
+      setDeletingTemplateId(template.id);
+      
+      // Check if template is being used in any allocations
+      const allocationsQuery = query(
+        collection(firestore, 'sheetAllocations'),
+        where('templateId', '==', template.id)
+      );
+      const allocationsSnapshot = await getDocs(allocationsQuery);
+      
+      if (allocationsSnapshot.size > 0) {
+        // Template is in use - soft delete (mark as inactive)
+        console.log(`Template ${template.id} is in use by ${allocationsSnapshot.size} allocation(s). Performing soft delete.`);
+        
+        await updateDoc(doc(firestore, 'sheetTemplates', template.id), {
+          isActive: false,
+          deletedAt: serverTimestamp(),
+          deletedBy: teacher.id
+        });
+        
+        alert(`Template "${template.name}" has been archived.\n\nNote: This template is currently used in ${allocationsSnapshot.size} class allocation(s). It has been hidden from your templates list but existing allocations will continue to work.`);
+      } else {
+        // Template is not in use - can safely delete completely
+        console.log(`Template ${template.id} is not in use. Performing hard delete.`);
+        
+        // Delete from Firestore
+        await deleteDoc(doc(firestore, 'sheetTemplates', template.id));
+        
+        // Try to delete from Storage (don't fail if it doesn't exist)
+        try {
+          const storageRef = ref(storage, `templates/${template.fileName}`);
+          await deleteObject(storageRef);
+          console.log('Template file deleted from storage');
+        } catch (storageError) {
+          console.warn('Could not delete file from storage (may not exist):', storageError);
+        }
+        
+        alert(`Template "${template.name}" has been deleted successfully.`);
+      }
+      
+      // Reload templates to reflect changes
+      await loadTemplates();
+      setShowDeleteConfirm(null);
+      
+    } catch (error) {
+      console.error('Error deleting template:', error);
+      alert('Error deleting template. Please try again.');
+    } finally {
+      setDeletingTemplateId(null);
+    }
   };
 
   const openClassManagement = (classData: ClassWithStats) => {
@@ -583,6 +641,14 @@ export default function SheetManagementPage() {
                               <Download className="h-4 w-4" />
                             </button>
                             <button
+                              onClick={() => setShowDeleteConfirm(template.id)}
+                              disabled={deletingTemplateId === template.id}
+                              className="p-2 text-gray-400 hover:text-red-600 rounded-md hover:bg-red-50 disabled:opacity-50"
+                              title="Delete template"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                            <button
                               onClick={() => router.push(`/teacher/sheets/allocate?templateId=${template.id}`)}
                               className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
                             >
@@ -590,6 +656,46 @@ export default function SheetManagementPage() {
                             </button>
                           </div>
                         </div>
+                        
+                        {/* Delete Confirmation */}
+                        {showDeleteConfirm === template.id && (
+                          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-md">
+                            <div className="flex items-start space-x-3">
+                              <Trash2 className="h-5 w-5 text-red-600 mt-0.5" />
+                              <div className="flex-1">
+                                <h4 className="text-sm font-medium text-red-900">
+                                  Delete Template?
+                                </h4>
+                                <p className="text-sm text-red-700 mt-1">
+                                  Are you sure you want to delete "{template.name}"?
+                                  {deletingTemplateId === template.id ? (
+                                    <span className="block mt-1 text-xs">Checking if template is in use...</span>
+                                  ) : (
+                                    <span className="block mt-1 text-xs">
+                                      If this template is currently allocated to any classes, it will be archived instead of deleted.
+                                    </span>
+                                  )}
+                                </p>
+                                <div className="flex items-center space-x-2 mt-3">
+                                  <button
+                                    onClick={() => handleDeleteTemplate(template)}
+                                    disabled={deletingTemplateId === template.id}
+                                    className="px-3 py-1 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
+                                  >
+                                    {deletingTemplateId === template.id ? 'Deleting...' : 'Yes, Delete'}
+                                  </button>
+                                  <button
+                                    onClick={() => setShowDeleteConfirm(null)}
+                                    disabled={deletingTemplateId === template.id}
+                                    className="px-3 py-1 text-sm bg-white text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
