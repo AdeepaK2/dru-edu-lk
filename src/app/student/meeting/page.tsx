@@ -482,11 +482,11 @@ export default function StudentMeetingPage() {
           : theme === 'bounceworld'
           ? 'linear-gradient(to bottom right, rgb(255, 255, 255), rgb(29, 66, 138), rgb(200, 16, 46))'
           : theme === 'avengers'
-          ? 'linear-gradient(to bottom right, rgb(44, 18, 103), rgb(79, 44, 141), rgb(15, 8, 38))'
+          ? 'linear-gradient(to bottom right, rgb(44, 18, 103,0.2), rgb(79, 44, 141,0.2), rgb(15, 8, 38,0.2))'
           : theme === 'ponyville'
           ? 'linear-gradient(to bottom right, rgb(255, 245, 251), rgb(241, 174, 213), rgb(255, 46, 159))'
           : theme === 'cricketverse'
-          ? 'linear-gradient(to bottom right, rgb(96, 165, 250), rgb(79, 70, 229))'
+          ? 'linear-gradient(to bottom right, rgb(96, 165, 250), rgba(245, 137, 90, 0.6), rgb(79, 70, 229), rgb(96, 165, 250))'
           : theme === 'cricketverse-australian'
           ? 'linear-gradient(to bottom right, rgb(134, 250, 92) 0%, rgb(255, 255, 42) 40%, rgb(255, 255, 42) 60%, rgb(134, 250, 92) 100%)'
           : 'linear-gradient(to bottom right, rgb(249, 250, 251), rgb(255, 255, 255))'
@@ -587,7 +587,7 @@ export default function StudentMeetingPage() {
             )}
           </div>
           <div className="text-center">
-            <h2 className={`text-2xl font-black mb-2 ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>Loading Meetings...</h2>
+            <h2 className={`text-2xl font-black mb-2 ${theme === 'avengers' ? 'text-black' : 'text-black'}`}>Loading Meetings...</h2>
             <p className={`text-gray-600 font-medium ${theme === 'bounceworld' ? 'text-[#1D428A]' : theme === 'avengers' ? 'text-[#2C1267]' : theme === 'ponyville' ? 'text-[#e13690]' : theme === 'cricketverse' ? 'text-blue-600' : theme === 'cricketverse-australian' ? 'text-black' : ''}`}>
               {theme === 'bounceworld' ? 'Get ready to schedule your personalized learning sessions! 📅' : theme === 'avengers' ? 'Assemble your meeting schedule! 🦸‍♂️' : theme === 'ponyville' ? 'Get ready to cast magical meeting spells! ✨🦄' : theme === 'cricketverse' ? 'Get ready to schedule your learning sessions!' : theme === 'cricketverse-australian' ? 'Get ready to schedule your learning sessions!' : 'Get ready to transform your learning!'}
             </p>
@@ -637,7 +637,7 @@ export default function StudentMeetingPage() {
         : theme === 'ponyville'
         ? 'linear-gradient(to bottom right, rgb(255, 245, 251), rgb(241, 174, 213), rgb(255, 46, 159))'
         : theme === 'cricketverse'
-        ? 'linear-gradient(to bottom right, rgb(96, 165, 250), rgb(79, 70, 229))'
+        ? 'linear-gradient(to bottom right, rgb(96, 165, 250), rgba(245, 137, 90, 0.6), rgb(79, 70, 229), rgb(96, 165, 250))'
         : theme === 'cricketverse-australian'
         ? 'linear-gradient(to bottom right, rgb(134, 250, 92) 0%, rgb(255, 255, 42) 40%, rgb(255, 255, 42) 60%, rgb(134, 250, 92) 100%)'
         : 'linear-gradient(to bottom right, rgb(249, 250, 251), rgb(243, 244, 246), rgb(229, 231, 235))'

@@ -981,6 +981,8 @@ export default function StudentTests() {
           style={
             theme === 'ben10'
               ? { background: 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))' }
+              : theme === 'cricketverse'
+              ? { background: 'linear-gradient(to bottom right, rgb(96, 165, 250), rgba(245, 137, 90, 0.6), rgb(79, 70, 229), rgb(96, 165, 250))' }
               : theme === 'cricketverse-australian'
               ? { background: '#ffff2a' }
               : undefined
@@ -1046,12 +1048,12 @@ export default function StudentTests() {
     return (
       <StudentLayout>
         <div
-          className={`min-h-screen p-6 flex items-center justify-center ${theme === 'default' ? 'bg-gradient-to-br from-white to-gray-100' : theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A] to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-br from-[#987add] to-[#775ba7]' : theme === 'ponyville' ? 'bg-gradient-to-br from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : 'bg-gradient-to-br from-blue-400 to-indigo-600'}`}
+          className={`min-h-screen p-6 flex items-center justify-center ${theme === 'default' ? 'bg-gradient-to-br from-white to-gray-100' : theme === 'ben10' ? 'bg-gradient-to-br from-[#64cc4f] to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-400' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A] to-[#C8102E]' : theme === 'avengers' ? 'bg-gradient-to-br from-[#b9a2ef] to-[#c9b0f6]' : theme === 'ponyville' ? 'bg-gradient-to-br from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : 'bg-gradient-to-br from-blue-400 to-indigo-600'}`}
           style={
             theme === 'cricketverse-australian'
               ? { background: 'linear-gradient(to bottom right, rgb(134, 250, 92) 0%, rgb(255, 255, 42) 40%, rgb(255, 255, 42) 60%, rgb(134, 250, 92) 100%)' }
               : theme === 'cricketverse'
-              ? { background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }
+              ? { background: 'linear-gradient(to bottom right, rgb(96, 165, 250), rgba(245, 137, 90, 0.6), rgb(79, 70, 229), rgb(96, 165, 250))' }
               : undefined
           }
         >
@@ -1138,7 +1140,7 @@ export default function StudentTests() {
                     alt="CricketVerse Loading"
                     className="w-32 h-32 object-contain"
                   />
-                  <span className="text-2xl font-bold text-white mt-4">Loading</span>
+                  <span className="text-2xl font-bold text-black mt-4">Loading</span>
                 </div>
               )}
               
@@ -1151,10 +1153,10 @@ export default function StudentTests() {
               )}
             </div>
             <div className="text-center">
-              <h2 className={`text-2xl font-black mb-2 ${theme === 'cricketverse' ? 'text-white' : 'text-black'}`}>
+              <h2 className={`text-2xl font-black mb-2 ${theme === 'cricketverse' ? 'text-black' : 'text-black'}`}>
                 {theme === 'cricketverse-australian' ? 'Loading Tests...' : theme === 'cricketverse' ? 'Loading Your Cricket Tests...' : theme === 'ponyville' ? 'Summoning Magical Tests...' : 'Loading Tests...'}
               </h2>
-              <p className={`font-medium ${theme === 'cricketverse' ? 'text-white' : 'text-gray-600'}`}>
+              <p className={`font-medium ${theme === 'cricketverse' ? 'text-black' : 'text-gray-600'}`}>
                 {theme === 'cricketverse-australian' ? 'Getting your tests ready!' : theme === 'cricketverse' ? 'Preparing your cricket challenges! 🏏' : theme === 'ponyville' ? 'Getting your magical challenges ready! 📚✨' : 'Getting your tests ready!'}
               </p>
             </div>
@@ -1167,10 +1169,12 @@ export default function StudentTests() {
   return (
     <StudentLayout>
       <div
-        className={`min-h-screen p-6 ${theme === 'default' ? 'bg-gradient-to-br from-white via-gray-50 to-black' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-300' : theme === 'cricketverse' ? 'bg-gradient-to-br from-blue-400 via-indigo-500 to-blue-400' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A]/10 to-[#C8102E]/10' : theme === 'avengers' ? 'bg-gradient-to-br from-[#7946ef] to-[#4F2C8D]' : theme === 'ponyville' ? 'bg-gradient-to-br from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : 'bg-gradient-to-br from-blue-400 via-indigo-500 to-blue-400'}`}
+        className={`min-h-screen p-6 ${theme === 'default' ? 'bg-gradient-to-br from-white via-gray-50 to-black' : theme === 'tinkerbell' ? 'bg-gradient-to-br from-yellow-300 via-green-400 to-yellow-300' : theme === 'cricketverse' ? 'bg-gradient-to-br from-blue-400 via-indigo-500 to-blue-400' : theme === 'bounceworld' ? 'bg-gradient-to-br from-white via-[#1D428A]/10 to-[#C8102E]/10' : theme === 'avengers' ? 'bg-gradient-to-br from-[#9d7aef] to-[#b796ef]' : theme === 'ponyville' ? 'bg-gradient-to-br from-[#f1aed5] via-[#e13690] to-[#ff2e9f]' : 'bg-gradient-to-br from-blue-400 via-indigo-500 to-blue-400'}`}
         style={
           theme === 'ben10'
             ? { background: 'linear-gradient(to bottom right, rgb(100, 204, 79), rgb(178, 224, 91), rgb(34, 34, 34))' }
+            : theme === 'cricketverse'
+            ? { background: 'linear-gradient(to bottom right, rgb(96, 165, 250), rgba(245, 137, 90, 0.6), rgb(79, 70, 229), rgb(96, 165, 250))' }
             : theme === 'cricketverse-australian'
             ? { background: 'linear-gradient(to bottom right, rgb(255, 255, 42) 0%, rgb(255, 255, 42) 40%, rgb(134, 250, 92) 60%, rgb(255, 255, 42) 100%)' }
             : undefined
@@ -1186,7 +1190,7 @@ export default function StudentTests() {
               {theme === 'cricketverse-australian' ? (
                 <img src="/australian/batman4.png" alt="Australian Cricket" className="w-24 h-24 object-contain" />
               ) : theme === 'cricketverse' ? (
-                <img src="/indian/batmant2.png" alt="Indian Cricket" className="w-24 h-24 object-contain" />
+                <img src="/indian/batman2.png" alt="Indian Cricket" className="w-24 h-24 object-contain" />
               ) : theme === 'ponyville' ? (
                 <img src="/ponyville/sweetybelle.png" alt="Sweetybelle" className="w-24 h-24 object-contain" />
               ) : theme === 'avengers' ? (
