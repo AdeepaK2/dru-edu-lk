@@ -247,15 +247,18 @@ export default function TestTakePage() {
           setOfflineTime(timeCalc.offlineTime);
           setWasOffline(timeCalc.offlineTime > 0);
           
-          // ONLY auto-submit if the test is truly expired (time ran out)
-          if (timeCalc.isExpired) {
-            console.log('⏰ Test time has expired - auto-submitting...');
+          // DON'T auto-submit on reconnection even if isExpired is true
+          // The timer will naturally hit 0 and trigger auto-submit if truly expired
+          // This allows students to reconnect and continue if they still have time
+          if (timeCalc.isExpired && timeCalc.timeRemaining <= 0) {
+            console.log('⏰ Test time has expired (0 seconds remaining)');
             setTimeExpired(true);
-            await handleAutoSubmit();
-            return;
-          } else {
+            // Let the timer effect handle auto-submit naturally
+          } else if (timeCalc.timeRemaining > 0) {
             // Test still has time - allow student to continue!
             console.log('✅ Test still active - student can continue with', timeCalc.timeRemaining, 'seconds remaining');
+            // Restart the timer with the remaining time
+            setTimeExpired(false);
           }
         }
         

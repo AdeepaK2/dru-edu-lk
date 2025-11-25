@@ -698,6 +698,73 @@ export default function StudentTests() {
     );
   };
 
+  // Get active attempt information including time remaining
+  const getActiveAttemptInfo = (test: Test) => {
+    const attempts = testAttempts[test.id];
+    if (!attempts || !attempts.activeAttempts || attempts.activeAttempts.length === 0) {
+      return null;
+    }
+
+    // Get the most recent active attempt
+    const activeAttempt = attempts.activeAttempts[0];
+    
+    // Format time remaining from seconds to human-readable
+    const formatTimeRemaining = (seconds: number): string => {
+      if (seconds <= 0) return "Time expired";
+      
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      const secs = seconds % 60;
+      
+      if (hours > 0) {
+        return `${hours}h ${minutes}m remaining`;
+      } else if (minutes > 0) {
+        return `${minutes}m ${secs}s remaining`;
+      } else {
+        return `${secs}s remaining`;
+      }
+    };
+
+    // Get time remaining - could be from attempt or need to calculate based on deadline
+    let timeRemaining = activeAttempt.timeRemaining || 0;
+    
+    // For flexible tests, also check deadline
+    if (test.type === 'flexible') {
+      const flexTest = test as FlexibleTest;
+      const now = Date.now() / 1000; // Current time in seconds
+      
+      const getSeconds = (timestamp: any): number => {
+        if (timestamp && typeof timestamp.seconds === 'number') {
+          return timestamp.seconds;
+        } else if (timestamp && typeof timestamp.toDate === 'function') {
+          return timestamp.toDate().getTime() / 1000;
+        } else if (timestamp instanceof Date) {
+          return timestamp.getTime() / 1000;
+        } else if (typeof timestamp === 'string') {
+          return new Date(timestamp).getTime() / 1000;
+        }
+        return 0;
+      };
+      
+      const deadlineSeconds = getSeconds(flexTest.availableTo);
+      const timeUntilDeadline = Math.max(0, deadlineSeconds - now);
+      
+      // Use whichever is less: timer or deadline
+      if (timeUntilDeadline > 0 && timeUntilDeadline < timeRemaining) {
+        timeRemaining = timeUntilDeadline;
+      }
+    }
+
+    return {
+      attemptId: activeAttempt.id,
+      timeRemaining: Math.floor(timeRemaining),
+      formattedTime: formatTimeRemaining(Math.floor(timeRemaining)),
+      status: activeAttempt.status,
+      startedAt: activeAttempt.startedAt,
+      lastActiveAt: activeAttempt.lastActiveAt
+    };
+  };
+
   // Calculate time remaining until deadline for flexible tests
   const calculateTimeUntilDeadline = (test: FlexibleTest): string => {
     try {
@@ -1706,6 +1773,48 @@ export default function StudentTests() {
                                   )}
                                 </p>
                               )}
+                              {(() => {
+                                const activeInfo = getActiveAttemptInfo(test);
+                                if (activeInfo && activeInfo.timeRemaining > 0) {
+                                  return (
+                                    <div className="mt-2 p-3 bg-green-100 dark:bg-green-900/30 rounded-lg border-2 border-green-500 dark:border-green-600">
+                                      <div className="flex items-center space-x-2">
+                                        <Clock className="h-5 w-5 text-green-700 dark:text-green-400 animate-pulse" />
+                                        <div className="text-sm">
+                                          <p className="font-black text-green-800 dark:text-green-300 text-lg">
+                                            ⏱️ {activeInfo.formattedTime}
+                                          </p>
+                                          <p className="text-green-700 dark:text-green-400 text-xs mt-0.5">
+                                            You can resume your test and continue from where you left off
+                                          </p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              })()}
+                              {(() => {
+                                const activeInfo = getActiveAttemptInfo(test);
+                                if (activeInfo && activeInfo.timeRemaining > 0) {
+                                  return (
+                                    <div className="mt-2 p-3 bg-green-100 dark:bg-green-900/30 rounded-lg border-2 border-green-500 dark:border-green-600">
+                                      <div className="flex items-center space-x-2">
+                                        <Clock className="h-5 w-5 text-green-700 dark:text-green-400 animate-pulse" />
+                                        <div className="text-sm">
+                                          <p className="font-black text-green-800 dark:text-green-300 text-lg">
+                                            ⏱️ {activeInfo.formattedTime}
+                                          </p>
+                                          <p className="text-green-700 dark:text-green-400 text-xs mt-0.5">
+                                            You can resume your test and continue from where you left off
+                                          </p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              })()}
                               {test.description && (
                                 <p className={`text-lg font-bold mt-2 ${theme === 'avengers' ? 'text-white' : 'text-black'}`}>
                                   {test.description}
