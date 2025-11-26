@@ -375,7 +375,16 @@ export class AttemptManagementService {
         // Check if attempt is still valid (not expired)
         if (attempt.status === 'submitted' || attempt.status === 'auto_submitted' || 
             attempt.status === 'abandoned' || attempt.status === 'terminated') {
-          throw new Error('Attempt has already been completed or terminated');
+          console.log('⚠️ Attempt already completed, returning expired state');
+          return {
+            totalTimeAllowed: attempt.totalTimeAllowed || 0,
+            timeSpent: attempt.timeSpent || 0,
+            timeRemaining: 0,
+            offlineTime: 0,
+            isExpired: true,
+            canContinue: false,
+            timeUntilExpiry: 0
+          };
         }
         
         // Try to restart the attempt in realtime DB
@@ -527,9 +536,10 @@ export class AttemptManagementService {
       // Check if attempt should be marked as expired
       const isExpired = newTimeRemaining <= 0;
       
-      // If expired and student is offline, auto-submit
+      // Only mark as expired, DON'T auto-submit here
+      // Let the client-side timer or background job handle actual submission
       if (isExpired && !state.isOnline) {
-        console.log('⏰ Test expired while student was offline, marking for auto-submit');
+        console.log('⏰ Test expired while student was offline, marking for background processing');
         await this.markAttemptAsExpired(attemptId);
       }
 
@@ -685,8 +695,13 @@ export class AttemptManagementService {
       }
       
       // Calculate actual time remaining based on DEADLINE, not timer countdown
+      // IMPORTANT: Use state.timeRemaining as the baseline, but verify against deadline
       let actualTimeRemaining = state.timeRemaining ?? 0;
       let isExpiredByDeadline = false;
+      
+      // Only check deadline if we have a valid timeRemaining from state
+      // If timeRemaining is already 0 or negative, it means timer ran out before disconnect
+      const hasTimeFromTimer = actualTimeRemaining > 0;
       
       if (test.type === 'flexible') {
         const flexTest = test as any;
@@ -696,11 +711,20 @@ export class AttemptManagementService {
           const timeUntilDeadlineMs = Math.max(0, deadlineMs - now);
           const timeUntilDeadline = Math.floor(timeUntilDeadlineMs / 1000);
           
-          // Use whichever is LESS: timer countdown OR time until deadline
-          actualTimeRemaining = Math.min(state.timeRemaining ?? 0, timeUntilDeadline);
+          // Check if deadline has passed
           isExpiredByDeadline = timeUntilDeadline <= 0;
           
-          console.log('🔌 Reconnection check - Timer:', state.timeRemaining, 's, Deadline:', timeUntilDeadline, 's, Using:', actualTimeRemaining, 's');
+          if (hasTimeFromTimer) {
+            // Use whichever is LESS: timer countdown OR time until deadline
+            actualTimeRemaining = Math.min(state.timeRemaining ?? 0, timeUntilDeadline);
+            console.log('🔌 Reconnection check - Timer:', state.timeRemaining, 's, Deadline:', timeUntilDeadline, 's, Using:', actualTimeRemaining, 's');
+          } else {
+            // Timer was already at 0 - check if deadline still allows continuation
+            if (!isExpiredByDeadline) {
+              console.warn('⚠️ Timer at 0 but deadline not reached - this should not happen in normal flow');
+            }
+            console.log('🔌 Reconnection check - Timer was 0, Deadline:', timeUntilDeadline, 's');
+          }
         }
       } else if (test.type === 'live') {
         const liveTest = test as any;
@@ -710,20 +734,29 @@ export class AttemptManagementService {
           const timeUntilEndMs = Math.max(0, endTimeMs - now);
           const timeUntilEnd = Math.floor(timeUntilEndMs / 1000);
           
-          actualTimeRemaining = Math.min(state.timeRemaining ?? 0, timeUntilEnd);
+          // Check if end time has passed
           isExpiredByDeadline = timeUntilEnd <= 0;
           
-          console.log('🔌 Reconnection check - Timer:', state.timeRemaining, 's, End time:', timeUntilEnd, 's, Using:', actualTimeRemaining, 's');
+          if (hasTimeFromTimer) {
+            actualTimeRemaining = Math.min(state.timeRemaining ?? 0, timeUntilEnd);
+            console.log('🔌 Reconnection check - Timer:', state.timeRemaining, 's, End time:', timeUntilEnd, 's, Using:', actualTimeRemaining, 's');
+          } else {
+            console.log('🔌 Reconnection check - Timer was 0, End time:', timeUntilEnd, 's');
+          }
         }
       }
       
-      // Check if test has truly expired (past deadline)
+      // Test is expired ONLY if:
+      // 1. Timer countdown reached 0, OR
+      // 2. Deadline/end time has passed
       const isExpired = actualTimeRemaining <= 0 || isExpiredByDeadline;
       
       if (isExpired) {
-        console.log('⏰ Test expired (past deadline) - marking as expired');
-        await this.markAttemptAsExpired(attemptId);
+        console.log('⏰ Test expired (past deadline) during disconnection');
+        console.log('🔄 Returning isExpired=true - client will handle auto-submit');
         
+        // DON'T auto-submit here - return expired state and let client handle it
+        // This prevents auto-submit on reconnection and allows proper client-side handling
         return {
           totalTimeAllowed: attemptData.totalTimeAllowed || 0,
           timeSpent: state.totalTimeSpent ?? 0,
@@ -781,8 +814,23 @@ export class AttemptManagementService {
       const db = getDatabase();
       const now = Date.now();
 
-      // Update final time
-      await this.updateAttemptTime(attemptId);
+      // ✅ CRITICAL: Check if already submitted to prevent duplicates
+      const attemptDoc = await getDoc(doc(firestore, this.COLLECTIONS.ATTEMPTS, attemptId));
+      if (attemptDoc.exists()) {
+        const attemptData = attemptDoc.data() as TestAttempt;
+        if (attemptData.status === 'submitted' || attemptData.status === 'auto_submitted') {
+          console.log('⚠️ Attempt already submitted, skipping duplicate submission');
+          return; // Already submitted, don't submit again
+        }
+      }
+
+      // Update final time (only if not already expired)
+      try {
+        await this.updateAttemptTime(attemptId);
+      } catch (timeError) {
+        console.warn('⚠️ Could not update final time:', timeError);
+        // Continue with submission anyway
+      }
 
       // Update Firestore
       await updateDoc(doc(firestore, this.COLLECTIONS.ATTEMPTS, attemptId), {
