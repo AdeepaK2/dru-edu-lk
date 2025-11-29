@@ -302,11 +302,11 @@ export default function StudentSidebar({ student, isOpen, onToggle }: StudentSid
       )}
 
       {/* Sidebar */}
-      <div className="
+      <div className={`
         fixed inset-y-0 left-0 z-50 w-64 shadow-2xl transform transition-transform duration-300 ease-in-out border-r-4 border-black
         lg:translate-x-0 lg:static lg:inset-0 lg:w-64
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-        " style={{
+        `} style={{
         background: theme === 'default'
           ? 'rgb(255, 255, 255)'
           : theme === 'ben10'
