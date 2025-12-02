@@ -919,15 +919,20 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
       
       // Step 3: Update main material properties
       if (editingGroup && editingGroup.isGroup) {
-        // For real groups, update the group properties by updating the first material
-        const firstMaterial = materialToEdit.materials[0];
-        if (firstMaterial && !filesToRemove.includes(firstMaterial.id)) {
-          await updateStudyMaterial(firstMaterial.id, {
+        // For real groups, update ALL materials in the group with the new groupTitle
+        const materialsToUpdate = materialToEdit.materials.filter(
+          (m: any) => !filesToRemove.includes(m.id)
+        );
+        
+        // Update all materials in the group
+        for (const material of materialsToUpdate) {
+          await updateStudyMaterial(material.id, {
             groupTitle: editedData.title,
             description: editedData.description,
             isRequired: editedData.isRequired
           });
         }
+        console.log(`✅ Updated groupTitle for ${materialsToUpdate.length} materials in group`);
       } else if (editingGroup && !editingGroup.isGroup && newFilesToAdd.length > 0) {
         // Converting single material to group or adding to existing single material group
         const originalMaterial = materialToEdit.materials[0];
