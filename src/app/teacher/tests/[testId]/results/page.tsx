@@ -180,13 +180,27 @@ export default function TestResultsPage() {
         incompleteSnapshot.forEach((docSnap) => {
           const attemptData: any = { id: docSnap.id, ...docSnap.data() };
           
+          console.log('🔍 Checking attempt for incomplete status:', {
+            id: attemptData.id,
+            status: attemptData.status,
+            submittedAt: attemptData.submittedAt,
+            timeRemaining: attemptData.timeRemaining,
+            hasAnswers: attemptData.answers ? Object.keys(attemptData.answers).length : 0
+          });
+          
           // Check if this is an incomplete attempt (not submitted but has some progress)
+          // Be explicit about what counts as "submitted"
+          const hasValidSubmission = attemptData.submittedAt && 
+            (attemptData.submittedAt.seconds > 0 || 
+             (typeof attemptData.submittedAt === 'string' && attemptData.submittedAt.length > 0));
+          
           const isSubmitted = attemptData.status === 'submitted' || 
                              attemptData.status === 'auto_submitted' || 
-                             attemptData.submittedAt;
+                             hasValidSubmission;
           
           const hasProgress = attemptData.status === 'in_progress' || 
                              attemptData.status === 'paused' ||
+                             attemptData.status === 'not_started' ||
                              (attemptData.answers && Object.keys(attemptData.answers).length > 0);
           
           // Check if time has expired
@@ -203,6 +217,14 @@ export default function TestResultsPage() {
             const endTime = new Date(startTime.getTime() + (attemptData.totalTimeAllowed * 1000));
             isExpired = now > endTime;
           }
+          
+          console.log('🔍 Attempt categorization result:', {
+            id: attemptData.id,
+            isSubmitted,
+            hasProgress,
+            isExpired,
+            willInclude: !isSubmitted && hasProgress && isExpired
+          });
           
           // Only include expired incomplete attempts
           if (!isSubmitted && hasProgress && isExpired) {

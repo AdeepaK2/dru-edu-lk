@@ -1082,6 +1082,8 @@ export class AttemptManagementService {
       // For late submissions: exclude attempts that were marked as expired but NOT yet submitted
       // (timeRemaining=0 with status still 'in_progress'). These are zombie attempts that should
       // be ignored when checking if student can create a new attempt.
+      const now = Timestamp.now();
+      
       const validAttempts = attempts.filter(attempt => {
         // Always include fully submitted attempts (these count as real attempts)
         if (attempt.status === 'submitted' || attempt.status === 'auto_submitted') {
@@ -1089,9 +1091,35 @@ export class AttemptManagementService {
         }
         
         // For in-progress/paused/not_started attempts:
-        // Exclude if marked as expired (timeRemaining=0)
+        // Exclude if expired (based on multiple criteria)
         if (attempt.status === 'in_progress' || attempt.status === 'paused' || attempt.status === 'not_started') {
-          return attempt.timeRemaining === undefined || attempt.timeRemaining > 0;
+          // Check 1: timeRemaining explicitly set to 0
+          if (attempt.timeRemaining !== undefined && attempt.timeRemaining <= 0) {
+            console.log('🔍 Excluding expired attempt (timeRemaining=0):', attempt.id);
+            return false;
+          }
+          
+          // Check 2: endTime has passed
+          if (attempt.endTime) {
+            const endTimeSeconds = attempt.endTime.seconds || (attempt.endTime.toMillis ? attempt.endTime.toMillis() / 1000 : 0);
+            if (now.seconds > endTimeSeconds) {
+              console.log('🔍 Excluding expired attempt (endTime passed):', attempt.id);
+              return false;
+            }
+          }
+          
+          // Check 3: startedAt + totalTimeAllowed has passed
+          if (attempt.startedAt && attempt.totalTimeAllowed) {
+            const startSeconds = attempt.startedAt.seconds || (attempt.startedAt.toMillis ? attempt.startedAt.toMillis() / 1000 : 0);
+            const calculatedEndTime = startSeconds + attempt.totalTimeAllowed;
+            if (now.seconds > calculatedEndTime) {
+              console.log('🔍 Excluding expired attempt (calculated end time passed):', attempt.id);
+              return false;
+            }
+          }
+          
+          // Attempt is still valid (not expired)
+          return true;
         }
         
         // Include all other statuses

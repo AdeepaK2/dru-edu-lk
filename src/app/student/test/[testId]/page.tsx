@@ -465,6 +465,13 @@ export default function TestPage() {
     try {
       setStartingTest(true);
       
+      // Check for expired incomplete attempts first - redirect to review page
+      if ((attemptInfo as any).hasExpiredIncompleteAttempt && (attemptInfo as any).expiredIncompleteAttemptId) {
+        console.log('🔄 Found expired incomplete attempt, redirecting to review page:', (attemptInfo as any).expiredIncompleteAttemptId);
+        router.push(`/student/test/${testId}/review-expired?attemptId=${(attemptInfo as any).expiredIncompleteAttemptId}`);
+        return;
+      }
+      
       // Check for active attempts first - use the data we already have
       if ((attemptInfo as any).hasActiveAttempt) {
         // Find the active attempt from our already loaded data
@@ -1722,16 +1729,23 @@ export default function TestPage() {
                       ? 'bg-gradient-to-r from-pink-600 to-pink-700 hover:from-pink-500 hover:to-pink-600 border-pink-500/50'
                       : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 border-blue-500/50'
                   }`}
-                  variant={isLateSubmissionActive ? 'warning' : 'primary'}
-                  disabled={!canStart || (!(attemptInfo as any)?.hasActiveAttempt && !attemptInfo?.canCreateNewAttempt && !isLateSubmissionActive) || startingTest}
+                  variant={isLateSubmissionActive ? 'warning' : (attemptInfo as any)?.hasExpiredIncompleteAttempt ? 'warning' : 'primary'}
+                  disabled={
+                    // Allow clicking if there's an expired incomplete attempt (to review/submit it)
+                    (attemptInfo as any)?.hasExpiredIncompleteAttempt 
+                      ? startingTest 
+                      : (!canStart || (!(attemptInfo as any)?.hasActiveAttempt && !attemptInfo?.canCreateNewAttempt && !isLateSubmissionActive) || startingTest)
+                  }
                 >
                   {startingTest ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
-                      {(attemptInfo as any)?.hasActiveAttempt ? 'Resuming...' : 'Starting...'}
+                      {(attemptInfo as any)?.hasActiveAttempt ? 'Resuming...' : (attemptInfo as any)?.hasExpiredIncompleteAttempt ? 'Loading...' : 'Starting...'}
                     </>
                   ) : (attemptInfo as any)?.hasActiveAttempt ? (
                     'Resume Test'
+                  ) : (attemptInfo as any)?.hasExpiredIncompleteAttempt ? (
+                    'Review & Submit Incomplete Attempt'
                   ) : attemptInfo?.canCreateNewAttempt ? (
                     isLateSubmissionActive 
                       ? (attemptInfo.totalAttempts > 0 ? 'Start Late Submission' : 'Start Late Submission')
