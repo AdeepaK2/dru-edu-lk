@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 import {
   ArrowLeft,
   Download,
@@ -67,11 +68,13 @@ export default function TestResultsPage() {
 
   const [test, setTest] = useState<Test | null>(null);
   const [submissions, setSubmissions] = useState<StudentSubmission[]>([]);
+  const [incompleteAttempts, setIncompleteAttempts] = useState<any[]>([]);
   const [stats, setStats] = useState<TestStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [viewMode, setViewMode] = useState<'summary' | 'individual'>('summary');
+  const [viewMode, setViewMode] = useState<'summary' | 'individual' | 'incomplete'>('summary');
+  const [approvingAttempt, setApprovingAttempt] = useState<string | null>(null);
 
   useEffect(() => {
     if (testId) {
@@ -160,6 +163,65 @@ export default function TestResultsPage() {
       // Load submissions
       const submissionsData = await SubmissionService.getTestSubmissions(testId);
       setSubmissions(submissionsData);
+
+      // Load incomplete attempts (started but not submitted)
+      try {
+        const { collection, query, where, getDocs } = await import('firebase/firestore');
+        const { firestore } = await import('@/utils/firebase-client');
+        
+        const incompleteQuery = query(
+          collection(firestore, 'testAttempts'),
+          where('testId', '==', testId)
+        );
+        
+        const incompleteSnapshot = await getDocs(incompleteQuery);
+        const incompleteData: any[] = [];
+        
+        incompleteSnapshot.forEach((doc) => {
+          const attemptData = { id: doc.id, ...doc.data() };
+          
+          // Check if this is an incomplete attempt (not submitted but has some progress)
+          const isSubmitted = attemptData.status === 'submitted' || 
+                             attemptData.status === 'auto_submitted' || 
+                             attemptData.submittedAt;
+          
+          const hasProgress = attemptData.status === 'in_progress' || 
+                             attemptData.status === 'paused' ||
+                             (attemptData.answers && Object.keys(attemptData.answers).length > 0);
+          
+          // Check if time has expired
+          const now = new Date();
+          let isExpired = false;
+          
+          if (attemptData.timeRemaining !== undefined && attemptData.timeRemaining <= 0) {
+            isExpired = true;
+          } else if (attemptData.endTime) {
+            const endTime = attemptData.endTime.toDate ? attemptData.endTime.toDate() : new Date(attemptData.endTime.seconds * 1000);
+            isExpired = now > endTime;
+          } else if (attemptData.startedAt && attemptData.totalTimeAllowed) {
+            const startTime = attemptData.startedAt.toDate ? attemptData.startedAt.toDate() : new Date(attemptData.startedAt.seconds * 1000);
+            const endTime = new Date(startTime.getTime() + (attemptData.totalTimeAllowed * 1000));
+            isExpired = now > endTime;
+          }
+          
+          // Only include expired incomplete attempts
+          if (!isSubmitted && hasProgress && isExpired) {
+            const answersCount = attemptData.answers ? Object.keys(attemptData.answers).length : 0;
+            incompleteData.push({
+              ...attemptData,
+              answersCount,
+              totalQuestions: testData.questions?.length || 0,
+              isExpired: true
+            });
+          }
+        });
+        
+        setIncompleteAttempts(incompleteData);
+        console.log('📋 Loaded incomplete attempts:', incompleteData.length);
+      } catch (incompleteError) {
+        console.warn('⚠️ Failed to load incomplete attempts:', incompleteError);
+        setIncompleteAttempts([]);
+      }
 
       // Calculate statistics
       const testStats = calculateTestStats(testData, submissionsData);
@@ -520,6 +582,21 @@ export default function TestResultsPage() {
                 >
                   Individual Results
                 </button>
+                <button
+                  onClick={() => setViewMode('incomplete')}
+                  className={`px-4 py-2 text-sm font-medium rounded-md transition-colors relative ${
+                    viewMode === 'incomplete'
+                      ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow'
+                      : 'text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-100'
+                  }`}
+                >
+                  Incomplete
+                  {incompleteAttempts.length > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                      {incompleteAttempts.length}
+                    </span>
+                  )}
+                </button>
               </div>
               <button
                 onClick={exportResults}
@@ -873,7 +950,7 @@ export default function TestResultsPage() {
               </>
             )}
           </>
-        ) : (
+        ) : viewMode === 'individual' ? (
           <>
             {/* Individual Results */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
@@ -910,28 +987,28 @@ export default function TestResultsPage() {
               </div>
 
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <table className="w-full divide-y divide-gray-200 dark:divide-gray-700">
                   <thead className="bg-gray-50 dark:bg-gray-700">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[180px]">
                         Student
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[120px]">
                         Score
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[90px]">
                         Status
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[100px]">
                         Type
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[80px]">
                         Time Spent
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[140px]">
                         Submitted
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[80px]">
                         Actions
                       </th>
                     </tr>
@@ -951,7 +1028,7 @@ export default function TestResultsPage() {
                               : 'hover:bg-gray-50 dark:hover:bg-gray-700'
                           }`}
                         >
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-4 py-4 whitespace-nowrap">
                             <div className="flex items-center">
                               <div>
                                 <div className={`text-sm font-medium ${
@@ -979,7 +1056,7 @@ export default function TestResultsPage() {
                               </div>
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-4 py-4 whitespace-nowrap">
                             <div className="flex items-center">
                               <div className={`text-sm font-medium ${
                                 isHighestScorer 
@@ -1009,7 +1086,7 @@ export default function TestResultsPage() {
                               {submission.autoGradedScore || 0}/{submission.maxScore || 0} marks
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-4 py-4 whitespace-nowrap">
                             {(() => {
                               const passStatus = getSubmissionPassStatus(submission);
                               return (
@@ -1029,12 +1106,12 @@ export default function TestResultsPage() {
                               );
                             })()}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-4 py-4 whitespace-nowrap">
                             {isLateSubmission(submission) ? (
                               <div className="group relative">
                                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400 cursor-help">
                                   <Clock className="h-3 w-3 mr-1" />
-                                  Late Submission
+                                  Late
                                 </span>
                                 {getLateSubmissionInfo(submission) && (
                                   <div className="absolute bottom-full left-0 mb-2 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none">
@@ -1053,33 +1130,34 @@ export default function TestResultsPage() {
                               </span>
                             )}
                           </td>
-                          <td className={`px-6 py-4 whitespace-nowrap text-sm ${
+                          <td className={`px-4 py-4 whitespace-nowrap text-sm ${
                             isHighestScorer 
                               ? 'text-yellow-900 dark:text-yellow-100' 
                               : 'text-gray-900 dark:text-white'
                           }`}>
                             {formatTime(submission.totalTimeSpent || 0)}
                           </td>
-                          <td className={`px-6 py-4 whitespace-nowrap text-sm ${
+                          <td className={`px-4 py-4 whitespace-nowrap text-sm ${
                             isHighestScorer 
                               ? 'text-yellow-700 dark:text-yellow-300' 
                               : 'text-gray-500 dark:text-gray-400'
                           }`}>
                             {formatDateTime(submission.submittedAt)}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
                             <button
                               onClick={() => {
                                 // Navigate to detailed view
                                 router.push(`/teacher/tests/${testId}/results/${submission.id}`);
                               }}
-                              className={`${
+                              className={`inline-flex items-center px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                                 isHighestScorer
-                                  ? 'text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-200'
-                                  : 'text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300'
+                                  ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:hover:bg-yellow-900/50'
+                                  : 'bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50'
                               }`}
                             >
-                              <Eye className="h-4 w-4" />
+                              <Eye className="h-3.5 w-3.5 mr-1" />
+                              View
                             </button>
                           </td>
                         </tr>
@@ -1100,6 +1178,149 @@ export default function TestResultsPage() {
                       ? 'Try adjusting your search or filter criteria.'
                       : 'No students have submitted this test yet.'
                     }
+                  </p>
+                </div>
+              )}
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Incomplete Attempts */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+              <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                      Incomplete Attempts
+                    </h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      Students who started the test but didn't submit before time expired
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {incompleteAttempts.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead className="bg-gray-50 dark:bg-gray-700">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          Student
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          Started At
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          Progress
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                      {incompleteAttempts.map((attempt) => (
+                        <tr key={attempt.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="h-10 w-10 flex-shrink-0">
+                                <div className="h-10 w-10 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
+                                  <span className="text-orange-600 dark:text-orange-400 font-medium">
+                                    {attempt.studentName?.charAt(0) || 'S'}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="ml-4">
+                                <div className="text-sm font-medium text-gray-900 dark:text-white">
+                                  {attempt.studentName || 'Unknown Student'}
+                                </div>
+                                <div className="text-sm text-gray-500 dark:text-gray-400">
+                                  {attempt.studentEmail || ''}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                            {attempt.startedAt 
+                              ? (attempt.startedAt.toDate ? attempt.startedAt.toDate() : new Date(attempt.startedAt.seconds ? attempt.startedAt.seconds * 1000 : attempt.startedAt)).toLocaleString() 
+                              : 'N/A'}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="flex-1 mr-2">
+                                <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                                  <div
+                                    className="bg-orange-500 h-2 rounded-full"
+                                    style={{ width: `${((attempt.answersCount || 0) / (attempt.totalQuestions || 1)) * 100}%` }}
+                                  ></div>
+                                </div>
+                              </div>
+                              <span className="text-sm text-gray-600 dark:text-gray-300">
+                                {attempt.answersCount || 0}/{attempt.totalQuestions || 0}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300">
+                              <AlertTriangle className="h-3 w-3 mr-1" />
+                              Time Expired
+                            </span>
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <div className="flex items-center justify-end space-x-2">
+                              <button
+                                onClick={() => router.push(`/teacher/tests/${testId}/review/${attempt.id}`)}
+                                className="inline-flex items-center px-3 py-1.5 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+                              >
+                                <Eye className="h-3 w-3 mr-1" />
+                                View
+                              </button>
+                              <button
+                                onClick={async () => {
+                                  if (confirm(`Approve submission for ${attempt.studentName}? This will submit their current answers.`)) {
+                                    try {
+                                      const { doc, updateDoc } = await import('firebase/firestore');
+                                      const { firestore } = await import('@/utils/firebase-client');
+                                      
+                                      const attemptRef = doc(firestore, 'testAttempts', attempt.id);
+                                      await updateDoc(attemptRef, {
+                                        status: 'auto_submitted',
+                                        submittedAt: new Date().toISOString(),
+                                        autoSubmittedReason: 'Teacher approved late submission',
+                                        teacherApprovedAt: new Date().toISOString(),
+                                      });
+                                      toast.success(`Submission approved for ${attempt.studentName}`);
+                                      loadTestResults();
+                                    } catch (error) {
+                                      console.error('Error approving submission:', error);
+                                      toast.error('Failed to approve submission');
+                                    }
+                                  }
+                                }}
+                                className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
+                              >
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                Approve
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <CheckCircle className="mx-auto h-12 w-12 text-green-400 mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                    No Incomplete Attempts
+                  </h3>
+                  <p className="text-gray-500 dark:text-gray-400">
+                    All students who started this test have submitted their answers.
                   </p>
                 </div>
               )}
