@@ -373,14 +373,15 @@ export default function ReviewExpiredAttemptPage() {
       const cleanedSubmissionData = removeUndefined(submissionData);
       
       console.log('📤 Saving submission data:', cleanedSubmissionData);
-      console.log('📤 Saving to path: submissions/' + attemptId);
+      console.log('📤 Saving to path: studentSubmissions/' + attemptId);
       
-      await setDoc(doc(firestore, 'submissions', attemptId!), cleanedSubmissionData);
+      // IMPORTANT: Use 'studentSubmissions' collection - this matches SubmissionService.COLLECTIONS.SUBMISSIONS
+      await setDoc(doc(firestore, 'studentSubmissions', attemptId!), cleanedSubmissionData);
       
       console.log('✅ Submission document created with ID:', attemptId);
       
       // Verify the submission was created by reading it back
-      const verifyDoc = await getDoc(doc(firestore, 'submissions', attemptId!));
+      const verifyDoc = await getDoc(doc(firestore, 'studentSubmissions', attemptId!));
       if (verifyDoc.exists()) {
         console.log('✅ Verified submission document exists:', verifyDoc.id);
         console.log('✅ Submission data verified:', verifyDoc.data());
