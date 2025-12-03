@@ -62,54 +62,67 @@ export default function ReviewExpiredAttemptPage() {
         let attempt = { id: attemptDoc.id, ...attemptDoc.data() } as any;
         
         // If no answers in Firestore, try to load from Realtime Database
+        // IMPORTANT: Answers are stored in testSessions/${attemptId}/answers, NOT testAttempts
         if (!attempt.answers || Object.keys(attempt.answers).length === 0) {
           try {
             const { ref, get } = await import('firebase/database');
             const { realtimeDb } = await import('@/utils/firebase-client');
             
-            // Try to get answers from Realtime Database
-            const answersRef = ref(realtimeDb, `testAttempts/${attemptId}/answers`);
-            const answersSnapshot = await get(answersRef);
+            // PRIMARY PATH: testSessions/${attemptId}/answers (this is where RealtimeTestService saves)
+            const sessionAnswersRef = ref(realtimeDb, `testSessions/${attemptId}/answers`);
+            const sessionAnswersSnapshot = await get(sessionAnswersRef);
             
-            if (answersSnapshot.exists()) {
-              const rtdbAnswers = answersSnapshot.val();
-              console.log('📥 Loaded answers from Realtime Database:', rtdbAnswers);
+            if (sessionAnswersSnapshot.exists()) {
+              const rtdbAnswers = sessionAnswersSnapshot.val();
+              console.log('📥 Loaded answers from testSessions RTDB path:', rtdbAnswers);
               attempt.answers = rtdbAnswers;
             } else {
-              console.log('📥 No answers found in Realtime Database at path: testAttempts/' + attemptId + '/answers');
+              console.log('📥 No answers found in testSessions at path: testSessions/' + attemptId + '/answers');
+              
+              // FALLBACK: Try testAttempts path (legacy)
+              const legacyAnswersRef = ref(realtimeDb, `testAttempts/${attemptId}/answers`);
+              const legacyAnswersSnapshot = await get(legacyAnswersRef);
+              
+              if (legacyAnswersSnapshot.exists()) {
+                const rtdbAnswers = legacyAnswersSnapshot.val();
+                console.log('📥 Loaded answers from legacy testAttempts RTDB path:', rtdbAnswers);
+                attempt.answers = rtdbAnswers;
+              } else {
+                console.log('📥 No answers found in testAttempts at path: testAttempts/' + attemptId + '/answers');
+              }
             }
           } catch (rtdbError) {
             console.warn('⚠️ Could not load answers from Realtime Database:', rtdbError);
           }
         }
         
-        // Also try alternative RTDB paths if still no answers
+        // Also try the full session object if still no answers
         if (!attempt.answers || Object.keys(attempt.answers).length === 0) {
           try {
             const { ref, get } = await import('firebase/database');
             const { realtimeDb } = await import('@/utils/firebase-client');
             
-            // Try student-specific path
-            const studentAnswersRef = ref(realtimeDb, `students/${student.id}/testAttempts/${attemptId}/answers`);
-            const studentAnswersSnapshot = await get(studentAnswersRef);
+            // Try getting the entire session object
+            const sessionRef = ref(realtimeDb, `testSessions/${attemptId}`);
+            const sessionSnapshot = await get(sessionRef);
             
-            if (studentAnswersSnapshot.exists()) {
-              const rtdbAnswers = studentAnswersSnapshot.val();
-              console.log('📥 Loaded answers from student-specific RTDB path:', rtdbAnswers);
-              attempt.answers = rtdbAnswers;
-            } else {
-              // Try test-specific path
-              const testAnswersRef = ref(realtimeDb, `tests/${testId}/attempts/${attemptId}/answers`);
-              const testAnswersSnapshot = await get(testAnswersRef);
+            if (sessionSnapshot.exists()) {
+              const sessionData = sessionSnapshot.val();
+              console.log('📥 Loaded full session from RTDB:', {
+                hasAnswers: !!sessionData.answers,
+                answersCount: sessionData.answers ? Object.keys(sessionData.answers).length : 0,
+                sessionKeys: Object.keys(sessionData)
+              });
               
-              if (testAnswersSnapshot.exists()) {
-                const rtdbAnswers = testAnswersSnapshot.val();
-                console.log('📥 Loaded answers from test-specific RTDB path:', rtdbAnswers);
-                attempt.answers = rtdbAnswers;
+              if (sessionData.answers && Object.keys(sessionData.answers).length > 0) {
+                attempt.answers = sessionData.answers;
+                console.log('📥 Extracted answers from session:', attempt.answers);
               }
+            } else {
+              console.log('📥 No session found at path: testSessions/' + attemptId);
             }
           } catch (rtdbError) {
-            console.warn('⚠️ Could not load answers from alternative RTDB paths:', rtdbError);
+            console.warn('⚠️ Could not load session from Realtime Database:', rtdbError);
           }
         }
         
@@ -201,13 +214,25 @@ export default function ReviewExpiredAttemptPage() {
           savedAnswer = answers[`q${index}`];
         }
         
+        console.log(`📝 Processing question ${index} (${questionId}):`, {
+          questionType: question.type || question.questionType,
+          savedAnswer,
+          savedAnswerType: typeof savedAnswer
+        });
+        
         const questionMarks = question.marks || 1;
         
-        // Build final answers array - handle different answer formats
+        // Build final answers array - handle different answer formats from RTDB
+        // RTDB format: { selectedOption: number, textContent: string, questionId, lastModified, ... }
         let answerValue: number | string | null = null;
         if (savedAnswer !== undefined && savedAnswer !== null) {
-          if (typeof savedAnswer === 'object' && savedAnswer.selectedOption !== undefined) {
-            answerValue = savedAnswer.selectedOption;
+          // Handle RealtimeAnswer object format (from testSessions)
+          if (typeof savedAnswer === 'object') {
+            if (savedAnswer.selectedOption !== undefined && savedAnswer.selectedOption !== null) {
+              answerValue = savedAnswer.selectedOption;
+            } else if (savedAnswer.textContent !== undefined) {
+              answerValue = savedAnswer.textContent;
+            }
           } else if (typeof savedAnswer === 'number') {
             answerValue = savedAnswer;
           } else if (typeof savedAnswer === 'string') {
@@ -215,12 +240,14 @@ export default function ReviewExpiredAttemptPage() {
           }
         }
         
+        console.log(`📝 Extracted answer value for question ${questionId}:`, answerValue);
+        
         // Only add fields that have values (avoid undefined)
         const finalAnswer: any = {
           questionId,
-          timeSpent: 0,
-          changeCount: 0,
-          wasReviewed: false
+          timeSpent: savedAnswer?.timeSpent || 0,
+          changeCount: savedAnswer?.changeHistory?.length || 0,
+          wasReviewed: savedAnswer?.isMarkedForReview || false
         };
         
         if (typeof answerValue === 'number') {
@@ -229,12 +256,17 @@ export default function ReviewExpiredAttemptPage() {
           finalAnswer.textContent = answerValue;
         }
         
+        // Also copy PDF files if present
+        if (savedAnswer?.pdfFiles && savedAnswer.pdfFiles.length > 0) {
+          finalAnswer.pdfFiles = savedAnswer.pdfFiles;
+        }
+        
         finalAnswers.push(finalAnswer);
         
-        if (savedAnswer !== undefined && savedAnswer !== null) {
+        if (answerValue !== undefined && answerValue !== null) {
           if (question.type === 'mcq' || question.questionType === 'mcq') {
             const correctOption = question.correctOption ?? question.correctAnswer ?? 0;
-            const selectedOption = typeof savedAnswer === 'object' ? savedAnswer.selectedOption : savedAnswer;
+            const selectedOption = typeof answerValue === 'number' ? answerValue : -1;
             const isCorrect = selectedOption === correctOption;
             
             if (isCorrect) {
@@ -246,7 +278,7 @@ export default function ReviewExpiredAttemptPage() {
             mcqResults.push({
               questionId,
               questionText: question.question || question.questionText || '',
-              selectedOption: selectedOption ?? -1,
+              selectedOption: selectedOption,
               correctOption: correctOption,
               selectedOptionText: question.options?.[selectedOption] || '',
               correctOptionText: question.options?.[correctOption] || '',
@@ -256,6 +288,13 @@ export default function ReviewExpiredAttemptPage() {
             });
           }
         }
+      });
+      
+      console.log('📊 Submission processing complete:', {
+        totalQuestions: test.questions.length,
+        answeredQuestions: finalAnswers.filter(a => a.selectedOption !== undefined || a.textContent).length,
+        correctAnswers,
+        totalMarks
       });
       
       const maxMarks = test.totalMarks || test.questions.length;
