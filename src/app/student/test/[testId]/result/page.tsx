@@ -69,6 +69,12 @@ export default function TestResultPage() {
         const { doc, getDoc } = await import('firebase/firestore');
         const { firestore } = await import('@/utils/firebase-client');
         
+        // Debug: Log all search params
+        console.log('🔍 Result page loaded');
+        console.log('🔍 URL submissionId param:', submissionId);
+        console.log('🔍 All search params:', searchParams?.toString());
+        console.log('🔍 testId:', testId, 'student:', student.id);
+        
         // Get the submission with enhanced recovery
         console.log('🔍 Looking for submission for test:', testId, 'student:', student.id);
         const subId = submissionId || await SubmissionService.findSubmissionWithRecovery(testId, student.id);
@@ -76,6 +82,7 @@ export default function TestResultPage() {
         
         if (!subId) {
           console.error('❌ No submission ID found');
+          console.error('❌ submissionId from URL was:', submissionId);
           setError('No submission found for this test. The test may still be processing or there may have been an issue during submission.');
           setLoading(false);
           return;
