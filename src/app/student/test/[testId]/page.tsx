@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { AlertCircle, Clock, ArrowLeft, Target, RefreshCw } from 'lucide-react';
+import { AlertCircle, Clock, ArrowLeft, Target, RefreshCw, AlertTriangle } from 'lucide-react';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { Button } from '@/components/ui';
 import { Test, LiveTest, FlexibleTest } from '@/models/testSchema';
@@ -122,6 +122,7 @@ export default function TestPage() {
         const allAttempts: any[] = [];
         const completedAttempts: any[] = [];
         const activeAttempts: any[] = [];
+        const expiredIncompleteAttempts: any[] = []; // Track expired but not submitted attempts
         
         const now = new Date();
         
@@ -210,17 +211,26 @@ export default function TestPage() {
                            attemptData.status === 'paused') &&
                           (!attemptData.submittedAt); // ✅ Ensure no submission timestamp
           
+          // Track expired incomplete attempts (started but not submitted, and time expired)
+          const isExpiredIncomplete = !isCompleted && 
+                                      isExpired && 
+                                      (attemptData.status === 'in_progress' || attemptData.status === 'paused') &&
+                                      (!attemptData.submittedAt);
+          
           console.log('🔍 Attempt categorization:', {
             id: attemptData.id,
             isExpired,
             isCompleted,
-            isActive
+            isActive,
+            isExpiredIncomplete
           });
           
           if (isCompleted) {
             completedAttempts.push(attemptData);
           } else if (isActive) {
             activeAttempts.push(attemptData);
+          } else if (isExpiredIncomplete) {
+            expiredIncompleteAttempts.push(attemptData);
           }
         });
         
@@ -323,6 +333,28 @@ export default function TestPage() {
         (attemptData as any).activeAttempts = activeAttempts.length;
         (attemptData as any).hasActiveAttempt = activeAttempts.length > 0;
         
+        // Store expired incomplete attempts data
+        (attemptData as any).expiredIncompleteAttempts = expiredIncompleteAttempts.length;
+        (attemptData as any).hasExpiredIncompleteAttempt = expiredIncompleteAttempts.length > 0;
+        
+        // If there's an expired incomplete attempt, store its details for submission
+        if (expiredIncompleteAttempts.length > 0) {
+          const expiredAttempt = expiredIncompleteAttempts[0];
+          (attemptData as any).expiredIncompleteAttemptId = expiredAttempt.id;
+          (attemptData as any).expiredIncompleteAttemptData = {
+            id: expiredAttempt.id,
+            answers: expiredAttempt.answers || {},
+            startedAt: expiredAttempt.startedAt,
+            questionsAnswered: expiredAttempt.answers ? Object.keys(expiredAttempt.answers).length : 0,
+            totalQuestions: testData.questions.length
+          };
+          console.log('⚠️ Found expired incomplete attempt:', {
+            id: expiredAttempt.id,
+            questionsAnswered: expiredAttempt.answers ? Object.keys(expiredAttempt.answers).length : 0,
+            totalQuestions: testData.questions.length
+          });
+        }
+        
         // Calculate remaining time for active attempt if exists
         if (activeAttempts.length > 0) {
           const activeAttempt = activeAttempts[0];
@@ -346,6 +378,7 @@ export default function TestPage() {
           totalAttempts: allAttempts.length,
           completedAttempts: completedAttempts.length,
           activeAttempts: activeAttempts.length,
+          expiredIncompleteAttempts: expiredIncompleteAttempts.length,
           attemptsAllowed,
           canCreateNewAttempt
         });
@@ -1444,6 +1477,80 @@ export default function TestPage() {
                                 : 'Time expired'
                               }
                             </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Expired incomplete attempt indicator - shows when student started but didn't submit */}
+                    {(attemptInfo as any).hasExpiredIncompleteAttempt && (
+                      <div className={`mt-4 border-2 rounded-xl p-4 ${
+                        canStart 
+                          ? (theme === 'default'
+                              ? 'bg-orange-50 border-orange-300'
+                              : 'bg-orange-500/20 border-orange-400')
+                          : (theme === 'default'
+                              ? 'bg-red-50 border-red-300'
+                              : 'bg-red-500/20 border-red-400')
+                      }`}>
+                        <div className="flex flex-col space-y-3">
+                          <div className="flex items-center">
+                            <AlertTriangle className={`h-5 w-5 mr-3 ${canStart ? 'text-orange-500' : 'text-red-500'}`} />
+                            <p className={`text-sm font-medium ${
+                              canStart
+                                ? (theme === 'default' ? 'text-orange-800' : 'text-orange-200')
+                                : (theme === 'default' ? 'text-red-800' : 'text-red-200')
+                            }`}>
+                              {canStart 
+                                ? '⚠️ You have an incomplete attempt that was not submitted!'
+                                : '❌ Test deadline passed - You have an incomplete attempt!'
+                              }
+                            </p>
+                          </div>
+                          <div className={`text-sm ${
+                            canStart
+                              ? (theme === 'default' ? 'text-orange-700' : 'text-orange-300')
+                              : (theme === 'default' ? 'text-red-700' : 'text-red-300')
+                          }`}>
+                            You answered <span className="font-bold">{(attemptInfo as any).expiredIncompleteAttemptData?.questionsAnswered || 0}</span> out of <span className="font-bold">{(attemptInfo as any).expiredIncompleteAttemptData?.totalQuestions || 0}</span> questions before the time expired.
+                          </div>
+                          
+                          {canStart ? (
+                            <>
+                              <div className={`text-xs ${
+                                theme === 'default' ? 'text-orange-600' : 'text-orange-400'
+                              }`}>
+                                Your saved answers can still be submitted. You cannot change any answers, but you can submit what you have completed.
+                              </div>
+                              <button
+                                onClick={() => router.push(`/student/test/${testId}/review-expired?attemptId=${(attemptInfo as any).expiredIncompleteAttemptId}`)}
+                                className={`mt-2 px-4 py-2 rounded-lg font-medium text-sm transition-colors bg-orange-500 hover:bg-orange-600 text-white`}
+                              >
+                                Review & Submit Incomplete Attempt →
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <div className={`text-xs ${
+                                theme === 'default' ? 'text-red-600' : 'text-red-400'
+                              }`}>
+                                The test deadline has passed. Your incomplete attempt cannot be submitted automatically. Please contact your teacher to request submission approval.
+                              </div>
+                              <div className={`mt-2 p-3 rounded-lg ${
+                                theme === 'default' ? 'bg-red-100' : 'bg-red-900/30'
+                              }`}>
+                                <p className={`text-xs font-medium ${
+                                  theme === 'default' ? 'text-red-800' : 'text-red-200'
+                                }`}>
+                                  📧 Contact your teacher: <span className="font-bold">{test?.teacherName || 'Your Teacher'}</span>
+                                </p>
+                                <p className={`text-xs mt-1 ${
+                                  theme === 'default' ? 'text-red-700' : 'text-red-300'
+                                }`}>
+                                  Let them know you have an incomplete submission for "{test?.title}" and request permission to submit.
+                                </p>
+                              </div>
+                            </>
                           )}
                         </div>
                       </div>
