@@ -222,12 +222,16 @@ export default function TestPage() {
           // Track expired incomplete attempts (started but not submitted, and time expired)
           // Also check if there are saved answers - this indicates the student actually worked on the test
           const hasAnswers = attemptData.answers && Object.keys(attemptData.answers).length > 0;
+          // Include not_started attempts that have expired - these are "zombie" attempts 
+          // that were created but the student never actually started/submitted
           const isExpiredIncomplete = !isCompleted && 
                                       isExpired && 
                                       (attemptData.status === 'in_progress' || 
                                        attemptData.status === 'paused' ||
+                                       attemptData.status === 'not_started' || // Include not_started expired attempts
                                        hasAnswers) && // Also catch cases where answers exist
-                                      (!attemptData.submittedAt);
+                                      (!attemptData.submittedAt || 
+                                       (attemptData.submittedAt && attemptData.submittedAt.seconds === 0));
           
           console.log('🔍 Attempt categorization:', {
             id: attemptData.id,

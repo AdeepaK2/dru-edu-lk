@@ -1093,32 +1093,64 @@ export class AttemptManagementService {
         // For in-progress/paused/not_started attempts:
         // Exclude if expired (based on multiple criteria)
         if (attempt.status === 'in_progress' || attempt.status === 'paused' || attempt.status === 'not_started') {
-          // Check 1: timeRemaining explicitly set to 0
+          console.log('🔍 Checking if attempt is expired:', {
+            id: attempt.id,
+            status: attempt.status,
+            timeRemaining: attempt.timeRemaining,
+            endTime: attempt.endTime,
+            startedAt: attempt.startedAt,
+            totalTimeAllowed: attempt.totalTimeAllowed,
+            nowSeconds: now.seconds
+          });
+          
+          // Check 1: timeRemaining explicitly set to 0 or less
           if (attempt.timeRemaining !== undefined && attempt.timeRemaining <= 0) {
-            console.log('🔍 Excluding expired attempt (timeRemaining=0):', attempt.id);
+            console.log('🔍 Excluding expired attempt (timeRemaining<=0):', attempt.id);
             return false;
           }
           
           // Check 2: endTime has passed
           if (attempt.endTime) {
-            const endTimeSeconds = attempt.endTime.seconds || (attempt.endTime.toMillis ? attempt.endTime.toMillis() / 1000 : 0);
-            if (now.seconds > endTimeSeconds) {
-              console.log('🔍 Excluding expired attempt (endTime passed):', attempt.id);
+            // Handle both Timestamp objects and plain objects with seconds
+            let endTimeSeconds = 0;
+            if (typeof attempt.endTime.seconds === 'number') {
+              endTimeSeconds = attempt.endTime.seconds;
+            } else if (attempt.endTime.toMillis) {
+              endTimeSeconds = attempt.endTime.toMillis() / 1000;
+            } else if (attempt.endTime._seconds) {
+              // Firestore serialized timestamp format
+              endTimeSeconds = attempt.endTime._seconds;
+            }
+            
+            if (endTimeSeconds > 0 && now.seconds > endTimeSeconds) {
+              console.log('🔍 Excluding expired attempt (endTime passed):', attempt.id, 'endTime:', endTimeSeconds, 'now:', now.seconds);
               return false;
             }
           }
           
           // Check 3: startedAt + totalTimeAllowed has passed
           if (attempt.startedAt && attempt.totalTimeAllowed) {
-            const startSeconds = attempt.startedAt.seconds || (attempt.startedAt.toMillis ? attempt.startedAt.toMillis() / 1000 : 0);
-            const calculatedEndTime = startSeconds + attempt.totalTimeAllowed;
-            if (now.seconds > calculatedEndTime) {
-              console.log('🔍 Excluding expired attempt (calculated end time passed):', attempt.id);
-              return false;
+            let startSeconds = 0;
+            if (typeof attempt.startedAt.seconds === 'number') {
+              startSeconds = attempt.startedAt.seconds;
+            } else if (attempt.startedAt.toMillis) {
+              startSeconds = attempt.startedAt.toMillis() / 1000;
+            } else if (attempt.startedAt._seconds) {
+              // Firestore serialized timestamp format
+              startSeconds = attempt.startedAt._seconds;
+            }
+            
+            if (startSeconds > 0) {
+              const calculatedEndTime = startSeconds + attempt.totalTimeAllowed;
+              if (now.seconds > calculatedEndTime) {
+                console.log('🔍 Excluding expired attempt (calculated end time passed):', attempt.id, 'calculatedEnd:', calculatedEndTime, 'now:', now.seconds);
+                return false;
+              }
             }
           }
           
           // Attempt is still valid (not expired)
+          console.log('✅ Attempt is still valid:', attempt.id);
           return true;
         }
         
