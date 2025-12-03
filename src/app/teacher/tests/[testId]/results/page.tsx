@@ -177,8 +177,8 @@ export default function TestResultsPage() {
         const incompleteSnapshot = await getDocs(incompleteQuery);
         const incompleteData: any[] = [];
         
-        incompleteSnapshot.forEach((doc) => {
-          const attemptData = { id: doc.id, ...doc.data() };
+        incompleteSnapshot.forEach((docSnap) => {
+          const attemptData: any = { id: docSnap.id, ...docSnap.data() };
           
           // Check if this is an incomplete attempt (not submitted but has some progress)
           const isSubmitted = attemptData.status === 'submitted' || 
