@@ -504,15 +504,33 @@ export default function StudentTests() {
     const hasCompletedAttempt = attempts && attempts.completedAttempts && attempts.completedAttempts.length > 0;
     const hasExpiredIncompleteAttempt = attempts && attempts.expiredIncompleteAttempts && attempts.expiredIncompleteAttempts.length > 0;
     const expiredIncompleteAttempt = hasExpiredIncompleteAttempt ? attempts.expiredIncompleteAttempts[0] : null;
+    const activeAttempt = hasActiveAttempt ? attempts.activeAttempts[0] : null;
 
-    // Check if there's an expired incomplete attempt that needs attention
+    // PRIORITY 1: If there's an active attempt (in progress with time remaining), show Resume
+    // This takes highest priority when test is still available
+    if (hasActiveAttempt && activeAttempt && (status.status === 'live' || status.status === 'active' || status.status === 'late-active')) {
+      // Double-check the attempt still has time
+      const timeRemaining = activeAttempt.timeRemaining || 0;
+      if (timeRemaining > 0) {
+        return {
+          text: 'Resume Test',
+          action: () => handleStartTest(test.id),
+          variant: 'primary' as const,
+          icon: Play,
+          disabled: false,
+          hasActiveAttempt: true
+        };
+      }
+    }
+
+    // PRIORITY 2: Check if there's an expired incomplete attempt that needs attention
     if (hasExpiredIncompleteAttempt && expiredIncompleteAttempt) {
       // Check if deadline has passed for submission
       const canStillSubmit = status.status === 'active' || status.status === 'live' || status.status === 'late-active';
       
       if (canStillSubmit) {
         return {
-          text: 'Review & Submit',
+          text: 'Complete Submission',
           action: () => router.push(`/student/test/${test.id}/review-expired?attemptId=${expiredIncompleteAttempt.id}`),
           variant: 'warning' as const,
           icon: AlertCircle,
@@ -534,7 +552,7 @@ export default function StudentTests() {
       }
     }
 
-    // For completed tests, always show view results if there are completed attempts
+    // PRIORITY 3: For completed tests, always show view results if there are completed attempts
     if (status.status === 'completed') {
       if (hasCompletedAttempt) {
         return {
@@ -555,17 +573,18 @@ export default function StudentTests() {
       }
     }
 
-    // For live or available tests (including late submissions)
+    // PRIORITY 4: For live or available tests (including late submissions)
     if (status.status === 'live' || status.status === 'active' || status.status === 'late-active') {
       if (attemptInfo.canAttempt) {
-        // If there's an active attempt, show resume
+        // If there's an active attempt (fallback check), show resume
         if (hasActiveAttempt) {
           return {
             text: 'Resume Test',
             action: () => handleStartTest(test.id),
             variant: 'primary' as const,
             icon: Play,
-            disabled: false
+            disabled: false,
+            hasActiveAttempt: true
           };
         }
         
@@ -599,6 +618,7 @@ export default function StudentTests() {
           disabled: false
         };
       } else {
+        // Can't attempt - max attempts reached, show view results
         return {
           text: 'View Results',
           action: () => handleViewResults(test.id),
@@ -609,7 +629,7 @@ export default function StudentTests() {
       }
     }
 
-    // For late submission expired
+    // PRIORITY 5: For late submission expired
     if (status.status === 'late-expired') {
       if (hasCompletedAttempt) {
         return {
