@@ -75,11 +75,50 @@ export default function ReviewExpiredAttemptPage() {
               const rtdbAnswers = answersSnapshot.val();
               console.log('📥 Loaded answers from Realtime Database:', rtdbAnswers);
               attempt.answers = rtdbAnswers;
+            } else {
+              console.log('📥 No answers found in Realtime Database at path: testAttempts/' + attemptId + '/answers');
             }
           } catch (rtdbError) {
             console.warn('⚠️ Could not load answers from Realtime Database:', rtdbError);
           }
         }
+        
+        // Also try alternative RTDB paths if still no answers
+        if (!attempt.answers || Object.keys(attempt.answers).length === 0) {
+          try {
+            const { ref, get } = await import('firebase/database');
+            const { realtimeDb } = await import('@/utils/firebase-client');
+            
+            // Try student-specific path
+            const studentAnswersRef = ref(realtimeDb, `students/${student.id}/testAttempts/${attemptId}/answers`);
+            const studentAnswersSnapshot = await get(studentAnswersRef);
+            
+            if (studentAnswersSnapshot.exists()) {
+              const rtdbAnswers = studentAnswersSnapshot.val();
+              console.log('📥 Loaded answers from student-specific RTDB path:', rtdbAnswers);
+              attempt.answers = rtdbAnswers;
+            } else {
+              // Try test-specific path
+              const testAnswersRef = ref(realtimeDb, `tests/${testId}/attempts/${attemptId}/answers`);
+              const testAnswersSnapshot = await get(testAnswersRef);
+              
+              if (testAnswersSnapshot.exists()) {
+                const rtdbAnswers = testAnswersSnapshot.val();
+                console.log('📥 Loaded answers from test-specific RTDB path:', rtdbAnswers);
+                attempt.answers = rtdbAnswers;
+              }
+            }
+          } catch (rtdbError) {
+            console.warn('⚠️ Could not load answers from alternative RTDB paths:', rtdbError);
+          }
+        }
+        
+        console.log('📊 Final attempt data with answers:', {
+          attemptId: attempt.id,
+          hasAnswers: !!attempt.answers,
+          answersCount: attempt.answers ? Object.keys(attempt.answers).length : 0,
+          answers: attempt.answers
+        });
         
         setAttemptData(attempt);
         
@@ -120,6 +159,24 @@ export default function ReviewExpiredAttemptPage() {
       const { doc, updateDoc, setDoc, Timestamp } = await import('firebase/firestore');
       const { firestore } = await import('@/utils/firebase-client');
       
+      // Helper function to remove undefined values from objects
+      const removeUndefined = (obj: any): any => {
+        if (obj === null || obj === undefined) return null;
+        if (Array.isArray(obj)) {
+          return obj.map(item => removeUndefined(item)).filter(item => item !== undefined);
+        }
+        if (typeof obj === 'object') {
+          const cleaned: any = {};
+          for (const [key, value] of Object.entries(obj)) {
+            if (value !== undefined) {
+              cleaned[key] = removeUndefined(value);
+            }
+          }
+          return cleaned;
+        }
+        return obj;
+      };
+      
       // Calculate score from saved answers
       const answers = attemptData.answers || {};
       let correctAnswers = 0;
@@ -127,26 +184,57 @@ export default function ReviewExpiredAttemptPage() {
       const mcqResults: any[] = [];
       const finalAnswers: any[] = [];
       
+      console.log('📊 Processing answers for submission:', answers);
+      
       test.questions.forEach((question: any, index: number) => {
         const questionId = question.questionId || question.id || `q${index}`;
-        const savedAnswer = answers[questionId];
+        
+        // Try multiple keys to find the answer (same logic as getQuestionAnswer)
+        let savedAnswer = answers[questionId];
+        if (savedAnswer === undefined || savedAnswer === null) {
+          savedAnswer = answers[index];
+        }
+        if (savedAnswer === undefined || savedAnswer === null) {
+          savedAnswer = answers[String(index)];
+        }
+        if (savedAnswer === undefined || savedAnswer === null) {
+          savedAnswer = answers[`q${index}`];
+        }
+        
         const questionMarks = question.marks || 1;
         
-        // Build final answers array
-        const answerValue = savedAnswer?.selectedOption ?? savedAnswer;
-        finalAnswers.push({
+        // Build final answers array - handle different answer formats
+        let answerValue: number | string | null = null;
+        if (savedAnswer !== undefined && savedAnswer !== null) {
+          if (typeof savedAnswer === 'object' && savedAnswer.selectedOption !== undefined) {
+            answerValue = savedAnswer.selectedOption;
+          } else if (typeof savedAnswer === 'number') {
+            answerValue = savedAnswer;
+          } else if (typeof savedAnswer === 'string') {
+            answerValue = savedAnswer;
+          }
+        }
+        
+        // Only add fields that have values (avoid undefined)
+        const finalAnswer: any = {
           questionId,
-          selectedOption: typeof answerValue === 'number' ? answerValue : undefined,
-          textContent: typeof answerValue === 'string' ? answerValue : undefined,
           timeSpent: 0,
           changeCount: 0,
           wasReviewed: false
-        });
+        };
         
-        if (savedAnswer !== undefined) {
+        if (typeof answerValue === 'number') {
+          finalAnswer.selectedOption = answerValue;
+        } else if (typeof answerValue === 'string' && answerValue.length > 0) {
+          finalAnswer.textContent = answerValue;
+        }
+        
+        finalAnswers.push(finalAnswer);
+        
+        if (savedAnswer !== undefined && savedAnswer !== null) {
           if (question.type === 'mcq' || question.questionType === 'mcq') {
             const correctOption = question.correctOption ?? question.correctAnswer ?? 0;
-            const selectedOption = savedAnswer?.selectedOption ?? savedAnswer;
+            const selectedOption = typeof savedAnswer === 'object' ? savedAnswer.selectedOption : savedAnswer;
             const isCorrect = selectedOption === correctOption;
             
             if (isCorrect) {
@@ -158,7 +246,7 @@ export default function ReviewExpiredAttemptPage() {
             mcqResults.push({
               questionId,
               questionText: question.question || question.questionText || '',
-              selectedOption: selectedOption,
+              selectedOption: selectedOption ?? -1,
               correctOption: correctOption,
               selectedOptionText: question.options?.[selectedOption] || '',
               correctOptionText: question.options?.[correctOption] || '',
@@ -197,11 +285,12 @@ export default function ReviewExpiredAttemptPage() {
       
       // Create submission document in submissions collection
       // This is required for the result page to find the submission
-      const submissionData = {
+      // Build submission data carefully to avoid undefined values
+      const submissionData: Record<string, any> = {
         id: attemptId,
         testId: test.id,
         testTitle: test.title || 'Untitled Test',
-        testType: test.type,
+        testType: test.type || 'flexible',
         studentId: student.id,
         studentName: student.name || 'Unknown Student',
         studentEmail: student.email || '',
@@ -209,12 +298,10 @@ export default function ReviewExpiredAttemptPage() {
         className: attemptData.className || 'Unknown Class',
         attemptNumber: attemptData.attemptNumber || 1,
         status: 'submitted',
-        startTime: attemptData.startedAt || attemptData.createdAt,
-        endTime: attemptData.endTime,
         submittedAt,
         totalTimeSpent: attemptData.timeSpent || 0,
-        questionsAttempted: Object.keys(answers).length,
-        questionsSkipped: test.questions.length - Object.keys(answers).length,
+        questionsAttempted: finalAnswers.filter(a => a.selectedOption !== undefined || a.textContent !== undefined).length,
+        questionsSkipped: test.questions.length - finalAnswers.filter(a => a.selectedOption !== undefined || a.textContent !== undefined).length,
         questionsReviewed: 0,
         totalChanges: 0,
         autoGradedScore: totalMarks,
@@ -223,8 +310,8 @@ export default function ReviewExpiredAttemptPage() {
         maxScore: maxMarks,
         percentage,
         passStatus,
-        finalAnswers,
-        mcqResults,
+        finalAnswers: removeUndefined(finalAnswers),
+        mcqResults: removeUndefined(mcqResults),
         essayResults: [],
         submissionType: 'incomplete_submission',
         submissionNote: 'Submitted from incomplete attempt review - answers were saved but not submitted before time expired',
@@ -232,7 +319,23 @@ export default function ReviewExpiredAttemptPage() {
         updatedAt: submittedAt
       };
       
-      await setDoc(doc(firestore, 'submissions', attemptId!), submissionData);
+      // Only add startTime and endTime if they exist and are valid
+      if (attemptData.startedAt) {
+        submissionData.startTime = attemptData.startedAt;
+      } else if (attemptData.createdAt) {
+        submissionData.startTime = attemptData.createdAt;
+      }
+      
+      if (attemptData.endTime) {
+        submissionData.endTime = attemptData.endTime;
+      }
+      
+      // Clean the submission data to remove any remaining undefined values
+      const cleanedSubmissionData = removeUndefined(submissionData);
+      
+      console.log('📤 Saving submission data:', cleanedSubmissionData);
+      
+      await setDoc(doc(firestore, 'submissions', attemptId!), cleanedSubmissionData);
       
       console.log('✅ Submission document created');
       console.log('✅ Incomplete attempt submitted successfully');
@@ -248,10 +351,37 @@ export default function ReviewExpiredAttemptPage() {
   };
 
   const getQuestionAnswer = (questionIndex: number, question: any) => {
-    if (!attemptData?.answers) return null;
+    if (!attemptData?.answers) {
+      console.log('🔍 No answers object in attemptData');
+      return null;
+    }
     
     const questionId = question.questionId || question.id || `q${questionIndex}`;
-    const answer = attemptData.answers[questionId];
+    
+    // Try multiple possible keys for the answer
+    let answer = attemptData.answers[questionId];
+    
+    // If not found by questionId, try by index
+    if (answer === undefined || answer === null) {
+      answer = attemptData.answers[questionIndex];
+    }
+    
+    // If not found by index, try string index
+    if (answer === undefined || answer === null) {
+      answer = attemptData.answers[String(questionIndex)];
+    }
+    
+    // Try with 'q' prefix
+    if (answer === undefined || answer === null) {
+      answer = attemptData.answers[`q${questionIndex}`];
+    }
+    
+    console.log('🔍 Getting answer for question:', {
+      questionIndex,
+      questionId,
+      foundAnswer: answer,
+      allAnswerKeys: Object.keys(attemptData.answers)
+    });
     
     return answer;
   };
