@@ -1117,9 +1117,9 @@ export class AttemptManagementService {
               endTimeSeconds = attempt.endTime.seconds;
             } else if (attempt.endTime.toMillis) {
               endTimeSeconds = attempt.endTime.toMillis() / 1000;
-            } else if (attempt.endTime._seconds) {
+            } else if ((attempt.endTime as any)._seconds) {
               // Firestore serialized timestamp format
-              endTimeSeconds = attempt.endTime._seconds;
+              endTimeSeconds = (attempt.endTime as any)._seconds;
             }
             
             if (endTimeSeconds > 0 && now.seconds > endTimeSeconds) {
@@ -1135,9 +1135,9 @@ export class AttemptManagementService {
               startSeconds = attempt.startedAt.seconds;
             } else if (attempt.startedAt.toMillis) {
               startSeconds = attempt.startedAt.toMillis() / 1000;
-            } else if (attempt.startedAt._seconds) {
+            } else if ((attempt.startedAt as any)._seconds) {
               // Firestore serialized timestamp format
-              startSeconds = attempt.startedAt._seconds;
+              startSeconds = (attempt.startedAt as any)._seconds;
             }
             
             if (startSeconds > 0) {
