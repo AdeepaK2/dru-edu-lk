@@ -59,7 +59,28 @@ export default function ReviewExpiredAttemptPage() {
           setLoading(false);
           return;
         }
-        const attempt = { id: attemptDoc.id, ...attemptDoc.data() };
+        let attempt = { id: attemptDoc.id, ...attemptDoc.data() } as any;
+        
+        // If no answers in Firestore, try to load from Realtime Database
+        if (!attempt.answers || Object.keys(attempt.answers).length === 0) {
+          try {
+            const { ref, get } = await import('firebase/database');
+            const { realtimeDb } = await import('@/utils/firebase-client');
+            
+            // Try to get answers from Realtime Database
+            const answersRef = ref(realtimeDb, `testAttempts/${attemptId}/answers`);
+            const answersSnapshot = await get(answersRef);
+            
+            if (answersSnapshot.exists()) {
+              const rtdbAnswers = answersSnapshot.val();
+              console.log('📥 Loaded answers from Realtime Database:', rtdbAnswers);
+              attempt.answers = rtdbAnswers;
+            }
+          } catch (rtdbError) {
+            console.warn('⚠️ Could not load answers from Realtime Database:', rtdbError);
+          }
+        }
+        
         setAttemptData(attempt);
         
         // Check if test deadline has passed

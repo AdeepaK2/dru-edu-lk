@@ -173,6 +173,9 @@ export default function StudentTests() {
         // Check if attempt timer has expired (timeRemaining <= 0 or no time left)
         const hasTimeExpired = attemptData.timeRemaining !== undefined && attemptData.timeRemaining <= 0;
         
+        // Also check if there are saved answers - strong indicator of work done
+        const hasAnswers = attemptData.answers && Object.keys(attemptData.answers).length > 0;
+        
         if (isCompleted) {
           attempts[testId].completedAttempts.push(attempt);
           
@@ -186,10 +189,10 @@ export default function StudentTests() {
               (attemptData.submittedAt && attemptData.submittedAt.seconds > attempts[testId].latestAttempt.submittedAt?.seconds)) {
             attempts[testId].latestAttempt = attemptData;
           }
-        } else if (isInProgress && hasTimeExpired) {
-          // Expired incomplete attempt - time ran out but not submitted
+        } else if ((isInProgress || hasAnswers) && hasTimeExpired) {
+          // Expired incomplete attempt - time ran out but not submitted (or has answers but expired)
           attempts[testId].expiredIncompleteAttempts.push(attempt);
-        } else if (isInProgress) {
+        } else if (isInProgress && !hasTimeExpired) {
           attempts[testId].activeAttempts.push(attempt);
         }
       });
@@ -2371,12 +2374,20 @@ export default function StudentTests() {
                                       </p>
                                     )}
                                   </div>
-                                  <div className="mt-4 md:mt-0">
+                                  <div className="mt-4 md:mt-0 flex flex-col items-end gap-2">
+                                    {(buttonConfig as any).hasExpiredIncomplete && (
+                                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-orange-100 text-orange-800 border-2 border-orange-400">
+                                        <AlertCircle className="w-4 h-4 mr-1" />
+                                        Incomplete Attempt
+                                      </span>
+                                    )}
                                     <Button
                                       onClick={buttonConfig.action}
                                       disabled={buttonConfig.disabled}
                                       className={`inline-flex items-center px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black ${
-                                        buttonConfig.variant === 'primary' && !buttonConfig.disabled
+                                        buttonConfig.variant === 'warning' && !buttonConfig.disabled
+                                          ? 'bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white'
+                                          : buttonConfig.variant === 'primary' && !buttonConfig.disabled
                                           ? theme === 'default'
                                             ? 'bg-gradient-to-r from-black to-gray-800 hover:from-gray-800 hover:to-black text-white'
                                             : `${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222] hover:from-[#b2e05b] hover:to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600' : theme === 'cricketverse-australian' ? 'bg-gradient-to-r from-[#ffd700] to-[#b38f00] hover:from-[#b38f00] hover:to-[#8b6914]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7] to-[#2C1267] hover:from-[#2C1267] hover:to-[#0F0826]' : 'bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600'} text-white`

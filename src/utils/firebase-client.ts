@@ -3,6 +3,7 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getAnalytics } from 'firebase/analytics';
+import { getDatabase } from 'firebase/database';
 
 const MELBOURNE_TIMEZONE = 'Australia/Melbourne';
 
@@ -25,8 +26,9 @@ const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
 const auth = getAuth(app);
 const firestore = getFirestore(app, process.env.NEXT_PUBLIC_FIRESTORE_DATABASE_ID || '(default)');
 const storage = getStorage(app);
+const realtimeDb = getDatabase(app);
 
 // Initialize Analytics only on the client side
 const analytics = typeof window !== 'undefined' ? getAnalytics(app) : null;
 
-export { app, auth, firestore, storage, analytics };
+export { app, auth, firestore, storage, analytics, realtimeDb };

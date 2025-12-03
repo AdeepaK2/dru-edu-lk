@@ -172,8 +172,16 @@ export default function TestPage() {
           // For late submissions, we need to consider the extended deadline
           let isExpired = false;
           
+          // First check: if timeRemaining is stored and <= 0, the attempt timer has expired
+          if (attemptData.timeRemaining !== undefined && attemptData.timeRemaining <= 0) {
+            isExpired = true;
+            console.log('⏱️ Attempt expired based on timeRemaining <= 0:', {
+              attemptId: attemptData.id,
+              timeRemaining: attemptData.timeRemaining
+            });
+          }
           // If there's a late submission approved, check against late submission deadline first
-          if (lateSubmissionInfo && lateSubmissionInfo.status === 'approved') {
+          else if (lateSubmissionInfo && lateSubmissionInfo.status === 'approved') {
             const lateDeadline = lateSubmissionInfo.newDeadline.toDate ? 
               lateSubmissionInfo.newDeadline.toDate() : 
               new Date(lateSubmissionInfo.newDeadline.seconds * 1000);
@@ -212,9 +220,13 @@ export default function TestPage() {
                           (!attemptData.submittedAt); // ✅ Ensure no submission timestamp
           
           // Track expired incomplete attempts (started but not submitted, and time expired)
+          // Also check if there are saved answers - this indicates the student actually worked on the test
+          const hasAnswers = attemptData.answers && Object.keys(attemptData.answers).length > 0;
           const isExpiredIncomplete = !isCompleted && 
                                       isExpired && 
-                                      (attemptData.status === 'in_progress' || attemptData.status === 'paused') &&
+                                      (attemptData.status === 'in_progress' || 
+                                       attemptData.status === 'paused' ||
+                                       hasAnswers) && // Also catch cases where answers exist
                                       (!attemptData.submittedAt);
           
           console.log('🔍 Attempt categorization:', {
@@ -222,7 +234,9 @@ export default function TestPage() {
             isExpired,
             isCompleted,
             isActive,
-            isExpiredIncomplete
+            isExpiredIncomplete,
+            hasAnswers,
+            answersCount: attemptData.answers ? Object.keys(attemptData.answers).length : 0
           });
           
           if (isCompleted) {
