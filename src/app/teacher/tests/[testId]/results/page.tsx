@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 import {
   ArrowLeft,
   Download,
@@ -949,7 +950,7 @@ export default function TestResultsPage() {
               </>
             )}
           </>
-        ) : (
+        ) : viewMode === 'individual' ? (
           <>
             {/* Individual Results */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
@@ -1177,6 +1178,149 @@ export default function TestResultsPage() {
                       ? 'Try adjusting your search or filter criteria.'
                       : 'No students have submitted this test yet.'
                     }
+                  </p>
+                </div>
+              )}
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Incomplete Attempts */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+              <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                      Incomplete Attempts
+                    </h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      Students who started the test but didn't submit before time expired
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {incompleteAttempts.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead className="bg-gray-50 dark:bg-gray-700">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          Student
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          Started At
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          Progress
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                      {incompleteAttempts.map((attempt) => (
+                        <tr key={attempt.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="h-10 w-10 flex-shrink-0">
+                                <div className="h-10 w-10 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
+                                  <span className="text-orange-600 dark:text-orange-400 font-medium">
+                                    {attempt.studentName?.charAt(0) || 'S'}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="ml-4">
+                                <div className="text-sm font-medium text-gray-900 dark:text-white">
+                                  {attempt.studentName || 'Unknown Student'}
+                                </div>
+                                <div className="text-sm text-gray-500 dark:text-gray-400">
+                                  {attempt.studentEmail || ''}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                            {attempt.startedAt 
+                              ? (attempt.startedAt.toDate ? attempt.startedAt.toDate() : new Date(attempt.startedAt.seconds ? attempt.startedAt.seconds * 1000 : attempt.startedAt)).toLocaleString() 
+                              : 'N/A'}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="flex-1 mr-2">
+                                <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                                  <div
+                                    className="bg-orange-500 h-2 rounded-full"
+                                    style={{ width: `${((attempt.answersCount || 0) / (attempt.totalQuestions || 1)) * 100}%` }}
+                                  ></div>
+                                </div>
+                              </div>
+                              <span className="text-sm text-gray-600 dark:text-gray-300">
+                                {attempt.answersCount || 0}/{attempt.totalQuestions || 0}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300">
+                              <AlertTriangle className="h-3 w-3 mr-1" />
+                              Time Expired
+                            </span>
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <div className="flex items-center justify-end space-x-2">
+                              <button
+                                onClick={() => router.push(`/teacher/tests/${testId}/review/${attempt.id}`)}
+                                className="inline-flex items-center px-3 py-1.5 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+                              >
+                                <Eye className="h-3 w-3 mr-1" />
+                                View
+                              </button>
+                              <button
+                                onClick={async () => {
+                                  if (confirm(`Approve submission for ${attempt.studentName}? This will submit their current answers.`)) {
+                                    try {
+                                      const { doc, updateDoc } = await import('firebase/firestore');
+                                      const { firestore } = await import('@/utils/firebase-client');
+                                      
+                                      const attemptRef = doc(firestore, 'testAttempts', attempt.id);
+                                      await updateDoc(attemptRef, {
+                                        status: 'auto_submitted',
+                                        submittedAt: new Date().toISOString(),
+                                        autoSubmittedReason: 'Teacher approved late submission',
+                                        teacherApprovedAt: new Date().toISOString(),
+                                      });
+                                      toast.success(`Submission approved for ${attempt.studentName}`);
+                                      loadTestResults();
+                                    } catch (error) {
+                                      console.error('Error approving submission:', error);
+                                      toast.error('Failed to approve submission');
+                                    }
+                                  }
+                                }}
+                                className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
+                              >
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                Approve
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <CheckCircle className="mx-auto h-12 w-12 text-green-400 mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                    No Incomplete Attempts
+                  </h3>
+                  <p className="text-gray-500 dark:text-gray-400">
+                    All students who started this test have submitted their answers.
                   </p>
                 </div>
               )}

@@ -44,6 +44,7 @@
     "react": "^19.0.0",
     "react-confetti": "^6.4.0",
     "react-dom": "^19.0.0",
+    "react-hot-toast": "^2.6.0",
     "react-pdf": "^10.2.0",
     "stripe": "^18.4.0",
     "swr": "^2.3.6",
