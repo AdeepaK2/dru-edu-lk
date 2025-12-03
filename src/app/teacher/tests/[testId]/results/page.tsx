@@ -1009,7 +1009,7 @@ export default function TestResultsPage() {
                               {submission.autoGradedScore || 0}/{submission.maxScore || 0} marks
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-4 py-4 whitespace-nowrap">
                             {(() => {
                               const passStatus = getSubmissionPassStatus(submission);
                               return (
@@ -1029,12 +1029,12 @@ export default function TestResultsPage() {
                               );
                             })()}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-4 py-4 whitespace-nowrap">
                             {isLateSubmission(submission) ? (
                               <div className="group relative">
                                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400 cursor-help">
                                   <Clock className="h-3 w-3 mr-1" />
-                                  Late Submission
+                                  Late
                                 </span>
                                 {getLateSubmissionInfo(submission) && (
                                   <div className="absolute bottom-full left-0 mb-2 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none">
@@ -1053,33 +1053,34 @@ export default function TestResultsPage() {
                               </span>
                             )}
                           </td>
-                          <td className={`px-6 py-4 whitespace-nowrap text-sm ${
+                          <td className={`px-4 py-4 whitespace-nowrap text-sm ${
                             isHighestScorer 
                               ? 'text-yellow-900 dark:text-yellow-100' 
                               : 'text-gray-900 dark:text-white'
                           }`}>
                             {formatTime(submission.totalTimeSpent || 0)}
                           </td>
-                          <td className={`px-6 py-4 whitespace-nowrap text-sm ${
+                          <td className={`px-4 py-4 whitespace-nowrap text-sm ${
                             isHighestScorer 
                               ? 'text-yellow-700 dark:text-yellow-300' 
                               : 'text-gray-500 dark:text-gray-400'
                           }`}>
                             {formatDateTime(submission.submittedAt)}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
                             <button
                               onClick={() => {
                                 // Navigate to detailed view
                                 router.push(`/teacher/tests/${testId}/results/${submission.id}`);
                               }}
-                              className={`${
+                              className={`inline-flex items-center px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                                 isHighestScorer
-                                  ? 'text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-200'
-                                  : 'text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300'
+                                  ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:hover:bg-yellow-900/50'
+                                  : 'bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50'
                               }`}
                             >
-                              <Eye className="h-4 w-4" />
+                              <Eye className="h-3.5 w-3.5 mr-1" />
+                              View
                             </button>
                           </td>
                         </tr>
