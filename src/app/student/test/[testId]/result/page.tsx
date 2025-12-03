@@ -54,7 +54,71 @@ export default function TestResultPage() {
 
   // UI states
   const [showAllAttempts, setShowAllAttempts] = useState(false);
-  const [startingNewAttempt, setStartingNewAttempt] = useState(false);  // Load data
+  const [startingNewAttempt, setStartingNewAttempt] = useState(false);
+  
+  // Helper function to find submission with multiple fallback strategies
+  const findSubmissionWithRetry = async (
+    testId: string, 
+    studentId: string, 
+    urlSubmissionId: string | null,
+    SubmissionService: any,
+    AttemptManagementService: any,
+    firestore: any,
+    doc: any,
+    getDoc: any,
+    maxRetries: number = 3
+  ): Promise<string | null> => {
+    // Strategy 1: Use URL parameter if provided
+    if (urlSubmissionId) {
+      console.log('🔍 Strategy 1: Using URL submissionId:', urlSubmissionId);
+      return urlSubmissionId;
+    }
+    
+    // Strategy 2: Find via SubmissionService with retry for timing issues
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      console.log(`🔍 Strategy 2: Attempt ${attempt + 1}/${maxRetries} - Finding via SubmissionService...`);
+      const subId = await SubmissionService.findSubmissionWithRecovery(testId, studentId);
+      if (subId) {
+        console.log('✅ Found submission via SubmissionService:', subId);
+        return subId;
+      }
+      
+      if (attempt < maxRetries - 1) {
+        console.log('⏳ Waiting 1 second before retry...');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+    
+    // Strategy 3: Check testAttempts for recent submitted attempt and use its ID
+    console.log('🔍 Strategy 3: Checking testAttempts for submitted attempts...');
+    try {
+      const attemptInfo = await AttemptManagementService.getAttemptSummary(testId, studentId);
+      if (attemptInfo && attemptInfo.attempts.length > 0) {
+        // Find the most recent submitted attempt
+        const submittedAttempts = attemptInfo.attempts.filter(
+          (a: any) => a.status === 'submitted' || a.status === 'auto_submitted'
+        );
+        
+        if (submittedAttempts.length > 0) {
+          const latestAttempt = submittedAttempts[submittedAttempts.length - 1];
+          console.log('🔍 Found submitted attempt:', latestAttempt.attemptId);
+          
+          // Check if submission exists with this ID directly
+          const submissionDoc = await getDoc(doc(firestore, 'studentSubmissions', latestAttempt.attemptId));
+          if (submissionDoc.exists()) {
+            console.log('✅ Found submission document directly:', latestAttempt.attemptId);
+            return latestAttempt.attemptId;
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('⚠️ Strategy 3 failed:', err);
+    }
+    
+    return null;
+  };
+  
+  // Load data
   useEffect(() => {
     const loadData = async () => {
       if (!testId || !student) return;
@@ -74,16 +138,26 @@ export default function TestResultPage() {
         console.log('🔍 URL submissionId param:', submissionId);
         console.log('🔍 All search params:', searchParams?.toString());
         console.log('🔍 testId:', testId, 'student:', student.id);
+        console.log('🔍 Full URL:', window.location.href);
         
-        // Get the submission with enhanced recovery
+        // Get the submission with enhanced recovery and retry logic
         console.log('🔍 Looking for submission for test:', testId, 'student:', student.id);
-        const subId = submissionId || await SubmissionService.findSubmissionWithRecovery(testId, student.id);
+        const subId = await findSubmissionWithRetry(
+          testId, 
+          student.id, 
+          submissionId, 
+          SubmissionService, 
+          AttemptManagementService,
+          firestore,
+          doc,
+          getDoc
+        );
         console.log('🔍 Found submission ID:', subId);
         
         if (!subId) {
-          console.error('❌ No submission ID found');
+          console.error('❌ No submission ID found after all strategies');
           console.error('❌ submissionId from URL was:', submissionId);
-          setError('No submission found for this test. The test may still be processing or there may have been an issue during submission.');
+          setError('No submission found for this test. The test may still be processing or there may have been an issue during submission. Please try refreshing the page.');
           setLoading(false);
           return;
         }
