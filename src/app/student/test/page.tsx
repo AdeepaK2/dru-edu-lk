@@ -126,7 +126,7 @@ export default function StudentTests() {
       const { AttemptManagementService } = await import('@/apiservices/attemptManagementService');
       
       // Get all test attempts for this student
-      const { collection, query, where, getDocs } = await import('firebase/firestore');
+      const { collection, query, where, getDocs, doc, getDoc } = await import('firebase/firestore');
       const { firestore } = await import('@/utils/firebase-client');
       
       const attemptsQuery = query(
@@ -136,17 +136,32 @@ export default function StudentTests() {
       
       const attemptsSnapshot = await getDocs(attemptsQuery);
       const attempts: Record<string, any> = {};
+      const now = new Date();
       
-      attemptsSnapshot.forEach((doc) => {
-        const attemptData = doc.data();
+      // Helper to get seconds from any timestamp format
+      const getSeconds = (timestamp: any): number => {
+        if (!timestamp) return 0;
+        if (typeof timestamp.seconds === 'number') return timestamp.seconds;
+        if (typeof timestamp.toDate === 'function') return timestamp.toDate().getTime() / 1000;
+        if (timestamp instanceof Date) return timestamp.getTime() / 1000;
+        if (typeof timestamp === 'string') return new Date(timestamp).getTime() / 1000;
+        if (typeof timestamp === 'number') return timestamp > 1000000000000 ? timestamp / 1000 : timestamp;
+        return 0;
+      };
+      
+      // Cache for test data to avoid multiple fetches
+      const testCache: Record<string, any> = {};
+      
+      for (const docSnap of attemptsSnapshot.docs) {
+        const attemptData = docSnap.data();
         const testId = attemptData.testId;
         
         if (!attempts[testId]) {
           attempts[testId] = {
-            attempts: [], // All attempts (completed + incomplete)
-            completedAttempts: [], // Only completed attempts
-            activeAttempts: [], // Only active/incomplete attempts
-            expiredIncompleteAttempts: [], // Attempts that are in_progress but time expired
+            attempts: [],
+            completedAttempts: [],
+            activeAttempts: [],
+            expiredIncompleteAttempts: [],
             canAttemptAgain: true,
             bestScore: 0,
             latestAttempt: null
@@ -154,7 +169,7 @@ export default function StudentTests() {
         }
         
         const attempt = {
-          id: doc.id,
+          id: docSnap.id,
           ...attemptData
         };
         
@@ -170,11 +185,40 @@ export default function StudentTests() {
                             attemptData.status === 'active' || 
                             attemptData.status === 'paused';
         
-        // Check if attempt timer has expired (timeRemaining <= 0 or no time left)
-        const hasTimeExpired = attemptData.timeRemaining !== undefined && attemptData.timeRemaining <= 0;
+        // Check if attempt timer has expired
+        const hasTimeRemaining = attemptData.timeRemaining !== undefined && attemptData.timeRemaining > 0;
         
-        // Also check if there are saved answers - strong indicator of work done
+        // Also check if there are saved answers - indicator of work done
         const hasAnswers = attemptData.answers && Object.keys(attemptData.answers).length > 0;
+        
+        // Get test data to check deadline (cache it)
+        if (!testCache[testId]) {
+          try {
+            const testDoc = await getDoc(doc(firestore, 'tests', testId));
+            if (testDoc.exists()) {
+              testCache[testId] = testDoc.data();
+            }
+          } catch (e) {
+            console.warn('Failed to load test data for', testId);
+          }
+        }
+        
+        const testData = testCache[testId];
+        let isTestDeadlinePassed = false;
+        let isUntimed = false;
+        
+        if (testData) {
+          isUntimed = testData.isUntimed === true;
+          
+          // Check test deadline
+          if (testData.type === 'flexible' && testData.availableTo) {
+            const deadlineSeconds = getSeconds(testData.availableTo);
+            isTestDeadlinePassed = (now.getTime() / 1000) > deadlineSeconds;
+          } else if (testData.type === 'live' && testData.actualEndTime) {
+            const endTimeSeconds = getSeconds(testData.actualEndTime);
+            isTestDeadlinePassed = (now.getTime() / 1000) > endTimeSeconds;
+          }
+        }
         
         if (isCompleted) {
           attempts[testId].completedAttempts.push(attempt);
@@ -186,16 +230,29 @@ export default function StudentTests() {
           
           // Update latest completed attempt
           if (!attempts[testId].latestAttempt || 
-              (attemptData.submittedAt && attemptData.submittedAt.seconds > attempts[testId].latestAttempt.submittedAt?.seconds)) {
+              (attemptData.submittedAt && getSeconds(attemptData.submittedAt) > getSeconds(attempts[testId].latestAttempt.submittedAt))) {
             attempts[testId].latestAttempt = attemptData;
           }
-        } else if ((isInProgress || hasAnswers) && hasTimeExpired) {
-          // Expired incomplete attempt - time ran out but not submitted (or has answers but expired)
-          attempts[testId].expiredIncompleteAttempts.push(attempt);
-        } else if (isInProgress && !hasTimeExpired) {
-          attempts[testId].activeAttempts.push(attempt);
+        } else if (isInProgress || hasAnswers) {
+          // For in-progress attempts, determine if they're active or expired
+          
+          // An attempt is "active" if:
+          // 1. Test deadline has NOT passed AND
+          // 2. Either it's untimed OR it has time remaining
+          const isAttemptActive = !isTestDeadlinePassed && (isUntimed || hasTimeRemaining);
+          
+          // An attempt is "expired incomplete" if:
+          // 1. It's in progress (not submitted) AND
+          // 2. Either the test deadline passed OR time ran out (for timed tests)
+          const isExpiredIncomplete = isTestDeadlinePassed || (!isUntimed && !hasTimeRemaining);
+          
+          if (isAttemptActive) {
+            attempts[testId].activeAttempts.push(attempt);
+          } else if (isExpiredIncomplete) {
+            attempts[testId].expiredIncompleteAttempts.push(attempt);
+          }
         }
-      });
+      }
       
       setTestAttempts(attempts);
       console.log('✅ Loaded test attempts:', {
@@ -506,12 +563,18 @@ export default function StudentTests() {
     const expiredIncompleteAttempt = hasExpiredIncompleteAttempt ? attempts.expiredIncompleteAttempts[0] : null;
     const activeAttempt = hasActiveAttempt ? attempts.activeAttempts[0] : null;
 
-    // PRIORITY 1: If there's an active attempt (in progress with time remaining), show Resume
+    // Check if test is untimed
+    const isUntimed = test.type === 'flexible' && (test as FlexibleTest).isUntimed === true;
+
+    // PRIORITY 1: If there's an active attempt (in progress), show Resume
     // This takes highest priority when test is still available
     if (hasActiveAttempt && activeAttempt && (status.status === 'live' || status.status === 'active' || status.status === 'late-active')) {
-      // Double-check the attempt still has time
-      const timeRemaining = activeAttempt.timeRemaining || 0;
-      if (timeRemaining > 0) {
+      // For untimed tests, don't check timeRemaining - just show Resume
+      // For timed tests, verify there's time left
+      const timeRemaining = activeAttempt.timeRemaining;
+      const hasTimeLeft = isUntimed || timeRemaining === undefined || timeRemaining > 0;
+      
+      if (hasTimeLeft) {
         return {
           text: 'Resume Test',
           action: () => handleStartTest(test.id),
