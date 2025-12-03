@@ -24,6 +24,7 @@ import TeacherLayout from '@/components/teacher/TeacherLayout';
 import CreateTestModal from '@/components/modals/CreateTestModal';
 import CreateStudentTestModal from '@/components/modals/CreateStudentTestModal';
 import { useTeacherAuth } from '@/hooks/useTeacherAuth';
+import { useToast } from '@/components/ui/ToastProvider';
 import { TestService } from '@/apiservices/testService';
 import { SubmissionService } from '@/apiservices/submissionService';
 import { ClassFirestoreService } from '@/apiservices/classFirestoreService';
@@ -42,6 +43,7 @@ import ExamPDFViewer from '@/components/teacher/ExamPDFViewer';
 
 export default function TeacherTests() {
   const { teacher, loading: authLoading, error: authError } = useTeacherAuth();
+  const { showSuccess } = useToast();
   const [tests, setTests] = useState<Test[]>([]);
   const [coTests, setCoTests] = useState<Test[]>([]);
   const [loading, setLoading] = useState(true);
@@ -312,6 +314,9 @@ export default function TeacherTests() {
     setTests(prev => [newTest, ...prev]);
     setShowCreateModal(false);
     
+    // Show success toast
+    showSuccess(`Test "${newTest.title}" created successfully!`);
+    
     // For essay tests, refresh data multiple times to catch PDF generation
     if (newTest.config?.questionType === 'essay' || 
         newTest.questions?.some(q => q.questionType === 'essay' || q.type === 'essay')) {
@@ -345,6 +350,9 @@ export default function TeacherTests() {
   const handleStudentTestCreated = (newTest: Test) => {
     setTests(prev => [newTest, ...prev]);
     setShowCreateStudentTestModal(false);
+    
+    // Show success toast for custom test
+    showSuccess(`Custom test "${newTest.title}" created successfully!`);
   };
 
   // Handle modal close
