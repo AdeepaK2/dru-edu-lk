@@ -146,6 +146,7 @@ export default function StudentTests() {
             attempts: [], // All attempts (completed + incomplete)
             completedAttempts: [], // Only completed attempts
             activeAttempts: [], // Only active/incomplete attempts
+            expiredIncompleteAttempts: [], // Attempts that are in_progress but time expired
             canAttemptAgain: true,
             bestScore: 0,
             latestAttempt: null
@@ -165,9 +166,12 @@ export default function StudentTests() {
                            attemptData.status === 'auto_submitted' || 
                            attemptData.submittedAt;
         
-        const isActive = attemptData.status === 'active' || 
-                        attemptData.status === 'paused' || 
-                        (!attemptData.submittedAt && !attemptData.status);
+        const isInProgress = attemptData.status === 'in_progress' || 
+                            attemptData.status === 'active' || 
+                            attemptData.status === 'paused';
+        
+        // Check if attempt timer has expired (timeRemaining <= 0 or no time left)
+        const hasTimeExpired = attemptData.timeRemaining !== undefined && attemptData.timeRemaining <= 0;
         
         if (isCompleted) {
           attempts[testId].completedAttempts.push(attempt);
@@ -182,7 +186,10 @@ export default function StudentTests() {
               (attemptData.submittedAt && attemptData.submittedAt.seconds > attempts[testId].latestAttempt.submittedAt?.seconds)) {
             attempts[testId].latestAttempt = attemptData;
           }
-        } else if (isActive) {
+        } else if (isInProgress && hasTimeExpired) {
+          // Expired incomplete attempt - time ran out but not submitted
+          attempts[testId].expiredIncompleteAttempts.push(attempt);
+        } else if (isInProgress) {
           attempts[testId].activeAttempts.push(attempt);
         }
       });
@@ -194,7 +201,8 @@ export default function StudentTests() {
           testId,
           totalAttempts: data.attempts.length,
           completedAttempts: data.completedAttempts.length,
-          activeAttempts: data.activeAttempts.length
+          activeAttempts: data.activeAttempts.length,
+          expiredIncompleteAttempts: data.expiredIncompleteAttempts.length
         }))
       });
       return attempts;
@@ -491,6 +499,37 @@ export default function StudentTests() {
     // Use the categorized attempts from loadTestAttempts
     const hasActiveAttempt = attempts && attempts.activeAttempts && attempts.activeAttempts.length > 0;
     const hasCompletedAttempt = attempts && attempts.completedAttempts && attempts.completedAttempts.length > 0;
+    const hasExpiredIncompleteAttempt = attempts && attempts.expiredIncompleteAttempts && attempts.expiredIncompleteAttempts.length > 0;
+    const expiredIncompleteAttempt = hasExpiredIncompleteAttempt ? attempts.expiredIncompleteAttempts[0] : null;
+
+    // Check if there's an expired incomplete attempt that needs attention
+    if (hasExpiredIncompleteAttempt && expiredIncompleteAttempt) {
+      // Check if deadline has passed for submission
+      const canStillSubmit = status.status === 'active' || status.status === 'live' || status.status === 'late-active';
+      
+      if (canStillSubmit) {
+        return {
+          text: 'Review & Submit',
+          action: () => router.push(`/student/test/${test.id}/review-expired?attemptId=${expiredIncompleteAttempt.id}`),
+          variant: 'warning' as const,
+          icon: AlertCircle,
+          disabled: false,
+          hasExpiredIncomplete: true,
+          expiredAttemptId: expiredIncompleteAttempt.id
+        };
+      } else {
+        // Deadline passed - show contact teacher
+        return {
+          text: 'Incomplete - Contact Teacher',
+          action: () => router.push(`/student/test/${test.id}`),
+          variant: 'outline' as const,
+          icon: AlertCircle,
+          disabled: false,
+          hasExpiredIncomplete: true,
+          expiredAttemptId: expiredIncompleteAttempt.id
+        };
+      }
+    }
 
     // For completed tests, always show view results if there are completed attempts
     if (status.status === 'completed') {
@@ -1492,12 +1531,20 @@ export default function StudentTests() {
                               )}
                               {renderLateSubmissionDetails(test)}
                             </div>
-                            <div>
+                            <div className="flex flex-col items-end gap-2">
+                              {(buttonConfig as any).hasExpiredIncomplete && (
+                                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-orange-100 text-orange-800 border-2 border-orange-400">
+                                  <AlertCircle className="w-4 h-4 mr-1" />
+                                  Incomplete Attempt
+                                </span>
+                              )}
                               <Button
                                 onClick={buttonConfig.action}
                                 disabled={buttonConfig.disabled}
                                 className={`inline-flex items-center px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black ${
-                                  buttonConfig.variant === 'primary' && !buttonConfig.disabled
+                                  buttonConfig.variant === 'warning' && !buttonConfig.disabled
+                                    ? 'bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white'
+                                    : buttonConfig.variant === 'primary' && !buttonConfig.disabled
                                     ? theme === 'default'
                                       ? 'bg-gradient-to-r from-black to-gray-800 hover:from-gray-800 hover:to-black text-white'
                                       : theme === 'ben10'
@@ -1690,12 +1737,20 @@ export default function StudentTests() {
                                 </p>
                               )}
                             </div>
-                            <div>
+                            <div className="flex flex-col items-end gap-2">
+                              {(buttonConfig as any).hasExpiredIncomplete && (
+                                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-orange-100 text-orange-800 border-2 border-orange-400">
+                                  <AlertCircle className="w-4 h-4 mr-1" />
+                                  Incomplete Attempt
+                                </span>
+                              )}
                               <Button
                                 onClick={buttonConfig.action}
                                 disabled={buttonConfig.disabled}
                                 className={`inline-flex items-center px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black ${
-                                  buttonConfig.variant === 'primary' && !buttonConfig.disabled
+                                  buttonConfig.variant === 'warning' && !buttonConfig.disabled
+                                    ? 'bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white'
+                                    : buttonConfig.variant === 'primary' && !buttonConfig.disabled
                                     ? theme === 'default'
                                       ? 'bg-gradient-to-r from-black to-gray-800 hover:from-gray-800 hover:to-black text-white'
                                       : theme === 'ben10'
@@ -1821,12 +1876,20 @@ export default function StudentTests() {
                                 </p>
                               )}
                             </div>
-                            <div className="mt-4 md:mt-0">
+                            <div className="mt-4 md:mt-0 flex flex-col items-end gap-2">
+                              {(buttonConfig as any).hasExpiredIncomplete && (
+                                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-orange-100 text-orange-800 border-2 border-orange-400">
+                                  <AlertCircle className="w-4 h-4 mr-1" />
+                                  Incomplete Attempt
+                                </span>
+                              )}
                               <Button
                                 onClick={buttonConfig.action}
                                 disabled={buttonConfig.disabled}
                                 className={`inline-flex items-center px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black ${
-                                  buttonConfig.variant === 'primary' && !buttonConfig.disabled
+                                  buttonConfig.variant === 'warning' && !buttonConfig.disabled
+                                    ? 'bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white'
+                                    : buttonConfig.variant === 'primary' && !buttonConfig.disabled
                                     ? theme === 'default'
                                       ? 'bg-gradient-to-r from-black to-gray-800 hover:from-gray-800 hover:to-black text-white'
                                       : theme === 'ben10'
@@ -1982,12 +2045,20 @@ export default function StudentTests() {
                                     )}
                                     {renderLateSubmissionDetails(test)}
                                   </div>
-                                  <div>
+                                  <div className="flex flex-col items-end gap-2">
+                                    {(buttonConfig as any).hasExpiredIncomplete && (
+                                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-orange-100 text-orange-800 border-2 border-orange-400">
+                                        <AlertCircle className="w-4 h-4 mr-1" />
+                                        Incomplete Attempt
+                                      </span>
+                                    )}
                                     <Button
                                       onClick={buttonConfig.action}
                                       disabled={buttonConfig.disabled}
                                       className={`inline-flex items-center px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black ${
-                                        buttonConfig.variant === 'primary' && !buttonConfig.disabled
+                                        buttonConfig.variant === 'warning' && !buttonConfig.disabled
+                                          ? 'bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white'
+                                          : buttonConfig.variant === 'primary' && !buttonConfig.disabled
                                           ? theme === 'default'
                                             ? 'bg-gradient-to-r from-black to-gray-800 hover:from-gray-800 hover:to-black text-white'
                                             : `${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222] hover:from-[#b2e05b] hover:to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600' : theme === 'cricketverse-australian' ? 'bg-gradient-to-r from-[#ffd700] to-[#b38f00] hover:from-[#b38f00] hover:to-[#8b6914]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7] to-[#2C1267] hover:from-[#2C1267] hover:to-[#0F0826]' : 'bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600'} text-white`
@@ -2180,12 +2251,20 @@ export default function StudentTests() {
                                       </p>
                                     )}
                                   </div>
-                                  <div>
+                                  <div className="flex flex-col items-end gap-2">
+                                    {(buttonConfig as any).hasExpiredIncomplete && (
+                                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-orange-100 text-orange-800 border-2 border-orange-400">
+                                        <AlertCircle className="w-4 h-4 mr-1" />
+                                        Incomplete Attempt
+                                      </span>
+                                    )}
                                     <Button
                                       onClick={buttonConfig.action}
                                       disabled={buttonConfig.disabled}
                                       className={`inline-flex items-center px-6 py-3 rounded-full font-black text-lg transform hover:scale-105 transition-all shadow-lg border-4 border-black ${
-                                        buttonConfig.variant === 'primary' && !buttonConfig.disabled
+                                        buttonConfig.variant === 'warning' && !buttonConfig.disabled
+                                          ? 'bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white'
+                                          : buttonConfig.variant === 'primary' && !buttonConfig.disabled
                                           ? theme === 'default'
                                             ? 'bg-gradient-to-r from-black to-gray-800 hover:from-gray-800 hover:to-black text-white'
                                             : `${theme === 'ben10' ? 'bg-gradient-to-r from-[#64cc4f] to-[#222222] hover:from-[#b2e05b] hover:to-[#222222]' : theme === 'tinkerbell' ? 'bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600' : theme === 'cricketverse-australian' ? 'bg-gradient-to-r from-[#ffd700] to-[#b38f00] hover:from-[#b38f00] hover:to-[#8b6914]' : theme === 'avengers' ? 'bg-gradient-to-r from-[#604AC7] to-[#2C1267] hover:from-[#2C1267] hover:to-[#0F0826]' : 'bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600'} text-white`
