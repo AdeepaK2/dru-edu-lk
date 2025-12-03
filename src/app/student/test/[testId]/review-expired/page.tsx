@@ -117,54 +117,128 @@ export default function ReviewExpiredAttemptPage() {
     try {
       setSubmitting(true);
       
-      const { doc, updateDoc, Timestamp } = await import('firebase/firestore');
+      const { doc, updateDoc, setDoc, Timestamp } = await import('firebase/firestore');
       const { firestore } = await import('@/utils/firebase-client');
       
       // Calculate score from saved answers
       const answers = attemptData.answers || {};
       let correctAnswers = 0;
       let totalMarks = 0;
+      const mcqResults: any[] = [];
+      const finalAnswers: any[] = [];
       
       test.questions.forEach((question: any, index: number) => {
         const questionId = question.questionId || question.id || `q${index}`;
         const savedAnswer = answers[questionId];
+        const questionMarks = question.marks || 1;
+        
+        // Build final answers array
+        const answerValue = savedAnswer?.selectedOption ?? savedAnswer;
+        finalAnswers.push({
+          questionId,
+          selectedOption: typeof answerValue === 'number' ? answerValue : undefined,
+          textContent: typeof answerValue === 'string' ? answerValue : undefined,
+          timeSpent: 0,
+          changeCount: 0,
+          wasReviewed: false
+        });
         
         if (savedAnswer !== undefined) {
-          const questionMarks = question.marks || 1;
-          
           if (question.type === 'mcq' || question.questionType === 'mcq') {
             const correctOption = question.correctOption ?? question.correctAnswer ?? 0;
-            if (savedAnswer === correctOption || savedAnswer?.selectedOption === correctOption) {
+            const selectedOption = savedAnswer?.selectedOption ?? savedAnswer;
+            const isCorrect = selectedOption === correctOption;
+            
+            if (isCorrect) {
               correctAnswers++;
               totalMarks += questionMarks;
             }
+            
+            // Build MCQ results array
+            mcqResults.push({
+              questionId,
+              questionText: question.question || question.questionText || '',
+              selectedOption: selectedOption,
+              correctOption: correctOption,
+              selectedOptionText: question.options?.[selectedOption] || '',
+              correctOptionText: question.options?.[correctOption] || '',
+              isCorrect,
+              marksAwarded: isCorrect ? questionMarks : 0,
+              maxMarks: questionMarks
+            });
           }
         }
       });
       
       const maxMarks = test.totalMarks || test.questions.length;
       const percentage = maxMarks > 0 ? Math.round((totalMarks / maxMarks) * 100) : 0;
+      const passingScore = (test as any).config?.passingScore || 50;
+      const passStatus = percentage >= passingScore ? 'passed' : 'failed';
+      
+      const submittedAt = Timestamp.now();
       
       // Update the attempt with submission data
       await updateDoc(doc(firestore, 'testAttempts', attemptId!), {
         status: 'submitted',
-        submittedAt: Timestamp.now(),
+        submittedAt,
         autoGradedScore: totalMarks,
         score: totalMarks,
         percentage,
         maxScore: maxMarks,
         correctAnswers,
         totalQuestions: test.questions.length,
-        submissionType: 'incomplete_submission', // Mark as incomplete submission
+        submissionType: 'incomplete_submission',
         submissionNote: 'Submitted from incomplete attempt review - answers were saved but not submitted before time expired',
-        gradedAt: Timestamp.now(),
+        gradedAt: submittedAt,
         isAutoGraded: true
       });
       
+      console.log('✅ Attempt document updated');
+      
+      // Create submission document in submissions collection
+      // This is required for the result page to find the submission
+      const submissionData = {
+        id: attemptId,
+        testId: test.id,
+        testTitle: test.title || 'Untitled Test',
+        testType: test.type,
+        studentId: student.id,
+        studentName: student.name || 'Unknown Student',
+        studentEmail: student.email || '',
+        classId: attemptData.classId || '',
+        className: attemptData.className || 'Unknown Class',
+        attemptNumber: attemptData.attemptNumber || 1,
+        status: 'submitted',
+        startTime: attemptData.startedAt || attemptData.createdAt,
+        endTime: attemptData.endTime,
+        submittedAt,
+        totalTimeSpent: attemptData.timeSpent || 0,
+        questionsAttempted: Object.keys(answers).length,
+        questionsSkipped: test.questions.length - Object.keys(answers).length,
+        questionsReviewed: 0,
+        totalChanges: 0,
+        autoGradedScore: totalMarks,
+        manualGradingPending: false,
+        totalScore: totalMarks,
+        maxScore: maxMarks,
+        percentage,
+        passStatus,
+        finalAnswers,
+        mcqResults,
+        essayResults: [],
+        submissionType: 'incomplete_submission',
+        submissionNote: 'Submitted from incomplete attempt review - answers were saved but not submitted before time expired',
+        createdAt: submittedAt,
+        updatedAt: submittedAt
+      };
+      
+      await setDoc(doc(firestore, 'submissions', attemptId!), submissionData);
+      
+      console.log('✅ Submission document created');
       console.log('✅ Incomplete attempt submitted successfully');
       
-      // Redirect to results page
-      router.push(`/student/test/${testId}/result`);
+      // Redirect to results page with submission ID
+      router.push(`/student/test/${testId}/result?submissionId=${attemptId}`);
       
     } catch (err) {
       console.error('Error submitting attempt:', err);
