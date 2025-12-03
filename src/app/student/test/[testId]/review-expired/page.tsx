@@ -169,7 +169,7 @@ export default function ReviewExpiredAttemptPage() {
     try {
       setSubmitting(true);
       
-      const { doc, updateDoc, setDoc, Timestamp } = await import('firebase/firestore');
+      const { doc, getDoc, updateDoc, setDoc, Timestamp } = await import('firebase/firestore');
       const { firestore } = await import('@/utils/firebase-client');
       
       // Helper function to remove undefined values from objects
