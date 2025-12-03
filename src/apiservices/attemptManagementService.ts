@@ -1084,6 +1084,20 @@ export class AttemptManagementService {
       // be ignored when checking if student can create a new attempt.
       const now = Timestamp.now();
       
+      // Also check test deadline for flexible tests
+      let testDeadlineSeconds = 0;
+      if (test.type === 'flexible' && (test as any).availableTo) {
+        const availableTo = (test as any).availableTo;
+        if (typeof availableTo.seconds === 'number') {
+          testDeadlineSeconds = availableTo.seconds;
+        } else if (availableTo.toMillis) {
+          testDeadlineSeconds = availableTo.toMillis() / 1000;
+        } else if ((availableTo as any)._seconds) {
+          testDeadlineSeconds = (availableTo as any)._seconds;
+        }
+        console.log('🗓️ Test deadline check:', { testDeadlineSeconds, nowSeconds: now.seconds, isPastDeadline: now.seconds > testDeadlineSeconds });
+      }
+      
       const validAttempts = attempts.filter(attempt => {
         // Always include fully submitted attempts (these count as real attempts)
         if (attempt.status === 'submitted' || attempt.status === 'auto_submitted') {
@@ -1102,6 +1116,13 @@ export class AttemptManagementService {
             totalTimeAllowed: attempt.totalTimeAllowed,
             nowSeconds: now.seconds
           });
+          
+          // Check 0: TEST DEADLINE has passed (most important for flexible tests!)
+          // If the test deadline has passed, any incomplete attempt is expired
+          if (testDeadlineSeconds > 0 && now.seconds > testDeadlineSeconds) {
+            console.log('🔍 Excluding expired attempt (TEST DEADLINE passed):', attempt.id, 'testDeadline:', testDeadlineSeconds, 'now:', now.seconds);
+            return false;
+          }
           
           // Check 1: timeRemaining explicitly set to 0 or less
           if (attempt.timeRemaining !== undefined && attempt.timeRemaining <= 0) {

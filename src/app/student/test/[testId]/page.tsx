@@ -172,8 +172,24 @@ export default function TestPage() {
           // For late submissions, we need to consider the extended deadline
           let isExpired = false;
           
+          // PRIORITY CHECK: Check if TEST DEADLINE has passed (for flexible tests)
+          // This is the most important check - if the test deadline has passed,
+          // any incomplete attempt should be considered expired
+          if (testData.type === 'flexible' && (testData as any).availableTo) {
+            const availableTo = (testData as any).availableTo;
+            const testDeadline = availableTo.toDate ? availableTo.toDate() : new Date(availableTo.seconds * 1000);
+            if (now > testDeadline) {
+              isExpired = true;
+              console.log('🗓️ Attempt expired based on TEST DEADLINE passed:', {
+                attemptId: attemptData.id,
+                testDeadline: testDeadline.toISOString(),
+                currentTime: now.toISOString()
+              });
+            }
+          }
+          
           // First check: if timeRemaining is stored and <= 0, the attempt timer has expired
-          if (attemptData.timeRemaining !== undefined && attemptData.timeRemaining <= 0) {
+          if (!isExpired && attemptData.timeRemaining !== undefined && attemptData.timeRemaining <= 0) {
             isExpired = true;
             console.log('⏱️ Attempt expired based on timeRemaining <= 0:', {
               attemptId: attemptData.id,
@@ -181,7 +197,7 @@ export default function TestPage() {
             });
           }
           // If there's a late submission approved, check against late submission deadline first
-          else if (lateSubmissionInfo && lateSubmissionInfo.status === 'approved') {
+          else if (!isExpired && lateSubmissionInfo && lateSubmissionInfo.status === 'approved') {
             const lateDeadline = lateSubmissionInfo.newDeadline.toDate ? 
               lateSubmissionInfo.newDeadline.toDate() : 
               new Date(lateSubmissionInfo.newDeadline.seconds * 1000);
@@ -192,7 +208,7 @@ export default function TestPage() {
               currentTime: now.toISOString(),
               isExpired
             });
-          } else {
+          } else if (!isExpired) {
             // Use original attempt end time logic
             if (attemptData.endTime) {
               const endTime = attemptData.endTime.toDate ? attemptData.endTime.toDate() : new Date(attemptData.endTime.seconds * 1000);
