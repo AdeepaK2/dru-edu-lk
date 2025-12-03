@@ -1207,12 +1207,18 @@ export default function TestTakePage() {
 
   // Handle saving answer with offline backup
   const saveAnswer = useCallback(async (answer: any) => {
-    if (!currentQuestion || !attemptId) return;
+    console.log('🔵 saveAnswer called:', { answer, currentQuestion: currentQuestion?.id, attemptId, isOnline });
+    
+    if (!currentQuestion || !attemptId) {
+      console.warn('⚠️ saveAnswer aborted: missing currentQuestion or attemptId', { currentQuestion, attemptId });
+      return;
+    }
     
     try {
       setSavedState('saving');
       
       const questionId = currentQuestion.id;
+      console.log('🔵 Saving answer for question:', questionId, 'Type:', currentQuestion.type);
       const timeSpent = timeSpentRef.current[questionId] || 0;
       
       // Handle different answer types
@@ -1264,11 +1270,21 @@ export default function TestTakePage() {
       // Save to localStorage as backup
       const backupKey = `backup_${attemptId}_${questionId}`;
       localStorage.setItem(backupKey, JSON.stringify(updatedAnswer));
+      console.log('🔵 Saved to localStorage backup:', backupKey);
       
       if (isOnline) {
+        console.log('🔵 Online - attempting to save to Realtime DB...');
         try {
           // Import service
           const { RealtimeTestService } = await import('@/apiservices/realtimeTestService');
+          
+          console.log('🔵 Calling RealtimeTestService.saveAnswer with:', {
+            attemptId,
+            questionId,
+            cleanAnswer,
+            type: currentQuestion.type,
+            timeSpent
+          });
           
           // Save to Realtime DB - extend to support PDF files
           await RealtimeTestService.saveAnswer(
@@ -1300,7 +1316,7 @@ export default function TestTakePage() {
         setTimeout(() => setSavedState(null), 2000);
       }
     } catch (error) {
-      console.error('Error saving answer:', error);
+      console.error('❌ Error saving answer:', error);
       setSavedState('error');
       setTimeout(() => setSavedState(null), 3000);
     }
@@ -1308,8 +1324,15 @@ export default function TestTakePage() {
 
   // Handle option selection for MCQ
   const handleOptionSelect = (optionIndex: number) => {
-    if (!currentQuestion || currentQuestion.type !== 'mcq') return;
+    console.log('🟢 handleOptionSelect called with optionIndex:', optionIndex);
+    console.log('🟢 currentQuestion:', currentQuestion?.id, 'type:', currentQuestion?.type);
     
+    if (!currentQuestion || currentQuestion.type !== 'mcq') {
+      console.warn('⚠️ handleOptionSelect aborted: invalid question');
+      return;
+    }
+    
+    console.log('🟢 Calling saveAnswer with optionIndex:', optionIndex);
     saveAnswer(optionIndex);
   };
 

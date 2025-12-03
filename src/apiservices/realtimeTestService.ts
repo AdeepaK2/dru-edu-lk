@@ -132,9 +132,19 @@ export class RealtimeTestService {
     timeSpent: number,
     pdfFiles?: any[] // Optional PDF files for essays
   ): Promise<void> {
+    console.log('🔷 RealtimeTestService.saveAnswer called:', {
+      attemptId,
+      questionId,
+      answer,
+      questionType,
+      timeSpent
+    });
+    
     try {
       const db = this.init();
       const now = Date.now();
+      
+      console.log('🔷 Database initialized, timestamp:', now);
       
       // ⚠️ IMPORTANT: Do NOT default unanswered MCQ questions to 0 (Option A)
       // Keep them as null/undefined to indicate "not answered"
@@ -145,10 +155,14 @@ export class RealtimeTestService {
         cleanAnswer = questionType === 'essay' ? '' : null;
       }
       
+      console.log('🔷 Clean answer:', cleanAnswer);
+      
       // Get current answer to track changes
       const currentAnswerRef = ref(db, `testSessions/${attemptId}/answers/${questionId}`);
       const currentSnapshot = await get(currentAnswerRef);
       const currentAnswer = currentSnapshot.val() as RealtimeAnswer | null;
+      
+      console.log('🔷 Current answer from DB:', currentAnswer);
       
       // Create change record
       const change: AnswerChange = {
@@ -185,6 +199,8 @@ export class RealtimeTestService {
 
       // Clean the updatedAnswer object to remove any undefined values
       const cleanUpdatedAnswer = this.removeUndefinedValues(updatedAnswer);
+      
+      console.log('🔷 Clean updated answer:', cleanUpdatedAnswer);
 
       // Update in realtime DB with clean data
       const updates: Record<string, any> = {
@@ -192,8 +208,12 @@ export class RealtimeTestService {
         [`testSessions/${attemptId}/lastActivity`]: now,
         [`testSessions/${attemptId}/timePerQuestion/${questionId}`]: timeSpent || 0
       };
+      
+      console.log('🔷 Updating RTDB with paths:', Object.keys(updates));
 
       await update(ref(db), updates);
+      
+      console.log('✅ RTDB update successful for question:', questionId);
       
       // Log answer change event
       await this.logSessionEvent(attemptId, '', 'answer_change', { 
@@ -206,7 +226,7 @@ export class RealtimeTestService {
 
       console.log('💾 Answer saved in real-time for question:', questionId);
     } catch (error) {
-      console.error('Error saving answer:', error);
+      console.error('❌ Error saving answer to RTDB:', error);
       throw error;
     }
   }

@@ -375,16 +375,54 @@ export default function TestPage() {
         if (expiredIncompleteAttempts.length > 0) {
           const expiredAttempt = expiredIncompleteAttempts[0];
           (attemptData as any).expiredIncompleteAttemptId = expiredAttempt.id;
+          
+          // CRITICAL: Check RTDB for answers since that's where RealtimeTestService saves them
+          let rtdbAnswers: Record<string, any> = {};
+          let questionsAnswered = 0;
+          
+          try {
+            const { ref, get } = await import('firebase/database');
+            const { realtimeDb } = await import('@/utils/firebase-client');
+            
+            // PRIMARY PATH: testSessions/${attemptId}/answers
+            const sessionRef = ref(realtimeDb, `testSessions/${expiredAttempt.id}/answers`);
+            const sessionSnapshot = await get(sessionRef);
+            
+            if (sessionSnapshot.exists()) {
+              rtdbAnswers = sessionSnapshot.val();
+              questionsAnswered = Object.keys(rtdbAnswers).length;
+              console.log('📥 Loaded expired attempt answers from RTDB:', {
+                attemptId: expiredAttempt.id,
+                answersCount: questionsAnswered,
+                answerKeys: Object.keys(rtdbAnswers)
+              });
+            } else {
+              console.log('📥 No RTDB answers found for expired attempt:', expiredAttempt.id);
+              // Fall back to Firestore answers if any
+              if (expiredAttempt.answers) {
+                rtdbAnswers = expiredAttempt.answers;
+                questionsAnswered = Object.keys(expiredAttempt.answers).length;
+              }
+            }
+          } catch (rtdbError) {
+            console.warn('⚠️ Error loading RTDB answers for expired attempt:', rtdbError);
+            // Fall back to Firestore answers if any
+            if (expiredAttempt.answers) {
+              rtdbAnswers = expiredAttempt.answers;
+              questionsAnswered = Object.keys(expiredAttempt.answers).length;
+            }
+          }
+          
           (attemptData as any).expiredIncompleteAttemptData = {
             id: expiredAttempt.id,
-            answers: expiredAttempt.answers || {},
+            answers: rtdbAnswers,
             startedAt: expiredAttempt.startedAt,
-            questionsAnswered: expiredAttempt.answers ? Object.keys(expiredAttempt.answers).length : 0,
+            questionsAnswered: questionsAnswered,
             totalQuestions: testData.questions.length
           };
           console.log('⚠️ Found expired incomplete attempt:', {
             id: expiredAttempt.id,
-            questionsAnswered: expiredAttempt.answers ? Object.keys(expiredAttempt.answers).length : 0,
+            questionsAnswered: questionsAnswered,
             totalQuestions: testData.questions.length
           });
         }
