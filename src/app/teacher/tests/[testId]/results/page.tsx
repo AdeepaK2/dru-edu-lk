@@ -67,11 +67,13 @@ export default function TestResultsPage() {
 
   const [test, setTest] = useState<Test | null>(null);
   const [submissions, setSubmissions] = useState<StudentSubmission[]>([]);
+  const [incompleteAttempts, setIncompleteAttempts] = useState<any[]>([]);
   const [stats, setStats] = useState<TestStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [viewMode, setViewMode] = useState<'summary' | 'individual'>('summary');
+  const [viewMode, setViewMode] = useState<'summary' | 'individual' | 'incomplete'>('summary');
+  const [approvingAttempt, setApprovingAttempt] = useState<string | null>(null);
 
   useEffect(() => {
     if (testId) {
@@ -160,6 +162,65 @@ export default function TestResultsPage() {
       // Load submissions
       const submissionsData = await SubmissionService.getTestSubmissions(testId);
       setSubmissions(submissionsData);
+
+      // Load incomplete attempts (started but not submitted)
+      try {
+        const { collection, query, where, getDocs } = await import('firebase/firestore');
+        const { firestore } = await import('@/utils/firebase-client');
+        
+        const incompleteQuery = query(
+          collection(firestore, 'testAttempts'),
+          where('testId', '==', testId)
+        );
+        
+        const incompleteSnapshot = await getDocs(incompleteQuery);
+        const incompleteData: any[] = [];
+        
+        incompleteSnapshot.forEach((doc) => {
+          const attemptData = { id: doc.id, ...doc.data() };
+          
+          // Check if this is an incomplete attempt (not submitted but has some progress)
+          const isSubmitted = attemptData.status === 'submitted' || 
+                             attemptData.status === 'auto_submitted' || 
+                             attemptData.submittedAt;
+          
+          const hasProgress = attemptData.status === 'in_progress' || 
+                             attemptData.status === 'paused' ||
+                             (attemptData.answers && Object.keys(attemptData.answers).length > 0);
+          
+          // Check if time has expired
+          const now = new Date();
+          let isExpired = false;
+          
+          if (attemptData.timeRemaining !== undefined && attemptData.timeRemaining <= 0) {
+            isExpired = true;
+          } else if (attemptData.endTime) {
+            const endTime = attemptData.endTime.toDate ? attemptData.endTime.toDate() : new Date(attemptData.endTime.seconds * 1000);
+            isExpired = now > endTime;
+          } else if (attemptData.startedAt && attemptData.totalTimeAllowed) {
+            const startTime = attemptData.startedAt.toDate ? attemptData.startedAt.toDate() : new Date(attemptData.startedAt.seconds * 1000);
+            const endTime = new Date(startTime.getTime() + (attemptData.totalTimeAllowed * 1000));
+            isExpired = now > endTime;
+          }
+          
+          // Only include expired incomplete attempts
+          if (!isSubmitted && hasProgress && isExpired) {
+            const answersCount = attemptData.answers ? Object.keys(attemptData.answers).length : 0;
+            incompleteData.push({
+              ...attemptData,
+              answersCount,
+              totalQuestions: testData.questions?.length || 0,
+              isExpired: true
+            });
+          }
+        });
+        
+        setIncompleteAttempts(incompleteData);
+        console.log('📋 Loaded incomplete attempts:', incompleteData.length);
+      } catch (incompleteError) {
+        console.warn('⚠️ Failed to load incomplete attempts:', incompleteError);
+        setIncompleteAttempts([]);
+      }
 
       // Calculate statistics
       const testStats = calculateTestStats(testData, submissionsData);
@@ -519,6 +580,21 @@ export default function TestResultsPage() {
                   }`}
                 >
                   Individual Results
+                </button>
+                <button
+                  onClick={() => setViewMode('incomplete')}
+                  className={`px-4 py-2 text-sm font-medium rounded-md transition-colors relative ${
+                    viewMode === 'incomplete'
+                      ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow'
+                      : 'text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-100'
+                  }`}
+                >
+                  Incomplete
+                  {incompleteAttempts.length > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                      {incompleteAttempts.length}
+                    </span>
+                  )}
                 </button>
               </div>
               <button
