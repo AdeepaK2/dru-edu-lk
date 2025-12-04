@@ -465,8 +465,18 @@ export async function PATCH(req: NextRequest) {
     const validatedData = studentUpdateSchema.safeParse(body);
     
     if (!validatedData.success) {
+      // Format validation errors into a user-friendly message
+      const errorMessages = validatedData.error.issues.map(issue => {
+        const path = issue.path.join('.');
+        return `${path}: ${issue.message}`;
+      }).join('; ');
+      
       return NextResponse.json(
-        { error: "Invalid input data", details: validatedData.error.issues },
+        { 
+          error: "Validation failed", 
+          message: errorMessages,
+          details: validatedData.error.issues 
+        },
         { status: 400 }
       );
     }
