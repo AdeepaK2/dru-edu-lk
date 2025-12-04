@@ -147,9 +147,14 @@ export default function EnrollmentPage() {
   // Helper function to format Australian phone number
   const formatAustralianPhone = (phone: string): string => {
     // Remove all non-digits
-    const digits = phone.replace(/\D/g, '');
+    let digits = phone.replace(/\D/g, '');
     
-    // If it starts with 04, it's already in correct format
+    // If it starts with 61 (country code already present), remove it first
+    if (digits.startsWith('61') && digits.length >= 11) {
+      digits = digits.substring(2);
+    }
+    
+    // If it starts with 04, convert to international format
     if (digits.startsWith('04') && digits.length === 10) {
       return `+61${digits.substring(1)}`;
     }
@@ -169,26 +174,38 @@ export default function EnrollmentPage() {
       return `+61${digits}`;
     }
     
-    // For any other format, just add +61 and hope for the best
-    return `+61${digits}`;
+    // For numbers that don't match Australian mobile format, return as-is with +61 prefix
+    // but only if it doesn't already have it
+    if (digits.length > 0) {
+      return `+61${digits}`;
+    }
+    
+    return phone; // Return original if empty
   };
 
   // Helper function to validate Australian mobile number
   const validateAustralianMobile = (phone: string): { isValid: boolean; message: string } => {
-    const digits = phone.replace(/\D/g, '');
+    let digits = phone.replace(/\D/g, '');
+    
+    // If it starts with 61 (country code), remove it for validation
+    if (digits.startsWith('61') && digits.length >= 11) {
+      digits = digits.substring(2);
+    }
     
     // Check if it's a valid Australian mobile format
+    // 10 digits starting with 04 (e.g., 0412345678)
     if (digits.length === 10 && digits.startsWith('04')) {
       return { isValid: true, message: 'Valid' };
     }
     
+    // 9 digits starting with 4 (e.g., 412345678)
     if (digits.length === 9 && digits.startsWith('4')) {
       return { isValid: true, message: 'Valid' };
     }
     
     return { 
       isValid: false, 
-      message: 'Please enter a valid Australian mobile number (e.g., 0412 345 678)' 
+      message: 'Please enter a valid Australian mobile number (e.g., 0412 345 678 or +61 412 345 678)' 
     };
   };
 
