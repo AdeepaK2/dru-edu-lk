@@ -64,6 +64,19 @@ export default function EnrollmentPage() {
   const [sortBy, setSortBy] = useState<'name' | 'subject' | 'year' | 'fee' | 'location'>('name');
   const [submittedClassCount, setSubmittedClassCount] = useState(0);
   
+  // Phone validation errors for real-time feedback
+  const [phoneErrors, setPhoneErrors] = useState<{
+    studentPhone: string;
+    parentPhone: string;
+  }>({ studentPhone: '', parentPhone: '' });
+  
+  // Name validation errors for real-time feedback
+  const [nameErrors, setNameErrors] = useState<{
+    studentFirstName: string;
+    studentLastName: string;
+    parentName: string;
+  }>({ studentFirstName: '', studentLastName: '', parentName: '' });
+  
   const [formData, setFormData] = useState<EnrollmentFormData>({
     studentFirstName: '',
     studentLastName: '',
@@ -144,12 +157,73 @@ export default function EnrollmentPage() {
     loadTeacherNames();
   }, [classes]);
 
+  // Helper function to validate name (no emojis, special characters, or numbers)
+  const validateName = (name: string): { isValid: boolean; message: string } => {
+    if (!name.trim()) {
+      return { isValid: true, message: '' }; // Let required validation handle empty
+    }
+    
+    // Check for emojis - emoji regex pattern
+    const emojiRegex = /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE00}-\u{FE0F}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{231A}-\u{231B}\u{23E9}-\u{23F3}\u{23F8}-\u{23FA}\u{25AA}-\u{25AB}\u{25B6}\u{25C0}\u{25FB}-\u{25FE}\u{2614}-\u{2615}\u{2648}-\u{2653}\u{267F}\u{2693}\u{26A1}\u{26AA}-\u{26AB}\u{26BD}-\u{26BE}\u{26C4}-\u{26C5}\u{26CE}\u{26D4}\u{26EA}\u{26F2}-\u{26F3}\u{26F5}\u{26FA}\u{26FD}\u{2702}\u{2705}\u{2708}-\u{270D}\u{270F}]/u;
+    
+    if (emojiRegex.test(name)) {
+      return { 
+        isValid: false, 
+        message: 'Name cannot contain emojis. Please use only letters.' 
+      };
+    }
+    
+    // Check for numbers
+    if (/\d/.test(name)) {
+      return { 
+        isValid: false, 
+        message: 'Name cannot contain numbers. Please use only letters.' 
+      };
+    }
+    
+    // Check for special characters (allow letters, spaces, hyphens, apostrophes, and periods)
+    // This covers names like "O'Connor", "Mary-Jane", "Dr. Smith", and international characters
+    const validNameRegex = /^[a-zA-Z\u00C0-\u024F\u1E00-\u1EFF\s'\-\.]+$/;
+    if (!validNameRegex.test(name)) {
+      return { 
+        isValid: false, 
+        message: 'Name can only contain letters, spaces, hyphens, and apostrophes.' 
+      };
+    }
+    
+    // Check minimum length (at least 2 characters for a valid name)
+    if (name.trim().length < 2) {
+      return { 
+        isValid: false, 
+        message: 'Name must be at least 2 characters long.' 
+      };
+    }
+    
+    return { isValid: true, message: '' };
+  };
+  
+  // Helper function to sanitize name (remove invalid characters)
+  const sanitizeName = (name: string): string => {
+    // Remove emojis and other unwanted characters, keep letters, spaces, hyphens, apostrophes, periods
+    return name
+      .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE00}-\u{FE0F}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{231A}-\u{231B}\u{23E9}-\u{23F3}\u{23F8}-\u{23FA}\u{25AA}-\u{25AB}\u{25B6}\u{25C0}\u{25FB}-\u{25FE}\u{2614}-\u{2615}\u{2648}-\u{2653}\u{267F}\u{2693}\u{26A1}\u{26AA}-\u{26AB}\u{26BD}-\u{26BE}\u{26C4}-\u{26C5}\u{26CE}\u{26D4}\u{26EA}\u{26F2}-\u{26F3}\u{26F5}\u{26FA}\u{26FD}\u{2702}\u{2705}\u{2708}-\u{270D}\u{270F}]/gu, '')
+      .replace(/[0-9]/g, '')
+      .replace(/[^a-zA-Z\u00C0-\u024F\u1E00-\u1EFF\s'\-\.]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  };
+
   // Helper function to format Australian phone number
   const formatAustralianPhone = (phone: string): string => {
     // Remove all non-digits
-    const digits = phone.replace(/\D/g, '');
+    let digits = phone.replace(/\D/g, '');
     
-    // If it starts with 04, it's already in correct format
+    // If it starts with 61 (country code already present), remove it first
+    if (digits.startsWith('61') && digits.length >= 11) {
+      digits = digits.substring(2);
+    }
+    
+    // If it starts with 04, convert to international format
     if (digits.startsWith('04') && digits.length === 10) {
       return `+61${digits.substring(1)}`;
     }
@@ -169,26 +243,72 @@ export default function EnrollmentPage() {
       return `+61${digits}`;
     }
     
-    // For any other format, just add +61 and hope for the best
-    return `+61${digits}`;
+    // For numbers that don't match Australian mobile format, return as-is with +61 prefix
+    // but only if it doesn't already have it
+    if (digits.length > 0) {
+      return `+61${digits}`;
+    }
+    
+    return phone; // Return original if empty
   };
 
   // Helper function to validate Australian mobile number
   const validateAustralianMobile = (phone: string): { isValid: boolean; message: string } => {
-    const digits = phone.replace(/\D/g, '');
-    
-    // Check if it's a valid Australian mobile format
-    if (digits.length === 10 && digits.startsWith('04')) {
-      return { isValid: true, message: 'Valid' };
+    // If empty, let required validation handle it
+    if (!phone.trim()) {
+      return { isValid: true, message: '' };
     }
     
+    let digits = phone.replace(/\D/g, '');
+    
+    // If it starts with 61 (country code), remove it for validation
+    if (digits.startsWith('61') && digits.length >= 11) {
+      digits = digits.substring(2);
+    }
+    
+    // Check if it's a valid Australian mobile format
+    // 10 digits starting with 04 (e.g., 0412345678)
+    if (digits.length === 10 && digits.startsWith('04')) {
+      return { isValid: true, message: '' };
+    }
+    
+    // 9 digits starting with 4 (e.g., 412345678)
     if (digits.length === 9 && digits.startsWith('4')) {
-      return { isValid: true, message: 'Valid' };
+      return { isValid: true, message: '' };
+    }
+    
+    // Provide specific error messages based on the issue
+    if (digits.length === 0) {
+      return { 
+        isValid: false, 
+        message: 'Please enter a phone number' 
+      };
+    }
+    
+    if (!digits.startsWith('04') && !digits.startsWith('4') && !digits.startsWith('61')) {
+      return { 
+        isValid: false, 
+        message: 'Australian mobile numbers start with 04 (e.g., 0412 345 678)' 
+      };
+    }
+    
+    if (digits.length < 9) {
+      return { 
+        isValid: false, 
+        message: `Phone number is too short. Enter ${10 - digits.length} more digit${10 - digits.length > 1 ? 's' : ''}` 
+      };
+    }
+    
+    if (digits.length > 10 && !digits.startsWith('61')) {
+      return { 
+        isValid: false, 
+        message: 'Phone number is too long. Australian mobiles are 10 digits (e.g., 0412 345 678)' 
+      };
     }
     
     return { 
       isValid: false, 
-      message: 'Please enter a valid Australian mobile number (e.g., 0412 345 678)' 
+      message: 'Enter a valid Australian mobile (e.g., 0412 345 678 or +61 412 345 678)' 
     };
   };
 
@@ -197,6 +317,48 @@ export default function EnrollmentPage() {
       ...prev,
       [field]: value
     }));
+    
+    // Real-time phone validation
+    if (field === 'studentPhone' && typeof value === 'string') {
+      const validation = validateAustralianMobile(value);
+      setPhoneErrors(prev => ({
+        ...prev,
+        studentPhone: value.trim() ? (validation.isValid ? '' : validation.message) : ''
+      }));
+    }
+    
+    if (field === 'parentPhone' && typeof value === 'string') {
+      const validation = validateAustralianMobile(value);
+      setPhoneErrors(prev => ({
+        ...prev,
+        parentPhone: value.trim() ? (validation.isValid ? '' : validation.message) : ''
+      }));
+    }
+    
+    // Real-time name validation
+    if (field === 'studentFirstName' && typeof value === 'string') {
+      const validation = validateName(value);
+      setNameErrors(prev => ({
+        ...prev,
+        studentFirstName: value.trim() ? (validation.isValid ? '' : validation.message) : ''
+      }));
+    }
+    
+    if (field === 'studentLastName' && typeof value === 'string') {
+      const validation = validateName(value);
+      setNameErrors(prev => ({
+        ...prev,
+        studentLastName: value.trim() ? (validation.isValid ? '' : validation.message) : ''
+      }));
+    }
+    
+    if (field === 'parentName' && typeof value === 'string') {
+      const validation = validateName(value);
+      setNameErrors(prev => ({
+        ...prev,
+        parentName: value.trim() ? (validation.isValid ? '' : validation.message) : ''
+      }));
+    }
   };
 
   const handleClassSelection = (classId: string, isSelected: boolean) => {
@@ -228,38 +390,71 @@ export default function EnrollmentPage() {
   const validateForm = (): string[] => {
     const errors: string[] = [];
     
-    if (!formData.studentFirstName.trim()) errors.push('Student first name is required');
-    if (!formData.studentLastName.trim()) errors.push('Student last name is required');
+    if (!formData.studentFirstName.trim()) {
+      errors.push('Student first name is required');
+    } else {
+      const firstNameValidation = validateName(formData.studentFirstName);
+      if (!firstNameValidation.isValid) {
+        setNameErrors(prev => ({ ...prev, studentFirstName: firstNameValidation.message }));
+        errors.push(`First name: ${firstNameValidation.message}`);
+      }
+    }
+    
+    if (!formData.studentLastName.trim()) {
+      errors.push('Student last name is required');
+    } else {
+      const lastNameValidation = validateName(formData.studentLastName);
+      if (!lastNameValidation.isValid) {
+        setNameErrors(prev => ({ ...prev, studentLastName: lastNameValidation.message }));
+        errors.push(`Last name: ${lastNameValidation.message}`);
+      }
+    }
     if (!formData.studentEmail.trim()) errors.push('Student email is required');
-    if (!formData.studentPhone.trim()) errors.push('Student phone is required');
+    if (!formData.studentPhone.trim()) errors.push('Student phone number is required');
     if (!formData.dateOfBirth) errors.push('Date of birth is required');
     if (!formData.school.trim()) errors.push('School name is required');
     
-    if (!formData.parentName.trim()) errors.push('Parent name is required');
-    if (!formData.parentEmail.trim()) errors.push('Parent email is required');
-    if (!formData.parentPhone.trim()) errors.push('Parent phone is required');
+    if (!formData.parentName.trim()) {
+      errors.push('Parent/Guardian name is required');
+    } else {
+      const parentNameValidation = validateName(formData.parentName);
+      if (!parentNameValidation.isValid) {
+        setNameErrors(prev => ({ ...prev, parentName: parentNameValidation.message }));
+        errors.push(`Parent name: ${parentNameValidation.message}`);
+      }
+    }
+    if (!formData.parentEmail.trim()) errors.push('Parent/Guardian email is required');
+    if (!formData.parentPhone.trim()) errors.push('Parent/Guardian phone number is required');
     
-    if (formData.selectedClassIds.length === 0) errors.push('Please select at least one class');
-    if (!formData.agreedToTerms) errors.push('You must agree to terms and conditions');
+    if (formData.selectedClassIds.length === 0) errors.push('Please select at least one class to enroll in');
+    if (!formData.agreedToTerms) errors.push('You must agree to the terms and conditions');
     
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (formData.studentEmail && !emailRegex.test(formData.studentEmail)) {
-      errors.push('Student email format is invalid');
+      errors.push('Student email format is invalid (e.g., student@example.com)');
     }
     if (formData.parentEmail && !emailRegex.test(formData.parentEmail)) {
-      errors.push('Parent email format is invalid');
+      errors.push('Parent email format is invalid (e.g., parent@example.com)');
     }
     
-    // Phone validation
-    const studentPhoneValidation = validateAustralianMobile(formData.studentPhone);
-    if (!studentPhoneValidation.isValid) {
-      errors.push(`Student phone: ${studentPhoneValidation.message}`);
+    // Phone validation - only add error if phone is provided but invalid
+    if (formData.studentPhone.trim()) {
+      const studentPhoneValidation = validateAustralianMobile(formData.studentPhone);
+      if (!studentPhoneValidation.isValid) {
+        // Update inline error state
+        setPhoneErrors(prev => ({ ...prev, studentPhone: studentPhoneValidation.message }));
+        errors.push(`Student phone: ${studentPhoneValidation.message}`);
+      }
     }
     
-    const parentPhoneValidation = validateAustralianMobile(formData.parentPhone);
-    if (!parentPhoneValidation.isValid) {
-      errors.push(`Parent phone: ${parentPhoneValidation.message}`);
+    if (formData.parentPhone.trim()) {
+      const parentPhoneValidation = validateAustralianMobile(formData.parentPhone);
+      if (!parentPhoneValidation.isValid) {
+        // Update inline error state
+        setPhoneErrors(prev => ({ ...prev, parentPhone: parentPhoneValidation.message }));
+        errors.push(`Parent phone: ${parentPhoneValidation.message}`);
+      }
     }
     
     return errors;
@@ -395,9 +590,14 @@ export default function EnrollmentPage() {
         
         // Create enrollment requests for each new selected class
         const enrollmentPromises = newClassesToEnroll.map(async (selectedClass) => {
+          // Sanitize names before submission to ensure clean data
+          const sanitizedFirstName = sanitizeName(formData.studentFirstName);
+          const sanitizedLastName = sanitizeName(formData.studentLastName);
+          const sanitizedParentName = sanitizeName(formData.parentName);
+          
           const enrollmentData: EnrollmentRequestData = {
             student: {
-              name: `${formData.studentFirstName} ${formData.studentLastName}`,
+              name: `${sanitizedFirstName} ${sanitizedLastName}`,
               email: formData.studentEmail,
               phone: formatAustralianPhone(formData.studentPhone),
               dateOfBirth: formData.dateOfBirth,
@@ -405,7 +605,7 @@ export default function EnrollmentPage() {
               school: formData.school,
             },
             parent: {
-              name: formData.parentName,
+              name: sanitizedParentName,
               email: formData.parentEmail,
               phone: formatAustralianPhone(formData.parentPhone),
               relationship: formData.relationship,
@@ -553,6 +753,8 @@ export default function EnrollmentPage() {
                     value={formData.studentFirstName}
                     onChange={(e) => handleInputChange('studentFirstName', e.target.value)}
                     placeholder="e.g., John"
+                    helperText="Letters only (no emojis or special characters)"
+                    error={nameErrors.studentFirstName}
                     required
                   />
                   <Input
@@ -560,6 +762,8 @@ export default function EnrollmentPage() {
                     value={formData.studentLastName}
                     onChange={(e) => handleInputChange('studentLastName', e.target.value)}
                     placeholder="e.g., Smith"
+                    helperText="Letters only (no emojis or special characters)"
+                    error={nameErrors.studentLastName}
                     required
                   />
                   <Input
@@ -574,6 +778,8 @@ export default function EnrollmentPage() {
                     value={formData.studentPhone}
                     onChange={(e) => handleInputChange('studentPhone', e.target.value)}
                     placeholder="e.g., 0412 345 678"
+                    helperText="Australian mobile number (10 digits starting with 04)"
+                    error={phoneErrors.studentPhone}
                     required
                   />
                   <Input
@@ -602,6 +808,8 @@ export default function EnrollmentPage() {
                     value={formData.parentName}
                     onChange={(e) => handleInputChange('parentName', e.target.value)}
                     placeholder="e.g., Sarah Smith"
+                    helperText="Full name - letters only (no emojis or special characters)"
+                    error={nameErrors.parentName}
                     required
                     className="md:col-span-2"
                   />
@@ -617,6 +825,8 @@ export default function EnrollmentPage() {
                     value={formData.parentPhone}
                     onChange={(e) => handleInputChange('parentPhone', e.target.value)}
                     placeholder="e.g., 0412 345 678"
+                    helperText="Australian mobile number (10 digits starting with 04)"
+                    error={phoneErrors.parentPhone}
                     required
                   />
                   <Select
