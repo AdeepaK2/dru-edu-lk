@@ -579,7 +579,13 @@ export default function StudentsManagement() {
         let errorMessage = 'Failed to update student';
         try {
           const errorData = await response.json();
-          errorMessage = errorData.error || errorMessage;
+          // Use the detailed message if available, otherwise fall back to error
+          errorMessage = errorData.message || errorData.error || errorMessage;
+          
+          // Log the full error details for debugging
+          if (errorData.details) {
+            console.error('Validation errors:', errorData.details);
+          }
         } catch (jsonError) {
           console.error('Failed to parse error response:', jsonError);
           errorMessage = `HTTP ${response.status}: ${response.statusText}`;

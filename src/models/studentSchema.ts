@@ -60,6 +60,7 @@ export const studentSchema = z.object({
   coursesEnrolled: z.number().default(0),
   enrollmentDate: z.string().optional(),
   studentNumber: z.string().optional(), // Short ID like ST001, ST002 (optional for backward compatibility)
+  avatar: z.string().optional(), // Avatar URL or identifier
   parent: parentInfoSchema,
   payment: paymentInfoSchema.optional(),
   documents: z.array(documentSchema).optional(),
