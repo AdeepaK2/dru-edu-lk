@@ -85,7 +85,7 @@ export default function AdminChatPage() {
         // Check both possible field names for students
         const studentsCount = data.linkedStudents?.length || data.students?.length || 0;
         return {
-          id: doc.id,
+          id: data.email || doc.id, // Use email as ID to match mobile app
           name: data.name || 'Unknown',
           email: data.email || '',
           phone: data.phone,
