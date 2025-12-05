@@ -241,18 +241,25 @@ export class ChatFirestoreService {
     const messagesRef = collection(firestore, MESSAGES_COLLECTION);
     const now = Timestamp.now();
     
-    const newMessage: Omit<ChatMessageDocument, 'id'> = {
+    // Build message object, excluding undefined fields
+    const newMessage: Record<string, any> = {
       conversationId,
       senderId,
       senderName,
       senderRole,
       message,
       messageType,
-      attachmentUrl,
-      attachmentName,
       readBy: [senderId], // Sender has read their own message
       createdAt: now,
     };
+    
+    // Only add attachment fields if they have values
+    if (attachmentUrl) {
+      newMessage.attachmentUrl = attachmentUrl;
+    }
+    if (attachmentName) {
+      newMessage.attachmentName = attachmentName;
+    }
     
     const docRef = await addDoc(messagesRef, newMessage);
     
@@ -283,8 +290,20 @@ export class ChatFirestoreService {
     
     return {
       id: docRef.id,
-      ...newMessage,
+      conversationId,
+      senderId,
+      senderName,
+      senderRole,
+      message,
+      messageType,
+      attachmentUrl,
+      attachmentName,
+      readBy: [senderId],
       createdAt: now.toDate(),
+      // Add aliases for compatibility
+      text: message,
+      timestamp: now.toDate(),
+      senderType: senderRole,
     };
   }
   

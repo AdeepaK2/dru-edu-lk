@@ -419,7 +419,7 @@ export default function TeacherChatPage() {
                 </div>
                 <div className="flex-1">
                   <p className="font-medium text-gray-900">{selectedParent.name}</p>
-                  <p className="text-sm text-gray-500">Parent of {selectedParent.studentName}</p>
+                  <p className="text-sm text-gray-500">Parent of {selectedParent.studentName} • {selectedParent.className}</p>
                 </div>
               </div>
 
