@@ -79,18 +79,33 @@ export class ChatFirestoreService {
     console.log('ChatFirestoreService: Participant 1:', JSON.stringify(participant1));
     console.log('ChatFirestoreService: Participant 2:', JSON.stringify(participant2));
     
-    // Debug: Query all conversations for participant1
-    const allConvsQuery = query(
+    // Query conversations containing EITHER participant
+    const p1ConvsQuery = query(
       collection(firestore, CONVERSATIONS_COLLECTION),
       where('participants', 'array-contains', participant1.id)
     );
-    const allConvs = await getDocs(allConvsQuery);
-    console.log('ChatFirestoreService DEBUG: All conversations for participant1:', allConvs.docs.map(d => ({
-      id: d.id,
-      participants: d.data().participants,
-    })));
+    const p2ConvsQuery = query(
+      collection(firestore, CONVERSATIONS_COLLECTION),
+      where('participants', 'array-contains', participant2.id)
+    );
     
-    // Check if conversation exists
+    const [p1Convs, p2Convs] = await Promise.all([
+      getDocs(p1ConvsQuery),
+      getDocs(p2ConvsQuery)
+    ]);
+    
+    console.log('ChatFirestoreService DEBUG: Conversations containing participant1 (' + participant1.id + '):', 
+      p1Convs.docs.map(d => ({ id: d.id, participants: d.data().participants })));
+    console.log('ChatFirestoreService DEBUG: Conversations containing participant2 (' + participant2.id + '):', 
+      p2Convs.docs.map(d => ({ id: d.id, participants: d.data().participants })));
+    
+    // Find conversations that contain BOTH participants
+    const p1ConvIds = new Set(p1Convs.docs.map(d => d.id));
+    const sharedConvs = p2Convs.docs.filter(d => p1ConvIds.has(d.id));
+    console.log('ChatFirestoreService DEBUG: Conversations containing BOTH participants:', 
+      sharedConvs.map(d => ({ id: d.id, participants: d.data().participants })));
+    
+    // Check for exact match first
     const conversationsRef = collection(firestore, CONVERSATIONS_COLLECTION);
     const q = query(
       conversationsRef,
@@ -98,15 +113,22 @@ export class ChatFirestoreService {
     );
     
     const snapshot = await getDocs(q);
+    console.log('ChatFirestoreService: Exact match conversations:', snapshot.docs.length);
     
-    console.log('ChatFirestoreService: Found conversations:', snapshot.docs.length);
+    // Use exact match if found, otherwise check shared conversations
+    let existingDoc = snapshot.docs[0];
     
-    if (!snapshot.empty) {
-      const doc = snapshot.docs[0];
-      console.log('ChatFirestoreService: Using existing conversation:', doc.id);
-      const data = doc.data() as Omit<ChatConversationDocument, 'id'>;
+    if (!existingDoc && sharedConvs.length > 0) {
+      // Found conversations containing both participants but with different array format
+      console.log('ChatFirestoreService: No exact match, but found shared conversation:', sharedConvs[0].id);
+      existingDoc = sharedConvs[0];
+    }
+    
+    if (existingDoc) {
+      console.log('ChatFirestoreService: Using existing conversation:', existingDoc.id);
+      const data = existingDoc.data() as Omit<ChatConversationDocument, 'id'>;
       return {
-        id: doc.id,
+        id: existingDoc.id,
         ...data,
         lastMessageAt: data.lastMessageAt ? convertChatTimestampToDate(data.lastMessageAt) : undefined,
         createdAt: convertChatTimestampToDate(data.createdAt),
