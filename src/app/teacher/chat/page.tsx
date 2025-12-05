@@ -138,16 +138,17 @@ export default function TeacherChatPage() {
         setConversationsMap(prev => {
           const newMap = new Map(prev);
           conversations.forEach(conv => {
-            // Find the parent participant
-            const parentParticipant = conv.participants.find(p => p.type === 'parent');
+            // Find the parent participant from participantDetails
+            const parentParticipant = conv.participantDetails?.find(p => p.type === 'parent');
             if (parentParticipant) {
               const existing = newMap.get(parentParticipant.id);
               if (existing) {
+                const lastMsg = conv.lastMessage as { text?: string; timestamp?: Date } | undefined;
                 newMap.set(parentParticipant.id, {
                   ...existing,
                   conversation: conv,
-                  lastMessage: conv.lastMessage?.text,
-                  lastMessageTime: conv.lastMessage?.timestamp?.toDate?.() || conv.updatedAt?.toDate?.(),
+                  lastMessage: lastMsg?.text,
+                  lastMessageTime: lastMsg?.timestamp || conv.updatedAt,
                   unreadCount: conv.unreadCount?.[teacher.id] || 0,
                 });
               }
