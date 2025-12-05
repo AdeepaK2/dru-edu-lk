@@ -1,21 +1,21 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   MessageCircle, 
   Search,
   Send,
   Users,
   ArrowLeft,
-  Clock,
   CheckCheck,
-  User
+  Check
 } from 'lucide-react';
-import { Button, Input } from '@/components/ui';
+import { Button } from '@/components/ui';
 import { useTeacherAuth } from '@/hooks/useTeacherAuth';
 import TeacherLayout from '@/components/teacher/TeacherLayout';
 import { ClassFirestoreService } from '@/apiservices/classFirestoreService';
 import { getEnrollmentsByClass } from '@/services/studentEnrollmentService';
+import { ChatFirestoreService, ConversationDocument, ChatMessageDocument } from '@/apiservices/chatFirestoreService';
 
 interface Parent {
   id: string;
@@ -29,9 +29,10 @@ interface Parent {
   avatar: string;
 }
 
-interface Conversation {
+interface ConversationWithParent {
   parentId: string;
   parent: Parent;
+  conversation?: ConversationDocument;
   lastMessage?: string;
   lastMessageTime?: Date;
   unreadCount: number;
@@ -40,11 +41,29 @@ interface Conversation {
 export default function TeacherChatPage() {
   const { teacher, loading: authLoading, isAuthenticated } = useTeacherAuth();
   const [parents, setParents] = useState<Parent[]>([]);
-  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [conversationsMap, setConversationsMap] = useState<Map<string, ConversationWithParent>>(new Map());
   const [selectedParent, setSelectedParent] = useState<Parent | null>(null);
+  const [selectedConversation, setSelectedConversation] = useState<ConversationDocument | null>(null);
+  const [messages, setMessages] = useState<ChatMessageDocument[]>([]);
+  const [newMessage, setNewMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [loadingMessages, setLoadingMessages] = useState(false);
+  const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const unsubscribeMessagesRef = useRef<(() => void) | null>(null);
+  const unsubscribeConversationsRef = useRef<(() => void) | null>(null);
+
+  // Scroll to bottom of messages
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   // Fetch parents from teacher's classes
   const fetchParents = useCallback(async () => {
@@ -86,15 +105,19 @@ export default function TeacherChatPage() {
         }
       }
       
-      setParents(Array.from(parentMap.values()));
+      const parentsArray = Array.from(parentMap.values());
+      setParents(parentsArray);
       
-      // Convert to conversations (no actual chat history for now)
-      const convs: Conversation[] = Array.from(parentMap.values()).map(parent => ({
-        parentId: parent.id,
-        parent,
-        unreadCount: 0,
-      }));
-      setConversations(convs);
+      // Initialize conversations map
+      const convMap = new Map<string, ConversationWithParent>();
+      parentsArray.forEach(parent => {
+        convMap.set(parent.id, {
+          parentId: parent.id,
+          parent,
+          unreadCount: 0,
+        });
+      });
+      setConversationsMap(convMap);
       
     } catch (err) {
       console.error('Error fetching parents:', err);
@@ -104,18 +127,154 @@ export default function TeacherChatPage() {
     }
   }, [teacher?.id]);
 
+  // Subscribe to conversations for unread counts
+  useEffect(() => {
+    if (!teacher?.id || !teacher?.email) return;
+
+    unsubscribeConversationsRef.current = ChatFirestoreService.subscribeToConversations(
+      teacher.id,
+      teacher.email,
+      (conversations) => {
+        setConversationsMap(prev => {
+          const newMap = new Map(prev);
+          conversations.forEach(conv => {
+            // Find the parent participant
+            const parentParticipant = conv.participants.find(p => p.type === 'parent');
+            if (parentParticipant) {
+              const existing = newMap.get(parentParticipant.id);
+              if (existing) {
+                newMap.set(parentParticipant.id, {
+                  ...existing,
+                  conversation: conv,
+                  lastMessage: conv.lastMessage?.text,
+                  lastMessageTime: conv.lastMessage?.timestamp?.toDate?.() || conv.updatedAt?.toDate?.(),
+                  unreadCount: conv.unreadCount?.[teacher.id] || 0,
+                });
+              }
+            }
+          });
+          return newMap;
+        });
+      }
+    );
+
+    return () => {
+      if (unsubscribeConversationsRef.current) {
+        unsubscribeConversationsRef.current();
+      }
+    };
+  }, [teacher?.id, teacher?.email]);
+
   useEffect(() => {
     if (isAuthenticated && teacher?.id) {
       fetchParents();
     }
   }, [isAuthenticated, teacher?.id, fetchParents]);
 
+  // Handle parent selection and subscribe to messages
+  const handleSelectParent = useCallback(async (parent: Parent) => {
+    if (!teacher?.id || !teacher?.email) return;
+    
+    setSelectedParent(parent);
+    setLoadingMessages(true);
+    setMessages([]);
+
+    // Unsubscribe from previous messages
+    if (unsubscribeMessagesRef.current) {
+      unsubscribeMessagesRef.current();
+    }
+
+    try {
+      // Get or create conversation
+      const conversationId = await ChatFirestoreService.getOrCreateConversation(
+        teacher.id,
+        teacher.email,
+        teacher.name || 'Teacher',
+        'teacher',
+        parent.id,
+        parent.email,
+        parent.name,
+        'parent'
+      );
+
+      const conversation = await ChatFirestoreService.getConversation(conversationId);
+      setSelectedConversation(conversation);
+
+      // Subscribe to messages
+      unsubscribeMessagesRef.current = ChatFirestoreService.subscribeToMessages(
+        conversationId,
+        (msgs) => {
+          setMessages(msgs);
+          setLoadingMessages(false);
+          
+          // Mark as read
+          if (teacher?.id) {
+            ChatFirestoreService.markAsRead(conversationId, teacher.id);
+          }
+        }
+      );
+    } catch (err) {
+      console.error('Error loading conversation:', err);
+      setLoadingMessages(false);
+    }
+  }, [teacher?.id, teacher?.email, teacher?.name]);
+
+  // Send message
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() || !selectedConversation?.id || !teacher?.id || !teacher?.email || sending) return;
+
+    const messageText = newMessage.trim();
+    setNewMessage('');
+    setSending(true);
+
+    try {
+      await ChatFirestoreService.sendMessage(
+        selectedConversation.id,
+        teacher.id,
+        teacher.email,
+        teacher.name || 'Teacher',
+        'teacher',
+        messageText
+      );
+    } catch (err) {
+      console.error('Error sending message:', err);
+      setNewMessage(messageText);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  // Format timestamp
+  const formatTime = (timestamp: any) => {
+    if (!timestamp) return '';
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  };
+
+  const formatDate = (timestamp: any) => {
+    if (!timestamp) return '';
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    const today = new Date();
+    if (date.toDateString() === today.toDateString()) return 'Today';
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
   // Filter conversations by search
-  const filteredConversations = conversations.filter(conv => 
-    conv.parent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    conv.parent.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    conv.parent.className.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredConversations = Array.from(conversationsMap.values())
+    .filter(conv => 
+      conv.parent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      conv.parent.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      conv.parent.className.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => {
+      // Sort by last message time, most recent first
+      const timeA = a.lastMessageTime?.getTime() || 0;
+      const timeB = b.lastMessageTime?.getTime() || 0;
+      return timeB - timeA;
+    });
 
   if (authLoading) {
     return (
@@ -199,7 +358,7 @@ export default function TeacherChatPage() {
               filteredConversations.map((conv) => (
                 <button
                   key={conv.parentId}
-                  onClick={() => setSelectedParent(conv.parent)}
+                  onClick={() => handleSelectParent(conv.parent)}
                   className={`w-full p-4 flex items-start gap-3 hover:bg-gray-50 transition-colors border-b border-gray-100 text-left ${
                     selectedParent?.id === conv.parentId ? 'bg-indigo-50' : ''
                   }`}
@@ -212,13 +371,17 @@ export default function TeacherChatPage() {
                       <p className="font-medium text-gray-900 truncate">{conv.parent.name}</p>
                       {conv.lastMessageTime && (
                         <span className="text-xs text-gray-400">
-                          {new Date(conv.lastMessageTime).toLocaleDateString()}
+                          {formatDate(conv.lastMessageTime)}
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-gray-500 truncate">
-                      Parent of {conv.parent.studentName}
-                    </p>
+                    {conv.lastMessage ? (
+                      <p className="text-sm text-gray-500 truncate">{conv.lastMessage}</p>
+                    ) : (
+                      <p className="text-sm text-gray-500 truncate">
+                        Parent of {conv.parent.studentName}
+                      </p>
+                    )}
                     <p className="text-xs text-indigo-500 mt-1">{conv.parent.className}</p>
                   </div>
                   {conv.unreadCount > 0 && (
@@ -253,45 +416,84 @@ export default function TeacherChatPage() {
                 </div>
               </div>
 
-              {/* Coming Soon Message */}
-              <div className="flex-1 flex items-center justify-center bg-gray-50">
-                <div className="text-center p-8">
-                  <div className="w-20 h-20 rounded-full bg-indigo-100 flex items-center justify-center mx-auto mb-4">
-                    <MessageCircle className="w-10 h-10 text-indigo-600" />
+              {/* Messages Area */}
+              <div className="flex-1 overflow-y-auto bg-gray-50 p-4">
+                {loadingMessages ? (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Chat Coming Soon</h3>
-                  <p className="text-gray-500 max-w-sm mx-auto">
-                    Direct messaging with parents will be available in an upcoming update. 
-                    For now, you can send class announcements from the Classes page.
-                  </p>
-                  <div className="mt-6 p-4 bg-white rounded-lg border border-gray-200 max-w-xs mx-auto">
-                    <p className="text-sm text-gray-600">
-                      <strong>Parent:</strong> {selectedParent.name}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      <strong>Email:</strong> {selectedParent.email || 'Not available'}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      <strong>Student:</strong> {selectedParent.studentName}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      <strong>Class:</strong> {selectedParent.className}
-                    </p>
+                ) : messages.length === 0 ? (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="text-center">
+                      <MessageCircle className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                      <p className="text-gray-500">No messages yet</p>
+                      <p className="text-sm text-gray-400">Start the conversation!</p>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="space-y-4">
+                    {messages.map((msg, index) => {
+                      const isMe = msg.senderType === 'teacher';
+                      const showDate = index === 0 || 
+                        formatDate(messages[index - 1].timestamp) !== formatDate(msg.timestamp);
+                      
+                      return (
+                        <React.Fragment key={msg.id}>
+                          {showDate && (
+                            <div className="flex items-center justify-center my-4">
+                              <span className="text-xs text-gray-400 bg-white px-3 py-1 rounded-full">
+                                {formatDate(msg.timestamp)}
+                              </span>
+                            </div>
+                          )}
+                          <div className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                            <div className={`max-w-[70%] ${isMe ? 'order-2' : ''}`}>
+                              <div className={`px-4 py-2 rounded-2xl ${
+                                isMe 
+                                  ? 'bg-indigo-600 text-white rounded-br-sm' 
+                                  : 'bg-white text-gray-900 rounded-bl-sm border border-gray-200'
+                              }`}>
+                                <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
+                              </div>
+                              <div className={`flex items-center gap-1 mt-1 ${isMe ? 'justify-end' : ''}`}>
+                                <span className="text-xs text-gray-400">{formatTime(msg.timestamp)}</span>
+                                {isMe && (
+                                  msg.read 
+                                    ? <CheckCheck className="w-3 h-3 text-blue-500" />
+                                    : <Check className="w-3 h-3 text-gray-400" />
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </React.Fragment>
+                      );
+                    })}
+                    <div ref={messagesEndRef} />
+                  </div>
+                )}
               </div>
 
-              {/* Message Input (Disabled) */}
+              {/* Message Input */}
               <div className="p-4 bg-white border-t border-gray-200">
                 <div className="flex gap-2">
                   <input
                     type="text"
-                    placeholder="Type a message... (Coming Soon)"
-                    disabled
-                    className="flex-1 px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 cursor-not-allowed"
+                    placeholder="Type a message..."
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+                    disabled={sending}
+                    className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   />
-                  <Button disabled className="opacity-50 cursor-not-allowed">
-                    <Send className="w-4 h-4" />
+                  <Button 
+                    onClick={handleSendMessage}
+                    disabled={!newMessage.trim() || sending}
+                  >
+                    {sending ? (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Send className="w-4 h-4" />
+                    )}
                   </Button>
                 </div>
               </div>
