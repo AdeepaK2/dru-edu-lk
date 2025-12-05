@@ -75,6 +75,8 @@ export class ChatFirestoreService {
     // Sort participant IDs to create consistent conversation lookup
     const participantIds = [participant1.id, participant2.id].sort();
     
+    console.log('ChatFirestoreService: Looking for conversation with participants:', participantIds);
+    
     // Check if conversation exists
     const conversationsRef = collection(firestore, CONVERSATIONS_COLLECTION);
     const q = query(
@@ -84,8 +86,11 @@ export class ChatFirestoreService {
     
     const snapshot = await getDocs(q);
     
+    console.log('ChatFirestoreService: Found conversations:', snapshot.docs.length);
+    
     if (!snapshot.empty) {
       const doc = snapshot.docs[0];
+      console.log('ChatFirestoreService: Using existing conversation:', doc.id);
       const data = doc.data() as Omit<ChatConversationDocument, 'id'>;
       return {
         id: doc.id,
