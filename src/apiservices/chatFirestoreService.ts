@@ -113,7 +113,9 @@ export class ChatFirestoreService {
     
     return {
       id: docRef.id,
-      ...newConversation,
+      participants: participantIds,
+      participantDetails: [participant1, participant2],
+      unreadCount: newConversation.unreadCount,
       createdAt: now.toDate(),
       updatedAt: now.toDate(),
     };
