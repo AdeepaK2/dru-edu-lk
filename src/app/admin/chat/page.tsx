@@ -71,12 +71,15 @@ export default function AdminChatPage() {
   const [error, setError] = useState<string | null>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const unsubscribeMessagesRef = useRef<(() => void) | null>(null);
   const unsubscribeConversationsRef = useRef<(() => void) | null>(null);
 
-  // Scroll to bottom of messages
+  // Scroll to bottom of messages - scroll within container only
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
   };
 
   useEffect(() => {
@@ -449,7 +452,7 @@ export default function AdminChatPage() {
             </div>
 
             {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto bg-gray-50 p-4">
+            <div ref={messagesContainerRef} className="flex-1 overflow-y-auto bg-gray-50 p-4">
               {loadingMessages ? (
                 <div className="flex items-center justify-center h-full">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
@@ -490,7 +493,7 @@ export default function AdminChatPage() {
                             <div className={`flex items-center gap-1 mt-1 ${isMe ? 'justify-end' : ''}`}>
                               <span className="text-xs text-gray-400">{formatTime(msg.timestamp)}</span>
                               {isMe && (
-                                (msg.readBy?.length || 0) > 1
+                                msg.readBy && msg.readBy.length > 1
                                   ? <CheckCheck className="w-3 h-3 text-blue-500" />
                                   : <Check className="w-3 h-3 text-gray-400" />
                               )}
