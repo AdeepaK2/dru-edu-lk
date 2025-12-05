@@ -76,6 +76,19 @@ export class ChatFirestoreService {
     const participantIds = [participant1.id, participant2.id].sort();
     
     console.log('ChatFirestoreService: Looking for conversation with participants:', participantIds);
+    console.log('ChatFirestoreService: Participant 1:', JSON.stringify(participant1));
+    console.log('ChatFirestoreService: Participant 2:', JSON.stringify(participant2));
+    
+    // Debug: Query all conversations for participant1
+    const allConvsQuery = query(
+      collection(firestore, CONVERSATIONS_COLLECTION),
+      where('participants', 'array-contains', participant1.id)
+    );
+    const allConvs = await getDocs(allConvsQuery);
+    console.log('ChatFirestoreService DEBUG: All conversations for participant1:', allConvs.docs.map(d => ({
+      id: d.id,
+      participants: d.data().participants,
+    })));
     
     // Check if conversation exists
     const conversationsRef = collection(firestore, CONVERSATIONS_COLLECTION);
