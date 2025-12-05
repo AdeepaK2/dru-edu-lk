@@ -89,12 +89,13 @@ const sidebarItems: SidebarItem[] = [
     href: '/teacher/meeting',
     icon: Video,
   },
-  {
-    id: 'chat',
-    label: 'Messages',
-    href: '/teacher/chat',
-    icon: MessageCircle,
-  },
+  // TODO: Re-enable chat after mobile app production launch
+  // {
+  //   id: 'chat',
+  //   label: 'Messages',
+  //   href: '/teacher/chat',
+  //   icon: MessageCircle,
+  // },
   {
     id: 'transactions',
     label: 'Transactions',
