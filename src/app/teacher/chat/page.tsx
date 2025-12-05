@@ -193,6 +193,13 @@ export default function TeacherChatPage() {
 
     try {
       // Get or create conversation
+      console.log('Teacher chat: Creating conversation with:', {
+        teacherId: teacher.id,
+        teacherEmail: teacher.email,
+        parentId: parent.id,
+        parentEmail: parent.email,
+      });
+      
       const conversationId = await ChatFirestoreService.getOrCreateConversation(
         teacher.id,
         teacher.email,
@@ -203,6 +210,8 @@ export default function TeacherChatPage() {
         parent.name,
         'parent'
       );
+      
+      console.log('Teacher chat: Got conversation ID:', conversationId);
 
       const conversation = await ChatFirestoreService.getConversation(conversationId);
       setSelectedConversation(conversation);
