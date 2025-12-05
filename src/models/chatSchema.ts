@@ -75,12 +75,15 @@ export interface ChatMessage {
   senderId: string;
   senderName: string;
   senderRole: 'parent' | 'teacher' | 'admin' | 'student';
+  senderType?: 'parent' | 'teacher' | 'admin' | 'student'; // Alias for senderRole
   message: string;
+  text?: string; // Alias for message
   messageType: 'text' | 'image' | 'file';
   attachmentUrl?: string;
   attachmentName?: string;
   readBy: string[];
   createdAt: Date;
+  timestamp?: Date; // Alias for createdAt
 }
 
 export interface ChatMessageDocument {
@@ -89,12 +92,15 @@ export interface ChatMessageDocument {
   senderId: string;
   senderName: string;
   senderRole: 'parent' | 'teacher' | 'admin' | 'student';
+  senderType?: 'parent' | 'teacher' | 'admin' | 'student'; // Alias for senderRole
   message: string;
+  text?: string; // Alias for message
   messageType: 'text' | 'image' | 'file';
   attachmentUrl?: string;
   attachmentName?: string;
   readBy: string[];
   createdAt: Timestamp;
+  timestamp?: Date; // Alias for createdAt (as Date)
 }
 
 // Type inference

@@ -334,10 +334,15 @@ export class ChatFirestoreService {
     return onSnapshot(q, (snapshot) => {
       const messages = snapshot.docs.map(doc => {
         const data = doc.data() as Omit<ChatMessageDocument, 'id'>;
+        const createdAtDate = convertChatTimestampToDate(data.createdAt);
         return {
           id: doc.id,
           ...data,
-          createdAt: convertChatTimestampToDate(data.createdAt),
+          createdAt: createdAtDate,
+          // Add aliases for compatibility
+          text: data.message,
+          timestamp: createdAtDate,
+          senderType: data.senderRole,
         };
       }).reverse(); // Reverse to get chronological order
       callback(messages);
