@@ -13,7 +13,6 @@ import {
   Timestamp,
   arrayUnion,
   increment,
-  serverTimestamp,
   writeBatch
 } from 'firebase/firestore';
 import { firestore } from '@/utils/firebase-client';
@@ -29,14 +28,47 @@ import {
 const CONVERSATIONS_COLLECTION = 'chatConversations';
 const MESSAGES_COLLECTION = 'chatMessages';
 
+// Re-export types for convenience
+export type { ChatConversation as ConversationDocument, ChatMessage as ChatMessageDocument } from '@/models/chatSchema';
+
 export class ChatFirestoreService {
   
   // ==================== CONVERSATIONS ====================
   
   /**
-   * Get or create a conversation between two users
+   * Get or create a conversation between two users (convenience method)
    */
   static async getOrCreateConversation(
+    user1Id: string,
+    user1Email: string,
+    user1Name: string,
+    user1Type: 'parent' | 'teacher' | 'admin' | 'student',
+    user2Id: string,
+    user2Email: string,
+    user2Name: string,
+    user2Type: 'parent' | 'teacher' | 'admin' | 'student'
+  ): Promise<string> {
+    const participant1: ChatParticipant = {
+      id: user1Id,
+      email: user1Email,
+      name: user1Name,
+      type: user1Type,
+    };
+    const participant2: ChatParticipant = {
+      id: user2Id,
+      email: user2Email,
+      name: user2Name,
+      type: user2Type,
+    };
+    
+    const conversation = await this.getOrCreateConversationWithParticipants(participant1, participant2);
+    return conversation.id;
+  }
+  
+  /**
+   * Get or create a conversation between two users (with ChatParticipant objects)
+   */
+  static async getOrCreateConversationWithParticipants(
     participant1: ChatParticipant,
     participant2: ChatParticipant
   ): Promise<ChatConversation> {
@@ -113,6 +145,38 @@ export class ChatFirestoreService {
   }
   
   /**
+   * Get a single conversation by ID
+   */
+  static async getConversation(conversationId: string): Promise<ChatConversation | null> {
+    const conversationRef = doc(firestore, CONVERSATIONS_COLLECTION, conversationId);
+    const conversationSnap = await getDoc(conversationRef);
+    
+    if (!conversationSnap.exists()) {
+      return null;
+    }
+    
+    const data = conversationSnap.data() as Omit<ChatConversationDocument, 'id'>;
+    return {
+      id: conversationSnap.id,
+      ...data,
+      lastMessageAt: data.lastMessageAt ? convertChatTimestampToDate(data.lastMessageAt) : undefined,
+      createdAt: convertChatTimestampToDate(data.createdAt),
+      updatedAt: convertChatTimestampToDate(data.updatedAt),
+    };
+  }
+  
+  /**
+   * Subscribe to user's conversations (real-time) - convenience method with email
+   */
+  static subscribeToConversations(
+    userId: string,
+    userEmail: string,
+    callback: (conversations: ChatConversation[]) => void
+  ): () => void {
+    return this.subscribeToUserConversations(userId, callback);
+  }
+  
+  /**
    * Subscribe to user's conversations (real-time)
    */
   static subscribeToUserConversations(
@@ -146,9 +210,23 @@ export class ChatFirestoreService {
   // ==================== MESSAGES ====================
   
   /**
-   * Send a message
+   * Send a message (convenience method)
    */
   static async sendMessage(
+    conversationId: string,
+    senderId: string,
+    senderEmail: string,
+    senderName: string,
+    senderType: 'parent' | 'teacher' | 'admin' | 'student',
+    text: string
+  ): Promise<ChatMessage> {
+    return this.sendMessageFull(conversationId, senderId, senderName, senderType, text);
+  }
+  
+  /**
+   * Send a message (full version with all options)
+   */
+  static async sendMessageFull(
     conversationId: string,
     senderId: string,
     senderName: string,
@@ -264,6 +342,13 @@ export class ChatFirestoreService {
     }, (error) => {
       console.error('Error in messages subscription:', error);
     });
+  }
+  
+  /**
+   * Mark messages as read (convenience alias)
+   */
+  static async markAsRead(conversationId: string, userId: string): Promise<void> {
+    return this.markMessagesAsRead(conversationId, userId);
   }
   
   /**

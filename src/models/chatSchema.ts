@@ -40,7 +40,8 @@ export interface ChatParticipant {
   id: string;
   name: string;
   email?: string;
-  role: 'parent' | 'teacher' | 'admin' | 'student';
+  type: 'parent' | 'teacher' | 'admin' | 'student';
+  role?: 'parent' | 'teacher' | 'admin' | 'student'; // Alias for type
   avatar?: string;
 }
 
