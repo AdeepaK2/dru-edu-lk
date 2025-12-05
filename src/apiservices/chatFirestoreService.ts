@@ -290,8 +290,20 @@ export class ChatFirestoreService {
     
     return {
       id: docRef.id,
-      ...newMessage,
+      conversationId,
+      senderId,
+      senderName,
+      senderRole,
+      message,
+      messageType,
+      attachmentUrl,
+      attachmentName,
+      readBy: [senderId],
       createdAt: now.toDate(),
+      // Add aliases for compatibility
+      text: message,
+      timestamp: now.toDate(),
+      senderType: senderRole,
     };
   }
   
