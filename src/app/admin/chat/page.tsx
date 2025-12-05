@@ -139,12 +139,12 @@ export default function AdminChatPage() {
       (conversations) => {
         const dataMap = new Map<string, { lastMessage?: string; lastMessageTime?: Date; unreadCount: number; conversationDoc?: ConversationDocument }>();
         conversations.forEach(conv => {
-          // Find the other participant (not admin)
-          const otherParticipant = conv.participants.find(p => p.id !== ADMIN_ID);
+          // Find the other participant (not admin) from participantDetails
+          const otherParticipant = conv.participantDetails?.find(p => p.id !== ADMIN_ID);
           if (otherParticipant) {
             dataMap.set(otherParticipant.id, {
-              lastMessage: conv.lastMessage?.text,
-              lastMessageTime: conv.lastMessage?.timestamp?.toDate?.() || conv.updatedAt?.toDate?.(),
+              lastMessage: conv.lastMessage,
+              lastMessageTime: conv.lastMessageAt,
               unreadCount: conv.unreadCount?.[ADMIN_ID] || 0,
               conversationDoc: conv,
             });
