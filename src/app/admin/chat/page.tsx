@@ -7,8 +7,6 @@ import {
   Send,
   Users,
   ArrowLeft,
-  GraduationCap,
-  User,
   CheckCheck,
   Check
 } from 'lucide-react';
@@ -31,23 +29,11 @@ interface Parent {
   studentsCount: number;
 }
 
-interface Teacher {
-  id: string;
-  name: string;
-  email: string;
-  avatar: string;
-  subjects: string[];
-  status: string;
-}
-
-type ContactType = 'parents' | 'teachers';
-
 interface Conversation {
   id: string;
   name: string;
   email: string;
   avatar: string;
-  type: ContactType;
   subtitle: string;
   conversationDoc?: ConversationDocument;
   lastMessage?: string;
@@ -56,9 +42,7 @@ interface Conversation {
 }
 
 export default function AdminChatPage() {
-  const [activeTab, setActiveTab] = useState<ContactType>('parents');
   const [parents, setParents] = useState<Parent[]>([]);
-  const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [conversationsData, setConversationsData] = useState<Map<string, { lastMessage?: string; lastMessageTime?: Date; unreadCount: number; conversationDoc?: ConversationDocument }>>(new Map());
   const [selectedContact, setSelectedContact] = useState<Conversation | null>(null);
   const [selectedConversation, setSelectedConversation] = useState<ConversationDocument | null>(null);
@@ -86,7 +70,7 @@ export default function AdminChatPage() {
     scrollToBottom();
   }, [messages]);
 
-  // Fetch parents and teachers
+  // Fetch parents
   const fetchContacts = useCallback(async () => {
     try {
       setLoading(true);
@@ -98,33 +82,18 @@ export default function AdminChatPage() {
       );
       const parentsData: Parent[] = parentsSnapshot.docs.map(doc => {
         const data = doc.data();
+        // Check both possible field names for students
+        const studentsCount = data.linkedStudents?.length || data.students?.length || 0;
         return {
           id: doc.id,
           name: data.name || 'Unknown',
           email: data.email || '',
           phone: data.phone,
           avatar: (data.name || 'P').charAt(0).toUpperCase(),
-          studentsCount: data.students?.length || 0,
+          studentsCount,
         };
       });
       setParents(parentsData);
-
-      // Fetch teachers
-      const teachersSnapshot = await getDocs(
-        query(collection(firestore, 'teachers'), orderBy('name', 'asc'))
-      );
-      const teachersData: Teacher[] = teachersSnapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          name: data.name || 'Unknown',
-          email: data.email || '',
-          avatar: data.avatar || (data.name || 'T').charAt(0).toUpperCase(),
-          subjects: data.subjects || [],
-          status: data.status || 'Active',
-        };
-      });
-      setTeachers(teachersData);
 
     } catch (err) {
       console.error('Error fetching contacts:', err);
@@ -180,8 +149,7 @@ export default function AdminChatPage() {
     }
 
     try {
-      // Get or create conversation
-      const recipientType = contact.type === 'parents' ? 'parent' : 'teacher';
+      // Get or create conversation with parent
       const conversationId = await ChatFirestoreService.getOrCreateConversation(
         ADMIN_ID,
         ADMIN_EMAIL,
@@ -190,7 +158,7 @@ export default function AdminChatPage() {
         contact.id,
         contact.email,
         contact.name,
-        recipientType
+        'parent'
       );
 
       const conversation = await ChatFirestoreService.getConversation(conversationId);
@@ -256,38 +224,21 @@ export default function AdminChatPage() {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
-  // Get conversations based on active tab
-  const conversations: Conversation[] = activeTab === 'parents'
-    ? parents.map(p => {
-        const convData = conversationsData.get(p.id);
-        return {
-          id: p.id,
-          name: p.name,
-          email: p.email,
-          avatar: p.avatar,
-          type: 'parents' as ContactType,
-          subtitle: `${p.studentsCount} student${p.studentsCount !== 1 ? 's' : ''}`,
-          conversationDoc: convData?.conversationDoc,
-          lastMessage: convData?.lastMessage,
-          lastMessageTime: convData?.lastMessageTime,
-          unreadCount: convData?.unreadCount || 0,
-        };
-      })
-    : teachers.map(t => {
-        const convData = conversationsData.get(t.id);
-        return {
-          id: t.id,
-          name: t.name,
-          email: t.email,
-          avatar: t.avatar,
-          type: 'teachers' as ContactType,
-          subtitle: t.subjects.join(', ') || 'No subjects',
-          conversationDoc: convData?.conversationDoc,
-          lastMessage: convData?.lastMessage,
-          lastMessageTime: convData?.lastMessageTime,
-          unreadCount: convData?.unreadCount || 0,
-        };
-      });
+  // Get conversations for parents
+  const conversations: Conversation[] = parents.map(p => {
+    const convData = conversationsData.get(p.id);
+    return {
+      id: p.id,
+      name: p.name,
+      email: p.email,
+      avatar: p.avatar,
+      subtitle: `${p.studentsCount} student${p.studentsCount !== 1 ? 's' : ''}`,
+      conversationDoc: convData?.conversationDoc,
+      lastMessage: convData?.lastMessage,
+      lastMessageTime: convData?.lastMessageTime,
+      unreadCount: convData?.unreadCount || 0,
+    };
+  });
 
   // Filter and sort conversations
   const filteredConversations = conversations
@@ -312,37 +263,7 @@ export default function AdminChatPage() {
             <MessageCircle className="w-6 h-6 text-indigo-600" />
             Admin Messages
           </h1>
-          <p className="text-sm text-gray-500 mt-1">Chat with parents and teachers</p>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex border-b border-gray-200">
-          <button
-            onClick={() => { setActiveTab('parents'); setSelectedContact(null); }}
-            className={`flex-1 py-3 text-sm font-medium transition-colors ${
-              activeTab === 'parents'
-                ? 'text-indigo-600 border-b-2 border-indigo-600'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            <div className="flex items-center justify-center gap-2">
-              <User className="w-4 h-4" />
-              Parents ({parents.length})
-            </div>
-          </button>
-          <button
-            onClick={() => { setActiveTab('teachers'); setSelectedContact(null); }}
-            className={`flex-1 py-3 text-sm font-medium transition-colors ${
-              activeTab === 'teachers'
-                ? 'text-indigo-600 border-b-2 border-indigo-600'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            <div className="flex items-center justify-center gap-2">
-              <GraduationCap className="w-4 h-4" />
-              Teachers ({teachers.length})
-            </div>
-          </button>
+          <p className="text-sm text-gray-500 mt-1">Chat with parents</p>
         </div>
 
         {/* Search */}
@@ -351,7 +272,7 @@ export default function AdminChatPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
-              placeholder={`Search ${activeTab}...`}
+              placeholder="Search parents..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
@@ -380,9 +301,9 @@ export default function AdminChatPage() {
           ) : filteredConversations.length === 0 ? (
             <div className="p-8 text-center">
               <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500">No {activeTab} found</p>
+              <p className="text-gray-500">No parents found</p>
               <p className="text-sm text-gray-400 mt-1">
-                {searchTerm ? 'Try a different search' : `${activeTab === 'parents' ? 'Parents' : 'Teachers'} will appear here`}
+                {searchTerm ? 'Try a different search' : 'Parents will appear here'}
               </p>
             </div>
           ) : (
@@ -394,12 +315,8 @@ export default function AdminChatPage() {
                   selectedContact?.id === conv.id ? 'bg-indigo-50' : ''
                 }`}
               >
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${
-                  conv.type === 'parents' ? 'bg-blue-100' : 'bg-green-100'
-                }`}>
-                  <span className={`font-semibold text-lg ${
-                    conv.type === 'parents' ? 'text-blue-600' : 'text-green-600'
-                  }`}>{conv.avatar}</span>
+                <div className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 bg-blue-100">
+                  <span className="font-semibold text-lg text-blue-600">{conv.avatar}</span>
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
@@ -438,12 +355,8 @@ export default function AdminChatPage() {
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                selectedContact.type === 'parents' ? 'bg-blue-100' : 'bg-green-100'
-              }`}>
-                <span className={`font-semibold ${
-                  selectedContact.type === 'parents' ? 'text-blue-600' : 'text-green-600'
-                }`}>{selectedContact.avatar}</span>
+              <div className="w-10 h-10 rounded-full flex items-center justify-center bg-blue-100">
+                <span className="font-semibold text-blue-600">{selectedContact.avatar}</span>
               </div>
               <div className="flex-1">
                 <p className="font-medium text-gray-900">{selectedContact.name}</p>
@@ -541,7 +454,7 @@ export default function AdminChatPage() {
                 <MessageCircle className="w-10 h-10 text-gray-400" />
               </div>
               <h3 className="text-xl font-medium text-gray-700">Select a conversation</h3>
-              <p className="text-gray-500 mt-2">Choose a {activeTab === 'parents' ? 'parent' : 'teacher'} from the list to start chatting</p>
+              <p className="text-gray-500 mt-2">Choose a parent from the list to start chatting</p>
             </div>
           </div>
         )}
