@@ -471,8 +471,33 @@ export default function TeacherChatPage() {
                                 isMe 
                                   ? 'bg-indigo-600 text-white rounded-br-sm' 
                                   : 'bg-white text-gray-900 rounded-bl-sm border border-gray-200'
-                              }`}>
-                                <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
+                              } ${msg.messageType === 'image' ? 'p-1' : ''}`}>
+                                {/* Image attachment */}
+                                {msg.messageType === 'image' && msg.attachments && msg.attachments.length > 0 && (
+                                  <a href={msg.attachments[0].url} target="_blank" rel="noopener noreferrer">
+                                    <img 
+                                      src={msg.attachments[0].url} 
+                                      alt="Shared image"
+                                      className="max-w-full h-auto rounded-xl cursor-pointer hover:opacity-90 transition-opacity"
+                                      style={{ maxHeight: '300px' }}
+                                    />
+                                  </a>
+                                )}
+                                {/* Legacy single attachment support */}
+                                {msg.messageType === 'image' && msg.attachmentUrl && !msg.attachments?.length && (
+                                  <a href={msg.attachmentUrl} target="_blank" rel="noopener noreferrer">
+                                    <img 
+                                      src={msg.attachmentUrl} 
+                                      alt="Shared image"
+                                      className="max-w-full h-auto rounded-xl cursor-pointer hover:opacity-90 transition-opacity"
+                                      style={{ maxHeight: '300px' }}
+                                    />
+                                  </a>
+                                )}
+                                {/* Text message or caption */}
+                                {msg.text && (
+                                  <p className={`text-sm whitespace-pre-wrap ${msg.messageType === 'image' ? 'mt-2 px-2' : ''}`}>{msg.text}</p>
+                                )}
                               </div>
                               <div className={`flex items-center gap-1 mt-1 ${isMe ? 'justify-end' : ''}`}>
                                 <span className="text-xs text-gray-400">{formatTime(msg.timestamp)}</span>
