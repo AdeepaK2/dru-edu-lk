@@ -490,7 +490,7 @@ export default function AdminChatPage() {
                             <div className={`flex items-center gap-1 mt-1 ${isMe ? 'justify-end' : ''}`}>
                               <span className="text-xs text-gray-400">{formatTime(msg.timestamp)}</span>
                               {isMe && (
-                                msg.read 
+                                (msg.readBy?.length || 0) > 1
                                   ? <CheckCheck className="w-3 h-3 text-blue-500" />
                                   : <Check className="w-3 h-3 text-gray-400" />
                               )}

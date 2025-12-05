@@ -15,6 +15,7 @@ import { useTeacherAuth } from '@/hooks/useTeacherAuth';
 import TeacherLayout from '@/components/teacher/TeacherLayout';
 import { ClassFirestoreService } from '@/apiservices/classFirestoreService';
 import { getEnrollmentsByClass } from '@/services/studentEnrollmentService';
+import { StudentFirestoreService } from '@/apiservices/studentFirestoreService';
 import { ChatFirestoreService, ConversationDocument, ChatMessageDocument } from '@/apiservices/chatFirestoreService';
 
 interface Parent {
@@ -85,19 +86,24 @@ export default function TeacherChatPage() {
           const activeEnrollments = enrollments.filter(e => e.status === 'Active');
           
           for (const enrollment of activeEnrollments) {
-            // Each enrollment has parent info
-            if (enrollment.parentId && !parentMap.has(enrollment.parentId)) {
-              parentMap.set(enrollment.parentId, {
-                id: enrollment.parentId,
-                name: enrollment.parentName || 'Parent',
-                email: enrollment.parentEmail || '',
-                phone: enrollment.parentPhone,
-                studentName: enrollment.studentName || 'Student',
-                studentId: enrollment.studentId,
-                classId: cls.id,
-                className: cls.name || 'Unknown Class',
-                avatar: (enrollment.parentName || 'P').charAt(0).toUpperCase(),
-              });
+            // Fetch student to get parent info
+            try {
+              const student = await StudentFirestoreService.getStudentById(enrollment.studentId);
+              if (student?.parent?.email && !parentMap.has(student.parent.email)) {
+                parentMap.set(student.parent.email, {
+                  id: student.parent.email, // Use parent email as ID
+                  name: student.parent.name || 'Parent',
+                  email: student.parent.email,
+                  phone: student.parent.phone,
+                  studentName: enrollment.studentName || student.name || 'Student',
+                  studentId: enrollment.studentId,
+                  classId: cls.id,
+                  className: cls.name || 'Unknown Class',
+                  avatar: (student.parent.name || 'P').charAt(0).toUpperCase(),
+                });
+              }
+            } catch (studentErr) {
+              console.warn(`Failed to get student ${enrollment.studentId}:`, studentErr);
             }
           }
         } catch (err) {
@@ -459,7 +465,7 @@ export default function TeacherChatPage() {
                               <div className={`flex items-center gap-1 mt-1 ${isMe ? 'justify-end' : ''}`}>
                                 <span className="text-xs text-gray-400">{formatTime(msg.timestamp)}</span>
                                 {isMe && (
-                                  msg.read 
+                                  (msg.readBy?.length || 0) > 1
                                     ? <CheckCheck className="w-3 h-3 text-blue-500" />
                                     : <Check className="w-3 h-3 text-gray-400" />
                                 )}
