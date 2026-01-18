@@ -7,6 +7,7 @@ interface CalendarDate {
   isToday: boolean;
   isSelected: boolean;
   hasEvent?: boolean;
+  eventCount?: number;
 }
 
 interface SimpleCalendarProps {
@@ -58,19 +59,20 @@ export default function SimpleCalendar({
       const isToday = date.getTime() === today.getTime();
       const isSelected = selectedDate ? date.getTime() === selectedDate.getTime() : false;
       
-      // Check if this date has a scheduled event
-      const hasEvent = scheduledDates.some(scheduledDate => {
+      // Count how many events are scheduled for this date
+      const eventCount = scheduledDates.filter(scheduledDate => {
         const scheduled = new Date(scheduledDate);
         scheduled.setHours(0, 0, 0, 0);
         return scheduled.getTime() === date.getTime();
-      });
+      }).length;
       
       dates.push({
         date,
         isCurrentMonth,
         isToday,
         isSelected,
-        hasEvent
+        hasEvent: eventCount > 0,
+        eventCount
       });
     }
     
@@ -136,8 +138,9 @@ export default function SimpleCalendar({
       {/* Calendar grid */}
       <div className="grid grid-cols-7 gap-1">
         {calendarDates.map((calendarDate, index) => {
-          const { date, isCurrentMonth, isToday, isSelected, hasEvent } = calendarDate;
+          const { date, isCurrentMonth, isToday, isSelected, hasEvent, eventCount } = calendarDate;
           const disabled = isDateDisabled(date);
+          const hasMultipleEvents = (eventCount || 0) > 1;
           
           return (
             <button
@@ -157,7 +160,9 @@ export default function SimpleCalendar({
                 ${isSelected 
                   ? 'bg-blue-600 text-white font-semibold' 
                   : hasEvent 
-                    ? 'bg-[#b2e05b] dark:bg-[#b2e05b]/30 text-[#222222] dark:text-[#222222] font-medium border-2 border-[#64cc4f] hover:bg-[#64cc4f]' 
+                    ? hasMultipleEvents
+                      ? 'bg-[#fbbf24] dark:bg-[#fbbf24]/40 text-[#222222] dark:text-[#222222] font-bold border-2 border-[#f59e0b] hover:bg-[#f59e0b]'
+                      : 'bg-[#b2e05b] dark:bg-[#b2e05b]/30 text-[#222222] dark:text-[#222222] font-medium border-2 border-[#64cc4f] hover:bg-[#64cc4f]' 
                     : 'hover:bg-gray-100 dark:hover:bg-gray-700'
                 }
                 ${disabled 
@@ -168,9 +173,15 @@ export default function SimpleCalendar({
             >
               <span className="relative z-10">{date.getDate()}</span>
               
-              {/* Event indicator - small green dot for scheduled dates */}
+              {/* Event indicator - shows count badge for multiple classes, dot for single class */}
               {hasEvent && !isSelected && (
-                <div className="absolute top-1 right-1 w-2 h-2 bg-[#64cc4f] rounded-full"></div>
+                hasMultipleEvents ? (
+                  <div className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-[#f59e0b] text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-sm border border-white">
+                    {eventCount}
+                  </div>
+                ) : (
+                  <div className="absolute top-1 right-1 w-2 h-2 bg-[#64cc4f] rounded-full"></div>
+                )
               )}
             </button>
           );
@@ -178,7 +189,7 @@ export default function SimpleCalendar({
       </div>
 
       {/* Legend */}
-      <div className="flex items-center justify-center space-x-4 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+      <div className="flex items-center justify-center flex-wrap gap-3 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
         <div className="flex items-center space-x-2">
           <div className="w-3 h-3 bg-blue-100 dark:bg-blue-900/50 rounded"></div>
           <span className="text-xs text-gray-600 dark:text-gray-400">Today</span>
@@ -188,10 +199,16 @@ export default function SimpleCalendar({
           <span className="text-xs text-gray-600 dark:text-gray-400">Selected</span>
         </div>
         <div className="flex items-center space-x-2">
-          <div className="w-3 h-3 bg-gray-200 dark:bg-gray-700 rounded relative">
-            <div className="absolute bottom-0.5 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-[#64cc4f] rounded-full"></div>
+          <div className="w-3 h-3 bg-[#b2e05b] border border-[#64cc4f] rounded relative">
+            <div className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-[#64cc4f] rounded-full"></div>
           </div>
-          <span className="text-xs text-gray-600 dark:text-gray-400">Scheduled</span>
+          <span className="text-xs text-gray-600 dark:text-gray-400">1 Class</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <div className="w-3 h-3 bg-[#fbbf24] border border-[#f59e0b] rounded relative">
+            <div className="absolute -top-1 -right-1 w-3 h-3 bg-[#f59e0b] text-white text-[6px] font-bold rounded-full flex items-center justify-center">2</div>
+          </div>
+          <span className="text-xs text-gray-600 dark:text-gray-400">2+ Classes</span>
         </div>
       </div>
     </div>

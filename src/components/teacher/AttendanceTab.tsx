@@ -369,9 +369,22 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
     });
     
     if (scheduledOnDate.length > 0) {
-      // There are scheduled classes - show attendance modal
-      const firstSchedule = scheduledOnDate[0]; // Use first schedule if multiple
-      await handleScheduleClick(firstSchedule);
+      // There are scheduled classes
+      if (scheduledOnDate.length > 1) {
+        // Multiple classes on this date - show info to user
+        const classListText = scheduledOnDate.map((schedule, idx) => 
+          `${idx + 1}. ${schedule.startTime} - ${schedule.endTime}: ${schedule.topic || schedule.className}`
+        ).join('\n');
+        
+        const confirmText = `There are ${scheduledOnDate.length} classes scheduled for this date:\n\n${classListText}\n\nClick OK to mark attendance for the first class, or view the list below to select a specific class.`;
+        
+        if (confirm(confirmText)) {
+          await handleScheduleClick(scheduledOnDate[0]);
+        }
+      } else {
+        // Single class - open directly
+        await handleScheduleClick(scheduledOnDate[0]);
+      }
     } else {
       // No classes scheduled - show modal to schedule extra class
       setModalSelectedDate(date);
@@ -452,21 +465,23 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
     const endDateTime = new Date(scheduleDate);
     endDateTime.setHours(endHours, endMinutes, 0, 0);
     
-    // Calculate time windows
-    const oneHourBefore = new Date(startDateTime.getTime() - 60 * 60 * 1000); // 1 hour before start
-    const oneHourAfter = new Date(endDateTime.getTime() + 60 * 60 * 1000); // 1 hour after end
+    // Calculate time windows - Allow attendance marking for the entire day
+    const startOfDay = new Date(scheduleDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(scheduleDate);
+    endOfDay.setHours(23, 59, 59, 999);
     
     console.log('📅 Attendance time validation:', {
       now: now.toLocaleString(),
       classStart: startDateTime.toLocaleString(),
       classEnd: endDateTime.toLocaleString(),
-      allowedFrom: oneHourBefore.toLocaleString(),
-      allowedUntil: oneHourAfter.toLocaleString(),
-      isWithinWindow: now >= oneHourBefore && now <= oneHourAfter
+      allowedFrom: startOfDay.toLocaleString(),
+      allowedUntil: endOfDay.toLocaleString(),
+      isWithinWindow: now >= startOfDay && now <= endOfDay
     });
     
-    // Check if current time is within the attendance marking window
-    if (now >= oneHourBefore && now <= oneHourAfter) {
+    // Check if current time is within the same day as the scheduled class
+    if (now >= startOfDay && now <= endOfDay) {
       setAttendanceTimeValid(true);
       
       if (now < startDateTime) {
@@ -476,16 +491,16 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
         setAttendanceTimeMessage(`Class is currently ongoing. Perfect time to mark attendance!`);
       } else {
         const minutesSinceEnd = Math.ceil((now.getTime() - endDateTime.getTime()) / (1000 * 60));
-        setAttendanceTimeMessage(`Class ended ${minutesSinceEnd} minutes ago. You can still mark attendance.`);
+        setAttendanceTimeMessage(`Class ended ${minutesSinceEnd} minutes ago. You can still mark attendance today.`);
       }
     } else {
       setAttendanceTimeValid(false);
       
-      if (now < oneHourBefore) {
-        const hoursUntilWindow = Math.ceil((oneHourBefore.getTime() - now.getTime()) / (1000 * 60 * 60));
-        setAttendanceTimeMessage(`Too early to mark attendance. Please wait ${hoursUntilWindow} hour(s) until attendance window opens.`);
+      if (now < startOfDay) {
+        const daysUntil = Math.ceil((startOfDay.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        setAttendanceTimeMessage(`This class is scheduled for a future date. Attendance can be marked on the day of the class (in ${daysUntil} day${daysUntil > 1 ? 's' : ''}).`);
       } else {
-        setAttendanceTimeMessage(`Attendance marking window has closed. Contact admin if you need to mark late attendance.`);
+        setAttendanceTimeMessage(`Attendance marking closed. This class was on a previous day. Contact admin if you need to mark late attendance.`);
       }
     }
 

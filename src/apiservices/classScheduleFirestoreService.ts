@@ -221,10 +221,11 @@ export class ClassScheduleFirestoreService {
         throw new Error('End time must be after start time');
       }
 
-      // Check for existing schedules on the same date
+      // Multiple classes per day are now allowed - no duplicate check needed
+      // Log if there are existing classes for reference
       const existingSchedules = await this.getSchedulesByDate(classData.id, date);
       if (existingSchedules.length > 0) {
-        throw new Error(`A class is already scheduled for ${date.toDateString()}`);
+        console.log(`📅 Note: ${existingSchedules.length} class(es) already scheduled for ${date.toDateString()}. Adding additional class.`);
       }
 
       const duration = (endHours * 60 + endMinutes) - (startHours * 60 + startMinutes);
