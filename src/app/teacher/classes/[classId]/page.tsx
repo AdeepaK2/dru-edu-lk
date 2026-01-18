@@ -71,6 +71,7 @@ const PDFViewer = dynamic(() => import('@/components/PDFViewer'), {
   )
 });
 import AttendanceTab from '@/components/teacher/AttendanceTab';
+import HomeworkTab from '@/components/teacher/HomeworkTab';
 import ZoomLinkModal from '@/components/modals/ZoomLinkModal';
 import RemarkModal from '@/components/teacher/RemarkModal';
 import { 
@@ -370,6 +371,12 @@ export default function ClassDetails() {
       count: materialsLoading ? undefined : materialsCount
     },
     {
+      id: 'homework',
+      label: 'Homework',
+      icon: FileText,
+      count: undefined
+    },
+    {
       id: 'students',
       label: 'Students',
       icon: Users,
@@ -545,6 +552,7 @@ export default function ClassDetails() {
           {/* Tab Content */}
           <div className="p-6">
             {activeTab === 'study-materials' && <StudyMaterialsTab classId={classId} />}
+            {activeTab === 'homework' && <HomeworkTab classData={classData} classId={classId} />}
             {activeTab === 'students' && (
               <StudentsTab 
                 classId={classId} 
