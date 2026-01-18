@@ -69,6 +69,16 @@ export interface ChatConversationDocument {
   updatedAt: Timestamp;
 }
 
+export interface ChatAttachment {
+  type: 'image';
+  url: string;
+  thumbnailUrl?: string;
+  fileName?: string;
+  fileSize?: number;
+  width?: number;
+  height?: number;
+}
+
 export interface ChatMessage {
   id: string;
   conversationId: string;
@@ -79,7 +89,8 @@ export interface ChatMessage {
   message: string;
   text?: string; // Alias for message
   messageType: 'text' | 'image' | 'file';
-  attachmentUrl?: string;
+  attachments?: ChatAttachment[]; // New array-based attachments
+  attachmentUrl?: string; // Legacy single attachment
   attachmentName?: string;
   readBy: string[];
   createdAt: Date;
@@ -96,7 +107,8 @@ export interface ChatMessageDocument {
   message: string;
   text?: string; // Alias for message
   messageType: 'text' | 'image' | 'file';
-  attachmentUrl?: string;
+  attachments?: ChatAttachment[]; // New array-based attachments
+  attachmentUrl?: string; // Legacy single attachment
   attachmentName?: string;
   readBy: string[];
   createdAt: Timestamp;
