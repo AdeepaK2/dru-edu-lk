@@ -766,6 +766,13 @@ export default function StudentsManagement() {
 
     setProcessingEnrollment(pendingRequests[0].student.email);
     
+    // Track results for detailed error reporting
+    let studentId: string = '';
+    let studentCreated = false;
+    let enrollmentSuccesses = 0;
+    let enrollmentFailures: string[] = [];
+    let requestUpdateFailures: string[] = [];
+    
     try {
       // Check if student already exists (same logic as single approval)
       const studentsQuery = query(
@@ -774,8 +781,6 @@ export default function StudentsManagement() {
       );
       const existingStudentSnapshot = await getDocs(studentsQuery);
       
-      let studentId: string;
-      
       if (!existingStudentSnapshot.empty) {
         // Student exists
         const existingStudent = existingStudentSnapshot.docs[0];
@@ -783,7 +788,6 @@ export default function StudentsManagement() {
         const studentData = existingStudent.data() as StudentDocument;
         
         console.log('Batch approval - student already exists:', studentData.name, studentData.email);
-        showSuccess(`All ${pendingRequests.length} pending enrollments approved for existing student ${studentData.name}`);
       } else {
         // Create new student
         console.log('Creating new student via API for batch approval...');
@@ -797,7 +801,7 @@ export default function StudentsManagement() {
           school: firstRequest.student.school,
           status: 'Active',
           enrollmentDate: new Date().toISOString().split('T')[0],
-          coursesEnrolled: 0, // Will be calculated based on actual enrollments
+          coursesEnrolled: 0,
           avatar: firstRequest.student.name.substring(0, 2).toUpperCase(),
           parent: {
             name: firstRequest.parent.name,
@@ -826,19 +830,28 @@ export default function StudentsManagement() {
         if (!response.ok) {
           const errorData = await response.json();
           console.error('API error:', errorData);
-          throw new Error(errorData.error || 'Failed to create student');
+          
+          // Provide more specific error messages based on status code
+          if (response.status === 409) {
+            throw new Error(`Student with email ${newStudent.email} already exists in authentication system. Please contact support.`);
+          } else if (response.status === 400) {
+            throw new Error(`Invalid student data: ${errorData.message || errorData.error || 'Validation failed'}`);
+          } else if (response.status === 500) {
+            throw new Error(`Server error while creating student account. Please try again later. Details: ${errorData.details || errorData.error || 'Unknown error'}`);
+          } else {
+            throw new Error(errorData.message || errorData.error || `Failed to create student (HTTP ${response.status})`);
+          }
         }
 
         const createdStudent = await response.json();
         console.log('Created student:', createdStudent);
         studentId = createdStudent.id;
-        
-        showSuccess(`New student account created for ${newStudent.name} with ${pendingRequests.length} classes enrolled and welcome email sent`);
+        studentCreated = true;
       }
       
-      // Create enrollment records for each approved request
-      const enrollmentPromises = pendingRequests.map(async (request) => {
-        try {
+      // Create enrollment records for each approved request - track successes and failures
+      const enrollmentResults = await Promise.allSettled(
+        pendingRequests.map(async (request) => {
           await createStudentEnrollment({
             studentId: studentId,
             classId: request.classId,
@@ -851,13 +864,20 @@ export default function StudentsManagement() {
             attendance: 0,
             notes: request.additionalNotes || undefined,
           });
-        } catch (enrollmentError) {
-          console.error(`Error creating enrollment for class ${request.className}:`, enrollmentError);
-          // Continue with other enrollments even if one fails
+          return request.className;
+        })
+      );
+      
+      // Count successes and failures
+      enrollmentResults.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+          enrollmentSuccesses++;
+        } else {
+          const className = pendingRequests[index].className;
+          enrollmentFailures.push(className);
+          console.error(`Failed to create enrollment for ${className}:`, result.reason);
         }
       });
-      
-      await Promise.all(enrollmentPromises);
       
       // Update the student's course count based on actual enrollments
       const enrollmentsQuery = query(
@@ -874,17 +894,25 @@ export default function StudentsManagement() {
         updatedAt: Timestamp.now(),
       });
       
-      // Update all pending enrollment requests
-      const updatePromises = pendingRequests.map(request =>
-        updateDoc(doc(firestore, 'enrollmentRequests', request.id), {
-          status: 'Approved',
-          processedAt: Timestamp.now(),
-          studentId: studentId,
-          updatedAt: Timestamp.now(),
-        })
+      // Update enrollment requests - track individual failures
+      const requestUpdateResults = await Promise.allSettled(
+        pendingRequests.map(request =>
+          updateDoc(doc(firestore, 'enrollmentRequests', request.id), {
+            status: 'Approved',
+            processedAt: Timestamp.now(),
+            studentId: studentId,
+            updatedAt: Timestamp.now(),
+          })
+        )
       );
       
-      await Promise.all(updatePromises);
+      // Track request update failures
+      requestUpdateResults.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          requestUpdateFailures.push(pendingRequests[index].className);
+          console.error(`Failed to update request for ${pendingRequests[index].className}:`, result.reason);
+        }
+      });
       
       // Refresh modal data if it's open for this student
       if (showEnrollmentDetailModal && selectedStudentRequests.length > 0 && 
@@ -895,9 +923,49 @@ export default function StudentsManagement() {
       // Refresh enrollment counts to update the main table
       await refreshEnrollmentCounts([studentId]);
       
-    } catch (error) {
+      // Show appropriate success/warning message based on results
+      const totalRequests = pendingRequests.length;
+      
+      if (enrollmentFailures.length === 0 && requestUpdateFailures.length === 0) {
+        // Complete success
+        if (studentCreated) {
+          showSuccess(`New student account created for ${pendingRequests[0].student.name} with ${totalRequests} classes enrolled and welcome email sent`);
+        } else {
+          showSuccess(`All ${totalRequests} pending enrollments approved for ${pendingRequests[0].student.name}`);
+        }
+      } else if (enrollmentSuccesses > 0) {
+        // Partial success
+        let message = `Partially completed: ${enrollmentSuccesses} of ${totalRequests} enrollments succeeded.`;
+        if (enrollmentFailures.length > 0) {
+          message += ` Failed classes: ${enrollmentFailures.join(', ')}.`;
+        }
+        if (requestUpdateFailures.length > 0) {
+          message += ` Some request updates failed.`;
+        }
+        showError(message);
+      } else {
+        // All enrollments failed
+        showError(`Failed to create any enrollments. Please try again or contact support.`);
+      }
+      
+    } catch (error: any) {
       console.error('Error batch approving enrollments:', error);
-      showError('Failed to batch approve enrollment requests');
+      
+      // Build a detailed error message
+      let errorMessage = 'Failed to batch approve enrollment requests';
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+      
+      // Add context about what was completed before the error
+      if (studentId && enrollmentSuccesses > 0) {
+        errorMessage += ` (${enrollmentSuccesses} enrollments were created before the error)`;
+      }
+      
+      showError(errorMessage);
     } finally {
       setProcessingEnrollment(null);
     }
