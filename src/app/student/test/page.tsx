@@ -593,6 +593,14 @@ export default function StudentTests() {
       const timeRemaining = activeAttempt.timeRemaining;
       const hasTimeLeft = isUntimed || timeRemaining === undefined || timeRemaining > 0;
       
+      console.log(`[Button Debug] Test: ${test.title} (${test.id})`, {
+        hasActiveAttempt,
+        status: status.status,
+        isUntimed,
+        timeRemaining,
+        hasTimeLeft
+      });
+
       if (hasTimeLeft) {
         return {
           text: 'Resume Test',
@@ -603,6 +611,12 @@ export default function StudentTests() {
           hasActiveAttempt: true
         };
       }
+    } else if (hasActiveAttempt) {
+        console.log(`[Button Debug] Active attempt ignored for ${test.title}:`, {
+            hasActiveAttempt,
+            status: status.status,
+            activeAttemptId: activeAttempt?.id
+        });
     }
 
     // PRIORITY 2: Check if there's an expired incomplete attempt that needs attention
