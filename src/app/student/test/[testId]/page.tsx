@@ -126,7 +126,7 @@ export default function TestPage() {
         
         const now = new Date();
         
-        attemptsSnapshot.forEach((doc) => {
+        for (const doc of attemptsSnapshot.docs) {
           const attemptData = { id: doc.id, ...doc.data() } as any;
           allAttempts.push(attemptData);
           
@@ -147,25 +147,38 @@ export default function TestPage() {
           if (enableExtensionDetection && (attemptData.requiresTestDataRefresh || attemptData.testExtendedAt)) {
             console.log('🔄 Attempt was affected by test extension, refreshing test data...');
             
-            // Clear the extension flags first to prevent infinite loops
-            fetch('/api/tests/clear-extension-flags', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ testId, studentId: student.id })
-            }).then(response => {
-              if (response.ok) {
-                console.log('✅ Extension flags cleared');
-              }
-            }).catch(error => {
-              console.warn('⚠️ Failed to clear extension flags:', error);
-            });
-            
             // Force refresh test data to get latest deadline
-            setTimeout(() => {
-              console.log('♻️ Reloading test data due to extension');
-              loadTestData(); // Recursive call to refresh with latest data
-            }, 500); // Slightly longer delay to ensure flag clearing completes
-            return; // Exit early to prevent stale data processing
+            // CRITICAL FIX: Prevent infinite loops by checking recursion depth
+            const refreshCount = (window as any)._attemptRefreshCount || 0;
+            if (refreshCount < 3) {
+              (window as any)._attemptRefreshCount = refreshCount + 1;
+              
+              // Wait for the clear request to complete BEFORE reloading
+              try {
+                await fetch('/api/tests/clear-extension-flags', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ testId, studentId: student.id })
+                });
+                console.log('✅ Extension flags cleared, reloading data...');
+                
+                // Now safe to reload
+                setTimeout(() => {
+                  loadTestData(); 
+                }, 500);
+              } catch (clearError) {
+                console.error('❌ Failed to clear flags, aborting refresh:', clearError);
+                // Do not reload if we couldn't clear flags
+              }
+            } else {
+              console.warn('⚠️ Max refresh attempts reached, proceeding with current data to prevent infinite loop');
+              (window as any)._attemptRefreshCount = 0; // Reset for future interactions
+              // Do NOT return here, proceed with rendering what we have
+            }
+            
+            if (refreshCount < 3) {
+               return; // Only exit if we are actually going to reload
+            }
           }
           
           // Check if attempt has expired by comparing current time with endTime
@@ -266,7 +279,7 @@ export default function TestPage() {
           } else if (isExpiredIncomplete) {
             expiredIncompleteAttempts.push(attemptData);
           }
-        });
+        }
         
         // Calculate proper attempt summary
         const attemptsAllowed = testData.type === 'flexible' 
