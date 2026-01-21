@@ -212,7 +212,8 @@ export default function StudentTests() {
         
         const isInProgress = attemptData.status === 'in_progress' || 
                             attemptData.status === 'active' || 
-                            attemptData.status === 'paused';
+                            attemptData.status === 'paused' ||
+                            attemptData.status === 'not_started';
         
         // Check if attempt timer has expired
         const hasTimeRemaining = attemptData.timeRemaining !== undefined && attemptData.timeRemaining > 0;
