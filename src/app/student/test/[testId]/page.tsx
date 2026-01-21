@@ -246,7 +246,7 @@ export default function TestPage() {
                           (attemptData.status === 'in_progress' || 
                            attemptData.status === 'not_started' || 
                            attemptData.status === 'paused') &&
-                          (!attemptData.submittedAt); // ✅ Ensure no submission timestamp
+                          (!attemptData.submittedAt || attemptData.submittedAt.seconds === 0); // ✅ Ensure no submission timestamp
           
           // Track expired incomplete attempts (started but not submitted, and time expired)
           // Also check if there are saved answers - this indicates the student actually worked on the test
