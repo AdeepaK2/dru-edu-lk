@@ -358,23 +358,30 @@ export default function StudentTests() {
       setLoading(true);
       setError(null);
       
-      // Load enrollments, test attempts, and late submission approvals in parallel
-      const [enrollmentsData, attemptsData, lateSubmissionsData] = await Promise.all([
-        loadEnrollments(),
-        loadTestAttempts(),
-        loadLateSubmissionApprovals()
-      ]);
+      // OPTIMIZATION: Start independent fetches immediately
+      const attemptsPromise = loadTestAttempts();
+      const approvalsPromise = loadLateSubmissionApprovals();
+      
+      // Enrollments are needed for the test listener, so await them first
+      // But don't wait for attempts/approvals yet
+      const enrollmentsData = await loadEnrollments();
       
       if (enrollmentsData.length === 0) {
         setLoading(false);
-        return null; // No enrollments, no need to set up test listener
+        return null; 
       }
       
       // Get class IDs from enrollments
       const classIds = enrollmentsData.map((enrollment: StudentEnrollment) => enrollment.classId);
       
-      // Set up test listener (await it since it's now async)
-      return await setupTestListener(classIds);
+      // Now start the test listener (main content) immediately
+      // This is the most important data for the user to see
+      const listenerPromise = setupTestListener(classIds);
+      
+      // Wait for everything to complete
+      await Promise.all([attemptsPromise, approvalsPromise, listenerPromise]);
+      
+      return await listenerPromise; // Return the cleanup function from listener
     } catch (error) {
       console.error('Error loading student data:', error);
       setError('Failed to load data. Please refresh the page.');
