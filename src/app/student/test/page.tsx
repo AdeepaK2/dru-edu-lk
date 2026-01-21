@@ -152,6 +152,35 @@ export default function StudentTests() {
       // Cache for test data to avoid multiple fetches
       const testCache: Record<string, any> = {};
       
+      // OPTIMIZATION: Collect all unique test IDs first to fetch them in parallel
+      const uniqueTestIds = new Set<string>();
+      attemptsSnapshot.docs.forEach(doc => {
+        const data = doc.data();
+        if (data.testId) uniqueTestIds.add(data.testId);
+      });
+      
+      // Fetch all test data in parallel
+      console.log(`🚀 Pre-fetching data for ${uniqueTestIds.size} tests...`);
+      const testFetchPromises = Array.from(uniqueTestIds).map(async (testId) => {
+        try {
+          const testDoc = await getDoc(doc(firestore, 'tests', testId));
+          if (testDoc.exists()) {
+            return { id: testId, data: testDoc.data() };
+          }
+        } catch (e) {
+          console.warn('Failed to load test data for', testId);
+        }
+        return null;
+      });
+      
+      const testResults = await Promise.all(testFetchPromises);
+      testResults.forEach(result => {
+        if (result) {
+          testCache[result.id] = result.data;
+        }
+      });
+      console.log('✅ Pre-fetched test data complete');
+
       for (const docSnap of attemptsSnapshot.docs) {
         const attemptData = docSnap.data();
         const testId = attemptData.testId;
@@ -179,7 +208,7 @@ export default function StudentTests() {
         // Categorize the attempt based on status
         const isCompleted = attemptData.status === 'submitted' || 
                            attemptData.status === 'auto_submitted' || 
-                           attemptData.submittedAt;
+                           (attemptData.submittedAt && getSeconds(attemptData.submittedAt) > 0);
         
         const isInProgress = attemptData.status === 'in_progress' || 
                             attemptData.status === 'active' || 
@@ -191,18 +220,8 @@ export default function StudentTests() {
         // Also check if there are saved answers - indicator of work done
         const hasAnswers = attemptData.answers && Object.keys(attemptData.answers).length > 0;
         
-        // Get test data to check deadline (cache it)
-        if (!testCache[testId]) {
-          try {
-            const testDoc = await getDoc(doc(firestore, 'tests', testId));
-            if (testDoc.exists()) {
-              testCache[testId] = testDoc.data();
-            }
-          } catch (e) {
-            console.warn('Failed to load test data for', testId);
-          }
-        }
-        
+        // Get test data from cache (already pre-fetched)
+        // No need to await here anymore
         const testData = testCache[testId];
         let isTestDeadlinePassed = false;
         let isUntimed = false;
