@@ -30,6 +30,7 @@ interface TimeSlot {
   studentId?: string;
   studentName?: string;
   meetingLink?: string;
+  subject?: string;
 }
 
 interface AvailabilitySlot {
@@ -128,7 +129,8 @@ export default function TeacherMeetingPage() {
           isBooked: true,
           studentId: booking.studentId,
           studentName: booking.studentName,
-          meetingLink: booking.meetingLink
+          meetingLink: booking.meetingLink,
+          subject: booking.subject
         }));
 
       setBookedMeetings(meetings);
@@ -966,7 +968,7 @@ export default function TeacherMeetingPage() {
                       <div className="flex-1">
                         <div className="flex items-center space-x-3 mb-2">
                           <h4 className="font-medium text-gray-900 dark:text-white">
-                            Meeting with {meeting.studentName}
+                            {meeting.subject ? 'Meeting with Parent' : `Meeting with ${meeting.studentName}`}
                           </h4>
                           <span className={`px-2 py-1 text-xs rounded-full ${meetingStatus.color}`}>
                             {meetingStatus.status}
@@ -975,6 +977,11 @@ export default function TeacherMeetingPage() {
                         <p className="text-sm text-gray-600 dark:text-gray-400">
                           {formatDate(meeting.date)} at {meeting.startTime} - {meeting.endTime}
                         </p>
+                        {meeting.subject && (
+                          <p className="text-sm font-medium text-purple-600 dark:text-purple-400 mt-1">
+                            Reason: {meeting.subject}
+                          </p>
+                        )}
                         <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
                           Duration: {meeting.duration} minutes
                         </p>
