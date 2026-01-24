@@ -45,7 +45,6 @@ interface FileUploadItem {
   externalUrl?: string;
   isRequired: boolean;
   tags: string[];
-  isHomework: boolean;
   error?: string;
 }
 
@@ -56,6 +55,7 @@ interface GlobalSettings {
   isVisible: boolean;
   order: number;
   dueDate: string;
+  isHomework: boolean;
   homeworkType: 'manual' | 'submission';
   manualInstruction: string;
   maxMarks: number;
@@ -89,6 +89,7 @@ export default function StudyMaterialUploadModal({
     isVisible: true,
     order: 1,
     dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Default 1 week from now
+    isHomework: false,
     homeworkType: 'manual',
     manualInstruction: '',
     maxMarks: 0,
@@ -106,6 +107,7 @@ export default function StudyMaterialUploadModal({
         isVisible: true,
         order: 1,
         dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        isHomework: false,
         homeworkType: 'manual',
         manualInstruction: '',
         maxMarks: 0,
@@ -163,12 +165,16 @@ export default function StudyMaterialUploadModal({
           title: file.name.split('.')[0],
           fileType,
           isRequired: false,
-          isHomework: false,
           tags: []
         });
       });
 
       setFiles(prev => [...prev, ...newItems]);
+      
+      // Reset input value to allow selecting same files again if needed
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     } else {
       // Add empty link item
       setFiles(prev => [...prev, {
@@ -177,7 +183,6 @@ export default function StudyMaterialUploadModal({
         fileType: 'link',
         externalUrl: '',
         isRequired: false,
-        isHomework: false,
         tags: []
       }]);
     }
@@ -381,12 +386,12 @@ export default function StudyMaterialUploadModal({
           uploadedAt: new Date(),
           viewCount: 0,
           // Homework data
-          isHomework: item.isHomework,
-          homeworkType: item.isHomework ? globalSettings.homeworkType : undefined,
-          manualInstruction: (item.isHomework && globalSettings.homeworkType === 'manual') ? globalSettings.manualInstruction : undefined,
-          maxMarks: (item.isHomework && globalSettings.maxMarks > 0) ? globalSettings.maxMarks : undefined,
-          allowLateSubmission: item.isHomework ? globalSettings.allowLateSubmission : true,
-          lateSubmissionDays: item.isHomework ? globalSettings.lateSubmissionDays : 3
+          isHomework: globalSettings.isHomework,
+          homeworkType: globalSettings.isHomework ? globalSettings.homeworkType : undefined,
+          manualInstruction: (globalSettings.isHomework && globalSettings.homeworkType === 'manual') ? globalSettings.manualInstruction : undefined,
+          maxMarks: (globalSettings.isHomework && globalSettings.maxMarks > 0) ? globalSettings.maxMarks : undefined,
+          allowLateSubmission: globalSettings.isHomework ? globalSettings.allowLateSubmission : true,
+          lateSubmissionDays: globalSettings.isHomework ? globalSettings.lateSubmissionDays : 3
         };
 
         // Save to Firestore
@@ -523,34 +528,52 @@ export default function StudyMaterialUploadModal({
               </div>
             </div>
             
-            {/* Homework Configuration Button - Visible if any file is marked as homework */}
-            {files.some(f => f.isHomework) && (
-              <div className="mt-4 border-t border-blue-200 dark:border-blue-700 pt-4 flex items-center justify-between">
-                 <div>
-                   <h5 className="font-medium text-gray-900 dark:text-white flex items-center">
-                     <Settings className="w-4 h-4 mr-2 text-purple-600" />
-                     Homework Settings
-                   </h5>
-                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                     Configure deadlines and type for marked files.
-                   </p>
+            {/* Homework Toggle & Configuration */}
+            <div className="mt-4 border-t border-blue-200 dark:border-blue-700 pt-4">
+              <div className="flex items-center justify-between">
+                 <div className="flex items-center space-x-2">
+                   <div className="flex items-center">
+                     <button
+                       type="button"
+                       onClick={() => setGlobalSettings(prev => ({ ...prev, isHomework: !prev.isHomework }))}
+                       className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${
+                         globalSettings.isHomework ? 'bg-purple-600' : 'bg-gray-200 dark:bg-gray-700'
+                       }`}
+                     >
+                       <span className="sr-only">Mark as Homework</span>
+                       <span
+                         aria-hidden="true"
+                         className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                           globalSettings.isHomework ? 'translate-x-5' : 'translate-x-0'
+                         }`}
+                       />
+                     </button>
+                     <span className="ml-3 text-sm font-medium text-gray-900 dark:text-white">
+                       Mark as Homework
+                     </span>
+                   </div>
                  </div>
-                 <Button
-                   type="button"
-                   variant="outline"
-                   onClick={() => setShowHomeworkConfig(true)}
-                   className="text-purple-600 border-purple-200 hover:bg-purple-50 dark:border-purple-800 dark:hover:bg-purple-900/20"
-                 >
-                   Configure
-                 </Button>
+
+                 {globalSettings.isHomework && (
+                   <Button
+                     type="button"
+                     variant="outline"
+                     size="sm"
+                     onClick={() => setShowHomeworkConfig(true)}
+                     className="text-purple-600 border-purple-200 hover:bg-purple-50 dark:border-purple-800 dark:hover:bg-purple-900/20"
+                   >
+                     <Settings className="w-4 h-4 mr-2" />
+                     Configure
+                   </Button>
+                 )}
               </div>
-            )}
-            
-            {!files.some(f => f.isHomework) && files.length > 0 && (
-                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 text-sm text-gray-500">
-                    <p>💡 Tip: Toggle "Homework" on individual files to enable homework settings.</p>
-                </div>
-            )}
+              
+              {globalSettings.isHomework && (
+                  <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                    All uploaded files will be marked as homework.
+                  </p>
+              )}
+            </div>
           </div>
 
           {/* Upload Actions */}
@@ -737,31 +760,7 @@ export default function StudyMaterialUploadModal({
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
-                    <div className="text-xs text-gray-500">
-                      {item.isHomework ? 'Marked as Homework' : 'Standard Material'}
-                    </div>
-                    <div className="flex items-center space-x-3">
-                         <span className={`text-sm font-medium ${item.isHomework ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 dark:text-gray-400'}`}>
-                           Homework
-                         </span>
-                         <button
-                           type="button"
-                           onClick={() => updateFileUploadItem(item.id, { isHomework: !item.isHomework })}
-                           className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${
-                             item.isHomework ? 'bg-purple-600' : 'bg-gray-200 dark:bg-gray-700'
-                           }`}
-                         >
-                           <span className="sr-only">Toggle homework</span>
-                           <span
-                             aria-hidden="true"
-                             className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                               item.isHomework ? 'translate-x-5' : 'translate-x-0'
-                             }`}
-                           />
-                         </button>
-                    </div>
-                  </div>
+
                 </div>
               </div>
             ))}
