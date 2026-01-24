@@ -79,7 +79,7 @@ export default function RemarkModal({
     }
   };
 
-  const remarkLevelOptions = Object.values(REMARK_LEVELS);
+  const remarkLevelOptions = Object.values(REMARK_LEVELS).filter(level => level !== REMARK_LEVELS.CUSTOM);
 
   if (!isOpen) return null;
 
@@ -147,23 +147,7 @@ export default function RemarkModal({
             </div>
           </div>
 
-          {/* Custom Remark Input (only show when Custom is selected) */}
-          {remarkLevel === REMARK_LEVELS.CUSTOM && (
-            <div>
-              <label htmlFor="customRemark" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Custom Remark *
-              </label>
-              <Input
-                id="customRemark"
-                type="text"
-                value={customRemark}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomRemark(e.target.value)}
-                placeholder="Enter custom remark..."
-                className="w-full"
-                required
-              />
-            </div>
-          )}
+
 
           {/* Additional Notes */}
           <div>
