@@ -898,7 +898,10 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
               order: 0,
               tags: fileItem.tags || [],
               uploadedAt: new Date(),
-              viewCount: 0
+              viewCount: 0,
+              isHomework: false,
+              allowLateSubmission: true,
+              lateSubmissionDays: 3
             };
             
             await createStudyMaterial(materialData);
