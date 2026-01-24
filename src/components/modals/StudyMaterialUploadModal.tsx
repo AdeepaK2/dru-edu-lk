@@ -49,10 +49,8 @@ interface GlobalSettings {
   title: string;
   description: string;
   lessonId: string;
-  year: number;
   isVisible: boolean;
   order: number;
-  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
   dueDate: string;
   groupingPreference: 'single' | 'group' | 'auto'; // New field for grouping preference
   customGroupId: string; // Custom group ID when user wants to specify
@@ -86,15 +84,13 @@ export default function StudyMaterialUploadModal({
     title: '',
     description: '',
     lessonId: preSelectedLessonId || '',
-    year: new Date().getFullYear(),
     isVisible: true,
     order: 1,
-    difficulty: 'Beginner',
-    dueDate: '',
+    dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Default 3 days from now
     groupingPreference: 'group',
     customGroupId: '',
     isHomework: false,
-    homeworkType: 'submission',
+    homeworkType: 'manual',
     manualInstruction: '',
     maxMarks: 0,
     allowLateSubmission: true,
@@ -108,15 +104,13 @@ export default function StudyMaterialUploadModal({
         title: '',
         description: '',
         lessonId: preSelectedLessonId || '',
-        year: new Date().getFullYear(),
         isVisible: true,
         order: 1,
-        difficulty: 'Beginner',
-        dueDate: '',
+        dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         groupingPreference: 'group',
         customGroupId: '',
         isHomework: false,
-        homeworkType: 'submission',
+        homeworkType: 'manual',
         manualInstruction: '',
         maxMarks: 0,
         allowLateSubmission: true,
@@ -372,7 +366,7 @@ export default function StudyMaterialUploadModal({
           teacherId: teacher!.id,
           week: 1,
           weekTitle: 'By Lesson',
-          year: globalSettings.year,
+          year: new Date().getFullYear(),
           fileUrl,
           fileName,
           fileSize,
@@ -386,7 +380,7 @@ export default function StudyMaterialUploadModal({
           isVisible: globalSettings.isVisible,
           order: globalSettings.order + i,
           tags: item.tags,
-          difficulty: globalSettings.difficulty,
+          // difficulty removed
           dueDate: globalSettings.dueDate ? new Date(globalSettings.dueDate) : undefined,
           externalUrl: item.fileType === 'link' && item.externalUrl ? item.externalUrl : undefined,
           uploadedAt: new Date(),
@@ -463,190 +457,134 @@ export default function StudyMaterialUploadModal({
           <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
             <h4 className="font-medium text-gray-900 dark:text-white mb-4">Global Settings</h4>
             
-            {/* Grouping Preference Section */}
-            {files.length > 0 && (
-              <div className="mb-6 p-4 bg-white dark:bg-gray-800 rounded-lg border border-blue-300 dark:border-blue-700">
-                <h5 className="font-medium text-gray-900 dark:text-white mb-3 flex items-center">
-                  <Users className="w-4 h-4 mr-2" />
-                  Material Organization
-                </h5>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  Choose how you want to organize your {files.length} material{files.length !== 1 ? 's' : ''}:
-                </p>
+            {/* Grouping Preference Section - Moved to Top */}
+            <div className="mb-6 p-4 bg-white dark:bg-gray-800 rounded-lg border border-blue-300 dark:border-blue-700">
+              <h5 className="font-medium text-gray-900 dark:text-white mb-3 flex items-center">
+                <Users className="w-4 h-4 mr-2" />
+                Material Organization
+              </h5>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Choose how you want to organize your materials:
+              </p>
+              
+              <div className="space-y-3">
+                {/* Single Components */}
+                <label className="flex items-start space-x-3 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="groupingPreference"
+                    value="single"
+                    checked={globalSettings.groupingPreference === 'single'}
+                    onChange={(e) => setGlobalSettings(prev => ({ ...prev, groupingPreference: e.target.value as any }))}
+                    className="mt-1 w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                  />
+                  <div>
+                    <div className="font-medium text-gray-900 dark:text-white">
+                      📄 Individual Components
+                    </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      Each file will be treated as a separate material with its own title and description.
+                    </div>
+                  </div>
+                </label>
                 
-                <div className="space-y-3">
-                  {/* Single Components */}
-                  <label className="flex items-start space-x-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="groupingPreference"
-                      value="single"
-                      checked={globalSettings.groupingPreference === 'single'}
-                      onChange={(e) => setGlobalSettings(prev => ({ ...prev, groupingPreference: e.target.value as any }))}
-                      className="mt-1 w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                    />
-                    <div>
-                      <div className="font-medium text-gray-900 dark:text-white">
-                        📄 Individual Components
-                      </div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">
-                        Each file will be treated as a separate material with its own title and description.
-                        {files.length > 1 && " Students will see them as separate items."}
-                      </div>
+                {/* Auto Group (default) */}
+                <label className="flex items-start space-x-3 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="groupingPreference"
+                    value="auto"
+                    checked={globalSettings.groupingPreference === 'auto'}
+                    onChange={(e) => setGlobalSettings(prev => ({ ...prev, groupingPreference: e.target.value as any }))}
+                    className="mt-1 w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                  />
+                  <div>
+                    <div className="font-medium text-gray-900 dark:text-white">
+                      🤖 Smart Organization (Recommended)
                     </div>
-                  </label>
-                  
-                  {/* Auto Group (default) */}
-                  <label className="flex items-start space-x-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="groupingPreference"
-                      value="auto"
-                      checked={globalSettings.groupingPreference === 'auto'}
-                      onChange={(e) => setGlobalSettings(prev => ({ ...prev, groupingPreference: e.target.value as any }))}
-                      className="mt-1 w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                    />
-                    <div>
-                      <div className="font-medium text-gray-900 dark:text-white">
-                        🤖 Smart Organization (Recommended)
-                      </div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">
-                        {files.length === 1 
-                          ? "Single file will be treated as individual component." 
-                          : `Multiple files (${files.length}) will be automatically grouped together as one assignment.`}
-                      </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      Single files separate, multiple files grouped.
                     </div>
-                  </label>
-                  
-                  {/* Custom Group */}
-                  <label className="flex items-start space-x-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="groupingPreference"
-                      value="group"
-                      checked={globalSettings.groupingPreference === 'group'}
-                      onChange={(e) => setGlobalSettings(prev => ({ ...prev, groupingPreference: e.target.value as any }))}
-                      className="mt-1 w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                    />
-                    <div className="flex-1">
-                      <div className="font-medium text-gray-900 dark:text-white">
-                        📁 Custom Group
-                      </div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                        Group all files together with a custom identifier. Students will see them as one assignment with multiple files.
-                      </div>
-                      
-                      {globalSettings.groupingPreference === 'group' && (
-                        <div className="mt-3">
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Custom Group ID (Optional)
-                          </label>
-                          <input
-                            type="text"
-                            value={globalSettings.customGroupId}
-                            onChange={(e) => setGlobalSettings(prev => ({ ...prev, customGroupId: e.target.value }))}
-                            disabled={uploading}
-                            placeholder="e.g., MATH_CH5, WEEK3_MATERIALS, ASSIGNMENT_1"
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white text-sm"
-                          />
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            Leave empty to auto-generate a unique group ID. Use alphanumeric characters and underscores only.
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </label>
-                </div>
+                  </div>
+                </label>
                 
-                {/* Preview of what will happen */}
-                <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-md">
-                  <h6 className="text-sm font-medium text-gray-900 dark:text-white mb-2">📋 Preview:</h6>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                    {globalSettings.groupingPreference === 'single' && (
-                      <>
-                        Students will see <strong>{files.length}</strong> separate material{files.length !== 1 ? 's' : ''} in their list.
-                      </>
-                    )}
-                    {globalSettings.groupingPreference === 'auto' && files.length === 1 && (
-                      <>
-                        Students will see <strong>1</strong> individual material.
-                      </>
-                    )}
-                    {globalSettings.groupingPreference === 'auto' && files.length > 1 && (
-                      <>
-                        Students will see <strong>1</strong> grouped assignment containing <strong>{files.length}</strong> files.
-                      </>
-                    )}
+                {/* Custom Group */}
+                <label className="flex items-start space-x-3 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="groupingPreference"
+                    value="group"
+                    checked={globalSettings.groupingPreference === 'group'}
+                    onChange={(e) => setGlobalSettings(prev => ({ ...prev, groupingPreference: e.target.value as any }))}
+                    className="mt-1 w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                  />
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-900 dark:text-white">
+                      📁 Custom Group
+                    </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                      Group all files together as one assignment.
+                    </div>
+                    
                     {globalSettings.groupingPreference === 'group' && (
-                      <>
-                        Students will see <strong>1</strong> grouped assignment 
-                        {globalSettings.customGroupId.trim() && (
-                          <> with ID "<strong>{globalSettings.customGroupId.trim()}</strong>"</>
-                        )} containing <strong>{files.length}</strong> file{files.length !== 1 ? 's' : ''}.
-                      </>
+                      <div className="mt-3">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Custom Group ID (Optional)
+                        </label>
+                        <input
+                          type="text"
+                          value={globalSettings.customGroupId}
+                          onChange={(e) => setGlobalSettings(prev => ({ ...prev, customGroupId: e.target.value }))}
+                          disabled={uploading}
+                          placeholder="e.g., MATH_CH5, WEEK3_MATERIALS"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white text-sm"
+                        />
+                      </div>
                     )}
                   </div>
-                </div>
+                </label>
               </div>
-            )}
-            
-            {/* Title field - full width */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {globalSettings.groupingPreference === 'single' 
-                  ? 'Default Title Prefix' 
-                  : 'Group Title'
-                } 
-                {((globalSettings.groupingPreference === 'group') || 
-                  (globalSettings.groupingPreference === 'auto' && files.length > 1)) && 
-                  <span className="text-xs text-blue-600"> (For grouping multiple files)</span>
-                }
-              </label>
-              <input
-                type="text"
-                value={globalSettings.title}
-                onChange={(e) => setGlobalSettings(prev => ({ ...prev, title: e.target.value }))}
-                disabled={uploading}
-                placeholder={
-                  globalSettings.groupingPreference === 'single' 
-                    ? "e.g., Math Chapter 5 - (will prefix individual titles)" 
-                    : "e.g., Math Chapter 5 Materials, Week 3 Resources..."
-                }
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-              />
-              {globalSettings.groupingPreference === 'single' && globalSettings.title.trim() && (
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Individual titles will be: "{globalSettings.title.trim()} - [File Name]"
-                </p>
-              )}
             </div>
+            
+            {/* Title field - Conditional */}
+            {(globalSettings.groupingPreference === 'group' || 
+              (globalSettings.groupingPreference === 'auto' && files.length > 1) ||
+              (globalSettings.groupingPreference === 'single')) && (
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    {globalSettings.groupingPreference === 'single' 
+                      ? 'Default Title Prefix (Optional)' 
+                      : 'Group Title'
+                    }
+                  </label>
+                  <input
+                    type="text"
+                    value={globalSettings.title}
+                    onChange={(e) => setGlobalSettings(prev => ({ ...prev, title: e.target.value }))}
+                    disabled={uploading}
+                    placeholder={
+                      globalSettings.groupingPreference === 'single' 
+                        ? "e.g., Math Chapter 5" 
+                        : "e.g., Math Chapter 5 Materials"
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+            )}
 
             {/* Global Description field */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {globalSettings.groupingPreference === 'single' 
-                  ? 'Common Description' 
-                  : 'Description'
-                }
-                {((globalSettings.groupingPreference === 'group') || 
-                  (globalSettings.groupingPreference === 'auto' && files.length > 1)) && 
-                  <span className="text-xs text-blue-600"> (Applied to all files in the group)</span>
-                }
-                {globalSettings.groupingPreference === 'single' && files.length > 1 && 
-                  <span className="text-xs text-blue-600"> (Applied to all individual files)</span>
-                }
+                Description (Optional)
+                <span className="text-xs text-blue-600 ml-2">(Applied to all files)</span>
               </label>
               <textarea
                 value={globalSettings.description}
                 onChange={(e) => setGlobalSettings(prev => ({ ...prev, description: e.target.value }))}
                 disabled={uploading}
-                rows={3}
+                rows={2}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none"
-                placeholder={
-                  globalSettings.groupingPreference === 'single'
-                    ? "This description will be applied to all individual materials..."
-                    : "Describe what this assignment/material is about..."
-                }
+                placeholder="Brief description..."
               />
             </div>
 
@@ -672,22 +610,6 @@ export default function StudyMaterialUploadModal({
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Difficulty Level
-                </label>
-                <select
-                  value={globalSettings.difficulty}
-                  onChange={(e) => setGlobalSettings(prev => ({ ...prev, difficulty: e.target.value as any }))}
-                  disabled={uploading}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                >
-                  <option value="Beginner">Beginner</option>
-                  <option value="Intermediate">Intermediate</option>
-                  <option value="Advanced">Advanced</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Due Date (Optional)
                 </label>
                 <input
@@ -695,21 +617,6 @@ export default function StudyMaterialUploadModal({
                   value={globalSettings.dueDate}
                   onChange={(e) => setGlobalSettings(prev => ({ ...prev, dueDate: e.target.value }))}
                   disabled={uploading}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Year
-                </label>
-                <input
-                  type="number"
-                  value={globalSettings.year}
-                  onChange={(e) => setGlobalSettings(prev => ({ ...prev, year: parseInt(e.target.value) }))}
-                  disabled={uploading}
-                  min="2020"
-                  max="2030"
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                 />
               </div>
