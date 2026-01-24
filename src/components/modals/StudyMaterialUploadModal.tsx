@@ -372,7 +372,10 @@ export default function StudyMaterialUploadModal({
           dueDate: globalSettings.dueDate ? new Date(globalSettings.dueDate) : undefined,
           externalUrl: item.fileType === 'link' && item.externalUrl ? item.externalUrl : undefined,
           uploadedAt: new Date(),
-          viewCount: 0
+          viewCount: 0,
+          isHomework: false,
+          allowLateSubmission: true,
+          lateSubmissionDays: 3
         };
 
         // Save to Firestore

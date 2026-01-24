@@ -52,6 +52,12 @@ interface GlobalSettings {
   order: number;
   difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
   dueDate: string;
+  isHomework: boolean;
+  homeworkType: 'manual' | 'submission';
+  manualInstruction: string;
+  maxMarks: number;
+  allowLateSubmission: boolean;
+  lateSubmissionDays: number;
 }
 
 export default function StudyMaterialUploadModal({
@@ -78,7 +84,13 @@ export default function StudyMaterialUploadModal({
     isVisible: true,
     order: 1,
     difficulty: 'Beginner',
-    dueDate: ''
+    dueDate: '',
+    isHomework: false,
+    homeworkType: 'submission',
+    manualInstruction: '',
+    maxMarks: 0,
+    allowLateSubmission: true,
+    lateSubmissionDays: 3
   });
 
   // Reset form when modal opens/closes
@@ -90,7 +102,13 @@ export default function StudyMaterialUploadModal({
         isVisible: true,
         order: 1,
         difficulty: 'Beginner',
-        dueDate: ''
+        dueDate: '',
+        isHomework: false,
+        homeworkType: 'submission',
+        manualInstruction: '',
+        maxMarks: 0,
+        allowLateSubmission: true,
+        lateSubmissionDays: 3
       });
       setFiles([]);
       setError(null);
@@ -228,6 +246,16 @@ export default function StudyMaterialUploadModal({
       return false;
     }
 
+    if (globalSettings.isHomework && !globalSettings.dueDate) {
+      setError('Due date is required for homework');
+      return false;
+    }
+    
+    if (globalSettings.isHomework && globalSettings.homeworkType === 'manual' && !globalSettings.manualInstruction) {
+      setError('Instructions are required for manual homework');
+      return false;
+    }
+
     if (!teacher) {
       setError('Teacher authentication required');
       return false;
@@ -331,6 +359,15 @@ export default function StudyMaterialUploadModal({
           difficulty: globalSettings.difficulty,
           dueDate: globalSettings.dueDate ? new Date(globalSettings.dueDate) : undefined,
           externalUrl: item.fileType === 'link' ? item.externalUrl : undefined,
+          
+          // Homework data
+          isHomework: globalSettings.isHomework,
+          homeworkType: globalSettings.isHomework ? globalSettings.homeworkType : undefined,
+          manualInstruction: (globalSettings.isHomework && globalSettings.homeworkType === 'manual') ? globalSettings.manualInstruction : undefined,
+          maxMarks: (globalSettings.isHomework && globalSettings.maxMarks > 0) ? globalSettings.maxMarks : undefined,
+          allowLateSubmission: globalSettings.isHomework ? globalSettings.allowLateSubmission : true,
+          lateSubmissionDays: globalSettings.isHomework ? globalSettings.lateSubmissionDays : 3,
+          
           uploadedAt: new Date(),
           viewCount: 0
         };
@@ -460,6 +497,113 @@ export default function StudyMaterialUploadModal({
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                 />
               </div>
+              </div>
+            
+            {/* Homework Settings */}
+            <div className="mt-4 border-t border-blue-200 dark:border-blue-700 pt-4">
+              <div className="flex items-center mb-4">
+                <input
+                  type="checkbox"
+                  id="isHomework"
+                  checked={globalSettings.isHomework}
+                  onChange={(e) => setGlobalSettings(prev => ({ ...prev, isHomework: e.target.checked }))}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <label htmlFor="isHomework" className="ml-2 text-sm font-medium text-gray-900 dark:text-white">
+                  Mark as Homework
+                </label>
+              </div>
+
+              {globalSettings.isHomework && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-6 border-l-2 border-blue-200 dark:border-blue-700">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Homework Type
+                    </label>
+                    <div className="flex space-x-4">
+                      <label className="inline-flex items-center">
+                        <input
+                          type="radio"
+                          value="submission"
+                          checked={globalSettings.homeworkType === 'submission'}
+                          onChange={() => setGlobalSettings(prev => ({ ...prev, homeworkType: 'submission' }))}
+                          className="text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">File Submission</span>
+                      </label>
+                      <label className="inline-flex items-center">
+                        <input
+                          type="radio"
+                          value="manual"
+                          checked={globalSettings.homeworkType === 'manual'}
+                          onChange={() => setGlobalSettings(prev => ({ ...prev, homeworkType: 'manual' }))}
+                          className="text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Manual Task</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {globalSettings.homeworkType === 'manual' ? (
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Instructions *
+                      </label>
+                      <textarea
+                        value={globalSettings.manualInstruction}
+                        onChange={(e) => setGlobalSettings(prev => ({ ...prev, manualInstruction: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                        placeholder="Instructions for students (e.g. 'Read chapter 5')"
+                        rows={2}
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Max Marks (Optional)
+                        </label>
+                        <input
+                          type="number"
+                          value={globalSettings.maxMarks}
+                          onChange={(e) => setGlobalSettings(prev => ({ ...prev, maxMarks: parseInt(e.target.value) || 0 }))}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                          min="0"
+                        />
+                      </div>
+                      
+                      <div className="md:col-span-2 flex items-center space-x-4">
+                        <div className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={globalSettings.allowLateSubmission}
+                            onChange={(e) => setGlobalSettings(prev => ({ ...prev, allowLateSubmission: e.target.checked }))}
+                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                          />
+                          <label className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                            Allow Late Submission
+                          </label>
+                        </div>
+                        
+                        {globalSettings.allowLateSubmission && (
+                          <div className="flex items-center">
+                            <label className="mr-2 text-sm text-gray-700 dark:text-gray-300">
+                              Grace Period (Days):
+                            </label>
+                            <input
+                              type="number"
+                              value={globalSettings.lateSubmissionDays}
+                              onChange={(e) => setGlobalSettings(prev => ({ ...prev, lateSubmissionDays: parseInt(e.target.value) || 0 }))}
+                              className="w-16 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                              min="0"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 

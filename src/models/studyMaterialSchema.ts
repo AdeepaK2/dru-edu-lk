@@ -36,6 +36,14 @@ export const studyMaterialSchema = z.object({
   viewCount: z.number().default(0), // Track how many times it's been viewed
   createdAt: z.date().default(() => new Date()),
   updatedAt: z.date().default(() => new Date()),
+  
+  // Homework fields
+  isHomework: z.boolean().default(false),
+  homeworkType: z.enum(['manual', 'submission']).optional(), // 'manual' = teacher checks offline/manually, 'submission' = student uploads file
+  manualInstruction: z.string().optional(), // Instructions for manual homework
+  maxMarks: z.number().optional(), // Optional numeric marks
+  allowLateSubmission: z.boolean().default(true),
+  lateSubmissionDays: z.number().default(3), // Days allowed after deadline
 });
 
 // Study material update schema (all fields optional except IDs)
@@ -81,6 +89,14 @@ export interface StudyMaterial {
   viewCount: number;
   createdAt: Date;
   updatedAt: Date;
+  
+  // Homework fields
+  isHomework: boolean;
+  homeworkType?: 'manual' | 'submission';
+  manualInstruction?: string;
+  maxMarks?: number;
+  allowLateSubmission: boolean;
+  lateSubmissionDays: number;
 }
 
 // Study material document in Firestore
@@ -117,6 +133,14 @@ export interface StudyMaterialDocument {
   viewCount: number;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  
+  // Homework fields
+  isHomework: boolean;
+  homeworkType?: string;
+  manualInstruction?: string;
+  maxMarks?: number;
+  allowLateSubmission: boolean;
+  lateSubmissionDays: number;
 }
 
 // Study material data for creation

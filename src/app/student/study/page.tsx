@@ -62,7 +62,19 @@ interface StudyMaterial {
   completedBy?: string[];
   viewCount?: number;
   downloadCount?: number;
+  // Homework fields
+  isHomework?: boolean;
+  homeworkType?: 'manual' | 'submission';
+  manualInstruction?: string;
+  maxMarks?: number;
+  allowLateSubmission?: boolean;
+  lateSubmissionDays?: number;
+  dueDate?: any;
 }
+
+import HomeworkSubmissionModal from '@/components/student/HomeworkSubmissionModal';
+import { HomeworkSubmissionService } from '@/apiservices/homeworkSubmissionService';
+import { HomeworkSubmissionDocument } from '@/models/homeworkSubmissionSchema';
 
 export default function StudentStudyPage() {
   const router = useRouter();
@@ -83,6 +95,11 @@ export default function StudentStudyPage() {
   const [imagePan, setImagePan] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
+  // Homework State
+  const [showHomeworkModal, setShowHomeworkModal] = useState(false);
+  const [selectedHomework, setSelectedHomework] = useState<StudyMaterial | null>(null);
+  const [homeworkSubmissions, setHomeworkSubmissions] = useState<Record<string, HomeworkSubmissionDocument>>({});
 
   // Memoize PDFViewer to prevent re-mounting
   const PDFViewer = useMemo(() => dynamic(() => import('@/components/PDFViewer'), {
@@ -169,13 +186,30 @@ export default function StudentStudyPage() {
       setGroupedMaterials(groupedMats);
       // Also keep flat materials for existing functionality
       const flatMaterials = groupedMats.flatMap(group => group.materials);
-      console.log('Loaded materials:', flatMaterials.map(m => ({
-        title: m.title,
-        fileType: m.fileType,
-        fileUrl: m.fileUrl ? 'present' : 'missing'
-      })));
+      
       setMaterials(flatMaterials);
       setSelectedClass(classId);
+
+      // Load submissions for homework materials
+      if (student) {
+        const homeworks = flatMaterials.filter(m => m.isHomework);
+        if (homeworks.length > 0) {
+          const submissionPromises = homeworks.map(async (hw) => {
+            const sub = await HomeworkSubmissionService.getStudentSubmission(hw.id, student.id);
+            return { id: hw.id, sub };
+          });
+          
+          const results = await Promise.all(submissionPromises);
+          const subMap: Record<string, HomeworkSubmissionDocument> = {};
+          results.forEach(res => {
+            if (res.sub) subMap[res.id] = res.sub;
+          });
+          setHomeworkSubmissions(subMap);
+        } else {
+          setHomeworkSubmissions({});
+        }
+      }
+
     } catch (error) {
       console.error('Error loading class materials:', error);
     } finally {
@@ -642,6 +676,52 @@ export default function StudentStudyPage() {
                                       }}
                                       onClick={() => viewMaterial(material)}
                                     />
+                                  )}
+
+                                  {/* Homework UI */}
+                                  {material.isHomework && (
+                                    <div className="ml-2 flex items-center space-x-2">
+                                      <Badge variant="secondary" className={`${
+                                        material.dueDate && new Date(material.dueDate) < new Date() 
+                                          ? 'border-red-500 text-red-500 bg-red-50' 
+                                          : 'border-blue-500 text-blue-500 bg-blue-50'
+                                      }`}>
+                                        {material.homeworkType === 'manual' ? 'Manual Task' : 'Homework'}
+                                      </Badge>
+                                      
+                                      {homeworkSubmissions[material.id] ? (
+                                        <div className="flex items-center space-x-1">
+                                          <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                            homeworkSubmissions[material.id].status === 'resubmit_needed' ? 'bg-orange-100 text-orange-700' :
+                                            homeworkSubmissions[material.id].status === 'late' ? 'bg-yellow-100 text-yellow-700' :
+                                            'bg-green-100 text-green-700'
+                                          }`}>
+                                            {homeworkSubmissions[material.id].status === 'resubmit_needed' ? 'Resubmit Req' : 'Submitted'}
+                                          </span>
+                                          {/* Show grade if available */}
+                                          {homeworkSubmissions[material.id].teacherMark && (
+                                            <span className="text-xs font-bold text-gray-700">
+                                              {homeworkSubmissions[material.id].teacherMark}
+                                            </span>
+                                          )}
+                                        </div>
+                                      ) : (
+                                         material.dueDate && new Date(material.dueDate) < new Date() && !material.allowLateSubmission ? (
+                                          <span className="text-xs text-red-500 font-bold">Closed</span>
+                                        ) : (
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setSelectedHomework(material);
+                                              setShowHomeworkModal(true);
+                                            }}
+                                            className="text-xs bg-blue-600 text-white px-3 py-1 rounded-full hover:bg-blue-700 transition"
+                                          >
+                                            {material.homeworkType === 'manual' ? 'Mark Done' : 'Submit'}
+                                          </button>
+                                        )
+                                      )}
+                                    </div>
                                   )}
                                 </div>
                               );
@@ -1546,8 +1626,26 @@ export default function StudentStudyPage() {
         </div>
       )}
 
-        </div>
+      {/* Homework Submission Modal */}
+      {student && selectedHomework && selectedClass && (
+        <HomeworkSubmissionModal
+          isOpen={showHomeworkModal}
+          onClose={() => {
+            setShowHomeworkModal(false);
+            setSelectedHomework(null);
+            // Reload to get updated submission
+            if (selectedClass) loadClassMaterials(selectedClass);
+          }}
+          material={selectedHomework as any} 
+          studentId={student.id}
+          studentName={student.name}
+          classId={selectedClass}
+          existingSubmission={homeworkSubmissions[selectedHomework.id]}
+          theme={theme}
+        />
+      )}
       </div>
+    </div>
     
     
     );
