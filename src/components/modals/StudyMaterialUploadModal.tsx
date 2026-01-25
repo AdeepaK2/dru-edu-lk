@@ -11,14 +11,10 @@ import {
   Image as ImageIcon,
   AlertCircle, 
   Loader2,
-  Plus,
   Tag,
   Trash2,
   Link,
-  Users,
-  Settings,
-  MoreVertical,
-  Check
+  Settings
 } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { createStudyMaterial } from '@/apiservices/studyMaterialFirestoreService';
@@ -46,6 +42,12 @@ interface FileUploadItem {
   isRequired: boolean;
   tags: string[];
   isHomework: boolean;
+  dueDate: string;
+  homeworkType: 'manual' | 'submission';
+  manualInstruction: string;
+  maxMarks: number;
+  allowLateSubmission: boolean;
+  lateSubmissionDays: number;
   error?: string;
 }
 
@@ -55,12 +57,7 @@ interface GlobalSettings {
   lessonId: string;
   isVisible: boolean;
   order: number;
-  dueDate: string;
-  homeworkType: 'manual' | 'submission';
-  manualInstruction: string;
-  maxMarks: number;
-  allowLateSubmission: boolean;
-  lateSubmissionDays: number;
+  dueDate: string; // Keep global due date as optional default
 }
 
 export default function StudyMaterialUploadModal({
@@ -88,12 +85,7 @@ export default function StudyMaterialUploadModal({
     lessonId: preSelectedLessonId || '',
     isVisible: true,
     order: 1,
-    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Default 1 week from now
-    homeworkType: 'manual',
-    manualInstruction: '',
-    maxMarks: 0,
-    allowLateSubmission: true,
-    lateSubmissionDays: 3
+    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // Default 1 week from now
   });
 
   // Reset form when modal opens/closes
@@ -105,12 +97,7 @@ export default function StudyMaterialUploadModal({
         lessonId: preSelectedLessonId || '',
         isVisible: true,
         order: 1,
-        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        homeworkType: 'manual',
-        manualInstruction: '',
-        maxMarks: 0,
-        allowLateSubmission: true,
-        lateSubmissionDays: 3
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
       });
       setFiles([]);
       setError(null);
@@ -164,6 +151,12 @@ export default function StudyMaterialUploadModal({
           fileType,
           isRequired: false,
           isHomework: false,
+          dueDate: globalSettings.dueDate,
+          homeworkType: 'manual',
+          manualInstruction: '',
+          maxMarks: 0,
+          allowLateSubmission: true,
+          lateSubmissionDays: 3,
           tags: []
         });
       });
@@ -183,6 +176,12 @@ export default function StudyMaterialUploadModal({
         externalUrl: '',
         isRequired: false,
         isHomework: false,
+        dueDate: globalSettings.dueDate,
+        homeworkType: 'manual',
+        manualInstruction: '',
+        maxMarks: 0,
+        allowLateSubmission: true,
+        lateSubmissionDays: 3,
         tags: []
       }]);
     }
@@ -387,11 +386,11 @@ export default function StudyMaterialUploadModal({
           viewCount: 0,
           // Homework data
           isHomework: item.isHomework,
-          homeworkType: item.isHomework ? globalSettings.homeworkType : undefined,
-          manualInstruction: (item.isHomework && globalSettings.homeworkType === 'manual') ? globalSettings.manualInstruction : undefined,
-          maxMarks: (item.isHomework && globalSettings.maxMarks > 0) ? globalSettings.maxMarks : undefined,
-          allowLateSubmission: item.isHomework ? globalSettings.allowLateSubmission : true,
-          lateSubmissionDays: item.isHomework ? globalSettings.lateSubmissionDays : 3
+          homeworkType: item.isHomework ? item.homeworkType : undefined,
+          manualInstruction: (item.isHomework && item.homeworkType === 'manual') ? item.manualInstruction : undefined,
+          maxMarks: (item.isHomework && item.maxMarks > 0) ? item.maxMarks : undefined,
+          allowLateSubmission: item.isHomework ? item.allowLateSubmission : true,
+          lateSubmissionDays: item.isHomework ? item.lateSubmissionDays : 3
         };
 
         // Save to Firestore
@@ -528,34 +527,7 @@ export default function StudyMaterialUploadModal({
               </div>
             </div>
             
-            {/* Homework Configuration Button - Visible if any file is marked as homework */}
-            {files.some(f => f.isHomework) && (
-              <div className="mt-4 border-t border-blue-200 dark:border-blue-700 pt-4 flex items-center justify-between">
-                 <div>
-                   <h5 className="font-medium text-gray-900 dark:text-white flex items-center">
-                     <Settings className="w-4 h-4 mr-2 text-purple-600" />
-                     Homework Settings
-                   </h5>
-                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                     Configure deadlines and type for marked files.
-                   </p>
-                 </div>
-                 <Button
-                   type="button"
-                   variant="outline"
-                   onClick={() => setShowHomeworkConfig(true)}
-                   className="text-purple-600 border-purple-200 hover:bg-purple-50 dark:border-purple-800 dark:hover:bg-purple-900/20"
-                 >
-                   Configure
-                 </Button>
-              </div>
-            )}
-            
-            {!files.some(f => f.isHomework) && files.length > 0 && (
-                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 text-sm text-gray-500">
-                    <p>💡 Tip: Toggle "Homework" on individual files to enable homework settings.</p>
-                </div>
-            )}
+
           </div>
 
           {/* Upload Actions */}
@@ -743,33 +715,147 @@ export default function StudyMaterialUploadModal({
                   </div>
 
 
-                </div>
+
+                  </div>
 
                 {/* Homework Toggle Per Item */}
-                <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-                    <div className="text-xs text-gray-500">
-                      {item.isHomework ? 'Marked as Homework' : 'Standard Material'}
-                    </div>
-                    <div className="flex items-center space-x-3">
-                         <span className={`text-sm font-medium ${item.isHomework ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 dark:text-gray-400'}`}>
-                           Homework
-                         </span>
-                         <button
-                           type="button"
-                           onClick={() => updateFileUploadItem(item.id, { isHomework: !item.isHomework })}
-                           className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${
-                             item.isHomework ? 'bg-purple-600' : 'bg-gray-200 dark:bg-gray-700'
-                           }`}
-                         >
-                           <span className="sr-only">Toggle homework</span>
-                           <span
-                             aria-hidden="true"
-                             className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                               item.isHomework ? 'translate-x-5' : 'translate-x-0'
+                <div className="flex flex-col mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                    <div className="flex items-center justify-between">
+                      <div className="text-xs text-gray-500">
+                        {item.isHomework ? 'Marked as Homework' : 'Standard Material'}
+                      </div>
+                      <div className="flex items-center space-x-3">
+                           <span className={`text-sm font-medium ${item.isHomework ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                             Homework
+                           </span>
+                           <button
+                             type="button"
+                             onClick={() => updateFileUploadItem(item.id, { isHomework: !item.isHomework })}
+                             className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${
+                               item.isHomework ? 'bg-purple-600' : 'bg-gray-200 dark:bg-gray-700'
                              }`}
-                           />
-                         </button>
+                           >
+                             <span className="sr-only">Toggle homework</span>
+                             <span
+                               aria-hidden="true"
+                               className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                 item.isHomework ? 'translate-x-5' : 'translate-x-0'
+                               }`}
+                             />
+                           </button>
+                      </div>
                     </div>
+
+                    {/* Per-File Homework Configuration */}
+                    {item.isHomework && (
+                      <div className="mt-4 p-4 bg-purple-50 dark:bg-purple-900/10 rounded-lg border border-purple-100 dark:border-purple-800 space-y-4 animate-in slide-in-from-top-2 duration-200">
+                          <h6 className="text-sm font-semibold text-purple-800 dark:text-purple-300 flex items-center">
+                            <Settings className="w-3 h-3 mr-2" />
+                            Configuration
+                          </h6>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Due Date
+                              </label>
+                              <input
+                                type="date"
+                                value={item.dueDate}
+                                onChange={(e) => updateFileUploadItem(item.id, { dueDate: e.target.value })}
+                                disabled={uploading}
+                                className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-1 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
+                              />
+                            </div>
+                            
+                            <div>
+                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                  Submission Type
+                                </label>
+                                <div className="flex rounded-md shadow-sm" role="group">
+                                  <button
+                                    type="button"
+                                    onClick={() => updateFileUploadItem(item.id, { homeworkType: 'manual' })}
+                                    className={`px-3 py-1.5 text-xs font-medium border rounded-l-lg flex-1 ${
+                                      item.homeworkType === 'manual'
+                                        ? 'bg-purple-600 text-white border-purple-600'
+                                        : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50'
+                                    }`}
+                                  >
+                                    Manual
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => updateFileUploadItem(item.id, { homeworkType: 'submission' })}
+                                    className={`px-3 py-1.5 text-xs font-medium border border-l-0 rounded-r-lg flex-1 ${
+                                      item.homeworkType === 'submission'
+                                        ? 'bg-purple-600 text-white border-purple-600'
+                                        : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50'
+                                    }`}
+                                  >
+                                    File Upload
+                                  </button>
+                                </div>
+                            </div>
+
+                            {item.homeworkType === 'manual' ? (
+                                <div className="md:col-span-2">
+                                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    Instructions for Student
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={item.manualInstruction}
+                                    onChange={(e) => updateFileUploadItem(item.id, { manualInstruction: e.target.value })}
+                                    placeholder="e.g. Read chapter 5 and answer questions on page 120"
+                                    className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-1 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
+                                  />
+                                </div>
+                            ) : (
+                                <div className="md:col-span-2">
+                                    <div className="flex items-center space-x-4">
+                                        <div className="flex-1">
+                                             <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                              Max Marks (Optional)
+                                            </label>
+                                            <input
+                                              type="number"
+                                              min="0"
+                                              value={item.maxMarks || ''}
+                                              onChange={(e) => updateFileUploadItem(item.id, { maxMarks: parseInt(e.target.value) || 0 })}
+                                              placeholder="100"
+                                              className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-1 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
+                                            />
+                                        </div>
+                                         <div className="flex-1 pt-5">
+                                             <label className="flex items-center space-x-2 cursor-pointer">
+                                              <input
+                                                type="checkbox"
+                                                checked={item.allowLateSubmission}
+                                                onChange={(e) => updateFileUploadItem(item.id, { allowLateSubmission: e.target.checked })}
+                                                className="w-4 h-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+                                              />
+                                              <span className="text-xs text-gray-700 dark:text-gray-300">Allow late submission</span>
+                                            </label>
+                                             {item.allowLateSubmission && (
+                                                <div className="mt-1 flex items-center space-x-2">
+                                                    <span className="text-xs text-gray-500">Days allowed:</span>
+                                                    <input 
+                                                        type="number" 
+                                                        min="0"
+                                                        max="30"
+                                                        value={item.lateSubmissionDays}
+                                                        onChange={(e) => updateFileUploadItem(item.id, { lateSubmissionDays: parseInt(e.target.value) || 0 })}
+                                                        className="w-16 px-1 py-0.5 text-xs border border-gray-300 rounded"
+                                                    />
+                                                </div>
+                                             )}
+                                         </div>
+                                    </div>
+                                </div>
+                            )}
+                          </div>
+                      </div>
+                    )}
                   </div>
               </div>
             ))}
@@ -857,128 +943,6 @@ export default function StudyMaterialUploadModal({
           </div>
         )}
       </div>
-
-      {/* Homework Configuration Modal */}
-      {showHomeworkConfig && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-lg w-full overflow-hidden border border-gray-200 dark:border-gray-700">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
-                <Settings className="w-5 h-5 mr-2 text-purple-600" />
-                Homework Settings
-              </h3>
-              <button
-                onClick={() => setShowHomeworkConfig(false)}
-                className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            
-            <div className="p-6 space-y-6">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                      Homework Type
-                    </label>
-                    <div className="grid grid-cols-2 gap-3">
-                      <label className={`cursor-pointer border rounded-lg p-3 flex flex-col items-center justify-center transition-all ${globalSettings.homeworkType === 'submission' ? 'bg-purple-50 border-purple-500 text-purple-700 dark:bg-purple-900/20 dark:border-purple-500' : 'border-gray-200 hover:border-purple-200 dark:border-gray-700'}`}>
-                        <input
-                          type="radio"
-                          className="sr-only"
-                          value="submission"
-                          checked={globalSettings.homeworkType === 'submission'}
-                          onChange={() => setGlobalSettings(prev => ({ ...prev, homeworkType: 'submission' }))}
-                        />
-                        <Upload className={`w-6 h-6 mb-2 ${globalSettings.homeworkType === 'submission' ? 'text-purple-600' : 'text-gray-400'}`} />
-                        <span className="text-sm font-medium">File Submission</span>
-                      </label>
-                      <label className={`cursor-pointer border rounded-lg p-3 flex flex-col items-center justify-center transition-all ${globalSettings.homeworkType === 'manual' ? 'bg-purple-50 border-purple-500 text-purple-700 dark:bg-purple-900/20 dark:border-purple-500' : 'border-gray-200 hover:border-purple-200 dark:border-gray-700'}`}>
-                        <input
-                          type="radio"
-                          className="sr-only"
-                          value="manual"
-                          checked={globalSettings.homeworkType === 'manual'}
-                          onChange={() => setGlobalSettings(prev => ({ ...prev, homeworkType: 'manual' }))}
-                        />
-                        <Check className={`w-6 h-6 mb-2 ${globalSettings.homeworkType === 'manual' ? 'text-purple-600' : 'text-gray-400'}`} />
-                        <span className="text-sm font-medium">Manual Task</span>
-                      </label>
-                    </div>
-                </div>
-
-                {globalSettings.homeworkType === 'manual' ? (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Instructions *
-                      </label>
-                      <textarea
-                        value={globalSettings.manualInstruction}
-                        onChange={(e) => setGlobalSettings(prev => ({ ...prev, manualInstruction: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                        placeholder="Instructions for students (e.g. 'Read chapter 5')"
-                        rows={3}
-                      />
-                    </div>
-                ) : (
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Max Marks (Optional)
-                        </label>
-                        <input
-                          type="number"
-                          value={globalSettings.maxMarks}
-                          onChange={(e) => setGlobalSettings(prev => ({ ...prev, maxMarks: parseInt(e.target.value) || 0 }))}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                          min="0"
-                        />
-                      </div>
-                      
-                      <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg space-y-3">
-                        <div className="flex items-center justify-between">
-                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            Allow late submission after deadline
-                          </label>
-                          <button
-                           type="button"
-                           onClick={() => setGlobalSettings(prev => ({ ...prev, allowLateSubmission: !prev.allowLateSubmission }))}
-                           className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${
-                             globalSettings.allowLateSubmission ? 'bg-purple-600' : 'bg-gray-200 dark:bg-gray-600'
-                           }`}
-                         >
-                           <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                             globalSettings.allowLateSubmission ? 'translate-x-5' : 'translate-x-0'
-                           }`} />
-                         </button>
-                        </div>
-                        
-                        {globalSettings.allowLateSubmission && (
-                          <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-600">
-                            <label className="text-sm text-gray-600 dark:text-gray-400">
-                              Days allowed after deadline:
-                            </label>
-                            <input
-                              type="number"
-                              value={globalSettings.lateSubmissionDays}
-                              onChange={(e) => setGlobalSettings(prev => ({ ...prev, lateSubmissionDays: parseInt(e.target.value) || 0 }))}
-                              className="w-20 px-2 py-1 text-right border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                              min="0"
-                            />
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                )}
-            </div>
-            
-            <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex justify-end">
-                <Button onClick={() => setShowHomeworkConfig(false)}>
-                    Done
-                </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
