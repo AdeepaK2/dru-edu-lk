@@ -41,6 +41,11 @@ export interface HomeworkSubmissionData {
   markedBy?: string;
   marks?: number;
   remarks?: string;
+  // Added to align with schema
+  files?: { url: string; name: string; type?: string }[];
+  teacherMark?: 'Good' | 'Satisfied' | 'Not Sufficient';
+  numericMark?: number; // alias for marks if needed, or prefer marks
+  teacherRemarks?: string; // alias for remarks
 }
 
 export interface HomeworkSubmissionDocument extends HomeworkSubmissionData {
@@ -191,9 +196,9 @@ export class HomeworkFirestoreService {
   /**
    * Get all submissions for a homework assignment
    */
-  static async getSubmissions(homeworkId: string): Promise<HomeworkSubmissionDocument[]> {
+  static async getSubmissions(homeworkId: string, collectionName: string = COLLECTION_NAME): Promise<HomeworkSubmissionDocument[]> {
     try {
-      const submissionsRef = collection(firestore, COLLECTION_NAME, homeworkId, 'submissions');
+      const submissionsRef = collection(firestore, collectionName, homeworkId, 'submissions');
       const snapshot = await getDocs(submissionsRef);
       
       return snapshot.docs.map(doc => {
@@ -222,10 +227,11 @@ export class HomeworkFirestoreService {
   static async markSubmission(
     homeworkId: string, 
     studentId: string, 
-    data: Omit<HomeworkSubmissionData, 'studentId'>
+    data: Omit<HomeworkSubmissionData, 'studentId'>,
+    collectionName: string = COLLECTION_NAME
   ): Promise<void> {
     try {
-      const submissionsRef = collection(firestore, COLLECTION_NAME, homeworkId, 'submissions');
+      const submissionsRef = collection(firestore, collectionName, homeworkId, 'submissions');
       const submissionDoc = doc(submissionsRef, studentId);
       
       const now = new Date();
@@ -248,6 +254,11 @@ export class HomeworkFirestoreService {
           ? Timestamp.fromDate(data.submittedAt) 
           : Timestamp.fromDate(now);
       }
+      
+      // Add new fields
+      if (data.teacherMark) submissionData.teacherMark = data.teacherMark;
+      if (data.teacherRemarks) submissionData.teacherRemarks = data.teacherRemarks;
+      if (data.files) submissionData.files = data.files;
 
       await updateDoc(submissionDoc, submissionData).catch(async () => {
         // Document doesn't exist, create it
@@ -268,12 +279,13 @@ export class HomeworkFirestoreService {
   static async bulkMarkSubmissions(
     homeworkId: string,
     submissions: HomeworkSubmissionData[],
-    markedBy: string
+    markedBy: string,
+    collectionName: string = COLLECTION_NAME
   ): Promise<void> {
     try {
       const batch = writeBatch(firestore);
       const now = new Date();
-      const submissionsRef = collection(firestore, COLLECTION_NAME, homeworkId, 'submissions');
+      const submissionsRef = collection(firestore, collectionName, homeworkId, 'submissions');
 
       for (const submission of submissions) {
         const submissionDoc = doc(submissionsRef, submission.studentId);
@@ -312,7 +324,7 @@ export class HomeworkFirestoreService {
   /**
    * Get submission statistics for a homework
    */
-  static async getSubmissionStats(homeworkId: string): Promise<{
+  static async getSubmissionStats(homeworkId: string, collectionName: string = COLLECTION_NAME): Promise<{
     total: number;
     submitted: number;
     notSubmitted: number;
@@ -321,7 +333,7 @@ export class HomeworkFirestoreService {
     averageMarks?: number;
   }> {
     try {
-      const submissions = await this.getSubmissions(homeworkId);
+      const submissions = await this.getSubmissions(homeworkId, collectionName);
       
       const stats = {
         total: submissions.length,

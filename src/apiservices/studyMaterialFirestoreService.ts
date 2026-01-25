@@ -25,7 +25,7 @@ import {
 } from '@/models/studyMaterialSchema';
 
 // Collection name
-const COLLECTION_NAME = 'studyMaterials';
+export const COLLECTION_NAME = 'studyMaterials';
 
 // Get collection reference
 const getStudyMaterialsCollection = () => collection(db, COLLECTION_NAME);
