@@ -609,6 +609,13 @@ export default function StudentStudyPage() {
                           <div className="space-y-3 border-t border-gray-100 pt-3">
                             {group.materials.map((material: any) => {
                               const isSelected = material.id === activeMaterial?.id;
+                              const submission = homeworkSubmissions[material.id];
+                              const teacherMark = submission?.teacherMark;
+                              
+                              let markStyle = '';
+                              if (teacherMark === 'Good') markStyle = 'border-green-500 bg-green-50 ring-1 ring-green-500';
+                              else if (teacherMark === 'Satisfied') markStyle = 'border-blue-500 bg-blue-50 ring-1 ring-blue-500';
+                              else if (teacherMark === 'Not Sufficient') markStyle = 'border-red-500 bg-red-50 ring-1 ring-red-500';
 
                               return (
                                 <div
@@ -624,7 +631,7 @@ export default function StudentStudyPage() {
                                         : theme === 'bounceworld'
                                         ? 'border-[#1D428A] bg-[#1D428A]/10 shadow-lg'
                                         : 'border-blue-500 bg-blue-100 shadow-lg'
-                                      : 'border-gray-300 bg-white'
+                                      : markStyle || 'border-gray-300 bg-white'
                                   }`}
                                   onClick={() => material.fileUrl && viewMaterial(material)}
                                 >
