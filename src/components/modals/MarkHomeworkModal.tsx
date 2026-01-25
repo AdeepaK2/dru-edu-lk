@@ -99,13 +99,19 @@ const MarkHomeworkModal: React.FC<MarkHomeworkModalProps> = ({
            }
         }
 
+        // files handling: support both 'files' array and legacy 'fileUrl'
+        let files = sub?.files || [];
+        if (!files.length && sub?.fileUrl) {
+            files = [{ url: sub.fileUrl, name: 'Submission.pdf' }]; // Fallback name
+        }
+
         return {
           studentId: enr.studentId,
           studentName: enr.studentName,
           status,
           submissionId: sub?.id,
           submittedAt: sub?.submittedAt ? (sub.submittedAt.toDate ? sub.submittedAt.toDate() : sub.submittedAt) : undefined,
-          files: sub?.files || [],
+          files: files,
           marks: sub?.numericMark || sub?.marks,
           remarks: sub?.teacherRemarks || sub?.remarks,
           teacherMark: sub?.teacherMark,
@@ -319,7 +325,7 @@ const MarkHomeworkModal: React.FC<MarkHomeworkModalProps> = ({
                                     {student.teacherMark === 'Not Sufficient' ? 'Issues' : student.teacherMark}
                                 </span>
                             )}
-                            {!student.files?.length && activeTab !== 'not_submitted' && submissionType === 'online' && (
+                            {!student.files?.length && activeTab !== 'not_submitted' && activeTab !== 'issues' && submissionType === 'online' && (
                                 <span className="text-[10px] text-gray-400 italic">No files</span>
                             )}
                         </div>
