@@ -1247,6 +1247,21 @@ export default function StudentStudyPage() {
                                           )
                                       )
                                   )}
+                                  
+                                  {/* View Submission Button */}
+                                  {material.isHomework && homeworkSubmissions[material.id] && material.homeworkType !== 'manual' && (
+                                      <Button
+                                          onClick={(e) => {
+                                              e.stopPropagation();
+                                              setSelectedHomework(material);
+                                              setShowHomeworkModal(true);
+                                          }}
+                                          size="sm"
+                                          className="bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1 h-8"
+                                      >
+                                          View Submission
+                                      </Button>
+                                  )}
                                 </div>
                               
                               <div className="flex items-center space-x-2 flex-shrink-0">
