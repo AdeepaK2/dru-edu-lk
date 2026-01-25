@@ -709,16 +709,18 @@ export default function StudentStudyPage() {
                                          material.dueDate && new Date(material.dueDate) < new Date() && !material.allowLateSubmission ? (
                                           <span className="text-xs text-red-500 font-bold">Closed</span>
                                         ) : (
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              setSelectedHomework(material);
-                                              setShowHomeworkModal(true);
-                                            }}
-                                            className="text-xs bg-blue-600 text-white px-3 py-1 rounded-full hover:bg-blue-700 transition"
-                                          >
-                                            {material.homeworkType === 'manual' ? 'Mark Done' : 'Submit'}
-                                          </button>
+                                          material.homeworkType !== 'manual' && (
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setSelectedHomework(material);
+                                                setShowHomeworkModal(true);
+                                              }}
+                                              className="text-xs bg-blue-600 text-white px-3 py-1 rounded-full hover:bg-blue-700 transition"
+                                            >
+                                              Submit
+                                            </button>
+                                          )
                                         )
                                       )}
                                     </div>
@@ -1230,6 +1232,7 @@ export default function StudentStudyPage() {
                                       material.dueDate && new Date(material.dueDate) < new Date() && !material.allowLateSubmission ? (
                                            <span className="text-xs text-red-500 font-bold px-3">Closed</span>
                                       ) : (
+                                          material.homeworkType !== 'manual' && (
                                           <Button
                                               onClick={(e) => {
                                                   e.stopPropagation();
@@ -1239,8 +1242,9 @@ export default function StudentStudyPage() {
                                               size="sm"
                                               className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1 h-8"
                                           >
-                                              {material.homeworkType === 'manual' ? 'Mark Done' : 'Submit'}
+                                              Submit
                                           </Button>
+                                          )
                                       )
                                   )}
                                 </div>

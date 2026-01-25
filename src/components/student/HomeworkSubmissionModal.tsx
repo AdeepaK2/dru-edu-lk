@@ -145,11 +145,15 @@ export default function HomeworkSubmissionModal({
                </div>
 
                {existingSubmission?.files && existingSubmission.files.length > 0 && !file && (
-                 <div className="flex items-center p-3 bg-green-50 rounded-lg border border-green-200">
+                 <div 
+                    onClick={() => window.open(existingSubmission.files[0].url, '_blank')}
+                    className="flex items-center p-3 bg-green-50 rounded-lg border border-green-200 cursor-pointer hover:bg-green-100 transition-colors group"
+                 >
                    <FileText className="w-4 h-4 text-green-600 mr-2" />
                    <div className="flex-1 text-sm text-green-800">
-                     Current submission: <span className="font-semibold">{existingSubmission.files[0].name}</span>
+                     Current submission: <span className="font-semibold underline group-hover:text-green-900">{existingSubmission.files[0].name}</span>
                    </div>
+                   <div className="text-xs text-green-600 font-bold bg-green-200 px-2 py-1 rounded">Download</div>
                  </div>
                )}
              </div>
