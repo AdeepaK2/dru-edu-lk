@@ -23,6 +23,9 @@ import { StudentEnrollmentFirestoreService, EnrollmentWithParent } from '@/apise
 import { MailService } from '@/apiservices/mailService';
 import { Timestamp } from 'firebase/firestore';
 import { StudentEnrollmentDocument } from '@/models/studentEnrollmentSchema';
+import { ClassCompletionService } from '@/apiservices/classCompletionService';
+import { ClassCompletionDocument } from '@/models/classCompletionSchema';
+import { useTeacherAuth } from '@/hooks/useTeacherAuth';
 
 interface AttendanceTabProps {
   classData: ClassDocument | null;
@@ -101,6 +104,112 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
   const [cancellationReason, setCancellationReason] = useState('');
   const [cancelLoading, setCancelLoading] = useState(false);
   const [teacherName, setTeacherName] = useState<string>('');
+  
+  // Class Completion State
+  const { teacher } = useTeacherAuth();
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [todaysClass, setTodaysClass] = useState<ScheduledClass | null>(null);
+  const [classCompletion, setClassCompletion] = useState<ClassCompletionDocument | null>(null);
+  const [markingFinished, setMarkingFinished] = useState(false);
+
+  // Clock Timer
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Find Today's Class and Check Completion
+  useEffect(() => {
+    const checkToday = async () => {
+      if (scheduledClasses.length > 0) {
+        const now = new Date();
+        const todayString = now.toDateString();
+        
+        // Find class scheduled for today
+        const todaySchedule = scheduledClasses.find(s => {
+          const sDate = s.scheduledDate instanceof Timestamp ? s.scheduledDate.toDate() : s.scheduledDate;
+          return sDate.toDateString() === todayString;
+        });
+
+        setTodaysClass(todaySchedule || null);
+
+        if (todaySchedule) {
+           // Format date as YYYY-MM-DD for ID lookup
+           const yyyy = now.getFullYear();
+           const mm = String(now.getMonth() + 1).padStart(2, '0');
+           const dd = String(now.getDate()).padStart(2, '0');
+           const dateStr = `${yyyy}-${mm}-${dd}`;
+           
+           try {
+             const completion = await ClassCompletionService.getClassCompletion(classId, dateStr);
+             setClassCompletion(completion);
+           } catch (err) {
+             console.error("Error fetching completion status", err);
+           }
+        }
+      }
+    };
+    
+    checkToday();
+  }, [scheduledClasses, classId]);
+
+  const handleMarkFinished = async () => {
+    if (!todaysClass || !teacher?.id) return;
+    
+    setMarkingFinished(true);
+    try {
+        const now = new Date();
+        const yyyy = now.getFullYear();
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const dd = String(now.getDate()).padStart(2, '0');
+        const dateStr = `${yyyy}-${mm}-${dd}`;
+
+        await ClassCompletionService.markClassFinished(
+           classId,
+           teacher.id,
+           dateStr,
+           todaysClass.startTime,
+           todaysClass.endTime
+        );
+        
+        // Refresh status
+        const completion = await ClassCompletionService.getClassCompletion(classId, dateStr);
+        setClassCompletion(completion);
+        
+    } catch (error) {
+        console.error("Failed to mark class as finished", error);
+        alert("Failed to mark class as finished");
+    } finally {
+        setMarkingFinished(false);
+    }
+  };
+
+  const getTimeRemaining = () => {
+    if (!todaysClass) return "No class now";
+    
+    // Parse end time (assuming 24h "HH:mm" from input, or convert)
+    // The ScheduledClass type says startTime/endTime are strings. Usually "09:00", "14:30" etc.
+    const [endH, endM] = todaysClass.endTime.split(':').map(Number);
+    const [startH, startM] = todaysClass.startTime.split(':').map(Number);
+    
+    const classEnd = new Date(currentTime);
+    classEnd.setHours(endH, endM, 0, 0);
+    
+    const classStart = new Date(currentTime);
+    classStart.setHours(startH, startM, 0, 0);
+    
+    if (currentTime < classStart) {
+        const diff = Math.ceil((classStart.getTime() - currentTime.getTime()) / 60000);
+        return `Starts in ${diff}m`;
+    }
+    
+    if (currentTime > classEnd) {
+        return "Class ended";
+    }
+    
+    const diff = Math.ceil((classEnd.getTime() - currentTime.getTime()) / 60000);
+    return `${diff} minutes left`;
+  };
 
   useEffect(() => {
     if (classData && classId) {
@@ -830,6 +939,53 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
 
   return (
     <div className="space-y-6">
+      {/* Today's Class Completion Section */}
+      {todaysClass && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+             <div>
+               <div className="flex items-center space-x-2 text-blue-600 dark:text-blue-400 mb-1">
+                 <Clock className="w-5 h-5" />
+                 <span className="font-bold text-lg">
+                    {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                 </span>
+               </div>
+               <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                 Today's Class: {todaysClass.className || todaysClass.subjectName || "Scheduled Class"}
+               </h3>
+               <p className="text-gray-600 dark:text-gray-300">
+                 {todaysClass.startTime} - {todaysClass.endTime} • {getTimeRemaining()}
+               </p>
+             </div>
+             
+             <div>
+               {classCompletion ? (
+                 <div className="flex flex-col items-end text-green-600 dark:text-green-400">
+                    <div className="flex items-center space-x-2 bg-green-50 dark:bg-green-900/20 px-4 py-2 rounded-lg">
+                      <CheckCircle className="w-6 h-6" />
+                      <span className="font-bold">Finished at {classCompletion.finishedAt.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                    </div>
+                 </div>
+               ) : (
+                 <Button
+                    onClick={handleMarkFinished}
+                    disabled={markingFinished}
+                    className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg flex items-center space-x-2"
+                 >
+                   {markingFinished ? (
+                      <>Processing...</>
+                   ) : (
+                      <>
+                        <CheckCircle className="w-5 h-5" />
+                        <span>Mark Class as Finished</span>
+                      </>
+                   )}
+                 </Button>
+               )}
+             </div>
+          </div>
+        </div>
+      )}
       {/* Error Display */}
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
