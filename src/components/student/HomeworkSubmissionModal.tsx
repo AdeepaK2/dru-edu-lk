@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, X, FileText, CheckCircle, AlertCircle } from 'lucide-react';
+import { Upload, X, FileText, CheckCircle, AlertCircle, Trash2, Lock } from 'lucide-react';
 import { HomeworkSubmissionService } from '@/apiservices/homeworkSubmissionService';
 import { StudyMaterialDocument } from '@/models/studyMaterialSchema';
 import { HomeworkSubmissionDocument } from '@/models/homeworkSubmissionSchema';
@@ -32,6 +32,12 @@ export default function HomeworkSubmissionModal({
   const [success, setSuccess] = useState(false);
   const [message, setMessage] = useState('');
   
+  // Track if user explicitly removed the existing file to upload a new one
+  const [removedExisting, setRemovedExisting] = useState(false);
+
+  // Check if graded/locked
+  const isGraded = !!(existingSubmission?.teacherMark || existingSubmission?.marks);
+  
   // Determine if we are in "Edit Mode"
   // Default: false if there is an existing submission, true otherwise
   const [isEditing, setIsEditing] = useState(!existingSubmission);
@@ -41,6 +47,7 @@ export default function HomeworkSubmissionModal({
   useEffect(() => {
     if (existingSubmission) {
       setMessage(existingSubmission.message || '');
+      setRemovedExisting(false);
     }
     // Update edit mode when submission changes
     setIsEditing(!existingSubmission);
@@ -56,7 +63,11 @@ export default function HomeworkSubmissionModal({
   };
 
   const handleSubmit = async () => {
-    if (material.homeworkType === 'submission' && !file && !existingSubmission) {
+    // Validation: 
+    // 1. If it's a file submission type
+    // 2. AND (we have no new file selected)
+    // 3. AND (we either never had an existing submission OR we explicitly removed the existing one)
+    if (material.homeworkType === 'submission' && !file && (!existingSubmission || removedExisting)) {
       setError('Please select a file to upload');
       return;
     }
@@ -79,7 +90,8 @@ export default function HomeworkSubmissionModal({
           size: file.size,
           type: file.type
         }];
-      } else if (existingSubmission?.files) {
+      } else if (existingSubmission?.files && !removedExisting) {
+        // Keep existing files if not removed
         fileData = existingSubmission.files as any;
       }
 
@@ -95,6 +107,7 @@ export default function HomeworkSubmissionModal({
         onClose();
         setSuccess(false);
         setFile(null);
+        setRemovedExisting(false);
       }, 2000);
 
     } catch (err: any) {
@@ -119,7 +132,15 @@ export default function HomeworkSubmissionModal({
 
         <div className="p-6 space-y-6">
           <div>
-            <h4 className="font-semibold text-gray-900 mb-2">{material.title}</h4>
+            <div className="flex justify-between items-start mb-2">
+                <h4 className="font-semibold text-gray-900">{material.title}</h4>
+                {isGraded && (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <Lock className="w-3 h-3 mr-1" />
+                        Graded
+                    </span>
+                )}
+            </div>
             <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
               {material.homeworkType === 'manual' 
                 ? material.manualInstruction 
@@ -129,8 +150,8 @@ export default function HomeworkSubmissionModal({
 
           {material.homeworkType === 'submission' && (
              <div className="space-y-4">
-               {/* Upload Box - Only show when editing */}
-               {isEditing && (
+               {/* Upload Box - Show if editing AND (no existing file OR existing file removed) */}
+               {isEditing && (removedExisting || !existingSubmission?.files?.length) && (
                  <div 
                    onClick={() => fileInputRef.current?.click()}
                    className={`border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all ${file ? 'bg-blue-50 border-blue-500' : ''}`}
@@ -153,29 +174,54 @@ export default function HomeworkSubmissionModal({
                  </div>
                )}
 
-               {/* Existing File View */}
-               {existingSubmission?.files && existingSubmission.files.length > 0 && !file && (
-                 <div 
-                    onClick={() => window.open(existingSubmission.files[0].url, '_blank')}
-                    className={`flex items-center p-3 rounded-lg border cursor-pointer transition-colors group ${
-                        isEditing ? 'bg-gray-50 border-gray-200 opacity-50' : 'bg-green-50 border-green-200 hover:bg-green-100'
-                    }`}
-                 >
+               {/* Existing File View - Show if NOT removed */}
+               {existingSubmission?.files && existingSubmission.files.length > 0 && !removedExisting && (
+                 <div className={`relative flex items-center p-3 rounded-lg border transition-colors group ${
+                        isEditing ? 'bg-gray-50 border-gray-200' : 'bg-green-50 border-green-200'
+                    }`}>
                    <FileText className={`w-4 h-4 mr-2 ${isEditing ? 'text-gray-500' : 'text-green-600'}`} />
                    <div className={`flex-1 text-sm ${isEditing ? 'text-gray-600' : 'text-green-800'}`}>
-                     Current submission: <span className="font-semibold underline group-hover:text-green-900">{existingSubmission.files[0].name}</span>
+                     Current submission: <a href={existingSubmission.files[0].url} target="_blank" rel="noreferrer" className="font-semibold underline hover:text-green-900">{existingSubmission.files[0].name}</a>
                    </div>
-                   <div className={`text-xs font-bold px-2 py-1 rounded ${isEditing ? 'bg-gray-200 text-gray-600' : 'bg-green-200 text-green-600'}`}>
-                      Download
-                   </div>
+                   
+                   {isEditing && !isGraded ? (
+                       <button 
+                           onClick={() => setRemovedExisting(true)}
+                           className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                           title="Remove file"
+                       >
+                           <Trash2 className="w-4 h-4" />
+                       </button>
+                   ) : (
+                       <a 
+                          href={existingSubmission.files[0].url} 
+                          target="_blank" 
+                          rel="noreferrer"
+                          className="text-xs font-bold px-2 py-1 rounded bg-green-200 text-green-600 hover:bg-green-300"
+                        >
+                          Download
+                       </a>
+                   )}
                  </div>
+               )}
+               
+               {/* Restore button if removed (Undo) */}
+               {removedExisting && (
+                   <div className="text-center">
+                       <button 
+                           onClick={() => { setRemovedExisting(false); setFile(null); }}
+                           className="text-xs text-gray-500 hover:text-gray-700 underline"
+                        >
+                           Cancel remove (Restore original file)
+                        </button>
+                   </div>
                )}
              </div>
           )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Message (Optional)</label>
-            {isEditing ? (
+            {isEditing && !isGraded ? (
                 <textarea
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
@@ -204,6 +250,32 @@ export default function HomeworkSubmissionModal({
             </div>
           )}
 
+          {/* Teacher Feedback Section (Read-only) */}
+          {existingSubmission?.teacherMark && (
+              <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl">
+                  <h5 className="font-semibold text-blue-900 mb-2">Teacher Feedback</h5>
+                  <div className="flex items-center gap-2 mb-2">
+                       <span className={`px-2 py-1 rounded text-xs font-bold ${
+                           existingSubmission.teacherMark === 'Good' ? 'bg-green-200 text-green-800' :
+                           existingSubmission.teacherMark === 'Satisfied' ? 'bg-blue-200 text-blue-800' :
+                           'bg-red-200 text-red-800'
+                       }`}>
+                           {existingSubmission.teacherMark}
+                       </span>
+                       {existingSubmission.numericMark && (
+                           <span className="text-sm font-medium text-blue-800">
+                               {existingSubmission.numericMark} Marks
+                           </span>
+                       )}
+                  </div>
+                  {existingSubmission.teacherRemarks && (
+                      <p className="text-sm text-blue-800">
+                          "{existingSubmission.teacherRemarks}"
+                      </p>
+                  )}
+              </div>
+          )}
+
           <div className="flex justify-end space-x-3 pt-4">
              <button
                 onClick={onClose}
@@ -216,15 +288,22 @@ export default function HomeworkSubmissionModal({
              {!isEditing && existingSubmission ? (
                  <button
                     onClick={() => setIsEditing(true)}
-                    className="px-6 py-2 bg-black text-white font-bold rounded-lg hover:opacity-80 transition-opacity"
+                    disabled={isGraded}
+                    className={`px-6 py-2 font-bold rounded-lg transition-all ${
+                        isGraded 
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                        : 'bg-black text-white hover:opacity-80'
+                    }`}
                  >
-                    Edit Submission
+                    {isGraded ? 'Graded (Read-only)' : 'Edit Submission'}
                  </button>
              ) : (
                  <button
                     onClick={handleSubmit}
-                    disabled={uploading || success}
-                    className={`px-6 py-2 bg-black text-white font-bold rounded-lg hover:opacity-80 transition-opacity flex items-center ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    disabled={uploading || success || isGraded}
+                    className={`px-6 py-2 bg-black text-white font-bold rounded-lg hover:opacity-80 transition-opacity flex items-center ${
+                        (uploading || isGraded) ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
                  >
                     {uploading ? 'Submitting...' : existingSubmission ? 'Update Submission' : 'Submit'}
                  </button>
