@@ -114,6 +114,9 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
 
   // Clock Timer
   useEffect(() => {
+    // Return a date object that is adjusted to Melbourne Time for display purposes if needed, 
+    // but better to just use current time and format it with timezone opt.
+    // Actually, simply updating local state "currentTime" is fine, we handle TZ in render.
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
@@ -122,22 +125,36 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
   useEffect(() => {
     const checkToday = async () => {
       if (scheduledClasses.length > 0) {
+        // Get "Today" in Melbourne Time
         const now = new Date();
-        const todayString = now.toDateString();
+        const melbourneDateStr = new Intl.DateTimeFormat('en-AU', {
+            timeZone: 'Australia/Melbourne',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        }).format(now);
         
-        // Find class scheduled for today
+        // Find class scheduled for today (comparing Date strings)
+        // We'll assume scheduledDate is stored as UTC or Local and we want to match the "Day"
         const todaySchedule = scheduledClasses.find(s => {
           const sDate = s.scheduledDate instanceof Timestamp ? s.scheduledDate.toDate() : s.scheduledDate;
-          return sDate.toDateString() === todayString;
+           // Format schedule date to Melbourne string for comparison
+          const scheduleDateStr = new Intl.DateTimeFormat('en-AU', {
+            timeZone: 'Australia/Melbourne',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+          }).format(sDate);
+          
+          return scheduleDateStr === melbourneDateStr;
         });
 
         setTodaysClass(todaySchedule || null);
 
         if (todaySchedule) {
-           // Format date as YYYY-MM-DD for ID lookup
-           const yyyy = now.getFullYear();
-           const mm = String(now.getMonth() + 1).padStart(2, '0');
-           const dd = String(now.getDate()).padStart(2, '0');
+           // Format date as YYYY-MM-DD for ID lookup from the Melbourne Date String
+           // invalid: 25/01/2026 -> 2026-01-25
+           const [dd, mm, yyyy] = melbourneDateStr.split('/');
            const dateStr = `${yyyy}-${mm}-${dd}`;
            
            try {
@@ -156,12 +173,21 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
   const handleMarkFinished = async () => {
     if (!todaysClass || !teacher?.id) return;
     
+    if (!window.confirm("Are you sure you want to mark this class as finished? This action cannot be undone.")) {
+        return;
+    }
+    
     setMarkingFinished(true);
     try {
         const now = new Date();
-        const yyyy = now.getFullYear();
-        const mm = String(now.getMonth() + 1).padStart(2, '0');
-        const dd = String(now.getDate()).padStart(2, '0');
+        const melbourneDateStr = new Intl.DateTimeFormat('en-AU', {
+            timeZone: 'Australia/Melbourne',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        }).format(now);
+        // invalid: 25/01/2026 -> 2026-01-25
+        const [dd, mm, yyyy] = melbourneDateStr.split('/');
         const dateStr = `${yyyy}-${mm}-${dd}`;
 
         await ClassCompletionService.markClassFinished(
@@ -947,7 +973,12 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
                <div className="flex items-center space-x-2 text-blue-600 dark:text-blue-400 mb-1">
                  <Clock className="w-5 h-5" />
                  <span className="font-bold text-lg">
-                    {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                    {currentTime.toLocaleTimeString('en-AU', { 
+                        timeZone: 'Australia/Melbourne',
+                        hour: '2-digit', 
+                        minute: '2-digit', 
+                        second: '2-digit' 
+                    })}
                  </span>
                </div>
                <h3 className="text-xl font-bold text-gray-900 dark:text-white">
@@ -963,7 +994,11 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
                  <div className="flex flex-col items-end text-green-600 dark:text-green-400">
                     <div className="flex items-center space-x-2 bg-green-50 dark:bg-green-900/20 px-4 py-2 rounded-lg">
                       <CheckCircle className="w-6 h-6" />
-                      <span className="font-bold">Finished at {classCompletion.finishedAt.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                      <span className="font-bold">Finished at {classCompletion.finishedAt.toDate().toLocaleTimeString('en-AU', {
+                          timeZone: 'Australia/Melbourne',
+                          hour: '2-digit', 
+                          minute:'2-digit'
+                      })}</span>
                     </div>
                  </div>
                ) : (
