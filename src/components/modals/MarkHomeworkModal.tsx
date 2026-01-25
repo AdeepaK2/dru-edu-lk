@@ -9,373 +9,408 @@ import {
   AlertCircle,
   Save,
   Search,
-  CheckSquare,
-  Square
+  FileText,
+  ChevronRight,
+  ThumbsUp,
+  ThumbsDown,
+  Award,
+  Download
 } from 'lucide-react';
 import { 
   HomeworkFirestoreService, 
-  HomeworkDocument,
   HomeworkSubmissionData,
-  HomeworkSubmissionDocument 
+  HomeworkSubmissionDocument
 } from '@/apiservices/homeworkFirestoreService';
 import { StudentEnrollmentFirestoreService } from '@/apiservices/studentEnrollmentFirestoreService';
+import PDFViewer from '@/components/PDFViewer';
+import Button from '@/components/ui/Button';
 
 interface MarkHomeworkModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: () => void;
-  homework: HomeworkDocument;
+  homework: { id: string; title: string; maxMarks?: number };
   classId: string;
+  collectionName?: string;
 }
 
-interface StudentSubmission {
+interface ExtendedStudentSubmission {
   studentId: string;
   studentName: string;
-  status: 'submitted' | 'not_submitted' | 'late' | 'excused';
+  status: 'submitted' | 'not_submitted' | 'late' | 'excused' | 'resubmit_needed';
+  submissionId?: string;
+  submittedAt?: Date;
+  files?: { url: string; name: string; type?: string }[];
   marks?: number;
   remarks?: string;
+  teacherMark?: 'Good' | 'Satisfied' | 'Not Sufficient'; // Maps to Good, Satisfactory, Not Satisfactory
   isChanged: boolean;
 }
+
+type TabType = 'submitted' | 'late' | 'not_submitted' | 'issues';
 
 const MarkHomeworkModal: React.FC<MarkHomeworkModalProps> = ({
   isOpen,
   onClose,
   onSave,
   homework,
-  classId
+  classId,
+  collectionName = 'homework'
 }) => {
-  const [students, setStudents] = useState<StudentSubmission[]>([]);
+  const [students, setStudents] = useState<ExtendedStudentSubmission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
+  const [activeTab, setActiveTab] = useState<TabType>('submitted');
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectAll, setSelectAll] = useState(false);
 
   useEffect(() => {
     if (isOpen && homework) {
-      loadStudentsAndSubmissions();
+      loadData();
     }
   }, [isOpen, homework]);
 
-  const loadStudentsAndSubmissions = async () => {
+  const loadData = async () => {
     try {
       setIsLoading(true);
       setError('');
 
-      // Load enrolled students
+      // 1. Load Enrolled Students
       const enrollments = await StudentEnrollmentFirestoreService.getEnrolledStudentsByClassId(classId);
       
-      // Load existing submissions
-      const existingSubmissions = await HomeworkFirestoreService.getSubmissions(homework.id);
-      const submissionMap = new Map(existingSubmissions.map(s => [s.studentId, s]));
+      // 2. Load Submissions
+      const submissions = await HomeworkFirestoreService.getSubmissions(homework.id, collectionName);
+      const submissionMap = new Map(submissions.map(s => [s.studentId, s]));
 
-      // Merge into student list
-      const studentList: StudentSubmission[] = enrollments.map((enrollment: { studentId: string; studentName: string }) => {
-        const existing = submissionMap.get(enrollment.studentId);
+      // 3. Merge
+      const list: ExtendedStudentSubmission[] = enrollments.map((enr: any) => {
+        const sub = submissionMap.get(enr.studentId) as any;
+        
+        // Normalize status
+        let status: ExtendedStudentSubmission['status'] = 'not_submitted';
+        if (sub?.status) {
+           if (['submitted', 'late', 'excused', 'resubmit_needed'].includes(sub.status)) {
+               status = sub.status as any;
+           } else if (sub.status === 'approved' || sub.status === 'rejected') {
+               status = 'submitted'; 
+           }
+        }
+
         return {
-          studentId: enrollment.studentId,
-          studentName: enrollment.studentName,
-          status: existing?.status || 'not_submitted',
-          marks: existing?.marks,
-          remarks: existing?.remarks,
-          isChanged: false,
+          studentId: enr.studentId,
+          studentName: enr.studentName,
+          status,
+          submissionId: sub?.id,
+          submittedAt: sub?.submittedAt ? (sub.submittedAt.toDate ? sub.submittedAt.toDate() : sub.submittedAt) : undefined,
+          files: sub?.files || [],
+          marks: sub?.numericMark || sub?.marks,
+          remarks: sub?.teacherRemarks || sub?.remarks,
+          teacherMark: sub?.teacherMark,
+          isChanged: false
         };
       });
 
       // Sort by name
-      studentList.sort((a, b) => a.studentName.localeCompare(b.studentName));
-      setStudents(studentList);
+      list.sort((a, b) => a.studentName.localeCompare(b.studentName));
+      setStudents(list);
+      
+      // Auto-select first student in default tab if available
+      const firstInTab = list.find(s => getTabForStatus(s.status) === 'submitted');
+      if (firstInTab) setSelectedStudentId(firstInTab.studentId);
+
     } catch (err) {
-      console.error('Error loading students:', err);
-      setError('Failed to load students');
+      console.error('Error loading data:', err);
+      setError('Failed to load submissions');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleStatusChange = (studentId: string, status: StudentSubmission['status']) => {
-    setStudents(prev => prev.map(s => 
-      s.studentId === studentId 
-        ? { ...s, status, isChanged: true }
-        : s
-    ));
+  const getTabForStatus = (status: ExtendedStudentSubmission['status']): TabType => {
+    if (status === 'resubmit_needed') return 'issues';
+    if (status === 'late') return 'late';
+    if (status === 'not_submitted') return 'not_submitted';
+    return 'submitted'; // submitted, excused (maybe?), approved
   };
 
-  const handleMarksChange = (studentId: string, marks: string) => {
-    const marksValue = marks === '' ? undefined : parseInt(marks);
-    setStudents(prev => prev.map(s => 
-      s.studentId === studentId 
-        ? { ...s, marks: marksValue, isChanged: true }
-        : s
-    ));
-  };
+  const filteredStudents = students.filter(s => {
+    const matchesTab = getTabForStatus(s.status) === activeTab;
+    const matchesSearch = s.studentName.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesTab && matchesSearch;
+  });
 
-  const handleRemarksChange = (studentId: string, remarks: string) => {
-    setStudents(prev => prev.map(s => 
-      s.studentId === studentId 
-        ? { ...s, remarks, isChanged: true }
-        : s
-    ));
-  };
+  const selectedStudent = students.find(s => s.studentId === selectedStudentId);
 
-  const handleMarkAllAs = (status: StudentSubmission['status']) => {
-    setStudents(prev => prev.map(s => ({ ...s, status, isChanged: true })));
-  };
+  const handleMarking = (type: 'Satisfactory' | 'Good' | 'Not Satisfactory') => {
+    if (!selectedStudent) return;
 
-  const handleSelectAllToggle = () => {
-    const newSelectAll = !selectAll;
-    setSelectAll(newSelectAll);
-    if (newSelectAll) {
-      handleMarkAllAs('submitted');
-    } else {
-      handleMarkAllAs('not_submitted');
-    }
+    setStudents(prev => prev.map(s => {
+      if (s.studentId === selectedStudent.studentId) {
+        let newStatus = s.status;
+        let teacherMark: ExtendedStudentSubmission['teacherMark'];
+
+        if (type === 'Satisfactory') {
+             teacherMark = 'Satisfied';
+             // If currently in 'issues' or 'late', do we move it? 
+             // Typically 'Satisfactory' means it's done. 
+             // But if it was late, it remains late but marked? 
+             // User says: "if marked unsatifactory his submission becomes in 4th tab"
+             // Implies status change.
+             if (s.status === 'resubmit_needed') newStatus = 'submitted'; // Move back to handled?
+        } else if (type === 'Good') {
+             teacherMark = 'Good';
+             if (s.status === 'resubmit_needed') newStatus = 'submitted';
+        } else {
+             teacherMark = 'Not Sufficient';
+             newStatus = 'resubmit_needed'; // Move to Issue tab
+        }
+
+        return {
+          ...s,
+          status: newStatus,
+          teacherMark,
+          isChanged: true
+        };
+      }
+      return s;
+    }));
   };
 
   const handleSave = async () => {
     try {
       setIsSaving(true);
-      setError('');
-
-      // Only save changed submissions
-      const changedSubmissions = students.filter(s => s.isChanged);
       
-      if (changedSubmissions.length === 0) {
-        onSave();
-        return;
+      const changed = students.filter(s => s.isChanged);
+      if (changed.length === 0) {
+          onClose();
+          return;
       }
 
-      const submissions: HomeworkSubmissionData[] = changedSubmissions.map(s => ({
-        studentId: s.studentId,
-        studentName: s.studentName,
-        status: s.status,
-        marks: s.marks,
-        remarks: s.remarks,
-        markedBy: 'teacher', // Should come from auth
+      await Promise.all(changed.map(async (s) => {
+        // We need to update using markSubmission or bulk.
+        // Since statuses might change differently, bulk might be tricky if statuses vary.
+        // But bulkMarkSubmissions typically updates detailed fields. 
+        // Let's use individual updates or a smarter bulk. 
+        // HomeworkFirestoreService.markSubmission handles update.
+        
+        await HomeworkFirestoreService.markSubmission(
+            homework.id,
+            s.studentId,
+            {
+                studentName: s.studentName,
+                status: (s.status === 'resubmit_needed' ? 'resubmit_needed' : (s.status === 'late' ? 'late' : 'submitted')) as any, 
+                teacherMark: s.teacherMark,
+                teacherRemarks: s.remarks,
+                numericMark: s.marks,
+                markedBy: 'teacher' // TODO: Get actual teacher ID
+            },
+            collectionName
+        );
       }));
 
-      await HomeworkFirestoreService.bulkMarkSubmissions(homework.id, submissions, 'teacher');
-      onSave();
+      onSave(); // Refresh parent
+      onClose();
+
     } catch (err) {
-      console.error('Error saving submissions:', err);
-      setError('Failed to save submissions');
+      console.error('Error saving:', err);
+      setError('Failed to save changes');
     } finally {
-      setIsSaving(false);
+        setIsSaving(false);
     }
   };
-
-  const filteredStudents = students.filter(s => 
-    s.studentName.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const getStatusIcon = (status: StudentSubmission['status']) => {
-    switch (status) {
-      case 'submitted':
-        return <CheckCircle className="w-5 h-5 text-green-500" />;
-      case 'late':
-        return <Clock className="w-5 h-5 text-amber-500" />;
-      case 'excused':
-        return <AlertCircle className="w-5 h-5 text-blue-500" />;
-      default:
-        return <XCircle className="w-5 h-5 text-red-500" />;
-    }
-  };
-
-  const changedCount = students.filter(s => s.isChanged).length;
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[90vh] flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">Mark Submissions</h2>
-            <p className="text-sm text-gray-500">{homework.title}</p>
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-[95vw] h-[90vh] flex overflow-hidden">
+        
+        {/* LEFT SIDEBAR: Student List */}
+        <div className="w-1/4 min-w-[300px] border-r border-gray-200 dark:border-gray-700 flex flex-col bg-gray-50 dark:bg-gray-900/50">
+          
+          {/* Header */}
+          <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white truncate" title={homework.title}>
+              {homework.title}
+            </h2>
+            <p className="text-xs text-gray-500 mt-1">Marking Submissions</p>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+
+          {/* Tabs */}
+          <div className="flex border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-x-auto scrollbar-hide">
+             {[
+                 { id: 'submitted', label: 'Submitted', icon: CheckCircle, color: 'text-green-600' },
+                 { id: 'late', label: 'Late', icon: Clock, color: 'text-amber-600' },
+                 { id: 'issues', label: 'Issues', icon: AlertCircle, color: 'text-red-600' },
+                 { id: 'not_submitted', label: 'Missing', icon: XCircle, color: 'text-gray-400' },
+             ].map(tab => (
+                 <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id as TabType)}
+                    className={`flex-1 flex flex-col items-center justify-center py-3 px-1 border-b-2 transition-colors ${
+                        activeTab === tab.id 
+                        ? `border-indigo-600 bg-indigo-50/50 dark:bg-indigo-900/20` 
+                        : 'border-transparent hover:bg-gray-50 dark:hover:bg-gray-800'
+                    }`}
+                 >
+                    <tab.icon className={`w-4 h-4 mb-1 ${activeTab === tab.id ? tab.color : 'text-gray-400'}`} />
+                    <span className={`text-[10px] font-medium uppercase tracking-wide ${activeTab === tab.id ? 'text-gray-900 dark:text-white' : 'text-gray-500'}`}>
+                        {tab.label}
+                    </span>
+                    <span className="text-[10px] text-gray-400 mt-0.5">
+                        {students.filter(s => getTabForStatus(s.status) === tab.id).length}
+                    </span>
+                 </button>
+             ))}
+          </div>
+
+          {/* Search */}
+          <div className="p-2 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+            <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400" />
+                <input 
+                    type="text" 
+                    placeholder="Search..."
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    className="w-full pl-8 pr-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 border-none rounded-md focus:ring-1 focus:ring-indigo-500"
+                />
+            </div>
+          </div>
+
+          {/* List */}
+          <div className="flex-1 overflow-y-auto p-2 space-y-1">
+             {isLoading ? (
+                 <div className="flex justify-center py-10"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div></div>
+             ) : filteredStudents.length === 0 ? (
+                 <div className="text-center py-10 text-gray-500 text-sm">No students</div>
+             ) : (
+                filteredStudents.map(student => (
+                    <div 
+                        key={student.studentId}
+                        onClick={() => setSelectedStudentId(student.studentId)}
+                        className={`p-3 rounded-lg cursor-pointer transition-all border ${
+                            selectedStudentId === student.studentId
+                            ? 'bg-white dark:bg-gray-800 border-indigo-500 shadow-sm ring-1 ring-indigo-500'
+                            : 'bg-white dark:bg-gray-800 border-transparent hover:border-gray-200 dark:hover:border-gray-600'
+                        }`}
+                    >
+                        <div className="flex justify-between items-start">
+                            <span className="font-medium text-sm text-gray-900 dark:text-gray-200">{student.studentName}</span>
+                            {student.isChanged && <span className="w-2 h-2 rounded-full bg-indigo-500 mt-1.5"></span>}
+                        </div>
+                        <div className="flex items-center gap-2 mt-1">
+                            {student.teacherMark && (
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded ${
+                                    student.teacherMark === 'Good' ? 'bg-green-100 text-green-700' :
+                                    student.teacherMark === 'Satisfied' ? 'bg-blue-100 text-blue-700' :
+                                    'bg-red-100 text-red-700'
+                                }`}>
+                                    {student.teacherMark === 'Not Sufficient' ? 'Issues' : student.teacherMark}
+                                </span>
+                            )}
+                            {!student.files?.length && activeTab !== 'not_submitted' && (
+                                <span className="text-[10px] text-gray-400 italic">No files</span>
+                            )}
+                        </div>
+                    </div>
+                ))
+             )}
+          </div>
+
+          <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+               <Button onClick={handleSave} className="w-full justify-center" disabled={isSaving}>
+                   {isSaving ? 'Saving...' : 'Save & Close'}
+               </Button>
+          </div>
         </div>
 
-        {/* Quick Actions Bar */}
-        <div className="p-4 border-b border-gray-100 bg-gray-50">
-          <div className="flex items-center justify-between gap-4">
-            {/* Search */}
-            <div className="relative flex-1 max-w-xs">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search students..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              />
-            </div>
+        {/* RIGHT CONTENT: Grading Area */}
+        <div className="flex-1 flex flex-col bg-gray-100 dark:bg-gray-900 h-full relative">
+            <button 
+                onClick={onClose}
+                className="absolute top-4 right-4 z-10 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors"
+            >
+                <X className="w-5 h-5" />
+            </button>
 
-            {/* Bulk Actions */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => handleMarkAllAs('submitted')}
-                className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-green-700 bg-green-100 rounded-lg hover:bg-green-200 transition-colors"
-              >
-                <CheckCircle className="w-3 h-3 mr-1" />
-                All Submitted
-              </button>
-              <button
-                onClick={() => handleMarkAllAs('not_submitted')}
-                className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-red-700 bg-red-100 rounded-lg hover:bg-red-200 transition-colors"
-              >
-                <XCircle className="w-3 h-3 mr-1" />
-                All Missing
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Error */}
-        {error && (
-          <div className="mx-4 mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
-            {error}
-          </div>
-        )}
-
-        {/* Student List */}
-        <div className="flex-1 overflow-y-auto p-4">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-              <span className="ml-3 text-gray-600">Loading students...</span>
-            </div>
-          ) : filteredStudents.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">
-              No students found
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {filteredStudents.map((student) => (
-                <div
-                  key={student.studentId}
-                  className={`border rounded-lg p-4 transition-colors ${
-                    student.isChanged ? 'border-indigo-300 bg-indigo-50/50' : 'border-gray-200'
-                  }`}
-                >
-                  <div className="flex items-center gap-4">
-                    {/* Student Name */}
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900 truncate">{student.studentName}</p>
+            {selectedStudent ? (
+                <>
+                    {/* Toolbar / Student Info */}
+                    <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 flex justify-between items-center shadow-sm z-0">
+                        <div>
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                                {selectedStudent.studentName}
+                            </h3>
+                            <p className="text-sm text-gray-500">
+                                {selectedStudent.files?.length} file(s) • Submitted {selectedStudent.submittedAt?.toLocaleDateString()}
+                            </p>
+                        </div>
+                        
+                        {/* Marking Actions */}
+                        <div className="flex items-center gap-2">
+                            <Button 
+                                onClick={() => handleMarking('Good')}
+                                variant={selectedStudent.teacherMark === 'Good' ? 'primary' : 'outline'}
+                                className={`gap-2 ${selectedStudent.teacherMark === 'Good' ? 'bg-green-600 hover:bg-green-700 text-white' : 'text-green-600 border-green-200 hover:bg-green-50'}`}
+                            >
+                                <Award className="w-4 h-4" /> Good
+                            </Button>
+                            <Button 
+                                onClick={() => handleMarking('Satisfactory')}
+                                variant={selectedStudent.teacherMark === 'Satisfied' ? 'primary' : 'outline'}
+                                className={`gap-2 ${selectedStudent.teacherMark === 'Satisfied' ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'text-blue-600 border-blue-200 hover:bg-blue-50'}`}
+                            >
+                                <ThumbsUp className="w-4 h-4" /> Satisfactory
+                            </Button>
+                            <Button 
+                                onClick={() => handleMarking('Not Satisfactory')}
+                                variant={selectedStudent.teacherMark === 'Not Sufficient' ? 'primary' : 'outline'}
+                                className={`gap-2 ${selectedStudent.teacherMark === 'Not Sufficient' ? 'bg-red-600 hover:bg-red-700 text-white' : 'text-red-600 border-red-200 hover:bg-red-50'}`}
+                            >
+                                <ThumbsDown className="w-4 h-4" /> Issues
+                            </Button>
+                        </div>
                     </div>
 
-                    {/* Status Buttons */}
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => handleStatusChange(student.studentId, 'submitted')}
-                        className={`p-2 rounded-lg transition-colors ${
-                          student.status === 'submitted'
-                            ? 'bg-green-100 text-green-700'
-                            : 'text-gray-400 hover:bg-gray-100'
-                        }`}
-                        title="Submitted"
-                      >
-                        <CheckCircle className="w-5 h-5" />
-                      </button>
-                      <button
-                        onClick={() => handleStatusChange(student.studentId, 'late')}
-                        className={`p-2 rounded-lg transition-colors ${
-                          student.status === 'late'
-                            ? 'bg-amber-100 text-amber-700'
-                            : 'text-gray-400 hover:bg-gray-100'
-                        }`}
-                        title="Late"
-                      >
-                        <Clock className="w-5 h-5" />
-                      </button>
-                      <button
-                        onClick={() => handleStatusChange(student.studentId, 'not_submitted')}
-                        className={`p-2 rounded-lg transition-colors ${
-                          student.status === 'not_submitted'
-                            ? 'bg-red-100 text-red-700'
-                            : 'text-gray-400 hover:bg-gray-100'
-                        }`}
-                        title="Not Submitted"
-                      >
-                        <XCircle className="w-5 h-5" />
-                      </button>
-                      <button
-                        onClick={() => handleStatusChange(student.studentId, 'excused')}
-                        className={`p-2 rounded-lg transition-colors ${
-                          student.status === 'excused'
-                            ? 'bg-blue-100 text-blue-700'
-                            : 'text-gray-400 hover:bg-gray-100'
-                        }`}
-                        title="Excused"
-                      >
-                        <AlertCircle className="w-5 h-5" />
-                      </button>
+                    {/* PDF Viewer Area */}
+                    <div className="flex-1 bg-gray-200 dark:bg-gray-950 flex flex-col items-center justify-center p-4 overflow-hidden relative">
+                         {selectedStudent.files && selectedStudent.files.length > 0 ? (
+                             <div className="w-full h-full bg-white shadow-lg rounded-lg overflow-hidden relative flex flex-col">
+                                 <PDFViewer 
+                                     url={selectedStudent.files[0].url} 
+                                     title={selectedStudent.files[0].name}
+                                     onClose={() => {}} 
+                                     inline={true}
+                                 />
+                                 
+                                 {selectedStudent.files.length > 1 && (
+                                     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/80 text-white px-4 py-2 rounded-full text-sm">
+                                         File 1 of {selectedStudent.files.length} (Viewing {selectedStudent.files[0].name})
+                                     </div>
+                                 )}
+                             </div>
+                         ) : (
+                             <div className="text-center text-gray-500">
+                                 <FileText className="w-16 h-16 mx-auto mb-4 opacity-20" />
+                                 <p className="text-lg font-medium">No files submitted</p>
+                                 <p className="text-sm">Student has not uploaded any documents.</p>
+                             </div>
+                         )}
                     </div>
-
-                    {/* Marks (if applicable) */}
-                    {homework.maxMarks && (
-                      <div className="w-24">
-                        <input
-                          type="number"
-                          value={student.marks ?? ''}
-                          onChange={(e) => handleMarksChange(student.studentId, e.target.value)}
-                          placeholder={`/ ${homework.maxMarks}`}
-                          min="0"
-                          max={homework.maxMarks}
-                          className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm text-center focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Remarks (expandable) */}
-                  <div className="mt-2">
-                    <input
-                      type="text"
-                      value={student.remarks || ''}
-                      onChange={(e) => handleRemarksChange(student.studentId, e.target.value)}
-                      placeholder="Add remark (optional)..."
-                      className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm text-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    />
-                  </div>
+                </>
+            ) : (
+                <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
+                    <div className="w-16 h-16 bg-gray-200 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
+                        <Search className="w-8 h-8 opacity-50" />
+                    </div>
+                    <p className="text-lg font-medium text-gray-500">Select a student</p>
+                    <p className="text-sm">Choose a student from the sidebar to view detailed info.</p>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-between p-4 border-t border-gray-200 bg-gray-50">
-          <div className="text-sm text-gray-500">
-            {changedCount > 0 && (
-              <span className="text-indigo-600 font-medium">
-                {changedCount} student{changedCount > 1 ? 's' : ''} modified
-              </span>
             )}
-          </div>
-          <div className="flex gap-3">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={isSaving || changedCount === 0}
-              className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <Save className="w-4 h-4 mr-2" />
-              {isSaving ? 'Saving...' : 'Save Changes'}
-            </button>
-          </div>
-        </div>
+
+      </div>
       </div>
     </div>
   );

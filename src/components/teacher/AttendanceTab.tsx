@@ -26,6 +26,7 @@ import { StudentEnrollmentDocument } from '@/models/studentEnrollmentSchema';
 import { ClassCompletionService } from '@/apiservices/classCompletionService';
 import { MobileNotificationService } from '@/apiservices/mobileNotificationService';
 import { ClassCompletionDocument } from '@/models/classCompletionSchema';
+import FinishClassModal from './FinishClassModal';
 import { useTeacherAuth } from '@/hooks/useTeacherAuth';
 
 interface AttendanceTabProps {
@@ -85,9 +86,11 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
   const [manualZoomPassword, setManualZoomPassword] = useState('');
   const [scheduledDates, setScheduledDates] = useState<Date[]>([]);
   const [autoScheduleStatus, setAutoScheduleStatus] = useState<'idle' | 'running' | 'checking'>('idle');
+  const [isScheduling, setIsScheduling] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [showFinishClassModal, setShowFinishClassModal] = useState(false);
   const [modalSelectedDate, setModalSelectedDate] = useState<Date | null>(null);
   const [showAttendanceModal, setShowAttendanceModal] = useState(false);
   const [showViewAttendanceModal, setShowViewAttendanceModal] = useState(false);
@@ -171,12 +174,13 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
     checkToday();
   }, [scheduledClasses, classId]);
 
-  const handleMarkFinished = async () => {
+  const handleMarkFinishedClick = () => {
     if (!todaysClass || !teacher?.id) return;
-    
-    if (!window.confirm("Are you sure you want to mark this class as finished? This action cannot be undone.")) {
-        return;
-    }
+    setShowFinishClassModal(true);
+  };
+
+  const handleConfirmFinishClass = async () => {
+    if (!todaysClass || !teacher?.id) return;
     
     setMarkingFinished(true);
     try {
@@ -205,6 +209,8 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
         
         // Notify parents
         await MobileNotificationService.notifyClassFinished(classId, teacherName || "Teacher");
+
+        setShowFinishClassModal(false);
 
     } catch (error) {
         console.error("Failed to mark class as finished", error);
@@ -405,6 +411,8 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
         setError('Please fill in all required fields');
         return;
       }
+      
+      setIsScheduling(true);
 
       // Validate mode-specific requirements
       if (manualMode === 'physical' && !manualLocation.trim()) {
@@ -481,6 +489,7 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
       setManualZoomMeetingId('');
       setManualZoomPassword('');
       setShowManualSchedule(false);
+      setShowScheduleModal(false);
       setError('');
       
       alert('✅ Extra class scheduled successfully!');
@@ -489,8 +498,9 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
       await loadScheduledClasses();
       
     } catch (error) {
-      console.error('❌ Manual scheduling failed:', error);
       setError(`Failed to schedule class: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsScheduling(false);
     }
   };
 
@@ -1022,7 +1032,7 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
                  </div>
                ) : (
                  <Button
-                    onClick={handleMarkFinished}
+                    onClick={handleMarkFinishedClick}
                     disabled={markingFinished}
                     className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg flex items-center space-x-2"
                  >
@@ -1229,8 +1239,8 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
             )}
 
             <div className="flex gap-2">
-              <Button onClick={handleManualSchedule} className="flex-1">
-                Schedule Class
+              <Button onClick={handleManualSchedule} className="flex-1" disabled={isScheduling}>
+                {isScheduling ? 'Scheduling...' : 'Schedule Class'}
               </Button>
               <Button
                 onClick={() => setShowManualSchedule(false)}
@@ -1469,11 +1479,11 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
               Schedule an extra class for this date?
             </p>
             
+            
             <form 
               onSubmit={(e) => {
                 e.preventDefault();
                 handleManualSchedule();
-                setShowScheduleModal(false);
               }}
             >
               {/* Two-column grid layout */}
@@ -1596,35 +1606,43 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
               </div>
               
               <div className="flex justify-end space-x-3 mt-6 pt-4 border-t">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowScheduleModal(false);
-                    setModalSelectedDate(null);
-                    // Reset form fields
-                    setManualMode('physical');
-                    setManualLocation('');
-                    setManualZoomUrl('');
-                    setManualZoomMeetingId('');
-                    setManualZoomPassword('');
-                    setManualNotes('');
-                  }}
-                  className="px-4 py-2 text-gray-600 border rounded hover:bg-gray-50"
+                <Button 
+                   type="button"
+                   variant="outline" 
+                   onClick={() => setShowScheduleModal(false)}
+                   disabled={isScheduling}
                 >
                   Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+                </Button>
+                <Button 
+                   type="submit"
+                   disabled={isScheduling}
+                   className="bg-blue-600 hover:bg-blue-700 text-white"
                 >
-                  {isLoading ? 'Scheduling...' : 'Schedule Class'}
-                </button>
+                  {isScheduling ? (
+                    <>
+                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                       Scheduling...
+                    </>
+                  ) : (
+                    'Confirm Schedule'
+                  )}
+                </Button>
               </div>
             </form>
           </div>
         </div>
       )}
+      
+      {/* Finish Class Modal */}
+      <FinishClassModal
+        isOpen={showFinishClassModal}
+        onClose={() => setShowFinishClassModal(false)}
+        onConfirm={handleConfirmFinishClass}
+        isProcessing={markingFinished}
+        className={todaysClass?.className || todaysClass?.subjectName || "Scheduled Class"}
+      />
+
       
       {/* Attendance Marking Modal */}
       {showAttendanceModal && selectedSchedule && (
