@@ -54,6 +54,7 @@ export interface HomeworkSubmission {
     type?: string;
     size?: number;
   }[];
+  fileUrl?: string; // Legacy
   message?: string;
   
   submittedAt: Date;
@@ -61,6 +62,7 @@ export interface HomeworkSubmission {
   teacherMark?: TeacherMark;
   teacherRemarks?: string;
   numericMark?: number;
+  marks?: number; // Legacy alias
   markedAt?: Date;
   markedBy?: string;
   
@@ -86,6 +88,7 @@ export interface HomeworkSubmissionDocument {
     type?: string;
     size?: number;
   }[];
+  fileUrl?: string; // Legacy
   message?: string;
   
   submittedAt: Timestamp;
@@ -93,6 +96,7 @@ export interface HomeworkSubmissionDocument {
   teacherMark?: string;
   teacherRemarks?: string;
   numericMark?: number;
+  marks?: number; // Legacy alias
   markedAt?: Timestamp;
   markedBy?: string;
   

@@ -43,6 +43,7 @@ export interface HomeworkSubmissionData {
   remarks?: string;
   // Added to align with schema
   files?: { url: string; name: string; type?: string }[];
+  fileUrl?: string; // Legacy support
   teacherMark?: 'Good' | 'Satisfied' | 'Not Sufficient';
   numericMark?: number; // alias for marks if needed, or prefer marks
   teacherRemarks?: string; // alias for remarks
@@ -213,6 +214,10 @@ export class HomeworkFirestoreService {
           markedBy: data.markedBy,
           marks: data.marks,
           remarks: data.remarks,
+          files: data.files,
+          fileUrl: data.fileUrl,
+          teacherMark: data.teacherMark,
+          teacherRemarks: data.teacherRemarks,
         } as HomeworkSubmissionDocument;
       });
     } catch (error) {
