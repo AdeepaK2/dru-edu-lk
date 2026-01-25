@@ -1142,6 +1142,22 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                             Required
                           </span>
                         )}
+                        {/* Homework Badge */}
+                        {group.materials[0]?.isHomework && (
+                           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300">
+                             📝 Homework
+                           </span>
+                        )}
+                        {/* Homework Type Badge */}
+                        {group.materials[0]?.isHomework && (
+                           <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                               group.materials[0]?.homeworkType === 'manual' 
+                               ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-300' 
+                               : 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-300'
+                           }`}>
+                             {group.materials[0]?.homeworkType === 'manual' ? '🤲 Manual Submission' : '📤 Online Submission'}
+                           </span>
+                        )}
                       </div>
                       <div className="flex items-center space-x-6 text-xs text-gray-500 dark:text-gray-400">
                         <span>{new Date(group.uploadedAt?.toDate ? group.uploadedAt.toDate() : group.uploadedAt).toLocaleDateString()}</span>
