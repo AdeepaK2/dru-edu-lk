@@ -744,6 +744,33 @@ export default function StudyMaterialUploadModal({
 
 
                 </div>
+
+                {/* Homework Toggle Per Item */}
+                <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                    <div className="text-xs text-gray-500">
+                      {item.isHomework ? 'Marked as Homework' : 'Standard Material'}
+                    </div>
+                    <div className="flex items-center space-x-3">
+                         <span className={`text-sm font-medium ${item.isHomework ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                           Homework
+                         </span>
+                         <button
+                           type="button"
+                           onClick={() => updateFileUploadItem(item.id, { isHomework: !item.isHomework })}
+                           className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${
+                             item.isHomework ? 'bg-purple-600' : 'bg-gray-200 dark:bg-gray-700'
+                           }`}
+                         >
+                           <span className="sr-only">Toggle homework</span>
+                           <span
+                             aria-hidden="true"
+                             className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                               item.isHomework ? 'translate-x-5' : 'translate-x-0'
+                             }`}
+                           />
+                         </button>
+                    </div>
+                  </div>
               </div>
             ))}
 
