@@ -213,28 +213,43 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
   const getTimeRemaining = () => {
     if (!todaysClass) return "No class now";
     
-    // Parse end time (assuming 24h "HH:mm" from input, or convert)
-    // The ScheduledClass type says startTime/endTime are strings. Usually "09:00", "14:30" etc.
-    const [endH, endM] = todaysClass.endTime.split(':').map(Number);
+    // Get current time in Melbourne for accurate comparison
+    const now = new Date();
+    const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Australia/Melbourne',
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: false
+    }).formatToParts(now);
+    
+    const hObj = parts.find(p => p.type === 'hour');
+    const mObj = parts.find(p => p.type === 'minute');
+    
+    if (!hObj || !mObj) return "";
+    
+    // Handle "24" hour case if formatter returns it (though usually 0-23)
+    let curH = parseInt(hObj.value);
+    if (curH === 24) curH = 0;
+    
+    const curM = parseInt(mObj.value);
+    const curTotalMins = curH * 60 + curM;
+    
+    // Parse Schedule (assuming HH:mm format)
     const [startH, startM] = todaysClass.startTime.split(':').map(Number);
+    const startTotalMins = startH * 60 + startM;
     
-    const classEnd = new Date(currentTime);
-    classEnd.setHours(endH, endM, 0, 0);
+    const [endH, endM] = todaysClass.endTime.split(':').map(Number);
+    const endTotalMins = endH * 60 + endM;
     
-    const classStart = new Date(currentTime);
-    classStart.setHours(startH, startM, 0, 0);
-    
-    if (currentTime < classStart) {
-        const diff = Math.ceil((classStart.getTime() - currentTime.getTime()) / 60000);
-        return `Starts in ${diff}m`;
+    if (curTotalMins < startTotalMins) {
+        return `Starts in ${startTotalMins - curTotalMins}m`;
     }
     
-    if (currentTime > classEnd) {
+    if (curTotalMins > endTotalMins) {
         return "Class ended";
     }
     
-    const diff = Math.ceil((classEnd.getTime() - currentTime.getTime()) / 60000);
-    return `${diff} minutes left`;
+    return `${endTotalMins - curTotalMins} minutes left`;
   };
 
   useEffect(() => {
