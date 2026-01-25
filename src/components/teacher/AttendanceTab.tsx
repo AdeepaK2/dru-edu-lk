@@ -24,6 +24,7 @@ import { MailService } from '@/apiservices/mailService';
 import { Timestamp } from 'firebase/firestore';
 import { StudentEnrollmentDocument } from '@/models/studentEnrollmentSchema';
 import { ClassCompletionService } from '@/apiservices/classCompletionService';
+import { MobileNotificationService } from '@/apiservices/mobileNotificationService';
 import { ClassCompletionDocument } from '@/models/classCompletionSchema';
 import { useTeacherAuth } from '@/hooks/useTeacherAuth';
 
@@ -202,6 +203,9 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
         const completion = await ClassCompletionService.getClassCompletion(classId, dateStr);
         setClassCompletion(completion);
         
+        // Notify parents
+        await MobileNotificationService.notifyClassFinished(classId, teacherName || "Teacher");
+
     } catch (error) {
         console.error("Failed to mark class as finished", error);
         alert("Failed to mark class as finished");
