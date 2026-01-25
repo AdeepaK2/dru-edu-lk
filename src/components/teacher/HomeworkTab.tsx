@@ -44,7 +44,25 @@ interface DisplayHomework {
   originalDoc: HomeworkDocument | StudyMaterialDocument;
   collectionName: 'homework' | 'studyMaterials';
   submissionType: 'manual' | 'online';
+  allowLateSubmission?: boolean;
+  lateSubmissionDays?: number;
 }
+
+const getClosingDate = (item: DisplayHomework) => {
+  if (item.status === 'closed') return new Date(0); // Already closed
+  
+  let closeDate = new Date(item.dueDate);
+  if (item.allowLateSubmission && item.lateSubmissionDays) {
+    closeDate.setDate(closeDate.getDate() + item.lateSubmissionDays);
+  }
+  return closeDate;
+};
+
+const isActuallyClosed = (item: DisplayHomework) => {
+  if (item.status === 'closed') return true;
+  const closeDate = getClosingDate(item);
+  return new Date() > closeDate;
+};
 
 const isOverdue = (date: Date) => {
   return new Date() > date;
@@ -107,19 +125,23 @@ const HomeworkTab: React.FC<HomeworkTabProps> = ({ classData, classId }) => {
           type: 'homework' as const,
           originalDoc: h,
           collectionName: 'homework' as const,
-          submissionType: 'online' as const // Legacy defaults to online
+          submissionType: 'online' as const,
+          allowLateSubmission: false, // Legacy defaults
+          lateSubmissionDays: 0
         })),
         ...homeworkMaterials.map(m => ({
           id: m.id,
           title: m.title || m.groupTitle || 'Untitled Homework',
           description: m.description,
           dueDate: m.dueDate ? (m.dueDate instanceof Date ? m.dueDate : m.dueDate.toDate()) : new Date(),
-          status: ((m.dueDate && new Date() > (m.dueDate instanceof Date ? m.dueDate : m.dueDate.toDate())) ? 'closed' : 'active') as 'active' | 'closed', // derived status
+          status: ((m.dueDate && new Date() > (m.dueDate instanceof Date ? m.dueDate : m.dueDate.toDate())) ? 'closed' : 'active') as 'active' | 'closed', // This derived status might be overridden by dynamic check
           maxMarks: m.maxMarks,
           type: 'study_material' as const,
           originalDoc: m,
           collectionName: 'studyMaterials' as const,
-          submissionType: (m.homeworkType === 'manual' ? 'manual' : 'online') as 'manual' | 'online'
+          submissionType: (m.homeworkType === 'manual' ? 'manual' : 'online') as 'manual' | 'online',
+          allowLateSubmission: m.allowLateSubmission,
+          lateSubmissionDays: m.lateSubmissionDays
         }))
       ];
 
@@ -191,8 +213,8 @@ const HomeworkTab: React.FC<HomeworkTabProps> = ({ classData, classId }) => {
 
   const filteredItems = displayItems.filter(item => {
     if (filter === 'all') return true;
-    if (filter === 'active') return !isOverdue(item.dueDate) && item.status !== 'closed';
-    if (filter === 'closed') return isOverdue(item.dueDate) || item.status === 'closed';
+    if (filter === 'active') return !isActuallyClosed(item);
+    if (filter === 'closed') return isActuallyClosed(item);
     return true;
   });
 
@@ -200,7 +222,7 @@ const HomeworkTab: React.FC<HomeworkTabProps> = ({ classData, classId }) => {
 
    // Update getStatusBadge to accept DisplayHomework
   const getStatusBadge = (item: DisplayHomework) => {
-    if (item.status === 'closed') {
+    if (isActuallyClosed(item)) {
       return (
         <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-600">
           Closed
@@ -209,8 +231,8 @@ const HomeworkTab: React.FC<HomeworkTabProps> = ({ classData, classId }) => {
     }
     if (isOverdue(item.dueDate)) {
       return (
-        <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-600">
-          Overdue
+        <span className="px-2 py-1 text-xs font-medium rounded-full bg-amber-100 text-amber-600">
+          Late Submission
         </span>
       );
     }
@@ -256,8 +278,8 @@ const HomeworkTab: React.FC<HomeworkTabProps> = ({ classData, classId }) => {
           >
             {filterOption.charAt(0).toUpperCase() + filterOption.slice(1)}
              {/* Counts logic */}
-             {filterOption === 'active' && <span className="ml-2 px-2 py-0.5 text-xs bg-gray-100 rounded-full">{displayItems.filter(i => !isOverdue(i.dueDate) && i.status !== 'closed').length}</span>}
-             {filterOption === 'closed' && <span className="ml-2 px-2 py-0.5 text-xs bg-gray-100 rounded-full">{displayItems.filter(i => isOverdue(i.dueDate) || i.status === 'closed').length}</span>}
+             {filterOption === 'active' && <span className="ml-2 px-2 py-0.5 text-xs bg-gray-100 rounded-full">{displayItems.filter(i => !isActuallyClosed(i)).length}</span>}
+             {filterOption === 'closed' && <span className="ml-2 px-2 py-0.5 text-xs bg-gray-100 rounded-full">{displayItems.filter(i => isActuallyClosed(i)).length}</span>}
           </button>
         ))}
       </div>
@@ -308,6 +330,9 @@ const HomeworkTab: React.FC<HomeworkTabProps> = ({ classData, classId }) => {
                     <div className="flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
                       <span>Due: {formatDate(item.dueDate)}</span>
+                      {isOverdue(item.dueDate) && !isActuallyClosed(item) && (
+                           <span className="text-xs text-amber-600 font-medium">(Late allowed until {formatDate(getClosingDate(item))})</span>
+                      )}
                     </div>
                     {item.maxMarks && (
                       <div className="flex items-center gap-1">
