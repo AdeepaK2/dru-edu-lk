@@ -43,6 +43,7 @@ interface DisplayHomework {
   type: 'homework' | 'study_material';
   originalDoc: HomeworkDocument | StudyMaterialDocument;
   collectionName: 'homework' | 'studyMaterials';
+  submissionType: 'manual' | 'online';
 }
 
 const isOverdue = (date: Date) => {
@@ -105,7 +106,8 @@ const HomeworkTab: React.FC<HomeworkTabProps> = ({ classData, classId }) => {
           maxMarks: h.maxMarks,
           type: 'homework' as const,
           originalDoc: h,
-          collectionName: 'homework' as const
+          collectionName: 'homework' as const,
+          submissionType: 'online' as const // Legacy defaults to online
         })),
         ...homeworkMaterials.map(m => ({
           id: m.id,
@@ -116,7 +118,8 @@ const HomeworkTab: React.FC<HomeworkTabProps> = ({ classData, classId }) => {
           maxMarks: m.maxMarks,
           type: 'study_material' as const,
           originalDoc: m,
-          collectionName: 'studyMaterials' as const
+          collectionName: 'studyMaterials' as const,
+          submissionType: (m.homeworkType === 'manual' ? 'manual' : 'online') as 'manual' | 'online'
         }))
       ];
 
@@ -294,6 +297,9 @@ const HomeworkTab: React.FC<HomeworkTabProps> = ({ classData, classId }) => {
                     {item.type === 'study_material' && (
                         <span className="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-600">Material</span>
                     )}
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${item.submissionType === 'manual' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'}`}>
+                        {item.submissionType === 'manual' ? 'Manual' : 'Online'}
+                    </span>
                   </div>
                   
                   {item.description && <p className="text-gray-600 text-sm mb-3 line-clamp-2">{item.description}</p>}
@@ -397,6 +403,7 @@ const HomeworkTab: React.FC<HomeworkTabProps> = ({ classData, classId }) => {
           }}
           classId={classId}
           collectionName={selectedItem.collectionName}
+          submissionType={selectedItem.submissionType}
         />
       )}
     </div>

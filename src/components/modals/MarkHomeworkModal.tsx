@@ -32,6 +32,7 @@ interface MarkHomeworkModalProps {
   homework: { id: string; title: string; maxMarks?: number };
   classId: string;
   collectionName?: string;
+  submissionType?: 'manual' | 'online';
 }
 
 interface ExtendedStudentSubmission {
@@ -55,7 +56,8 @@ const MarkHomeworkModal: React.FC<MarkHomeworkModalProps> = ({
   onSave,
   homework,
   classId,
-  collectionName = 'homework'
+  collectionName = 'homework',
+  submissionType = 'online'
 }) => {
   const [students, setStudents] = useState<ExtendedStudentSubmission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -158,9 +160,11 @@ const MarkHomeworkModal: React.FC<MarkHomeworkModalProps> = ({
              // User says: "if marked unsatifactory his submission becomes in 4th tab"
              // Implies status change.
              if (s.status === 'resubmit_needed') newStatus = 'submitted'; // Move back to handled?
+             if (s.status === 'not_submitted') newStatus = 'submitted'; // Assume submitted if marked
         } else if (type === 'Good') {
              teacherMark = 'Good';
              if (s.status === 'resubmit_needed') newStatus = 'submitted';
+             if (s.status === 'not_submitted') newStatus = 'submitted';
         } else {
              teacherMark = 'Not Sufficient';
              newStatus = 'resubmit_needed'; // Move to Issue tab
@@ -234,7 +238,12 @@ const MarkHomeworkModal: React.FC<MarkHomeworkModalProps> = ({
             <h2 className="text-lg font-bold text-gray-900 dark:text-white truncate" title={homework.title}>
               {homework.title}
             </h2>
-            <p className="text-xs text-gray-500 mt-1">Marking Submissions</p>
+            <div className="flex items-center justify-between mt-1">
+                <p className="text-xs text-gray-500">Marking Submissions</p>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full ${submissionType === 'manual' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>
+                    {submissionType === 'manual' ? 'Manual' : 'Online'}
+                </span>
+            </div>
           </div>
 
           {/* Tabs */}
@@ -310,7 +319,7 @@ const MarkHomeworkModal: React.FC<MarkHomeworkModalProps> = ({
                                     {student.teacherMark === 'Not Sufficient' ? 'Issues' : student.teacherMark}
                                 </span>
                             )}
-                            {!student.files?.length && activeTab !== 'not_submitted' && (
+                            {!student.files?.length && activeTab !== 'not_submitted' && submissionType === 'online' && (
                                 <span className="text-[10px] text-gray-400 italic">No files</span>
                             )}
                         </div>
@@ -344,7 +353,10 @@ const MarkHomeworkModal: React.FC<MarkHomeworkModalProps> = ({
                                 {selectedStudent.studentName}
                             </h3>
                             <p className="text-sm text-gray-500">
-                                {selectedStudent.files?.length} file(s) • Submitted {selectedStudent.submittedAt?.toLocaleDateString()}
+                                {submissionType === 'online' 
+                                    ? `${selectedStudent.files?.length} file(s) • Submitted ${selectedStudent.submittedAt?.toLocaleDateString() || '-'}`
+                                    : `Manual Submission • ${selectedStudent.submittedAt ? `Submitted ${selectedStudent.submittedAt.toLocaleDateString()}` : 'Not submitted yet'}`
+                                }
                             </p>
                         </div>
                         
@@ -374,9 +386,15 @@ const MarkHomeworkModal: React.FC<MarkHomeworkModalProps> = ({
                         </div>
                     </div>
 
-                    {/* PDF Viewer Area */}
+                    {/* Content Area */}
                     <div className="flex-1 bg-gray-200 dark:bg-gray-950 flex flex-col items-center justify-center p-4 overflow-hidden relative">
-                         {selectedStudent.files && selectedStudent.files.length > 0 ? (
+                         {submissionType === 'manual' ? (
+                             <div className="text-center text-gray-500">
+                                 <FileText className="w-16 h-16 mx-auto mb-4 opacity-20" />
+                                 <p className="text-lg font-medium">Manual Submission</p>
+                                 <p className="text-sm max-w-sm mx-auto">This is a manual homework assignment. No files are expected from the student. You can mark the submission based on physical or offline work.</p>
+                             </div>
+                         ) : selectedStudent.files && selectedStudent.files.length > 0 ? (
                              <div className="w-full h-full bg-white shadow-lg rounded-lg overflow-hidden relative flex flex-col">
                                  <PDFViewer 
                                      url={selectedStudent.files[0].url} 
