@@ -47,6 +47,11 @@ service firebase.storage {
     match /study-materials/{classId}/{allPaths=**} {
       allow read, write: if request.auth != null;
     }
+
+    // Allow authenticated users to upload and access homework
+    match /homework/{classId}/{materialId}/{studentId}/{allPaths=**} {
+      allow read, write: if request.auth != null;
+    }
     
     // Allow authenticated teachers to upload and manage sheet templates
     match /templates/{templateId} {
