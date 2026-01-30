@@ -1266,6 +1266,7 @@ export default function StudentStudyPage() {
                                               </div>
                                           )}
 
+
                                           {/* Status Badge */}
                                           {(() => {
                                              const deadlineStatus = getHomeworkDeadlineStatus(material.dueDate);
