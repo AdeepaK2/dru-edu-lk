@@ -36,6 +36,7 @@ import Button from '@/components/ui/Button';
 import { StudentEnrollment } from '@/models/studentEnrollmentSchema';
 import { MailService } from '@/apiservices/mailService';
 import { MailBatchService } from '@/apiservices/mailBatchService';
+import { StudentEnrollmentFirestoreService } from '@/apiservices/studentEnrollmentFirestoreService';
 
 interface StudyMaterialUploadModalProps {
   isOpen: boolean;
@@ -483,21 +484,38 @@ export default function StudyMaterialUploadModal({
           await createStudyMaterial(materialData);
           
           // Send Homework Notification Email if it's a homework
-          if (item.isHomework && enrollments && enrollments.length > 0) {
+          if (item.isHomework && item.dueDate) {
               try {
-                  console.log('📧 Sending homework notifications...');
-                  
-                  // Filter active students
-                  const recipients = enrollments
-                      .filter(e => e.status === 'Active' && e.studentEmail)
-                      .map(e => ({
-                          recipientEmail: e.studentEmail,
-                          recipientName: e.studentName,
-                          recipientType: 'student' as const,
-                          studentName: e.studentName
-                      }));
+                // Get fresh list of active enrollments for reliable email sending
+                let currentEnrollments = enrollments || [];
+                
+                // Only try to fetch if we have a classId to fetch for
+                if (classData?.id) {
+                    try {
+                      console.log('🔄 Fetching latest active enrollments for email notifications...');
+                      const activeEnrollments = await StudentEnrollmentFirestoreService.getEnrolledStudentsByClassId(classData.id);
+                      if (activeEnrollments && activeEnrollments.length > 0) {
+                         currentEnrollments = activeEnrollments as any;
+                         console.log(`✅ Found ${currentEnrollments.length} active students.`);
+                      } else {
+                         console.warn('⚠️ No active enrollments found for this class.');
+                      }
+                    } catch (fetchErr) {
+                      console.error('❌ Failed to fetch latest enrollments, falling back to props:', fetchErr);
+                    }
+                }
+
+                if (currentEnrollments.length > 0) {
+                  const recipients = currentEnrollments.map(enrollment => ({
+                     recipientEmail: enrollment.studentEmail,
+                     recipientName: enrollment.studentName,
+                     recipientType: 'student' as const,
+                     studentName: enrollment.studentName
+                  })).filter(r => r.recipientEmail && r.recipientEmail.includes('@')); // Basic validation
 
                   if (recipients.length > 0) {
+                      console.log(`📧 Sending homework notifications to ${recipients.length} students...`);
+                      
                       // Create Mail Batch
                       const batchId = await MailBatchService.createBatch({
                           batchName: `Homework Notification - ${materialTitle}`,
@@ -510,7 +528,7 @@ export default function StudyMaterialUploadModal({
 
                       // Process batch
                       await Promise.allSettled(recipients.map(async (recipient) => {
-                          const student = enrollments.find(e => e.studentEmail === recipient.recipientEmail);
+                          const student = currentEnrollments.find(e => e.studentEmail === recipient.recipientEmail);
                           if (!student) return;
 
                           await MailBatchService.sendWithBatchTracking(
@@ -523,8 +541,8 @@ export default function StudyMaterialUploadModal({
                                       materialTitle,
                                       globalSettings.description || 'Check the student portal for details.',
                                       teacher!.name,
-                                      classData!.subject || 'Subject', // Use subject name
-                                      classData!.name || 'Your Class',
+                                      classData?.subject || 'Subject', // Use subject name
+                                      classData?.name || 'Your Class',
                                       item.dueDate,
                                       item.homeworkType === 'submission' ? 'online' : 'manual',
                                       item.fileType === 'link' ? item.externalUrl : undefined, // passing link if available
@@ -536,7 +554,12 @@ export default function StudyMaterialUploadModal({
                       }));
                       
                       console.log('✅ Homework notifications sent.');
+                  } else {
+                     console.warn('⚠️ No valid recipients found.');
                   }
+               } else {
+                  console.warn('⚠️ No enrollments available to send emails.');
+               }
               } catch (emailError) {
                   console.error('❌ Failed to send homework notifications:', emailError);
                   // Don't block the UI for email failure, just log it

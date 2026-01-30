@@ -1250,35 +1250,59 @@ export default function StudentStudyPage() {
                                   
                                   {/* Homework Badge & Status */}
                                   {material.isHomework && (
-                                      <>
+                                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                                          {/* Explicit Due Date Display */}
+                                          {material.dueDate && (
+                                              <div className="flex items-center text-xs font-semibold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md border border-gray-200 dark:border-gray-600">
+                                                  <Calendar className="w-3 h-3 mr-1.5" />
+                                                  <span>
+                                                      {new Date(material.dueDate).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+                                                  </span>
+                                                  <span className="mx-1.5 text-gray-300">|</span>
+                                                  <Clock className="w-3 h-3 mr-1.5" />
+                                                  <span>
+                                                      {new Date(material.dueDate).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
+                                                  </span>
+                                              </div>
+                                          )}
+
+
+                                          {/* Status Badge */}
                                           {(() => {
                                              const deadlineStatus = getHomeworkDeadlineStatus(material.dueDate);
                                              return (
-                                              <span className={`text-[10px] px-1.5 py-0.5 rounded border ${
+                                              <div className={`flex items-center text-xs font-bold px-2 py-1 rounded-md border shadow-sm ${
                                                   material.dueDate && new Date(material.dueDate) < new Date() 
-                                                  ? 'border-red-200 bg-red-50 text-red-600' 
+                                                  ? 'border-red-200 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800' 
                                                   : deadlineStatus?.color || 'border-blue-200 bg-blue-50 text-blue-600'
                                               }`}>
-                                                  {material.homeworkType === 'manual' ? 'Manual Task' : 'Homework'}
+                                                  <span className="mr-1.5">
+                                                      {material.homeworkType === 'manual' ? '📝 Manual Task' : '🏠 Homework'}
+                                                  </span>
+                                                  
                                                   {deadlineStatus && !homeworkSubmissions[material.id] && (
-                                                      <span className="ml-1 pl-1 border-l border-current">
-                                                          {deadlineStatus.label}
-                                                      </span>
+                                                      <>
+                                                          <span className="mr-1.5 text-current opacity-50">•</span>
+                                                          <span>
+                                                              {deadlineStatus.label}
+                                                          </span>
+                                                      </>
                                                   )}
-                                              </span>
+                                              </div>
                                              );
                                           })()}
 
+                                          {/* Submission Status */}
                                           {homeworkSubmissions[material.id] && (
-                                               <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
-                                                  homeworkSubmissions[material.id].status === 'resubmit_needed' ? 'bg-orange-100 text-orange-700' :
-                                                  homeworkSubmissions[material.id].status === 'late' ? 'bg-yellow-100 text-yellow-700' :
-                                                  'bg-green-100 text-green-700'
+                                               <div className={`flex items-center text-xs font-bold px-2 py-1 rounded-md border ${
+                                                  homeworkSubmissions[material.id].status === 'resubmit_needed' ? 'bg-orange-100 text-orange-700 border-orange-200' :
+                                                  homeworkSubmissions[material.id].status === 'late' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
+                                                  'bg-green-100 text-green-700 border-green-200'
                                               }`}>
-                                                  {homeworkSubmissions[material.id].status === 'resubmit_needed' ? 'Resubmit Req' : 'Submitted'}
-                                              </span>
+                                                  {homeworkSubmissions[material.id].status === 'resubmit_needed' ? '⚠️ Resubmit Req' : '✅ Submitted'}
+                                              </div>
                                           )}
-                                      </>
+                                      </div>
                                   )}
                                   </div>
                                 </div>
