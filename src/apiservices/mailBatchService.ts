@@ -50,7 +50,7 @@ export class MailBatchService {
           status: 'pending' as const,
           attemptCount: 0
         })),
-        metadata: input.metadata,
+        ...(input.metadata ? { metadata: input.metadata } : {}),
         lastUpdatedAt: Timestamp.now()
       };
 
