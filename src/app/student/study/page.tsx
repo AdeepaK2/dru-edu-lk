@@ -1155,24 +1155,26 @@ export default function StudentStudyPage() {
                         {!group.isGroup ? (
                           /* Single file actions */
                           <div className="flex space-x-2">
-                            <Button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleMaterialCompletion(group.materials[0]);
-                              }}
-                              variant={group.materials[0].completedBy?.includes(student?.id || '') ? "success" : "outline"}
-                              size="sm"
-                              className={group.materials[0].completedBy?.includes(student?.id || '')
-                                ? "bg-green-600 hover:bg-green-700 text-white" 
-                                : "border-green-600 text-green-600 hover:bg-green-50"
-                              }
-                            >
-                              {group.materials[0].completedBy?.includes(student?.id || '') ? (
-                                <CheckCircle className="w-4 h-4" />
-                              ) : (
-                                <Circle className="w-4 h-4" />
-                              )}
-                            </Button>
+                            {!group.materials[0].isHomework && (
+                              <Button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleMaterialCompletion(group.materials[0]);
+                                }}
+                                variant={group.materials[0].completedBy?.includes(student?.id || '') ? "success" : "outline"}
+                                size="sm"
+                                className={group.materials[0].completedBy?.includes(student?.id || '')
+                                  ? "bg-green-600 hover:bg-green-700 text-white" 
+                                  : "border-green-600 text-green-600 hover:bg-green-50"
+                                }
+                              >
+                                {group.materials[0].completedBy?.includes(student?.id || '') ? (
+                                  <CheckCircle className="w-4 h-4" />
+                                ) : (
+                                  <Circle className="w-4 h-4" />
+                                )}
+                              </Button>
+                            )}
                             
                             {group.materials[0].fileType === 'link' ? (
                               <Button
@@ -1216,7 +1218,8 @@ export default function StudentStudyPage() {
                     <div className="pt-0 px-6 pb-6">
                       <div className="space-y-3 border-t border-gray-100 dark:border-gray-700 pt-4">
                         {group.materials.map((material: any) => {
-                          const isCompleted = material.completedBy?.includes(student?.id || '') || false;
+                          const isSubmitted = material.isHomework && homeworkSubmissions[material.id]?.status === 'submitted';
+                          const isCompleted = (material.completedBy?.includes(student?.id || '') || false) || isSubmitted;
                           
                           return (
                             <div key={material.id} className={`flex items-center justify-between p-3 border rounded-lg dark:border-gray-700 transition-colors ${
@@ -1348,21 +1351,23 @@ export default function StudentStudyPage() {
                               
                               <div className="flex items-center space-x-2 flex-shrink-0">
                                 {/* Completion Toggle Button */}
-                                <Button
-                                  onClick={() => toggleMaterialCompletion(material)}
-                                  variant={isCompleted ? "success" : "outline"}
-                                  size="sm"
-                                  className={isCompleted
-                                    ? "bg-green-600 hover:bg-green-700 text-white" 
-                                    : "border-green-600 text-green-600 hover:bg-green-50"
-                                  }
-                                >
-                                  {isCompleted ? (
-                                    <CheckCircle className="w-4 h-4" />
-                                  ) : (
-                                    <Circle className="w-4 h-4" />
-                                  )}
-                                </Button>
+                                {!material.isHomework && (
+                                  <Button
+                                    onClick={() => toggleMaterialCompletion(material)}
+                                    variant={isCompleted ? "success" : "outline"}
+                                    size="sm"
+                                    className={isCompleted
+                                      ? "bg-green-600 hover:bg-green-700 text-white" 
+                                      : "border-green-600 text-green-600 hover:bg-green-50"
+                                    }
+                                  >
+                                    {isCompleted ? (
+                                      <CheckCircle className="w-4 h-4" />
+                                    ) : (
+                                      <Circle className="w-4 h-4" />
+                                    )}
+                                  </Button>
+                                )}
 
                                 {/* Action Button */}
                                 {material.fileType === 'link' ? (
