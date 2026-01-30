@@ -59,15 +59,37 @@ export class HomeworkSubmissionService {
 
       const submissionRef = doc(db, COLLECTION_NAME, studyMaterialId, SUBMISSIONS_COLLECTION, studentId);
       
-      // Check for existing submission to increment attempt number
+      // Check for existing submission to increment attempt number and handle resubmission
       const existingSnap = await getDoc(submissionRef);
       let attemptNumber = 1;
+      let isResubmission = false;
+      let revisions: any[] = [];
+
       if (existingSnap.exists()) {
-        attemptNumber = (existingSnap.data().attemptNumber || 0) + 1;
+        const existingData = existingSnap.data();
+        attemptNumber = (existingData.attemptNumber || 0) + 1;
+        revisions = existingData.revisions || [];
+
+        if (existingData.status === 'resubmit_needed' || existingData.teacherMark === 'Not Sufficient') {
+          isResubmission = true;
+          
+          // Archive the current submission before overwriting
+          revisions.push({
+            files: existingData.files || [],
+            message: existingData.message || null,
+            submittedAt: existingData.submittedAt,
+            // Grading info for history
+            teacherMark: existingData.teacherMark || null,
+            teacherRemarks: existingData.teacherRemarks || null,
+            numericMark: existingData.numericMark || null,
+            markedAt: existingData.markedAt || null,
+            markedBy: existingData.markedBy || null
+          });
+        }
       }
 
       const submissionData: any = {
-        id: studentId, // Using studentId as doc ID for 1:1 relationship
+        id: studentId,
         studyMaterialId,
         classId: data.classId,
         studentId,
@@ -78,8 +100,20 @@ export class HomeworkSubmissionService {
         submittedAt: Timestamp.fromDate(now),
         attemptNumber,
         createdAt: existingSnap.exists() ? existingSnap.data().createdAt : Timestamp.fromDate(now),
-        updatedAt: Timestamp.fromDate(now)
+        updatedAt: Timestamp.fromDate(now),
+        revisions: revisions
       };
+
+      if (isResubmission) {
+        // Clear grading fields for the new attempt
+        submissionData.teacherMark = null;
+        submissionData.teacherRemarks = null;
+        submissionData.numericMark = null;
+        submissionData.markedAt = null;
+        submissionData.markedBy = null;
+        // Ensure status is submitted (or late), overriding 'resubmit_needed'
+        submissionData.status = status; 
+      }
 
       await setDoc(submissionRef, submissionData, { merge: true });
       

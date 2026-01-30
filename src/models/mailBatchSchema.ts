@@ -18,7 +18,7 @@ export interface EmailRecipient {
 export interface MailBatchDocument {
   batchName: string; // e.g., "Test Assignment - Math Quiz 01 - 2024-10-24"
   subject: string; // Email subject line
-  batchType: 'test_notification' | 'class_cancellation' | 'class_schedule' | 'document_reminder' | 'test_extension' | 'absence_notification' | 'meeting_confirmation' | 'other';
+  batchType: 'test_notification' | 'class_cancellation' | 'class_schedule' | 'document_reminder' | 'test_extension' | 'absence_notification' | 'meeting_confirmation' | 'homework_notification' | 'other';
   createdAt: Timestamp;
   createdBy: string; // Teacher/Admin ID
   createdByName: string; // Teacher/Admin name
@@ -56,6 +56,7 @@ export const mailBatchSchema = z.object({
     'test_extension',
     'absence_notification',
     'meeting_confirmation',
+    'homework_notification',
     'other'
   ]),
   createdAt: z.instanceof(Timestamp),

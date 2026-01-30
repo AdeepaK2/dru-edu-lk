@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, X, FileText, CheckCircle, AlertCircle, Trash2, Lock } from 'lucide-react';
+import { Upload, X, FileText, CheckCircle, AlertCircle, Trash2, Lock, Clock } from 'lucide-react';
 import { HomeworkSubmissionService } from '@/apiservices/homeworkSubmissionService';
 import { StudyMaterialDocument } from '@/models/studyMaterialSchema';
 import { HomeworkSubmissionDocument } from '@/models/homeworkSubmissionSchema';
@@ -36,7 +36,9 @@ export default function HomeworkSubmissionModal({
   const [removedExisting, setRemovedExisting] = useState(false);
 
   // Check if graded/locked
-  const isGraded = !!(existingSubmission?.teacherMark || existingSubmission?.marks);
+  const isResubmit = existingSubmission?.teacherMark === 'Not Sufficient';
+  // Locked if marked AND NOT "Not Sufficient" (allow editing if Not Sufficient)
+  const isLocked = !!((existingSubmission?.teacherMark && !isResubmit) || (existingSubmission?.marks && !existingSubmission.teacherMark));
   
   // Determine if we are in "Edit Mode"
   // Default: false if there is an existing submission, true otherwise
@@ -134,10 +136,16 @@ export default function HomeworkSubmissionModal({
           <div>
             <div className="flex justify-between items-start mb-2">
                 <h4 className="font-semibold text-gray-900">{material.title}</h4>
-                {isGraded && (
+                {isLocked && (
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                         <Lock className="w-3 h-3 mr-1" />
                         Graded
+                    </span>
+                )}
+                {isResubmit && (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                        <AlertCircle className="w-3 h-3 mr-1" />
+                        Resubmit Needed
                     </span>
                 )}
             </div>
@@ -184,7 +192,7 @@ export default function HomeworkSubmissionModal({
                      Current submission: <a href={existingSubmission.files[0].url} target="_blank" rel="noreferrer" className="font-semibold underline hover:text-green-900">{existingSubmission.files[0].name}</a>
                    </div>
                    
-                   {isEditing && !isGraded ? (
+                   {isEditing && !isLocked ? (
                        <button 
                            onClick={() => setRemovedExisting(true)}
                            className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors"
@@ -221,7 +229,7 @@ export default function HomeworkSubmissionModal({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Message (Optional)</label>
-            {isEditing && !isGraded ? (
+            {isEditing && !isLocked ? (
                 <textarea
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
@@ -276,6 +284,46 @@ export default function HomeworkSubmissionModal({
               </div>
           )}
 
+          {/* Revision History */}
+          {existingSubmission?.revisions && existingSubmission.revisions.length > 0 && (
+            <div className="mt-6 border-t pt-4">
+                <h5 className="font-semibold text-gray-900 mb-3 flex items-center">
+                    <Clock className="w-4 h-4 mr-2" />
+                    Submission History
+                </h5>
+                <div className="space-y-3 max-h-40 overflow-y-auto">
+                    {[...existingSubmission.revisions].reverse().map((rev, index) => (
+                        <div key={index} className="bg-gray-50 rounded-lg p-3 text-sm border border-gray-100">
+                            <div className="flex justify-between items-start mb-1">
+                                <span className="font-medium text-gray-500 text-xs">
+                                    {rev.submittedAt ? new Date((rev.submittedAt as any).seconds * 1000).toLocaleDateString() : 'Unknown Date'}
+                                </span>
+                                {rev.teacherMark && (
+                                    <span className={`px-2 py-0.5 rounded text-xs font-bold ${
+                                        rev.teacherMark === 'Good' ? 'bg-green-100 text-green-800' :
+                                        rev.teacherMark === 'Satisfied' ? 'bg-blue-100 text-blue-800' :
+                                        'bg-red-100 text-red-800'
+                                    }`}>
+                                        {rev.teacherMark}
+                                    </span>
+                                )}
+                            </div>
+                            {rev.teacherRemarks && (
+                                <p className="text-gray-600 italic text-xs mb-1">"{rev.teacherRemarks}"</p>
+                            )}
+                             <div className="mt-1">
+                                {rev.files && rev.files[0] && (
+                                    <a href={rev.files[0].url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline flex items-center gap-1 text-xs">
+                                        <FileText className="w-3 h-3"/> {rev.files[0].name}
+                                    </a>
+                                )}
+                             </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+          )}
+
           <div className="flex justify-end space-x-3 pt-4">
              <button
                 onClick={onClose}
@@ -288,24 +336,24 @@ export default function HomeworkSubmissionModal({
              {!isEditing && existingSubmission ? (
                  <button
                     onClick={() => setIsEditing(true)}
-                    disabled={isGraded}
+                    disabled={isLocked}
                     className={`px-6 py-2 font-bold rounded-lg transition-all ${
-                        isGraded 
+                        isLocked 
                         ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
                         : 'bg-black text-white hover:opacity-80'
                     }`}
                  >
-                    {isGraded ? 'Graded (Read-only)' : 'Edit Submission'}
+                    {isLocked ? 'Graded (Read-only)' : (isResubmit ? 'Resubmit Work' : 'Edit Submission')}
                  </button>
              ) : (
                  <button
-                    onClick={handleSubmit}
-                    disabled={uploading || success || isGraded}
+                     onClick={handleSubmit}
+                    disabled={uploading || success || isLocked}
                     className={`px-6 py-2 bg-black text-white font-bold rounded-lg hover:opacity-80 transition-opacity flex items-center ${
-                        (uploading || isGraded) ? 'opacity-50 cursor-not-allowed' : ''
+                        (uploading || isLocked) ? 'opacity-50 cursor-not-allowed' : ''
                     }`}
                  >
-                    {uploading ? 'Submitting...' : existingSubmission ? 'Update Submission' : 'Submit'}
+                    {uploading ? 'Submitting...' : isResubmit ? 'Resubmit Work' : existingSubmission ? 'Update Submission' : 'Submit'}
                  </button>
              )}
           </div>
