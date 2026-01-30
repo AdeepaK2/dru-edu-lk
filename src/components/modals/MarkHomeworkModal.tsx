@@ -44,7 +44,7 @@ interface ExtendedStudentSubmission {
   files?: { url: string; name: string; type?: string }[];
   marks?: number;
   remarks?: string;
-  teacherMark?: 'Good' | 'Satisfied' | 'Not Sufficient'; // Maps to Good, Satisfactory, Not Satisfactory
+  teacherMark?: 'Excellent' | 'Good' | 'Satisfied' | 'Satisfactory' | 'Needs Improvement' | 'Not Sufficient' | 'Unsatisfactory'; // Maps to Good, Satisfactory, Not Satisfactory
   isChanged: boolean;
 }
 
@@ -150,30 +150,27 @@ const MarkHomeworkModal: React.FC<MarkHomeworkModalProps> = ({
 
   const selectedStudent = students.find(s => s.studentId === selectedStudentId);
 
-  const handleMarking = (type: 'Satisfactory' | 'Good' | 'Not Satisfactory') => {
+  const handleMarking = (type: 'Excellent' | 'Good' | 'Satisfactory' | 'Needs Improvement' | 'Unsatisfactory') => {
     if (!selectedStudent) return;
 
     setStudents(prev => prev.map(s => {
       if (s.studentId === selectedStudent.studentId) {
         let newStatus = s.status;
-        let teacherMark: ExtendedStudentSubmission['teacherMark'];
+        let teacherMark: ExtendedStudentSubmission['teacherMark'] = type;
 
-        if (type === 'Satisfactory') {
-             teacherMark = 'Satisfied';
-             // If currently in 'issues' or 'late', do we move it? 
-             // Typically 'Satisfactory' means it's done. 
-             // But if it was late, it remains late but marked? 
-             // User says: "if marked unsatifactory his submission becomes in 4th tab"
-             // Implies status change.
-             if (s.status === 'resubmit_needed') newStatus = 'submitted'; // Move back to handled?
-             if (s.status === 'not_submitted') newStatus = 'submitted'; // Assume submitted if marked
-        } else if (type === 'Good') {
-             teacherMark = 'Good';
-             if (s.status === 'resubmit_needed') newStatus = 'submitted';
-             if (s.status === 'not_submitted') newStatus = 'submitted';
+        // Logic: 
+        // Excellent, Good, Satisfactory -> Submitted (Approved)
+        // Needs Improvement, Unsatisfactory -> Resubmit Needed (Issues tab)
+
+        if (['Excellent', 'Good', 'Satisfactory'].includes(type)) {
+             // Promote to submitted if currently in issues/not_submitted
+             if (s.status === 'resubmit_needed' || s.status === 'not_submitted') {
+                 newStatus = 'submitted';
+             }
+             // existing submitted/late statuses are preserved as they indicate timeliness
         } else {
-             teacherMark = 'Not Sufficient';
-             newStatus = 'resubmit_needed'; // Move to Issue tab
+             // Demote to issues
+             newStatus = 'resubmit_needed';
         }
 
         return {
@@ -318,11 +315,14 @@ const MarkHomeworkModal: React.FC<MarkHomeworkModalProps> = ({
                         <div className="flex items-center gap-2 mt-1">
                             {student.teacherMark && (
                                 <span className={`text-[10px] px-1.5 py-0.5 rounded ${
-                                    student.teacherMark === 'Good' ? 'bg-green-100 text-green-700' :
-                                    student.teacherMark === 'Satisfied' ? 'bg-blue-100 text-blue-700' :
+                                    student.teacherMark === 'Excellent' ? 'bg-emerald-100 text-emerald-700' :
+                                    student.teacherMark === 'Good' ? 'bg-blue-100 text-blue-700' :
+                                    (student.teacherMark === 'Satisfactory' || student.teacherMark === 'Satisfied') ? 'bg-amber-100 text-amber-700' :
+                                    student.teacherMark === 'Needs Improvement' ? 'bg-orange-100 text-orange-700' :
                                     'bg-red-100 text-red-700'
                                 }`}>
-                                    {student.teacherMark === 'Not Sufficient' ? 'Issues' : student.teacherMark}
+                                    {/* Display Logic */}
+                                    {((student.teacherMark === 'Unsatisfactory' || student.teacherMark === 'Not Sufficient') ? 'Issues' : student.teacherMark) || 'Marked'}
                                 </span>
                             )}
                             {!student.files?.length && activeTab !== 'not_submitted' && activeTab !== 'issues' && submissionType === 'online' && (
@@ -367,28 +367,54 @@ const MarkHomeworkModal: React.FC<MarkHomeworkModalProps> = ({
                         </div>
                         
                         {/* Marking Actions */}
-                        <div className="flex items-center gap-2">
-                            <Button 
-                                onClick={() => handleMarking('Good')}
-                                variant={selectedStudent.teacherMark === 'Good' ? 'primary' : 'outline'}
-                                className={`gap-2 ${selectedStudent.teacherMark === 'Good' ? 'bg-green-600 hover:bg-green-700 text-white' : 'text-green-600 border-green-200 hover:bg-green-50'}`}
-                            >
-                                <Award className="w-4 h-4" /> Good
-                            </Button>
-                            <Button 
-                                onClick={() => handleMarking('Satisfactory')}
-                                variant={selectedStudent.teacherMark === 'Satisfied' ? 'primary' : 'outline'}
-                                className={`gap-2 ${selectedStudent.teacherMark === 'Satisfied' ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'text-blue-600 border-blue-200 hover:bg-blue-50'}`}
-                            >
-                                <ThumbsUp className="w-4 h-4" /> Satisfactory
-                            </Button>
-                            <Button 
-                                onClick={() => handleMarking('Not Satisfactory')}
-                                variant={selectedStudent.teacherMark === 'Not Sufficient' ? 'primary' : 'outline'}
-                                className={`gap-2 ${selectedStudent.teacherMark === 'Not Sufficient' ? 'bg-red-600 hover:bg-red-700 text-white' : 'text-red-600 border-red-200 hover:bg-red-50'}`}
-                            >
-                                <ThumbsDown className="w-4 h-4" /> Issues
-                            </Button>
+                        <div className="flex flex-col gap-2 items-end">
+                            {/* Top Row: Passing Grades */}
+                            <div className="flex items-center gap-2">
+                                <Button 
+                                    onClick={() => handleMarking('Excellent')}
+                                    variant={selectedStudent.teacherMark === 'Excellent' ? 'primary' : 'outline'}
+                                    className={`gap-1.5 h-7 text-xs ${selectedStudent.teacherMark === 'Excellent' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'text-emerald-600 border-emerald-200 hover:bg-emerald-50'}`}
+                                    title="90-100% - Exceeds expectations"
+                                >
+                                    <Award className="w-3 h-3" /> Excellent
+                                </Button>
+                                <Button 
+                                    onClick={() => handleMarking('Good')}
+                                    variant={selectedStudent.teacherMark === 'Good' ? 'primary' : 'outline'}
+                                    className={`gap-1.5 h-7 text-xs ${selectedStudent.teacherMark === 'Good' ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'text-blue-600 border-blue-200 hover:bg-blue-50'}`}
+                                    title="80-89% - Good"
+                                >
+                                    <ThumbsUp className="w-3 h-3" /> Good
+                                </Button>
+                                <Button 
+                                    onClick={() => handleMarking('Satisfactory')}
+                                    variant={(selectedStudent.teacherMark === 'Satisfactory' || selectedStudent.teacherMark === 'Satisfied') ? 'primary' : 'outline'}
+                                    className={`gap-1.5 h-7 text-xs ${(selectedStudent.teacherMark === 'Satisfactory' || selectedStudent.teacherMark === 'Satisfied') ? 'bg-amber-500 hover:bg-amber-600 text-white' : 'text-amber-600 border-amber-200 hover:bg-amber-50'}`}
+                                    title="70-79% - Satisfactory"
+                                >
+                                    <CheckCircle className="w-3 h-3" /> Satisfactory
+                                </Button>
+                            </div>
+                            
+                            {/* Bottom Row: Improvement Needed */}
+                            <div className="flex items-center gap-2">
+                                <Button 
+                                    onClick={() => handleMarking('Needs Improvement')}
+                                    variant={selectedStudent.teacherMark === 'Needs Improvement' ? 'primary' : 'outline'}
+                                    className={`gap-1.5 h-7 text-xs ${selectedStudent.teacherMark === 'Needs Improvement' ? 'bg-orange-600 hover:bg-orange-700 text-white' : 'text-orange-600 border-orange-200 hover:bg-orange-50'}`}
+                                    title="60-69% - Requires revision"
+                                >
+                                    <AlertCircle className="w-3 h-3" /> Needs Improvement
+                                </Button>
+                                <Button 
+                                    onClick={() => handleMarking('Unsatisfactory')}
+                                    variant={(selectedStudent.teacherMark === 'Unsatisfactory' || selectedStudent.teacherMark === 'Not Sufficient') ? 'primary' : 'outline'}
+                                    className={`gap-1.5 h-7 text-xs ${(selectedStudent.teacherMark === 'Unsatisfactory' || selectedStudent.teacherMark === 'Not Sufficient') ? 'bg-red-600 hover:bg-red-700 text-white' : 'text-red-600 border-red-200 hover:bg-red-50'}`}
+                                    title="Below 60% - Needs major revision"
+                                >
+                                    <ThumbsDown className="w-3 h-3" /> Unsatisfactory
+                                </Button>
+                            </div>
                         </div>
                     </div>
 

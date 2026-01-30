@@ -98,8 +98,8 @@ export class MailBatchService {
       recipients[recipientIndex] = {
         ...recipients[recipientIndex],
         status,
-        mailId,
-        error,
+        ...(mailId ? { mailId } : {}),
+        ...(error ? { error } : {}),
         sentAt: status === 'sent' ? Timestamp.now() : recipients[recipientIndex].sentAt,
         attemptCount: (recipients[recipientIndex].attemptCount || 0) + 1
       };
