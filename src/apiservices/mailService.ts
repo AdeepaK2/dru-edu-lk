@@ -33,6 +33,109 @@ export class MailService {
     }
   }
 
+  // Generate homework notification email for student
+  static generateHomeworkNotificationEmail(
+    studentName: string,
+    studentEmail: string,
+    homeworkTitle: string,
+    homeworkDescription: string,
+    teacherName: string,
+    subjectName: string,
+    className: string,
+    dueDate: string,
+    homeworkType: 'manual' | 'online',
+    materialLink?: string,
+    maxMarks?: number,
+    instructions?: string
+  ): Omit<MailDocument, 'createdAt' | 'processed'> {
+    const formattedDueDate = new Date(dueDate).toLocaleString('en-US', { // Changed to toLocaleString for date and time
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+    const homeworkIcon = '📚';
+    const typeLabel = homeworkType === 'online' ? 'Online Submission' : 'Manual Submission';
+    
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #4F46E5; text-align: center;">${homeworkIcon} New Homework Assigned - Dr U Education</h2>
+        
+        <p>Dear ${studentName},</p>
+        
+        <p>A new homework assignment has been posted by <strong>${teacherName}</strong> for your <strong>${subjectName}</strong> class.</p>
+        
+        <div style="background-color: #F3F4F6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="color: #374151; margin-top: 0;">📋 Assignment Details</h3>
+          <p><strong>Title:</strong> ${homeworkTitle}</p>
+          <p><strong>Subject:</strong> ${subjectName}</p>
+          <p><strong>Class:</strong> ${className}</p>
+          <p><strong>Type:</strong> ${typeLabel}</p>
+          <p><strong>Due Date:</strong> ${formattedDueDate}</p>
+          ${maxMarks ? `<p><strong>Marks:</strong> ${maxMarks}</p>` : ''}
+        </div>
+
+        ${homeworkDescription ? `
+        <div style="background-color: #F0FDF4; border-left: 4px solid #22C55E; padding: 15px; margin: 20px 0;">
+          <p style="margin: 0;"><strong>Description:</strong></p>
+          <p style="margin: 10px 0 0 0; color: #16A34A;">${homeworkDescription}</p>
+        </div>
+        ` : ''}
+
+        ${instructions ? `
+        <div style="background-color: #FEF2F2; border-left: 4px solid #EF4444; padding: 15px; margin: 20px 0;">
+          <p style="margin: 0; color: #DC2626;"><strong>📖 Instructions:</strong></p>
+          <p style="margin: 10px 0 0 0; color: #7F1D1D;">${instructions}</p>
+        </div>
+        ` : ''}
+
+        <div style="background-color: #EBF8FF; border-left: 4px solid #3B82F6; padding: 15px; margin: 20px 0;">
+          <p style="margin: 0; color: #1E40AF;"><strong>💡 Action Required:</strong></p>
+          <p style="margin: 10px 0 0 0; color: #1E3A8A;">
+            Please ensure you complete this homework by the due date. 
+            ${homeworkType === 'online' 
+              ? 'You need to upload your submission through the student portal.' 
+              : 'Please follow the instructions provided by your teacher for submission.'}
+          </p>
+        </div>
+        
+        ${materialLink ? `
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${materialLink}" style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+            View Homework Material
+          </a>
+        </div>
+        ` : ''}
+        
+        <div style="text-align: center; margin: 20px 0;">
+          <a href="https://www.drueducation.com.au/student" 
+             style="display: inline-block; background-color: #10B981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+            Login to Student Portal
+          </a>
+        </div>
+
+        <p>If you have any questions, please reach out to your teacher.</p>
+        
+        <p>Happy Learning!<br>
+        The Dr U Education Team</p>
+        
+        <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 30px 0;">
+        <p style="font-size: 12px; color: #6B7280; text-align: center;">
+          This is an automated notification from Dr U Education.
+        </p>
+      </div>
+    `;
+
+    return {
+      to: studentEmail,
+      subject: `📚 Homework Assigned: ${homeworkTitle} - ${subjectName}`,
+      html: html.trim()
+    };
+  }
+
   // Generate meeting confirmation email for teacher
   static generateTeacherMeetingEmail(
     teacherName: string,

@@ -69,6 +69,18 @@ export interface HomeworkSubmission {
   resubmissionDeadline?: Date;
   attemptNumber: number;
   
+  revisions?: {
+    files: { url: string; name: string; type?: string; size?: number }[];
+    message?: string;
+    submittedAt: Date;
+    teacherMark?: TeacherMark;
+    teacherRemarks?: string;
+    numericMark?: number;
+    marks?: number;
+    markedAt?: Date;
+    markedBy?: string;
+  }[];
+  
   createdAt: Date;
   updatedAt: Date;
 }
@@ -102,6 +114,18 @@ export interface HomeworkSubmissionDocument {
   
   resubmissionDeadline?: Timestamp;
   attemptNumber: number;
+
+  revisions?: {
+    files: { url: string; name: string; type?: string; size?: number }[];
+    message?: string;
+    submittedAt: Timestamp;
+    teacherMark?: string;
+    teacherRemarks?: string;
+    numericMark?: number;
+    marks?: number;
+    markedAt?: Timestamp;
+    markedBy?: string;
+  }[];
   
   createdAt: Timestamp;
   updatedAt: Timestamp;

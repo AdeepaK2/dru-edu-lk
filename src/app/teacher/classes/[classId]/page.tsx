@@ -1308,6 +1308,7 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
         onSuccess={handleUploadSuccess}
         classData={classData || undefined}
         preSelectedLessonId={selectedLessonId}
+        enrollments={enrollments}
       />
 
       {/* Completion Details Modal */}
