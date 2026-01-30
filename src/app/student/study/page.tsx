@@ -97,6 +97,11 @@ export default function StudentStudyPage() {
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
   // Homework State
+  
+  // Loading States
+  const [classesLoading, setClassesLoading] = useState(true);
+
+  // Homework State
   const [showHomeworkModal, setShowHomeworkModal] = useState(false);
   const [selectedHomework, setSelectedHomework] = useState<StudyMaterial | null>(null);
   const [homeworkSubmissions, setHomeworkSubmissions] = useState<Record<string, HomeworkSubmissionDocument>>({});
@@ -132,6 +137,7 @@ export default function StudentStudyPage() {
   const loadStudentClasses = async () => {
     if (!student) return;
     
+    setClassesLoading(true);
     try {
       const enrollments = await getEnrollmentsByStudent(student.id);
       const classesWithProgress: ClassWithProgress[] = [];
@@ -175,6 +181,8 @@ export default function StudentStudyPage() {
       setClasses(classesWithProgress);
     } catch (error) {
       console.error('Error loading student classes:', error);
+    } finally {
+      setClassesLoading(false);
     }
   };
 
@@ -239,6 +247,29 @@ export default function StudentStudyPage() {
     if (progress >= 60) return 'Good';
     if (progress >= 40) return 'Fair';
     return 'Needs Attention';
+  };
+
+  const getHomeworkDeadlineStatus = (dueDate?: string) => {
+    if (!dueDate) return null;
+    const now = new Date();
+    const due = new Date(dueDate);
+    const diffTime = due.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const diffHours = Math.ceil(diffTime / (1000 * 60 * 60));
+
+    if (diffTime < 0) {
+      return { status: 'overdue', color: 'bg-red-100 text-red-700 border-red-500', label: 'Overdue' };
+    }
+
+    if (diffDays > 7) {
+      return { status: 'comfortable', color: 'bg-green-100 text-green-700 border-green-500', label: `${diffDays} days left` };
+    } else if (diffDays > 3) {
+      return { status: 'moderate', color: 'bg-yellow-100 text-yellow-700 border-yellow-500', label: `${diffDays} days left` };
+    } else if (diffDays > 1) {
+       return { status: 'soon', color: 'bg-orange-100 text-orange-700 border-orange-500', label: `${diffDays} days left` };
+    } else {
+      return { status: 'urgent', color: 'bg-red-100 text-red-700 border-red-500 animate-pulse', label: diffHours > 1 ? `${diffHours} hours left` : '< 1 hour left' };
+    }
   };
 
   const filteredMaterials = materials.filter(material => {
@@ -688,13 +719,23 @@ export default function StudentStudyPage() {
                                   {/* Homework UI */}
                                   {material.isHomework && (
                                     <div className="ml-2 flex items-center space-x-2">
-                                      <Badge variant="secondary" className={`${
-                                        material.dueDate && new Date(material.dueDate) < new Date() 
-                                          ? 'border-red-500 text-red-500 bg-red-50' 
-                                          : 'border-blue-500 text-blue-500 bg-blue-50'
-                                      }`}>
-                                        {material.homeworkType === 'manual' ? 'Manual Task' : 'Homework'}
-                                      </Badge>
+                                      {(() => {
+                                         const deadlineStatus = getHomeworkDeadlineStatus(material.dueDate);
+                                         return (
+                                          <Badge variant="secondary" className={`${
+                                            material.dueDate && new Date(material.dueDate) < new Date() 
+                                              ? 'border-red-500 text-red-500 bg-red-50' 
+                                              : deadlineStatus?.color || 'border-blue-500 text-blue-500 bg-blue-50'
+                                          }`}>
+                                            {material.homeworkType === 'manual' ? 'Manual Task' : 'Homework'}
+                                            {deadlineStatus && !homeworkSubmissions[material.id] && (
+                                              <span className="ml-1 border-l border-current pl-1">
+                                                {deadlineStatus.label}
+                                              </span>
+                                            )}
+                                          </Badge>
+                                         );
+                                      })()}
                                       
                                       {homeworkSubmissions[material.id] ? (
                                         <div className="flex items-center space-x-1">
@@ -1210,13 +1251,23 @@ export default function StudentStudyPage() {
                                   {/* Homework Badge & Status */}
                                   {material.isHomework && (
                                       <>
-                                          <span className={`text-[10px] px-1.5 py-0.5 rounded border ${
-                                              material.dueDate && new Date(material.dueDate) < new Date() 
-                                              ? 'border-red-200 bg-red-50 text-red-600' 
-                                              : 'border-blue-200 bg-blue-50 text-blue-600'
-                                          }`}>
-                                              {material.homeworkType === 'manual' ? 'Manual Task' : 'Homework'}
-                                          </span>
+                                          {(() => {
+                                             const deadlineStatus = getHomeworkDeadlineStatus(material.dueDate);
+                                             return (
+                                              <span className={`text-[10px] px-1.5 py-0.5 rounded border ${
+                                                  material.dueDate && new Date(material.dueDate) < new Date() 
+                                                  ? 'border-red-200 bg-red-50 text-red-600' 
+                                                  : deadlineStatus?.color || 'border-blue-200 bg-blue-50 text-blue-600'
+                                              }`}>
+                                                  {material.homeworkType === 'manual' ? 'Manual Task' : 'Homework'}
+                                                  {deadlineStatus && !homeworkSubmissions[material.id] && (
+                                                      <span className="ml-1 pl-1 border-l border-current">
+                                                          {deadlineStatus.label}
+                                                      </span>
+                                                  )}
+                                              </span>
+                                             );
+                                          })()}
 
                                           {homeworkSubmissions[material.id] && (
                                                <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
@@ -1673,8 +1724,17 @@ export default function StudentStudyPage() {
           ))}
         </div>
       </div>
+      
+      {/* Loading Skeleton for Classes */}
+      {classesLoading && classes.length === 0 && (
+         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3].map((i) => (
+                <div key={i} className="h-64 rounded-3xl bg-gray-200 animate-pulse"></div>
+            ))}
+         </div>
+      )}
 
-      {classes.length === 0 && (
+      {!classesLoading && classes.length === 0 && (
         <div className={`${theme === 'default' ? 'bg-white' : 'bg-gradient-to-r'} rounded-3xl shadow-2xl border-4 ${theme === 'ponyville' ? 'border-black' : 'border-black'} text-center py-12 ${
           theme === 'default' ? '' : theme === 'ben10'
             ? 'from-green-500 to-green-600'
