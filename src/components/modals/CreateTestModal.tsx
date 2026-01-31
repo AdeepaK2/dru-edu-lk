@@ -20,6 +20,7 @@ interface CreateTestModalProps {
   subjectId: string;
   subjectName: string;
   selectedClassId?: string; // Single class when coming from class-detail view
+  initialTemplateId?: string; // Pre-selected template ID
   availableClasses: Array<{
     id: string;
     name: string;
@@ -34,6 +35,7 @@ interface TestFormData {
   // Step 0: Template Selection (NEW)
   useTemplate: boolean;
   selectedTemplateId: string;
+  targetClassIds: string[]; // NEW: For selecting classes when no specific class is pre-selected
 
   // Step 1: Basic Info & Type
   title: string;
@@ -78,7 +80,8 @@ interface TestFormData {
 const INITIAL_FORM_DATA: TestFormData = {
   useTemplate: false,
   selectedTemplateId: '',
-
+  targetClassIds: [],
+  
   title: '',
   testNumber: '',
   description: '',
@@ -116,6 +119,7 @@ export default function CreateTestModal({
   subjectId,
   subjectName,
   selectedClassId,
+  initialTemplateId,
   availableClasses,
   questionBanks
 }: CreateTestModalProps) {
@@ -434,10 +438,28 @@ export default function CreateTestModal({
   useEffect(() => {
     if (isOpen) {
       setFormData(INITIAL_FORM_DATA);
+      
+      // If initialTemplateId is provided, initialize logic for it
+      if (initialTemplateId) {
+        updateFormData({
+          useTemplate: true,
+          selectedTemplateId: initialTemplateId,
+          targetClassIds: selectedClassId ? [selectedClassId] : []
+        });
+        // We defer the step change to `loadTemplateData` effect or just start at 0 and let user confirm
+        // Actually, let's start at 0 so they see the template is selected, or if we want to confirm class selection, maybe Step 5?
+        // Let's start at Step 0 but with pre-filled data.
+      } else {
+        // Normal initialization
+        updateFormData({
+          targetClassIds: selectedClassId ? [selectedClassId] : availableClasses.map(c => c.id) // Default to all if not specified, or we can force partial selection later
+        });
+      }
+      
       setCurrentStep(0);
       setErrors({});
     }
-  }, [isOpen]);
+  }, [isOpen, initialTemplateId, selectedClassId, availableClasses]);
 
   const updateFormData = (updates: Partial<TestFormData>) => {
     setFormData(prev => ({ ...prev, ...updates }));
@@ -604,6 +626,10 @@ export default function CreateTestModal({
         if (formData.passingScore < 0 || formData.passingScore > 100) {
           newErrors.passingScore = 'Passing score must be between 0 and 100';
         }
+        // Validate target classes if not pre-selected via props
+        if (!selectedClassId && formData.targetClassIds.length === 0) {
+           newErrors.targetClassIds = 'Please select at least one class to assign this test to';
+        }
         break;
     }
 
@@ -697,10 +723,10 @@ export default function CreateTestModal({
         teacherName: teacher?.name || '', // Get from auth context
         subjectId: subjectId || '', // Ensure not undefined
         subjectName: subjectName || '', // Ensure not undefined
-        classIds: selectedClassId ? [selectedClassId] : availableClasses.map(c => c.id),
+        classIds: selectedClassId ? [selectedClassId] : formData.targetClassIds,
         classNames: selectedClassId ? 
           [availableClasses.find(c => c.id === selectedClassId)?.name || ''] : 
-          availableClasses.map(c => c.name),
+          availableClasses.filter(c => formData.targetClassIds.includes(c.id)).map(c => c.name),
         config: testConfig,
         questions: formData.selectedQuestions || [], // Ensure not undefined
         totalMarks: totalMarks,
@@ -2602,6 +2628,50 @@ export default function CreateTestModal({
               </div>
 
               <div className="space-y-6">
+                
+                {/* Class Selection (Only if not pre-selected) */}
+                {!selectedClassId && (
+                  <div className="space-y-3 p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-100 dark:border-indigo-800">
+                    <h4 className="flex items-center text-md font-medium text-indigo-900 dark:text-indigo-300">
+                      <Users className="w-5 h-5 mr-2" />
+                      Assign to Classes <span className="text-red-500">*</span>
+                    </h4>
+                    <p className="text-sm text-indigo-700 dark:text-indigo-400 mb-3">
+                      Select which classes should receive this test.
+                    </p>
+                    
+                    <div className="max-h-40 overflow-y-auto space-y-2 bg-white dark:bg-gray-800 p-3 rounded border border-indigo-200 dark:border-indigo-700">
+                      {availableClasses.length > 0 ? (
+                        availableClasses.map(cls => (
+                          <label key={cls.id} className="flex items-center space-x-3 cursor-pointer p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded">
+                            <input
+                              type="checkbox"
+                              checked={formData.targetClassIds.includes(cls.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  updateFormData({ targetClassIds: [...formData.targetClassIds, cls.id] });
+                                } else {
+                                  updateFormData({ targetClassIds: formData.targetClassIds.filter(id => id !== cls.id) });
+                                }
+                              }}
+                              className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                            />
+                            <div>
+                               <span className="font-medium text-gray-900 dark:text-white">{cls.name}</span>
+                               <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">({cls.year})</span>
+                            </div>
+                          </label>
+                        ))
+                      ) : (
+                        <p className="text-sm text-gray-500">No classes available.</p>
+                      )}
+                    </div>
+                    {errors.targetClassIds && (
+                      <p className="text-sm text-red-500 mt-1">{errors.targetClassIds}</p>
+                    )}
+                  </div>
+                )}
+
                 {/* Test Behavior */}
                 <div className="space-y-4">
                   <h4 className="text-md font-medium text-gray-900 dark:text-white">Test Behavior</h4>
