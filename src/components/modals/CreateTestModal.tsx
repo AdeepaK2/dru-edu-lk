@@ -435,31 +435,35 @@ export default function CreateTestModal({
   };
 
   // Reset form when modal opens/closes
+  // Initialize form when modal opens
   useEffect(() => {
     if (isOpen) {
-      setFormData(INITIAL_FORM_DATA);
+      // Always reset to initial state first
+      const initialData = { ...INITIAL_FORM_DATA };
       
       // If initialTemplateId is provided, initialize logic for it
       if (initialTemplateId) {
-        updateFormData({
-          useTemplate: true,
-          selectedTemplateId: initialTemplateId,
-          targetClassIds: selectedClassId ? [selectedClassId] : []
-        });
-        // We defer the step change to `loadTemplateData` effect or just start at 0 and let user confirm
-        // Actually, let's start at 0 so they see the template is selected, or if we want to confirm class selection, maybe Step 5?
-        // Let's start at Step 0 but with pre-filled data.
+        // If we have a template, we want to start with class selection if not already selected
+        // The user wants class selection to be the FIRST thing for templates
+        initialData.useTemplate = true;
+        initialData.selectedTemplateId = initialTemplateId;
+        initialData.targetClassIds = selectedClassId ? [selectedClassId] : [];
+        
+        setFormData(initialData);
+        // We really want to skip the "Choose Method" step
+        // We'll handle the "Class Selection First" requirement by modifying the UI for Step 1 or adding a new step
+        setCurrentStep(1); 
       } else {
         // Normal initialization
-        updateFormData({
-          targetClassIds: selectedClassId ? [selectedClassId] : availableClasses.map(c => c.id) // Default to all if not specified, or we can force partial selection later
-        });
+        initialData.targetClassIds = selectedClassId ? [selectedClassId] : availableClasses.map(c => c.id);
+        setFormData(initialData);
+        setCurrentStep(0);
       }
       
-      setCurrentStep(0);
       setErrors({});
     }
-  }, [isOpen, initialTemplateId, selectedClassId, availableClasses]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]); // Only run when isOpen changes to true/false
 
   const updateFormData = (updates: Partial<TestFormData>) => {
     setFormData(prev => ({ ...prev, ...updates }));
@@ -545,10 +549,15 @@ export default function CreateTestModal({
         }
         break;
 
-      case 1: // Basic Info & Type
-        if (!formData.title.trim()) newErrors.title = 'Test title is required';
+      case 1: // Basic Info
+        if (!formData.title.trim()) newErrors.title = 'Title is required';
         if (!formData.type) newErrors.type = 'Test type is required';
         if (!formData.questionType) newErrors.questionType = 'Question type is required';
+        
+        // Validate target classes if using template and it's visible in Step 1
+        if (initialTemplateId && !selectedClassId && formData.targetClassIds.length === 0) {
+           newErrors.targetClassIds = 'Please select at least one class';
+        }
         // Test numbers are auto-assigned, no validation needed
         console.log('🔍 Step 1 validation errors:', newErrors);
         break;
@@ -647,17 +656,13 @@ export default function CreateTestModal({
       else if (currentStep === 1 && formData.useTemplate && formData.selectedTemplateId) {
         setCurrentStep(2); // Go to timing step
       }
-      // If using template and on step 2 (timing), skip question selection and go to final config
-      else if (currentStep === 2 && formData.useTemplate && formData.selectedTemplateId) {
-        setCurrentStep(5); // Skip question selection, go directly to final configuration
-      }
       // If moving from step 3 to step 4 and using auto-selection, generate preview
       else if (currentStep === 3 && formData.questionSelectionMethod === 'auto') {
         generatePreviewQuestions();
         setCurrentStep(4);
       }
-      // For manual selection, skip the preview step (step 4)
-      else if (currentStep === 3 && formData.questionSelectionMethod === 'manual') {
+      // For manual selection (or template which acts like manual), skip the preview step (step 4)
+      else if (currentStep === 3 && (formData.questionSelectionMethod === 'manual' || formData.useTemplate)) {
         setCurrentStep(5); // Jump directly to final configuration
       } else {
         setCurrentStep(prev => Math.min(prev + 1, totalSteps));
@@ -666,20 +671,8 @@ export default function CreateTestModal({
   };
 
   const handlePrevious = () => {
-    // If using template and on step 5 (final config), go back to step 2 (timing)
-    if (currentStep === 5 && formData.useTemplate && formData.selectedTemplateId) {
-      setCurrentStep(2); // Go back to timing
-    }
-    // If using template and on step 2 (timing), go back to step 1 (basic info)
-    else if (currentStep === 2 && formData.useTemplate && formData.selectedTemplateId) {
-      setCurrentStep(1); // Go back to basic info
-    }
-    // If using template and on step 1 (basic info), go back to step 0 (template selection)
-    else if (currentStep === 1 && formData.useTemplate) {
-      setCurrentStep(0); // Go back to template selection
-    }
     // If on step 5 and came from manual selection, go back to step 3
-    else if (currentStep === 5 && formData.questionSelectionMethod === 'manual') {
+    if (currentStep === 5 && formData.questionSelectionMethod === 'manual') {
       setCurrentStep(3);
     }
     // If on step 4 and came from auto-selection, go back to step 3
@@ -1237,6 +1230,50 @@ export default function CreateTestModal({
               </div>
 
               <div className="space-y-6">
+                
+                {/* Class Selection - ONLY if using template (User Requirement: Ask class first) */}
+                {initialTemplateId && !selectedClassId && (
+                  <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-4 mb-6">
+                    <h4 className="flex items-center text-md font-medium text-indigo-900 dark:text-indigo-300 mb-2">
+                      <Users className="w-5 h-5 mr-2" />
+                      Assign to Classes <span className="text-red-500">*</span>
+                    </h4>
+                    <p className="text-sm text-indigo-700 dark:text-indigo-400 mb-3">
+                      Select which classes should receive this test template.
+                    </p>
+                    
+                    <div className="max-h-40 overflow-y-auto space-y-2 bg-white dark:bg-gray-800 p-3 rounded border border-indigo-200 dark:border-indigo-700">
+                      {availableClasses.length > 0 ? (
+                        availableClasses.map(cls => (
+                          <label key={cls.id} className="flex items-center space-x-3 cursor-pointer p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded">
+                            <input
+                              type="checkbox"
+                              checked={formData.targetClassIds.includes(cls.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  updateFormData({ targetClassIds: [...formData.targetClassIds, cls.id] });
+                                } else {
+                                  updateFormData({ targetClassIds: formData.targetClassIds.filter(id => id !== cls.id) });
+                                }
+                              }}
+                              className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                            />
+                            <div>
+                               <span className="font-medium text-gray-900 dark:text-white">{cls.name}</span>
+                               <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">({cls.year})</span>
+                            </div>
+                          </label>
+                        ))
+                      ) : (
+                        <p className="text-sm text-gray-500">No classes available.</p>
+                      )}
+                    </div>
+                    {errors.targetClassIds && (
+                      <p className="text-sm text-red-500 mt-1">{errors.targetClassIds}</p>
+                    )}
+                  </div>
+                )}
+
                 {/* Test Title */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -1367,6 +1404,11 @@ export default function CreateTestModal({
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                     Test Type <span className="text-red-500">*</span>
+                    {initialTemplateId && (
+                      <span className="ml-2 text-xs font-normal text-amber-600 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400 px-2 py-0.5 rounded">
+                        Pre-selected from template
+                      </span>
+                    )}
                   </label>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     
@@ -1447,6 +1489,11 @@ export default function CreateTestModal({
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                     Question Type <span className="text-red-500">*</span>
+                    {formData.useTemplate && (
+                      <span className="ml-2 text-xs font-normal text-amber-600 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400 px-2 py-0.5 rounded">
+                        Fixed by Template (Cannot change)
+                      </span>
+                    )}
                   </label>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     
@@ -1459,8 +1506,9 @@ export default function CreateTestModal({
                       className={`cursor-pointer p-4 border rounded-lg transition-all ${
                         formData.questionType === 'mcq'
                           ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 ring-2 ring-blue-500'
-                          : 'border-gray-300 dark:border-gray-600 hover:border-gray-400'
+                          : formData.useTemplate ? 'opacity-50 cursor-not-allowed border-gray-200' : 'border-gray-300 dark:border-gray-600 hover:border-gray-400'
                       }`}
+                      style={{ pointerEvents: formData.useTemplate ? 'none' : 'auto' }}
                     >
                       <div className="flex items-start space-x-3">
                         <div className={`mt-1 w-4 h-4 rounded-full border-2 flex items-center justify-center ${
@@ -1495,8 +1543,9 @@ export default function CreateTestModal({
                       className={`cursor-pointer p-4 border rounded-lg transition-all ${
                         formData.questionType === 'essay'
                           ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 ring-2 ring-blue-500'
-                          : 'border-gray-300 dark:border-gray-600 hover:border-gray-400'
+                          : formData.useTemplate ? 'opacity-50 cursor-not-allowed border-gray-200' : 'border-gray-300 dark:border-gray-600 hover:border-gray-400'
                       }`}
+                      style={{ pointerEvents: formData.useTemplate ? 'none' : 'auto' }}
                     >
                       <div className="flex items-start space-x-3">
                         <div className={`mt-1 w-4 h-4 rounded-full border-2 flex items-center justify-center ${
