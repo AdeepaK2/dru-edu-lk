@@ -40,6 +40,7 @@ import ExtendTestModal from '@/components/teacher/ExtendTestModal';
 import ViewAssignedStudentsModal from '@/components/modals/ViewAssignedStudentsModal';
 import LateSubmissionModal from '@/components/modals/LateSubmissionModal';
 import ExamPDFViewer from '@/components/teacher/ExamPDFViewer';
+import { TestTemplatesView } from './TestTemplatesView';
 
 export default function TeacherTests() {
   const { teacher, loading: authLoading, error: authError } = useTeacherAuth();
@@ -70,7 +71,8 @@ export default function TeacherTests() {
   
   // New state for class-based view
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'overview' | 'class-detail' | 'custom-tests'>('overview');
+  const [selectedTemplateIdForModal, setSelectedTemplateIdForModal] = useState<string | undefined>(undefined); // State for passing template to modal
+  const [viewMode, setViewMode] = useState<'overview' | 'class-detail' | 'custom-tests' | 'templates'>('overview');
   
   // State for tracking student enrollment counts per class
   const [classEnrollmentCounts, setClassEnrollmentCounts] = useState<Record<string, number>>({});
@@ -358,6 +360,7 @@ export default function TeacherTests() {
   // Handle modal close
   const handleModalClose = () => {
     setShowCreateModal(false);
+    setSelectedTemplateIdForModal(undefined); // Reset template state
     // Reset selected class if we were in overview mode
     if (viewMode === 'overview') {
       setSelectedClassId(null);
@@ -792,6 +795,41 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
                         </div>
                       </div>
                     )}
+
+                    {/* Test Templates Card - Only for main teacher tab */}
+                    {activeTab === 'main' && (
+                      <div
+                        onClick={() => setViewMode('templates')}
+                        className="bg-gradient-to-br from-indigo-50 to-purple-100 dark:from-gray-700 dark:to-gray-600 rounded-lg p-6 cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 border-2 border-dashed border-indigo-300 dark:border-indigo-600"
+                      >
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="bg-white dark:bg-gray-800 rounded-full p-3">
+                            <FileText className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+                          </div>
+                          <span className="text-xs bg-indigo-200 dark:bg-indigo-900/50 text-indigo-800 dark:text-indigo-300 px-2 py-1 rounded-full">
+                            Templates
+                          </span>
+                        </div>
+                        
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                          Test Templates
+                        </h3>
+                        
+                        <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                          Reuse previous tests as templates
+                        </p>
+                        
+                        <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
+                          <span className="flex items-center">
+                            <FileText className="h-4 w-4 mr-1" />
+                            {tests.length} available
+                          </span>
+                          <span className="text-indigo-600 dark:text-indigo-400 font-medium">
+                            View All →
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -1155,6 +1193,17 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
               </div>
             </div>
           </>
+        ) : viewMode === 'templates' ? (
+          <TestTemplatesView
+            tests={tests}
+            onBack={() => setViewMode('overview')}
+            onUseTemplate={(templateTest) => {
+              // Open create modal with template data
+              console.log('Using template:', templateTest.title);
+              setSelectedTemplateIdForModal(templateTest.id);
+              setShowCreateModal(true);
+            }}
+          />
         ) : (
           // Class Detail Mode - Show tests for selected class
           <>
@@ -1472,6 +1521,7 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
             isOpen={showCreateModal}
             onClose={() => handleModalClose()}
             onTestCreated={handleTestCreated}
+            initialTemplateId={selectedTemplateIdForModal}
             subjectId={
               selectedClassId 
                 ? getSelectedClass()?.subjectId || getTeacherSubjects()[0]?.id || ''
