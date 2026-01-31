@@ -12,6 +12,7 @@ import { questionService } from '@/apiservices/questionBankFirestoreService';
 import { TestNumberingService } from '@/apiservices/testNumberingService';
 import { useTeacherAuth } from '@/hooks/useTeacherAuth';
 import { Timestamp } from 'firebase/firestore';
+import { ClassAllocator } from '../teacher/ClassAllocator';
 
 interface CreateTestModalProps {
   isOpen: boolean;
@@ -74,6 +75,7 @@ interface TestFormData {
   passingScore: number;
   showResultsImmediately: boolean;
   saveAsTemplate: boolean;
+  templateName: string; // NEW: Template name
   templateIsPublic: boolean;
 }
 
@@ -109,6 +111,7 @@ const INITIAL_FORM_DATA: TestFormData = {
   passingScore: 50,
   showResultsImmediately: false,
   saveAsTemplate: false,
+  templateName: '', // Initialize template name
   templateIsPublic: false,
 };
 
@@ -242,12 +245,27 @@ export default function CreateTestModal({
               type: q.type
             })));
 
+            // Infer question type if missing from config (for legacy templates)
+            let inferredQuestionType: 'mcq' | 'essay' | '' = (template.config.questionType as 'mcq' | 'essay' | '') || '';
+            
+            if (!inferredQuestionType && template.questions && template.questions.length > 0) {
+              // Check first question type - cast to any to avoid strict type overlap errors if types don't match exactly
+              const firstQType = (template.questions[0] as any).type;
+              
+              // Map question type to test question type ('mcq' or 'essay')
+              if (firstQType === 'mcq' || firstQType === 'true_false') {
+                 inferredQuestionType = 'mcq';
+              } else if (firstQType === 'essay' || firstQType === 'short_answer') {
+                 inferredQuestionType = 'essay';
+              }
+            }
+
             // Populate form with template data
             updateFormData({
               title: template.title,
               description: template.description || '',
               instructions: template.instructions || '',
-              questionType: template.config.questionType || '',
+              questionType: inferredQuestionType, // Use inferred type
               questionSelectionMethod: template.config.questionSelectionMethod,
               totalQuestions: template.config.totalQuestions,
               shuffleQuestions: template.config.shuffleQuestions,
@@ -987,7 +1005,7 @@ export default function CreateTestModal({
             isPublic: formData.templateIsPublic
           });
           const templateId = await TestTemplateService.createTemplateFromTest({
-            title: formData.title,
+            title: formData.templateName || formData.title,
             description: formData.description,
             instructions: formData.instructions,
             teacherId: teacher?.id || '',
@@ -1233,45 +1251,13 @@ export default function CreateTestModal({
                 
                 {/* Class Selection - ONLY if using template (User Requirement: Ask class first) */}
                 {initialTemplateId && !selectedClassId && (
-                  <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-4 mb-6">
-                    <h4 className="flex items-center text-md font-medium text-indigo-900 dark:text-indigo-300 mb-2">
-                      <Users className="w-5 h-5 mr-2" />
-                      Assign to Classes <span className="text-red-500">*</span>
-                    </h4>
-                    <p className="text-sm text-indigo-700 dark:text-indigo-400 mb-3">
-                      Select which classes should receive this test template.
-                    </p>
-                    
-                    <div className="max-h-40 overflow-y-auto space-y-2 bg-white dark:bg-gray-800 p-3 rounded border border-indigo-200 dark:border-indigo-700">
-                      {availableClasses.length > 0 ? (
-                        availableClasses.map(cls => (
-                          <label key={cls.id} className="flex items-center space-x-3 cursor-pointer p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded">
-                            <input
-                              type="checkbox"
-                              checked={formData.targetClassIds.includes(cls.id)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  updateFormData({ targetClassIds: [...formData.targetClassIds, cls.id] });
-                                } else {
-                                  updateFormData({ targetClassIds: formData.targetClassIds.filter(id => id !== cls.id) });
-                                }
-                              }}
-                              className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                            />
-                            <div>
-                               <span className="font-medium text-gray-900 dark:text-white">{cls.name}</span>
-                               <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">({cls.year})</span>
-                            </div>
-                          </label>
-                        ))
-                      ) : (
-                        <p className="text-sm text-gray-500">No classes available.</p>
-                      )}
-                    </div>
-                    {errors.targetClassIds && (
-                      <p className="text-sm text-red-500 mt-1">{errors.targetClassIds}</p>
-                    )}
-                  </div>
+                  <ClassAllocator
+                    availableClasses={availableClasses}
+                    selectedClassIds={formData.targetClassIds}
+                    onSelectionChange={(ids) => updateFormData({ targetClassIds: ids })}
+                    error={errors.targetClassIds}
+                    className="mb-6"
+                  />
                 )}
 
                 {/* Test Title */}
@@ -2680,45 +2666,12 @@ export default function CreateTestModal({
                 
                 {/* Class Selection (Only if not pre-selected) */}
                 {!selectedClassId && (
-                  <div className="space-y-3 p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-100 dark:border-indigo-800">
-                    <h4 className="flex items-center text-md font-medium text-indigo-900 dark:text-indigo-300">
-                      <Users className="w-5 h-5 mr-2" />
-                      Assign to Classes <span className="text-red-500">*</span>
-                    </h4>
-                    <p className="text-sm text-indigo-700 dark:text-indigo-400 mb-3">
-                      Select which classes should receive this test.
-                    </p>
-                    
-                    <div className="max-h-40 overflow-y-auto space-y-2 bg-white dark:bg-gray-800 p-3 rounded border border-indigo-200 dark:border-indigo-700">
-                      {availableClasses.length > 0 ? (
-                        availableClasses.map(cls => (
-                          <label key={cls.id} className="flex items-center space-x-3 cursor-pointer p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded">
-                            <input
-                              type="checkbox"
-                              checked={formData.targetClassIds.includes(cls.id)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  updateFormData({ targetClassIds: [...formData.targetClassIds, cls.id] });
-                                } else {
-                                  updateFormData({ targetClassIds: formData.targetClassIds.filter(id => id !== cls.id) });
-                                }
-                              }}
-                              className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                            />
-                            <div>
-                               <span className="font-medium text-gray-900 dark:text-white">{cls.name}</span>
-                               <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">({cls.year})</span>
-                            </div>
-                          </label>
-                        ))
-                      ) : (
-                        <p className="text-sm text-gray-500">No classes available.</p>
-                      )}
-                    </div>
-                    {errors.targetClassIds && (
-                      <p className="text-sm text-red-500 mt-1">{errors.targetClassIds}</p>
-                    )}
-                  </div>
+                  <ClassAllocator
+                    availableClasses={availableClasses}
+                    selectedClassIds={formData.targetClassIds}
+                    onSelectionChange={(ids) => updateFormData({ targetClassIds: ids })}
+                    error={errors.targetClassIds}
+                  />
                 )}
 
                 {/* Test Behavior */}
@@ -2821,11 +2774,20 @@ export default function CreateTestModal({
                 <div className="space-y-4">
                   <h4 className="text-md font-medium text-gray-900 dark:text-white">Template Options</h4>
                   
-                  <label className="flex items-center space-x-3">
+                  <label className="flex items-center space-x-3 mb-3">
                     <input
                       type="checkbox"
                       checked={formData.saveAsTemplate}
-                      onChange={(e) => updateFormData({ saveAsTemplate: e.target.checked })}
+                      onChange={(e) => {
+                        const isChecked = e.target.checked;
+                        updateFormData({ 
+                          saveAsTemplate: isChecked,
+                          // Auto-suggest template name if checked and empty
+                          templateName: isChecked && !formData.templateName 
+                            ? `${subjectName || 'Subject'} - ${new Date().toLocaleDateString()}` 
+                            : formData.templateName
+                        });
+                      }}
                       className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                     />
                     <div>
@@ -2839,23 +2801,21 @@ export default function CreateTestModal({
                   </label>
 
                   {formData.saveAsTemplate && (
-                    <label className="flex items-center space-x-3 ml-7">
+                    <div className="ml-7 mb-4">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Template Name <span className="text-red-500">*</span>
+                      </label>
                       <input
-                        type="checkbox"
-                        checked={formData.templateIsPublic}
-                        onChange={(e) => updateFormData({ templateIsPublic: e.target.checked })}
-                        className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        type="text"
+                        value={formData.templateName}
+                        onChange={(e) => updateFormData({ templateName: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                        placeholder="e.g. Math Midterm Template"
                       />
-                      <div>
-                        <span className="text-sm font-medium text-gray-900 dark:text-white">
-                          Make Public
-                        </span>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          Allow other teachers to use this template
-                        </p>
-                      </div>
-                    </label>
+                    </div>
                   )}
+
+                  {/* Public template option removed as per request */}
                 </div>
 
                 {/* Test Summary */}
