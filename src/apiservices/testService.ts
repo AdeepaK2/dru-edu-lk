@@ -1464,4 +1464,44 @@ export class TestService {
       throw error;
     }
   }
+
+
+  // Get in-class tests for specific classes (for student dashboard)
+  static async getInClassTestsForStudent(classIds: string[]): Promise<Test[]> {
+    try {
+      if (!classIds.length) return [];
+
+      // We need to query in batches due to Firestore 'in' limit of 10
+      const batches = [];
+      for (let i = 0; i < classIds.length; i += 10) {
+        const batchClassIds = classIds.slice(i, i + 10);
+        const q = query(
+          collection(firestore, this.COLLECTIONS.TESTS),
+          where('classIds', 'array-contains-any', batchClassIds),
+          where('type', '==', 'in-class'),
+          where('status', 'in', ['scheduled', 'live', 'completed']),
+          orderBy('scheduledStartTime', 'desc')
+        );
+        batches.push(getDocs(q));
+      }
+
+      const snapshots = await Promise.all(batches);
+      const tests: Test[] = [];
+      const seenIds = new Set();
+
+      snapshots.forEach(snapshot => {
+        snapshot.docs.forEach(doc => {
+          if (!seenIds.has(doc.id)) {
+            tests.push({ id: doc.id, ...doc.data() } as Test);
+            seenIds.add(doc.id);
+          }
+        });
+      });
+
+      return tests;
+    } catch (error) {
+      console.error('Error getting in-class tests for student:', error);
+      throw error;
+    }
+  }
 }

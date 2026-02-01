@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
+import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { TestService } from '@/apiservices/testService';
 import { getEnrollmentsByStudent } from '@/services/studentEnrollmentService';
 import { Test } from '@/models/testSchema';
@@ -12,7 +12,7 @@ import StudentSidebar from '@/components/student/StudentSidebar';
 
 export default function StudentInClassTestsPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user } = useStudentAuth();
   const [tests, setTests] = useState<Test[]>([]);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);

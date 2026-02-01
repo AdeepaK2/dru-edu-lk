@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
+import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { TestService } from '@/apiservices/testService';
 import { Test } from '@/models/testSchema';
 import { Button, Card } from '@/components/ui';
@@ -25,7 +25,7 @@ import { firestore } from '@/utils/firebase-client';
 export default function StudentInClassTestDetailPage() {
   const router = useRouter();
   const params = useParams();
-  const { user } = useAuth();
+  const { user } = useStudentAuth();
   const testId = params.testId as string;
   
   const [test, setTest] = useState<Test | null>(null);
