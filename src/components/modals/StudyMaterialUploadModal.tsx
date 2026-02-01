@@ -267,7 +267,9 @@ export default function StudyMaterialUploadModal({
     }
     if (item.file) {
       // Validate file type
-      const allowedTypes = StudyMaterialStorageService.getAllowedFileTypes(item.fileType);
+      // For PDF category, we allow all document types (doc, docx, txt, pdf)
+      const validationType = item.fileType === 'pdf' ? 'document' : item.fileType;
+      const allowedTypes = StudyMaterialStorageService.getAllowedFileTypes(validationType);
       if (allowedTypes.length > 0 && !StudyMaterialStorageService.validateFileType(item.file, allowedTypes)) {
         return `Invalid file type. Allowed types: ${allowedTypes.join(', ')}`;
       }
