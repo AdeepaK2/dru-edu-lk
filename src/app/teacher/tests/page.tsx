@@ -31,11 +31,12 @@ import { ClassFirestoreService } from '@/apiservices/classFirestoreService';
 import { questionBankService } from '@/apiservices/questionBankFirestoreService';
 import { teacherAccessBankService } from '@/apiservices/teacherAccessBankService';
 import { getEnrollmentsByClass } from '@/services/studentEnrollmentService';
-import { Test, LiveTest, FlexibleTest, TestExtension } from '@/models/testSchema';
+import { Test, LiveTest, FlexibleTest, TestExtension, TestTemplate } from '@/models/testSchema';
 import { ClassDocument } from '@/models/classSchema';
 import { QuestionBank } from '@/models/questionBankSchema';
 import { Timestamp } from 'firebase/firestore';
 import { TestExtensionService } from '@/apiservices/testExtensionService';
+import { TestTemplateService } from '@/apiservices/testTemplateService';
 import ExtendTestModal from '@/components/teacher/ExtendTestModal';
 import ViewAssignedStudentsModal from '@/components/modals/ViewAssignedStudentsModal';
 import LateSubmissionModal from '@/components/modals/LateSubmissionModal';
@@ -46,6 +47,7 @@ export default function TeacherTests() {
   const { teacher, loading: authLoading, error: authError } = useTeacherAuth();
   const { showSuccess } = useToast();
   const [tests, setTests] = useState<Test[]>([]);
+  const [templates, setTemplates] = useState<TestTemplate[]>([]);
   const [coTests, setCoTests] = useState<Test[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -206,6 +208,17 @@ export default function TeacherTests() {
       } catch (testError) {
         console.warn('No tests found for teacher (this is normal for new teachers):', testError);
         setTests([]); // Set empty array if no tests
+      }
+
+      // Load test templates
+      try {
+        console.log('🔍 Loading templates for teacher:', teacher!.id);
+        const teacherTemplates = await TestTemplateService.getTemplatesByTeacher(teacher!.id);
+        setTemplates(teacherTemplates);
+        console.log('✅ Loaded templates:', teacherTemplates.length);
+      } catch (templateError) {
+        console.warn('Failed to load templates:', templateError);
+        setTemplates([]);
       }
       
       // Load tests for co-teacher classes
@@ -822,7 +835,7 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
                         <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
                           <span className="flex items-center">
                             <FileText className="h-4 w-4 mr-1" />
-                            {tests.length} available
+                            {templates.length} available
                           </span>
                           <span className="text-indigo-600 dark:text-indigo-400 font-medium">
                             View All →
@@ -1195,12 +1208,12 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
           </>
         ) : viewMode === 'templates' ? (
           <TestTemplatesView
-            tests={tests}
+            templates={templates}
             onBack={() => setViewMode('overview')}
-            onUseTemplate={(templateTest) => {
+            onUseTemplate={(template) => {
               // Open create modal with template data
-              console.log('Using template:', templateTest.title);
-              setSelectedTemplateIdForModal(templateTest.id);
+              console.log('Using template:', template.title);
+              setSelectedTemplateIdForModal(template.id);
               setShowCreateModal(true);
             }}
           />
