@@ -163,8 +163,16 @@ export const updateStudyMaterial = async (
   try {
     const docRef = doc(getStudyMaterialsCollection(), id);
     
+    // Filter out undefined values from updateData
+    const cleanUpdateData: any = {};
+    Object.entries(updateData).forEach(([key, value]) => {
+      if (value !== undefined) {
+        cleanUpdateData[key] = value;
+      }
+    });
+
     const updateFields = {
-      ...updateData,
+      ...cleanUpdateData,
       updatedAt: Timestamp.now(),
       ...(updateData.dueDate && { dueDate: Timestamp.fromDate(updateData.dueDate) }),
     };
