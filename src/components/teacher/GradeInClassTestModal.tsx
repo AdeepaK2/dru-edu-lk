@@ -158,6 +158,35 @@ export default function GradeInClassTestModal({
     }
   };
 
+  const handleMarkAbsent = async (student: StudentGradeRow) => {
+    try {
+      if (student.submission?.id) {
+        // Update existing submission to absent
+        await InClassSubmissionService.saveSubmission({
+          ...student.submission,
+          status: 'absent',
+        });
+      } else {
+        // Create new submission marked as absent
+        await InClassSubmissionService.saveSubmission({
+          testId: test.id!,
+          studentId: student.studentId,
+          studentName: student.studentName,
+          studentEmail: student.studentEmail,
+          classId: (test as any).classIds[0],
+          submissionType: (test as any).submissionMethod,
+          status: 'absent',
+        });
+      }
+
+      toast.success(`Marked ${student.studentName} as absent`);
+      await loadStudentsAndSubmissions(); // Reload to reflect changes
+    } catch (error) {
+      console.error('Error marking absent:', error);
+      toast.error('Failed to mark student as absent');
+    }
+  };
+
   const gradingProgress = () => {
     const graded = students.filter(s => s.submission?.status === 'graded').length;
     return `${graded}/${students.length} students graded`;
@@ -212,6 +241,8 @@ export default function GradeInClassTestModal({
                             ? 'bg-green-100 text-green-800'
                             : student.submission.status === 'submitted'
                             ? 'bg-blue-100 text-blue-800'
+                            : student.submission.status === 'absent'
+                            ? 'bg-gray-100 text-gray-800'
                             : 'bg-gray-100 text-gray-800'
                         }`}>
                           {student.submission.status === 'graded' && <Check className="w-3 h-3 mr-1" />}
@@ -267,16 +298,37 @@ export default function GradeInClassTestModal({
                       />
                     </div>
 
-                    {/* Save Button */}
-                    <div className="md:col-span-1 flex items-end">
-                      <Button
-                        size="sm"
-                        onClick={() => handleSaveGrade(student)}
-                        disabled={!student.marks}
-                        className="w-full"
-                      >
-                        Save
-                      </Button>
+                    {/* Save/Absent Buttons */}
+                    <div className="md:col-span-1 flex flex-col items-end gap-2">
+                      {student.submission?.status === 'absent' ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleMarkAbsent(student)}
+                          className="w-full text-gray-500"
+                        >
+                          Absent
+                        </Button>
+                      ) : (
+                        <>
+                          <Button
+                            size="sm"
+                            onClick={() => handleSaveGrade(student)}
+                            disabled={!student.marks}
+                            className="w-full"
+                          >
+                            Save
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleMarkAbsent(student)}
+                            className="w-full text-xs"
+                          >
+                            Mark Absent
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
