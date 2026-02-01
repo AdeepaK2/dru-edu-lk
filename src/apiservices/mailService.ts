@@ -479,7 +479,7 @@ Your  Trusted  Guide for VCE Success</p>
     teacherName: string,
     subjectName: string,
     className: string,
-    testType: 'live' | 'flexible',
+    testType: 'live' | 'flexible' | 'in-class',
     testDate: string,
     testTime?: string,
     duration?: number,
@@ -520,7 +520,7 @@ Your  Trusted  Guide for VCE Success</p>
           </p>
         </div>
       `;
-    } else {
+    } else if (testType === 'flexible') {
       scheduleInfo = `
         <div style="background-color: #EBF8FF; border-left: 4px solid #3B82F6; padding: 20px; margin: 20px 0;">
           <h3 style="color: #1E40AF; margin-top: 0;">📅 Test Availability</h3>
@@ -529,6 +529,17 @@ Your  Trusted  Guide for VCE Success</p>
           <p><strong>Duration:</strong> ${duration || 60} minutes (once started)</p>
           <p style="color: #1E40AF; font-weight: 500; margin: 10px 0 0 0;">
             ℹ️ <strong>Flexible Schedule:</strong> You can take this test anytime within the available period.
+          </p>
+        </div>
+      `;
+    } else {
+      scheduleInfo = `
+        <div style="background-color: #F3F4F6; border-left: 4px solid #6B7280; padding: 20px; margin: 20px 0;">
+          <h3 style="color: #374151; margin-top: 0;">🏫 In-Class Test Schedule</h3>
+          <p><strong>Date & Time:</strong> ${formatDateTime(testDate, testTime)}</p>
+          <p><strong>Duration:</strong> ${duration || 60} minutes</p>
+          <p style="color: #374151; font-weight: 500; margin: 10px 0 0 0;">
+            ℹ️ <strong>In-Class:</strong> This test will be conducted in class. Please follow your teacher's instructions.
           </p>
         </div>
       `;
@@ -575,7 +586,7 @@ Your  Trusted  Guide for VCE Success</p>
             <li>Ensure you have a stable internet connection</li>
             <li>Find a quiet environment for the test</li>
             <li>Have scratch paper and a calculator ready if needed</li>
-            ${testType === 'live' ? '<li>Join the test a few minutes early</li>' : '<li>Plan your time wisely within the available period</li>'}
+            ${testType === 'live' ? '<li>Join the test a few minutes early</li>' : testType === 'flexible' ? '<li>Plan your time wisely within the available period</li>' : '<li>Bring necessary materials to class</li>'}
           </ul>
         </div>
 
@@ -616,7 +627,7 @@ Your  Trusted  Guide for VCE Success</p>
     teacherName: string,
     subjectName: string,
     className: string,
-    testType: 'live' | 'flexible',
+    testType: 'live' | 'flexible' | 'in-class',
     testDate: string,
     testTime?: string,
     duration?: number,
@@ -642,8 +653,19 @@ Your  Trusted  Guide for VCE Success</p>
       });
     };
 
-    const testTypeLabel = testType === 'live' ? 'Live Test' : 'Flexible Test';
-    const testIcon = testType === 'live' ? '📺' : '📝';
+    let testTypeLabel = '';
+    let testIcon = '';
+    
+    if (testType === 'live') {
+      testTypeLabel = 'Live Test';
+      testIcon = '📺';
+    } else if (testType === 'flexible') {
+      testTypeLabel = 'Flexible Test';
+      testIcon = '📝';
+    } else {
+      testTypeLabel = 'In-Class Test';
+      testIcon = '🏫';
+    }
     
     let scheduleInfo = '';
     if (testType === 'live') {
@@ -657,7 +679,7 @@ Your  Trusted  Guide for VCE Success</p>
           </p>
         </div>
       `;
-    } else {
+    } else if (testType === 'flexible') {
       scheduleInfo = `
         <div style="background-color: #EBF8FF; border-left: 4px solid #3B82F6; padding: 20px; margin: 20px 0;">
           <h3 style="color: #1E40AF; margin-top: 0;">📅 Test Availability</h3>
@@ -666,6 +688,17 @@ Your  Trusted  Guide for VCE Success</p>
           <p><strong>Duration:</strong> ${duration || 60} minutes (once started)</p>
           <p style="color: #1E40AF; font-weight: 500; margin: 10px 0 0 0;">
             ℹ️ <strong>Flexible Schedule:</strong> The test can be taken anytime within the available period.
+          </p>
+        </div>
+      `;
+    } else {
+      scheduleInfo = `
+        <div style="background-color: #F3F4F6; border-left: 4px solid #6B7280; padding: 20px; margin: 20px 0;">
+          <h3 style="color: #374151; margin-top: 0;">🏫 In-Class Test Schedule</h3>
+          <p><strong>Date & Time:</strong> ${formatDateTime(testDate, testTime)}</p>
+          <p><strong>Duration:</strong> ${duration || 60} minutes</p>
+          <p style="color: #374151; font-weight: 500; margin: 10px 0 0 0;">
+            ℹ️ <strong>In-Class:</strong> This test will be conducted in class. Please check with your child for more details.
           </p>
         </div>
       `;
@@ -754,7 +787,7 @@ Your  Trusted  Guide for VCE Success</p>
     teacherName: string,
     subjectName: string,
     className: string,
-    testType: 'live' | 'flexible',
+    testType: 'live' | 'flexible' | 'in-class',
     testDate: string,
     testTime?: string,
     duration?: number,

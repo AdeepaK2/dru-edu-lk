@@ -4,10 +4,12 @@
 import { Timestamp } from 'firebase/firestore';
 
 // Test types
-export type TestType = 'live' | 'flexible';
+export type TestType = 'live' | 'flexible' | 'in-class';
 
 // Question selection method
 export type QuestionSelectionMethod = 'manual' | 'auto' | 'mixed';
+
+// ... (existing code omitted for brevity in prompt, but replacing with full valid block if needed or just updating type definition)
 
 // Test status
 export type TestStatus = 'draft' | 'scheduled' | 'live' | 'completed' | 'cancelled';
@@ -95,21 +97,36 @@ export interface SimplifiedLiveTest extends BaseSimplifiedTest {
   studentsCompleted: number;
 }
 
-// Flexible duration test
+// Flexible/Homework test
 export interface SimplifiedFlexibleTest extends BaseSimplifiedTest {
   type: 'flexible';
   
-  // Availability period
-  availableFrom: Timestamp;
-  availableTo: Timestamp;
+  // Availability window
+  availableFrom?: Timestamp;
+  availableTo?: Timestamp;
   
-  // Test duration
+  // Duration control
+  duration?: number; // in minutes (optional, if time limited)
+  
+  // Attempts
+  attemptsAllowed?: number;
+}
+
+// In-Class test
+export interface SimplifiedInClassTest extends BaseSimplifiedTest {
+  type: 'in-class';
+  
+  // Scheduling
+  scheduledStartTime: Timestamp;
   duration: number; // in minutes
-  attemptsAllowed: number; // usually 1
+  
+  // Submission method
+  submissionMethod: 'online_upload' | 'offline_collection';
+  examPdfUrl?: string;
 }
 
 // Union type for all simplified test types
-export type SimplifiedTest = SimplifiedLiveTest | SimplifiedFlexibleTest;
+export type SimplifiedTest = SimplifiedLiveTest | SimplifiedFlexibleTest | SimplifiedInClassTest;
 
 // Simplified submission answer (with question reference)
 export interface SimplifiedAnswer {
@@ -128,7 +145,7 @@ export interface SimplifiedSubmission {
   // Test info
   testId: string;
   testTitle: string;
-  testType: 'live' | 'flexible';
+  testType: 'live' | 'flexible' | 'in-class';
   
   // Student info
   studentId: string;
