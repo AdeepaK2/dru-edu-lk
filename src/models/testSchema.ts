@@ -4,7 +4,7 @@ import { Timestamp } from 'firebase/firestore';
 import { TestAssignmentConfig, TestAssignmentType, StudentTestAssignment } from './testAssignmentSchema';
 
 // Test types
-export type TestType = 'live' | 'flexible';
+export type TestType = 'live' | 'flexible' | 'in-class';
 
 // Question selection method
 export type QuestionSelectionMethod = 'manual' | 'auto' | 'mixed';
@@ -166,6 +166,21 @@ export interface FlexibleTest extends BaseTest {
   isUntimed?: boolean; // If true, no per-session countdown timer, only deadline matters
 }
 
+// In-class test (offline/hybrid)
+export interface InClassTest extends BaseTest {
+  type: 'in-class';
+  
+  // Scheduling
+  scheduledStartTime: Timestamp;
+  duration: number; // in minutes
+  
+  // Submission
+  submissionMethod: 'online_upload' | 'offline_collection';
+  
+  // Optional: Link to PDF paper if uploaded
+  examPdfUrl?: string;
+}
+
 // Test extension record
 export interface TestExtension {
   id: string;
@@ -179,7 +194,7 @@ export interface TestExtension {
 }
 
 // Union type for all test types
-export type Test = LiveTest | FlexibleTest;
+export type Test = LiveTest | FlexibleTest | InClassTest;
 
 // Student answer for MCQ
 export interface MCQAnswer {

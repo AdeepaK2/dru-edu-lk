@@ -173,14 +173,14 @@ export class TestService {
     }
   }
 
-  // Get tests for teacher
-  static async getTeacherTests(teacherId: string): Promise<Test[]> {
+  // Get tests for class
+  static async getTestsByClass(classId: string): Promise<Test[]> {
     try {
-      console.log('🔍 Fetching tests for teacher ID:', teacherId);
+      console.log('🔍 Fetching tests for class ID:', classId);
       
       const testsQuery = query(
         collection(firestore, this.COLLECTIONS.TESTS),
-        where('teacherId', '==', teacherId),
+        where('classIds', 'array-contains', classId),
         orderBy('createdAt', 'desc')
       );
       
@@ -190,19 +190,18 @@ export class TestService {
         ...doc.data()
       })) as Test[];
       
-      // Filter out soft-deleted tests in JavaScript (to handle tests without isDeleted field)
+      // Filter out soft-deleted tests
       const activeTests = tests.filter(test => test.isDeleted !== true);
       
-      console.log('✅ Found', activeTests.length, 'active tests for teacher (filtered from', tests.length, 'total)');
+      console.log('✅ Found', activeTests.length, 'active tests for class');
       return activeTests;
     } catch (error) {
-      console.error('Error fetching teacher tests:', error);
-      // Return empty array instead of throwing error if it's just a "no results" case
+      console.error('Error fetching class tests:', error);
       if (error instanceof Error && error.message.includes('index')) {
-        console.warn('Index might not exist yet, returning empty tests array');
-        return [];
+         console.warn('Index might not exist yet, returning empty tests array');
+         return [];
       }
-      throw new Error('Failed to fetch teacher tests');
+      throw new Error('Failed to fetch class tests');
     }
   }
 
