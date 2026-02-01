@@ -7,11 +7,18 @@ import { TestService } from '@/apiservices/testService';
 import { Test } from '@/models/testSchema';
 import { Button, Card } from '@/components/ui';
 import { ArrowLeft, Calendar, Clock, Upload, AlertCircle, CheckCircle } from 'lucide-react';
-import ExamPDFViewer from '@/components/teacher/ExamPDFViewer';
 import TestTimer from '@/components/student/TestTimer';
+import dynamic from 'next/dynamic';
 import { toast } from 'react-hot-toast';
+
+const PDFViewer = dynamic(() => import('@/components/PDFViewer'), {
+  ssr: false,
+  loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div></div>
+});
 import { doc, getDoc, Timestamp } from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { firestore } from '@/utils/firebase-client';
+import { InClassSubmissionService } from '@/services/inClassSubmissionService';
 
 export default function StudentInClassTestDetailPage() {
   const router = useRouter();
@@ -71,22 +78,46 @@ export default function StudentInClassTestDetailPage() {
       return;
     }
 
+    if (!user) {
+      toast.error('You must be logged in to submit');
+      return;
+    }
+
     try {
       setUploading(true);
-      // In a real implementation, upload to Firebase Storage
-      // const url = await uploadService.uploadFile(file, `submissions/${testId}/${user?.uid}`);
+      setUploadError(null);
       
-      // Simulating upload for now
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Upload to Firebase Storage
+      const storage = getStorage();
+      const timestamp = Date.now();
+      const storageRef = ref(storage, `in-class-submissions/${testId}/${user.uid}/${timestamp}_${file.name}`);
+      
+      // Upload file
+      const uploadTask = await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(uploadTask.ref);
+      
+      // Create or update submission
+      await InClassSubmissionService.saveSubmission({
+        testId: testId,
+        studentId: user.uid,
+        studentName: user.displayName || user.email || 'Unknown Student',
+        studentEmail: user.email || '',
+        classId: (test as any).classIds?.[0] || '',
+        submissionType: 'online_upload',
+        answerFileUrl: downloadURL,
+        submittedAt: Timestamp.now(),
+        status: 'submitted',
+      });
       
       setSubmittedFile({
         name: file.name,
-        url: URL.createObjectURL(file) // temporary local URL
+        url: downloadURL
       });
       
       toast.success('Answer script uploaded successfully!');
     } catch (error) {
       console.error('Upload error:', error);
+      setUploadError(error instanceof Error ? error.message : 'Failed to upload file');
       toast.error('Failed to upload file');
     } finally {
       setUploading(false);
@@ -200,11 +231,11 @@ export default function StudentInClassTestDetailPage() {
         {(test as any).examPdfUrl && (
           <div className="space-y-3">
             <h3 className="text-lg font-semibold text-gray-900">Question Paper</h3>
-            <ExamPDFViewer 
-              examPdfUrl={(test as any).examPdfUrl}
-              testTitle={test.title}
-              testNumber="1"
-              className="bg-white shadow-sm"
+            <PDFViewer 
+              url={(test as any).examPdfUrl}
+              title={test.title}
+              onClose={() => {}}
+              inline={true}
             />
           </div>
         )}
