@@ -73,6 +73,14 @@ export class TestMigrationService {
           duration: flexTest.duration,
           attemptsAllowed: flexTest.attemptsAllowed
         });
+      } else if (oldTest.type === 'in-class') {
+        const inClassTest = oldTest as any;
+        Object.assign(simplifiedTest, {
+          scheduledStartTime: inClassTest.scheduledStartTime,
+          duration: inClassTest.duration,
+          submissionMethod: inClassTest.submissionMethod,
+          examPdfUrl: inClassTest.examPdfUrl
+        });
       }
       
       // Save the simplified test

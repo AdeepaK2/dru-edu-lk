@@ -85,7 +85,7 @@ export interface StudentSubmission {
   // Test info
   testId: string;
   testTitle: string;
-  testType: 'live' | 'flexible';
+  testType: 'live' | 'flexible' | 'in-class';
   
   // Student info
   studentId: string;
