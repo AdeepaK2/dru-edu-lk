@@ -38,6 +38,7 @@ import { Timestamp } from 'firebase/firestore';
 import { TestExtensionService } from '@/apiservices/testExtensionService';
 import { TestTemplateService } from '@/apiservices/testTemplateService';
 import ExtendTestModal from '@/components/teacher/ExtendTestModal';
+import UseTemplateModal from '@/components/modals/UseTemplateModal'; // NEW
 import ViewAssignedStudentsModal from '@/components/modals/ViewAssignedStudentsModal';
 import LateSubmissionModal from '@/components/modals/LateSubmissionModal';
 import ExamPDFViewer from '@/components/teacher/ExamPDFViewer';
@@ -51,6 +52,8 @@ export default function TeacherTests() {
   const [coTests, setCoTests] = useState<Test[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showUseTemplateModal, setShowUseTemplateModal] = useState(false); // NEW
+  const [selectedTemplateForModal, setSelectedTemplateForModal] = useState<TestTemplate | null>(null); // NEW
   const [showCreateStudentTestModal, setShowCreateStudentTestModal] = useState(false);
   const [teacherClasses, setTeacherClasses] = useState<ClassDocument[]>([]);
   const [loadingClasses, setLoadingClasses] = useState(true);
@@ -1211,10 +1214,10 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
             templates={templates}
             onBack={() => setViewMode('overview')}
             onUseTemplate={(template) => {
-              // Open create modal with template data
-              console.log('Using template:', template.title);
-              setSelectedTemplateIdForModal(template.id);
-              setShowCreateModal(true);
+              // Open NEW streamlined template modal
+              console.log('Using template quickly:', template.title);
+              setSelectedTemplateForModal(template);
+              setShowUseTemplateModal(true);
             }}
             onDeleteTemplate={async (templateId) => {
               try {
@@ -1670,6 +1673,29 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
           />
         )}
       </div>
+      
+      {/* Use Template Modal */}
+      {showUseTemplateModal && selectedTemplateForModal && (
+        <UseTemplateModal
+          isOpen={showUseTemplateModal}
+          onClose={() => setShowUseTemplateModal(false)}
+          template={selectedTemplateForModal}
+          availableClasses={teacherClasses.map(c => ({
+            id: c.id,
+            name: c.name,
+            subject: c.subject,
+            year: c.year
+          }))}
+          onTestCreated={(createdTest) => {
+            console.log('Test created from template:', createdTest);
+            // Add to list and close
+            setTests(prev => [createdTest, ...prev]);
+            setShowUseTemplateModal(false);
+            setViewMode('overview'); // Go back to overview to see the new test
+            showSuccess('Test created successfully!');
+          }}
+        />
+      )}
     </TeacherLayout>
   );
 }
