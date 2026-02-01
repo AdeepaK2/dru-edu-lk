@@ -6,7 +6,8 @@ import {
   Settings,
   Calendar,
   Search,
-  BookOpen
+  BookOpen,
+  Trash2
 } from 'lucide-react';
 import { Test, TestTemplate, LiveTest, FlexibleTest } from '@/models/testSchema';
 
@@ -14,9 +15,10 @@ interface TestTemplatesViewProps {
   templates: TestTemplate[];
   onBack: () => void;
   onUseTemplate: (template: TestTemplate) => void;
+  onDeleteTemplate?: (templateId: string) => void;
 }
 
-export function TestTemplatesView({ templates, onBack, onUseTemplate }: TestTemplatesViewProps) {
+export function TestTemplatesView({ templates, onBack, onUseTemplate, onDeleteTemplate }: TestTemplatesViewProps) {
   const [searchTerm, setSearchTerm] = React.useState('');
   
   // Filter templates based on search term
@@ -126,14 +128,30 @@ export function TestTemplatesView({ templates, onBack, onUseTemplate }: TestTemp
             </div>
 
             {/* Actions */}
-            <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-b-xl border-t border-gray-100 dark:border-gray-700">
+            <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-b-xl border-t border-gray-100 dark:border-gray-700 flex gap-3">
               <button
                 onClick={() => onUseTemplate(template)}
-                className="w-full flex items-center justify-center px-4 py-2 bg-white dark:bg-gray-800 border-2 border-indigo-100 dark:border-indigo-600 text-indigo-700 dark:text-indigo-300 font-medium rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:border-indigo-200 transition-colors"
+                className="flex-1 flex items-center justify-center px-4 py-2 bg-white dark:bg-gray-800 border-2 border-indigo-100 dark:border-indigo-600 text-indigo-700 dark:text-indigo-300 font-medium rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:border-indigo-200 transition-colors"
+                title="Use this template to create a new test"
               >
                 <FileText className="w-4 h-4 mr-2" />
                 Use Template
               </button>
+              
+              {onDeleteTemplate && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (confirm('Are you sure you want to delete this template?')) {
+                      onDeleteTemplate(template.id);
+                    }
+                  }}
+                  className="flex items-center justify-center px-3 py-2 bg-white dark:bg-gray-800 border-2 border-red-100 dark:border-red-900/50 text-red-600 dark:text-red-400 font-medium rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 hover:border-red-200 transition-colors"
+                  title="Delete Template"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
             </div>
           </div>
         ))}
