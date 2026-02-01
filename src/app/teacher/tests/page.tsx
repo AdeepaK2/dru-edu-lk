@@ -1216,6 +1216,7 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
             onUseTemplate={(template) => {
               // Open NEW streamlined template modal
               console.log('Using template quickly:', template.title);
+              setShowCreateModal(false); // Ensure create modal is closed
               setSelectedTemplateForModal(template);
               setShowUseTemplateModal(true);
             }}
