@@ -1216,6 +1216,17 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
               setSelectedTemplateIdForModal(template.id);
               setShowCreateModal(true);
             }}
+            onDeleteTemplate={async (templateId) => {
+              try {
+                await TestTemplateService.deleteTemplate(templateId);
+                // Remove from local state
+                setTemplates(prev => prev.filter(t => t.id !== templateId));
+                showSuccess('Template deleted successfully');
+              } catch (error) {
+                console.error('Failed to delete template:', error);
+                // toast.error('Failed to delete template');
+              }
+            }}
           />
         ) : (
           // Class Detail Mode - Show tests for selected class
