@@ -1481,7 +1481,7 @@ export default function CreateTestModal({
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                     Question Type <span className="text-red-500">*</span>
-                    {formData.useTemplate && (
+                    {formData.useTemplate && formData.questionType && (
                       <span className="ml-2 text-xs font-normal text-amber-600 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400 px-2 py-0.5 rounded">
                         Fixed by Template (Cannot change)
                       </span>
@@ -1498,9 +1498,9 @@ export default function CreateTestModal({
                       className={`cursor-pointer p-4 border rounded-lg transition-all ${
                         formData.questionType === 'mcq'
                           ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 ring-2 ring-blue-500'
-                          : formData.useTemplate ? 'opacity-50 cursor-not-allowed border-gray-200' : 'border-gray-300 dark:border-gray-600 hover:border-gray-400'
+                          : (formData.useTemplate && formData.questionType) ? 'opacity-50 cursor-not-allowed border-gray-200' : 'border-gray-300 dark:border-gray-600 hover:border-gray-400'
                       }`}
-                      style={{ pointerEvents: formData.useTemplate ? 'none' : 'auto' }}
+                      style={{ pointerEvents: (formData.useTemplate && formData.questionType) ? 'none' : 'auto' }}
                     >
                       <div className="flex items-start space-x-3">
                         <div className={`mt-1 w-4 h-4 rounded-full border-2 flex items-center justify-center ${
@@ -1535,9 +1535,9 @@ export default function CreateTestModal({
                       className={`cursor-pointer p-4 border rounded-lg transition-all ${
                         formData.questionType === 'essay'
                           ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 ring-2 ring-blue-500'
-                          : formData.useTemplate ? 'opacity-50 cursor-not-allowed border-gray-200' : 'border-gray-300 dark:border-gray-600 hover:border-gray-400'
+                          : (formData.useTemplate && formData.questionType) ? 'opacity-50 cursor-not-allowed border-gray-200' : 'border-gray-300 dark:border-gray-600 hover:border-gray-400'
                       }`}
-                      style={{ pointerEvents: formData.useTemplate ? 'none' : 'auto' }}
+                      style={{ pointerEvents: (formData.useTemplate && formData.questionType) ? 'none' : 'auto' }}
                     >
                       <div className="flex items-start space-x-3">
                         <div className={`mt-1 w-4 h-4 rounded-full border-2 flex items-center justify-center ${
