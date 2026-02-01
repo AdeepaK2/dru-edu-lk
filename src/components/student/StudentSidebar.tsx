@@ -79,6 +79,12 @@ function buildSidebarItems(upcomingQuizCount: number): SidebarItem[] {
       badge: upcomingQuizCount > 0 ? String(upcomingQuizCount) : undefined,
     },
     {
+      id: 'in-class',
+      label: 'In-Class Assignments',
+      href: '/student/in-class',
+      icon: FileCheck, 
+    },
+    {
       id: 'study',
       label: 'Study Materials',
       href: '/student/study',
