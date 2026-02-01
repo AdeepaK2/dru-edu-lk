@@ -1,12 +1,14 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Plus, FileText, Calendar, Clock, Lock, Eye, Trash2, Download } from 'lucide-react';
+import { Plus, FileText, Calendar, Clock, Lock, Eye, Trash2, Download, Edit3 } from 'lucide-react';
 import { TestService } from '@/apiservices/testService';
 import { Test, InClassTest } from '@/models/testSchema';
 import { Timestamp } from 'firebase/firestore';
 import CreateInClassTestModal from '@/components/modals/CreateInClassTestModal';
+import GradeInClassTestModal from '@/components/teacher/GradeInClassTestModal';
 import { useToast } from '@/components/ui/ToastProvider';
+import { useTeacherAuth } from '@/hooks/useTeacherAuth';
 
 interface InClassTestsTabProps {
   classId: string;
@@ -18,7 +20,9 @@ export default function InClassTestsTab({ classId, className, classSubject }: In
   const [tests, setTests] = useState<InClassTest[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [selectedTestForGrading, setSelectedTestForGrading] = useState<InClassTest | null>(null);
   const { showSuccess, showError } = useToast();
+  const { teacher } = useTeacherAuth();
 
   useEffect(() => {
     loadTests();
@@ -158,6 +162,14 @@ export default function InClassTestsTab({ classId, className, classSubject }: In
 
               <div className="flex items-center space-x-3 mt-4 md:mt-0 pl-14 md:pl-0">
                 <button
+                  onClick={() => setSelectedTestForGrading(test)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+                  title="Grade Test"
+                >
+                  <Edit3 className="w-4 h-4 mr-2" />
+                  Grade
+                </button>
+                <button
                   onClick={() => handleDeleteTest(test.id)}
                   className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                   title="Delete Test"
@@ -179,6 +191,15 @@ export default function InClassTestsTab({ classId, className, classSubject }: In
           subjectId={''} // Assuming not strictly needed or derived
           subjectName={classSubject}
           onTestCreated={handleTestCreated}
+        />
+      )}
+
+      {selectedTestForGrading && teacher && (
+        <GradeInClassTestModal
+          isOpen={true}
+          onClose={() => setSelectedTestForGrading(null)}
+          test={selectedTestForGrading as Test}
+          teacherId={teacher.id}
         />
       )}
     </div>

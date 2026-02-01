@@ -8,6 +8,7 @@ import { Test } from '@/models/testSchema';
 import { Button, Card } from '@/components/ui';
 import { ArrowLeft, Calendar, Clock, Upload, AlertCircle, CheckCircle } from 'lucide-react';
 import ExamPDFViewer from '@/components/teacher/ExamPDFViewer';
+import TestTimer from '@/components/student/TestTimer';
 import { toast } from 'react-hot-toast';
 import { doc, getDoc, Timestamp } from 'firebase/firestore';
 import { firestore } from '@/utils/firebase-client';
@@ -24,6 +25,7 @@ export default function StudentInClassTestDetailPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [submittedFile, setSubmittedFile] = useState<{ url: string, name: string } | null>(null);
+  const [timeExpired, setTimeExpired] = useState(false);
 
   useEffect(() => {
     const fetchTestAndSubmission = async () => {
@@ -54,6 +56,11 @@ export default function StudentInClassTestDetailPage() {
 
     fetchTestAndSubmission();
   }, [user, testId, router]);
+
+  const handleTimeExpired = () => {
+    setTimeExpired(true);
+    toast.error('Time has expired! You can no longer submit answers.');
+  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -163,6 +170,13 @@ export default function StudentInClassTestDetailPage() {
           </div>
         </div>
 
+        {/* Timer */}
+        <TestTimer 
+          scheduledStartTime={(test as any).scheduledStartTime}
+          duration={(test as any).duration}
+          onTimeExpired={handleTimeExpired}
+        />
+
         {/* Guidelines */}
         <Card className="p-6 bg-white border-blue-100 shadow-sm">
           <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
@@ -213,8 +227,9 @@ export default function StudentInClassTestDetailPage() {
                     variant="outline" 
                     onClick={() => setSubmittedFile(null)}
                     className="mt-4"
+                    disabled={timeExpired}
                   >
-                    Replace File
+                    {timeExpired ? 'Time Expired' : 'Replace File'}
                   </Button>
                 </div>
               ) : (
@@ -234,11 +249,11 @@ export default function StudentInClassTestDetailPage() {
                       type="file"
                       accept="application/pdf"
                       onChange={handleFileUpload}
-                      disabled={uploading}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      disabled={uploading || timeExpired}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
                     />
-                    <Button className="w-full" disabled={uploading}>
-                      {uploading ? 'Uploading...' : 'Select PDF File'}
+                    <Button className="w-full" disabled={uploading || timeExpired}>
+                      {uploading ? 'Uploading...' : timeExpired ? 'Time Expired - Cannot Submit' : 'Select PDF File'}
                     </Button>
                   </div>
                 </div>
