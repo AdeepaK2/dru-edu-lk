@@ -663,6 +663,11 @@ export default function CreateTestModal({
         if (!selectedClassId && formData.targetClassIds.length === 0) {
            newErrors.targetClassIds = 'Please select at least one class to assign this test to';
         }
+        
+        // Validate template name if saving as template
+        if (formData.saveAsTemplate && !formData.templateName.trim()) {
+          newErrors.templateName = 'Template name is required';
+        }
         break;
     }
 
@@ -2818,6 +2823,9 @@ export default function CreateTestModal({
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                         placeholder="e.g. Math Midterm Template"
                       />
+                      {errors.templateName && (
+                        <p className="mt-1 text-sm text-red-500">{errors.templateName}</p>
+                      )}
                     </div>
                   )}
 
