@@ -37,7 +37,7 @@ export interface TestSummary {
   title: string;
   testNumber?: number;
   displayNumber?: string;
-  type: 'live' | 'flexible';
+  type: 'live' | 'flexible' | 'in-class';
   status: string;
   totalMarks: number;
   createdAt: Date;
