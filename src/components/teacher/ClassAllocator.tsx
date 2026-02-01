@@ -14,6 +14,7 @@ interface ClassAllocatorProps {
   onSelectionChange: (selectedIds: string[]) => void;
   error?: string;
   className?: string;
+  singleSelection?: boolean;
 }
 
 export const ClassAllocator: React.FC<ClassAllocatorProps> = ({
@@ -21,16 +22,19 @@ export const ClassAllocator: React.FC<ClassAllocatorProps> = ({
   selectedClassIds,
   onSelectionChange,
   error,
-  className = ''
+  className = '',
+  singleSelection = false
 }) => {
   return (
     <div className={`bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-4 ${className}`}>
       <h4 className="flex items-center text-md font-medium text-indigo-900 dark:text-indigo-300 mb-2">
         <Users className="w-5 h-5 mr-2" />
-        Assign to Classes <span className="text-red-500">*</span>
+        {singleSelection ? 'Assign to Class' : 'Assign to Classes'} <span className="text-red-500">*</span>
       </h4>
       <p className="text-sm text-indigo-700 dark:text-indigo-400 mb-3">
-        Select which classes should receive this test template.
+        {singleSelection 
+          ? 'Select the class that should receive this test.' 
+          : 'Select which classes should receive this test template.'}
       </p>
       
       <div className="max-h-40 overflow-y-auto space-y-2 bg-white dark:bg-gray-800 p-3 rounded border border-indigo-200 dark:border-indigo-700">
@@ -38,13 +42,19 @@ export const ClassAllocator: React.FC<ClassAllocatorProps> = ({
           availableClasses.map(cls => (
             <label key={cls.id} className="flex items-center space-x-3 cursor-pointer p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded">
               <input
-                type="checkbox"
+                type={singleSelection ? "radio" : "checkbox"}
                 checked={selectedClassIds.includes(cls.id)}
                 onChange={(e) => {
-                  if (e.target.checked) {
-                    onSelectionChange([...selectedClassIds, cls.id]);
+                  if (singleSelection) {
+                    if (e.target.checked) {
+                      onSelectionChange([cls.id]);
+                    }
                   } else {
-                    onSelectionChange(selectedClassIds.filter(id => id !== cls.id));
+                    if (e.target.checked) {
+                      onSelectionChange([...selectedClassIds, cls.id]);
+                    } else {
+                      onSelectionChange(selectedClassIds.filter(id => id !== cls.id));
+                    }
                   }
                 }}
                 className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
