@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui';
 import { X, FileText, Check, AlertCircle } from 'lucide-react';
 import { Test } from '@/models/testSchema';
@@ -164,13 +163,16 @@ export default function GradeInClassTestModal({
     return `${graded}/${students.length} students graded`;
   };
 
+  if (!isOpen) return null;
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader>
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+        {/* Header */}
+        <div className="border-b p-6">
           <div className="flex items-center justify-between">
             <div>
-              <DialogTitle className="text-2xl">{test.title} - Grading</DialogTitle>
+              <h2 className="text-2xl font-bold text-gray-900">{test.title} - Grading</h2>
               <p className="text-sm text-gray-500 mt-1">
                 {gradingProgress()} • Total Marks: {totalMarks}
               </p>
@@ -179,9 +181,10 @@ export default function GradeInClassTestModal({
               <X className="w-4 h-4" />
             </Button>
           </div>
-        </DialogHeader>
+        </div>
 
-        <div className="flex-1 overflow-y-auto">
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-6">
           {loading ? (
             <div className="flex items-center justify-center py-20">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
@@ -282,7 +285,8 @@ export default function GradeInClassTestModal({
           )}
         </div>
 
-        <div className="border-t pt-4 flex justify-between items-center">
+        {/* Footer */}
+        <div className="border-t p-6 flex justify-between items-center bg-gray-50">
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>
@@ -290,7 +294,7 @@ export default function GradeInClassTestModal({
             {saving ? 'Saving...' : 'Save All Grades'}
           </Button>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 }
