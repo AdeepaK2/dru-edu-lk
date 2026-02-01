@@ -82,6 +82,7 @@ import {
   getRemarkColor 
 } from '@/models/studentRemarkSchema';
 import { StudentRemarkFirestoreService } from '@/apiservices/studentRemarkFirestoreService';
+import InClassTestsTab from '@/components/teacher/InClassTestsTab';
 
 interface TabData {
   id: string;
@@ -373,6 +374,12 @@ export default function ClassDetails() {
       count: materialsLoading ? undefined : materialsCount
     },
     {
+      id: 'in-class',
+      label: 'In-Class Tests',
+      icon: FileText,
+      count: undefined
+    },
+    {
       id: 'homework',
       label: 'Homework',
       icon: FileText,
@@ -554,6 +561,13 @@ export default function ClassDetails() {
           {/* Tab Content */}
           <div className="p-6">
             {activeTab === 'study-materials' && <StudyMaterialsTab classId={classId} />}
+            {activeTab === 'in-class' && (
+              <InClassTestsTab 
+                classId={classId} 
+                className={classData?.name || ''} 
+                classSubject={classData?.subject || ''} 
+              />
+            )}
             {activeTab === 'homework' && <HomeworkTab classData={classData} classId={classId} />}
             {activeTab === 'students' && (
               <StudentsTab 
