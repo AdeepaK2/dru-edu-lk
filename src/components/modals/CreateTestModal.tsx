@@ -249,15 +249,21 @@ export default function CreateTestModal({
             let inferredQuestionType: 'mcq' | 'essay' | '' = (template.config.questionType as 'mcq' | 'essay' | '') || '';
             
             if (!inferredQuestionType && template.questions && template.questions.length > 0) {
-              // Check first question type - cast to any to avoid strict type overlap errors if types don't match exactly
-              const firstQType = (template.questions[0] as any).type;
+              const firstQ = template.questions[0] as any;
+              // Check both property names (questionType is newer, type is older)
+              const rawType = (firstQ.questionType || firstQ.type || '').toLowerCase();
               
-              // Map question type to test question type ('mcq' or 'essay')
-              if (firstQType === 'mcq' || firstQType === 'true_false') {
+              if (rawType === 'mcq' || rawType === 'true_false' || rawType === 'multiple_choice') {
                  inferredQuestionType = 'mcq';
-              } else if (firstQType === 'essay' || firstQType === 'short_answer') {
+              } else if (rawType === 'essay' || rawType === 'short_answer' || rawType === 'descriptive') {
                  inferredQuestionType = 'essay';
               }
+              
+              console.log('📋 Inferred identity:', { 
+                fromConfig: template.config.questionType, 
+                fromQuestion: rawType, 
+                final: inferredQuestionType 
+              });
             }
 
             // Populate form with template data
