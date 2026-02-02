@@ -36,7 +36,7 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
   };
 
   // Helper function to load and add image to PDF
-  const addImageToPDF = async (imageUrl: string, maxWidth: number = contentWidth - 10, maxHeight: number = 120): Promise<boolean> => {
+  const addImageToPDF = async (imageUrl: string, maxWidth: number = contentWidth - 10, maxHeight: number = 240): Promise<boolean> => {
     try {
       console.log('📷 Loading image via proxy:', imageUrl);
       
@@ -101,7 +101,7 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
 
       // Add the image to PDF using base64
       doc.addImage(base64, 'JPEG', margin + 5, yPosition, pdfWidth, pdfHeight);
-      yPosition += pdfHeight + 8;
+      yPosition += pdfHeight + 10;
 
       console.log('✅ Image added to PDF');
       return true;
@@ -188,9 +188,9 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
       yPosition += 5;
     }
 
-    // Question image - embed actual image (larger size)
+    // Question image - embed actual image (very large - 240px)
     if (questionImageUrl) {
-      const imageLoaded = await addImageToPDF(questionImageUrl, contentWidth - 10, 120);
+      const imageLoaded = await addImageToPDF(questionImageUrl, contentWidth - 10, 240);
       if (!imageLoaded) {
         doc.setFontSize(9);
         doc.setTextColor(200, 0, 0);
@@ -202,7 +202,7 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
 
     // MCQ Options
     if (question.questionType === 'mcq' || question.type === 'mcq') {
-      yPosition += 5;
+      yPosition += 8;
       
       // Use questionData options if available (they have image URLs), otherwise use simple options array
       const optionsData = hasQuestionData && question.questionData!.options 
@@ -215,30 +215,35 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
       
       const correctIndex = question.correctOption;
 
-      // Show correct answer prominently at the top
+      // Show correct answer prominently at the top in GREEN
       if (correctIndex !== undefined && correctIndex >= 0 && correctIndex < optionsData.length) {
         checkNewPage(15);
-        doc.setFontSize(11);
+        doc.setFontSize(13);
         doc.setFont('helvetica', 'bold');
-        doc.setTextColor(0, 128, 0);
-        doc.text(`✓ Correct Answer: ${String.fromCharCode(65 + correctIndex)}`, margin + 5, yPosition);
-        yPosition += 8;
+        doc.setTextColor(0, 150, 0); // Bright green
+        doc.text(`✓ CORRECT ANSWER: ${String.fromCharCode(65 + correctIndex)}`, margin + 5, yPosition);
+        yPosition += 10;
         doc.setTextColor(0, 0, 0);
         doc.setFont('helvetica', 'normal');
       }
 
       for (let optIndex = 0; optIndex < optionsData.length; optIndex++) {
         const option = optionsData[optIndex];
-        checkNewPage(20);
+        checkNewPage(25);
         const isCorrect = optIndex === correctIndex;
         
         const optionText = option.text || '';
         const optionImageUrl = option.imageUrl;
         
-        // Option label - only show letter if no text
-        doc.setFontSize(11);
+        // Option label - show in green if correct
+        doc.setFontSize(12);
         doc.setFont('helvetica', isCorrect ? 'bold' : 'normal');
-        doc.setTextColor(isCorrect ? 0 : 0, isCorrect ? 128 : 0, 0);
+        
+        if (isCorrect) {
+          doc.setTextColor(0, 150, 0); // Bright green for correct
+        } else {
+          doc.setTextColor(0, 0, 0); // Black for others
+        }
         
         const optionLabel = `${String.fromCharCode(65 + optIndex)})`;
         doc.text(optionLabel, margin + 10, yPosition);
@@ -246,16 +251,16 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
         // Only show text if it exists
         if (optionText && optionText.trim()) {
           doc.text(optionText, margin + 20, yPosition);
-          yPosition += 6;
+          yPosition += 7;
         } else {
-          yPosition += 6;
+          yPosition += 7;
         }
         
         doc.setTextColor(0, 0, 0);
         
-        // Embed option image if available (larger size)
+        // Embed option image if available (very large - 200px)
         if (optionImageUrl) {
-          const imageLoaded = await addImageToPDF(optionImageUrl, contentWidth - 25, 100);
+          const imageLoaded = await addImageToPDF(optionImageUrl, contentWidth - 25, 200);
           if (!imageLoaded) {
             doc.setFontSize(9);
             doc.setTextColor(200, 0, 0);
@@ -265,7 +270,7 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
           }
         }
         
-        yPosition += 3;
+        yPosition += 5;
       }
       
       doc.setTextColor(0, 0, 0);
@@ -309,7 +314,7 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
       }
       
       if (explanationImageUrl) {
-        const imageLoaded = await addImageToPDF(explanationImageUrl, contentWidth - 10, 140);
+        const imageLoaded = await addImageToPDF(explanationImageUrl, contentWidth - 10, 240);
         if (!imageLoaded) {
           doc.setFontSize(9);
           doc.setTextColor(200, 0, 0);
