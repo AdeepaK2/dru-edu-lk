@@ -36,7 +36,7 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
   };
 
   // Helper function to load and add image to PDF
-  const addImageToPDF = async (imageUrl: string, maxWidth: number = contentWidth - 10, maxHeight: number = 80): Promise<boolean> => {
+  const addImageToPDF = async (imageUrl: string, maxWidth: number = contentWidth - 10, maxHeight: number = 120): Promise<boolean> => {
     try {
       console.log('📷 Loading image via proxy:', imageUrl);
       
@@ -101,7 +101,7 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
 
       // Add the image to PDF using base64
       doc.addImage(base64, 'JPEG', margin + 5, yPosition, pdfWidth, pdfHeight);
-      yPosition += pdfHeight + 5;
+      yPosition += pdfHeight + 8;
 
       console.log('✅ Image added to PDF');
       return true;
@@ -112,43 +112,45 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
   };
 
   // Title
-  doc.setFontSize(18);
+  doc.setFontSize(20);
   doc.setFont('helvetica', 'bold');
   doc.text(template.title, margin, yPosition);
-  yPosition += 10;
+  yPosition += 12;
 
   // Metadata
-  doc.setFontSize(10);
+  doc.setFontSize(11);
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(100, 100, 100);
+  doc.setTextColor(80, 80, 80);
   doc.text(`Subject: ${template.subjectName || 'N/A'}`, margin, yPosition);
-  yPosition += 6;
-  doc.text(`Total Questions: ${template.questions.length}`, margin, yPosition);
-  yPosition += 6;
-  doc.text(`Total Marks: ${template.totalMarks}`, margin, yPosition);
-  yPosition += 6;
+  yPosition += 7;
+  doc.text(`Total Questions: ${template.questions.length} | Total Marks: ${template.totalMarks}`, margin, yPosition);
+  yPosition += 7;
   
   if (template.description) {
-    doc.text(`Description: ${template.description}`, margin, yPosition);
-    yPosition += 6;
+    doc.setTextColor(100, 100, 100);
+    addWrappedText(template.description, margin, 10);
+    yPosition += 5;
   }
   
   yPosition += 5;
   doc.setTextColor(0, 0, 0);
 
   // Separator line
-  doc.setDrawColor(200, 200, 200);
+  doc.setDrawColor(150, 150, 150);
+  doc.setLineWidth(0.5);
   doc.line(margin, yPosition, pageWidth - margin, yPosition);
-  yPosition += 10;
+  yPosition += 12;
 
   // Instructions section
   if (template.instructions) {
     checkNewPage(30);
-    doc.setFontSize(12);
+    doc.setFontSize(13);
     doc.setFont('helvetica', 'bold');
     doc.text('Instructions:', margin, yPosition);
     yPosition += 8;
     
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
     addWrappedText(template.instructions, margin, 10);
     yPosition += 10;
   }
@@ -157,15 +159,16 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
   for (let index = 0; index < template.questions.length; index++) {
     const question = template.questions[index];
     
-    checkNewPage(40);
+    checkNewPage(50);
     
     // Question number and marks
-    doc.setFontSize(12);
+    doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
     doc.text(`Question ${index + 1}`, margin, yPosition);
     doc.setFont('helvetica', 'normal');
+    doc.setFontSize(11);
     doc.text(`[${question.points || question.marks} marks]`, pageWidth - margin - 30, yPosition);
-    yPosition += 8;
+    yPosition += 10;
 
     // Use questionData if available (it contains full question details with images)
     const hasQuestionData = !!question.questionData;
@@ -180,25 +183,26 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
       : question.imageUrl;
     
     if (questionText && questionText.trim()) {
+      doc.setFontSize(11);
       addWrappedText(questionText, margin + 5, 11);
       yPosition += 5;
     }
 
-    // Question image - embed actual image
+    // Question image - embed actual image (larger size)
     if (questionImageUrl) {
-      const imageLoaded = await addImageToPDF(questionImageUrl);
+      const imageLoaded = await addImageToPDF(questionImageUrl, contentWidth - 10, 120);
       if (!imageLoaded) {
         doc.setFontSize(9);
         doc.setTextColor(200, 0, 0);
         doc.text('[Failed to load question image]', margin + 5, yPosition);
-        yPosition += 6;
+        yPosition += 8;
         doc.setTextColor(0, 0, 0);
       }
     }
 
     // MCQ Options
     if (question.questionType === 'mcq' || question.type === 'mcq') {
-      yPosition += 3;
+      yPosition += 5;
       
       // Use questionData options if available (they have image URLs), otherwise use simple options array
       const optionsData = hasQuestionData && question.questionData!.options 
@@ -211,41 +215,57 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
       
       const correctIndex = question.correctOption;
 
+      // Show correct answer prominently at the top
+      if (correctIndex !== undefined && correctIndex >= 0 && correctIndex < optionsData.length) {
+        checkNewPage(15);
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(0, 128, 0);
+        doc.text(`✓ Correct Answer: ${String.fromCharCode(65 + correctIndex)}`, margin + 5, yPosition);
+        yPosition += 8;
+        doc.setTextColor(0, 0, 0);
+        doc.setFont('helvetica', 'normal');
+      }
+
       for (let optIndex = 0; optIndex < optionsData.length; optIndex++) {
         const option = optionsData[optIndex];
-        checkNewPage(15);
+        checkNewPage(20);
         const isCorrect = optIndex === correctIndex;
         
         const optionText = option.text || '';
         const optionImageUrl = option.imageUrl;
         
-        doc.setFontSize(10);
+        // Option label - only show letter if no text
+        doc.setFontSize(11);
         doc.setFont('helvetica', isCorrect ? 'bold' : 'normal');
+        doc.setTextColor(isCorrect ? 0 : 0, isCorrect ? 128 : 0, 0);
         
-        // Option label
-        if (isCorrect) {
-          doc.setTextColor(0, 128, 0); // Green for correct answer
-          const optionLabel = `${String.fromCharCode(65 + optIndex)}) ${optionText || '[Image option]'} ✓ CORRECT`;
-          addWrappedText(optionLabel, margin + 10, 10, contentWidth - 15, true);
+        const optionLabel = `${String.fromCharCode(65 + optIndex)})`;
+        doc.text(optionLabel, margin + 10, yPosition);
+        
+        // Only show text if it exists
+        if (optionText && optionText.trim()) {
+          doc.text(optionText, margin + 20, yPosition);
+          yPosition += 6;
         } else {
-          doc.setTextColor(0, 0, 0);
-          const optionLabel = `${String.fromCharCode(65 + optIndex)}) ${optionText || '[Image option]'}`;
-          addWrappedText(optionLabel, margin + 10, 10, contentWidth - 15);
-        }
-        
-        // Embed option image if available
-        if (optionImageUrl) {
-          const imageLoaded = await addImageToPDF(optionImageUrl, contentWidth - 20, 60);
-          if (!imageLoaded) {
-            doc.setFontSize(8);
-            doc.setTextColor(200, 0, 0);
-            doc.text('   [Failed to load option image]', margin + 10, yPosition);
-            yPosition += 5;
-          }
+          yPosition += 6;
         }
         
         doc.setTextColor(0, 0, 0);
-        yPosition += 2;
+        
+        // Embed option image if available (larger size)
+        if (optionImageUrl) {
+          const imageLoaded = await addImageToPDF(optionImageUrl, contentWidth - 25, 100);
+          if (!imageLoaded) {
+            doc.setFontSize(9);
+            doc.setTextColor(200, 0, 0);
+            doc.text('[Failed to load option image]', margin + 15, yPosition);
+            yPosition += 6;
+            doc.setTextColor(0, 0, 0);
+          }
+        }
+        
+        yPosition += 3;
       }
       
       doc.setTextColor(0, 0, 0);
@@ -254,11 +274,11 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
 
     // Essay question indicator
     if (question.questionType === 'essay' || question.type === 'essay') {
-      yPosition += 3;
-      doc.setFontSize(9);
+      yPosition += 5;
+      doc.setFontSize(10);
       doc.setTextColor(100, 100, 100);
       doc.text('[Essay Answer - Student will write their response]', margin + 5, yPosition);
-      yPosition += 6;
+      yPosition += 8;
       doc.setTextColor(0, 0, 0);
     }
 
@@ -272,60 +292,64 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
       : question.explanationImageUrl;
     
     if (explanationText || explanationImageUrl) {
-      yPosition += 5;
-      checkNewPage(20);
-      doc.setFontSize(10);
+      yPosition += 8;
+      checkNewPage(25);
+      doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(0, 0, 200);
       doc.text('Explanation:', margin + 5, yPosition);
-      yPosition += 6;
+      yPosition += 8;
       
       if (explanationText && explanationText.trim()) {
         doc.setFont('helvetica', 'normal');
-        doc.setTextColor(50, 50, 50);
-        addWrappedText(explanationText, margin + 5, 9);
+        doc.setFontSize(10);
+        doc.setTextColor(40, 40, 40);
+        addWrappedText(explanationText, margin + 5, 10);
+        yPosition += 3;
       }
       
       if (explanationImageUrl) {
-        const imageLoaded = await addImageToPDF(explanationImageUrl);
+        const imageLoaded = await addImageToPDF(explanationImageUrl, contentWidth - 10, 140);
         if (!imageLoaded) {
           doc.setFontSize(9);
           doc.setTextColor(200, 0, 0);
           doc.text('[Failed to load explanation image]', margin + 5, yPosition);
-          yPosition += 5;
+          yPosition += 6;
         }
       }
       
       if (!explanationText && !explanationImageUrl) {
         doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
         doc.setTextColor(150, 150, 150);
         doc.text('No explanation provided', margin + 5, yPosition);
-        yPosition += 5;
+        yPosition += 6;
       }
       
       doc.setTextColor(0, 0, 0);
     }
 
     // Difficulty and topic
-    yPosition += 3;
+    yPosition += 5;
     if (question.difficultyLevel || question.topic) {
       checkNewPage(10);
-      doc.setFontSize(8);
-      doc.setTextColor(150, 150, 150);
+      doc.setFontSize(9);
+      doc.setTextColor(120, 120, 120);
       let metaText = '';
       if (question.difficultyLevel) metaText += `Difficulty: ${question.difficultyLevel}`;
       if (question.topic) metaText += (metaText ? ' | ' : '') + `Topic: ${question.topic}`;
       doc.text(metaText, margin + 5, yPosition);
-      yPosition += 5;
+      yPosition += 6;
       doc.setTextColor(0, 0, 0);
     }
 
     // Separator between questions
-    yPosition += 5;
-    checkNewPage(10);
-    doc.setDrawColor(220, 220, 220);
+    yPosition += 8;
+    checkNewPage(15);
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.3);
     doc.line(margin, yPosition, pageWidth - margin, yPosition);
-    yPosition += 10;
+    yPosition += 15;
   }
 
   // Footer on last page
