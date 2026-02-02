@@ -38,27 +38,30 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
   // Helper function to load and add image to PDF
   const addImageToPDF = async (imageUrl: string, maxWidth: number = contentWidth - 10, maxHeight: number = 80): Promise<boolean> => {
     try {
-      console.log('📷 Loading image:', imageUrl);
+      console.log('📷 Loading image via proxy:', imageUrl);
       
-      // Load image directly into an Image element (bypasses CORS for Firebase Storage)
+      // Use the image proxy API to bypass CORS issues
+      const proxyUrl = `/api/image-proxy?url=${encodeURIComponent(imageUrl)}`;
+      
+      // Load image through proxy
       const img = await new Promise<HTMLImageElement>((resolve, reject) => {
         const image = new Image();
-        image.crossOrigin = 'anonymous'; // Enable CORS
+        image.crossOrigin = 'anonymous'; // Safe to use with our proxy
         
         image.onload = () => {
-          console.log('✅ Image loaded, dimensions:', image.width, 'x', image.height);
+          console.log('✅ Image loaded via proxy, dimensions:', image.width, 'x', image.height);
           resolve(image);
         };
         
         image.onerror = (err) => {
-          console.error('❌ Failed to load image:', err);
+          console.error('❌ Failed to load image via proxy:', err);
           reject(new Error('Failed to load image'));
         };
         
-        image.src = imageUrl;
+        image.src = proxyUrl;
       });
 
-      // Create a canvas to convert image to base64
+      // Create canvas to convert image to base64
       const canvas = document.createElement('canvas');
       canvas.width = img.width;
       canvas.height = img.height;
@@ -73,7 +76,6 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
       
       // Convert canvas to base64
       const base64 = canvas.toDataURL('image/jpeg', 0.95);
-      console.log('✅ Image converted to base64');
 
       // Calculate scaled dimensions to fit within maxWidth and maxHeight
       let width = img.width;
@@ -97,7 +99,7 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
       // Check if we need a new page for the image
       checkNewPage(pdfHeight + 10);
 
-      // Add the image to PDF
+      // Add the image to PDF using base64
       doc.addImage(base64, 'JPEG', margin + 5, yPosition, pdfWidth, pdfHeight);
       yPosition += pdfHeight + 5;
 
