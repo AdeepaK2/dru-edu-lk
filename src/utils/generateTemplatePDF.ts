@@ -38,42 +38,42 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
   // Helper function to load and add image to PDF
   const addImageToPDF = async (imageUrl: string, maxWidth: number = contentWidth - 10, maxHeight: number = 80): Promise<boolean> => {
     try {
-      console.log('📷 Fetching image:', imageUrl);
+      console.log('📷 Loading image:', imageUrl);
       
-      // Fetch the image with CORS mode
-      const response = await fetch(imageUrl, {
-        mode: 'cors',
-        credentials: 'omit'
-      });
-      
-      if (!response.ok) {
-        console.error('❌ Failed to fetch image:', response.status, response.statusText);
-        return false;
-      }
-      
-      const blob = await response.blob();
-      console.log('✅ Image blob fetched, size:', blob.size, 'type:', blob.type);
-      
-      // Convert blob to base64
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
-
-      // Create an image element to get dimensions
+      // Load image directly into an Image element (bypasses CORS for Firebase Storage)
       const img = await new Promise<HTMLImageElement>((resolve, reject) => {
         const image = new Image();
-        image.onload = () => resolve(image);
-        image.onerror = (err) => {
-          console.error('❌ Failed to load image element:', err);
-          reject(err);
+        image.crossOrigin = 'anonymous'; // Enable CORS
+        
+        image.onload = () => {
+          console.log('✅ Image loaded, dimensions:', image.width, 'x', image.height);
+          resolve(image);
         };
-        image.src = base64;
+        
+        image.onerror = (err) => {
+          console.error('❌ Failed to load image:', err);
+          reject(new Error('Failed to load image'));
+        };
+        
+        image.src = imageUrl;
       });
 
-      console.log('✅ Image loaded, dimensions:', img.width, 'x', img.height);
+      // Create a canvas to convert image to base64
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        throw new Error('Failed to get canvas context');
+      }
+      
+      // Draw image to canvas
+      ctx.drawImage(img, 0, 0);
+      
+      // Convert canvas to base64
+      const base64 = canvas.toDataURL('image/jpeg', 0.95);
+      console.log('✅ Image converted to base64');
 
       // Calculate scaled dimensions to fit within maxWidth and maxHeight
       let width = img.width;
@@ -97,9 +97,8 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
       // Check if we need a new page for the image
       checkNewPage(pdfHeight + 10);
 
-      // Add the image
-      const format = imageUrl.toLowerCase().includes('.png') ? 'PNG' : 'JPEG';
-      doc.addImage(base64, format, margin + 5, yPosition, pdfWidth, pdfHeight);
+      // Add the image to PDF
+      doc.addImage(base64, 'JPEG', margin + 5, yPosition, pdfWidth, pdfHeight);
       yPosition += pdfHeight + 5;
 
       console.log('✅ Image added to PDF');
