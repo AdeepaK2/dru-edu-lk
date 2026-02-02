@@ -549,6 +549,13 @@ export default function TeacherTests() {
     
     if (test.type === 'live') {
       const liveTest = test as LiveTest;
+      
+      // Add null checks for timestamps
+      if (!liveTest.studentJoinTime || !liveTest.actualEndTime) {
+        console.warn('Live test missing required timestamps:', test.id);
+        return { status: 'upcoming', color: 'gray', text: 'Pending' };
+      }
+      
       if (now.seconds < liveTest.studentJoinTime.seconds) {
         return { status: 'upcoming', color: 'blue', text: 'Upcoming' };
       } else if (now.seconds >= liveTest.studentJoinTime.seconds && now.seconds <= liveTest.actualEndTime.seconds) {
@@ -558,6 +565,13 @@ export default function TeacherTests() {
       }
     } else {
       const flexTest = test as FlexibleTest;
+      
+      // Add null checks for timestamps
+      if (!flexTest.availableFrom || !flexTest.availableTo) {
+        console.warn('Flexible test missing required timestamps:', test.id);
+        return { status: 'upcoming', color: 'gray', text: 'Pending' };
+      }
+      
       if (now.seconds < flexTest.availableFrom.seconds) {
         return { status: 'upcoming', color: 'blue', text: 'Upcoming' };
       } else if (now.seconds >= flexTest.availableFrom.seconds && now.seconds <= flexTest.availableTo.seconds) {
