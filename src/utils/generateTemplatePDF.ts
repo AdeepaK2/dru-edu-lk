@@ -212,11 +212,49 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
             imageUrl: typeof opt === 'object' ? opt.imageUrl : undefined
           }));
       
-      const correctIndex = question.correctOption;
+      // Find correct answer - try multiple fields
+      let correctIndex = question.correctOption;
+      
+      // If correctOption is undefined, try other fields
+      if (correctIndex === undefined || correctIndex === null) {
+        // Try correctAnswer field
+        correctIndex = (question as any).correctAnswer;
+        
+        // Try questionData
+        if ((correctIndex === undefined || correctIndex === null) && hasQuestionData) {
+          correctIndex = (question.questionData as any)?.correctAnswer || (question.questionData as any)?.correctOption;
+        }
+        
+        // Last resort: check options for isCorrect flag
+        if (correctIndex === undefined || correctIndex === null) {
+          const correctOptionIndex = optionsData.findIndex((opt: any, idx: number) => {
+            // Check if option has isCorrect property
+            const originalOption = question.options?.[idx];
+            return typeof originalOption === 'object' && (originalOption as any).isCorrect === true;
+          });
+          if (correctOptionIndex >= 0) {
+            correctIndex = correctOptionIndex;
+          }
+        }
+      }
+      
+      // Debug logging to identify the issue
+      console.log('🔍 Full Question Object:', JSON.stringify(question, null, 2));
+      console.log('🔍 Question Data Fields:', {
+        questionType: question.questionType,
+        type: question.type,
+        correctOption: question.correctOption,
+        correctAnswer: (question as any).correctAnswer,
+        hasQuestionData: hasQuestionData,
+        questionDataCorrectAnswer: hasQuestionData ? (question.questionData as any)?.correctAnswer : undefined,
+        questionDataCorrectOption: hasQuestionData ? (question.questionData as any)?.correctOption : undefined,
+        foundCorrectIndex: correctIndex
+      });
       console.log('🎯 Correct Index:', correctIndex, '| Total Options:', optionsData.length);
 
       // Show correct answer PROMINENTLY at the top with background
       if (correctIndex !== undefined && correctIndex >= 0 && correctIndex < optionsData.length) {
+        console.log('✅ Drawing green correct answer box for option', String.fromCharCode(65 + correctIndex));
         checkNewPage(20);
         
         // Draw a light green background box
@@ -231,13 +269,17 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
         doc.setTextColor(0, 0, 0);
         doc.setFont('helvetica', 'normal');
       } else {
-        console.warn('⚠️ No valid correct index found');
+        console.warn('⚠️ No valid correct index found. correctIndex =', correctIndex, 'optionsLength =', optionsData.length);
       }
 
       for (let optIndex = 0; optIndex < optionsData.length; optIndex++) {
         const option = optionsData[optIndex];
         checkNewPage(30);
         const isCorrect = optIndex === correctIndex;
+        
+        if (isCorrect) {
+          console.log('✅ Option', String.fromCharCode(65 + optIndex), 'is CORRECT - should be green');
+        }
         
         const optionText = option.text || '';
         const optionImageUrl = option.imageUrl;
@@ -250,6 +292,7 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
           doc.setFillColor(255, 255, 200); // Light yellow background
           doc.rect(margin + 5, yPosition - 5, 15, 8, 'F');
           doc.setTextColor(0, 150, 0); // Bright green for correct
+          console.log('🎨 Setting option', String.fromCharCode(65 + optIndex), 'to GREEN');
         } else {
           doc.setTextColor(0, 0, 0); // Black for others
         }
