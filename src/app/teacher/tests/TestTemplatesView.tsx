@@ -7,9 +7,11 @@ import {
   Calendar,
   Search,
   BookOpen,
-  Trash2
+  Trash2,
+  Download
 } from 'lucide-react';
 import { Test, TestTemplate, LiveTest, FlexibleTest } from '@/models/testSchema';
+import { generateTemplatePDF } from '@/utils/generateTemplatePDF';
 
 interface TestTemplatesViewProps {
   templates: TestTemplate[];
@@ -20,6 +22,7 @@ interface TestTemplatesViewProps {
 
 export function TestTemplatesView({ templates, onBack, onUseTemplate, onDeleteTemplate }: TestTemplatesViewProps) {
   const [searchTerm, setSearchTerm] = React.useState('');
+  const [downloadingId, setDownloadingId] = React.useState<string | null>(null);
   
   // Filter templates based on search term
   const filteredTemplates = templates.filter(template => 
@@ -42,6 +45,18 @@ export function TestTemplatesView({ templates, onBack, onUseTemplate, onDeleteTe
       return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(d);
     } catch (e) {
       return 'Invalid Date';
+    }
+  };
+
+  const handleDownloadPDF = async (template: TestTemplate) => {
+    try {
+      setDownloadingId(template.id);
+      await generateTemplatePDF(template);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Failed to generate PDF. Please try again.');
+    } finally {
+      setDownloadingId(null);
     }
   };
 
@@ -139,6 +154,22 @@ export function TestTemplatesView({ templates, onBack, onUseTemplate, onDeleteTe
               >
                 <FileText className="w-4 h-4 mr-2" />
                 Use Template
+              </button>
+              
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDownloadPDF(template);
+                }}
+                disabled={downloadingId === template.id}
+                className="flex items-center justify-center px-3 py-2 bg-white dark:bg-gray-800 border-2 border-green-100 dark:border-green-900/50 text-green-600 dark:text-green-400 font-medium rounded-lg hover:bg-green-50 dark:hover:bg-green-900/30 hover:border-green-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Download questions as PDF"
+              >
+                {downloadingId === template.id ? (
+                  <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4" />
+                )}
               </button>
               
               {onDeleteTemplate && (
