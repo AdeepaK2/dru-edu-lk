@@ -8,9 +8,12 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  const margin = 20;
+  const margin = 15; // Reduced margin for more space
   const contentWidth = pageWidth - (2 * margin);
   let yPosition = margin;
+
+  console.log('📄 PDF Page dimensions:', pageWidth, 'x', pageHeight, 'mm');
+  console.log('📏 Content width:', contentWidth, 'mm');
 
   // Helper function to check if we need a new page
   const checkNewPage = (requiredSpace: number = 20) => {
@@ -35,8 +38,8 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
     }
   };
 
-  // Helper function to load and add image to PDF
-  const addImageToPDF = async (imageUrl: string, maxWidth: number = contentWidth - 10, maxHeight: number = 240): Promise<boolean> => {
+  // Helper function to load and add image to PDF - USE 95% OF PAGE WIDTH!
+  const addImageToPDF = async (imageUrl: string, widthPercent: number = 0.95): Promise<boolean> => {
     try {
       console.log('📷 Loading image via proxy:', imageUrl);
       
@@ -49,7 +52,7 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
         image.crossOrigin = 'anonymous'; // Safe to use with our proxy
         
         image.onload = () => {
-          console.log('✅ Image loaded via proxy, dimensions:', image.width, 'x', image.height);
+          console.log('✅ Image loaded via proxy, dimensions:', image.width, 'x', image.height, 'pixels');
           resolve(image);
         };
         
@@ -77,33 +80,29 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
       // Convert canvas to base64
       const base64 = canvas.toDataURL('image/jpeg', 0.95);
 
-      // Calculate scaled dimensions to fit within maxWidth and maxHeight
-      let width = img.width;
-      let height = img.height;
-      const aspectRatio = width / height;
+      // Calculate dimensions - use widthPercent of contentWidth and maintain aspect ratio
+      const aspectRatio = img.width / img.height;
+      const pdfWidth = contentWidth * widthPercent;
+      const pdfHeight = pdfWidth / aspectRatio;
 
-      if (width > maxWidth) {
-        width = maxWidth;
-        height = width / aspectRatio;
-      }
-
-      if (height > maxHeight) {
-        height = maxHeight;
-        width = height * aspectRatio;
-      }
-
-      // Convert to PDF units (mm)
-      const pdfWidth = width * 0.264583; // pixels to mm
-      const pdfHeight = height * 0.264583;
+      console.log('📐 PDF image size:', pdfWidth.toFixed(2), 'x', pdfHeight.toFixed(2), 'mm (using', (widthPercent * 100).toFixed(0) + '% of', contentWidth.toFixed(2), 'mm)');
 
       // Check if we need a new page for the image
-      checkNewPage(pdfHeight + 10);
+      const requiredSpace = pdfHeight + 15;
+      if (yPosition + requiredSpace > pageHeight - margin) {
+        console.log('📄 Adding new page for image');
+        doc.addPage();
+        yPosition = margin;
+      }
+
+      // Center the image horizontally
+      const xPosition = margin + (contentWidth - pdfWidth) / 2;
 
       // Add the image to PDF using base64
-      doc.addImage(base64, 'JPEG', margin + 5, yPosition, pdfWidth, pdfHeight);
+      doc.addImage(base64, 'JPEG', xPosition, yPosition, pdfWidth, pdfHeight);
       yPosition += pdfHeight + 10;
 
-      console.log('✅ Image added to PDF');
+      console.log('✅ Image added to PDF at', xPosition.toFixed(2), ',', (yPosition - pdfHeight - 10).toFixed(2), 'with size', pdfWidth.toFixed(2), 'x', pdfHeight.toFixed(2), 'mm');
       return true;
     } catch (error) {
       console.error('❌ Failed to load image:', imageUrl, error);
@@ -188,9 +187,9 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
       yPosition += 5;
     }
 
-    // Question image - embed actual image (very large - 240px)
+    // Question image - embed VERY LARGE image (95% of page width!)
     if (questionImageUrl) {
-      const imageLoaded = await addImageToPDF(questionImageUrl, contentWidth - 10, 240);
+      const imageLoaded = await addImageToPDF(questionImageUrl, 0.95);
       if (!imageLoaded) {
         doc.setFontSize(9);
         doc.setTextColor(200, 0, 0);
@@ -202,7 +201,7 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
 
     // MCQ Options
     if (question.questionType === 'mcq' || question.type === 'mcq') {
-      yPosition += 8;
+      yPosition += 10;
       
       // Use questionData options if available (they have image URLs), otherwise use simple options array
       const optionsData = hasQuestionData && question.questionData!.options 
@@ -214,32 +213,42 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
           }));
       
       const correctIndex = question.correctOption;
+      console.log('🎯 Correct Index:', correctIndex, '| Total Options:', optionsData.length);
 
-      // Show correct answer prominently at the top in GREEN
+      // Show correct answer PROMINENTLY at the top with background
       if (correctIndex !== undefined && correctIndex >= 0 && correctIndex < optionsData.length) {
-        checkNewPage(15);
-        doc.setFontSize(13);
+        checkNewPage(20);
+        
+        // Draw a light green background box
+        doc.setFillColor(220, 255, 220);
+        doc.rect(margin, yPosition - 5, contentWidth, 12, 'F');
+        
+        doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(0, 150, 0); // Bright green
-        doc.text(`✓ CORRECT ANSWER: ${String.fromCharCode(65 + correctIndex)}`, margin + 5, yPosition);
-        yPosition += 10;
+        doc.text(`✓ CORRECT ANSWER: ${String.fromCharCode(65 + correctIndex)}`, margin + 10, yPosition + 5);
+        yPosition += 15;
         doc.setTextColor(0, 0, 0);
         doc.setFont('helvetica', 'normal');
+      } else {
+        console.warn('⚠️ No valid correct index found');
       }
 
       for (let optIndex = 0; optIndex < optionsData.length; optIndex++) {
         const option = optionsData[optIndex];
-        checkNewPage(25);
+        checkNewPage(30);
         const isCorrect = optIndex === correctIndex;
         
         const optionText = option.text || '';
         const optionImageUrl = option.imageUrl;
         
         // Option label - show in green if correct
-        doc.setFontSize(12);
+        doc.setFontSize(13);
         doc.setFont('helvetica', isCorrect ? 'bold' : 'normal');
         
         if (isCorrect) {
+          doc.setFillColor(255, 255, 200); // Light yellow background
+          doc.rect(margin + 5, yPosition - 5, 15, 8, 'F');
           doc.setTextColor(0, 150, 0); // Bright green for correct
         } else {
           doc.setTextColor(0, 0, 0); // Black for others
@@ -250,17 +259,17 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
         
         // Only show text if it exists
         if (optionText && optionText.trim()) {
-          doc.text(optionText, margin + 20, yPosition);
-          yPosition += 7;
+          doc.text(optionText, margin + 25, yPosition);
+          yPosition += 8;
         } else {
-          yPosition += 7;
+          yPosition += 8;
         }
         
         doc.setTextColor(0, 0, 0);
         
-        // Embed option image if available (very large - 200px)
+        // Embed option image LARGE (90% of page width)
         if (optionImageUrl) {
-          const imageLoaded = await addImageToPDF(optionImageUrl, contentWidth - 25, 200);
+          const imageLoaded = await addImageToPDF(optionImageUrl, 0.90);
           if (!imageLoaded) {
             doc.setFontSize(9);
             doc.setTextColor(200, 0, 0);
@@ -314,7 +323,7 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
       }
       
       if (explanationImageUrl) {
-        const imageLoaded = await addImageToPDF(explanationImageUrl, contentWidth - 10, 240);
+        const imageLoaded = await addImageToPDF(explanationImageUrl, 0.95);
         if (!imageLoaded) {
           doc.setFontSize(9);
           doc.setTextColor(200, 0, 0);
