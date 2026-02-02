@@ -212,45 +212,51 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
             imageUrl: typeof opt === 'object' ? opt.imageUrl : undefined
           }));
       
-      // Find correct answer - try multiple fields
-      let correctIndex = question.correctOption;
+      // Find correct answer - try multiple fields and formats
+      let correctIndex: number | undefined = question.correctOption;
       
       // If correctOption is undefined, try other fields
       if (correctIndex === undefined || correctIndex === null) {
-        // Try correctAnswer field
-        correctIndex = (question as any).correctAnswer;
+        // Try correctAnswer field (might be a letter like "A", "B", "C", "D")
+        let correctAnswer = (question as any).correctAnswer;
+        
+        if (typeof correctAnswer === 'string') {
+          // Convert letter to index: "A" -> 0, "B" -> 1, etc.
+          const letter = correctAnswer.toUpperCase().trim();
+          if (letter.length === 1 && letter >= 'A' && letter <= 'Z') {
+            correctIndex = letter.charCodeAt(0) - 'A'.charCodeAt(0);
+            console.log('✅ Converted letter', letter, 'to index', correctIndex);
+          }
+        } else if (typeof correctAnswer === 'number') {
+          correctIndex = correctAnswer;
+        }
         
         // Try questionData
         if ((correctIndex === undefined || correctIndex === null) && hasQuestionData) {
-          correctIndex = (question.questionData as any)?.correctAnswer || (question.questionData as any)?.correctOption;
+          const qDataCorrectAnswer = (question.questionData as any)?.correctAnswer;
+          if (typeof qDataCorrectAnswer === 'string') {
+            const letter = qDataCorrectAnswer.toUpperCase().trim();
+            if (letter.length === 1 && letter >= 'A' && letter <= 'Z') {
+              correctIndex = letter.charCodeAt(0) - 'A'.charCodeAt(0);
+            }
+          } else if (typeof qDataCorrectAnswer === 'number') {
+            correctIndex = qDataCorrectAnswer;
+          }
         }
         
         // Last resort: check options for isCorrect flag
         if (correctIndex === undefined || correctIndex === null) {
-          const correctOptionIndex = optionsData.findIndex((opt: any, idx: number) => {
-            // Check if option has isCorrect property
-            const originalOption = question.options?.[idx];
-            return typeof originalOption === 'object' && (originalOption as any).isCorrect === true;
+          const correctOptionIndex = (question.options as any[])?.findIndex((opt: any) => {
+            return typeof opt === 'object' && opt.isCorrect === true;
           });
           if (correctOptionIndex >= 0) {
             correctIndex = correctOptionIndex;
+            console.log('✅ Found correct answer from isCorrect flag at index', correctIndex);
           }
         }
       }
       
-      // Debug logging to identify the issue
-      console.log('🔍 Full Question Object:', JSON.stringify(question, null, 2));
-      console.log('🔍 Question Data Fields:', {
-        questionType: question.questionType,
-        type: question.type,
-        correctOption: question.correctOption,
-        correctAnswer: (question as any).correctAnswer,
-        hasQuestionData: hasQuestionData,
-        questionDataCorrectAnswer: hasQuestionData ? (question.questionData as any)?.correctAnswer : undefined,
-        questionDataCorrectOption: hasQuestionData ? (question.questionData as any)?.correctOption : undefined,
-        foundCorrectIndex: correctIndex
-      });
-      console.log('🎯 Correct Index:', correctIndex, '| Total Options:', optionsData.length);
+      console.log('🎯 FINAL Correct Index:', correctIndex, '| Total Options:', optionsData.length);
 
       // Show correct answer PROMINENTLY at the top with background
       if (correctIndex !== undefined && correctIndex >= 0 && correctIndex < optionsData.length) {
