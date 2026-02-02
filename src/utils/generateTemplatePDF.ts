@@ -35,6 +35,63 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
     }
   };
 
+  // Helper function to load and add image to PDF
+  const addImageToPDF = async (imageUrl: string, maxWidth: number = contentWidth - 10, maxHeight: number = 80): Promise<boolean> => {
+    try {
+      // Fetch the image
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      
+      // Convert blob to base64
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+
+      // Create an image element to get dimensions
+      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.onerror = reject;
+        image.src = base64;
+      });
+
+      // Calculate scaled dimensions to fit within maxWidth and maxHeight
+      let width = img.width;
+      let height = img.height;
+      const aspectRatio = width / height;
+
+      if (width > maxWidth) {
+        width = maxWidth;
+        height = width / aspectRatio;
+      }
+
+      if (height > maxHeight) {
+        height = maxHeight;
+        width = height * aspectRatio;
+      }
+
+      // Convert to PDF units (mm)
+      const pdfWidth = width * 0.264583; // pixels to mm
+      const pdfHeight = height * 0.264583;
+
+      // Check if we need a new page for the image
+      checkNewPage(pdfHeight + 10);
+
+      // Add the image
+      const format = imageUrl.toLowerCase().includes('.png') ? 'PNG' : 'JPEG';
+      doc.addImage(base64, format, margin + 5, yPosition, pdfWidth, pdfHeight);
+      yPosition += pdfHeight + 5;
+
+      return true;
+    } catch (error) {
+      console.error('Failed to load image:', imageUrl, error);
+      return false;
+    }
+  };
+
   // Title
   doc.setFontSize(18);
   doc.setFont('helvetica', 'bold');
@@ -77,8 +134,10 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
     yPosition += 10;
   }
 
-  // Questions section
-  template.questions.forEach((question: TestQuestion, index: number) => {
+  // Questions section - process sequentially to handle async image loading
+  for (let index = 0; index < template.questions.length; index++) {
+    const question = template.questions[index];
+    
     checkNewPage(40);
     
     // Question number and marks
@@ -96,28 +155,18 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
     if (questionText && questionText.trim()) {
       addWrappedText(questionText, margin + 5, 11);
       yPosition += 5;
-    } else if (hasQuestionImage) {
-      // Question is primarily image-based
-      doc.setFontSize(10);
-      doc.setTextColor(100, 100, 100);
-      doc.text('[Question is image-based - please refer to online version]', margin + 5, yPosition);
-      yPosition += 6;
-      doc.setTextColor(0, 0, 0);
-    } else {
-      doc.setFontSize(10);
-      doc.setTextColor(150, 150, 150);
-      doc.text('[No question text available]', margin + 5, yPosition);
-      yPosition += 6;
-      doc.setTextColor(0, 0, 0);
     }
 
-    // Question image indicator
+    // Question image - embed actual image
     if (hasQuestionImage) {
-      doc.setFontSize(9);
-      doc.setTextColor(0, 100, 200);
-      doc.text('📷 Image URL: ' + (question.imageUrl?.substring(0, 60) || '') + '...', margin + 5, yPosition);
-      yPosition += 6;
-      doc.setTextColor(0, 0, 0);
+      const imageLoaded = await addImageToPDF(question.imageUrl!);
+      if (!imageLoaded) {
+        doc.setFontSize(9);
+        doc.setTextColor(200, 0, 0);
+        doc.text('[Failed to load question image]', margin + 5, yPosition);
+        yPosition += 6;
+        doc.setTextColor(0, 0, 0);
+      }
     }
 
     // MCQ Options
@@ -126,7 +175,8 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
       const options = question.options || [];
       const correctIndex = question.correctOption;
 
-      options.forEach((option: any, optIndex: number) => {
+      for (let optIndex = 0; optIndex < options.length; optIndex++) {
+        const option = options[optIndex] as any;
         checkNewPage(15);
         const isCorrect = optIndex === correctIndex;
         
@@ -137,14 +187,14 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
         if (typeof option === 'string') {
           optionText = option;
         } else if (typeof option === 'object' && option !== null) {
-          optionText = option.text || option.content || '';
-          optionImageUrl = option.imageUrl || '';
+          optionText = (option as any).text || (option as any).content || '';
+          optionImageUrl = (option as any).imageUrl || '';
         }
         
         doc.setFontSize(10);
         doc.setFont('helvetica', isCorrect ? 'bold' : 'normal');
         
-        // Highlight correct answer
+        // Option label
         if (isCorrect) {
           doc.setTextColor(0, 128, 0); // Green for correct answer
           const optionLabel = `${String.fromCharCode(65 + optIndex)}) ${optionText || '[Image option]'} ✓ CORRECT`;
@@ -155,17 +205,20 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
           addWrappedText(optionLabel, margin + 10, 10, contentWidth - 15);
         }
         
-        // Show image indicator for option if it has an image
+        // Embed option image if available
         if (optionImageUrl) {
-          doc.setFontSize(8);
-          doc.setTextColor(0, 100, 200);
-          doc.text('   📷 Image option', margin + 10, yPosition);
-          yPosition += 5;
-          doc.setTextColor(0, 0, 0);
+          const imageLoaded = await addImageToPDF(optionImageUrl, contentWidth - 20, 60);
+          if (!imageLoaded) {
+            doc.setFontSize(8);
+            doc.setTextColor(200, 0, 0);
+            doc.text('   [Failed to load option image]', margin + 10, yPosition);
+            yPosition += 5;
+          }
         }
         
+        doc.setTextColor(0, 0, 0);
         yPosition += 2;
-      });
+      }
       
       doc.setTextColor(0, 0, 0);
       doc.setFont('helvetica', 'normal');
@@ -198,10 +251,13 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
       }
       
       if (question.explanationImageUrl) {
-        doc.setFontSize(9);
-        doc.setTextColor(0, 100, 200);
-        doc.text('📷 Explanation image available online', margin + 5, yPosition);
-        yPosition += 5;
+        const imageLoaded = await addImageToPDF(question.explanationImageUrl);
+        if (!imageLoaded) {
+          doc.setFontSize(9);
+          doc.setTextColor(200, 0, 0);
+          doc.text('[Failed to load explanation image]', margin + 5, yPosition);
+          yPosition += 5;
+        }
       }
       
       if (!question.explanation && !question.explanationImageUrl) {
@@ -234,7 +290,7 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
     doc.setDrawColor(220, 220, 220);
     doc.line(margin, yPosition, pageWidth - margin, yPosition);
     yPosition += 10;
-  });
+  }
 
   // Footer on last page
   const totalPages = (doc as any).internal.getNumberOfPages();
