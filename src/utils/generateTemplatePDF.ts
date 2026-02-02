@@ -38,9 +38,21 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
   // Helper function to load and add image to PDF
   const addImageToPDF = async (imageUrl: string, maxWidth: number = contentWidth - 10, maxHeight: number = 80): Promise<boolean> => {
     try {
-      // Fetch the image
-      const response = await fetch(imageUrl);
+      console.log('📷 Fetching image:', imageUrl);
+      
+      // Fetch the image with CORS mode
+      const response = await fetch(imageUrl, {
+        mode: 'cors',
+        credentials: 'omit'
+      });
+      
+      if (!response.ok) {
+        console.error('❌ Failed to fetch image:', response.status, response.statusText);
+        return false;
+      }
+      
       const blob = await response.blob();
+      console.log('✅ Image blob fetched, size:', blob.size, 'type:', blob.type);
       
       // Convert blob to base64
       const base64 = await new Promise<string>((resolve, reject) => {
@@ -54,9 +66,14 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
       const img = await new Promise<HTMLImageElement>((resolve, reject) => {
         const image = new Image();
         image.onload = () => resolve(image);
-        image.onerror = reject;
+        image.onerror = (err) => {
+          console.error('❌ Failed to load image element:', err);
+          reject(err);
+        };
         image.src = base64;
       });
+
+      console.log('✅ Image loaded, dimensions:', img.width, 'x', img.height);
 
       // Calculate scaled dimensions to fit within maxWidth and maxHeight
       let width = img.width;
@@ -85,9 +102,10 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
       doc.addImage(base64, format, margin + 5, yPosition, pdfWidth, pdfHeight);
       yPosition += pdfHeight + 5;
 
+      console.log('✅ Image added to PDF');
       return true;
     } catch (error) {
-      console.error('Failed to load image:', imageUrl, error);
+      console.error('❌ Failed to load image:', imageUrl, error);
       return false;
     }
   };
@@ -148,9 +166,17 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
     doc.text(`[${question.points || question.marks} marks]`, pageWidth - margin - 30, yPosition);
     yPosition += 8;
 
-    // Question text - handle both text and image-based questions
-    const questionText = question.questionText || question.content || '';
-    const hasQuestionImage = !!question.imageUrl;
+    // Use questionData if available (it contains full question details with images)
+    const hasQuestionData = !!question.questionData;
+    
+    // Question text - prefer questionData content over direct fields
+    const questionText = hasQuestionData 
+      ? (question.questionData!.content || question.questionText || question.content || '')
+      : (question.questionText || question.content || '');
+    
+    const questionImageUrl = hasQuestionData
+      ? (question.questionData!.imageUrl || question.imageUrl)
+      : question.imageUrl;
     
     if (questionText && questionText.trim()) {
       addWrappedText(questionText, margin + 5, 11);
@@ -158,8 +184,8 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
     }
 
     // Question image - embed actual image
-    if (hasQuestionImage) {
-      const imageLoaded = await addImageToPDF(question.imageUrl!);
+    if (questionImageUrl) {
+      const imageLoaded = await addImageToPDF(questionImageUrl);
       if (!imageLoaded) {
         doc.setFontSize(9);
         doc.setTextColor(200, 0, 0);
@@ -172,24 +198,25 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
     // MCQ Options
     if (question.questionType === 'mcq' || question.type === 'mcq') {
       yPosition += 3;
-      const options = question.options || [];
+      
+      // Use questionData options if available (they have image URLs), otherwise use simple options array
+      const optionsData = hasQuestionData && question.questionData!.options 
+        ? question.questionData!.options 
+        : (question.options || []).map((opt: any, idx: number) => ({
+            id: `opt-${idx}`,
+            text: typeof opt === 'string' ? opt : (opt.text || opt.content || ''),
+            imageUrl: typeof opt === 'object' ? opt.imageUrl : undefined
+          }));
+      
       const correctIndex = question.correctOption;
 
-      for (let optIndex = 0; optIndex < options.length; optIndex++) {
-        const option = options[optIndex] as any;
+      for (let optIndex = 0; optIndex < optionsData.length; optIndex++) {
+        const option = optionsData[optIndex];
         checkNewPage(15);
         const isCorrect = optIndex === correctIndex;
         
-        // Extract option text - handle both string and object formats
-        let optionText = '';
-        let optionImageUrl = '';
-        
-        if (typeof option === 'string') {
-          optionText = option;
-        } else if (typeof option === 'object' && option !== null) {
-          optionText = (option as any).text || (option as any).content || '';
-          optionImageUrl = (option as any).imageUrl || '';
-        }
+        const optionText = option.text || '';
+        const optionImageUrl = option.imageUrl;
         
         doc.setFontSize(10);
         doc.setFont('helvetica', isCorrect ? 'bold' : 'normal');
@@ -234,8 +261,16 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
       doc.setTextColor(0, 0, 0);
     }
 
-    // Explanation - handle both text and image-based explanations
-    if (question.explanation || question.explanationImageUrl) {
+    // Explanation - use questionData if available
+    const explanationText = hasQuestionData
+      ? (question.questionData!.explanation || question.explanation)
+      : question.explanation;
+    
+    const explanationImageUrl = hasQuestionData
+      ? (question.questionData!.explanationImageUrl || question.explanationImageUrl)
+      : question.explanationImageUrl;
+    
+    if (explanationText || explanationImageUrl) {
       yPosition += 5;
       checkNewPage(20);
       doc.setFontSize(10);
@@ -244,14 +279,14 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
       doc.text('Explanation:', margin + 5, yPosition);
       yPosition += 6;
       
-      if (question.explanation && question.explanation.trim()) {
+      if (explanationText && explanationText.trim()) {
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(50, 50, 50);
-        addWrappedText(question.explanation, margin + 5, 9);
+        addWrappedText(explanationText, margin + 5, 9);
       }
       
-      if (question.explanationImageUrl) {
-        const imageLoaded = await addImageToPDF(question.explanationImageUrl);
+      if (explanationImageUrl) {
+        const imageLoaded = await addImageToPDF(explanationImageUrl);
         if (!imageLoaded) {
           doc.setFontSize(9);
           doc.setTextColor(200, 0, 0);
@@ -260,7 +295,7 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
         }
       }
       
-      if (!question.explanation && !question.explanationImageUrl) {
+      if (!explanationText && !explanationImageUrl) {
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(150, 150, 150);
         doc.text('No explanation provided', margin + 5, yPosition);
