@@ -83,6 +83,30 @@ export default function StudentInClassTestsPage() {
     }
   };
 
+  const getTestStatus = (test: Test) => {
+    const now = new Date();
+    const scheduledTime = (test as any).scheduledStartTime?.toDate ? (test as any).scheduledStartTime.toDate() : new Date((test as any).scheduledStartTime);
+    const duration = (test as any).duration || 0;
+    const endTime = new Date(scheduledTime.getTime() + duration * 60 * 1000);
+    
+    // Check if time expired
+    if (now > endTime) {
+      return { label: 'Time Expired', color: 'bg-red-50 text-red-700 border-red-200' };
+    }
+    
+    // Check if active (within test window)
+    if (now >= scheduledTime && now <= endTime) {
+      return { label: 'Active', color: 'bg-green-50 text-green-700 border-green-200 animate-pulse' };
+    }
+    
+    // Check if scheduled (future)
+    if (now < scheduledTime) {
+      return { label: 'Scheduled', color: 'bg-blue-50 text-blue-700 border-blue-200' };
+    }
+    
+    return { label: test.status, color: getStatusColor(test.status) };
+  };
+
   const formatDateTime = (timestamp: any) => {
     if (!timestamp) return 'TBA';
     // Handle Firestore Timestamp
@@ -123,7 +147,7 @@ export default function StudentInClassTestsPage() {
         ) : (
           <div className="grid gap-4">
             {tests.map((test) => {
-              const isLive = test.status === 'live';
+              const testStatus = getTestStatus(test);
               const scheduledTime = (test as any).scheduledStartTime;
               
               return (
@@ -135,16 +159,18 @@ export default function StudentInClassTestsPage() {
                   <div className="p-5 flex flex-col md:flex-row md:items-center gap-4">
                     <div className="flex-shrink-0">
                       <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-                        isLive ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'
+                        testStatus.label === 'Active' ? 'bg-green-100 text-green-600' : 
+                        testStatus.label === 'Time Expired' ? 'bg-red-100 text-red-600' :
+                        'bg-blue-100 text-blue-600'
                       }`}>
                         <FileText className="w-6 h-6" />
                       </div>
                     </div>
                     
                     <div className="flex-grow min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(test.status)}`}>
-                          {test.status.charAt(0).toUpperCase() + test.status.slice(1)}
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${testStatus.color}`}>
+                          {testStatus.label}
                         </span>
                         <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded border border-gray-200">
                           {test.subjectName}

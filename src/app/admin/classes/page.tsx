@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { BookOpen, Search, Edit2, Trash2, Plus, XCircle, Users, Clock } from 'lucide-react';
+import { BookOpen, Search, Edit2, Trash2, Plus, XCircle, Users, Clock, Download } from 'lucide-react';
 import { ClassDocument, ClassDisplayData, classDocumentToDisplay } from '@/models/classSchema';
 import { CenterDocument } from '@/apiservices/centerFirestoreService';
 import { SubjectDocument } from '@/models/subjectSchema';
@@ -178,6 +178,60 @@ export default function ClassManager() {
     return Array.from(years).sort();
   }, [classes]);
 
+  // Handle CSV export
+  const handleExportCSV = () => {
+    if (!filteredClasses.length) {
+      showError('No classes to export');
+      return;
+    }
+
+    // Define CSV headers
+    const headers = [
+      'Class ID',
+      'Name',
+      'Subject',
+      'Year',
+      'Teacher',
+      'Co-Teacher',
+      'Schedule',
+      'Students',
+      'Status',
+      'Center',
+      'Session Fee'
+    ];
+
+    // Convert data to CSV format
+    const csvContent = [
+      headers.join(','),
+      ...filteredClasses.map(cls => {
+        const row = [
+          cls.classId,
+          cls.name,
+          cls.subject,
+          cls.year,
+          cls.teacher,
+          cls.coTeacher || 'N/A',
+          `"${cls.schedule}"`, // Wrap in quotes to handle commas in schedule
+          cls.students,
+          cls.status,
+          cls.centerName,
+          cls.sessionFee
+        ];
+        return row.join(',');
+      })
+    ].join('\n');
+
+    // Create a Blob and download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `classes_export_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // Handle edit button click
   const handleEditClick = (cls: ClassDisplayData) => {
     setSelectedClass(cls);
@@ -312,17 +366,27 @@ export default function ClassManager() {
               ))}
             </select>
           </div>
-          <Button
-            onClick={() => {
-              setSelectedClass(null);
-              setEditMode(false);
-              setModalOpen(true);
-            }}
-            className="flex items-center space-x-2"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add Class</span>
-          </Button>
+          <div className="flex items-center space-x-2">
+            <Button
+              onClick={handleExportCSV}
+              variant="outline"
+              className="flex items-center space-x-2"
+            >
+              <Download className="w-4 h-4" />
+              <span>Export CSV</span>
+            </Button>
+            <Button
+              onClick={() => {
+                setSelectedClass(null);
+                setEditMode(false);
+                setModalOpen(true);
+              }}
+              className="flex items-center space-x-2"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Class</span>
+            </Button>
+          </div>
         </div>
       </div>
 
