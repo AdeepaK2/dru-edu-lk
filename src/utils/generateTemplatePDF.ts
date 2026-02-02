@@ -89,16 +89,33 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
     doc.text(`[${question.points || question.marks} marks]`, pageWidth - margin - 30, yPosition);
     yPosition += 8;
 
-    // Question text
-    const questionText = question.questionText || question.content || 'No question text';
-    addWrappedText(questionText, margin + 5, 11);
-    yPosition += 5;
+    // Question text - handle both text and image-based questions
+    const questionText = question.questionText || question.content || '';
+    const hasQuestionImage = !!question.imageUrl;
+    
+    if (questionText && questionText.trim()) {
+      addWrappedText(questionText, margin + 5, 11);
+      yPosition += 5;
+    } else if (hasQuestionImage) {
+      // Question is primarily image-based
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      doc.text('[Question is image-based - please refer to online version]', margin + 5, yPosition);
+      yPosition += 6;
+      doc.setTextColor(0, 0, 0);
+    } else {
+      doc.setFontSize(10);
+      doc.setTextColor(150, 150, 150);
+      doc.text('[No question text available]', margin + 5, yPosition);
+      yPosition += 6;
+      doc.setTextColor(0, 0, 0);
+    }
 
     // Question image indicator
-    if (question.imageUrl) {
+    if (hasQuestionImage) {
       doc.setFontSize(9);
-      doc.setTextColor(100, 100, 100);
-      doc.text('[Image attached - see online version]', margin + 5, yPosition);
+      doc.setTextColor(0, 100, 200);
+      doc.text('📷 Image URL: ' + (question.imageUrl?.substring(0, 60) || '') + '...', margin + 5, yPosition);
       yPosition += 6;
       doc.setTextColor(0, 0, 0);
     }
@@ -109,9 +126,20 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
       const options = question.options || [];
       const correctIndex = question.correctOption;
 
-      options.forEach((option: string, optIndex: number) => {
+      options.forEach((option: any, optIndex: number) => {
         checkNewPage(15);
         const isCorrect = optIndex === correctIndex;
+        
+        // Extract option text - handle both string and object formats
+        let optionText = '';
+        let optionImageUrl = '';
+        
+        if (typeof option === 'string') {
+          optionText = option;
+        } else if (typeof option === 'object' && option !== null) {
+          optionText = option.text || option.content || '';
+          optionImageUrl = option.imageUrl || '';
+        }
         
         doc.setFontSize(10);
         doc.setFont('helvetica', isCorrect ? 'bold' : 'normal');
@@ -119,12 +147,21 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
         // Highlight correct answer
         if (isCorrect) {
           doc.setTextColor(0, 128, 0); // Green for correct answer
-          const optionLabel = `${String.fromCharCode(65 + optIndex)}) ${option} ✓ CORRECT`;
+          const optionLabel = `${String.fromCharCode(65 + optIndex)}) ${optionText || '[Image option]'} ✓ CORRECT`;
           addWrappedText(optionLabel, margin + 10, 10, contentWidth - 15, true);
         } else {
           doc.setTextColor(0, 0, 0);
-          const optionLabel = `${String.fromCharCode(65 + optIndex)}) ${option}`;
+          const optionLabel = `${String.fromCharCode(65 + optIndex)}) ${optionText || '[Image option]'}`;
           addWrappedText(optionLabel, margin + 10, 10, contentWidth - 15);
+        }
+        
+        // Show image indicator for option if it has an image
+        if (optionImageUrl) {
+          doc.setFontSize(8);
+          doc.setTextColor(0, 100, 200);
+          doc.text('   📷 Image option', margin + 10, yPosition);
+          yPosition += 5;
+          doc.setTextColor(0, 0, 0);
         }
         
         yPosition += 2;
@@ -144,8 +181,8 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
       doc.setTextColor(0, 0, 0);
     }
 
-    // Explanation
-    if (question.explanation) {
+    // Explanation - handle both text and image-based explanations
+    if (question.explanation || question.explanationImageUrl) {
       yPosition += 5;
       checkNewPage(20);
       doc.setFontSize(10);
@@ -154,9 +191,26 @@ export async function generateTemplatePDF(template: TestTemplate): Promise<void>
       doc.text('Explanation:', margin + 5, yPosition);
       yPosition += 6;
       
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(50, 50, 50);
-      addWrappedText(question.explanation, margin + 5, 9);
+      if (question.explanation && question.explanation.trim()) {
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(50, 50, 50);
+        addWrappedText(question.explanation, margin + 5, 9);
+      }
+      
+      if (question.explanationImageUrl) {
+        doc.setFontSize(9);
+        doc.setTextColor(0, 100, 200);
+        doc.text('📷 Explanation image available online', margin + 5, yPosition);
+        yPosition += 5;
+      }
+      
+      if (!question.explanation && !question.explanationImageUrl) {
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(150, 150, 150);
+        doc.text('No explanation provided', margin + 5, yPosition);
+        yPosition += 5;
+      }
+      
       doc.setTextColor(0, 0, 0);
     }
 
