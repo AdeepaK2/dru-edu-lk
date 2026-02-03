@@ -1614,7 +1614,7 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
             {/* Header - Fixed */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                {editingGroup ? 'Edit Material Group' : 'Edit Study Material'}
+                {editingGroup?.isGroup ? 'Edit Material Group' : 'Edit Study Material'}
               </h3>
               <button
                 onClick={() => {
@@ -1737,7 +1737,8 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                   </div>
                 </div>
 
-                {/* Homework Configuration */}
+                {/* Homework Configuration - Only show for group editing */}
+                {editingGroup?.isGroup && (
                 <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                   <div className="flex items-center justify-between">
                     <h4 className="font-medium text-gray-900 dark:text-white flex items-center">
@@ -1866,9 +1867,10 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                     </div>
                   )}
                 </div>
+                )}
 
-                {/* Current Files Section */}
-                {(editingGroup || materialToEdit.materials) && (
+                {/* Current Files Section - Only show for group editing */}
+                {editingGroup?.isGroup && (editingGroup || materialToEdit.materials) && (
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <h4 className="font-medium text-gray-900 dark:text-white">Current Files</h4>
@@ -1974,7 +1976,8 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                   </div>
                 )}
 
-                {/* Add New Files Section */}
+                {/* Add New Files Section - Only show for group editing */}
+                {editingGroup?.isGroup && (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <h4 className="font-medium text-gray-900 dark:text-white">Add New Files</h4>
@@ -2140,6 +2143,7 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                     </div>
                   )}
                 </div>
+                )}
 
                 {/* Upload Progress */}
                 {editLoading && uploadProgress > 0 && (
