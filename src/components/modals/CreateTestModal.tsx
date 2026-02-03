@@ -685,6 +685,10 @@ export default function CreateTestModal({
       else if (currentStep === 1 && formData.useTemplate && formData.selectedTemplateId) {
         setCurrentStep(2); // Go to timing step
       }
+      // If using template and on step 2 (timing), skip question selection and go to step 5 (final config)
+      else if (currentStep === 2 && formData.useTemplate && formData.selectedTemplateId) {
+        setCurrentStep(5); // Skip step 3 (question selection) - templates already have questions
+      }
       // If moving from step 3 to step 4 and using auto-selection, generate preview
       else if (currentStep === 3 && formData.questionSelectionMethod === 'auto') {
         generatePreviewQuestions();
@@ -700,8 +704,12 @@ export default function CreateTestModal({
   };
 
   const handlePrevious = () => {
+    // If on step 5 and using template, go back to step 2 (timing)
+    if (currentStep === 5 && formData.useTemplate && formData.selectedTemplateId) {
+      setCurrentStep(2);
+    }
     // If on step 5 and came from manual selection, go back to step 3
-    if (currentStep === 5 && formData.questionSelectionMethod === 'manual') {
+    else if (currentStep === 5 && formData.questionSelectionMethod === 'manual') {
       setCurrentStep(3);
     }
     // If on step 4 and came from auto-selection, go back to step 3
@@ -1824,8 +1832,8 @@ export default function CreateTestModal({
             </div>
           )}
 
-          {/* Step 3: Question Selection */}
-          {currentStep === 3 && (
+          {/* Step 3: Question Selection - Skip for templates */}
+          {currentStep === 3 && !formData.useTemplate && (
             <div className="space-y-6">
               <div className="text-center mb-8">
                 <div className="mx-auto w-16 h-16 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center mb-4">
