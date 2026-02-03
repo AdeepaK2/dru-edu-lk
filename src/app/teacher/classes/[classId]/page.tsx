@@ -1661,7 +1661,7 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                   <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
                     <div className="flex items-center space-x-3 mb-3">
                       <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
-                        {editingGroup ? (
+                        {editingGroup?.isGroup ? (
                           <div className="text-blue-600 font-bold text-xs">
                             {materialToEdit.materials?.length || 0}
                           </div>
@@ -1671,7 +1671,7 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                       </div>
                       <div>
                         <div className="flex items-center space-x-2">
-                          {editingGroup ? (
+                          {editingGroup?.isGroup ? (
                             <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
                               GROUP ({materialToEdit.materials?.length || 0} files)
                             </span>
@@ -1696,7 +1696,7 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                   {/* Title Field */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      {editingGroup ? 'Group Title' : 'Title'} *
+                      {editingGroup?.isGroup ? 'Group Title' : 'Title'} *
                     </label>
                     <input
                       type="text"
@@ -1704,7 +1704,7 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                       defaultValue={materialToEdit.title}
                       required
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                      placeholder={editingGroup ? "Enter group title" : "Enter material title"}
+                      placeholder={editingGroup?.isGroup ? "Enter group title" : "Enter material title"}
                     />
                   </div>
 
@@ -1737,8 +1737,8 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                   </div>
                 </div>
 
-                {/* Homework Configuration - Only show for group editing */}
-                {editingGroup?.isGroup && (
+                {/* Homework Configuration - Only show for single material editing */}
+                {!editingGroup?.isGroup && (
                 <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                   <div className="flex items-center justify-between">
                     <h4 className="font-medium text-gray-900 dark:text-white flex items-center">
