@@ -1333,6 +1333,24 @@ export default function StudentStudyPage() {
                                       )
                                   )}
                                   
+                                  {/* Resubmit Button */}
+                                  {material.isHomework && 
+                                   homeworkSubmissions[material.id] && 
+                                   homeworkSubmissions[material.id].status === 'resubmit_needed' && 
+                                   material.homeworkType !== 'manual' && (
+                                      <Button
+                                          onClick={(e) => {
+                                              e.stopPropagation();
+                                              setSelectedHomework(material);
+                                              setShowHomeworkModal(true);
+                                          }}
+                                          size="sm"
+                                          className="bg-orange-600 hover:bg-orange-700 text-white text-xs px-3 py-1 h-8 mr-2"
+                                      >
+                                          Resubmit
+                                      </Button>
+                                  )}
+
                                   {/* View Submission Button */}
                                   {material.isHomework && homeworkSubmissions[material.id] && material.homeworkType !== 'manual' && (
                                       <Button

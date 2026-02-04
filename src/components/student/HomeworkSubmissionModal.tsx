@@ -36,8 +36,12 @@ export default function HomeworkSubmissionModal({
   const [removedExisting, setRemovedExisting] = useState(false);
 
   // Check if graded/locked
-  const isResubmit = existingSubmission?.teacherMark === 'Not Sufficient';
-  // Locked if marked AND NOT "Not Sufficient" (allow editing if Not Sufficient)
+  const isResubmit = existingSubmission?.teacherMark === 'Not Sufficient' || 
+                     existingSubmission?.teacherMark === 'Unsatisfactory' || 
+                     existingSubmission?.teacherMark === 'Needs Improvement' ||
+                     existingSubmission?.status === 'resubmit_needed';
+                     
+  // Locked if marked AND NOT "Resubmit" (allow editing if Resubmit needed)
   const isLocked = !!((existingSubmission?.teacherMark && !isResubmit) || (existingSubmission?.marks && !existingSubmission.teacherMark));
   
   // Determine if we are in "Edit Mode"

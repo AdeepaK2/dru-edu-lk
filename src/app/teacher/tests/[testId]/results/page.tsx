@@ -1305,28 +1305,31 @@ export default function TestResultsPage() {
                                 onClick={async () => {
                                   if (confirm(`Approve submission for ${attempt.studentName}? This will submit their current answers.`)) {
                                     try {
-                                      const { doc, updateDoc } = await import('firebase/firestore');
-                                      const { firestore } = await import('@/utils/firebase-client');
-                                      
-                                      const attemptRef = doc(firestore, 'testAttempts', attempt.id);
-                                      await updateDoc(attemptRef, {
-                                        status: 'auto_submitted',
-                                        submittedAt: new Date().toISOString(),
-                                        autoSubmittedReason: 'Teacher approved late submission',
-                                        teacherApprovedAt: new Date().toISOString(),
-                                      });
+                                      setApprovingAttempt(attempt.id);
+                                      await SubmissionService.processApprovedSubmission(attempt.id);
                                       toast.success(`Submission approved for ${attempt.studentName}`);
                                       loadTestResults();
                                     } catch (error) {
                                       console.error('Error approving submission:', error);
                                       toast.error('Failed to approve submission');
+                                    } finally {
+                                      setApprovingAttempt(null);
                                     }
                                   }
                                 }}
-                                className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
+                                disabled={approvingAttempt === attempt.id}
+                                className={`inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white ${
+                                  approvingAttempt === attempt.id 
+                                    ? 'bg-green-400 cursor-not-allowed' 
+                                    : 'bg-green-600 hover:bg-green-700'
+                                }`}
                               >
-                                <CheckCircle className="h-3 w-3 mr-1" />
-                                Approve
+                                {approvingAttempt === attempt.id ? (
+                                  <span className="h-3 w-3 mr-1 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                ) : (
+                                  <CheckCircle className="h-3 w-3 mr-1" />
+                                )}
+                                {approvingAttempt === attempt.id ? 'Processing...' : 'Approve'}
                               </button>
                             </div>
                           </td>
