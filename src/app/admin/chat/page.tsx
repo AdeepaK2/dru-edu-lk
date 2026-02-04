@@ -3,6 +3,9 @@
 import { useEffect, useState } from 'react';
 import ChatInterface from '@/components/chat/ChatInterface';
 
+import { auth } from '@/utils/firebase-client';
+import { onAuthStateChanged } from 'firebase/auth';
+
 export default function AdminChatPage() {
   const [adminInfo, setAdminInfo] = useState<{
     id: string;
@@ -12,40 +15,20 @@ export default function AdminChatPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch current admin info
-    const fetchAdminInfo = async () => {
-      try {
-        // Get admin info from localStorage or session
-        const storedAdmin = localStorage.getItem('adminUser');
-        if (storedAdmin) {
-          const admin = JSON.parse(storedAdmin);
-          setAdminInfo({
-            id: admin.id || admin.uid || 'admin',
-            name: admin.name || 'Admin',
-            email: admin.email || 'admin@drueducation.com.au',
-          });
-        } else {
-          // Fallback: use default admin info
-          setAdminInfo({
-            id: 'admin',
-            name: 'Admin',
-            email: 'admin@drueducation.com.au',
-          });
-        }
-      } catch (error) {
-        console.error('Error fetching admin info:', error);
-        // Use default admin info
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
         setAdminInfo({
-          id: 'admin',
-          name: 'Admin',
-          email: 'admin@drueducation.com.au',
+          id: user.uid, // Use Firebase UID as admin ID
+          name: user.displayName || 'Admin',
+          email: user.email || 'admin@drueducation.com.au',
         });
-      } finally {
-        setIsLoading(false);
+      } else {
+        setAdminInfo(null);
       }
-    };
+      setIsLoading(false);
+    });
 
-  fetchAdminInfo();
+    return () => unsubscribe();
   }, []);
 
   if (isLoading) {
