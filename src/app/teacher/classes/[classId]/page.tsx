@@ -653,6 +653,17 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
   const [editManualInstruction, setEditManualInstruction] = useState('');
   const [editAllowLateSubmission, setEditAllowLateSubmission] = useState(true);
   const [editLateSubmissionDays, setEditLateSubmissionDays] = useState(3);
+  
+  // Per-material homework state - tracks individual homework settings for each material
+  const [materialHomeworkSettings, setMaterialHomeworkSettings] = useState<Record<string, {
+    isHomework: boolean;
+    homeworkType?: 'manual' | 'submission';
+    dueDate?: string;
+    maxMarks?: number;
+    manualInstruction?: string;
+    allowLateSubmission?: boolean;
+    lateSubmissionDays?: number;
+  }>>({});
 
   // Load class data and lessons
   useEffect(() => {
@@ -813,6 +824,29 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
     setEditManualInstruction(baseMaterial.manualInstruction || '');
     setEditAllowLateSubmission(baseMaterial.allowLateSubmission !== false); // Default to true if undefined
     setEditLateSubmissionDays(baseMaterial.lateSubmissionDays || 3);
+
+    // Initialize per-material homework settings for group editing
+    if (group?.isGroup && group.materials) {
+      const homeworkSettings: Record<string, any> = {};
+      group.materials.forEach((mat: any) => {
+        homeworkSettings[mat.id] = {
+          isHomework: mat.isHomework || false,
+          homeworkType: mat.homeworkType || 'manual',
+          dueDate: mat.dueDate ? 
+            (typeof mat.dueDate === 'object' && 'toDate' in mat.dueDate 
+              ? mat.dueDate.toDate() 
+              : new Date(mat.dueDate)
+            ).toISOString().slice(0, 16) : '',
+          maxMarks: mat.maxMarks || 100,
+          manualInstruction: mat.manualInstruction || '',
+          allowLateSubmission: mat.allowLateSubmission !== false,
+          lateSubmissionDays: mat.lateSubmissionDays || 3
+        };
+      });
+      setMaterialHomeworkSettings(homeworkSettings);
+    } else {
+      setMaterialHomeworkSettings({});
+    }
 
     setNewFilesToAdd([]);
     setFilesToRemove([]);
@@ -988,21 +1022,30 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
       };
 
       if (editingGroup && editingGroup.isGroup) {
-        // For real groups, update ALL materials in the group with the new groupTitle
+        // For real groups, update ALL materials in the group with the new groupTitle and per-material homework settings
         const materialsToUpdate = materialToEdit.materials.filter(
           (m: any) => !filesToRemove.includes(m.id)
         );
         
-        // Update all materials in the group
+        // Update all materials in the group with their individual homework settings
         for (const material of materialsToUpdate) {
+          const materialSettings = materialHomeworkSettings[material.id] || {};
+          
           await updateStudyMaterial(material.id, {
             groupTitle: editedData.title,
             description: editedData.description,
             isRequired: editedData.isRequired,
-            ...commonUpdateData
+            // Apply per-material homework settings
+            isHomework: materialSettings.isHomework || false,
+            homeworkType: materialSettings.isHomework ? materialSettings.homeworkType : undefined,
+            dueDate: (materialSettings.isHomework && materialSettings.dueDate) ? new Date(materialSettings.dueDate) : undefined,
+            maxMarks: (materialSettings.isHomework && materialSettings.homeworkType === 'submission') ? materialSettings.maxMarks : undefined,
+            manualInstruction: (materialSettings.isHomework && materialSettings.homeworkType === 'manual') ? materialSettings.manualInstruction : undefined,
+            allowLateSubmission: materialSettings.isHomework ? materialSettings.allowLateSubmission : true,
+            lateSubmissionDays: materialSettings.isHomework ? materialSettings.lateSubmissionDays : 3
           });
         }
-        console.log(`✅ Updated groupTitle for ${materialsToUpdate.length} materials in group`);
+        console.log(`✅ Updated groupTitle and per-material homework settings for ${materialsToUpdate.length} materials in group`);
       } else if (editingGroup && !editingGroup.isGroup && newFilesToAdd.length > 0) {
         // Converting single material to group or adding to existing single material group
         const originalMaterial = materialToEdit.materials[0];
@@ -1737,14 +1780,20 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                   </div>
                 </div>
 
-                {/* Homework Configuration - Only show for single material editing */}
-                {!editingGroup?.isGroup && (
+                {/* Homework Configuration */}
                 <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                   <div className="flex items-center justify-between">
-                    <h4 className="font-medium text-gray-900 dark:text-white flex items-center">
-                      <Settings className="w-4 h-4 mr-2" />
-                      Homework Settings
-                    </h4>
+                    <div>
+                      <h4 className="font-medium text-gray-900 dark:text-white flex items-center">
+                        <Settings className="w-4 h-4 mr-2" />
+                        Homework Settings
+                      </h4>
+                      {editingGroup?.isGroup && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          Settings will apply to all materials in this group
+                        </p>
+                      )}
+                    </div>
                     <div className="flex items-center space-x-2">
                         <label className="inline-flex items-center cursor-pointer">
                           <input 
@@ -1867,7 +1916,6 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                     </div>
                   )}
                 </div>
-                )}
 
                 {/* Current Files Section - Only show for group editing */}
                 {editingGroup?.isGroup && (editingGroup || materialToEdit.materials) && (
@@ -1883,92 +1931,125 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                       {(materialToEdit.materials || [materialToEdit]).map((material: any) => (
                         <div 
                           key={material.id} 
-                          className={`flex items-center justify-between p-3 rounded-lg border transition-all ${
+                          className={`rounded-lg border transition-all ${
                             filesToRemove.includes(material.id)
                               ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 opacity-50'
                               : 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-600'
                           }`}
                         >
-                          <div className="flex items-center space-x-3 flex-1">
-                            <div className="w-8 h-8 bg-white dark:bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0 border">
-                              {getFileIcon(material.fileType)}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className={`font-medium truncate ${filesToRemove.includes(material.id) ? 'line-through text-gray-400' : 'text-gray-900 dark:text-white'}`}>
-                                {material.title}
+                          <div className="flex items-center justify-between p-3">
+                            <div className="flex items-center space-x-3 flex-1">
+                              <div className="w-8 h-8 bg-white dark:bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0 border">
+                                {getFileIcon(material.fileType)}
                               </div>
-                              {material.description && (
-                                <div className="text-sm text-gray-600 dark:text-gray-300 truncate">
-                                  {material.description}
+                              <div className="flex-1 min-w-0">
+                                <div className={`font-medium truncate ${filesToRemove.includes(material.id) ? 'line-through text-gray-400' : 'text-gray-900 dark:text-white'}`}>
+                                  {material.title}
                                 </div>
-                              )}
-                              <div className="text-xs text-gray-500 dark:text-gray-400">
-                                {material.formattedFileSize || '2.3 MB'} • {(material.fileType || 'FILE').toUpperCase()}
+                                {material.description && (
+                                  <div className="text-sm text-gray-600 dark:text-gray-300 truncate">
+                                    {material.description}
+                                  </div>
+                                )}
+                                <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                                  <span>{material.formattedFileSize || '2.3 MB'} • {(material.fileType || 'FILE').toUpperCase()}</span>
+                                  {materialHomeworkSettings[material.id]?.isHomework && (
+                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300">
+                                      📝 Homework
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                          
-                          <div className="flex items-center space-x-2">
-                            {material.fileType === 'link' ? (
-                              <Button 
-                                type="button"
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => window.open(material.externalUrl || material.fileUrl, '_blank')}
-                                disabled={filesToRemove.includes(material.id)}
-                                className="flex items-center space-x-1"
-                              >
-                                <ExternalLink className="w-4 h-4" />
-                              </Button>
-                            ) : (
+                            
+                            <div className="flex items-center space-x-2">
+                              {/* Homework Toggle */}
+                              <label className="inline-flex items-center cursor-pointer" title={materialHomeworkSettings[material.id]?.isHomework ? "Mark as not homework" : "Mark as homework"}>
+                                <input
+                                  type="checkbox"
+                                  checked={materialHomeworkSettings[material.id]?.isHomework || false}
+                                  onChange={(e) => {
+                                    setMaterialHomeworkSettings(prev => ({
+                                      ...prev,
+                                      [material.id]: {
+                                        ...(prev[material.id] || {}),
+                                        isHomework: e.target.checked,
+                                        homeworkType: prev[material.id]?.homeworkType || 'manual',
+                                        dueDate: prev[material.id]?.dueDate || '',
+                                        maxMarks: prev[material.id]?.maxMarks || 100,
+                                        manualInstruction: prev[material.id]?.manualInstruction || '',
+                                        allowLateSubmission: prev[material.id]?.allowLateSubmission !== false,
+                                        lateSubmissionDays: prev[material.id]?.lateSubmissionDays || 3
+                                      }
+                                    }));
+                                  }}
+                                  disabled={filesToRemove.includes(material.id)}
+                                  className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                                />
+                                <span className="ml-1.5 text-xs text-gray-700 dark:text-gray-300 hidden sm:inline">HW</span>
+                              </label>
+                              
+                              {material.fileType === 'link' ? (
+                                <Button 
+                                  type="button"
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => window.open(material.externalUrl || material.fileUrl, '_blank')}
+                                  disabled={filesToRemove.includes(material.id)}
+                                  className="flex items-center space-x-1"
+                                >
+                                  <ExternalLink className="w-4 h-4" />
+                                </Button>
+                              ) : (
+                                <Button 
+                                  type="button"
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => {
+                                    if (material.fileUrl) {
+                                      const link = document.createElement('a');
+                                      link.href = material.fileUrl;
+                                      link.download = material.fileName || material.title;
+                                      link.click();
+                                    }
+                                  }}
+                                  disabled={filesToRemove.includes(material.id)}
+                                  className="flex items-center space-x-1"
+                                >
+                                  <Download className="w-4 h-4" />
+                                </Button>
+                              )}
+                              
                               <Button 
                                 type="button"
                                 variant="outline" 
                                 size="sm"
                                 onClick={() => {
-                                  if (material.fileUrl) {
-                                    const link = document.createElement('a');
-                                    link.href = material.fileUrl;
-                                    link.download = material.fileName || material.title;
-                                    link.click();
+                                  if (filesToRemove.includes(material.id)) {
+                                    setFilesToRemove(prev => prev.filter(id => id !== material.id));
+                                  } else {
+                                    setFilesToRemove(prev => [...prev, material.id]);
                                   }
                                 }}
-                                disabled={filesToRemove.includes(material.id)}
-                                className="flex items-center space-x-1"
+                                className={`flex items-center space-x-1 ${
+                                  filesToRemove.includes(material.id)
+                                    ? 'bg-green-50 text-green-600 border-green-300 hover:bg-green-100'
+                                    : 'text-red-600 hover:text-red-700 hover:border-red-300'
+                                }`}
                               >
-                                <Download className="w-4 h-4" />
+                                {filesToRemove.includes(material.id) ? (
+                                  <>
+                                    <Plus className="w-4 h-4" />
+                                    <span className="hidden sm:inline">Keep</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Trash2 className="w-4 h-4" />
+                                    <span className="hidden sm:inline">Remove</span>
+                                  </>
+                                )}
                               </Button>
-                            )}
-                            
-                            <Button 
-                              type="button"
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => {
-                                if (filesToRemove.includes(material.id)) {
-                                  setFilesToRemove(prev => prev.filter(id => id !== material.id));
-                                } else {
-                                  setFilesToRemove(prev => [...prev, material.id]);
-                                }
-                              }}
-                              className={`flex items-center space-x-1 ${
-                                filesToRemove.includes(material.id)
-                                  ? 'bg-green-50 text-green-600 border-green-300 hover:bg-green-100'
-                                  : 'text-red-600 hover:text-red-700 hover:border-red-300'
-                              }`}
-                            >
-                              {filesToRemove.includes(material.id) ? (
-                                <>
-                                  <Plus className="w-4 h-4" />
-                                  <span className="hidden sm:inline">Keep</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Trash2 className="w-4 h-4" />
-                                  <span className="hidden sm:inline">Remove</span>
-                                </>
-                              )}
-                            </Button>
+                            </div>
                           </div>
                         </div>
                       ))}
