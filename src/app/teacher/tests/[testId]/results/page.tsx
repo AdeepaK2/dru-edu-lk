@@ -1129,7 +1129,21 @@ export default function TestResultsPage() {
                             })()}
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap">
-                            {isLateSubmission(submission) ? (
+                            {submission.submissionType === 'incomplete_submission' ? (
+                              <div className="group relative">
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400 cursor-help">
+                                  <AlertTriangle className="h-3 w-3 mr-1" />
+                                  Incomplete
+                                </span>
+                                <div className="absolute bottom-full left-0 mb-2 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none">
+                                  <div className="font-medium mb-1">Incomplete Submission:</div>
+                                  <div>This submission was incomplete and approved by the teacher.</div>
+                                  {submission.submissionNote && (
+                                    <div className="mt-1 opacity-75">{submission.submissionNote}</div>
+                                  )}
+                                </div>
+                              </div>
+                            ) : isLateSubmission(submission) ? (
                               <div className="group relative">
                                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400 cursor-help">
                                   <Clock className="h-3 w-3 mr-1" />

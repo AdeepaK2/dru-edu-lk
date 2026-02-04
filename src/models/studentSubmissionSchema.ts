@@ -144,6 +144,10 @@ export interface StudentSubmission {
     approvedAt: Timestamp;
     reason?: string;
   };
+
+  // Submission details
+  submissionType?: 'regular' | 'late_submission' | 'incomplete_submission';
+  submissionNote?: string;
   
   // Integrity monitoring
   integrityReport: {
