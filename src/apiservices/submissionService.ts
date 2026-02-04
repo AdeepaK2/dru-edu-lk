@@ -11,7 +11,8 @@ import {
   where,
   updateDoc,
   writeBatch,
-  Timestamp 
+  Timestamp,
+  deleteDoc
 } from 'firebase/firestore';
 import { firestore } from '@/utils/firebase-client';
 import { 
@@ -1278,6 +1279,164 @@ export class SubmissionService {
       console.log('✅ Submission grade updated successfully');
     } catch (error) {
       console.error('Error updating submission grade:', error);
+      throw error;
+    }
+  }
+  // Process approved incomplete submission (teacher approval)
+  static async processApprovedSubmission(attemptId: string): Promise<void> {
+    try {
+      console.log('🔄 Processing approved submission for attempt:', attemptId);
+      
+      // 1. Get the attempt data from Firestore (not Realtime DB)
+      const attemptDoc = await getDoc(doc(firestore, 'testAttempts', attemptId));
+      if (!attemptDoc.exists()) {
+        throw new Error('Test attempt not found');
+      }
+      
+      const attemptData = attemptDoc.data(); // accessing as any to get answers keys
+      
+      // 2. Get test data
+      const testDoc = await getDoc(doc(firestore, this.COLLECTIONS.TESTS, attemptData.testId));
+      if (!testDoc.exists()) {
+        throw new Error('Test not found');
+      }
+      const test = { id: testDoc.id, ...testDoc.data() } as Test;
+
+      // 2.5 Try to get answers from Realtime DB if missing in Firestore
+      let answers = attemptData.answers || {};
+      if (Object.keys(answers).length === 0) {
+        try {
+          console.log('🔍 Answers missing in Firestore, checking Realtime DB...');
+          const { getDatabase, ref, get } = await import('firebase/database');
+          const db = getDatabase();
+          const sessionAnswersRef = ref(db, `testSessions/${attemptId}/answers`);
+          const snapshot = await get(sessionAnswersRef);
+          
+          if (snapshot.exists()) {
+            answers = snapshot.val();
+            console.log('✅ Recovered answers from Realtime DB:', Object.keys(answers).length);
+          } else {
+             // Try legacy path
+             const legacyRef = ref(db, `testAttempts/${attemptId}/answers`);
+             const legacySnapshot = await get(legacyRef);
+             if (legacySnapshot.exists()) {
+                answers = legacySnapshot.val();
+                console.log('✅ Recovered answers from Legacy RTDB:', Object.keys(answers).length);
+             }
+          }
+        } catch (rtdbError) {
+          console.warn('⚠️ Failed to check Realtime DB for answers:', rtdbError);
+        }
+      }
+      
+      // 3. Construct a mock RealtimeTestSession from the attempt data
+      // We assume attemptData.answers contains the answer state
+      const mockSession: RealtimeTestSession = {
+        attemptId: attemptId,
+        testId: attemptData.testId,
+        studentId: attemptData.studentId,
+        studentName: attemptData.studentName,
+        classId: attemptData.classId || '',
+        status: 'submitted', // We are submitting it now
+        startTime: attemptData.startedAt?.toMillis() || Date.now(),
+        lastActivity: attemptData.lastActiveAt?.toMillis() || Date.now(),
+        answers: answers, // Use resolved answers
+        // Defaults for other fields
+        currentQuestionIndex: 0,
+        isReviewMode: false,
+        totalTimeSpent: attemptData.timeSpent || 0,
+        questionsVisited: [],
+        questionsCompleted: [],
+        questionsMarkedForReview: [],
+        userAgent: '',
+        tabSwitchCount: 0,
+        disconnectionCount: 0,
+        timePerQuestion: {},
+        isFullscreen: false,
+        suspiciousActivity: {
+          tabSwitches: 0,
+          copyPasteAttempts: 0,
+          rightClickAttempts: 0,
+          keyboardShortcuts: []
+        }
+      };
+      
+      console.log('📊 Constructed mock session from attempt data:', {
+        hasAnswers: !!attemptData.answers,
+        answerCount: Object.keys(attemptData.answers || {}).length
+      });
+      
+      // 4. Process answers effectively as if it came from realtime session
+      const { finalAnswers, mcqResults, autoGradedScore, manualGradingPending } = 
+        await this.processAnswers(mockSession, test);
+        
+      // 5. Create submission object
+      const submission: StudentSubmission = {
+        id: attemptId,
+        testId: test.id,
+        testTitle: test.title || '',
+        testType: test.type || 'mixed',
+        studentId: attemptData.studentId,
+        studentName: attemptData.studentName,
+        studentEmail: '', // Optional
+        classId: attemptData.classId || '',
+        className: attemptData.className || 'Unknown Class',
+        attemptNumber: attemptData.attemptNumber || 1,
+        status: 'auto_submitted',
+        startTime: attemptData.startedAt || Timestamp.now(),
+        endTime: Timestamp.now(),
+        submittedAt: Timestamp.now(),
+        totalTimeSpent: attemptData.timeSpent || 0,
+        timePerQuestion: {},
+        finalAnswers,
+        questionsAttempted: Object.keys(mockSession.answers || {}).length,
+        questionsSkipped: (test.questions?.length || 0) - Object.keys(mockSession.answers || {}).length,
+        questionsReviewed: 0,
+        totalChanges: 0,
+        autoGradedScore: autoGradedScore || 0,
+        totalScore: manualGradingPending ? undefined : (autoGradedScore || 0),
+        manualGradingPending,
+        maxScore: test.totalMarks || 0,
+        percentage: autoGradedScore ? Math.round((autoGradedScore / (test.totalMarks || 1)) * 100) : 0,
+        passStatus: manualGradingPending ? 'pending_review' : 
+                   (autoGradedScore && autoGradedScore >= ((test.totalMarks || 0) * 0.6)) ? 'passed' : 'failed',
+        mcqResults,
+        essayResults: [],
+        integrityReport: {
+          tabSwitches: 0,
+          disconnections: 0,
+          suspiciousActivities: [],
+          isIntegrityCompromised: false,
+          notes: 'Teacher approved incomplete submission'
+        },
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now()
+      };
+      
+      // 6. Save submission
+      await setDoc(doc(firestore, this.COLLECTIONS.SUBMISSIONS, attemptId), this.removeUndefinedValues(submission));
+      
+      // 7. Update attempt status to auto_submitted
+      await updateDoc(doc(firestore, 'testAttempts', attemptId), {
+        status: 'auto_submitted',
+        submittedAt: Timestamp.now(),
+        autoSubmittedReason: 'Teacher approved incomplete submission',
+        teacherApprovedAt: Timestamp.now(),
+        updatedAt: Timestamp.now()
+      });
+      
+      // 8. Update statistics
+      try {
+        const { TestStatisticsService } = await import('./testStatisticsService');
+        await TestStatisticsService.updateStatisticsForNewSubmission(attemptData.testId);
+      } catch (statsError) {
+        console.warn('⚠️ Failed to update stats:', statsError);
+      }
+      
+      console.log('✅ Approved submission processed successfully');
+      
+    } catch (error) {
+      console.error('Error processing approved submission:', error);
       throw error;
     }
   }
