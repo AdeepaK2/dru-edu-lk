@@ -30,6 +30,10 @@ export default function TeacherDashboard() {
   const [actualStudentsCount, setActualStudentsCount] = useState<number>(0);
   const [actualPendingTests, setActualPendingTests] = useState<number>(0);
   const [actualVideosCount, setActualVideosCount] = useState<number>(0);
+  const [actualActiveTests, setActualActiveTests] = useState<number>(0);
+  const [actualCompletedHomework, setActualCompletedHomework] = useState<number>(0);
+  const [actualStudyMaterials, setActualStudyMaterials] = useState<number>(0);
+  const [actualTotalQuestions, setActualTotalQuestions] = useState<number>(0);
   const [loadingStats, setLoadingStats] = useState(false);
 
   // Load actual statistics when teacher is available
@@ -92,6 +96,72 @@ export default function TeacherDashboard() {
           console.warn('Failed to load videos count:', error);
           setActualVideosCount(0);
         }
+
+        // Load active tests count
+        try {
+          const { TestService } = await import('@/apiservices/testService');
+          const teacherTests = await TestService.getTeacherTests(teacher.id);
+          const activeTests = teacherTests.filter((test: any) => 
+            test.status === 'active' || test.status === 'open'
+          );
+          setActualActiveTests(activeTests.length);
+          console.log('✅ Active tests:', activeTests.length);
+        } catch (error) {
+          console.warn('Failed to load active tests:', error);
+          setActualActiveTests(0);
+        }
+
+        // Load study materials count
+        try {
+          const { getStudyMaterialsByClass } = await import('@/apiservices/studyMaterialFirestoreService');
+          // Get all materials across all classes
+          let totalMaterials = 0;
+          for (const cls of classes) {
+            const materials = await getStudyMaterialsByClass(cls.id);
+            totalMaterials += materials.length;
+          }
+          setActualStudyMaterials(totalMaterials);
+          console.log('📚 Study materials:', totalMaterials);
+        } catch (error) {
+          console.warn('Failed to load study materials:', error);
+          setActualStudyMaterials(0);
+        }
+
+        // Load total questions created by teacher
+        try {
+          const { questionService } = await import('@/apiservices/questionBankFirestoreService');
+          // Get questions filtered by teacher email (or ID if that field exists)
+          const allQuestions = await questionService.listQuestions();
+          // Filter questions created by this teacher based on createdBy field
+          const teacherQuestions = allQuestions.filter((q: any) => q.createdBy === teacher.id || q.createdBy === teacher.email);
+          setActualTotalQuestions(teacherQuestions.length);
+          console.log('❓ Total questions:', teacherQuestions.length);
+        } catch (error) {
+          console.warn('Failed to load questions:', error);
+          setActualTotalQuestions(0);
+        }
+
+        // Load completed homework count
+        try {
+          let completedCount = 0;
+          // Homework submissions are tracked separately, for now show count of homework items
+          for (const cls of classes) {
+            try {
+              const { getStudyMaterialsByClass } = await import('@/apiservices/studyMaterialFirestoreService');
+              const materials = await getStudyMaterialsByClass(cls.id);
+              const homeworkMaterials = materials.filter((m: any) => m.isHomework && m.homeworkType === 'submission');
+              // Count homework items (actual submission tracking would require homework submission service)
+              completedCount += homeworkMaterials.length;
+            } catch (error) {
+              console.warn(`Failed to get homework for class ${cls.id}:`, error);
+            }
+          }
+          setActualCompletedHomework(completedCount);
+          console.log('📝 Homework assignments:', completedCount);
+        } catch (error) {
+          console.warn('Failed to load homework count:', error);
+          setActualCompletedHomework(0);
+        }
         
       } catch (error) {
         console.error('❌ Error loading teacher stats:', error);
@@ -128,7 +198,11 @@ export default function TeacherDashboard() {
     totalStudents: actualStudentsCount,
     pendingTests: actualPendingTests,
     videosUploaded: actualVideosCount,
-  }), [actualClassesCount, actualStudentsCount, actualPendingTests, actualVideosCount]);
+    activeTests: actualActiveTests,
+    completedHomework: actualCompletedHomework,
+    studyMaterials: actualStudyMaterials,
+    totalQuestions: actualTotalQuestions,
+  }), [actualClassesCount, actualStudentsCount, actualPendingTests, actualVideosCount, actualActiveTests, actualCompletedHomework, actualStudyMaterials, actualTotalQuestions]);
 
   // Memoized quick actions with preloading
   const quickActions = useMemo(() => [
@@ -284,8 +358,8 @@ export default function TeacherDashboard() {
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        {/* Stats Cards Row 1 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
             <div className="flex items-center">
               <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
@@ -373,6 +447,89 @@ export default function TeacherDashboard() {
                   {loadingStats && (
                     <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">Loading...</span>
                   )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Stats Cards Row 2 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center">
+              <div className="w-12 h-12 bg-teal-100 dark:bg-teal-900/20 rounded-lg flex items-center justify-center">
+                <BarChart3 className="w-6 h-6 text-teal-600 dark:text-teal-400" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm text-gray-600 dark:text-gray-400">Active Tests</p>
+                <div className="flex items-center">
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {loadingStats ? (
+                      <span className="inline-block w-8 h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></span>
+                    ) : (
+                      dashboardStats.activeTests
+                    )}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center">
+              <div className="w-12 h-12 bg-pink-100 dark:bg-pink-900/20 rounded-lg flex items-center justify-center">
+                <FileText className="w-6 h-6 text-pink-600 dark:text-pink-400" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm text-gray-600 dark:text-gray-400">Homework Assigned</p>
+                <div className="flex items-center">
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {loadingStats ? (
+                      <span className="inline-block w-8 h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></span>
+                    ) : (
+                      dashboardStats.completedHomework
+                    )}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center">
+              <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/20 rounded-lg flex items-center justify-center">
+                <BookOpen className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm text-gray-600 dark:text-gray-400">Study Materials</p>
+                <div className="flex items-center">
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {loadingStats ? (
+                      <span className="inline-block w-8 h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></span>
+                    ) : (
+                      dashboardStats.studyMaterials
+                    )}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center">
+              <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/20 rounded-lg flex items-center justify-center">
+                <FileText className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm text-gray-600 dark:text-gray-400">Total Questions</p>
+                <div className="flex items-center">
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {loadingStats ? (
+                      <span className="inline-block w-8 h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></span>
+                    ) : (
+                      dashboardStats.totalQuestions
+                    )}
+                  </p>
                 </div>
               </div>
             </div>
