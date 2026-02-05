@@ -44,7 +44,7 @@ export interface HomeworkSubmissionData {
   // Added to align with schema
   files?: { url: string; name: string; type?: string }[];
   fileUrl?: string; // Legacy support
-  teacherMark?: 'Excellent' | 'Good' | 'Satisfied' | 'Satisfactory' | 'Needs Improvement' | 'Not Sufficient' | 'Unsatisfactory'; // Extended with new types
+  teacherMark?: 'Excellent' | 'Good' | 'Satisfied' | 'Satisfactory' | 'Needs Improvement' | 'Not Sufficient' | 'Unsatisfactory' | 'Incorrect or Incomplete' | 'Completed but need to resubmit'; // Extended with new types
   numericMark?: number; // alias for marks if needed, or prefer marks
   teacherRemarks?: string; // alias for remarks
 }

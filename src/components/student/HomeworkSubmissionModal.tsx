@@ -63,7 +63,14 @@ export default function HomeworkSubmissionModal({
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
+      const selectedFile = e.target.files[0];
+      if (selectedFile.type !== 'application/pdf') {
+        setError('Only PDF files are allowed');
+        e.target.value = ''; // Reset input
+        setFile(null);
+        return;
+      }
+      setFile(selectedFile);
       setError(null);
     }
   };
@@ -172,6 +179,7 @@ export default function HomeworkSubmissionModal({
                      type="file" 
                      ref={fileInputRef} 
                      className="hidden" 
+                     accept="application/pdf"
                      onChange={handleFileChange} 
                    />
                    <Upload className="w-10 h-10 mx-auto text-gray-400 mb-2" />
