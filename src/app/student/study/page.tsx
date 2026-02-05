@@ -643,10 +643,12 @@ export default function StudentStudyPage() {
                               const submission = homeworkSubmissions[material.id];
                               const teacherMark = submission?.teacherMark;
                               
+
                               let markStyle = '';
-                              if (teacherMark === 'Good') markStyle = 'border-green-500 bg-green-50 ring-1 ring-green-500';
-                              else if (teacherMark === 'Satisfied') markStyle = 'border-blue-500 bg-blue-50 ring-1 ring-blue-500';
-                              else if (teacherMark === 'Not Sufficient') markStyle = 'border-red-500 bg-red-50 ring-1 ring-red-500';
+                              if (teacherMark === 'Satisfied') markStyle = 'border-green-500 bg-green-50 ring-1 ring-green-500';
+                              else if (teacherMark === 'Incorrect or Incomplete') markStyle = 'border-red-500 bg-red-50 ring-1 ring-red-500';
+                              else if (teacherMark === 'Completed but need to resubmit') markStyle = 'border-orange-500 bg-orange-50 ring-1 ring-orange-500';
+
 
                               return (
                                 <div
@@ -738,7 +740,15 @@ export default function StudentStudyPage() {
                                       })()}
                                       
                                       {homeworkSubmissions[material.id] ? (
-                                        <div className="flex items-center space-x-1">
+                                        <div 
+                                          className="flex items-center space-x-1 cursor-pointer hover:opacity-80 transition-opacity"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSelectedHomework(material);
+                                            setShowHomeworkModal(true);
+                                          }}
+                                          title="Click to view/edit submission"
+                                        >
                                           <span className={`text-xs px-2 py-0.5 rounded-full ${
                                             homeworkSubmissions[material.id].status === 'resubmit_needed' ? 'bg-orange-100 text-orange-700' :
                                             homeworkSubmissions[material.id].status === 'late' ? 'bg-yellow-100 text-yellow-700' :

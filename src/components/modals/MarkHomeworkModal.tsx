@@ -14,7 +14,8 @@ import {
   ThumbsUp,
   ThumbsDown,
   Award,
-  Download
+  Download,
+  RotateCcw
 } from 'lucide-react';
 import { 
   HomeworkFirestoreService, 
@@ -44,7 +45,7 @@ interface ExtendedStudentSubmission {
   files?: { url: string; name: string; type?: string }[];
   marks?: number;
   remarks?: string;
-  teacherMark?: 'Excellent' | 'Good' | 'Satisfied' | 'Satisfactory' | 'Needs Improvement' | 'Not Sufficient' | 'Unsatisfactory'; // Maps to Good, Satisfactory, Not Satisfactory
+  teacherMark?: 'Excellent' | 'Good' | 'Satisfied' | 'Satisfactory' | 'Needs Improvement' | 'Not Sufficient' | 'Unsatisfactory' | 'Incorrect or Incomplete' | 'Completed but need to resubmit'; // Maps to Good, Satisfactory, Not Satisfactory
   isChanged: boolean;
 }
 
@@ -150,7 +151,7 @@ const MarkHomeworkModal: React.FC<MarkHomeworkModalProps> = ({
 
   const selectedStudent = students.find(s => s.studentId === selectedStudentId);
 
-  const handleMarking = (type: 'Excellent' | 'Good' | 'Satisfactory' | 'Needs Improvement' | 'Unsatisfactory') => {
+  const handleMarking = (type: 'Satisfied' | 'Incorrect or Incomplete' | 'Completed but need to resubmit') => {
     if (!selectedStudent) return;
 
     setStudents(prev => prev.map(s => {
@@ -159,10 +160,11 @@ const MarkHomeworkModal: React.FC<MarkHomeworkModalProps> = ({
         let teacherMark: ExtendedStudentSubmission['teacherMark'] = type;
 
         // Logic: 
-        // Excellent, Good, Satisfactory -> Submitted (Approved)
-        // Needs Improvement, Unsatisfactory -> Resubmit Needed (Issues tab)
+        // Satisfied -> Submitted (Approved)
+        // Incorrect or Incomplete -> Resubmit Needed (Issues tab)
+        // Completed but need to resubmit -> Resubmit Needed (Issues tab)
 
-        if (['Excellent', 'Good', 'Satisfactory'].includes(type)) {
+        if (type === 'Satisfied') {
              // Promote to submitted if currently in issues/not_submitted
              if (s.status === 'resubmit_needed' || s.status === 'not_submitted') {
                  newStatus = 'submitted';
@@ -368,51 +370,33 @@ const MarkHomeworkModal: React.FC<MarkHomeworkModalProps> = ({
                         
                         {/* Marking Actions */}
                         <div className="flex flex-col gap-2 items-end">
-                            {/* Top Row: Passing Grades */}
-                            <div className="flex items-center gap-2">
+                            {/* Marking Buttons */}
+                            <div className="flex flex-wrap items-center justify-end gap-2">
                                 <Button 
-                                    onClick={() => handleMarking('Excellent')}
-                                    variant={selectedStudent.teacherMark === 'Excellent' ? 'primary' : 'outline'}
-                                    className={`gap-1.5 h-7 text-xs ${selectedStudent.teacherMark === 'Excellent' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'text-emerald-600 border-emerald-200 hover:bg-emerald-50'}`}
-                                    title="90-100% - Exceeds expectations"
+                                    onClick={() => handleMarking('Satisfied')}
+                                    variant={selectedStudent.teacherMark === 'Satisfied' ? 'primary' : 'outline'}
+                                    className={`gap-1.5 h-auto py-1.5 px-3 text-xs ${selectedStudent.teacherMark === 'Satisfied' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'text-emerald-600 border-emerald-200 hover:bg-emerald-50'}`}
+                                    title="Mark as Satisfied"
                                 >
-                                    <Award className="w-3 h-3" /> Excellent
+                                    <CheckCircle className="w-3.5 h-3.5" /> Satisfied
                                 </Button>
+                                
                                 <Button 
-                                    onClick={() => handleMarking('Good')}
-                                    variant={selectedStudent.teacherMark === 'Good' ? 'primary' : 'outline'}
-                                    className={`gap-1.5 h-7 text-xs ${selectedStudent.teacherMark === 'Good' ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'text-blue-600 border-blue-200 hover:bg-blue-50'}`}
-                                    title="80-89% - Good"
+                                    onClick={() => handleMarking('Incorrect or Incomplete')}
+                                    variant={selectedStudent.teacherMark === 'Incorrect or Incomplete' ? 'primary' : 'outline'}
+                                    className={`gap-1.5 h-auto py-1.5 px-3 text-xs ${selectedStudent.teacherMark === 'Incorrect or Incomplete' ? 'bg-red-600 hover:bg-red-700 text-white' : 'text-red-600 border-red-200 hover:bg-red-50'}`}
+                                    title="Mark as Incorrect or Incomplete"
                                 >
-                                    <ThumbsUp className="w-3 h-3" /> Good
+                                    <XCircle className="w-3.5 h-3.5" /> Incorrect or Incomplete
                                 </Button>
+                                
                                 <Button 
-                                    onClick={() => handleMarking('Satisfactory')}
-                                    variant={(selectedStudent.teacherMark === 'Satisfactory' || selectedStudent.teacherMark === 'Satisfied') ? 'primary' : 'outline'}
-                                    className={`gap-1.5 h-7 text-xs ${(selectedStudent.teacherMark === 'Satisfactory' || selectedStudent.teacherMark === 'Satisfied') ? 'bg-amber-500 hover:bg-amber-600 text-white' : 'text-amber-600 border-amber-200 hover:bg-amber-50'}`}
-                                    title="70-79% - Satisfactory"
+                                    onClick={() => handleMarking('Completed but need to resubmit')}
+                                    variant={selectedStudent.teacherMark === 'Completed but need to resubmit' ? 'primary' : 'outline'}
+                                    className={`gap-1.5 h-auto py-1.5 px-3 text-xs ${selectedStudent.teacherMark === 'Completed but need to resubmit' ? 'bg-orange-500 hover:bg-orange-600 text-white' : 'text-orange-600 border-orange-200 hover:bg-orange-50'}`}
+                                    title="Mark as Completed but need to resubmit"
                                 >
-                                    <CheckCircle className="w-3 h-3" /> Satisfactory
-                                </Button>
-                            </div>
-                            
-                            {/* Bottom Row: Improvement Needed */}
-                            <div className="flex items-center gap-2">
-                                <Button 
-                                    onClick={() => handleMarking('Needs Improvement')}
-                                    variant={selectedStudent.teacherMark === 'Needs Improvement' ? 'primary' : 'outline'}
-                                    className={`gap-1.5 h-7 text-xs ${selectedStudent.teacherMark === 'Needs Improvement' ? 'bg-orange-600 hover:bg-orange-700 text-white' : 'text-orange-600 border-orange-200 hover:bg-orange-50'}`}
-                                    title="60-69% - Requires revision"
-                                >
-                                    <AlertCircle className="w-3 h-3" /> Needs Improvement
-                                </Button>
-                                <Button 
-                                    onClick={() => handleMarking('Unsatisfactory')}
-                                    variant={(selectedStudent.teacherMark === 'Unsatisfactory' || selectedStudent.teacherMark === 'Not Sufficient') ? 'primary' : 'outline'}
-                                    className={`gap-1.5 h-7 text-xs ${(selectedStudent.teacherMark === 'Unsatisfactory' || selectedStudent.teacherMark === 'Not Sufficient') ? 'bg-red-600 hover:bg-red-700 text-white' : 'text-red-600 border-red-200 hover:bg-red-50'}`}
-                                    title="Below 60% - Needs major revision"
-                                >
-                                    <ThumbsDown className="w-3 h-3" /> Unsatisfactory
+                                    <RotateCcw className="w-3.5 h-3.5" /> Completed but need to resubmit
                                 </Button>
                             </div>
                         </div>
