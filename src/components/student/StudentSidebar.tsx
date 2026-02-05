@@ -85,10 +85,16 @@ function buildSidebarItems(upcomingQuizCount: number): SidebarItem[] {
       icon: FileCheck, 
     },
     {
+      id: 'homework',
+      label: 'Home Work',
+      href: '/student/homework',
+      icon: BookOpenCheck,
+    },
+    {
       id: 'study',
       label: 'Study Materials',
       href: '/student/study',
-      icon: BookOpenCheck,
+      icon: BookOpen,
     },
     {
       id: 'sheets',
