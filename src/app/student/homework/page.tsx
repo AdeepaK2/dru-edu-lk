@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { getEnrollmentsByStudent } from '@/services/studentEnrollmentService';
-import { getStudyMaterialsByClass } from '@/apiservices/studyMaterialService';
+import { getStudyMaterialsByClass } from '@/apiservices/studyMaterialFirestoreService';
 import { HomeworkSubmissionService } from '@/apiservices/homeworkSubmissionService';
 import { StudyMaterialDocument } from '@/models/studyMaterialSchema';
 import { HomeworkSubmissionDocument } from '@/models/homeworkSubmissionSchema';

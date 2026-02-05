@@ -22,7 +22,17 @@ export const homeworkSubmissionSchema = z.object({
   submittedAt: z.date(),
   
   // Grading
-  teacherMark: z.enum(['Good', 'Satisfied', 'Not Sufficient']).optional(),
+  teacherMark: z.enum([
+    'Excellent', 
+    'Good', 
+    'Satisfied', 
+    'Satisfactory', 
+    'Needs Improvement', 
+    'Not Sufficient', 
+    'Unsatisfactory', 
+    'Incorrect or Incomplete', 
+    'Completed but need to resubmit'
+  ]).optional(),
   teacherRemarks: z.string().optional(),
   numericMark: z.number().optional(),
   markedAt: z.date().optional(),
@@ -37,7 +47,16 @@ export const homeworkSubmissionSchema = z.object({
 });
 
 export type HomeworkSubmissionStatus = 'submitted' | 'late' | 'resubmit_needed' | 'approved' | 'rejected';
-export type TeacherMark = 'Good' | 'Satisfied' | 'Not Sufficient';
+export type TeacherMark = 
+  | 'Excellent'
+  | 'Good' 
+  | 'Satisfied' 
+  | 'Satisfactory'
+  | 'Needs Improvement'
+  | 'Not Sufficient' 
+  | 'Unsatisfactory'
+  | 'Incorrect or Incomplete' 
+  | 'Completed but need to resubmit';
 
 export interface HomeworkSubmission {
   id: string;
