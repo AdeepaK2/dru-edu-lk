@@ -288,6 +288,17 @@ export default function HomeworkSubmissionModal({
                            </span>
                        )}
                   </div>
+                  {/* System Messages for specific marks */}
+                  {(existingSubmission.teacherMark === 'Completed but need to resubmit' || existingSubmission.teacherMark === 'Incorrect or Incomplete') && (
+                      <div className={`text-sm font-medium mb-2 ${
+                          existingSubmission.teacherMark === 'Completed but need to resubmit' ? 'text-yellow-700' : 'text-red-700'
+                      }`}>
+                          {existingSubmission.teacherMark === 'Completed but need to resubmit' 
+                              ? "It is completed and since some issues it is recommended to do it clearly and submit clearly."
+                              : "This attempt is not valid pls resubmit."}
+                      </div>
+                  )}
+
                   {existingSubmission.teacherRemarks && (
                       <p className="text-sm text-blue-800">
                           "{existingSubmission.teacherRemarks}"
