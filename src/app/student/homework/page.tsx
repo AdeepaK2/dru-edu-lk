@@ -84,7 +84,7 @@ export default function StudentHomeworkPage() {
 
         // 3. Get submissions for these homeworks
         for (const material of homeworkMaterials) {
-            let submission: HomeworkSubmissionDocument | undefined;
+            let submission: HomeworkSubmissionDocument | undefined | null;
             try {
                 submission = await HomeworkSubmissionService.getStudentSubmission(material.id, student.id);
             } catch (err) {
@@ -94,7 +94,7 @@ export default function StudentHomeworkPage() {
             // Determine status
             let status: HomeworkItem['status'] = 'pending';
             const now = new Date();
-            const due = material.dueDate ? new Date(material.dueDate) : null;
+            const due = material.dueDate ? (material.dueDate instanceof Date ? material.dueDate : material.dueDate.toDate()) : null;
 
             if (submission) {
                 if (submission.status === 'resubmit_needed') status = 'resubmit_needed';
@@ -108,7 +108,7 @@ export default function StudentHomeworkPage() {
 
             allHomeworks.push({
                 material,
-                submission,
+                submission: submission || undefined,
                 className: enrollment.className,
                 classId: enrollment.classId,
                 status,
@@ -187,7 +187,7 @@ export default function StudentHomeworkPage() {
       if (!mark) return '';
       if (mark === 'Satisfied') return 'text-green-600 bg-green-50 border-green-200';
       if (mark === 'Incorrect or Incomplete') return 'text-red-600 bg-red-50 border-red-200';
-      if (mark === 'Completed but need to resubmit') return 'text-orange-600 bg-orange-50 border-orange-200';
+      if (mark === 'Completed but need to resubmit') return 'text-yellow-600 bg-yellow-50 border-yellow-200';
       if (mark === 'Good' || mark === 'Excellent') return 'text-green-600 bg-green-50 border-green-200';
       return 'text-gray-600 bg-gray-50 border-gray-200';
   };
