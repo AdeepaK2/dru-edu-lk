@@ -107,45 +107,108 @@ export default function StudyMaterialUploadModal({
     dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16) // Format: YYYY-MM-DDTHH:mm
   });
 
+  const [removedFileIds, setRemovedFileIds] = useState<string[]>([]);
+
   // Reset form when modal opens/closes
   useEffect(() => {
     if (isOpen) {
       if (initialMaterial) {
-        // Edit Mode: Populate with existing data
-        setGlobalSettings({
-          title: initialMaterial.groupTitle || initialMaterial.title, // Use group title if available, otherwise title
-          description: initialMaterial.description || '',
-          lessonId: initialMaterial.lessonId || '',
-          isVisible: initialMaterial.isVisible,
-          order: initialMaterial.order || 1,
-          dueDate: (initialMaterial.dueDate && typeof initialMaterial.dueDate === 'object' && 'toDate' in initialMaterial.dueDate 
-            ? (initialMaterial.dueDate as any).toDate()
-            : (initialMaterial.dueDate as any) instanceof Date 
-              ? initialMaterial.dueDate 
-              : new Date(initialMaterial.dueDate || Date.now())).toISOString().slice(0, 16)
-        });
+        // Edit Mode
+        const initializeEditMode = async () => {
+          setGlobalSettings({
+            title: initialMaterial.groupTitle || initialMaterial.title,
+            description: initialMaterial.description || '',
+            lessonId: initialMaterial.lessonId || '',
+            isVisible: initialMaterial.isVisible,
+            order: initialMaterial.order || 1,
+            dueDate: (initialMaterial.dueDate && typeof initialMaterial.dueDate === 'object' && 'toDate' in initialMaterial.dueDate 
+              ? (initialMaterial.dueDate as any).toDate()
+              : (initialMaterial.dueDate as any) instanceof Date 
+                ? initialMaterial.dueDate 
+                : new Date(initialMaterial.dueDate || Date.now())).toISOString().slice(0, 16)
+          });
 
-        // Populate file item
-        setFiles([{
-          id: initialMaterial.id,
-          title: initialMaterial.title,
-          fileType: initialMaterial.fileType as any,
-          existingUrl: initialMaterial.fileUrl,
-          externalUrl: initialMaterial.externalUrl,
-          isRequired: initialMaterial.isRequired,
-          tags: initialMaterial.tags || [],
-          isHomework: initialMaterial.isHomework || false,
-          dueDate: (initialMaterial.dueDate && typeof initialMaterial.dueDate === 'object' && 'toDate' in initialMaterial.dueDate 
-            ? (initialMaterial.dueDate as any).toDate() 
-            : (initialMaterial.dueDate as any) instanceof Date 
-              ? initialMaterial.dueDate 
-              : new Date(initialMaterial.dueDate || Date.now() + 7 * 24 * 60 * 60 * 1000)).toISOString().slice(0, 16),
-          homeworkType: (initialMaterial.homeworkType as any) || 'manual',
-          manualInstruction: initialMaterial.manualInstruction || '',
-          maxMarks: initialMaterial.maxMarks || 0,
-          allowLateSubmission: initialMaterial.allowLateSubmission ?? true,
-          lateSubmissionDays: initialMaterial.lateSubmissionDays || 3,
-        }]);
+          // Check if it's a group and load all files
+          let initialFiles: FileUploadItem[] = [];
+          
+          if (initialMaterial.groupId) {
+             try {
+                // Dynamic import to avoid circular dependency if any, or just cleaner code structure within effect
+                const { getStudyMaterialsByGroupId } = await import('@/apiservices/studyMaterialFirestoreService');
+                const groupMaterials = await getStudyMaterialsByGroupId(initialMaterial.groupId);
+                
+                initialFiles = groupMaterials.map(m => ({
+                  id: m.id,
+                  title: m.title,
+                  fileType: m.fileType as any,
+                  existingUrl: m.fileUrl,
+                  externalUrl: m.externalUrl,
+                  isRequired: m.isRequired,
+                  tags: m.tags || [],
+                  isHomework: m.isHomework || false,
+                  dueDate: (m.dueDate && typeof m.dueDate === 'object' && 'toDate' in m.dueDate 
+                    ? (m.dueDate as any).toDate() 
+                    : (m.dueDate as any) instanceof Date 
+                      ? m.dueDate 
+                      : new Date(m.dueDate || Date.now() + 7 * 24 * 60 * 60 * 1000)).toISOString().slice(0, 16),
+                  homeworkType: (m.homeworkType as any) || 'manual',
+                  manualInstruction: m.manualInstruction || '',
+                  maxMarks: m.maxMarks || 0,
+                  allowLateSubmission: m.allowLateSubmission ?? true,
+                  lateSubmissionDays: m.lateSubmissionDays || 3,
+                }));
+             } catch (err) {
+                console.error("Failed to load group materials", err);
+                // Fallback to single file
+                initialFiles = [{
+                  id: initialMaterial.id,
+                  title: initialMaterial.title,
+                  fileType: initialMaterial.fileType as any,
+                  existingUrl: initialMaterial.fileUrl,
+                  externalUrl: initialMaterial.externalUrl,
+                  isRequired: initialMaterial.isRequired,
+                  tags: initialMaterial.tags || [],
+                  isHomework: initialMaterial.isHomework || false,
+                  dueDate: (initialMaterial.dueDate && typeof initialMaterial.dueDate === 'object' && 'toDate' in initialMaterial.dueDate 
+                    ? (initialMaterial.dueDate as any).toDate() 
+                    : (initialMaterial.dueDate as any) instanceof Date 
+                      ? initialMaterial.dueDate 
+                      : new Date(initialMaterial.dueDate || Date.now() + 7 * 24 * 60 * 60 * 1000)).toISOString().slice(0, 16),
+                  homeworkType: (initialMaterial.homeworkType as any) || 'manual',
+                  manualInstruction: initialMaterial.manualInstruction || '',
+                  maxMarks: initialMaterial.maxMarks || 0,
+                  allowLateSubmission: initialMaterial.allowLateSubmission ?? true,
+                  lateSubmissionDays: initialMaterial.lateSubmissionDays || 3,
+                }];
+             }
+          } else {
+             // Single file
+             initialFiles = [{
+                id: initialMaterial.id,
+                title: initialMaterial.title,
+                fileType: initialMaterial.fileType as any,
+                existingUrl: initialMaterial.fileUrl,
+                externalUrl: initialMaterial.externalUrl,
+                isRequired: initialMaterial.isRequired,
+                tags: initialMaterial.tags || [],
+                isHomework: initialMaterial.isHomework || false,
+                dueDate: (initialMaterial.dueDate && typeof initialMaterial.dueDate === 'object' && 'toDate' in initialMaterial.dueDate 
+                  ? (initialMaterial.dueDate as any).toDate() 
+                  : (initialMaterial.dueDate as any) instanceof Date 
+                    ? initialMaterial.dueDate 
+                    : new Date(initialMaterial.dueDate || Date.now() + 7 * 24 * 60 * 60 * 1000)).toISOString().slice(0, 16),
+                homeworkType: (initialMaterial.homeworkType as any) || 'manual',
+                manualInstruction: initialMaterial.manualInstruction || '',
+                maxMarks: initialMaterial.maxMarks || 0,
+                allowLateSubmission: initialMaterial.allowLateSubmission ?? true,
+                lateSubmissionDays: initialMaterial.lateSubmissionDays || 3,
+             }];
+          }
+
+          setFiles(initialFiles);
+        };
+        
+        initializeEditMode();
 
       } else {
         // Create Mode: Reset
@@ -164,6 +227,7 @@ export default function StudyMaterialUploadModal({
       setUploadProgress(0);
       setCurrentUpload(0);
       setTotalUploads(0);
+      setRemovedFileIds([]);
     }
   }, [isOpen, preSelectedLessonId, initialMaterial]);
 
@@ -223,8 +287,27 @@ export default function StudyMaterialUploadModal({
   };
 
   const removeFileUploadItem = (id: string) => {
+    // If it's an existing file (checked against initial IDs or if we can track it), mark for deletion
+    // Simple check: if we are editing, and this ID was in the initial files, add to removed list.
+    // However, since we populate files state from initial, we can just assume if we are editing, 
+    // any ID that matches a document ID format (or better, track original IDs separately)
+    // For simplicity, we'll just track all removals. If it was a new temp ID, deleteStudyMaterial will fail gracefully or we check before calling.
+    // Better: only track if it doesn't look like a generated temp ID? Temp IDs are random strings. Firestore IDs are also strings.
+    // Safe approach: Add to removed list. When submitting, only call delete for those that actually exist in DB.
+    // But how do we know? We can check if it was in the initialFiles list we loaded.
+    
+    // Actually, we can just add it to removedFileIds.
+    // If it was a new file (not in DB), we won't find it in DB to delete, no harm (except an API call).
+    // Or we can check if `file` property is missing (implies existing file) or existingUrl is present.
+    const fileToRemove = files.find(f => f.id === id);
+    if (fileToRemove && fileToRemove.existingUrl) {
+        setRemovedFileIds(prev => [...prev, id]);
+    }
+
     setFiles(prev => prev.filter(item => item.id !== id));
   };
+
+  // ... updateFileUploadItem, addTagToItem, removeTagFromItem, validateFileItem ...
 
   const updateFileUploadItem = (id: string, updates: Partial<FileUploadItem>) => {
     setFiles(prev => prev.map(item => 
@@ -253,7 +336,7 @@ export default function StudyMaterialUploadModal({
     }));
   };
 
-  // Validate file item
+    // Validate file item
   const validateFileItem = (item: FileUploadItem): string | null => {
     if (!item.title.trim()) {
       return 'Title is required';
@@ -314,8 +397,6 @@ export default function StudyMaterialUploadModal({
     return isValid;
   };
 
-
-
   const uploadFileToStorage = async (file: File, type: string): Promise<string> => {
     return await StudyMaterialStorageService.uploadStudyMaterial(
        file, 
@@ -343,63 +424,119 @@ export default function StudyMaterialUploadModal({
     try {
       // If editing, handle update
       if (isEditing && initialMaterial) {
-        const item = files[0];
         
-        // Check if file is being replaced
-        let fileUrl = item.existingUrl || '';
-        let fileName = initialMaterial.fileName;
-        let fileSize = initialMaterial.fileSize;
-        let mimeType = initialMaterial.mimeType;
-
-        if (item.fileType === 'link') {
-            fileUrl = item.externalUrl || '';
-            fileName = item.title;
-        } else if (item.file) {
-             // New file uploaded
-            fileUrl = await uploadFileToStorage(item.file, item.fileType);
-            fileName = item.file.name;
-            fileSize = item.file.size;
-            mimeType = item.file.type;
+        // 1. Handle Deletions
+        if (removedFileIds.length > 0) {
+            const { deleteStudyMaterial } = await import('@/apiservices/studyMaterialFirestoreService');
+            await Promise.all(removedFileIds.map(id => deleteStudyMaterial(id).catch(e => console.warn('Failed to delete', id, e))));
         }
 
-        const selectedLesson = lessons.find(lesson => lesson.id === globalSettings.lessonId);
-        const lessonName = selectedLesson ? selectedLesson.name : (globalSettings.lessonId ? 'Unknown Lesson' : '');
+        // Determine efficient Group ID to use
+        let targetGroupId = initialMaterial.groupId;
+        let targetGroupTitle = initialMaterial.groupTitle || initialMaterial.title;
 
-        const updateData: StudyMaterialUpdateData = {
-          title: item.title, // Use item title
-          description: globalSettings.description,
-          lessonId: globalSettings.lessonId || undefined,
-          lessonName: lessonName || undefined,
-          isVisible: globalSettings.isVisible,
-          order: globalSettings.order,
-          tags: item.tags,
-          dueDate: globalSettings.dueDate ? new Date(globalSettings.dueDate) : undefined,
-          
-          // File data
-          fileUrl,
-          fileName,
-          fileSize,
-          fileType: item.fileType,
-          mimeType,
-          externalUrl: item.fileType === 'link' ? item.externalUrl : undefined,
-
-          // Homework data
-          isHomework: item.isHomework,
-          homeworkType: item.isHomework ? item.homeworkType : undefined,
-          manualInstruction: (item.isHomework && item.homeworkType === 'manual') ? item.manualInstruction : undefined,
-          maxMarks: (item.isHomework && item.maxMarks > 0) ? item.maxMarks : undefined,
-          allowLateSubmission: item.isHomework ? item.allowLateSubmission : true,
-          lateSubmissionDays: item.isHomework ? item.lateSubmissionDays : 3,
-          
-          isRequired: item.isRequired,
-        };
-
-        if (files.length === 1 && globalSettings.title.trim()) {
-             // Optionally update group title if it was grouped? 
-             // For simplicity, we just update the material.
+        // If we didn't have a group before but now have > 1 file (existing + new), create a group ID
+        // Note: files state contains ALL files currently in the modal
+        if (!targetGroupId && files.length > 1) {
+             targetGroupId = `group_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+             targetGroupTitle = globalSettings.title.trim() || initialMaterial.title;
         }
 
-        await updateStudyMaterial(initialMaterial.id, updateData);
+        // 2. Handle Updates and New Additions
+        for (let i = 0; i < files.length; i++) {
+             const item = files[i];
+             setCurrentUpload(i + 1);
+             
+             let fileUrl = item.existingUrl || '';
+             let fileName = item.title; 
+             let fileSize = 0;
+             let mimeType = '';
+
+             if (item.fileType === 'link') {
+                fileUrl = item.externalUrl || '';
+                fileName = item.title;
+             } else if (item.file) {
+                fileUrl = await uploadFileToStorage(item.file, item.fileType);
+                fileName = item.file.name;
+                fileSize = item.file.size;
+                mimeType = item.file.type;
+             }
+
+             const selectedLesson = lessons.find(lesson => lesson.id === globalSettings.lessonId);
+             const lessonName = selectedLesson ? selectedLesson.name : (globalSettings.lessonId ? 'Unknown Lesson' : '');
+
+             // Prepare core data
+             const coreData = {
+                  title: item.title,
+                  description: globalSettings.description, 
+                  lessonId: globalSettings.lessonId || undefined,
+                  lessonName: lessonName || undefined,
+                  isVisible: globalSettings.isVisible,
+                  order: globalSettings.order + i,
+                  tags: item.tags,
+                  dueDate: globalSettings.dueDate ? new Date(globalSettings.dueDate) : undefined,
+                  externalUrl: item.fileType === 'link' ? item.externalUrl : undefined,
+                  
+                  // Group Info
+                  groupId: targetGroupId || undefined,
+                  groupTitle: targetGroupId ? targetGroupTitle : undefined,
+
+                  // Homework data
+                  isHomework: item.isHomework,
+                  homeworkType: item.isHomework ? item.homeworkType : undefined,
+                  manualInstruction: (item.isHomework && item.homeworkType === 'manual') ? item.manualInstruction : undefined,
+                  maxMarks: (item.isHomework && item.maxMarks > 0) ? item.maxMarks : undefined,
+                  allowLateSubmission: item.isHomework ? item.allowLateSubmission : true,
+                  lateSubmissionDays: item.isHomework ? item.lateSubmissionDays : 3,
+                  isRequired: item.isRequired,
+             };
+
+             if (item.existingUrl && !item.file) {
+                 // UPDATE existing document
+                 const updateData: StudyMaterialUpdateData = {
+                  ...coreData,
+                  // Only update file URL if we have a new one (we don't for existing without file)
+                  // So we keep existing fileUrl implicitly by not adding it to updateData if it's not changed?
+                  // Actually fileUrl in coreData is set to existingUrl.
+                  fileUrl: fileUrl, 
+                 };
+                 await updateStudyMaterial(item.id, updateData);
+
+             } else if (item.existingUrl && item.file) {
+                 // REPLACING existing document (Update)
+                 const updateData: StudyMaterialUpdateData = {
+                  ...coreData,
+                  fileUrl: fileUrl,
+                  fileName: fileName,
+                  fileSize: fileSize || undefined,
+                  fileType: item.fileType,
+                  mimeType: mimeType || undefined,
+                 };
+                 await updateStudyMaterial(item.id, updateData);
+             
+             } else {
+                 // CREATE new document
+                  const materialData: StudyMaterialData = {
+                    ...coreData,
+                    classId: classData!.id,
+                    subjectId: classData!.subjectId,
+                    teacherId: teacher!.id,
+                    week: 1,
+                    weekTitle: 'By Lesson',
+                    year: new Date().getFullYear(),
+                    fileUrl,
+                    fileName,
+                    fileSize,
+                    fileType: item.fileType,
+                    mimeType,
+                    
+                    uploadedAt: new Date(),
+                    viewCount: 0,
+                  };
+                  await createStudyMaterial(materialData);
+             }
+        }
+        
         console.log('✅ Material updated successfully');
 
       } else {

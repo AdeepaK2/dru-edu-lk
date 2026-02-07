@@ -155,6 +155,25 @@ export const getStudyMaterialsByLesson = async (lessonId: string): Promise<Study
   }
 };
 
+// Get study materials by group ID
+export const getStudyMaterialsByGroupId = async (groupId: string): Promise<StudyMaterialDocument[]> => {
+  try {
+    const q = query(
+      getStudyMaterialsCollection(),
+      where('groupId', '==', groupId)
+    );
+
+    const querySnapshot = await getDocs(q);
+    const materials = querySnapshot.docs.map(convertDocumentToStudyMaterial);
+    
+    // Sort by order in memory to avoid needing a composite index
+    return materials.sort((a, b) => a.order - b.order);
+  } catch (error) {
+    console.error('Error getting study materials by group:', error);
+    throw error;
+  }
+};
+
 // Update study material
 export const updateStudyMaterial = async (
   id: string, 
