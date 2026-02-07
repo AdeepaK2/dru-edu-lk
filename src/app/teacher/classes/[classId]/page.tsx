@@ -811,42 +811,38 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
 
     // Initialize Homework State from material
     // If it's a group, we take the state from the first material as representative
-    const baseMaterial = group?.isGroup ? group.materials[0] : material;
-    setEditIsHomework(baseMaterial.isHomework || false);
-    setEditHomeworkType(baseMaterial.homeworkType || 'manual');
-    setEditDueDate(baseMaterial.dueDate ? 
-      (typeof baseMaterial.dueDate === 'object' && 'toDate' in baseMaterial.dueDate 
-        ? baseMaterial.dueDate.toDate() 
-        : new Date(baseMaterial.dueDate)
-      ).toISOString().slice(0, 16) : ''
-    );
-    setEditMaxMarks(baseMaterial.maxMarks || 100);
-    setEditManualInstruction(baseMaterial.manualInstruction || '');
-    setEditAllowLateSubmission(baseMaterial.allowLateSubmission !== false); // Default to true if undefined
-    setEditLateSubmissionDays(baseMaterial.lateSubmissionDays || 3);
-
-    // Initialize per-material homework settings for group editing
-    if (group?.isGroup && group.materials) {
-      const homeworkSettings: Record<string, any> = {};
-      group.materials.forEach((mat: any) => {
-        homeworkSettings[mat.id] = {
-          isHomework: mat.isHomework || false,
-          homeworkType: mat.homeworkType || 'manual',
-          dueDate: mat.dueDate ? 
-            (typeof mat.dueDate === 'object' && 'toDate' in mat.dueDate 
+    // Initialize per-material homework settings for all materials (group or single)
+    const materialsToInit = (group?.isGroup && group.materials) ? group.materials : [material];
+    const homeworkSettings: Record<string, any> = {};
+    
+    materialsToInit.forEach((mat: any) => {
+      // For groups, properties are directly on the material object
+      // For single material, it might be the material object itself
+      
+      // Check if we need to parse date
+      let formattedDueDate = '';
+      if (mat.dueDate) {
+          try {
+            formattedDueDate = (typeof mat.dueDate === 'object' && 'toDate' in mat.dueDate 
               ? mat.dueDate.toDate() 
               : new Date(mat.dueDate)
-            ).toISOString().slice(0, 16) : '',
-          maxMarks: mat.maxMarks || 100,
-          manualInstruction: mat.manualInstruction || '',
-          allowLateSubmission: mat.allowLateSubmission !== false,
-          lateSubmissionDays: mat.lateSubmissionDays || 3
-        };
-      });
-      setMaterialHomeworkSettings(homeworkSettings);
-    } else {
-      setMaterialHomeworkSettings({});
-    }
+            ).toISOString().slice(0, 16);
+          } catch (e) {
+            console.error('Error parsing date:', e);
+          }
+      }
+
+      homeworkSettings[mat.id] = {
+        isHomework: mat.isHomework || false,
+        homeworkType: mat.homeworkType || 'manual',
+        dueDate: formattedDueDate,
+        maxMarks: mat.maxMarks || 100,
+        manualInstruction: mat.manualInstruction || '',
+        allowLateSubmission: mat.allowLateSubmission !== false,
+        lateSubmissionDays: mat.lateSubmissionDays || 3
+      };
+    });
+    setMaterialHomeworkSettings(homeworkSettings);
 
     setNewFilesToAdd([]);
     setFilesToRemove([]);
@@ -977,13 +973,15 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
               viewCount: 0,
               
               // Apply homework settings to new files too
-              isHomework: editedData.isHomework,
-              homeworkType: editedData.isHomework ? editedData.homeworkType : undefined,
-              dueDate: (editedData.isHomework && editedData.dueDate) ? new Date(editedData.dueDate) : undefined,
-              maxMarks: (editedData.isHomework && editedData.homeworkType === 'submission') ? editedData.maxMarks : undefined,
-              manualInstruction: (editedData.isHomework && editedData.homeworkType === 'manual') ? editedData.manualInstruction : undefined,
-              allowLateSubmission: editedData.isHomework ? editedData.allowLateSubmission : true,
-              lateSubmissionDays: editedData.isHomework ? editedData.lateSubmissionDays : 3
+              // Apply homework settings to new files too
+              // Default to false as they can be configured after upload
+              isHomework: false,
+              homeworkType: undefined,
+              dueDate: undefined,
+              maxMarks: undefined,
+              manualInstruction: undefined,
+              allowLateSubmission: true,
+              lateSubmissionDays: 3
             };
             
             await createStudyMaterial(materialData);
@@ -1011,15 +1009,7 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
       }
       
       // Step 3: Update main material properties
-      const commonUpdateData = {
-        isHomework: editedData.isHomework,
-        homeworkType: editedData.isHomework ? editedData.homeworkType : undefined,
-        dueDate: (editedData.isHomework && editedData.dueDate) ? new Date(editedData.dueDate) : undefined,
-        maxMarks: (editedData.isHomework && editedData.homeworkType === 'submission') ? editedData.maxMarks : undefined,
-        manualInstruction: (editedData.isHomework && editedData.homeworkType === 'manual') ? editedData.manualInstruction : undefined,
-        allowLateSubmission: editedData.isHomework ? editedData.allowLateSubmission : true,
-        lateSubmissionDays: editedData.isHomework ? editedData.lateSubmissionDays : 3
-      };
+
 
       if (editingGroup && editingGroup.isGroup) {
         // For real groups, update ALL materials in the group with the new groupTitle and per-material homework settings
@@ -1050,12 +1040,22 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
         // Converting single material to group or adding to existing single material group
         const originalMaterial = materialToEdit.materials[0];
         if (originalMaterial && !filesToRemove.includes(originalMaterial.id)) {
-          const updateData: any = {
+            const materialSettings = materialHomeworkSettings[originalMaterial.id] || {};
+            
+            const updateData: any = {
             groupId: groupId,
             groupTitle: editedData.title,
             description: editedData.description,
             isRequired: editedData.isRequired,
-            ...commonUpdateData
+            
+            // Per-file homework settings
+            isHomework: materialSettings.isHomework || false,
+            homeworkType: materialSettings.isHomework ? materialSettings.homeworkType : undefined,
+            dueDate: (materialSettings.isHomework && materialSettings.dueDate) ? new Date(materialSettings.dueDate) : undefined,
+            maxMarks: (materialSettings.isHomework && materialSettings.homeworkType === 'submission') ? materialSettings.maxMarks : undefined,
+            manualInstruction: (materialSettings.isHomework && materialSettings.homeworkType === 'manual') ? materialSettings.manualInstruction : undefined,
+            allowLateSubmission: materialSettings.isHomework ? materialSettings.allowLateSubmission : true,
+            lateSubmissionDays: materialSettings.isHomework ? materialSettings.lateSubmissionDays : 3
           };
           
           // Only update title if we're creating a new group (not if we're adding to existing group)
@@ -1066,12 +1066,22 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
           await updateStudyMaterial(originalMaterial.id, updateData);
         }
       } else {
-        // For single materials, update normally
+        // For single materials, update normally utilizing per-file settings
+        const materialSettings = materialHomeworkSettings[materialToEdit.id] || {};
+        
         await updateStudyMaterial(materialToEdit.id, {
           title: editedData.title,
           description: editedData.description,
           isRequired: editedData.isRequired,
-          ...commonUpdateData
+          
+          // Per-file homework settings
+          isHomework: materialSettings.isHomework || false,
+          homeworkType: materialSettings.isHomework ? materialSettings.homeworkType : undefined,
+          dueDate: (materialSettings.isHomework && materialSettings.dueDate) ? new Date(materialSettings.dueDate) : undefined,
+          maxMarks: (materialSettings.isHomework && materialSettings.homeworkType === 'submission') ? materialSettings.maxMarks : undefined,
+          manualInstruction: (materialSettings.isHomework && materialSettings.homeworkType === 'manual') ? materialSettings.manualInstruction : undefined,
+          allowLateSubmission: materialSettings.isHomework ? materialSettings.allowLateSubmission : true,
+          lateSubmissionDays: materialSettings.isHomework ? materialSettings.lateSubmissionDays : 3
         });
       }
       
@@ -1683,15 +1693,7 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                   handleEditSubmit({
                     title: formData.get('title') as string,
                     description: formData.get('description') as string,
-                    isRequired: formData.get('isRequired') === 'on',
-                    // Pass current state values
-                    isHomework: editIsHomework,
-                    homeworkType: editHomeworkType,
-                    dueDate: editDueDate,
-                    maxMarks: editMaxMarks,
-                    manualInstruction: editManualInstruction,
-                    allowLateSubmission: editAllowLateSubmission,
-                    lateSubmissionDays: editLateSubmissionDays
+                    isRequired: formData.get('isRequired') === 'on'
                   });
                 }}
                 className="p-6 space-y-6"
@@ -1780,145 +1782,8 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                   </div>
                 </div>
 
-                {/* Homework Configuration */}
-                <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium text-gray-900 dark:text-white flex items-center">
-                        <Settings className="w-4 h-4 mr-2" />
-                        Homework Settings
-                      </h4>
-                      {editingGroup?.isGroup && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                          Settings will apply to all materials in this group
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <label className="inline-flex items-center cursor-pointer">
-                          <input 
-                            type="checkbox" 
-                            checked={editIsHomework} 
-                            onChange={(e) => setEditIsHomework(e.target.checked)}
-                            className="sr-only peer"
-                          />
-                          <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-purple-600"></div>
-                          <span className="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">
-                            {editIsHomework ? 'Marked as Homework' : 'Not Homework'}
-                          </span>
-                        </label>
-                    </div>
-                  </div>
-
-                  {editIsHomework && (
-                    <div className="p-4 bg-purple-50 dark:bg-purple-900/10 rounded-lg border border-purple-100 dark:border-purple-800 space-y-4 animate-in slide-in-from-top-2 duration-200">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Due Date *
-                          </label>
-                          <input
-                            type="datetime-local"
-                            value={editDueDate}
-                            onChange={(e) => setEditDueDate(e.target.value)}
-                            required={editIsHomework}
-                            className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-1 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
-                          />
-                        </div>
-                        
-                        <div>
-                            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                              Submission Type
-                            </label>
-                            <div className="flex rounded-md shadow-sm" role="group">
-                              <button
-                                type="button"
-                                onClick={() => setEditHomeworkType('manual')}
-                                className={`px-3 py-1.5 text-xs font-medium border rounded-l-lg flex-1 ${
-                                  editHomeworkType === 'manual'
-                                    ? 'bg-purple-600 text-white border-purple-600'
-                                    : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50'
-                                }`}
-                              >
-                                Manual
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setEditHomeworkType('submission')}
-                                className={`px-3 py-1.5 text-xs font-medium border border-l-0 rounded-r-lg flex-1 ${
-                                  editHomeworkType === 'submission'
-                                    ? 'bg-purple-600 text-white border-purple-600'
-                                    : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50'
-                                }`}
-                              >
-                                File Upload
-                              </button>
-                            </div>
-                        </div>
-
-                        {editHomeworkType === 'manual' ? (
-                            <div className="md:col-span-2">
-                              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                Instructions for Student
-                              </label>
-                              <input
-                                type="text"
-                                value={editManualInstruction}
-                                onChange={(e) => setEditManualInstruction(e.target.value)}
-                                placeholder="e.g. Read chapter 5 and answer questions on page 120"
-                                className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-1 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
-                              />
-                            </div>
-                        ) : (
-                            <div className="md:col-span-2">
-                                <div className="flex items-center space-x-4">
-                                    <div className="flex-1">
-                                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                          Max Marks
-                                        </label>
-                                        <input
-                                          type="number"
-                                          min="0"
-                                          value={editMaxMarks}
-                                          onChange={(e) => setEditMaxMarks(parseInt(e.target.value) || 0)}
-                                          placeholder="100"
-                                          className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-1 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
-                                        />
-                                    </div>
-                                      <div className="flex-1 pt-5">
-                                          <label className="flex items-center space-x-2 cursor-pointer">
-                                          <input
-                                            type="checkbox"
-                                            checked={editAllowLateSubmission}
-                                            onChange={(e) => setEditAllowLateSubmission(e.target.checked)}
-                                            className="w-4 h-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
-                                          />
-                                          <span className="text-xs text-gray-700 dark:text-gray-300">Allow late submission</span>
-                                        </label>
-                                          {editAllowLateSubmission && (
-                                            <div className="mt-1 flex items-center space-x-2">
-                                                <span className="text-xs text-gray-500">Days allowed:</span>
-                                                <input 
-                                                    type="number" 
-                                                    min="0"
-                                                    max="30"
-                                                    value={editLateSubmissionDays}
-                                                    onChange={(e) => setEditLateSubmissionDays(parseInt(e.target.value) || 0)}
-                                                    className="w-16 px-1 py-0.5 text-xs border border-gray-300 rounded"
-                                                />
-                                            </div>
-                                          )}
-                                      </div>
-                                </div>
-                            </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Current Files Section - Only show for group editing */}
-                {editingGroup?.isGroup && (editingGroup || materialToEdit.materials) && (
+                {/* Current Files Section - Show for both partial and full groups */}
+                {(editingGroup || materialToEdit.materials) && (
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <h4 className="font-medium text-gray-900 dark:text-white">Current Files</h4>
@@ -2051,14 +1916,168 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                               </Button>
                             </div>
                           </div>
+
+                          {/* Per-File Homework Configuration - Expanded when checked */}
+                          {materialHomeworkSettings[material.id]?.isHomework && (
+                            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600 animate-in slide-in-from-top-2 duration-200 p-3">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                      Due Date *
+                                    </label>
+                                    <input
+                                      type="datetime-local"
+                                      value={materialHomeworkSettings[material.id]?.dueDate || ''}
+                                      onChange={(e) => {
+                                        setMaterialHomeworkSettings(prev => ({
+                                          ...prev,
+                                          [material.id]: { ...prev[material.id], dueDate: e.target.value }
+                                        }));
+                                      }}
+                                      className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-1 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
+                                    />
+                                  </div>
+                                  
+                                  <div>
+                                      <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Submission Type
+                                      </label>
+                                      <div className="flex rounded-md shadow-sm" role="group">
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setMaterialHomeworkSettings(prev => ({
+                                              ...prev,
+                                              [material.id]: { 
+                                                ...prev[material.id], 
+                                                homeworkType: 'manual',
+                                                // Reset unneeded fields when switching to manual
+                                                maxMarks: undefined,
+                                                allowLateSubmission: true,
+                                                lateSubmissionDays: 3
+                                              }
+                                            }));
+                                          }}
+                                          className={`px-3 py-1.5 text-xs font-medium border rounded-l-lg flex-1 ${
+                                            (materialHomeworkSettings[material.id]?.homeworkType || 'manual') === 'manual'
+                                              ? 'bg-purple-600 text-white border-purple-600'
+                                              : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50'
+                                          }`}
+                                        >
+                                          Manual
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                             setMaterialHomeworkSettings(prev => ({
+                                              ...prev,
+                                              [material.id]: { 
+                                                ...prev[material.id], 
+                                                homeworkType: 'submission',
+                                                // Initialize fields when switching to submission
+                                                maxMarks: prev[material.id]?.maxMarks || 100,
+                                                allowLateSubmission: prev[material.id]?.allowLateSubmission !== false,
+                                                lateSubmissionDays: prev[material.id]?.lateSubmissionDays || 3
+                                              }
+                                            }));
+                                          }}
+                                          className={`px-3 py-1.5 text-xs font-medium border border-l-0 rounded-r-lg flex-1 ${
+                                            materialHomeworkSettings[material.id]?.homeworkType === 'submission'
+                                              ? 'bg-purple-600 text-white border-purple-600'
+                                              : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50'
+                                          }`}
+                                        >
+                                          File Upload
+                                        </button>
+                                      </div>
+                                  </div>
+
+                                  {(materialHomeworkSettings[material.id]?.homeworkType || 'manual') === 'manual' ? (
+                                      <div className="md:col-span-2">
+                                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                          Instructions for Student
+                                        </label>
+                                        <input
+                                          type="text"
+                                          value={materialHomeworkSettings[material.id]?.manualInstruction || ''}
+                                          onChange={(e) => {
+                                            setMaterialHomeworkSettings(prev => ({
+                                              ...prev,
+                                              [material.id]: { ...prev[material.id], manualInstruction: e.target.value }
+                                            }));
+                                          }}
+                                          placeholder="e.g. Read chapter 5 and answer questions on page 120"
+                                          className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-1 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
+                                        />
+                                      </div>
+                                  ) : (
+                                      <div className="md:col-span-2">
+                                          <div className="flex items-center space-x-4">
+                                              <div className="flex-1">
+                                                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                    Max Marks
+                                                  </label>
+                                                  <input
+                                                    type="number"
+                                                    min="0"
+                                                    value={materialHomeworkSettings[material.id]?.maxMarks || 100}
+                                                    onChange={(e) => {
+                                                      setMaterialHomeworkSettings(prev => ({
+                                                        ...prev,
+                                                        [material.id]: { ...prev[material.id], maxMarks: parseInt(e.target.value) || 0 }
+                                                      }));
+                                                    }}
+                                                    placeholder="100"
+                                                    className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-1 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
+                                                  />
+                                              </div>
+                                                <div className="flex-1 pt-5">
+                                                    <label className="flex items-center space-x-2 cursor-pointer">
+                                                    <input
+                                                      type="checkbox"
+                                                      checked={materialHomeworkSettings[material.id]?.allowLateSubmission !== false}
+                                                      onChange={(e) => {
+                                                        setMaterialHomeworkSettings(prev => ({
+                                                          ...prev,
+                                                          [material.id]: { ...prev[material.id], allowLateSubmission: e.target.checked }
+                                                        }));
+                                                      }}
+                                                      className="w-4 h-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+                                                    />
+                                                    <span className="text-xs text-gray-700 dark:text-gray-300">Allow late submission</span>
+                                                  </label>
+                                                    {materialHomeworkSettings[material.id]?.allowLateSubmission !== false && (
+                                                      <div className="mt-1 flex items-center space-x-2">
+                                                          <span className="text-xs text-gray-500">Days allowed:</span>
+                                                          <input 
+                                                              type="number" 
+                                                              min="0"
+                                                              max="30"
+                                                              value={materialHomeworkSettings[material.id]?.lateSubmissionDays || 3}
+                                                              onChange={(e) => {
+                                                                setMaterialHomeworkSettings(prev => ({
+                                                                  ...prev,
+                                                                  [material.id]: { ...prev[material.id], lateSubmissionDays: parseInt(e.target.value) || 0 }
+                                                                }));
+                                                              }}
+                                                              className="w-16 px-1 py-0.5 text-xs border border-gray-300 rounded"
+                                                          />
+                                                      </div>
+                                                    )}
+                                                </div>
+                                          </div>
+                                      </div>
+                                  )}
+                                </div>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
                   </div>
                 )}
 
-                {/* Add New Files Section - Only show for group editing */}
-                {editingGroup?.isGroup && (
+                {/* Add New Files Section - Show for all to allow converting single to group */}
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <h4 className="font-medium text-gray-900 dark:text-white">Add New Files</h4>
@@ -2224,7 +2243,7 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                     </div>
                   )}
                 </div>
-                )}
+
 
                 {/* Upload Progress */}
                 {editLoading && uploadProgress > 0 && (
