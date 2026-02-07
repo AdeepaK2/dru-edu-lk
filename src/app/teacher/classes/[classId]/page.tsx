@@ -973,15 +973,14 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
               viewCount: 0,
               
               // Apply homework settings to new files too
-              // Apply homework settings to new files too
-              // Default to false as they can be configured after upload
-              isHomework: false,
-              homeworkType: undefined,
-              dueDate: undefined,
-              maxMarks: undefined,
-              manualInstruction: undefined,
-              allowLateSubmission: true,
-              lateSubmissionDays: 3
+              // Apply homework settings from the UI configuration
+              isHomework: fileItem.isHomework || false,
+              homeworkType: fileItem.isHomework ? (fileItem.homeworkType || 'manual') : undefined,
+              dueDate: (fileItem.isHomework && fileItem.dueDate) ? new Date(fileItem.dueDate) : undefined,
+              maxMarks: (fileItem.isHomework && fileItem.homeworkType === 'submission') ? (fileItem.maxMarks || 100) : undefined,
+              manualInstruction: (fileItem.isHomework && fileItem.homeworkType === 'manual') ? (fileItem.manualInstruction || '') : undefined,
+              allowLateSubmission: fileItem.isHomework ? (fileItem.allowLateSubmission !== false) : true,
+              lateSubmissionDays: fileItem.isHomework ? (fileItem.lateSubmissionDays || 3) : 3
             };
             
             await createStudyMaterial(materialData);
@@ -2190,21 +2189,49 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                               </div>
 
                               <div className="flex items-center justify-between">
-                                <div className="flex items-center space-x-2">
-                                  <input
-                                    type="checkbox"
-                                    id={`required_${fileItem.id}`}
-                                    checked={fileItem.isRequired}
-                                    onChange={(e) => {
-                                      setNewFilesToAdd(prev => prev.map(item => 
-                                        item.id === fileItem.id ? { ...item, isRequired: e.target.checked } : item
-                                      ));
-                                    }}
-                                    className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                  />
-                                  <label htmlFor={`required_${fileItem.id}`} className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                                    Required
-                                  </label>
+                                <div className="flex items-center space-x-4">
+                                  <div className="flex items-center space-x-2">
+                                    <input
+                                      type="checkbox"
+                                      id={`required_${fileItem.id}`}
+                                      checked={fileItem.isRequired}
+                                      onChange={(e) => {
+                                        setNewFilesToAdd(prev => prev.map(item => 
+                                          item.id === fileItem.id ? { ...item, isRequired: e.target.checked } : item
+                                        ));
+                                      }}
+                                      className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                    />
+                                    <label htmlFor={`required_${fileItem.id}`} className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                                      Required
+                                    </label>
+                                  </div>
+
+                                  <div className="flex items-center space-x-2">
+                                    <input
+                                      type="checkbox"
+                                      id={`homework_${fileItem.id}`}
+                                      checked={fileItem.isHomework || false}
+                                      onChange={(e) => {
+                                        setNewFilesToAdd(prev => prev.map(item => 
+                                          item.id === fileItem.id ? { 
+                                            ...item, 
+                                            isHomework: e.target.checked,
+                                            // Initialize defaults if enabling
+                                            homeworkType: item.homeworkType || 'manual',
+                                            dueDate: item.dueDate || '',
+                                            maxMarks: item.maxMarks || 100,
+                                            allowLateSubmission: item.allowLateSubmission !== false,
+                                            lateSubmissionDays: item.lateSubmissionDays || 3
+                                          } : item
+                                        ));
+                                      }}
+                                      className="w-3 h-3 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                                    />
+                                    <label htmlFor={`homework_${fileItem.id}`} className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                                      Homework
+                                    </label>
+                                  </div>
                                 </div>
 
                                 <div className="flex items-center space-x-2">
@@ -2224,6 +2251,152 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                                   </Button>
                                 </div>
                               </div>
+
+                              {/* Homework Configuration for New File */}
+                              {fileItem.isHomework && (
+                                <div className="mt-2 pt-3 border-t border-gray-200 dark:border-gray-600 animate-in slide-in-from-top-2 duration-200">
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                      <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Due Date *
+                                      </label>
+                                      <input
+                                        type="datetime-local"
+                                        value={fileItem.dueDate || ''}
+                                        onChange={(e) => {
+                                          setNewFilesToAdd(prev => prev.map(item => 
+                                            item.id === fileItem.id ? { ...item, dueDate: e.target.value } : item
+                                          ));
+                                        }}
+                                        className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-1 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
+                                      />
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                          Submission Type
+                                        </label>
+                                        <div className="flex rounded-md shadow-sm" role="group">
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              setNewFilesToAdd(prev => prev.map(item => 
+                                                item.id === fileItem.id ? { 
+                                                  ...item, 
+                                                  homeworkType: 'manual',
+                                                  maxMarks: undefined,
+                                                  allowLateSubmission: true,
+                                                  lateSubmissionDays: 3
+                                                } : item
+                                              ));
+                                            }}
+                                            className={`px-3 py-1.5 text-xs font-medium border rounded-l-lg flex-1 ${
+                                              (fileItem.homeworkType || 'manual') === 'manual'
+                                                ? 'bg-purple-600 text-white border-purple-600'
+                                                : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50'
+                                            }`}
+                                          >
+                                            Manual
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                                setNewFilesToAdd(prev => prev.map(item => 
+                                                item.id === fileItem.id ? { 
+                                                  ...item, 
+                                                  homeworkType: 'submission',
+                                                  maxMarks: item.maxMarks || 100,
+                                                  allowLateSubmission: item.allowLateSubmission !== false,
+                                                  lateSubmissionDays: item.lateSubmissionDays || 3
+                                                } : item
+                                              ));
+                                            }}
+                                            className={`px-3 py-1.5 text-xs font-medium border border-l-0 rounded-r-lg flex-1 ${
+                                              fileItem.homeworkType === 'submission'
+                                                ? 'bg-purple-600 text-white border-purple-600'
+                                                : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50'
+                                            }`}
+                                          >
+                                            File Upload
+                                          </button>
+                                        </div>
+                                    </div>
+
+                                    {(fileItem.homeworkType || 'manual') === 'manual' ? (
+                                        <div className="md:col-span-2">
+                                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                            Instructions for Student
+                                          </label>
+                                          <input
+                                            type="text"
+                                            value={fileItem.manualInstruction || ''}
+                                            onChange={(e) => {
+                                              setNewFilesToAdd(prev => prev.map(item => 
+                                                item.id === fileItem.id ? { ...item, manualInstruction: e.target.value } : item
+                                              ));
+                                            }}
+                                            placeholder="e.g. Read chapter 5 and answer questions on page 120"
+                                            className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-1 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
+                                          />
+                                        </div>
+                                    ) : (
+                                        <div className="md:col-span-2">
+                                            <div className="flex items-center space-x-4">
+                                                <div className="flex-1">
+                                                      <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                      Max Marks
+                                                    </label>
+                                                    <input
+                                                      type="number"
+                                                      min="0"
+                                                      value={fileItem.maxMarks || 100}
+                                                      onChange={(e) => {
+                                                        setNewFilesToAdd(prev => prev.map(item => 
+                                                          item.id === fileItem.id ? { ...item, maxMarks: parseInt(e.target.value) || 0 } : item
+                                                        ));
+                                                      }}
+                                                      placeholder="100"
+                                                      className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-1 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
+                                                    />
+                                                </div>
+                                                  <div className="flex-1 pt-5">
+                                                      <label className="flex items-center space-x-2 cursor-pointer">
+                                                      <input
+                                                        type="checkbox"
+                                                        checked={fileItem.allowLateSubmission !== false}
+                                                        onChange={(e) => {
+                                                          setNewFilesToAdd(prev => prev.map(item => 
+                                                            item.id === fileItem.id ? { ...item, allowLateSubmission: e.target.checked } : item
+                                                          ));
+                                                        }}
+                                                        className="w-4 h-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+                                                      />
+                                                      <span className="text-xs text-gray-700 dark:text-gray-300">Allow late submission</span>
+                                                    </label>
+                                                      {fileItem.allowLateSubmission !== false && (
+                                                        <div className="mt-1 flex items-center space-x-2">
+                                                            <span className="text-xs text-gray-500">Days allowed:</span>
+                                                            <input 
+                                                                type="number" 
+                                                                min="0"
+                                                                max="30"
+                                                                value={fileItem.lateSubmissionDays || 3}
+                                                                onChange={(e) => {
+                                                                  setNewFilesToAdd(prev => prev.map(item => 
+                                                                    item.id === fileItem.id ? { ...item, lateSubmissionDays: parseInt(e.target.value) || 0 } : item
+                                                                  ));
+                                                                }}
+                                                                className="w-16 px-1 py-0.5 text-xs border border-gray-300 rounded"
+                                                            />
+                                                        </div>
+                                                      )}
+                                                  </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
