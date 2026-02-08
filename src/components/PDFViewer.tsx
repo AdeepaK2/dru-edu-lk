@@ -19,9 +19,10 @@ interface PDFViewerProps {
   title: string;
   onClose: () => void;
   inline?: boolean;
+  maxHeight?: string; // e.g., '500px', '60vh'
 }
 
-export default function PDFViewer({ url, title, onClose, inline = false }: PDFViewerProps) {
+export default function PDFViewer({ url, title, onClose, inline = false, maxHeight }: PDFViewerProps) {
   const [numPages, setNumPages] = useState<number | null>(null);
   const [pageNumber, setPageNumber] = useState(1);
   const [scale, setScale] = useState(1.0);
@@ -152,9 +153,14 @@ export default function PDFViewer({ url, title, onClose, inline = false }: PDFVi
     setPageNumber(prev => Math.min(prev + 1, numPages || 1));
   };
 
+  const inlineStyle = maxHeight ? { maxHeight, height: maxHeight } : {};
+
   return (
-    <div className={inline ? "h-full w-full flex flex-col bg-white dark:bg-gray-800" : "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"}>
-      <div className={inline ? "h-full w-full flex flex-col" : "bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] flex flex-col"}>
+    <div
+      className={inline ? "w-full flex flex-col bg-white dark:bg-gray-800 rounded-lg border border-gray-200" : "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"}
+      style={inline ? inlineStyle : undefined}
+    >
+      <div className={inline ? "h-full w-full flex flex-col overflow-hidden" : "bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] flex flex-col"}>
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
