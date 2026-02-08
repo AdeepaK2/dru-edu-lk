@@ -1566,6 +1566,9 @@ export default function StudentsManagement() {
             <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  ID
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Student
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -1582,7 +1585,7 @@ export default function StudentsManagement() {
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {filteredStudents.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center">
+                  <td colSpan={5} className="px-4 py-8 text-center">
                     <div className="text-center">
                       <Users className="mx-auto h-12 w-12 text-gray-400" />
                       <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-white">No students found</h3>
@@ -1604,20 +1607,14 @@ export default function StudentsManagement() {
               ) : (
                 filteredStudents.map((student) => (
                   <tr key={student.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                      {student.studentNumber || <span className="text-gray-400 italic">--</span>}
+                    </td>
                     <td className="px-4 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div>
                           <div className="text-sm font-medium text-gray-900 dark:text-white">
                             {student.name}
-                          </div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">
-                            {student.studentNumber ? (
-                              <span className="font-semibold text-indigo-600 dark:text-indigo-400">
-                                {student.studentNumber}
-                              </span>
-                            ) : (
-                              <span className="text-xs italic">ID: {student.id.substring(0, 8)}...</span>
-                            )}
                           </div>
                         </div>
                       </div>

@@ -1547,7 +1547,7 @@ export default function StudentDashboard() {
                 <span className={`text-sm font-black text-black px-2 py-1 rounded border border-black ${
                   theme === 'ben10' ? 'bg-[#64cc4f]' :theme === 'cricketverse-australian' ? 'bg-yellow-400' : theme === 'tinkerbell' ? 'bg-yellow-400' : 'bg-[#3b82f6]'
                 }`}>
-                  {student.id || 'N/A'}
+                  {student.studentNumber || student.id || 'N/A'}
                 </span>
               </div>
               <div className={`flex items-center justify-between p-3 bg-white border-2 ${theme === 'bounceworld' ? 'border-[#1D428A]' : 'border-black'} rounded-lg`}>
