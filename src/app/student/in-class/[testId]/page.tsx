@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
-import { TestService } from '@/apiservices/testService';
 import { Test } from '@/models/testSchema';
 import { Button, Card } from '@/components/ui';
 import { ArrowLeft, Calendar, Clock, Upload, AlertCircle, CheckCircle, Award } from 'lucide-react';
@@ -29,12 +28,12 @@ export default function StudentInClassTestDetailPage() {
   
   const [test, setTest] = useState<Test | null>(null);
   const [loading, setLoading] = useState(true);
-  const [answerFile, setAnswerFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [submittedFile, setSubmittedFile] = useState<{ url: string, name: string } | null>(null);
   const [timeExpired, setTimeExpired] = useState(false);
   const [submission, setSubmission] = useState<InClassSubmission | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const fetchTestAndSubmission = async () => {
@@ -81,10 +80,21 @@ export default function StudentInClassTestDetailPage() {
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file) {
+      console.log('[Upload] No file selected');
+      return;
+    }
+
+    console.log('[Upload] File selected:', file.name, file.type, file.size);
 
     if (file.type !== 'application/pdf') {
       toast.error('Please upload a PDF file');
+      return;
+    }
+
+    // Check file size (10MB limit)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('File size must be less than 10MB');
       return;
     }
 
@@ -93,10 +103,16 @@ export default function StudentInClassTestDetailPage() {
       return;
     }
 
+    if (!test) {
+      toast.error('Test data not loaded');
+      return;
+    }
+
     try {
       setUploading(true);
       setUploadError(null);
-      
+      console.log('[Upload] Starting upload...');
+
       // Upload to Firebase Storage
       const storage = getStorage();
       const timestamp = Date.now();
@@ -107,28 +123,44 @@ export default function StudentInClassTestDetailPage() {
       const downloadURL = await getDownloadURL(uploadTask.ref);
       
       // Create or update submission
-      await InClassSubmissionService.saveSubmission({
+      const submissionData = {
         testId: testId,
         studentId: user.uid,
         studentName: user.displayName || user.email || 'Unknown Student',
         studentEmail: user.email || '',
         classId: (test as any).classIds?.[0] || '',
-        submissionType: 'online_upload',
+        submissionType: 'online_upload' as const,
         answerFileUrl: downloadURL,
         submittedAt: Timestamp.now(),
-        status: 'submitted',
-      });
-      
+        status: 'submitted' as const,
+        // Include existing submission ID if updating
+        ...(submission?.id ? { id: submission.id } : {}),
+      };
+
+      console.log('[Upload] File uploaded to storage, saving submission...');
+      await InClassSubmissionService.saveSubmission(submissionData);
+      console.log('[Upload] Submission saved successfully');
+
+      // Update local submission state
+      setSubmission(prev => prev ? { ...prev, ...submissionData } : submissionData as InClassSubmission);
+
       setSubmittedFile({
         name: file.name,
         url: downloadURL
       });
-      
+
       toast.success('Answer script uploaded successfully!');
-    } catch (error) {
-      console.error('Upload error:', error);
-      setUploadError(error instanceof Error ? error.message : 'Failed to upload file');
-      toast.error('Failed to upload file');
+    } catch (error: any) {
+      console.error('[Upload] Error:', error);
+      const errorMessage = error?.code === 'storage/unauthorized'
+        ? 'Permission denied. Please contact support.'
+        : error?.code === 'storage/quota-exceeded'
+        ? 'Storage quota exceeded. Please contact support.'
+        : error instanceof Error
+        ? error.message
+        : 'Failed to upload file';
+      setUploadError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setUploading(false);
     }
@@ -284,11 +316,12 @@ export default function StudentInClassTestDetailPage() {
         {(test as any).examPdfUrl && (
           <div className="space-y-3">
             <h3 className="text-lg font-semibold text-gray-900">Question Paper</h3>
-            <PDFViewer 
+            <PDFViewer
               url={(test as any).examPdfUrl}
               title={test.title}
               onClose={() => {}}
               inline={true}
+              maxHeight="500px"
             />
           </div>
         )}
@@ -328,17 +361,25 @@ export default function StudentInClassTestDetailPage() {
                     </p>
                   </div>
                   
-                  <div className="relative">
+                  <div className="space-y-2">
                     <input
+                      ref={fileInputRef}
                       type="file"
                       accept="application/pdf"
                       onChange={handleFileUpload}
                       disabled={uploading || timeExpired}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                      className="hidden"
                     />
-                    <Button className="w-full" disabled={uploading || timeExpired}>
+                    <Button
+                      className="w-full"
+                      disabled={uploading || timeExpired}
+                      onClick={() => fileInputRef.current?.click()}
+                    >
                       {uploading ? 'Uploading...' : timeExpired ? 'Time Expired - Cannot Submit' : 'Select PDF File'}
                     </Button>
+                    {uploadError && (
+                      <p className="text-sm text-red-600 text-center">{uploadError}</p>
+                    )}
                   </div>
                 </div>
               )}
