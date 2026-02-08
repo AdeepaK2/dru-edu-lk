@@ -6,7 +6,8 @@ import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { TestService } from '@/apiservices/testService';
 import { Test } from '@/models/testSchema';
 import { Button, Card } from '@/components/ui';
-import { ArrowLeft, Calendar, Clock, Upload, AlertCircle, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, Upload, AlertCircle, CheckCircle, Award } from 'lucide-react';
+import { InClassSubmission } from '@/models/inClassSubmissionSchema';
 import TestTimer from '@/components/student/TestTimer';
 import dynamic from 'next/dynamic';
 import { toast } from 'react-hot-toast';
@@ -33,6 +34,7 @@ export default function StudentInClassTestDetailPage() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [submittedFile, setSubmittedFile] = useState<{ url: string, name: string } | null>(null);
   const [timeExpired, setTimeExpired] = useState(false);
+  const [submission, setSubmission] = useState<InClassSubmission | null>(null);
 
   useEffect(() => {
     const fetchTestAndSubmission = async () => {
@@ -45,10 +47,18 @@ export default function StudentInClassTestDetailPage() {
         if (testDoc.exists()) {
           const testData = { id: testDoc.id, ...testDoc.data() } as Test;
           setTest(testData);
-          
-          // Check for existing submission
-          // Note: In a real implementation, you'd fetch the submission record
-          // For now, we'll just check if we have a local submission state or fetch from a submissions collection
+
+          // Fetch existing submission
+          const existingSubmission = await InClassSubmissionService.getStudentSubmission(testId, user.uid);
+          if (existingSubmission) {
+            setSubmission(existingSubmission);
+            if (existingSubmission.answerFileUrl) {
+              setSubmittedFile({
+                url: existingSubmission.answerFileUrl,
+                name: 'Previously submitted answer'
+              });
+            }
+          }
         } else {
           toast.error('Test not found');
           router.push('/student/in-class');
@@ -202,11 +212,54 @@ export default function StudentInClassTestDetailPage() {
         </div>
 
         {/* Timer */}
-        <TestTimer 
+        <TestTimer
           scheduledStartTime={(test as any).scheduledStartTime}
           duration={(test as any).duration}
           onTimeExpired={handleTimeExpired}
         />
+
+        {/* Grade Results - Show if graded */}
+        {submission?.status === 'graded' && (
+          <Card className="p-6 bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 shadow-sm">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                <Award className="w-8 h-8 text-green-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">Your Results</h3>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold text-green-600">{submission.marks}</span>
+                  <span className="text-lg text-gray-500">/ {submission.totalMarks}</span>
+                  <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+                    {submission.totalMarks ? Math.round((submission.marks! / submission.totalMarks) * 100) : 0}%
+                  </span>
+                </div>
+                {submission.feedback && (
+                  <div className="mt-3 p-3 bg-white/60 rounded-lg">
+                    <p className="text-sm text-gray-700">
+                      <span className="font-medium">Feedback:</span> {submission.feedback}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {/* Pending Grade - For offline tests after time expired */}
+        {isOffline && timeExpired && submission?.status !== 'graded' && submission?.status !== 'absent' && (
+          <Card className="p-6 bg-yellow-50 border-yellow-200 shadow-sm">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                <Clock className="w-6 h-6 text-yellow-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Pending Grade</h3>
+                <p className="text-sm text-gray-600">Your teacher will grade your offline submission soon.</p>
+              </div>
+            </div>
+          </Card>
+        )}
 
         {/* Guidelines */}
         <Card className="p-6 bg-white border-blue-100 shadow-sm">
@@ -240,8 +293,8 @@ export default function StudentInClassTestDetailPage() {
           </div>
         )}
 
-        {/* Submission Section */}
-        {!isOffline && (
+        {/* Submission Section - Only show if not graded */}
+        {!isOffline && submission?.status !== 'graded' && (
           <div className="space-y-3">
             <h3 className="text-lg font-semibold text-gray-900">Answer Submission</h3>
             <Card className="p-8 border-dashed border-2 border-gray-300 bg-gray-50 flex flex-col items-center justify-center text-center">

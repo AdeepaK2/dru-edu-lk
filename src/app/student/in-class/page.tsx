@@ -5,14 +5,17 @@ import { useRouter } from 'next/navigation';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { TestService } from '@/apiservices/testService';
 import { getEnrollmentsByStudent } from '@/services/studentEnrollmentService';
+import { InClassSubmissionService } from '@/services/inClassSubmissionService';
+import { InClassSubmission } from '@/models/inClassSubmissionSchema';
 import { Test } from '@/models/testSchema';
 import { Button, Card } from '@/components/ui';
-import { Calendar, Clock, FileText, ChevronRight, AlertCircle } from 'lucide-react';
+import { Calendar, Clock, FileText, ChevronRight, AlertCircle, CheckCircle } from 'lucide-react';
 
 export default function StudentInClassTestsPage() {
   const router = useRouter();
   const { user } = useStudentAuth();
   const [tests, setTests] = useState<Test[]>([]);
+  const [submissions, setSubmissions] = useState<Map<string, InClassSubmission>>(new Map());
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -44,7 +47,7 @@ export default function StudentInClassTestsPage() {
         
         console.log('[In-Class] Fetched tests:', inClassTests);
         console.log('[In-Class] Total tests found:', inClassTests.length);
-        
+
         inClassTests.forEach((test, index) => {
           console.log(`[In-Class] Test ${index + 1}:`, {
             id: test.id,
@@ -57,6 +60,20 @@ export default function StudentInClassTestsPage() {
         });
 
         setTests(inClassTests);
+
+        // Fetch submissions for each test
+        const submissionMap = new Map<string, InClassSubmission>();
+        for (const test of inClassTests) {
+          try {
+            const submission = await InClassSubmissionService.getStudentSubmission(test.id, user.uid);
+            if (submission) {
+              submissionMap.set(test.id, submission);
+            }
+          } catch (err) {
+            console.error(`[In-Class] Error fetching submission for test ${test.id}:`, err);
+          }
+        }
+        setSubmissions(submissionMap);
       } catch (error) {
         console.error('[In-Class] Error fetching tests:', error);
         if (error instanceof Error) {
@@ -88,22 +105,51 @@ export default function StudentInClassTestsPage() {
     const scheduledTime = (test as any).scheduledStartTime?.toDate ? (test as any).scheduledStartTime.toDate() : new Date((test as any).scheduledStartTime);
     const duration = (test as any).duration || 0;
     const endTime = new Date(scheduledTime.getTime() + duration * 60 * 1000);
-    
-    // Check if time expired
+
+    // Check if student has a submission for this test
+    const submission = submissions.get(test.id);
+
+    // If graded, show grade regardless of time
+    if (submission?.status === 'graded') {
+      const percentage = submission.totalMarks ? Math.round((submission.marks! / submission.totalMarks) * 100) : 0;
+      return {
+        label: `Graded: ${submission.marks}/${submission.totalMarks}`,
+        color: percentage >= 50 ? 'bg-green-50 text-green-700 border-green-200' : 'bg-orange-50 text-orange-700 border-orange-200',
+        isGraded: true,
+        marks: submission.marks,
+        totalMarks: submission.totalMarks
+      };
+    }
+
+    // If submitted (online), show submitted status
+    if (submission?.status === 'submitted') {
+      return { label: 'Submitted - Pending Grade', color: 'bg-purple-50 text-purple-700 border-purple-200' };
+    }
+
+    // If marked absent
+    if (submission?.status === 'absent') {
+      return { label: 'Absent', color: 'bg-gray-50 text-gray-700 border-gray-200' };
+    }
+
+    // Check if time expired (only show if not graded)
     if (now > endTime) {
+      const isOffline = (test as any).submissionMethod === 'offline_collection';
+      if (isOffline) {
+        return { label: 'Pending Grade', color: 'bg-yellow-50 text-yellow-700 border-yellow-200' };
+      }
       return { label: 'Time Expired', color: 'bg-red-50 text-red-700 border-red-200' };
     }
-    
+
     // Check if active (within test window)
     if (now >= scheduledTime && now <= endTime) {
       return { label: 'Active', color: 'bg-green-50 text-green-700 border-green-200 animate-pulse' };
     }
-    
+
     // Check if scheduled (future)
     if (now < scheduledTime) {
       return { label: 'Scheduled', color: 'bg-blue-50 text-blue-700 border-blue-200' };
     }
-    
+
     return { label: test.status, color: getStatusColor(test.status) };
   };
 
@@ -159,11 +205,13 @@ export default function StudentInClassTestsPage() {
                   <div className="p-5 flex flex-col md:flex-row md:items-center gap-4">
                     <div className="flex-shrink-0">
                       <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-                        testStatus.label === 'Active' ? 'bg-green-100 text-green-600' : 
+                        (testStatus as any).isGraded ? 'bg-green-100 text-green-600' :
+                        testStatus.label === 'Active' ? 'bg-green-100 text-green-600' :
                         testStatus.label === 'Time Expired' ? 'bg-red-100 text-red-600' :
+                        testStatus.label === 'Pending Grade' ? 'bg-yellow-100 text-yellow-600' :
                         'bg-blue-100 text-blue-600'
                       }`}>
-                        <FileText className="w-6 h-6" />
+                        {(testStatus as any).isGraded ? <CheckCircle className="w-6 h-6" /> : <FileText className="w-6 h-6" />}
                       </div>
                     </div>
                     
@@ -192,9 +240,20 @@ export default function StudentInClassTestsPage() {
                     </div>
 
                     <div className="flex-shrink-0 self-start md:self-center">
-                      <Button variant="outline" size="sm" className="hidden md:flex">
-                        View Details <ChevronRight className="w-4 h-4 ml-1" />
-                      </Button>
+                      {(testStatus as any).isGraded ? (
+                        <div className="text-center px-4 py-2 bg-green-50 rounded-lg border border-green-200">
+                          <div className="text-2xl font-bold text-green-600">
+                            {(testStatus as any).marks}/{(testStatus as any).totalMarks}
+                          </div>
+                          <div className="text-xs text-green-600 font-medium">
+                            {(testStatus as any).totalMarks ? Math.round(((testStatus as any).marks / (testStatus as any).totalMarks) * 100) : 0}%
+                          </div>
+                        </div>
+                      ) : (
+                        <Button variant="outline" size="sm" className="hidden md:flex">
+                          View Details <ChevronRight className="w-4 h-4 ml-1" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </Card>
