@@ -10,6 +10,8 @@ import { InClassSubmission } from '@/models/inClassSubmissionSchema';
 import { Test } from '@/models/testSchema';
 import { Button, Card } from '@/components/ui';
 import { Calendar, Clock, FileText, ChevronRight, AlertCircle, CheckCircle } from 'lucide-react';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { firestore } from '@/utils/firebase-client';
 
 export default function StudentInClassTestsPage() {
   const router = useRouter();
@@ -19,20 +21,22 @@ export default function StudentInClassTestsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchTests = async () => {
-      if (!user) {
-        console.log('[In-Class] No user found, skipping fetch');
-        return;
-      }
+    if (!user) {
+      console.log('[In-Class] No user found, skipping fetch');
+      return;
+    }
 
+    let unsubscribeSubmissions: (() => void) | null = null;
+
+    const fetchTests = async () => {
       try {
         setLoading(true);
         console.log('[In-Class] Fetching tests for user:', user.uid);
-        
+
         // Get student's enrolled classes
         const enrollments = await getEnrollmentsByStudent(user.uid);
         const classIds = enrollments.map(e => e.classId);
-        
+
         console.log('[In-Class] Student enrolled in classes:', classIds);
         console.log('[In-Class] Total enrollments:', enrollments.length);
 
@@ -44,7 +48,7 @@ export default function StudentInClassTestsPage() {
 
         // Fetch in-class tests for those classes
         const inClassTests = await TestService.getInClassTestsForStudent(classIds);
-        
+
         console.log('[In-Class] Fetched tests:', inClassTests);
         console.log('[In-Class] Total tests found:', inClassTests.length);
 
@@ -61,19 +65,26 @@ export default function StudentInClassTestsPage() {
 
         setTests(inClassTests);
 
-        // Fetch submissions for each test
-        const submissionMap = new Map<string, InClassSubmission>();
-        for (const test of inClassTests) {
-          try {
-            const submission = await InClassSubmissionService.getStudentSubmission(test.id, user.uid);
-            if (submission) {
-              submissionMap.set(test.id, submission);
-            }
-          } catch (err) {
-            console.error(`[In-Class] Error fetching submission for test ${test.id}:`, err);
-          }
-        }
-        setSubmissions(submissionMap);
+        // Set up real-time listener for all student's submissions
+        const submissionsQuery = query(
+          collection(firestore, 'inClassSubmissions'),
+          where('studentId', '==', user.uid)
+        );
+
+        unsubscribeSubmissions = onSnapshot(submissionsQuery, (snapshot) => {
+          const submissionMap = new Map<string, InClassSubmission>();
+          snapshot.docs.forEach((doc) => {
+            const submissionData = {
+              id: doc.id,
+              ...doc.data()
+            } as InClassSubmission;
+            submissionMap.set(submissionData.testId, submissionData);
+          });
+          console.log('[In-Class] Submissions updated:', submissionMap.size);
+          setSubmissions(submissionMap);
+        }, (error) => {
+          console.error('[In-Class] Submissions listener error:', error);
+        });
       } catch (error) {
         console.error('[In-Class] Error fetching tests:', error);
         if (error instanceof Error) {
@@ -85,6 +96,13 @@ export default function StudentInClassTestsPage() {
     };
 
     fetchTests();
+
+    // Cleanup listener on unmount
+    return () => {
+      if (unsubscribeSubmissions) {
+        unsubscribeSubmissions();
+      }
+    };
   }, [user]);
 
   const handleTestClick = (testId: string) => {

@@ -15,7 +15,7 @@ const PDFViewer = dynamic(() => import('@/components/PDFViewer'), {
   ssr: false,
   loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div></div>
 });
-import { doc, getDoc, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, Timestamp, collection, query, where, onSnapshot } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { firestore } from '@/utils/firebase-client';
 import { InClassSubmissionService } from '@/services/inClassSubmissionService';
@@ -37,9 +37,11 @@ export default function StudentInClassTestDetailPage() {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const fetchTestAndSubmission = async () => {
-      if (!user || !testId) return;
+    if (!user || !testId) return;
 
+    let unsubscribe: (() => void) | null = null;
+
+    const fetchTestAndSetupListener = async () => {
       try {
         setLoading(true);
         // Fetch test details
@@ -48,17 +50,34 @@ export default function StudentInClassTestDetailPage() {
           const testData = { id: testDoc.id, ...testDoc.data() } as Test;
           setTest(testData);
 
-          // Fetch existing submission
-          const existingSubmission = await InClassSubmissionService.getStudentSubmission(testId, user.uid);
-          if (existingSubmission) {
-            setSubmission(existingSubmission);
-            if (existingSubmission.answerFileUrl) {
-              setSubmittedFile({
-                url: existingSubmission.answerFileUrl,
-                name: 'Previously submitted answer'
-              });
+          // Set up real-time listener for submission updates (for when teacher grades)
+          const submissionsQuery = query(
+            collection(firestore, 'inClassSubmissions'),
+            where('testId', '==', testId),
+            where('studentId', '==', user.uid)
+          );
+
+          unsubscribe = onSnapshot(submissionsQuery, (snapshot) => {
+            if (!snapshot.empty) {
+              const submissionDoc = snapshot.docs[0];
+              const submissionData = {
+                id: submissionDoc.id,
+                ...submissionDoc.data()
+              } as InClassSubmission;
+
+              console.log('[Submission] Real-time update:', submissionData.status, submissionData.marks);
+              setSubmission(submissionData);
+
+              if (submissionData.answerFileUrl) {
+                setSubmittedFile({
+                  url: submissionData.answerFileUrl,
+                  name: 'Previously submitted answer'
+                });
+              }
             }
-          }
+          }, (error) => {
+            console.error('[Submission] Listener error:', error);
+          });
         } else {
           toast.error('Test not found');
           router.push('/student/in-class');
@@ -71,7 +90,14 @@ export default function StudentInClassTestDetailPage() {
       }
     };
 
-    fetchTestAndSubmission();
+    fetchTestAndSetupListener();
+
+    // Cleanup listener on unmount
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
   }, [user, testId, router]);
 
   const handleTimeExpired = () => {
