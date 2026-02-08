@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { Test } from '@/models/testSchema';
 import { Button, Card } from '@/components/ui';
-import { ArrowLeft, Calendar, Clock, Upload, AlertCircle, CheckCircle, Award } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, Upload, AlertCircle, CheckCircle, Award, FileText, Eye } from 'lucide-react';
 import { InClassSubmission } from '@/models/inClassSubmissionSchema';
 import TestTimer from '@/components/student/TestTimer';
 import dynamic from 'next/dynamic';
@@ -33,6 +33,7 @@ export default function StudentInClassTestDetailPage() {
   const [submittedFile, setSubmittedFile] = useState<{ url: string, name: string } | null>(null);
   const [timeExpired, setTimeExpired] = useState(false);
   const [submission, setSubmission] = useState<InClassSubmission | null>(null);
+  const [showPdfModal, setShowPdfModal] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -316,14 +317,37 @@ export default function StudentInClassTestDetailPage() {
         {(test as any).examPdfUrl && (
           <div className="space-y-3">
             <h3 className="text-lg font-semibold text-gray-900">Question Paper</h3>
-            <PDFViewer
-              url={(test as any).examPdfUrl}
-              title={test.title}
-              onClose={() => {}}
-              inline={true}
-              maxHeight="500px"
-            />
+            <Card
+              className="p-4 hover:shadow-md transition-shadow cursor-pointer border border-gray-200"
+              onClick={() => setShowPdfModal(true)}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-red-50 rounded-lg flex items-center justify-center">
+                    <FileText className="w-6 h-6 text-red-500" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-gray-900">{test.title}</h4>
+                    <p className="text-sm text-gray-500">Click to view question paper</p>
+                  </div>
+                </div>
+                <Button variant="outline" size="sm" className="flex items-center gap-2">
+                  <Eye className="w-4 h-4" />
+                  View
+                </Button>
+              </div>
+            </Card>
           </div>
+        )}
+
+        {/* PDF Modal */}
+        {showPdfModal && (test as any).examPdfUrl && (
+          <PDFViewer
+            url={(test as any).examPdfUrl}
+            title={test.title}
+            onClose={() => setShowPdfModal(false)}
+            inline={false}
+          />
         )}
 
         {/* Submission Section - Only show if not graded */}
