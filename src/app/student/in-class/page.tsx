@@ -9,9 +9,14 @@ import { InClassSubmissionService } from '@/services/inClassSubmissionService';
 import { InClassSubmission } from '@/models/inClassSubmissionSchema';
 import { Test } from '@/models/testSchema';
 import { Button, Card } from '@/components/ui';
-import { Calendar, Clock, FileText, ChevronRight, AlertCircle, CheckCircle } from 'lucide-react';
+import { Calendar, Clock, FileText, ChevronRight, AlertCircle, CheckCircle, Filter } from 'lucide-react';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { firestore } from '@/utils/firebase-client';
+
+interface ClassInfo {
+  id: string;
+  name: string;
+}
 
 export default function StudentInClassTestsPage() {
   const router = useRouter();
@@ -19,6 +24,8 @@ export default function StudentInClassTestsPage() {
   const [tests, setTests] = useState<Test[]>([]);
   const [submissions, setSubmissions] = useState<Map<string, InClassSubmission>>(new Map());
   const [loading, setLoading] = useState(true);
+  const [classes, setClasses] = useState<ClassInfo[]>([]);
+  const [selectedClassId, setSelectedClassId] = useState<string>('all');
 
   useEffect(() => {
     if (!user) {
@@ -36,6 +43,13 @@ export default function StudentInClassTestsPage() {
         // Get student's enrolled classes
         const enrollments = await getEnrollmentsByStudent(user.uid);
         const classIds = enrollments.map(e => e.classId);
+
+        // Store class info for filtering
+        const classInfoList: ClassInfo[] = enrollments.map(e => ({
+          id: e.classId,
+          name: e.className || 'Unknown Class'
+        }));
+        setClasses(classInfoList);
 
         console.log('[In-Class] Student enrolled in classes:', classIds);
         console.log('[In-Class] Total enrollments:', enrollments.length);
@@ -171,6 +185,14 @@ export default function StudentInClassTestsPage() {
     return { label: test.status, color: getStatusColor(test.status) };
   };
 
+  // Filter tests by selected class
+  const filteredTests = selectedClassId === 'all'
+    ? tests
+    : tests.filter(test => {
+        const testClassIds = (test as any).classIds || [];
+        return testClassIds.includes(selectedClassId);
+      });
+
   const formatDateTime = (timestamp: any) => {
     if (!timestamp) return 'TBA';
     // Handle Firestore Timestamp
@@ -192,25 +214,44 @@ export default function StudentInClassTestsPage() {
             <h1 className="text-2xl font-bold text-gray-900">In-Class Assignments</h1>
             <p className="text-gray-500 mt-1">View and manage your in-class tests and offline assessments</p>
           </div>
+
+          {/* Class Filter */}
+          {classes.length > 1 && (
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-gray-500" />
+              <select
+                value={selectedClassId}
+                onChange={(e) => setSelectedClassId(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              >
+                <option value="all">All Classes</option>
+                {classes.map((cls) => (
+                  <option key={cls.id} value={cls.id}>{cls.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         {loading ? (
           <div className="flex justify-center items-center py-20">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
           </div>
-        ) : tests.length === 0 ? (
+        ) : filteredTests.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-xl shadow-sm border border-gray-100">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <FileText className="w-8 h-8 text-gray-400" />
             </div>
             <h3 className="text-lg font-medium text-gray-900">No Assignments Found</h3>
             <p className="text-gray-500 max-w-sm mx-auto mt-2">
-              You don't have any in-class assignments scheduled at the moment.
+              {selectedClassId === 'all'
+                ? "You don't have any in-class assignments scheduled at the moment."
+                : "No assignments found for this class."}
             </p>
           </div>
         ) : (
           <div className="grid gap-4">
-            {tests.map((test) => {
+            {filteredTests.map((test) => {
               const testStatus = getTestStatus(test);
               const scheduledTime = (test as any).scheduledStartTime;
               
