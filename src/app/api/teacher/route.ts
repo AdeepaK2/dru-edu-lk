@@ -3,6 +3,7 @@ import { teacherSchema, teacherUpdateSchema, TeacherDocument } from '@/models/te
 import firebaseAdmin from '@/utils/firebase-server';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { cacheUtils } from '@/utils/cache';
+import { sendTeacherWelcomeEmail } from '@/utils/emailService';
 
 // Function to generate random password
 function generateRandomPassword(length: number = 8): string {
@@ -24,72 +25,7 @@ function generateRandomPassword(length: number = 8): string {
   return password.split('').sort(() => Math.random() - 0.5).join('');
 }
 
-// Function to create email document for Firebase extension
-async function createTeacherWelcomeEmail(to: string, teacherName: string, password: string): Promise<void> {
-  try {
-    const emailData = {
-      to: to,
-      message: {
-        subject: "Welcome to Dr U Education - Teacher Account Created",
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <h2 style="color: #4F46E5; text-align: center;">Welcome to Dr U Education Faculty!</h2>
-            
-            <p>Dear ${teacherName},</p>
-            
-            <p>Welcome to Dr U Education! We're excited to have you join our teaching community and look forward to your contributions to our students' educational journey.</p>
-            
-            <div style="background-color: #F3F4F6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              <h3 style="color: #374151; margin-top: 0;">Your Teacher Login Credentials:</h3>
-              <p><strong>Email:</strong> ${to}</p>
-              <p><strong>Password:</strong> <code style="background-color: #E5E7EB; padding: 4px 8px; border-radius: 4px; font-family: monospace;">${password}</code></p>
-            </div>
-            
-            <div style="background-color: #FEF3C7; border-left: 4px solid #F59E0B; padding: 15px; margin: 20px 0;">
-              <p style="margin: 0;"><strong>Important:</strong> Please change your password after your first login for security purposes.</p>
-            </div>
-            
-            <p>As a teacher at Dr U Education, you can now access your teacher portal to:</p>
-            <ul>
-              <li>Manage your classes and students</li>
-              <li>Upload course materials and assignments</li>
-              <li>Track student progress and grades</li>
-              <li>Communicate with students and parents</li>
-              <li>Access teaching resources and tools</li>
-              <li>View your schedule and class rosters</li>
-            </ul>
-            
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="https://www.drueducation.com.au/teacher/login" 
-                 style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
-                Access Teacher Portal
-              </a>
-            </div>
-            
-            <p>If you have any questions or need assistance with your account, please don't hesitate to contact our administration team.</p>
-            
-            <p>We're thrilled to have you on board and look forward to working with you!</p>
-            
-            <p>Best regards,<br>
-            The Dr U Education Administration Team</p>
-            
-            <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 30px 0;">
-            <p style="font-size: 12px; color: #6B7280; text-align: center;">
-              This is an automated message. Please do not reply to this email.
-            </p>
-          </div>
-        `,
-      }
-    };
-
-    // Add email document to the mail collection (Firebase extension will process it)
-    await firebaseAdmin.firestore.addDoc('mail', emailData);
-    console.log(`Teacher welcome email queued for sending to: ${to}`);
-  } catch (error) {
-    console.error('Error creating teacher welcome email document:', error);
-    throw new Error('Failed to queue teacher welcome email');
-  }
-}
+// Welcome email is now handled by centralized emailService using Nodemailer SMTP
 
 // POST - Create a new teacher
 export async function POST(req: NextRequest) {
@@ -189,7 +125,7 @@ export async function POST(req: NextRequest) {
         role: 'teacher'
       }),
       firebaseAdmin.firestore.setDoc('teachers', userRecord.uid, teacherDocument),
-      createTeacherWelcomeEmail(teacherData.email, teacherData.name, generatedPassword)
+      sendTeacherWelcomeEmail(teacherData.email, teacherData.name, generatedPassword)
     ]);
     
     // Clear cache
