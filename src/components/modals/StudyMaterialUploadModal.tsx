@@ -581,8 +581,10 @@ export default function StudyMaterialUploadModal({
           const lessonName = selectedLesson ? selectedLesson.name : (globalSettings.lessonId ? 'Unknown Lesson' : '');
 
           let materialTitle = item.title.trim();
+          // If single file and global title is set, use global title as groupTitle only, not as file title
           if (files.length === 1 && globalSettings.title.trim()) {
-             materialTitle = globalSettings.title.trim() || item.title.trim();
+             groupId = `group_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+             groupTitle = globalSettings.title.trim();
           }
 
           // Create study material data with grouping
