@@ -673,7 +673,7 @@ export default function StudentStudyPage() {
                                       {getFileIcon(material.fileType)}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                      <h4 className={`font-black truncate text-sm ${
+                                      <h4 className={`font-black line-clamp-1 text-sm ${
                                         isSelected
                                           ? theme === 'ben10'
                                             ? 'text-[#64cc4f]'
@@ -690,17 +690,83 @@ export default function StudentStudyPage() {
                                       }`}>
                                         {material.title}
                                       </h4>
-                                      <div className={`text-xs font-bold ${
+                                      <div className={`text-xs font-bold mb-1 ${
                                         theme === 'ben10' ? 'text-[#64cc4f]' : theme === 'tinkerbell' ? 'text-yellow-600' : theme === 'bounceworld' ? 'text-[#C8102E]' : 'text-blue-600'
                                       }`}>
                                         {material.fileType.toUpperCase()}
                                       </div>
+
+                                      {/* Homework UI - Moved inside text container for vertical layout */}
+                                      {material.isHomework && (
+                                        <div className="flex flex-wrap items-center gap-1 mt-1">
+                                          {(() => {
+                                             const deadlineStatus = getHomeworkDeadlineStatus(material.dueDate);
+                                             return (
+                                              <Badge variant="secondary" className={`text-[10px] px-1 py-0 h-auto ${
+                                                material.dueDate && new Date(material.dueDate) < new Date() 
+                                                  ? 'border-red-500 text-red-500 bg-red-50' 
+                                                  : deadlineStatus?.color || 'border-blue-500 text-blue-500 bg-blue-50'
+                                              }`}>
+                                                {material.homeworkType === 'manual' ? 'Manual' : 'Homework'}
+                                                {deadlineStatus && !homeworkSubmissions[material.id] && (
+                                                  <span className="ml-1 border-l border-current pl-1">
+                                                    {deadlineStatus.label}
+                                                  </span>
+                                                )}
+                                              </Badge>
+                                             );
+                                          })()}
+                                          
+                                          {homeworkSubmissions[material.id] ? (
+                                            <div 
+                                              className="flex items-center space-x-1 cursor-pointer hover:opacity-80 transition-opacity"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setSelectedHomework(material);
+                                                setShowHomeworkModal(true);
+                                              }}
+                                              title="Click to view/edit submission"
+                                            >
+                                              <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                                                homeworkSubmissions[material.id].status === 'resubmit_needed' ? 'bg-orange-100 text-orange-700' :
+                                                homeworkSubmissions[material.id].status === 'late' ? 'bg-yellow-100 text-yellow-700' :
+                                                'bg-green-100 text-green-700'
+                                              }`}>
+                                                {homeworkSubmissions[material.id].status === 'resubmit_needed' ? 'Resubmit' : 'Submitted'}
+                                              </span>
+                                              {/* Show grade if available */}
+                                              {homeworkSubmissions[material.id].teacherMark && (
+                                                <span className="text-[10px] font-bold text-gray-700">
+                                                  {homeworkSubmissions[material.id].teacherMark}
+                                                </span>
+                                              )}
+                                            </div>
+                                          ) : (
+                                             material.dueDate && new Date(material.dueDate) < new Date() && !material.allowLateSubmission ? (
+                                              <span className="text-[10px] text-red-500 font-bold">Closed</span>
+                                            ) : (
+                                              material.homeworkType !== 'manual' && (
+                                                <button
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setSelectedHomework(material);
+                                                    setShowHomeworkModal(true);
+                                                  }}
+                                                  className="text-[10px] bg-blue-600 text-white px-2 py-0.5 rounded-full hover:bg-blue-700 transition"
+                                                >
+                                                  Submit
+                                                </button>
+                                              )
+                                            )
+                                          )}
+                                        </div>
+                                      )}
                                     </div>
                                   </div>
 
                                   {material.fileUrl && (
                                     <Eye
-                                      className="w-4 h-4 flex-shrink-0 cursor-pointer transition-colors pointer-events-auto font-black"
+                                      className="w-4 h-4 flex-shrink-0 cursor-pointer transition-colors pointer-events-auto font-black ml-2"
                                       style={{
                                         color: isSelected 
                                           ? (theme === 'ben10' ? '#22c55e' : theme === 'tinkerbell' ? '#eab308' : theme === 'bounceworld' ? '#1D428A' : '#3b82f6')
@@ -716,72 +782,6 @@ export default function StudentStudyPage() {
                                       }}
                                       onClick={() => viewMaterial(material)}
                                     />
-                                  )}
-
-                                  {/* Homework UI */}
-                                  {material.isHomework && (
-                                    <div className="ml-2 flex items-center space-x-2">
-                                      {(() => {
-                                         const deadlineStatus = getHomeworkDeadlineStatus(material.dueDate);
-                                         return (
-                                          <Badge variant="secondary" className={`${
-                                            material.dueDate && new Date(material.dueDate) < new Date() 
-                                              ? 'border-red-500 text-red-500 bg-red-50' 
-                                              : deadlineStatus?.color || 'border-blue-500 text-blue-500 bg-blue-50'
-                                          }`}>
-                                            {material.homeworkType === 'manual' ? 'Manual Task' : 'Homework'}
-                                            {deadlineStatus && !homeworkSubmissions[material.id] && (
-                                              <span className="ml-1 border-l border-current pl-1">
-                                                {deadlineStatus.label}
-                                              </span>
-                                            )}
-                                          </Badge>
-                                         );
-                                      })()}
-                                      
-                                      {homeworkSubmissions[material.id] ? (
-                                        <div 
-                                          className="flex items-center space-x-1 cursor-pointer hover:opacity-80 transition-opacity"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            setSelectedHomework(material);
-                                            setShowHomeworkModal(true);
-                                          }}
-                                          title="Click to view/edit submission"
-                                        >
-                                          <span className={`text-xs px-2 py-0.5 rounded-full ${
-                                            homeworkSubmissions[material.id].status === 'resubmit_needed' ? 'bg-orange-100 text-orange-700' :
-                                            homeworkSubmissions[material.id].status === 'late' ? 'bg-yellow-100 text-yellow-700' :
-                                            'bg-green-100 text-green-700'
-                                          }`}>
-                                            {homeworkSubmissions[material.id].status === 'resubmit_needed' ? 'Resubmit Req' : 'Submitted'}
-                                          </span>
-                                          {/* Show grade if available */}
-                                          {homeworkSubmissions[material.id].teacherMark && (
-                                            <span className="text-xs font-bold text-gray-700">
-                                              {homeworkSubmissions[material.id].teacherMark}
-                                            </span>
-                                          )}
-                                        </div>
-                                      ) : (
-                                         material.dueDate && new Date(material.dueDate) < new Date() && !material.allowLateSubmission ? (
-                                          <span className="text-xs text-red-500 font-bold">Closed</span>
-                                        ) : (
-                                          material.homeworkType !== 'manual' && (
-                                            <button
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                setSelectedHomework(material);
-                                                setShowHomeworkModal(true);
-                                              }}
-                                              className="text-xs bg-blue-600 text-white px-3 py-1 rounded-full hover:bg-blue-700 transition"
-                                            >
-                                              Submit
-                                            </button>
-                                          )
-                                        )
-                                      )}
-                                    </div>
                                   )}
                                 </div>
                               );
