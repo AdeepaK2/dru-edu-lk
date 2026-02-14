@@ -1,7 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import CanvasWriter from '@/components/ui/CanvasWriter';
+import dynamic from 'next/dynamic';
+
+const CanvasWriter = dynamic(() => import('@/components/ui/CanvasWriter'), {
+  ssr: false,
+});
 import { Toaster, toast } from 'react-hot-toast';
 import { StudentPdfSubmission, PageAnnotations } from '@/models/canvasSchema';
 import { Timestamp } from 'firebase/firestore';
