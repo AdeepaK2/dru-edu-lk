@@ -1068,20 +1068,31 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
         // For single materials, update normally utilizing per-file settings
         const materialSettings = materialHomeworkSettings[materialToEdit.id] || {};
         
-        await updateStudyMaterial(materialToEdit.id, {
-          title: editedData.title,
-          description: editedData.description,
-          isRequired: editedData.isRequired,
-          
-          // Per-file homework settings
-          isHomework: materialSettings.isHomework || false,
-          homeworkType: materialSettings.isHomework ? materialSettings.homeworkType : undefined,
-          dueDate: (materialSettings.isHomework && materialSettings.dueDate) ? new Date(materialSettings.dueDate) : undefined,
-          maxMarks: (materialSettings.isHomework && materialSettings.homeworkType === 'submission') ? materialSettings.maxMarks : undefined,
-          manualInstruction: (materialSettings.isHomework && materialSettings.homeworkType === 'manual') ? materialSettings.manualInstruction : undefined,
-          allowLateSubmission: materialSettings.isHomework ? materialSettings.allowLateSubmission : true,
-          lateSubmissionDays: materialSettings.isHomework ? materialSettings.lateSubmissionDays : 3
-        });
+        const updateData: any = {
+           description: editedData.description,
+           isRequired: editedData.isRequired,
+           
+           // Per-file homework settings
+           isHomework: materialSettings.isHomework || false,
+           homeworkType: materialSettings.isHomework ? materialSettings.homeworkType : undefined,
+           dueDate: (materialSettings.isHomework && materialSettings.dueDate) ? new Date(materialSettings.dueDate) : undefined,
+           maxMarks: (materialSettings.isHomework && materialSettings.homeworkType === 'submission') ? materialSettings.maxMarks : undefined,
+           manualInstruction: (materialSettings.isHomework && materialSettings.homeworkType === 'manual') ? materialSettings.manualInstruction : undefined,
+           allowLateSubmission: materialSettings.isHomework ? materialSettings.allowLateSubmission : true,
+           lateSubmissionDays: materialSettings.isHomework ? materialSettings.lateSubmissionDays : 3
+        };
+
+        if (groupId) {
+             // If part of a group (even single), update Group Title, preserve File Title
+             updateData.groupTitle = groupTitle; // variable determined above
+             updateData.groupId = groupId;
+             // We do NOT update 'title' here, so file name is preserved.
+        } else {
+             // Pure single file (no group), update Title (which acts as both)
+             updateData.title = editedData.title;
+        }
+
+        await updateStudyMaterial(materialToEdit.id, updateData);
       }
       
       await refreshMaterials();
@@ -1740,12 +1751,12 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                   {/* Title Field */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      {editingGroup?.isGroup ? 'Group Title' : 'Title'} *
+                       Title *
                     </label>
                     <input
                       type="text"
                       name="title"
-                      defaultValue={materialToEdit.title}
+                      defaultValue={materialToEdit.groupTitle || materialToEdit.title}
                       required
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                       placeholder={editingGroup?.isGroup ? "Enter group title" : "Enter material title"}
