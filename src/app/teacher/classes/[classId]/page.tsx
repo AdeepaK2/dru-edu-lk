@@ -873,7 +873,7 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
       if (editingGroup && editingGroup.isGroup && editingGroup.groupId) {
         // When editing a real group (has groupId), use the existing groupId
         groupId = editingGroup.groupId;
-        groupTitle = editingGroup.groupTitle || editedData.title;
+        groupTitle = editedData.title || editingGroup.groupTitle;
         console.log('📦 Using existing real group:', { groupId, groupTitle });
       } else if (editingGroup && !editingGroup.isGroup && newFilesToAdd.length > 0) {
         // When editing a single material (fake group) and adding files
@@ -891,7 +891,7 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
       } else if (materialToEdit.groupId) {
         // Use groupId from materialToEdit if it exists
         groupId = materialToEdit.groupId;
-        groupTitle = materialToEdit.title || editedData.title;
+        groupTitle = materialToEdit.groupTitle || editedData.title;
         console.log('📦 Using material group:', { groupId, groupTitle });
       } else if (materialToEdit.materials && materialToEdit.materials.length > 0 && materialToEdit.materials[0]?.groupId) {
         // Fallback: use groupId from first material if available
