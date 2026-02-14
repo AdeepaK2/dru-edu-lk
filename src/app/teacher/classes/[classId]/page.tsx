@@ -1832,7 +1832,7 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                                   onChange={(e) => {
                                     e.stopPropagation();
                                     const newTitle = e.target.value;
-                                    setMaterialToEdit(prev => {
+                                    setMaterialToEdit((prev: any) => {
                                       const updatedMaterials = (prev.materials || [prev]).map((m: any) => 
                                         m.id === material.id ? { ...m, title: newTitle } : m
                                       );
