@@ -1024,6 +1024,7 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
             groupTitle: editedData.title,
             description: editedData.description,
             isRequired: editedData.isRequired,
+            title: material.title, // Update file title
             // Apply per-material homework settings
             isHomework: materialSettings.isHomework || false,
             homeworkType: materialSettings.isHomework ? materialSettings.homeworkType : undefined,
@@ -1083,13 +1084,20 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
         };
 
         if (groupId) {
-             // If part of a group (even single), update Group Title, preserve File Title
-             updateData.groupTitle = groupTitle; // variable determined above
+             // If part of a group (even single), update Group Title, preserve File Title (unless changed)
+             updateData.groupTitle = groupTitle; 
              updateData.groupId = groupId;
-             // We do NOT update 'title' here, so file name is preserved.
+             
+             // Check if file title was changed in the input list
+             const currentFileTitle = materialToEdit.materials?.find((m:any) => m.id === materialToEdit.id)?.title || materialToEdit.title;
+             if (currentFileTitle) {
+                updateData.title = currentFileTitle;
+             }
         } else {
              // Pure single file (no group), update Title (which acts as both)
-             updateData.title = editedData.title;
+             // But valid file title might be in materials array if user edited it there
+             const currentFileTitle = materialToEdit.materials?.find((m:any) => m.id === materialToEdit.id)?.title;
+             updateData.title = currentFileTitle || editedData.title;
         }
 
         await updateStudyMaterial(materialToEdit.id, updateData);
@@ -1818,9 +1826,27 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                                 {getFileIcon(material.fileType)}
                               </div>
                               <div className="flex-1 min-w-0">
-                                <div className={`font-medium truncate ${filesToRemove.includes(material.id) ? 'line-through text-gray-400' : 'text-gray-900 dark:text-white'}`}>
-                                  {material.title}
-                                </div>
+                                <input
+                                  type="text"
+                                  value={material.title}
+                                  onChange={(e) => {
+                                    e.stopPropagation();
+                                    const newTitle = e.target.value;
+                                    setMaterialToEdit(prev => {
+                                      const updatedMaterials = (prev.materials || [prev]).map((m: any) => 
+                                        m.id === material.id ? { ...m, title: newTitle } : m
+                                      );
+                                      // If single material (not group), also update top-level title to match? 
+                                      // No, we keeping them separate now. Top level is Group Title.
+                                      return { ...prev, materials: updatedMaterials };
+                                    });
+                                  }}
+                                  disabled={filesToRemove.includes(material.id)}
+                                  className={`w-full px-2 py-1 text-sm border border-transparent hover:border-gray-300 focus:border-blue-500 rounded bg-transparent focus:bg-white dark:focus:bg-gray-700 transition-colors ${
+                                    filesToRemove.includes(material.id) ? 'line-through text-gray-400' : 'text-gray-900 dark:text-white font-medium'
+                                  }`}
+                                  placeholder="File title"
+                                />
                                 {material.description && (
                                   <div className="text-sm text-gray-600 dark:text-gray-300 truncate">
                                     {material.description}
