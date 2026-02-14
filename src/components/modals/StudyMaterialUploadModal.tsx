@@ -433,13 +433,12 @@ export default function StudyMaterialUploadModal({
 
         // Determine efficient Group ID to use
         let targetGroupId = initialMaterial.groupId;
-        let targetGroupTitle = initialMaterial.groupTitle || initialMaterial.title;
+        let targetGroupTitle = globalSettings.title.trim() || initialMaterial.groupTitle || initialMaterial.title;
 
-        // If we didn't have a group before but now have > 1 file (existing + new), create a group ID
+        // If we didn't have a group before but now have > 1 file (existing + new) OR a custom title for single file, create a group ID
         // Note: files state contains ALL files currently in the modal
-        if (!targetGroupId && files.length > 1) {
+        if (!targetGroupId && (files.length > 1 || (files.length === 1 && globalSettings.title.trim()))) {
              targetGroupId = `group_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-             targetGroupTitle = globalSettings.title.trim() || initialMaterial.title;
         }
 
         // 2. Handle Updates and New Additions
