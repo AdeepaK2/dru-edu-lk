@@ -355,7 +355,7 @@ const MarkHomeworkModal: React.FC<MarkHomeworkModalProps> = ({
             {selectedStudent ? (
                 <>
                     {/* Toolbar / Student Info */}
-                    <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 flex justify-between items-center shadow-sm z-20">
+                    <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 flex justify-between items-center shadow-sm z-20 flex-shrink-0">
                         <div>
                             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                                 {selectedStudent.studentName}
@@ -403,7 +403,7 @@ const MarkHomeworkModal: React.FC<MarkHomeworkModalProps> = ({
                     </div>
 
                     {/* Content Area */}
-                    <div className="flex-1 bg-gray-200 dark:bg-gray-950 flex flex-col items-center justify-center p-4 overflow-hidden relative">
+                    <div className="flex-1 bg-gray-200 dark:bg-gray-950 flex flex-col items-center justify-center p-4 overflow-hidden relative isolate z-0">
                          {submissionType === 'manual' ? (
                              <div className="text-center text-gray-500">
                                  <FileText className="w-16 h-16 mx-auto mb-4 opacity-20" />

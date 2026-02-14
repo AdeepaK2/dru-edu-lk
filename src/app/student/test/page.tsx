@@ -29,6 +29,7 @@ export default function StudentTests() {
   const [error, setError] = useState<string | null>(null);
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [sortOrder, setSortOrder] = useState<'latest' | 'oldest'>('latest');
   const [expandedClasses, setExpandedClasses] = useState<Set<string>>(new Set());
   const [expandedCompletedSections, setExpandedCompletedSections] = useState<Set<string>>(new Set());
   const [expandedCustomTests, setExpandedCustomTests] = useState(false);
@@ -1050,15 +1051,47 @@ export default function StudentTests() {
         grouped.live.push(test);
       } else if (status.status === 'upcoming') {
         grouped.upcoming.push(test);
-      } else if (status.status === 'active') {
+      } else if (status.status === 'active' || status.status === 'late-active') {
         grouped.available.push(test);
       } else {
         grouped.completed.push(test);
       }
     });
+
+    // Sort available tests
+    grouped.available.sort((a, b) => {
+      const statusA = getTestStatus(a);
+      const statusB = getTestStatus(b);
+
+      // 1. Priority: Late-Active tests first
+      if (statusA.status === 'late-active' && statusB.status !== 'late-active') return -1;
+      if (statusA.status !== 'late-active' && statusB.status === 'late-active') return 1;
+
+      // 2. Sort by Date
+      const getTimestamp = (test: Test) => {
+         if (test.type === 'live') return (test as LiveTest).studentJoinTime;
+         return (test as FlexibleTest).availableFrom;
+      };
+
+      const timeA = getTimestamp(a);
+      const timeB = getTimestamp(b);
+
+      const getSeconds = (timestamp: any): number => {
+          if (timestamp && typeof timestamp.seconds === 'number') return timestamp.seconds;
+          if (timestamp && typeof timestamp.toDate === 'function') return timestamp.toDate().getTime() / 1000;
+          if (timestamp instanceof Date) return timestamp.getTime() / 1000;
+          if (typeof timestamp === 'string') return new Date(timestamp).getTime() / 1000;
+          return 0;
+      };
+
+      const secondsA = getSeconds(timeA);
+      const secondsB = getSeconds(timeB);
+
+      return sortOrder === 'latest' ? secondsB - secondsA : secondsA - secondsB;
+    });
     
     return grouped;
-  }, [customTests]);
+  }, [customTests, sortOrder, lateSubmissionApprovals]);
 
   // Group tests by class (only class-based tests now)
   const testsByClass = useMemo(() => {
@@ -1101,7 +1134,7 @@ export default function StudentTests() {
             grouped[classId].groupedTests.live.push(test);
           } else if (status.status === 'upcoming') {
             grouped[classId].groupedTests.upcoming.push(test);
-          } else if (status.status === 'active') {
+          } else if (status.status === 'active' || status.status === 'late-active') {
             grouped[classId].groupedTests.available.push(test);
           } else {
             grouped[classId].groupedTests.completed.push(test);
@@ -1110,43 +1143,71 @@ export default function StudentTests() {
       });
     });
 
-    // Sort upcoming tests by date (soonest first)
+    // Helper to get seconds
+    const getSeconds = (timestamp: any): number => {
+        if (timestamp && typeof timestamp.seconds === 'number') return timestamp.seconds;
+        if (timestamp && typeof timestamp.toDate === 'function') return timestamp.toDate().getTime() / 1000;
+        if (timestamp instanceof Date) return timestamp.getTime() / 1000;
+        if (typeof timestamp === 'string') return new Date(timestamp).getTime() / 1000;
+        return 0;
+    };
+
+    // Sort tests within groups
     Object.values(grouped).forEach(classData => {
+      // Sort upcoming tests by date (soonest first)
       classData.groupedTests.upcoming.sort((a, b) => {
         const getTimestamp = (test: Test) => {
-          if (test.type === 'live') {
-            const liveTest = test as LiveTest;
-            return liveTest.studentJoinTime;
-          } else {
-            const flexTest = test as FlexibleTest;
-            return flexTest.availableFrom;
-          }
+          if (test.type === 'live') return (test as LiveTest).studentJoinTime;
+          return (test as FlexibleTest).availableFrom;
         };
-
         const aTime = getTimestamp(a);
         const bTime = getTimestamp(b);
-
-        const getSeconds = (timestamp: any): number => {
-          if (timestamp && typeof timestamp.seconds === 'number') {
-            return timestamp.seconds;
-          } else if (timestamp && typeof timestamp.toDate === 'function') {
-            return timestamp.toDate().getTime() / 1000;
-          } else if (timestamp instanceof Date) {
-            return timestamp.getTime() / 1000;
-          } else if (typeof timestamp === 'string') {
-            return new Date(timestamp).getTime() / 1000;
-          } else if (typeof timestamp === 'number') {
-            return timestamp > 1000000000000 ? timestamp / 1000 : timestamp;
-          }
-          return 0;
-        };
-
         return getSeconds(aTime) - getSeconds(bTime);
+      });
+
+       // Sort available tests
+       classData.groupedTests.available.sort((a, b) => {
+        const statusA = getTestStatus(a);
+        const statusB = getTestStatus(b);
+  
+        // 1. Priority: Late-Active tests first
+        if (statusA.status === 'late-active' && statusB.status !== 'late-active') return -1;
+        if (statusA.status !== 'late-active' && statusB.status === 'late-active') return 1;
+  
+        // 2. Sort by Date
+        const getTimestamp = (test: Test) => {
+           if (test.type === 'live') return (test as LiveTest).studentJoinTime;
+           return (test as FlexibleTest).availableFrom;
+        };
+  
+        const timeA = getTimestamp(a);
+        const timeB = getTimestamp(b);
+  
+        const secondsA = getSeconds(timeA);
+        const secondsB = getSeconds(timeB);
+  
+        return sortOrder === 'latest' ? secondsB - secondsA : secondsA - secondsB;
+      });
+
+       // Sort completed tests
+       classData.groupedTests.completed.sort((a, b) => {
+        const getTimestamp = (test: Test) => {
+           if (test.type === 'live') return (test as LiveTest).studentJoinTime;
+           return (test as FlexibleTest).availableFrom;
+        };
+  
+        const timeA = getTimestamp(a);
+        const timeB = getTimestamp(b);
+  
+        const secondsA = getSeconds(timeA);
+        const secondsB = getSeconds(timeB);
+  
+        return sortOrder === 'latest' ? secondsB - secondsA : secondsA - secondsB;
       });
     });
 
     return grouped;
-  }, [classBasedTests, enrollments]);
+  }, [classBasedTests, enrollments, sortOrder, lateSubmissionApprovals]);
 
   // Toggle custom tests expansion
   const toggleCustomTests = () => {
@@ -1511,6 +1572,18 @@ export default function StudentTests() {
                      {subject.name}
                   </option>
                 ))}
+              </select>
+            </div>
+
+            {/* Sort Order */}
+            <div className="flex-shrink-0 min-w-[150px]">
+              <select
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value as 'latest' | 'oldest')}
+                className={`border-4 ${theme === 'bounceworld' ? 'border-[#1D428A]' : theme === 'ponyville' ? 'border-[#e13690]' : 'border-black'} rounded-2xl px-6 py-3 bg-white text-black font-bold text-lg focus:outline-none shadow-lg hover:bg-gray-50 transition-all w-full ${theme === 'cricketverse-australian' ? 'focus:ring-4 focus:ring-black' : theme === 'ben10' ? 'focus:ring-4 focus:ring-[#64cc4f]' : theme === 'tinkerbell' ? 'focus:ring-4 focus:ring-yellow-400' : theme === 'bounceworld' ? 'focus:ring-4 focus:ring-[#1D428A]' : theme === 'avengers' ? 'focus:ring-4 focus:ring-[#604AC7]' : theme === 'ponyville' ? 'focus:ring-4 focus:ring-[#e13690]' : theme === 'default' ? 'focus:ring-4 focus:ring-gray-600' : 'focus:ring-4 focus:ring-blue-400'}`}
+              >
+                <option value="latest">Latest First</option>
+                <option value="oldest">Oldest First</option>
               </select>
             </div>
           </div>
