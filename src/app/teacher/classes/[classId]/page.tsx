@@ -891,12 +891,12 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
       } else if (materialToEdit.groupId) {
         // Use groupId from materialToEdit if it exists
         groupId = materialToEdit.groupId;
-        groupTitle = materialToEdit.groupTitle || editedData.title;
+        groupTitle = editedData.title || materialToEdit.groupTitle;
         console.log('📦 Using material group:', { groupId, groupTitle });
       } else if (materialToEdit.materials && materialToEdit.materials.length > 0 && materialToEdit.materials[0]?.groupId) {
         // Fallback: use groupId from first material if available
         groupId = materialToEdit.materials[0].groupId;
-        groupTitle = materialToEdit.materials[0].groupTitle || editedData.title;
+        groupTitle = editedData.title || materialToEdit.materials[0].groupTitle;
         console.log('📦 Using first material group:', { groupId, groupTitle });
       } else if (newFilesToAdd.length > 1) {
         // Creating a new group when adding multiple files
