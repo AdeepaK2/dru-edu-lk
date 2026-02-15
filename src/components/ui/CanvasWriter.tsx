@@ -78,14 +78,13 @@ const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>(({
 
                  canvas.width = rect.width;
                  canvas.height = rect.height;
-                 console.log('Canvas Resized:', canvas.width, canvas.height);
 
                  const ctx = canvas.getContext('2d');
                  if (ctx) {
                      ctx.lineCap = 'round';
                      ctx.lineJoin = 'round';
                      // Restore content
-                     if (tempCanvas.width > 0) {
+                     if (tempCanvas.width > 0 && tempCanvas.height > 0) {
                          ctx.drawImage(tempCanvas, 0, 0);
                      } else if (historyIndex >= 0 && history[historyIndex]) {
                          ctx.putImageData(history[historyIndex], 0, 0);
@@ -289,19 +288,14 @@ const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>(({
             <canvas
                 ref={canvasRef}
                 className="block touch-none absolute inset-0"
-                style={{ touchAction: 'none', border: '1px solid red' }}
+                style={{ touchAction: 'none' }}
                 onPointerDown={(e) => {
-                    console.log('Pointer Down:', e.clientX, e.clientY);
                     startDrawing(e);
                 }}
                 onPointerMove={(e) => {
-                    if (isDrawingRef.current) console.log('Pointer Move:', e.clientX, e.clientY);
                     draw(e);
                 }}
-                onPointerUp={(e) => {
-                    console.log('Pointer Up');
-                    stopDrawing(e);
-                }}
+                onPointerUp={stopDrawing}
                 onPointerLeave={stopDrawing}
                 onPointerCancel={stopDrawing}
             />
@@ -522,7 +516,7 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
                  )}
              </div>
          ) : (
-             <div className="bg-white min-h-full">
+             <div className="bg-white h-full">
                  <DrawingCanvas
                     ref={plainCanvasRef}
                     width={typeof width === 'number' ? width : undefined} 
