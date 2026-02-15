@@ -78,6 +78,7 @@ const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>(({
 
                  canvas.width = rect.width;
                  canvas.height = rect.height;
+                 console.log('Canvas Resized:', canvas.width, canvas.height);
 
                  const ctx = canvas.getContext('2d');
                  if (ctx) {
@@ -288,10 +289,19 @@ const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>(({
             <canvas
                 ref={canvasRef}
                 className="block touch-none absolute inset-0"
-                style={{ touchAction: 'none' }}
-                onPointerDown={startDrawing}
-                onPointerMove={draw}
-                onPointerUp={stopDrawing}
+                style={{ touchAction: 'none', border: '1px solid red' }}
+                onPointerDown={(e) => {
+                    console.log('Pointer Down:', e.clientX, e.clientY);
+                    startDrawing(e);
+                }}
+                onPointerMove={(e) => {
+                    if (isDrawingRef.current) console.log('Pointer Move:', e.clientX, e.clientY);
+                    draw(e);
+                }}
+                onPointerUp={(e) => {
+                    console.log('Pointer Up');
+                    stopDrawing(e);
+                }}
                 onPointerLeave={stopDrawing}
                 onPointerCancel={stopDrawing}
             />
