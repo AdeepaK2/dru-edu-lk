@@ -53,7 +53,7 @@ const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>(({
 }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
-    const [isDrawing, setIsDrawing] = useState(false);
+    const isDrawingRef = useRef(false); // Use Ref for synchronous state in event handlers
     const [history, setHistory] = useState<ImageData[]>([]);
     const [historyIndex, setHistoryIndex] = useState<number>(-1);
 
@@ -89,8 +89,7 @@ const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>(({
                      } else if (historyIndex >= 0 && history[historyIndex]) {
                          ctx.putImageData(history[historyIndex], 0, 0);
                      } else if (initialDataUrl) {
-                        // Load initial data if strictly needed here? 
-                        // Better to rely on the dedicated initial load effect below to avoid race/double draw
+                        // handled by separate effect
                      } else if (backgroundImage) {
                          const img = new Image();
                          img.src = backgroundImage;
@@ -132,8 +131,7 @@ const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>(({
         const img = new Image();
         img.src = initialDataUrl;
         img.onload = () => {
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height); // Stretch to fit? Or maintain aspect?
-            // For annotations, we assume they match the canvas size.
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
             saveHistory();
         };
     }, [initialDataUrl]);
@@ -156,7 +154,7 @@ const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>(({
         });
     }, [historyIndex]);
 
-    // Notify parent about history state for global toolbar
+    // Notify parent about history state
     useEffect(() => {
         onHistoryChange?.(historyIndex > 0, historyIndex < history.length - 1);
     }, [historyIndex, history.length, onHistoryChange]);
@@ -171,16 +169,11 @@ const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>(({
                 ctx.putImageData(history[newIndex], 0, 0);
             }
         } else if (historyIndex === 0) {
-            // Clear to initial state?
-            // If index goes to -1, we clear
              setHistoryIndex(-1);
              const canvas = canvasRef.current;
              const ctx = canvas?.getContext('2d');
              if (canvas && ctx) {
                  ctx.clearRect(0, 0, canvas.width, canvas.height);
-             }
-             if (backgroundImage) {
-                 // re-draw background?
              }
         }
     };
@@ -235,27 +228,40 @@ const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>(({
     const startDrawing = (e: React.PointerEvent<HTMLCanvasElement>) => {
         const canvas = canvasRef.current;
         if (!canvas) return;
+        
+        // Critical: Capture pointer to handle moves outside canvas and stylus input correctly
+        e.currentTarget.setPointerCapture(e.pointerId);
+        
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        setIsDrawing(true);
+        isDrawingRef.current = true;
         const { x, y } = getCoordinates(e);
         
         ctx.beginPath();
         ctx.moveTo(x, y);
-        
+
+        // Apply styles immediately
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
         if (tool === 'eraser') {
-            ctx.globalCompositeOperation = 'destination-out'; // True transparency for eraser
-            ctx.lineWidth = strokeWidth * 2; // Make eraser slightly bigger
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.lineWidth = strokeWidth * 2;
         } else {
             ctx.globalCompositeOperation = 'source-over';
             ctx.strokeStyle = color;
             ctx.lineWidth = strokeWidth;
         }
+
+        // Draw a single dot for clicks
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x, y);
     };
 
     const draw = (e: React.PointerEvent<HTMLCanvasElement>) => {
-        if (!isDrawing) return;
+        if (!isDrawingRef.current) return; // Use Ref to check state synchronously
         const canvas = canvasRef.current;
         const ctx = canvas?.getContext('2d');
         if (!canvas || !ctx) return;
@@ -265,9 +271,11 @@ const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>(({
         ctx.stroke();
     };
 
-    const stopDrawing = () => {
-        if (isDrawing) {
-            setIsDrawing(false);
+    const stopDrawing = (e: React.PointerEvent<HTMLCanvasElement>) => {
+        if (isDrawingRef.current) {
+            isDrawingRef.current = false;
+            e.currentTarget.releasePointerCapture(e.pointerId);
+            
             const canvas = canvasRef.current;
             const ctx = canvas?.getContext('2d');
             ctx?.closePath();
@@ -280,10 +288,12 @@ const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>(({
             <canvas
                 ref={canvasRef}
                 className="block touch-none absolute inset-0"
+                style={{ touchAction: 'none' }}
                 onPointerDown={startDrawing}
                 onPointerMove={draw}
                 onPointerUp={stopDrawing}
                 onPointerLeave={stopDrawing}
+                onPointerCancel={stopDrawing}
             />
         </div>
     );
