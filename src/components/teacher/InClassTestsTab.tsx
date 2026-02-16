@@ -143,7 +143,10 @@ export default function InClassTestsTab({ classId, className, classSubject }: In
           </p>
         </div>
         <button
-          onClick={() => setShowCreateModal(true)}
+          onClick={() => {
+            console.log('Create In-Class Test button clicked!');
+            setShowCreateModal(true);
+          }}
           className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors w-full md:w-auto"
         >
           <Plus className="w-4 h-4 mr-2" />
@@ -324,17 +327,20 @@ export default function InClassTestsTab({ classId, className, classSubject }: In
         </div>
       )}
 
-      {showCreateModal && (
-        <CreateInClassTestModal
-          isOpen={showCreateModal}
-          onClose={() => setShowCreateModal(false)}
-          classId={classId}
-          className={className}
-          subjectId={''} // Assuming not strictly needed or derived
-          subjectName={classSubject}
-          onTestCreated={handleTestCreated}
-        />
-      )}
+      {(() => {
+        console.log('showCreateModal state:', showCreateModal);
+        return showCreateModal && (
+          <CreateInClassTestModal
+            isOpen={showCreateModal}
+            onClose={() => setShowCreateModal(false)}
+            classId={classId}
+            className={className}
+            subjectId={''} // Assuming not strictly needed or derived
+            subjectName={classSubject}
+            onTestCreated={handleTestCreated}
+          />
+        );
+      })()}
 
       {selectedTestForGrading && teacher && (
         <GradeInClassTestModal
