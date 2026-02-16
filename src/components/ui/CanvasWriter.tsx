@@ -5,6 +5,8 @@ import Button from './Button';
 import { Paintbrush, Eraser, Trash2, Undo, Redo, Download, Save, ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { Document, Page, pdfjs } from 'react-pdf';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 // Ensure worker is configured
 pdfjs.GlobalWorkerOptions.workerSrc = '/pdfjs/pdf.worker.min.js';
@@ -16,6 +18,8 @@ interface CanvasWriterProps {
   pdfUrl?: string; // New prop for PDF support
   initialPageAnnotations?: Record<number, string>; // Page 1-based index -> DataURL
   onSave?: (data: string | string[]) => void; // string for single image, string[] for PDF pages
+  outputFormat?: 'image' | 'pdf'; // Output format
+  onSavePdf?: (file: File) => void; // Callback for PDF file
   className?: string;
 }
 
@@ -317,6 +321,8 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
   pdfUrl,
   initialPageAnnotations,
   onSave,
+  outputFormat = 'image',
+  onSavePdf,
   className = '',
 }) => {
   const [tool, setTool] = useState<'pen' | 'eraser'>('pen');
@@ -392,7 +398,67 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
       }
   };
 
-  const handleSaveAction = () => {
+  const generatePdf = async () => {
+      try {
+          const pdf = new jsPDF('p', 'mm', 'a4');
+          const pageWidth = pdf.internal.pageSize.getWidth();
+          const pageHeight = pdf.internal.pageSize.getHeight();
+
+          if (pdfUrl) {
+              // Multi-page PDF
+              const pageElements = document.querySelectorAll('.react-pdf__Page');
+              for (let i = 0; i < pageElements.length; i++) {
+                  const pageElement = pageElements[i] as HTMLElement;
+                  const canvas = await html2canvas(pageElement, {
+                      scale: 2,
+                      useCORS: true,
+                      logging: false,
+                  });
+                  
+                  const imgData = canvas.toDataURL('image/png');
+                  const imgWidth = pageWidth;
+                  const imgHeight = (canvas.height * pageWidth) / canvas.width;
+                  
+                  if (i > 0) pdf.addPage();
+                  pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+              }
+          } else {
+              // Single canvas
+              const canvasElement = document.querySelector('.bg-white.h-full') as HTMLElement;
+              if (canvasElement) {
+                  const canvas = await html2canvas(canvasElement, {
+                      scale: 2,
+                      useCORS: true,
+                      logging: false,
+                  });
+                  
+                  const imgData = canvas.toDataURL('image/png');
+                  const imgWidth = pageWidth;
+                  const imgHeight = (canvas.height * pageWidth) / canvas.width;
+                  
+                  pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+              }
+          }
+
+          // Convert to File object
+          const pdfBlob = pdf.output('blob');
+          const pdfFile = new File([pdfBlob], `answer-${Date.now()}.pdf`, { type: 'application/pdf' });
+          
+          if (onSavePdf) {
+              onSavePdf(pdfFile);
+          }
+      } catch (error) {
+          console.error('PDF generation failed:', error);
+          toast.error('Failed to generate PDF');
+      }
+  };
+
+  const handleSaveAction = async () => {
+      if (outputFormat === 'pdf' && onSavePdf) {
+          await generatePdf();
+          return;
+      }
+      
       if (!onSave) return;
       
       if (pdfUrl) {
