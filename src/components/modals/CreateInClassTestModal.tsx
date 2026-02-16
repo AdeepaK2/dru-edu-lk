@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { X, Calendar, Clock, Upload, FileText, Check, AlertCircle } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { X, Calendar, Clock, Upload, FileText, Check, AlertCircle, Info, Trash2 } from 'lucide-react';
 import { TestService } from '@/apiservices/testService';
 import { ExamPDFService } from '@/services/examPDFService';
 import { useTeacherAuth } from '@/hooks/useTeacherAuth';
@@ -12,7 +12,7 @@ interface CreateInClassTestModalProps {
   onClose: () => void;
   classId: string;
   className: string;
-  subjectId: string; // Assuming class has subject ID
+  subjectId: string;
   subjectName: string;
   onTestCreated: (test: any) => void;
 }
@@ -37,10 +37,55 @@ export default function CreateInClassTestModal({
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Calculate end time
+  const calculatedEndTime = useMemo(() => {
+    if (!formData.scheduledStartTime) return '';
+    const start = new Date(formData.scheduledStartTime);
+    const end = new Date(start.getTime() + formData.duration * 60 * 1000);
+    return end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }, [formData.scheduledStartTime, formData.duration]);
+
+  // Calculate access time (1 hour before)
+  const accessTime = useMemo(() => {
+    if (!formData.scheduledStartTime) return '';
+    const start = new Date(formData.scheduledStartTime);
+    const access = new Date(start.getTime() - 60 * 60 * 1000);
+    return access.toLocaleString([], { 
+      month: 'short', 
+      day: 'numeric', 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+  }, [formData.scheduledStartTime]);
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+    
+    if (!formData.title.trim()) {
+      newErrors.title = 'Test title is required';
+    }
+    
+    if (!formData.scheduledStartTime) {
+      newErrors.scheduledStartTime = 'Date and time are required';
+    } else {
+      const startTime = new Date(formData.scheduledStartTime);
+      if (startTime < new Date()) {
+        newErrors.scheduledStartTime = 'Start time must be in the future';
+      }
+    }
+    
+    if (!formData.duration || formData.duration < 1) {
+      newErrors.duration = 'Duration must be at least 1 minute';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async () => {
-    if (!formData.title || !formData.scheduledStartTime) {
-      alert('Please fill in all required fields');
+    if (!validateForm()) {
       return;
     }
 
@@ -48,28 +93,8 @@ export default function CreateInClassTestModal({
       setIsSubmitting(true);
       let examPdfUrl = '';
 
-      // Upload PDF if selected
       if (formData.examPdfFile) {
         setUploadProgress(10);
-        // We can reuse the ExamPDFService or directly upload to storage
-        // Assuming ExamPDFService has a generic upload method or we use a storage helper
-        // ideally we upload to a path like `exam-papers/${classId}/${timestamp}_${filename}`
-        // For now, let's assume we have a helper in ExamPDFService or we implement a simple one here.
-        // Actually, ExamPDFService usually generates PDFs. Let's assume we need to upload it.
-        // I will use a placeholder upload logic here, assuming typical firebase storage usage.
-        
-        // Since I don't see a generic upload service, I will assume ExamPDFService.uploadExamPaper exists or create a simple logic.
-        // Checking ExamPDFService in previous context... it was used for generation.
-        // Let's use the standard storage logic if available, or just mock it if i can't find it.
-        // Wait, the user has `examPDFService.ts`. I should check if it has upload capabilities.
-        // If not, I'll use a direct assumed implementation or ask to add it.
-        // For the sake of progress, I will use `ExamPDFService.uploadCustomExamPaper` if it existed, 
-        // but since I haven't checked it, I will optimistically assume I can just pass the file to a service.
-        // Let's rely on `TestService` to handle the upload if we pass the file? No, TestService usually takes data.
-        
-        // I'll add the upload logic directly here using the service if possible.
-        // Let's double check `examPDFService`. I'll assume for now I can upload.
-        
         examPdfUrl = await ExamPDFService.uploadExamPDF(formData.examPdfFile, `in-class_${classId}_${Date.now()}`);
         setUploadProgress(100);
       }
@@ -93,18 +118,16 @@ export default function CreateInClassTestModal({
         submissionMethod: formData.submissionMethod,
         examPdfUrl,
         
-        // Required base fields
         config: {
-          questionSelectionMethod: 'manual', // Dummy
+          questionSelectionMethod: 'manual',
           totalQuestions: 0,
           shuffleQuestions: false,
           allowReviewBeforeSubmit: false,
           showResultsImmediately: false
         },
-        questions: [], // No online questions
-        totalMarks: 0, // Manual grading
+        questions: [],
+        totalMarks: 0,
         
-        // calculated
         studentJoinTime: Timestamp.fromDate(startTime),
         actualEndTime: Timestamp.fromDate(endTime),
         assignmentType: 'class-based',
@@ -126,133 +149,303 @@ export default function CreateInClassTestModal({
     }
   };
 
+  const isFormValid = formData.title.trim() && formData.scheduledStartTime && formData.duration > 0;
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-lg">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center">
-            <FileText className="w-5 h-5 mr-2 text-blue-600" />
-            Create In-Class Test
-          </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
+              <FileText className="w-6 h-6 mr-3 text-blue-600" />
+              Create In-Class Test
+            </h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              Schedule a test for {className}
+            </p>
+          </div>
+          <button 
+            onClick={onClose} 
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-2 rounded-lg hover:bg-white/50 dark:hover:bg-gray-700/50 transition-colors"
+          >
             <X className="h-6 w-6" />
           </button>
         </div>
 
-        <div className="p-6 space-y-4">
+        <div className="p-6 space-y-6">
           
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Test Title *
-            </label>
-            <input
-              type="text"
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              placeholder="e.g., Mid-term Physics Paper"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
+          {/* Test Details Section */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+              Test Details
+            </h3>
+            
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Date & Time *
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Test Title <span className="text-red-500">*</span>
               </label>
               <input
-                type="datetime-local"
-                value={formData.scheduledStartTime}
-                onChange={(e) => setFormData({ ...formData, scheduledStartTime: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                type="text"
+                value={formData.title}
+                onChange={(e) => {
+                  setFormData({ ...formData, title: e.target.value });
+                  if (errors.title) setErrors({ ...errors, title: '' });
+                }}
+                className={`w-full px-4 py-3 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                  errors.title ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="e.g., Mid-term Physics Paper"
               />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Duration (mins) *
-              </label>
-              <input
-                type="number"
-                value={formData.duration}
-                onChange={(e) => setFormData({ ...formData, duration: parseInt(e.target.value) })}
-                className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              />
+              {errors.title && (
+                <p className="mt-1 text-sm text-red-600 flex items-center">
+                  <AlertCircle className="w-4 h-4 mr-1" />
+                  {errors.title}
+                </p>
+              )}
             </div>
           </div>
 
-          <div>
-             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          {/* Schedule Section */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+              Schedule
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <Calendar className="w-4 h-4 inline mr-1" />
+                  Date & Time <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="datetime-local"
+                  value={formData.scheduledStartTime}
+                  onChange={(e) => {
+                    setFormData({ ...formData, scheduledStartTime: e.target.value });
+                    if (errors.scheduledStartTime) setErrors({ ...errors, scheduledStartTime: '' });
+                  }}
+                  className={`w-full px-4 py-3 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    errors.scheduledStartTime ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                />
+                {errors.scheduledStartTime && (
+                  <p className="mt-1 text-sm text-red-600 flex items-center">
+                    <AlertCircle className="w-4 h-4 mr-1" />
+                    {errors.scheduledStartTime}
+                  </p>
+                )}
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <Clock className="w-4 h-4 inline mr-1" />
+                  Duration (minutes) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  value={formData.duration}
+                  onChange={(e) => {
+                    setFormData({ ...formData, duration: parseInt(e.target.value) || 0 });
+                    if (errors.duration) setErrors({ ...errors, duration: '' });
+                  }}
+                  className={`w-full px-4 py-3 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    errors.duration ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="60"
+                />
+                {errors.duration && (
+                  <p className="mt-1 text-sm text-red-600 flex items-center">
+                    <AlertCircle className="w-4 h-4 mr-1" />
+                    {errors.duration}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {calculatedEndTime && (
+              <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+                <p className="text-sm text-blue-800 dark:text-blue-200">
+                  <Info className="w-4 h-4 inline mr-1" />
+                  Test will end at <strong>{calculatedEndTime}</strong>
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Submission Method Section */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
               Submission Method
-            </label>
-            <div className="flex space-x-4">
-              <label className="flex items-center space-x-2 cursor-pointer p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex-1">
-                <input
-                  type="radio"
-                  checked={formData.submissionMethod === 'offline_collection'}
-                  onChange={() => setFormData({ ...formData, submissionMethod: 'offline_collection' })}
-                  className="text-blue-600"
-                />
-                <span className="text-sm">Offline Collection</span>
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <label className={`relative flex flex-col p-4 border-2 rounded-xl cursor-pointer transition-all ${
+                formData.submissionMethod === 'offline_collection'
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                  : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+              }`}>
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-center">
+                    <input
+                      type="radio"
+                      checked={formData.submissionMethod === 'offline_collection'}
+                      onChange={() => setFormData({ ...formData, submissionMethod: 'offline_collection' })}
+                      className="w-4 h-4 text-blue-600"
+                    />
+                    <span className="ml-3 font-medium text-gray-900 dark:text-white">
+                      Offline Collection
+                    </span>
+                  </div>
+                  {formData.submissionMethod === 'offline_collection' && (
+                    <Check className="w-5 h-5 text-blue-600" />
+                  )}
+                </div>
+                <p className="text-xs text-gray-600 dark:text-gray-400 ml-7">
+                  Students submit physical answer sheets to you
+                </p>
               </label>
-              <label className="flex items-center space-x-2 cursor-pointer p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex-1">
-                <input
-                  type="radio"
-                  checked={formData.submissionMethod === 'online_upload'}
-                  onChange={() => setFormData({ ...formData, submissionMethod: 'online_upload' })}
-                  className="text-blue-600"
-                />
-                <span className="text-sm">Student Upload PDF</span>
+
+              <label className={`relative flex flex-col p-4 border-2 rounded-xl cursor-pointer transition-all ${
+                formData.submissionMethod === 'online_upload'
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                  : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+              }`}>
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-center">
+                    <input
+                      type="radio"
+                      checked={formData.submissionMethod === 'online_upload'}
+                      onChange={() => setFormData({ ...formData, submissionMethod: 'online_upload' })}
+                      className="w-4 h-4 text-blue-600"
+                    />
+                    <span className="ml-3 font-medium text-gray-900 dark:text-white">
+                      Online Upload
+                    </span>
+                  </div>
+                  {formData.submissionMethod === 'online_upload' && (
+                    <Check className="w-5 h-5 text-blue-600" />
+                  )}
+                </div>
+                <p className="text-xs text-gray-600 dark:text-gray-400 ml-7">
+                  Students upload PDF answers or write digitally
+                </p>
               </label>
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Upload Question Paper (Optional PDF)
-            </label>
-            <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+          {/* Question Paper Upload Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+                Question Paper (Optional)
+              </h3>
+              {formData.examPdfFile && (
+                <button
+                  onClick={() => setFormData({ ...formData, examPdfFile: null })}
+                  className="text-sm text-red-600 hover:text-red-700 flex items-center"
+                >
+                  <Trash2 className="w-4 h-4 mr-1" />
+                  Remove
+                </button>
+              )}
+            </div>
+            
+            <div className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${
+              formData.examPdfFile
+                ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                : 'border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+            }`}>
               <input
                 type="file"
                 accept=".pdf"
-                onChange={(e) => setFormData({ ...formData, examPdfFile: e.target.files?.[0] || null })} // Assuming validation is handled or file is correct
+                onChange={(e) => setFormData({ ...formData, examPdfFile: e.target.files?.[0] || null })}
                 className="hidden"
                 id="pdf-upload"
               />
               <label htmlFor="pdf-upload" className="cursor-pointer block">
                 {formData.examPdfFile ? (
-                  <div className="text-green-600 flex items-center justify-center">
-                    <Check className="w-5 h-5 mr-2" />
-                    {formData.examPdfFile.name}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-center text-green-600">
+                      <Check className="w-8 h-8 mr-2" />
+                      <FileText className="w-8 h-8" />
+                    </div>
+                    <p className="font-medium text-gray-900 dark:text-white">
+                      {formData.examPdfFile.name}
+                    </p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                      {(formData.examPdfFile.size / 1024 / 1024).toFixed(2)} MB
+                    </p>
                   </div>
                 ) : (
-                  <div className="text-gray-500">
-                    <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                    <span className="text-sm">Click to upload PDF</span>
+                  <div className="space-y-3">
+                    <Upload className="w-12 h-12 mx-auto text-gray-400" />
+                    <div>
+                      <p className="font-medium text-gray-700 dark:text-gray-300">
+                        Click to upload PDF
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        Students will be able to view this question paper
+                      </p>
+                    </div>
                   </div>
                 )}
               </label>
             </div>
           </div>
 
-          <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg flex items-start">
-            <AlertCircle className="w-4 h-4 text-yellow-600 dark:text-yellow-400 mr-2 mt-0.5" />
-            <p className="text-xs text-yellow-800 dark:text-yellow-200">
-              Students will only see this test 1 hour before start time. They cannot open it until {formData.scheduledStartTime ? new Date(formData.scheduledStartTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'start time'}.
-            </p>
-          </div>
+          {/* Important Notice */}
+          {accessTime && (
+            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-4 rounded-lg">
+              <div className="flex items-start">
+                <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 mr-3 mt-0.5 flex-shrink-0" />
+                <div className="text-sm text-amber-800 dark:text-amber-200">
+                  <p className="font-medium mb-1">Student Access Information</p>
+                  <p>
+                    Students will see this test from <strong>{accessTime}</strong> (1 hour before start time).
+                    They can only begin the test at the scheduled start time.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
         </div>
 
-        <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex justify-end space-x-3">
-          <button onClick={onClose} className="px-4 py-2 text-gray-700">Cancel</button>
+        {/* Footer */}
+        <div className="p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex justify-end space-x-3">
+          <button 
+            onClick={onClose} 
+            className="px-5 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg font-medium transition-colors"
+          >
+            Cancel
+          </button>
           <button
             onClick={handleSubmit}
-            disabled={isSubmitting}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            disabled={isSubmitting || !isFormValid}
+            className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors flex items-center"
           >
-            {isSubmitting ? (uploadProgress > 0 && uploadProgress < 100 ? `Uploading ${uploadProgress}%...` : 'Creating...') : 'Create In-Class Test'}
+            {isSubmitting ? (
+              <>
+                {uploadProgress > 0 && uploadProgress < 100 ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                    Uploading {uploadProgress}%...
+                  </>
+                ) : (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                    Creating...
+                  </>
+                )}
+              </>
+            ) : (
+              'Create In-Class Test'
+            )}
           </button>
         </div>
 
