@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getAnalytics } from 'firebase/analytics';
@@ -31,4 +31,5 @@ const realtimeDb = getDatabase(app);
 // Initialize Analytics only on the client side
 const analytics = typeof window !== 'undefined' ? getAnalytics(app) : null;
 
-export { app, auth, firestore, storage, analytics, realtimeDb };
+const googleProvider = new GoogleAuthProvider();
+export { app, auth, firestore, storage, analytics, realtimeDb, googleProvider };
