@@ -15,6 +15,11 @@ const PDFViewer = dynamic(() => import('@/components/PDFViewer'), {
   ssr: false,
   loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div></div>
 });
+
+const CanvasWriter = dynamic(() => import('@/components/ui/CanvasWriter'), {
+  ssr: false,
+  loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div></div>
+});
 import { doc, getDoc, Timestamp, collection, query, where, onSnapshot } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { firestore } from '@/utils/firebase-client';
@@ -34,6 +39,7 @@ export default function StudentInClassTestDetailPage() {
   const [timeExpired, setTimeExpired] = useState(false);
   const [submission, setSubmission] = useState<InClassSubmission | null>(null);
   const [showPdfModal, setShowPdfModal] = useState(false);
+  const [isWriting, setIsWriting] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -187,6 +193,69 @@ export default function StudentInClassTestDetailPage() {
         ? error.message
         : 'Failed to upload file';
       setUploadError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleCanvasSave = async (file: File) => {
+    if (!user || !test) {
+      toast.error('User or test data not loaded');
+      return;
+    }
+
+    try {
+      setUploading(true);
+      console.log('[Canvas] Uploading PDF...');
+
+      // Upload to Firebase Storage
+      const storage = getStorage();
+      const timestamp = Date.now();
+      const storageRef = ref(storage, `in-class-submissions/${testId}/${user.uid}/${timestamp}_${file.name}`);
+      
+      // Upload file
+      const uploadTask = await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(uploadTask.ref);
+      
+      // Create or update submission
+      const submissionData = {
+        testId: testId,
+        studentId: user.uid,
+        studentName: user.displayName || user.email || 'Unknown Student',
+        studentEmail: user.email || '',
+        classId: (test as any).classIds?.[0] || '',
+        submissionType: 'online_upload' as const,
+        answerFileUrl: downloadURL,
+        submittedAt: Timestamp.now(),
+        status: 'submitted' as const,
+        // Include existing submission ID if updating
+        ...(submission?.id ? { id: submission.id } : {}),
+      };
+
+      console.log('[Canvas] Saving submission...');
+      await InClassSubmissionService.saveSubmission(submissionData);
+      console.log('[Canvas] Submission saved successfully');
+
+      // Update local submission state
+      setSubmission(prev => prev ? { ...prev, ...submissionData } : submissionData as InClassSubmission);
+
+      setSubmittedFile({
+        name: file.name,
+        url: downloadURL
+      });
+
+      setIsWriting(false);
+      toast.success('Answer submitted successfully!');
+    } catch (error: any) {
+      console.error('[Canvas] Error:', error);
+      const errorMessage = error?.code === 'storage/unauthorized'
+        ? 'Permission denied. Please contact support.'
+        : error?.code === 'storage/quota-exceeded'
+        ? 'Storage quota exceeded. Please contact support.'
+        : error instanceof Error
+        ? error.message
+        : 'Failed to upload answer';
       toast.error(errorMessage);
     } finally {
       setUploading(false);
@@ -392,11 +461,11 @@ export default function StudentInClassTestDetailPage() {
                   </div>
                   <Button 
                     variant="outline" 
-                    onClick={() => setSubmittedFile(null)}
+                    onClick={() => setIsWriting(true)}
                     className="mt-4"
                     disabled={timeExpired}
                   >
-                    {timeExpired ? 'Time Expired' : 'Replace File'}
+                    {timeExpired ? 'Time Expired' : 'Edit Answer'}
                   </Button>
                 </div>
               ) : (
@@ -405,13 +474,32 @@ export default function StudentInClassTestDetailPage() {
                     <Upload className="w-8 h-8 text-blue-500" />
                   </div>
                   <div>
-                    <h4 className="font-medium text-gray-900">Upload Answer Script</h4>
+                    <h4 className="font-medium text-gray-900">Submit Your Answer</h4>
                     <p className="text-sm text-gray-500 mt-1">
-                      Upload your scanned answer sheets as a single PDF file (Max 10MB)
+                      {(test as any).examPdfUrl 
+                        ? 'Write directly on the question paper or upload a scanned PDF' 
+                        : 'Write your answer or upload a scanned PDF'}
                     </p>
                   </div>
                   
                   <div className="space-y-2">
+                    <Button
+                      className="w-full"
+                      disabled={uploading || timeExpired}
+                      onClick={() => setIsWriting(true)}
+                    >
+                      {(test as any).examPdfUrl ? 'Write on Question Paper' : 'Write Answer'}
+                    </Button>
+                    
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-gray-200"></div>
+                      </div>
+                      <div className="relative flex justify-center text-xs">
+                        <span className="px-2 bg-gray-50 text-gray-500">or</span>
+                      </div>
+                    </div>
+                    
                     <input
                       ref={fileInputRef}
                       type="file"
@@ -421,11 +509,12 @@ export default function StudentInClassTestDetailPage() {
                       className="hidden"
                     />
                     <Button
+                      variant="outline"
                       className="w-full"
                       disabled={uploading || timeExpired}
                       onClick={() => fileInputRef.current?.click()}
                     >
-                      {uploading ? 'Uploading...' : timeExpired ? 'Time Expired - Cannot Submit' : 'Select PDF File'}
+                      {uploading ? 'Uploading...' : timeExpired ? 'Time Expired - Cannot Submit' : 'Upload PDF File'}
                     </Button>
                     {uploadError && (
                       <p className="text-sm text-red-600 text-center">{uploadError}</p>
@@ -437,6 +526,32 @@ export default function StudentInClassTestDetailPage() {
           </div>
         )}
       </div>
+
+      {/* Canvas Writer Overlay */}
+      {isWriting && (
+        <div className="fixed inset-0 z-50 bg-white">
+          <div className="h-full flex flex-col">
+            <div className="bg-gray-800 text-white px-4 py-3 flex items-center justify-between">
+              <h2 className="text-lg font-semibold">
+                {test.examPdfUrl ? 'Write on Question Paper' : 'Write Your Answer'}
+              </h2>
+              <button
+                onClick={() => setIsWriting(false)}
+                className="text-white hover:text-gray-300 px-3 py-1 rounded"
+              >
+                Close
+              </button>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <CanvasWriter
+                pdfUrl={(test as any).examPdfUrl}
+                outputFormat="pdf"
+                onSavePdf={handleCanvasSave}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
