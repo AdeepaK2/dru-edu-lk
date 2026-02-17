@@ -11,9 +11,8 @@ import { PDFSummarizationService, PDFSummary } from '@/services/pdfSummarization
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 
-// Configure PDF.js worker
-// Configure worker via CDN to match the version exactly
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+// Configure PDF.js worker - use local copy to ensure version compatibility
+pdfjs.GlobalWorkerOptions.workerSrc = '/pdfjs/pdf.worker.min.mjs';
 
 interface PDFViewerProps {
   url: string;
