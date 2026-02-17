@@ -436,7 +436,7 @@ export default function ClassDetails() {
 
   return (
     <TeacherLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 max-w-7xl mx-auto w-full">
         {/* Class Header */}
         <div className="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg shadow text-white p-6">
           <div className="flex items-center justify-between">
@@ -444,7 +444,7 @@ export default function ClassDetails() {
               <h1 className="text-3xl font-bold mb-2">
                 {classData?.name || 'Class Details'}
               </h1>
-              <div className="flex flex-wrap items-center gap-4 md:gap-6 text-blue-100 mt-2 md:mt-0">
+              <div className="flex flex-wrap items-center gap-3 md:gap-6 text-blue-100 mt-2 md:mt-0">
                 <div className="flex items-center space-x-2">
                   <Users className="w-4 h-4" />
                   <span>
