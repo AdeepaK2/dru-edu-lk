@@ -72,7 +72,7 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
         />
 
         {/* Main Content */}
-        <div className="flex-1 lg:ml-0">
+        <div className="flex-1 lg:ml-0 overflow-x-hidden">
           {/* Mobile Header */}
           <div className="lg:hidden bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between h-16 px-4">
@@ -92,7 +92,7 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
           </div>
 
           {/* Page Content */}
-          <main className="p-6 relative">
+          <main className="p-6 relative overflow-y-auto">
             {/* Navigation loading overlay */}
             {isNavigating && (
               <div className="absolute inset-0 bg-white/50 dark:bg-gray-900/50 z-10 flex items-center justify-center">

@@ -9,7 +9,8 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
 // Ensure worker is configured
-pdfjs.GlobalWorkerOptions.workerSrc = '/pdfjs/pdf.worker.min.js';
+// Configure worker via CDN to match the version exactly
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 interface CanvasWriterProps {
   width?: number | string;
