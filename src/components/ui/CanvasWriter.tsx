@@ -292,8 +292,8 @@ const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>(({
         <div ref={containerRef} className={`w-full h-full relative ${className}`} style={{ minHeight: '1px' }}>
             <canvas
                 ref={canvasRef}
-                className="block touch-none absolute inset-0"
-                style={{ touchAction: 'none' }}
+                className="block absolute inset-0"
+                style={{ touchAction: 'pan-y' }}
                 onPointerDown={(e) => {
                     startDrawing(e);
                 }}
@@ -546,7 +546,15 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
       </div>
 
       {/* Content Area */}
-      <div className="relative bg-gray-100 border rounded-xl overflow-auto shadow-inner" style={{ height: pdfUrl ? '80vh' : height }}>
+      <div 
+        className="relative bg-gray-100 border rounded-xl overflow-auto shadow-inner" 
+        style={{ 
+          height: pdfUrl ? '80vh' : height,
+          scrollBehavior: 'smooth',
+          WebkitOverflowScrolling: 'touch',
+          overscrollBehavior: 'contain'
+        }}
+      >
          {pdfUrl ? (
              <div className="flex justify-center min-h-full p-8">
                  {loadingPdf && <div className="text-center mt-10">Loading PDF...</div>}
