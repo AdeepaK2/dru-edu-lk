@@ -143,8 +143,9 @@ export default function StudentInClassTestDetailPage() {
           const firestoreData = draftDoc.data();
           if (firestoreData.strokePages && Object.keys(firestoreData.strokePages).length > 0) {
             setDraftAnnotations(firestoreData.strokePages);
-            setShowDraftPrompt(true);
-            console.log('[Recovery] Found saved strokes from Firestore:', new Date(firestoreData.lastSaved.toDate()).toLocaleString());
+            // Don't show prompt - just load the strokes automatically
+            console.log('[Recovery] Loaded saved strokes from Firestore:', new Date(firestoreData.lastSaved.toDate()).toLocaleString());
+            toast.success('Your previous work has been loaded');
             return; // Use Firestore data, skip localStorage check
           }
         }
@@ -157,7 +158,7 @@ export default function StudentInClassTestDetailPage() {
           const draft = JSON.parse(draftJson);
           if (draft.pages && Object.keys(draft.pages).length > 0) {
             setDraftAnnotations(draft.pages);
-            setShowDraftPrompt(true);
+            setShowDraftPrompt(true); // Only show prompt for localStorage recovery
             console.log('[Recovery] Found localStorage draft from', new Date(draft.timestamp).toLocaleString());
           }
         }
