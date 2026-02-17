@@ -41,7 +41,10 @@ export default function StudentInClassTestDetailPage() {
   const [showPdfModal, setShowPdfModal] = useState(false);
   const [isWriting, setIsWriting] = useState(false);
   const [canvasTimeRemaining, setCanvasTimeRemaining] = useState<number>(0);
+  const [draftAnnotations, setDraftAnnotations] = useState<Record<number, string> | null>(null);
+  const [showDraftPrompt, setShowDraftPrompt] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const canvasWriterRef = React.useRef<any>(null);
 
   useEffect(() => {
     if (!user || !testId) return;
@@ -124,6 +127,27 @@ export default function StudentInClassTestDetailPage() {
 
     return () => clearInterval(interval);
   }, [isWriting, test]);
+
+  // Check for draft on mount
+  useEffect(() => {
+    if (!user || !testId || !test) return;
+
+    try {
+      const autoSaveKey = `canvas_draft_${testId}_${user.uid}`;
+      const draftJson = localStorage.getItem(autoSaveKey);
+      
+      if (draftJson) {
+        const draft = JSON.parse(draftJson);
+        if (draft.pages && Object.keys(draft.pages).length > 0) {
+          setDraftAnnotations(draft.pages);
+          setShowDraftPrompt(true);
+          console.log('[Recovery] Found draft from', new Date(draft.timestamp).toLocaleString());
+        }
+      }
+    } catch (error) {
+      console.error('[Recovery] Failed to load draft:', error);
+    }
+  }, [user, testId, test]);
 
   const handleTimeExpired = () => {
     setTimeExpired(true);
@@ -254,6 +278,15 @@ export default function StudentInClassTestDetailPage() {
 
       console.log('[Canvas] Saving submission...');
       await InClassSubmissionService.saveSubmission(submissionData);
+      
+      // Clear draft from localStorage after successful submission
+      try {
+        const autoSaveKey = `canvas_draft_${testId}_${user.uid}`;
+        localStorage.removeItem(autoSaveKey);
+        console.log('[Canvas] Cleared draft from localStorage');
+      } catch (error) {
+        console.error('[Canvas] Failed to clear draft:', error);
+      }
       console.log('[Canvas] Submission saved successfully');
 
       // Update local submission state
@@ -364,6 +397,50 @@ export default function StudentInClassTestDetailPage() {
           duration={(test as any).duration}
           onTimeExpired={handleTimeExpired}
         />
+
+        {/* Draft Recovery Prompt */}
+        {showDraftPrompt && draftAnnotations && (
+          <Card className="border-blue-200 bg-blue-50">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0">
+                <AlertCircle className="w-6 h-6 text-blue-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-blue-900 mb-1">Unsaved Work Found</h3>
+                <p className="text-sm text-blue-800 mb-3">
+                  We found some work you started earlier. Would you like to continue from where you left off?
+                </p>
+                <div className="flex gap-3">
+                  <Button
+                    onClick={() => {
+                      setShowDraftPrompt(false);
+                      setIsWriting(true);
+                      toast.success('Resuming your previous work');
+                    }}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    Resume Previous Work
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setDraftAnnotations(null);
+                      setShowDraftPrompt(false);
+                      if (user && testId) {
+                        const autoSaveKey = `canvas_draft_${testId}_${user.uid}`;
+                        localStorage.removeItem(autoSaveKey);
+                      }
+                      toast.success('Draft discarded');
+                    }}
+                    variant="outline"
+                    className="border-blue-600 text-blue-600 hover:bg-blue-100"
+                  >
+                    Start Fresh
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </Card>
+        )}
 
         {/* Grade Results - Show if graded */}
         {submission?.status === 'graded' && (
@@ -555,7 +632,7 @@ export default function StudentInClassTestDetailPage() {
                 {test.examPdfUrl ? 'Write on Question Paper' : 'Write Your Answer'}
               </h2>
               
-              {/* Compact Timer Display */}
+              {/* Compact Timer and Actions */}
               <div className="flex items-center gap-2 sm:gap-4">
                 <div className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg border-2 transition-all ${
                   canvasTimeRemaining === 0
@@ -602,6 +679,34 @@ export default function StudentInClassTestDetailPage() {
                 </div>
                 
                 <button
+                  onClick={() => {
+                    // Trigger the CanvasWriter's footer "Save Answer" button
+                    const saveButton = document.querySelector('.flex.justify-end button') as HTMLButtonElement;
+                    if (saveButton) {
+                      saveButton.click();
+                      setTimeout(() => setIsWriting(false), 500);
+                    } else {
+                      toast.error('Please use the Save Answer button below to submit');
+                    }
+                  }}
+                  disabled={uploading || timeExpired}
+                  className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-3 sm:px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors flex-shrink-0"
+                >
+                  {uploading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span className="hidden sm:inline">Submitting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="w-4 h-4" />
+                      <span className="hidden sm:inline">Submit Answer</span>
+                      <span className="sm:hidden">Submit</span>
+                    </>
+                  )}
+                </button>
+                
+                <button
                   onClick={() => setIsWriting(false)}
                   className="text-white hover:text-gray-300 px-2 sm:px-3 py-1 rounded flex-shrink-0"
                 >
@@ -614,6 +719,8 @@ export default function StudentInClassTestDetailPage() {
                 pdfUrl={(test as any).examPdfUrl}
                 outputFormat="pdf"
                 onSavePdf={handleCanvasSave}
+                autoSaveKey={user && testId ? `canvas_draft_${testId}_${user.uid}` : undefined}
+                initialPageAnnotations={draftAnnotations || {}}
               />
             </div>
           </div>
