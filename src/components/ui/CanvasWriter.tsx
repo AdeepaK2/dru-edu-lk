@@ -21,6 +21,7 @@ interface CanvasWriterProps {
   onSave?: (data: string | string[]) => void; // string for single image, string[] for PDF pages
   outputFormat?: 'image' | 'pdf'; // Output format
   onSavePdf?: (file: File) => void; // Callback for PDF file
+  autoSaveKey?: string; // localStorage key for auto-saving drafts
   className?: string;
 }
 
@@ -31,6 +32,7 @@ interface DrawingCanvasProps {
     color: string;
     strokeWidth: number;
     onHistoryChange?: (hasUndo: boolean, hasRedo: boolean) => void;
+    onDrawingChange?: () => void; // Callback when drawing happens
     backgroundImage?: string;
     initialDataUrl?: string;
     className?: string;
@@ -52,6 +54,7 @@ const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>(({
     color,
     strokeWidth,
     onHistoryChange,
+    onDrawingChange,
     backgroundImage,
     initialDataUrl,
     className
@@ -285,6 +288,7 @@ const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>(({
             const ctx = canvas?.getContext('2d');
             ctx?.closePath();
             saveHistory();
+            onDrawingChange?.(); // Notify parent that drawing occurred
         }
     };
 
@@ -324,11 +328,13 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
   onSave,
   outputFormat = 'image',
   onSavePdf,
+  autoSaveKey,
   className = '',
 }) => {
   const [tool, setTool] = useState<'pen' | 'eraser'>('pen');
   const [color, setColor] = useState<string>('#000000');
   const [strokeWidth, setStrokeWidth] = useState<number>(2);
+  const [needsAutoSave, setNeedsAutoSave] = useState(false);
   
   // PDF Rendering State
   const [numPages, setNumPages] = useState<number | null>(null);
@@ -346,6 +352,9 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
   // For PDF, we need to fetch blob like PDFViewer to avoid CORS
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
   const [loadingPdf, setLoadingPdf] = useState(false);
+  
+  // Auto-save timer ref
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (pdfUrl) {
@@ -363,6 +372,58 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
         });
     }
   }, [pdfUrl]);
+
+  // Auto-save functionality
+  useEffect(() => {
+    if (!autoSaveKey || !needsAutoSave) return;
+
+    // Clear any existing timer
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+
+    // Set a new timer to save after 2 seconds of inactivity
+    autoSaveTimerRef.current = setTimeout(() => {
+      try {
+        const draftData: any = {
+          timestamp: Date.now(),
+          pages: {}
+        };
+
+        if (pdfUrl) {
+          // Save all PDF pages
+          for (let i = 0; i < (numPages || 0); i++) {
+            const ref = pdfCanvasRefs.current.get(i);
+            if (ref && !ref.isEmpty()) {
+              draftData.pages[i + 1] = ref.getDataUrl();
+            }
+          }
+        } else {
+          // Save single canvas
+          if (plainCanvasRef.current && !plainCanvasRef.current.isEmpty()) {
+            draftData.pages[1] = plainCanvasRef.current.getDataUrl();
+          }
+        }
+
+        // Only save if there's actual content
+        if (Object.keys(draftData.pages).length > 0) {
+          localStorage.setItem(autoSaveKey, JSON.stringify(draftData));
+          console.log('[CanvasWriter] Auto-saved draft to localStorage');
+        }
+
+        setNeedsAutoSave(false);
+      } catch (error) {
+        console.error('[CanvasWriter] Auto-save failed:', error);
+      }
+    }, 2000); // 2 second debounce
+
+    // Cleanup on unmount
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, [needsAutoSave, autoSaveKey, pdfUrl, numPages]);
 
   // Handle Ctrl+S for Save
   useEffect(() => {
@@ -582,6 +643,7 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
                                         tool={tool}
                                         color={color}
                                         strokeWidth={strokeWidth}
+                                        onDrawingChange={() => setNeedsAutoSave(true)}
                                         initialDataUrl={initialPageAnnotations?.[index + 1]}
                                      />
                                  </div>
@@ -601,6 +663,7 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
                     strokeWidth={strokeWidth}
                     backgroundImage={initialImage}
                     onHistoryChange={(u, r) => { setCanUndo(u); setCanRedo(r); }}
+                    onDrawingChange={() => setNeedsAutoSave(true)}
                     initialDataUrl={initialPageAnnotations?.[1]}
                  />
              </div>
@@ -609,7 +672,7 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
 
       {/* Footer */}
       <div className="flex justify-end gap-2">
-            {onSave && (
+            {(onSave || onSavePdf) && (
                 <Button onClick={handleSaveAction} className="flex items-center gap-2">
                     <Save size={16} />
                     Save Answer
