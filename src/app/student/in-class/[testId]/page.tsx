@@ -40,6 +40,7 @@ export default function StudentInClassTestDetailPage() {
   const [submission, setSubmission] = useState<InClassSubmission | null>(null);
   const [showPdfModal, setShowPdfModal] = useState(false);
   const [isWriting, setIsWriting] = useState(false);
+  const [canvasTimeRemaining, setCanvasTimeRemaining] = useState<number>(0);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -105,6 +106,24 @@ export default function StudentInClassTestDetailPage() {
       }
     };
   }, [user, testId, router]);
+
+  // Update canvas timer in real-time
+  useEffect(() => {
+    if (!isWriting || !test) return;
+
+    const updateTimer = () => {
+      const startTime = (test as any).scheduledStartTime.toDate();
+      const endTime = new Date(startTime.getTime() + (test as any).duration * 60 * 1000);
+      const now = new Date();
+      const remaining = Math.max(0, endTime.getTime() - now.getTime());
+      setCanvasTimeRemaining(remaining);
+    };
+
+    updateTimer(); // Initial calculation
+    const interval = setInterval(updateTimer, 1000); // Update every second
+
+    return () => clearInterval(interval);
+  }, [isWriting, test]);
 
   const handleTimeExpired = () => {
     setTimeExpired(true);
@@ -531,16 +550,64 @@ export default function StudentInClassTestDetailPage() {
       {isWriting && (
         <div className="fixed inset-0 z-50 bg-white">
           <div className="h-full flex flex-col">
-            <div className="bg-gray-800 text-white px-4 py-3 flex items-center justify-between">
-              <h2 className="text-lg font-semibold">
+            <div className="bg-gray-800 text-white px-4 py-3 flex items-center justify-between gap-4">
+              <h2 className="text-lg font-semibold flex-shrink-0">
                 {test.examPdfUrl ? 'Write on Question Paper' : 'Write Your Answer'}
               </h2>
-              <button
-                onClick={() => setIsWriting(false)}
-                className="text-white hover:text-gray-300 px-3 py-1 rounded"
-              >
-                Close
-              </button>
+              
+              {/* Compact Timer Display */}
+              <div className="flex items-center gap-2 sm:gap-4">
+                <div className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg border-2 transition-all ${
+                  canvasTimeRemaining === 0
+                    ? 'bg-red-600 border-red-400' 
+                    : canvasTimeRemaining < 300000 // Less than 5 minutes
+                    ? 'bg-red-600/90 border-red-400 animate-pulse' 
+                    : canvasTimeRemaining < 600000 // Less than 10 minutes
+                    ? 'bg-yellow-600 border-yellow-400'
+                    : 'bg-green-600 border-green-400'
+                }`}>
+                  <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <div className="hidden sm:block">
+                    <p className="text-xs opacity-90 leading-tight">Time Left</p>
+                    <p className="text-base sm:text-lg font-bold font-mono leading-tight">
+                      {(() => {
+                        const totalSeconds = Math.floor(canvasTimeRemaining / 1000);
+                        const hours = Math.floor(totalSeconds / 3600);
+                        const minutes = Math.floor((totalSeconds % 3600) / 60);
+                        const seconds = totalSeconds % 60;
+                        
+                        if (canvasTimeRemaining === 0) return 'Expired';
+                        if (hours > 0) {
+                          return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                        }
+                        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                      })()}
+                    </p>
+                  </div>
+                  {/* Mobile: Show only timer */}
+                  <p className="sm:hidden text-lg font-bold font-mono">
+                    {(() => {
+                      const totalSeconds = Math.floor(canvasTimeRemaining / 1000);
+                      const hours = Math.floor(totalSeconds / 3600);
+                      const minutes = Math.floor((totalSeconds % 3600) / 60);
+                      const seconds = totalSeconds % 60;
+                      
+                      if (canvasTimeRemaining === 0) return 'Expired';
+                      if (hours > 0) {
+                        return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                      }
+                      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                    })()}
+                  </p>
+                </div>
+                
+                <button
+                  onClick={() => setIsWriting(false)}
+                  className="text-white hover:text-gray-300 px-2 sm:px-3 py-1 rounded flex-shrink-0"
+                >
+                  Close
+                </button>
+              </div>
             </div>
             <div className="flex-1 overflow-hidden">
               <CanvasWriter
