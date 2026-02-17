@@ -516,38 +516,36 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
   };
 
   const handleSaveAction = async () => {
-      if (outputFormat === 'pdf' && onSavePdf) {
-          await generatePdf();
+      // Priority 1: If onSave exists, save stroke data (lightweight)
+      if (onSave) {
+          if (pdfUrl) {
+              // Collect all pages
+              const pagesData: string[] = [];
+              for (let i = 0; i < (numPages || 0); i++) {
+                  const ref = pdfCanvasRefs.current.get(i);
+                  if (ref) {
+                      pagesData.push(ref.getDataUrl());
+                  } else {
+                      // If no ref, check if we have initial data
+                      const initial = initialPageAnnotations?.[i + 1];
+                      pagesData.push(initial || '');
+                  }
+              }
+              onSave(pagesData); 
+              toast.success('Progress saved!');
+          } else {
+              if (plainCanvasRef.current) {
+                  onSave(plainCanvasRef.current.getDataUrl());
+                  toast.success('Drawing saved!');
+              }
+          }
           return;
       }
       
-      if (!onSave) return;
-      
-      if (pdfUrl) {
-          // Collect all pages
-          const pagesData: string[] = [];
-          for (let i = 0; i < (numPages || 0); i++) {
-              const ref = pdfCanvasRefs.current.get(i);
-              if (ref) {
-                  pagesData.push(ref.getDataUrl());
-              } else {
-                   // If no ref, check if we have initial data?
-                   // If ref is missing (e.g. valid page but not rendered yet?), we might lose data.
-                   // But typically all pages render in this simple view.
-                   // If virtualized, we'd need to merge with initialAnnotations.
-                   const initial = initialPageAnnotations?.[i + 1];
-                   pagesData.push(initial || '');
-              }
-          }
-          // Merge with initial data for pages not currently rendered (if using virtualization)?
-          // Current implementation renders all pages, so refs should exist.
-          onSave(pagesData); 
-          toast.success('Progress saved!');
-      } else {
-          if (plainCanvasRef.current) {
-              onSave(plainCanvasRef.current.getDataUrl());
-              toast.success('Drawing saved!');
-          }
+      // Priority 2: If only onSavePdf exists, generate PDF
+      if (outputFormat === 'pdf' && onSavePdf) {
+          await generatePdf();
+          return;
       }
   };
 
