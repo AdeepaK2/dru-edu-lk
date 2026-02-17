@@ -444,7 +444,7 @@ export default function ClassDetails() {
               <h1 className="text-3xl font-bold mb-2">
                 {classData?.name || 'Class Details'}
               </h1>
-              <div className="flex items-center space-x-6 text-blue-100">
+              <div className="flex flex-wrap items-center gap-4 md:gap-6 text-blue-100 mt-2 md:mt-0">
                 <div className="flex items-center space-x-2">
                   <Users className="w-4 h-4" />
                   <span>
@@ -525,8 +525,8 @@ export default function ClassDetails() {
 
         {/* Tabs Navigation */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-          <div className="border-b border-gray-200 dark:border-gray-700">
-            <nav className="flex space-x-8 px-6">
+          <div className="border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
+            <nav className="flex space-x-8 px-6 min-w-max">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
