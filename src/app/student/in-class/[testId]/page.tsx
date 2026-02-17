@@ -20,7 +20,7 @@ const CanvasWriter = dynamic(() => import('@/components/ui/CanvasWriter'), {
   ssr: false,
   loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div></div>
 });
-import { doc, getDoc, Timestamp, collection, query, where, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, Timestamp, collection, query, where, onSnapshot, getFirestore, setDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { firestore } from '@/utils/firebase-client';
 import { InClassSubmissionService } from '@/services/inClassSubmissionService';
@@ -128,25 +128,45 @@ export default function StudentInClassTestDetailPage() {
     return () => clearInterval(interval);
   }, [isWriting, test]);
 
-  // Check for draft on mount
+  // Check for draft on mount (localStorage + Firestore)
   useEffect(() => {
     if (!user || !testId || !test) return;
 
-    try {
-      const autoSaveKey = `canvas_draft_${testId}_${user.uid}`;
-      const draftJson = localStorage.getItem(autoSaveKey);
-      
-      if (draftJson) {
-        const draft = JSON.parse(draftJson);
-        if (draft.pages && Object.keys(draft.pages).length > 0) {
-          setDraftAnnotations(draft.pages);
-          setShowDraftPrompt(true);
-          console.log('[Recovery] Found draft from', new Date(draft.timestamp).toLocaleString());
+    const loadDraft = async () => {
+      try {
+        // First, check Firestore for saved strokes (source of truth)
+        const db = getFirestore();
+        const draftRef = doc(db, 'inClassTestDrafts', `${testId}_${user.uid}`);
+        const draftDoc = await getDoc(draftRef);
+        
+        if (draftDoc.exists()) {
+          const firestoreData = draftDoc.data();
+          if (firestoreData.strokePages && Object.keys(firestoreData.strokePages).length > 0) {
+            setDraftAnnotations(firestoreData.strokePages);
+            setShowDraftPrompt(true);
+            console.log('[Recovery] Found saved strokes from Firestore:', new Date(firestoreData.lastSaved.toDate()).toLocaleString());
+            return; // Use Firestore data, skip localStorage check
+          }
         }
+
+        // Fallback to localStorage for crash recovery
+        const autoSaveKey = `canvas_draft_${testId}_${user.uid}`;
+        const draftJson = localStorage.getItem(autoSaveKey);
+        
+        if (draftJson) {
+          const draft = JSON.parse(draftJson);
+          if (draft.pages && Object.keys(draft.pages).length > 0) {
+            setDraftAnnotations(draft.pages);
+            setShowDraftPrompt(true);
+            console.log('[Recovery] Found localStorage draft from', new Date(draft.timestamp).toLocaleString());
+          }
+        }
+      } catch (error) {
+        console.error('[Recovery] Failed to load draft:', error);
       }
-    } catch (error) {
-      console.error('[Recovery] Failed to load draft:', error);
-    }
+    };
+
+    loadDraft();
   }, [user, testId, test]);
 
   const handleTimeExpired = () => {
@@ -239,6 +259,47 @@ export default function StudentInClassTestDetailPage() {
       toast.error(errorMessage);
     } finally {
       setUploading(false);
+    }
+  };
+
+  // Save strokes to Firestore (lightweight - no PDF generation)
+  const handleStrokeSave = async (strokeData: string | string[]) => {
+    if (!user || !testId) {
+      toast.error('Unable to save - user or test not loaded');
+      return;
+    }
+
+    try {
+      console.log('[StrokeSave] Saving stroke data to Firestore...');
+      
+      // Convert to array if it's a single string
+      const dataArray = Array.isArray(strokeData) ? strokeData : [strokeData];
+      
+      // Convert array to object with page numbers as keys
+      const strokePages: Record<number, string> = {};
+      dataArray.forEach((data, index) => {
+        if (data) {
+          strokePages[index + 1] = data;
+        }
+      });
+
+      // Save to Firestore under student's test attempt
+      const db = getFirestore();
+      const draftRef = doc(db, 'inClassTestDrafts', `${testId}_${user.uid}`);
+      
+      await setDoc(draftRef, {
+        testId,
+        studentId: user.uid,
+        studentEmail: user.email,
+        strokePages,
+        lastSaved: Timestamp.now()
+      });
+
+      console.log('[StrokeSave] Strokes saved successfully');
+      toast.success('Progress saved!');
+    } catch (error) {
+      console.error('[StrokeSave] Error saving strokes:', error);
+      toast.error('Failed to save progress');
     }
   };
 
@@ -718,6 +779,7 @@ export default function StudentInClassTestDetailPage() {
               <CanvasWriter
                 pdfUrl={(test as any).examPdfUrl}
                 outputFormat="pdf"
+                onSave={handleStrokeSave}
                 onSavePdf={handleCanvasSave}
                 autoSaveKey={user && testId ? `canvas_draft_${testId}_${user.uid}` : undefined}
                 initialPageAnnotations={draftAnnotations || {}}
