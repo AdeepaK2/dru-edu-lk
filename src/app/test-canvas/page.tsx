@@ -35,7 +35,7 @@ export default function TestCanvasPage() {
   // Mock Loading State
   const [initialData, setInitialData] = useState<PageAnnotations>({});
 
-  const handleSave = (data: string | string[]) => {
+  const handleSave = (pagesJson: Record<number, string>) => {
     // Basic validation
     if (!selectedClassId || !selectedStudentId) {
         toast.error('Please select a Class and Student first!');
@@ -46,19 +46,6 @@ export default function TestCanvasPage() {
     const selectedStudent = STUDENTS.find(s => s.id === selectedStudentId);
 
     if (!selectedClass || !selectedStudent) return;
-
-    // Construct the Schema Object
-    let pageAnnotations: PageAnnotations = {};
-    
-    if (Array.isArray(data)) {
-        data.forEach((dataUrl, index) => {
-            if (dataUrl && dataUrl.length > 100) { 
-                 pageAnnotations[index + 1] = dataUrl;
-            }
-        });
-    } else {
-        pageAnnotations[1] = data;
-    }
 
     const submission: StudentPdfSubmission = {
         id: `sub_${Date.now()}`,
@@ -71,7 +58,7 @@ export default function TestCanvasPage() {
         submissionType: 'homework',
         title: submissionTitle,
         status: 'submitted',
-        pageAnnotations: pageAnnotations,
+        pageAnnotations: pagesJson,
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
         submittedAt: Timestamp.now(),
@@ -81,7 +68,7 @@ export default function TestCanvasPage() {
     toast.success('Submission saved! (Check Console)');
     
     // Simulate "Saved" state for resuming later
-    setInitialData(pageAnnotations);
+    setInitialData(pagesJson);
   };
 
   const handleLoadMockData = () => {

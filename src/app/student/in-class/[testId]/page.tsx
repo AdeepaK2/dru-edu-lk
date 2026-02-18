@@ -21,8 +21,8 @@ const CanvasWriter = dynamic(() => import('@/components/ui/CanvasWriter'), {
   loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div></div>
 });
 import { doc, getDoc, Timestamp, collection, query, where, onSnapshot, getFirestore, setDoc } from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { firestore } from '@/utils/firebase-client';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { firestore, storage } from '@/utils/firebase-client';
 import { InClassSubmissionService } from '@/services/inClassSubmissionService';
 
 export default function StudentInClassTestDetailPage() {
@@ -36,6 +36,7 @@ export default function StudentInClassTestDetailPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [submittedFile, setSubmittedFile] = useState<{ url: string, name: string } | null>(null);
+  const [submittedViaFile, setSubmittedViaFile] = useState(false);
   const [timeExpired, setTimeExpired] = useState(false);
   const [submission, setSubmission] = useState<InClassSubmission | null>(null);
   const [showPdfModal, setShowPdfModal] = useState(false);
@@ -45,6 +46,7 @@ export default function StudentInClassTestDetailPage() {
   const [showDraftPrompt, setShowDraftPrompt] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const canvasWriterRef = React.useRef<any>(null);
+  const canvasSubmitRef = React.useRef<(() => void) | null>(null);
 
   useEffect(() => {
     if (!user || !testId) return;
@@ -211,7 +213,6 @@ export default function StudentInClassTestDetailPage() {
       console.log('[Upload] Starting upload...');
 
       // Upload to Firebase Storage
-      const storage = getStorage();
       const timestamp = Date.now();
       const storageRef = ref(storage, `in-class-submissions/${testId}/${user.uid}/${timestamp}_${file.name}`);
       
@@ -245,6 +246,7 @@ export default function StudentInClassTestDetailPage() {
         name: file.name,
         url: downloadURL
       });
+      setSubmittedViaFile(true);
 
       toast.success('Answer script uploaded successfully!');
     } catch (error: any) {
@@ -263,28 +265,12 @@ export default function StudentInClassTestDetailPage() {
     }
   };
 
-  // Save strokes to Firestore (lightweight - no PDF generation)
-  const handleStrokeSave = async (strokeData: string | string[]) => {
-    if (!user || !testId) {
-      toast.error('Unable to save - user or test not loaded');
-      return;
-    }
+  // Save strokes to Firestore (called automatically by CanvasWriter every 3s)
+  const handleStrokeSave = async (strokePages: Record<number, string>) => {
+    if (!user || !testId) return;
 
     try {
-      console.log('[StrokeSave] Saving stroke data to Firestore...');
-      
-      // Convert to array if it's a single string
-      const dataArray = Array.isArray(strokeData) ? strokeData : [strokeData];
-      
-      // Convert array to object with page numbers as keys
-      const strokePages: Record<number, string> = {};
-      dataArray.forEach((data, index) => {
-        if (data) {
-          strokePages[index + 1] = data;
-        }
-      });
-
-      // Save to Firestore under student's test attempt
+      console.log('[StrokeSave] Auto-saving stroke data to Firestore...');
       const db = getFirestore();
       const draftRef = doc(db, 'inClassTestDrafts', `${testId}_${user.uid}`);
       
@@ -297,10 +283,8 @@ export default function StudentInClassTestDetailPage() {
       });
 
       console.log('[StrokeSave] Strokes saved successfully');
-      toast.success('Progress saved!');
     } catch (error) {
       console.error('[StrokeSave] Error saving strokes:', error);
-      toast.error('Failed to save progress');
     }
   };
 
@@ -315,7 +299,6 @@ export default function StudentInClassTestDetailPage() {
       console.log('[Canvas] Uploading PDF...');
 
       // Upload to Firebase Storage
-      const storage = getStorage();
       const timestamp = Date.now();
       const storageRef = ref(storage, `in-class-submissions/${testId}/${user.uid}/${timestamp}_${file.name}`);
       
@@ -358,6 +341,7 @@ export default function StudentInClassTestDetailPage() {
         name: file.name,
         url: downloadURL
       });
+      setSubmittedViaFile(false);
 
       setIsWriting(false);
       toast.success('Answer submitted successfully!');
@@ -617,29 +601,56 @@ export default function StudentInClassTestDetailPage() {
                     <h4 className="font-medium text-gray-900">Submission Received</h4>
                     <p className="text-sm text-gray-500 mt-1">{submittedFile.name}</p>
                   </div>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setIsWriting(true)}
-                    className="mt-4"
-                    disabled={timeExpired}
-                  >
-                    {timeExpired ? 'Time Expired' : 'Edit Answer'}
-                  </Button>
+                  {!timeExpired && (
+                    submittedViaFile ? (
+                      // File upload submission — re-upload a new file
+                      <>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="application/pdf"
+                          onChange={handleFileUpload}
+                          disabled={uploading}
+                          className="hidden"
+                        />
+                        <Button
+                          variant="outline"
+                          className="mt-4"
+                          disabled={uploading}
+                          onClick={() => fileInputRef.current?.click()}
+                        >
+                          {uploading ? 'Uploading...' : 'Replace File'}
+                        </Button>
+                      </>
+                    ) : (
+                      // Canvas submission — re-open canvas writer
+                      <Button
+                        variant="outline"
+                        onClick={() => setIsWriting(true)}
+                        className="mt-4"
+                      >
+                        Edit Answer
+                      </Button>
+                    )
+                  )}
+                  {timeExpired && (
+                    <p className="text-sm text-gray-500 mt-2">Time Expired — submission locked</p>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-4 w-full max-w-sm">
-                   <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-2">
                     <Upload className="w-8 h-8 text-blue-500" />
                   </div>
                   <div>
                     <h4 className="font-medium text-gray-900">Submit Your Answer</h4>
                     <p className="text-sm text-gray-500 mt-1">
-                      {(test as any).examPdfUrl 
-                        ? 'Write directly on the question paper or upload a scanned PDF' 
+                      {(test as any).examPdfUrl
+                        ? 'Write directly on the question paper or upload a scanned PDF'
                         : 'Write your answer or upload a scanned PDF'}
                     </p>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Button
                       className="w-full"
@@ -648,7 +659,7 @@ export default function StudentInClassTestDetailPage() {
                     >
                       {(test as any).examPdfUrl ? 'Write on Question Paper' : 'Write Answer'}
                     </Button>
-                    
+
                     <div className="relative">
                       <div className="absolute inset-0 flex items-center">
                         <div className="w-full border-t border-gray-200"></div>
@@ -657,7 +668,7 @@ export default function StudentInClassTestDetailPage() {
                         <span className="px-2 bg-gray-50 text-gray-500">or</span>
                       </div>
                     </div>
-                    
+
                     <input
                       ref={fileInputRef}
                       type="file"
@@ -742,13 +753,11 @@ export default function StudentInClassTestDetailPage() {
                 
                 <button
                   onClick={() => {
-                    // Trigger the CanvasWriter's footer "Save Answer" button
-                    const saveButton = document.querySelector('.flex.justify-end button') as HTMLButtonElement;
-                    if (saveButton) {
-                      saveButton.click();
-                      setTimeout(() => setIsWriting(false), 500);
+                    // Trigger PDF generation and upload via the registered submit callback
+                    if (canvasSubmitRef.current) {
+                      canvasSubmitRef.current();
                     } else {
-                      toast.error('Please use the Save Answer button below to submit');
+                      toast.error('Canvas not ready, please try again');
                     }
                   }}
                   disabled={uploading || timeExpired}
@@ -784,6 +793,7 @@ export default function StudentInClassTestDetailPage() {
                 onSavePdf={handleCanvasSave}
                 autoSaveKey={user && testId ? `canvas_draft_${testId}_${user.uid}` : undefined}
                 initialPageAnnotations={draftAnnotations || {}}
+                onRegisterSubmit={(fn) => { canvasSubmitRef.current = fn; }}
               />
             </div>
           </div>
