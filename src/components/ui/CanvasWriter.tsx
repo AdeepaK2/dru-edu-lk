@@ -1,682 +1,450 @@
 'use client';
 
-import React, { useRef, useState, useEffect, useCallback, useImperativeHandle, forwardRef } from 'react';
-import Button from './Button'; 
-import { Paintbrush, Eraser, Trash2, Undo, Redo, Download, Save, ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
+import { Paintbrush, Eraser, Trash2, Undo, Redo, ZoomIn, ZoomOut, Save } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { Document, Page, pdfjs } from 'react-pdf';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
+import { PDFDocument } from 'pdf-lib';
 
-// Ensure worker is configured
-// Configure worker via CDN to match the version exactly
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 interface CanvasWriterProps {
+  pdfUrl?: string;
+  initialPageAnnotations?: Record<number, string>; // page (1-based) -> Fabric JSON string
+  onSave?: (pagesJson: Record<number, string>) => void; // called on auto-save (stroke data)
+  onSavePdf?: (file: File) => void; // called on final submit
+  onRegisterSubmit?: (fn: () => Promise<void>) => void;
+  autoSaveKey?: string;
+  className?: string;
+  // Legacy props kept for compatibility
   width?: number | string;
   height?: number | string;
   initialImage?: string;
-  pdfUrl?: string; // New prop for PDF support
-  initialPageAnnotations?: Record<number, string>; // Page 1-based index -> DataURL
-  onSave?: (data: string | string[]) => void; // string for single image, string[] for PDF pages
-  outputFormat?: 'image' | 'pdf'; // Output format
-  onSavePdf?: (file: File) => void; // Callback for PDF file
-  autoSaveKey?: string; // localStorage key for auto-saving drafts
-  className?: string;
+  outputFormat?: 'image' | 'pdf';
 }
 
-interface DrawingCanvasProps {
-    width?: number;
-    height?: number;
-    tool: 'pen' | 'eraser';
-    color: string;
-    strokeWidth: number;
-    onHistoryChange?: (hasUndo: boolean, hasRedo: boolean) => void;
-    onDrawingChange?: () => void; // Callback when drawing happens
-    backgroundImage?: string;
-    initialDataUrl?: string;
-    className?: string;
+const COLORS = ['#000000', '#EF4444', '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899'];
+const STROKE_SIZES = [2, 4, 6, 10, 16];
+
+// Per-page Fabric canvas manager
+interface PageCanvasState {
+  fabricCanvas: any | null;
+  containerEl: HTMLDivElement | null;
 }
-
-export interface DrawingCanvasHandle {
-    undo: () => void;
-    redo: () => void;
-    clear: () => void;
-    getDataUrl: () => string;
-    isEmpty: () => boolean;
-}
-
-// Sub-component for the actual drawing surface
-const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>(({
-    width,
-    height,
-    tool,
-    color,
-    strokeWidth,
-    onHistoryChange,
-    onDrawingChange,
-    backgroundImage,
-    initialDataUrl,
-    className
-}, ref) => {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    const containerRef = useRef<HTMLDivElement>(null);
-    const isDrawingRef = useRef(false); // Use Ref for synchronous state in event handlers
-    const [history, setHistory] = useState<ImageData[]>([]);
-    const [historyIndex, setHistoryIndex] = useState<number>(-1);
-
-    // Initial Resize & Observer
-    useEffect(() => {
-        const canvas = canvasRef.current;
-        const container = containerRef.current;
-        if (!canvas || !container) return;
-
-        const updateSize = () => {
-             const rect = container.getBoundingClientRect();
-             // Only update if dimensions actually changed
-             if (canvas.width !== rect.width || canvas.height !== rect.height) {
-                 // Save current content
-                 const tempCanvas = document.createElement('canvas');
-                 tempCanvas.width = canvas.width;
-                 tempCanvas.height = canvas.height;
-                 const tempCtx = tempCanvas.getContext('2d');
-                 if (tempCtx && canvas.width > 0 && canvas.height > 0) {
-                     tempCtx.drawImage(canvas, 0, 0);
-                 }
-
-                 canvas.width = rect.width;
-                 canvas.height = rect.height;
-
-                 const ctx = canvas.getContext('2d');
-                 if (ctx) {
-                     ctx.lineCap = 'round';
-                     ctx.lineJoin = 'round';
-                     // Restore content
-                     if (tempCanvas.width > 0 && tempCanvas.height > 0) {
-                         ctx.drawImage(tempCanvas, 0, 0);
-                     } else if (historyIndex >= 0 && history[historyIndex]) {
-                         ctx.putImageData(history[historyIndex], 0, 0);
-                     } else if (initialDataUrl) {
-                        // handled by separate effect
-                     } else if (backgroundImage) {
-                         const img = new Image();
-                         img.src = backgroundImage;
-                         img.onload = () => {
-                             ctx.drawImage(img, 0, 0, rect.width, rect.height);
-                             saveHistory();
-                         };
-                     }
-                 }
-             }
-        };
-
-        // Initial sizing
-        if (width && height) {
-            canvas.width = width;
-            canvas.height = height;
-        } else {
-            updateSize();
-            const resizeObserver = new ResizeObserver(() => updateSize());
-            resizeObserver.observe(container);
-            return () => resizeObserver.disconnect();
-        }
-
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-             ctx.lineCap = 'round';
-             ctx.lineJoin = 'round';
-        }
-    }, [width, height, backgroundImage]);
-
-    // Load Initial Data URL
-    useEffect(() => {
-        const canvas = canvasRef.current;
-        if (!canvas || !initialDataUrl) return;
-
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-
-        const img = new Image();
-        img.src = initialDataUrl;
-        img.onload = () => {
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            saveHistory();
-        };
-    }, [initialDataUrl]);
-
-    const saveHistory = useCallback(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        
-        setHistory(prev => {
-            const newHistory = prev.slice(0, historyIndex + 1);
-            return [...newHistory, imageData];
-        });
-        setHistoryIndex(prev => {
-            const newIndex = prev + 1;
-            return newIndex;
-        });
-    }, [historyIndex]);
-
-    // Notify parent about history state
-    useEffect(() => {
-        onHistoryChange?.(historyIndex > 0, historyIndex < history.length - 1);
-    }, [historyIndex, history.length, onHistoryChange]);
-
-    const undo = () => {
-        if (historyIndex > 0) {
-            const newIndex = historyIndex - 1;
-            setHistoryIndex(newIndex);
-            const canvas = canvasRef.current;
-            const ctx = canvas?.getContext('2d');
-            if (canvas && ctx) {
-                ctx.putImageData(history[newIndex], 0, 0);
-            }
-        } else if (historyIndex === 0) {
-             setHistoryIndex(-1);
-             const canvas = canvasRef.current;
-             const ctx = canvas?.getContext('2d');
-             if (canvas && ctx) {
-                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-             }
-        }
-    };
-
-    const redo = () => {
-        if (historyIndex < history.length - 1) {
-            const newIndex = historyIndex + 1;
-            setHistoryIndex(newIndex);
-            const canvas = canvasRef.current;
-            const ctx = canvas?.getContext('2d');
-            if (canvas && ctx) {
-                ctx.putImageData(history[newIndex], 0, 0);
-            }
-        }
-    };
-
-    const clear = () => {
-        const canvas = canvasRef.current;
-        const ctx = canvas?.getContext('2d');
-        if (canvas && ctx) {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            saveHistory();
-        }
-    };
-
-    const getDataUrl = () => {
-        return canvasRef.current?.toDataURL('image/png') || '';
-    };
-
-    const isEmpty = () => {
-        return historyIndex === -1; 
-    };
-
-    useImperativeHandle(ref, () => ({
-        undo,
-        redo,
-        clear,
-        getDataUrl,
-        isEmpty
-    }));
-
-    const getCoordinates = (e: React.PointerEvent<HTMLCanvasElement>) => {
-        const canvas = canvasRef.current;
-        if (!canvas) return { x: 0, y: 0 };
-        const rect = canvas.getBoundingClientRect();
-        return {
-            x: e.clientX - rect.left,
-            y: e.clientY - rect.top,
-        };
-    };
-
-    const startDrawing = (e: React.PointerEvent<HTMLCanvasElement>) => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        
-        // Critical: Capture pointer to handle moves outside canvas and stylus input correctly
-        e.currentTarget.setPointerCapture(e.pointerId);
-        
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-
-        isDrawingRef.current = true;
-        const { x, y } = getCoordinates(e);
-        
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-
-        // Apply styles immediately
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        if (tool === 'eraser') {
-            ctx.globalCompositeOperation = 'destination-out';
-            ctx.lineWidth = strokeWidth * 2;
-        } else {
-            ctx.globalCompositeOperation = 'source-over';
-            ctx.strokeStyle = color;
-            ctx.lineWidth = strokeWidth;
-        }
-
-        // Draw a single dot for clicks
-        ctx.lineTo(x, y);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-    };
-
-    const draw = (e: React.PointerEvent<HTMLCanvasElement>) => {
-        if (!isDrawingRef.current) return; // Use Ref to check state synchronously
-        const canvas = canvasRef.current;
-        const ctx = canvas?.getContext('2d');
-        if (!canvas || !ctx) return;
-
-        const { x, y } = getCoordinates(e);
-        ctx.lineTo(x, y);
-        ctx.stroke();
-    };
-
-    const stopDrawing = (e: React.PointerEvent<HTMLCanvasElement>) => {
-        if (isDrawingRef.current) {
-            isDrawingRef.current = false;
-            e.currentTarget.releasePointerCapture(e.pointerId);
-            
-            const canvas = canvasRef.current;
-            const ctx = canvas?.getContext('2d');
-            ctx?.closePath();
-            saveHistory();
-            onDrawingChange?.(); // Notify parent that drawing occurred
-        }
-    };
-
-    return (
-        <div ref={containerRef} className={`w-full h-full relative ${className}`} style={{ minHeight: '1px' }}>
-            <canvas
-                ref={canvasRef}
-                className="block absolute inset-0"
-                style={{ touchAction: 'pan-y' }}
-                onPointerDown={(e) => {
-                    startDrawing(e);
-                }}
-                onPointerMove={(e) => {
-                    draw(e);
-                }}
-                onPointerUp={stopDrawing}
-                onPointerLeave={stopDrawing}
-                onPointerCancel={stopDrawing}
-            />
-        </div>
-    );
-});
-DrawingCanvas.displayName = 'DrawingCanvas';
-
-const COLORS = [
-  '#000000', '#EF4444', '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899'
-];
-
-const STROKE_SIZES = [2, 4, 6, 8, 12];
 
 const CanvasWriter: React.FC<CanvasWriterProps> = ({
-  width = '100%',
-  height = 500, // Default height for plain mode
-  initialImage,
   pdfUrl,
-  initialPageAnnotations,
+  initialPageAnnotations = {},
   onSave,
-  outputFormat = 'image',
   onSavePdf,
+  onRegisterSubmit,
   autoSaveKey,
   className = '',
 }) => {
   const [tool, setTool] = useState<'pen' | 'eraser'>('pen');
-  const [color, setColor] = useState<string>('#000000');
-  const [strokeWidth, setStrokeWidth] = useState<number>(2);
-  const [needsAutoSave, setNeedsAutoSave] = useState(false);
-  
-  // PDF Rendering State
-  const [numPages, setNumPages] = useState<number | null>(null);
+  const [color, setColor] = useState('#000000');
+  const [strokeWidth, setStrokeWidth] = useState(4);
   const [pdfScale, setPdfScale] = useState(1.0);
-  
-  // Refs for current canvas (Plain mode)
-  const plainCanvasRef = useRef<DrawingCanvasHandle>(null);
-
-  // Refs for multiple canvases (PDF mode)
-  const pdfCanvasRefs = useRef<Map<number, DrawingCanvasHandle>>(new Map());
-  
-  const [canUndo, setCanUndo] = useState(false);
-  const [canRedo, setCanRedo] = useState(false);
-
-  // For PDF, we need to fetch blob like PDFViewer to avoid CORS
+  const [numPages, setNumPages] = useState<number | null>(null);
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
   const [loadingPdf, setLoadingPdf] = useState(false);
-  
-  // Auto-save timer ref
-  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Map of page index (0-based) -> fabric.Canvas instance
+  const fabricCanvases = useRef<Map<number, any>>(new Map());
+  // Map of page index -> wrapper div (to size the fabric canvas)
+  const pageWrappers = useRef<Map<number, HTMLDivElement>>(new Map());
+  // Auto-save debounce timer
+  const autoSaveTimer = useRef<NodeJS.Timeout | null>(null);
+  // Track which pages have been initialised with saved strokes
+  const initialisedPages = useRef<Set<number>>(new Set());
+
+  // Load PDF blob via proxy to avoid CORS
   useEffect(() => {
-    if (pdfUrl) {
-      setLoadingPdf(true);
-      fetch(`/api/pdf?url=${encodeURIComponent(pdfUrl)}`)
-        .then(res => res.blob())
-        .then(blob => {
-            setPdfBlob(blob);
-            setLoadingPdf(false);
-        })
-        .catch(err => {
-            console.error(err);
-            toast.error("Failed to load PDF");
-            setLoadingPdf(false);
-        });
-    }
+    if (!pdfUrl) return;
+    setLoadingPdf(true);
+    fetch(`/api/pdf?url=${encodeURIComponent(pdfUrl)}`)
+      .then(r => r.blob())
+      .then(blob => { setPdfBlob(blob); setLoadingPdf(false); })
+      .catch(err => { console.error(err); toast.error('Failed to load PDF'); setLoadingPdf(false); });
   }, [pdfUrl]);
 
-  // Auto-save functionality
-  useEffect(() => {
-    if (!autoSaveKey || !needsAutoSave) return;
+  // Collect all page JSON data
+  const collectPagesJson = useCallback((): Record<number, string> => {
+    const result: Record<number, string> = {};
+    fabricCanvases.current.forEach((fc, idx) => {
+      if (fc) {
+        result[idx + 1] = JSON.stringify(fc.toJSON());
+      }
+    });
+    return result;
+  }, []);
 
-    // Clear any existing timer
-    if (autoSaveTimerRef.current) {
-      clearTimeout(autoSaveTimerRef.current);
+  // Trigger auto-save (debounced)
+  const scheduleAutoSave = useCallback(() => {
+    if (!onSave) return;
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(() => {
+      const pagesJson = collectPagesJson();
+      if (Object.keys(pagesJson).length > 0) {
+        onSave(pagesJson);
+        // Also persist to localStorage as crash backup
+        if (autoSaveKey) {
+          try {
+            localStorage.setItem(autoSaveKey, JSON.stringify({ timestamp: Date.now(), pages: pagesJson }));
+          } catch (_) {}
+        }
+      }
+    }, 3000);
+  }, [onSave, collectPagesJson, autoSaveKey]);
+
+  // Initialise a Fabric canvas on a page wrapper div
+  const initFabricCanvas = useCallback(async (pageIndex: number, wrapperEl: HTMLDivElement) => {
+    if (fabricCanvases.current.has(pageIndex)) return; // already initialised
+
+    // Dynamically import fabric (client-only)
+    const { fabric } = await import('fabric');
+
+    const rect = wrapperEl.getBoundingClientRect();
+    const w = rect.width || wrapperEl.offsetWidth || 800;
+    const h = rect.height || wrapperEl.offsetHeight || 1100;
+
+    // Create a canvas element inside the wrapper
+    const canvasEl = document.createElement('canvas');
+    canvasEl.width = w;
+    canvasEl.height = h;
+    canvasEl.style.position = 'absolute';
+    canvasEl.style.inset = '0';
+    canvasEl.style.width = '100%';
+    canvasEl.style.height = '100%';
+    wrapperEl.appendChild(canvasEl);
+
+    const fc = new fabric.Canvas(canvasEl, {
+      isDrawingMode: true,
+      width: w,
+      height: h,
+      backgroundColor: 'transparent',
+      selection: false,
+    });
+
+    // Set brush
+    fc.freeDrawingBrush = new fabric.PencilBrush(fc);
+    fc.freeDrawingBrush.color = color;
+    fc.freeDrawingBrush.width = strokeWidth;
+
+    // Listen for drawing events to trigger auto-save
+    fc.on('path:created', () => scheduleAutoSave());
+
+    fabricCanvases.current.set(pageIndex, fc);
+
+    // Restore saved strokes if available
+    const savedJson = initialPageAnnotations[pageIndex + 1];
+    if (savedJson && !initialisedPages.current.has(pageIndex)) {
+      initialisedPages.current.add(pageIndex);
+      try {
+        await new Promise<void>((resolve) => {
+          fc.loadFromJSON(JSON.parse(savedJson), () => {
+            fc.renderAll();
+            resolve();
+          });
+        });
+        // Re-enable drawing mode after loading
+        fc.isDrawingMode = true;
+      } catch (e) {
+        console.error('[CanvasWriter] Failed to restore strokes for page', pageIndex + 1, e);
+      }
     }
+  }, [color, strokeWidth, scheduleAutoSave, initialPageAnnotations]);
 
-    // Set a new timer to save after 2 seconds of inactivity
-    autoSaveTimerRef.current = setTimeout(() => {
-      try {
-        const draftData: any = {
-          timestamp: Date.now(),
-          pages: {}
-        };
-
-        if (pdfUrl) {
-          // Save all PDF pages
-          for (let i = 0; i < (numPages || 0); i++) {
-            const ref = pdfCanvasRefs.current.get(i);
-            if (ref && !ref.isEmpty()) {
-              draftData.pages[i + 1] = ref.getDataUrl();
-            }
-          }
-        } else {
-          // Save single canvas
-          if (plainCanvasRef.current && !plainCanvasRef.current.isEmpty()) {
-            draftData.pages[1] = plainCanvasRef.current.getDataUrl();
-          }
-        }
-
-        // Only save if there's actual content
-        if (Object.keys(draftData.pages).length > 0) {
-          localStorage.setItem(autoSaveKey, JSON.stringify(draftData));
-          console.log('[CanvasWriter] Auto-saved draft to localStorage');
-        }
-
-        setNeedsAutoSave(false);
-      } catch (error) {
-        console.error('[CanvasWriter] Auto-save failed:', error);
-      }
-    }, 2000); // 2 second debounce
-
-    // Cleanup on unmount
-    return () => {
-      if (autoSaveTimerRef.current) {
-        clearTimeout(autoSaveTimerRef.current);
-      }
-    };
-  }, [needsAutoSave, autoSaveKey, pdfUrl, numPages]);
-
-  // Handle Ctrl+S for Save
+  // Update all fabric canvases when tool/color/strokeWidth changes
   useEffect(() => {
-      const handleKeyDown = (e: KeyboardEvent) => {
-          if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-              e.preventDefault();
-              handleSaveAction();
-          }
-      };
+    const updateBrushes = async () => {
+      const { fabric } = await import('fabric');
+      fabricCanvases.current.forEach((fc) => {
+        if (!fc) return;
+        if (tool === 'eraser') {
+          // Use a white brush as eraser (simple approach compatible with fabric v5)
+          fc.freeDrawingBrush = new fabric.PencilBrush(fc);
+          fc.freeDrawingBrush.color = 'rgba(255,255,255,1)';
+          fc.freeDrawingBrush.width = strokeWidth * 3;
+          fc.isDrawingMode = true;
+        } else {
+          fc.freeDrawingBrush = new fabric.PencilBrush(fc);
+          fc.freeDrawingBrush.color = color;
+          fc.freeDrawingBrush.width = strokeWidth;
+          fc.isDrawingMode = true;
+        }
+      });
+    };
+    updateBrushes();
+  }, [tool, color, strokeWidth]);
 
-      window.addEventListener('keydown', handleKeyDown);
-      return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onSave, numPages, pdfUrl]); // Dependencies for save action
-
-  const handleDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
-    setNumPages(numPages);
-  };
-
-  const handleAction = (action: 'undo' | 'redo' | 'clear') => {
-      if (pdfUrl) {
-          if (action === 'clear') {
-              if (confirm('Clear drawings on all pages?')) {
-                  pdfCanvasRefs.current.forEach(ref => ref.clear());
-              }
-          }
-           if (action === 'undo' || action === 'redo') {
-               toast("Undo/Redo per page allows better control - implemented via per-page controls in future?");
-           }
-      } else {
-          // Plain mode
-          if (action === 'undo') plainCanvasRef.current?.undo();
-          if (action === 'redo') plainCanvasRef.current?.redo();
-          if (action === 'clear') plainCanvasRef.current?.clear();
+  // Undo last stroke on all canvases (removes last path object)
+  const handleUndo = () => {
+    fabricCanvases.current.forEach((fc) => {
+      if (!fc) return;
+      const objects = fc.getObjects();
+      if (objects.length > 0) {
+        fc.remove(objects[objects.length - 1]);
+        fc.renderAll();
       }
+    });
+    scheduleAutoSave();
   };
 
-  const generatePdf = async () => {
-      try {
-          const pdf = new jsPDF('p', 'mm', 'a4');
-          const pageWidth = pdf.internal.pageSize.getWidth();
-          const pageHeight = pdf.internal.pageSize.getHeight();
-
-          if (pdfUrl) {
-              // Multi-page PDF
-              const pageElements = document.querySelectorAll('.react-pdf__Page');
-              for (let i = 0; i < pageElements.length; i++) {
-                  const pageElement = pageElements[i] as HTMLElement;
-                  const canvas = await html2canvas(pageElement, {
-                      scale: 2,
-                      useCORS: true,
-                      logging: false,
-                  });
-                  
-                  const imgData = canvas.toDataURL('image/png');
-                  const imgWidth = pageWidth;
-                  const imgHeight = (canvas.height * pageWidth) / canvas.width;
-                  
-                  if (i > 0) pdf.addPage();
-                  pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-              }
-          } else {
-              // Single canvas
-              const canvasElement = document.querySelector('.bg-white.h-full') as HTMLElement;
-              if (canvasElement) {
-                  const canvas = await html2canvas(canvasElement, {
-                      scale: 2,
-                      useCORS: true,
-                      logging: false,
-                  });
-                  
-                  const imgData = canvas.toDataURL('image/png');
-                  const imgWidth = pageWidth;
-                  const imgHeight = (canvas.height * pageWidth) / canvas.width;
-                  
-                  pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-              }
-          }
-
-          // Convert to File object
-          const pdfBlob = pdf.output('blob');
-          const pdfFile = new File([pdfBlob], `answer-${Date.now()}.pdf`, { type: 'application/pdf' });
-          
-          if (onSavePdf) {
-              onSavePdf(pdfFile);
-          }
-      } catch (error) {
-          console.error('PDF generation failed:', error);
-          toast.error('Failed to generate PDF');
-      }
+  // Clear all canvases
+  const handleClear = () => {
+    if (!confirm('Clear all drawings on all pages?')) return;
+    fabricCanvases.current.forEach((fc) => {
+      if (!fc) return;
+      fc.clear();
+      fc.backgroundColor = 'transparent';
+      fc.renderAll();
+    });
+    scheduleAutoSave();
   };
 
-  const handleSaveAction = async () => {
-      // Priority 1: If onSave exists, save stroke data (lightweight)
+  // Manual save (strokes only)
+  const handleManualSave = useCallback(async () => {
+    setIsSaving(true);
+    try {
+      const pagesJson = collectPagesJson();
       if (onSave) {
-          if (pdfUrl) {
-              // Collect all pages
-              const pagesData: string[] = [];
-              for (let i = 0; i < (numPages || 0); i++) {
-                  const ref = pdfCanvasRefs.current.get(i);
-                  if (ref) {
-                      pagesData.push(ref.getDataUrl());
-                  } else {
-                      // If no ref, check if we have initial data
-                      const initial = initialPageAnnotations?.[i + 1];
-                      pagesData.push(initial || '');
-                  }
-              }
-              onSave(pagesData); 
-              toast.success('Progress saved!');
-          } else {
-              if (plainCanvasRef.current) {
-                  onSave(plainCanvasRef.current.getDataUrl());
-                  toast.success('Drawing saved!');
-              }
-          }
-          return;
+        onSave(pagesJson);
+        toast.success('Progress saved!');
       }
-      
-      // Priority 2: If only onSavePdf exists, generate PDF
-      if (outputFormat === 'pdf' && onSavePdf) {
-          await generatePdf();
-          return;
+    } finally {
+      setIsSaving(false);
+    }
+  }, [collectPagesJson, onSave]);
+
+  // Final submit: render each page (PDF background + fabric strokes) into a PDF
+  const handleSubmit = useCallback(async () => {
+    if (!onSavePdf) return;
+    setIsSubmitting(true);
+    try {
+      toast.loading('Generating PDF...', { id: 'pdf-gen' });
+
+      // First save strokes
+      const pagesJson = collectPagesJson();
+      if (onSave) onSave(pagesJson);
+
+      // Build PDF using pdf-lib
+      const pdfDoc = await PDFDocument.create();
+
+      const pageElements = document.querySelectorAll('.react-pdf__Page');
+      const { default: html2canvas } = await import('html2canvas');
+
+      for (let i = 0; i < pageElements.length; i++) {
+        const pageEl = pageElements[i] as HTMLElement;
+        const canvas = await html2canvas(pageEl, {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          allowTaint: true,
+        });
+
+        const imgData = canvas.toDataURL('image/jpeg', 0.92);
+        const imgBytes = Uint8Array.from(atob(imgData.split(',')[1]), c => c.charCodeAt(0));
+        const img = await pdfDoc.embedJpg(imgBytes);
+
+        const page = pdfDoc.addPage([canvas.width / 2, canvas.height / 2]);
+        page.drawImage(img, {
+          x: 0,
+          y: 0,
+          width: canvas.width / 2,
+          height: canvas.height / 2,
+        });
       }
-  };
+
+      const pdfBytes = await pdfDoc.save() as unknown as Uint8Array<ArrayBuffer>;
+      const file = new File([pdfBytes], `answer-${Date.now()}.pdf`, { type: 'application/pdf' });
+
+      toast.dismiss('pdf-gen');
+      onSavePdf(file);
+    } catch (err) {
+      console.error('[CanvasWriter] Submit failed:', err);
+      toast.dismiss('pdf-gen');
+      toast.error('Failed to generate PDF. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [collectPagesJson, onSave, onSavePdf]);
+
+  // Register submit function with parent
+  useEffect(() => {
+    if (onRegisterSubmit) {
+      onRegisterSubmit(handleSubmit);
+    }
+  }, [onRegisterSubmit, handleSubmit]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+      fabricCanvases.current.forEach((fc) => fc?.dispose());
+      fabricCanvases.current.clear();
+    };
+  }, []);
+
+  // Callback ref for each page wrapper div
+  const setPageWrapperRef = useCallback((pageIndex: number) => (el: HTMLDivElement | null) => {
+    if (el && !pageWrappers.current.has(pageIndex)) {
+      pageWrappers.current.set(pageIndex, el);
+      // Wait for the PDF page to render before initialising fabric
+      setTimeout(() => initFabricCanvas(pageIndex, el), 500);
+    }
+  }, [initFabricCanvas]);
 
   return (
-    <div className={`flex flex-col gap-4 ${className}`}>
+    <div className={`flex flex-col h-full ${className}`}>
       {/* Toolbar */}
-      <div className="sticky top-0 z-20 flex flex-wrap items-center gap-3 p-3 bg-white border rounded-xl shadow-sm">
-        <div className="flex items-center gap-2 border-r pr-3">
-            <button onClick={() => setTool('pen')} className={`p-2 rounded-lg ${tool === 'pen' ? 'bg-indigo-100 text-indigo-600' : 'hover:bg-gray-100'}`}><Paintbrush size={20}/></button>
-            <button onClick={() => setTool('eraser')} className={`p-2 rounded-lg ${tool === 'eraser' ? 'bg-indigo-100 text-indigo-600' : 'hover:bg-gray-100'}`}><Eraser size={20}/></button>
+      <div className="sticky top-0 z-20 flex flex-wrap items-center gap-2 px-3 py-2 bg-white border-b shadow-sm">
+        {/* Tool */}
+        <div className="flex items-center gap-1 border-r pr-2">
+          <button
+            onClick={() => setTool('pen')}
+            title="Pen"
+            className={`p-2 rounded-lg transition-colors ${tool === 'pen' ? 'bg-indigo-100 text-indigo-600' : 'hover:bg-gray-100 text-gray-600'}`}
+          >
+            <Paintbrush size={18} />
+          </button>
+          <button
+            onClick={() => setTool('eraser')}
+            title="Eraser"
+            className={`p-2 rounded-lg transition-colors ${tool === 'eraser' ? 'bg-red-100 text-red-600' : 'hover:bg-gray-100 text-gray-600'}`}
+          >
+            <Eraser size={18} />
+          </button>
         </div>
 
-        <div className="flex items-center gap-2 border-r pr-3">
-            {COLORS.map(c => (
-                <button
-                    key={c}
-                    onClick={() => { setColor(c); setTool('pen'); }}
-                    className={`w-6 h-6 rounded-full border-2 ${color === c && tool === 'pen' ? 'border-gray-900 scale-110' : 'border-transparent'}`}
-                    style={{ backgroundColor: c }}
-                />
-            ))}
+        {/* Colors */}
+        <div className="flex items-center gap-1 border-r pr-2">
+          {COLORS.map(c => (
+            <button
+              key={c}
+              onClick={() => { setColor(c); setTool('pen'); }}
+              className={`w-5 h-5 rounded-full border-2 transition-transform ${color === c && tool === 'pen' ? 'border-gray-900 scale-125' : 'border-transparent hover:scale-110'}`}
+              style={{ backgroundColor: c }}
+            />
+          ))}
         </div>
 
-        <div className="flex items-center gap-2 border-r pr-3">
-             {STROKE_SIZES.map(size => (
-                <button
-                    key={size}
-                    onClick={() => setStrokeWidth(size)}
-                    className={`w-8 h-8 flex items-center justify-center rounded-lg ${strokeWidth === size ? 'bg-gray-100 ring-1 ring-gray-300' : ''}`}
-                >
-                    <div className="rounded-full bg-gray-600" style={{ width: size, height: size }} />
-                </button>
-             ))}
+        {/* Stroke sizes */}
+        <div className="flex items-center gap-1 border-r pr-2">
+          {STROKE_SIZES.map(size => (
+            <button
+              key={size}
+              onClick={() => setStrokeWidth(size)}
+              className={`w-7 h-7 flex items-center justify-center rounded-lg transition-colors ${strokeWidth === size ? 'bg-gray-200' : 'hover:bg-gray-100'}`}
+            >
+              <div className="rounded-full bg-gray-700" style={{ width: size, height: size }} />
+            </button>
+          ))}
         </div>
 
-        {/* PDF Specific Controls */}
-        {pdfUrl && (
-            <div className="flex items-center gap-2 border-r pr-3">
-                <button onClick={() => setPdfScale(s => Math.max(0.5, s - 0.25))} className="p-2 hover:bg-gray-100 rounded-lg"><ZoomOut size={18}/></button>
-                <span className="text-xs font-mono">{Math.round(pdfScale * 100)}%</span>
-                <button onClick={() => setPdfScale(s => Math.min(3, s + 0.25))} className="p-2 hover:bg-gray-100 rounded-lg"><ZoomIn size={18}/></button>
-            </div>
+        {/* Zoom */}
+        <div className="flex items-center gap-1 border-r pr-2">
+          <button onClick={() => setPdfScale(s => Math.max(0.5, s - 0.25))} className="p-1.5 hover:bg-gray-100 rounded-lg" title="Zoom out"><ZoomOut size={16} /></button>
+          <span className="text-xs font-mono w-10 text-center">{Math.round(pdfScale * 100)}%</span>
+          <button onClick={() => setPdfScale(s => Math.min(3, s + 0.25))} className="p-1.5 hover:bg-gray-100 rounded-lg" title="Zoom in"><ZoomIn size={16} /></button>
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center gap-1 ml-auto">
+          <button onClick={handleUndo} className="p-2 hover:bg-gray-100 rounded-lg text-gray-600" title="Undo last stroke"><Undo size={16} /></button>
+          <button onClick={handleClear} className="p-2 hover:bg-red-50 rounded-lg text-red-500" title="Clear all"><Trash2 size={16} /></button>
+          <button
+            onClick={handleManualSave}
+            disabled={isSaving}
+            className="p-2 hover:bg-green-50 rounded-lg text-green-600 disabled:opacity-50"
+            title="Save progress (Ctrl+S)"
+          >
+            <Save size={16} />
+          </button>
+        </div>
+      </div>
+
+      {/* PDF + Canvas area */}
+      <div
+        className="flex-1 overflow-auto bg-gray-100"
+        style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}
+      >
+        {loadingPdf && (
+          <div className="flex items-center justify-center h-full">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600" />
+          </div>
         )}
 
-        <div className="flex items-center gap-2 ml-auto">
-             {!pdfUrl && (
-                 <>
-                    <button onClick={() => handleAction('undo')} className="p-2 hover:bg-gray-100 rounded-lg"><Undo size={18}/></button>
-                    <button onClick={() => handleAction('redo')} className="p-2 hover:bg-gray-100 rounded-lg"><Redo size={18}/></button>
-                 </>
-             )}
-             <button onClick={() => handleAction('clear')} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><Trash2 size={18}/></button>
-             <button onClick={handleSaveAction} className="p-2 text-green-600 hover:bg-green-50 rounded-lg" title="Save (Ctrl+S)">
-                <Save size={18} />
-             </button>
+        {pdfBlob && (
+          <div className="flex justify-center py-6 px-4">
+            <Document
+              file={pdfBlob}
+              onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+              className="space-y-6"
+            >
+              {Array.from({ length: numPages || 0 }, (_, i) => (
+                <div key={i} className="relative shadow-xl rounded-sm overflow-hidden" style={{ display: 'inline-block' }}>
+                  {/* PDF page render */}
+                  <Page
+                    pageNumber={i + 1}
+                    scale={pdfScale}
+                    renderTextLayer={false}
+                    renderAnnotationLayer={false}
+                  />
+                  {/* Fabric.js drawing overlay — absolutely positioned over the PDF page */}
+                  <div
+                    ref={setPageWrapperRef(i)}
+                    className="absolute inset-0"
+                    style={{ cursor: tool === 'eraser' ? 'cell' : 'crosshair' }}
+                  />
+                </div>
+              ))}
+            </Document>
+          </div>
+        )}
+
+        {/* Plain canvas (no PDF) */}
+        {!pdfUrl && (
+          <div className="flex justify-center py-6 px-4">
+            <div
+              ref={setPageWrapperRef(0)}
+              className="relative bg-white shadow-xl"
+              style={{ width: 800, height: 1100, cursor: tool === 'eraser' ? 'cell' : 'crosshair' }}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Footer save button */}
+      {(onSave || onSavePdf) && (
+        <div className="flex justify-end gap-2 px-4 py-3 bg-white border-t">
+          {onSave && (
+            <button
+              onClick={handleManualSave}
+              disabled={isSaving}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium disabled:opacity-50 transition-colors"
+            >
+              <Save size={15} />
+              {isSaving ? 'Saving...' : 'Save Progress'}
+            </button>
+          )}
+          {onSavePdf && (
+            <button
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium disabled:opacity-50 transition-colors"
+            >
+              {isSubmitting ? (
+                <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Submitting...</>
+              ) : (
+                <>Submit Answer</>
+              )}
+            </button>
+          )}
         </div>
-      </div>
-
-      {/* Content Area */}
-      <div 
-        className="relative bg-gray-100 border rounded-xl overflow-auto shadow-inner" 
-        style={{ 
-          height: pdfUrl ? '80vh' : height,
-          scrollBehavior: 'smooth',
-          WebkitOverflowScrolling: 'touch',
-          overscrollBehavior: 'contain'
-        }}
-      >
-         {pdfUrl ? (
-             <div className="flex justify-center min-h-full p-8">
-                 {loadingPdf && <div className="text-center mt-10">Loading PDF...</div>}
-                 {pdfBlob && (
-                     <Document
-                        file={pdfBlob}
-                        onLoadSuccess={handleDocumentLoadSuccess}
-                        className="space-y-4"
-                     >
-                         {Array.from(new Array(numPages || 0), (_, index) => (
-                             <div key={index} className="relative shadow-lg">
-                                 <Page 
-                                    pageNumber={index + 1} 
-                                    scale={pdfScale}
-                                    renderTextLayer={false} 
-                                    renderAnnotationLayer={false}
-                                 />
-                                 <div className="absolute inset-0 z-10">
-                                     <DrawingCanvas
-                                        ref={(el) => {
-                                            if (el) pdfCanvasRefs.current.set(index, el);
-                                            else pdfCanvasRefs.current.delete(index);
-                                        }}
-                                        width={undefined} 
-                                        tool={tool}
-                                        color={color}
-                                        strokeWidth={strokeWidth}
-                                        onDrawingChange={() => setNeedsAutoSave(true)}
-                                        initialDataUrl={initialPageAnnotations?.[index + 1]}
-                                     />
-                                 </div>
-                             </div>
-                         ))}
-                     </Document>
-                 )}
-             </div>
-         ) : (
-             <div className="bg-white h-full">
-                 <DrawingCanvas
-                    ref={plainCanvasRef}
-                    width={typeof width === 'number' ? width : undefined} 
-                    height={typeof height === 'number' ? height : 400}
-                    tool={tool}
-                    color={color}
-                    strokeWidth={strokeWidth}
-                    backgroundImage={initialImage}
-                    onHistoryChange={(u, r) => { setCanUndo(u); setCanRedo(r); }}
-                    onDrawingChange={() => setNeedsAutoSave(true)}
-                    initialDataUrl={initialPageAnnotations?.[1]}
-                 />
-             </div>
-         )}
-      </div>
-
-      {/* Footer */}
-      <div className="flex justify-end gap-2">
-            {(onSave || onSavePdf) && (
-                <Button onClick={handleSaveAction} className="flex items-center gap-2">
-                    <Save size={16} />
-                    Save Answer
-                </Button>
-            )}
-      </div>
+      )}
     </div>
   );
 };
