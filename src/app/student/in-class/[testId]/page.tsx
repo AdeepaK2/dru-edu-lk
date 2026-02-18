@@ -402,8 +402,8 @@ export default function StudentInClassTestDetailPage() {
   const scheduledTime = (test as any).scheduledStartTime?.toDate ? (test as any).scheduledStartTime.toDate() : new Date((test as any).scheduledStartTime);
   const now = new Date();
   const timeDiff = scheduledTime ? scheduledTime.getTime() - now.getTime() : 0;
-  // Unlock 1 hour before
-  const isLocked = timeDiff > 60 * 60 * 1000; 
+  // Unlock at the exact scheduled start time
+  const isLocked = timeDiff > 0; 
 
   if (isLocked) {
     return (
@@ -415,7 +415,7 @@ export default function StudentInClassTestDetailPage() {
           <h2 className="text-xl font-bold text-gray-900 mb-2">Test Locked</h2>
           <p className="text-gray-600 mb-6">
             This test is scheduled for {formatDateTime((test as any).scheduledStartTime)}. 
-            You can access the paper 1 hour before the start time.
+            You can access the paper at the scheduled start time.
           </p>
           <Button onClick={() => router.push('/student/in-class')}>
             <ArrowLeft className="w-4 h-4 mr-2" /> Back to List
