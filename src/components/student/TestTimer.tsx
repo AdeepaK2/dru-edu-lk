@@ -8,9 +8,10 @@ interface TestTimerProps {
   scheduledStartTime: Timestamp;
   duration: number; // in minutes
   onTimeExpired: () => void;
+  clockOffsetMs?: number; // server clock calibration offset
 }
 
-export default function TestTimer({ scheduledStartTime, duration, onTimeExpired }: TestTimerProps) {
+export default function TestTimer({ scheduledStartTime, duration, onTimeExpired, clockOffsetMs = 0 }: TestTimerProps) {
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
   const [hasExpired, setHasExpired] = useState(false);
 
@@ -18,8 +19,8 @@ export default function TestTimer({ scheduledStartTime, duration, onTimeExpired 
     const calculateTimeRemaining = () => {
       const startTime = scheduledStartTime.toDate();
       const endTime = new Date(startTime.getTime() + duration * 60 * 1000);
-      const now = new Date();
-      const remaining = endTime.getTime() - now.getTime();
+      const adjustedNow = new Date(Date.now() + clockOffsetMs);
+      const remaining = endTime.getTime() - adjustedNow.getTime();
       
       return Math.max(0, remaining);
     };

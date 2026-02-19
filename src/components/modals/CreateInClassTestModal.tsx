@@ -60,24 +60,50 @@ export default function CreateInClassTestModal({
       .catch(() => {});
   }, [isOpen]);
 
-  // Calculate end time
+  /**
+   * Convert a datetime-local string ("YYYY-MM-DDTHH:mm") that the teacher
+   * entered as Melbourne time into a correct UTC Date object.
+   * `new Date(str)` would interpret it in the browser's local timezone which
+   * is wrong if the teacher is not in Melbourne.
+   */
+  const parseMelbourneDateTime = (datetimeStr: string): Date => {
+    const [datePart, timePart] = datetimeStr.split('T');
+    const [y, mo, d] = datePart.split('-').map(Number);
+    const [h, mi] = timePart.split(':').map(Number);
+
+    // Try AEDT (+11) and AEST (+10) and pick the one that round-trips
+    for (const offset of [11, 10]) {
+      const candidate = new Date(Date.UTC(y, mo - 1, d, h - offset, mi));
+      const check = candidate.toLocaleString('sv-SE', {
+        timeZone: 'Australia/Melbourne',
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit',
+      }).replace(' ', 'T');
+      if (check === datetimeStr) return candidate;
+    }
+    // Fallback to AEDT
+    return new Date(Date.UTC(y, mo - 1, d, h - 11, mi));
+  };
+
+  // Calculate end time (in Melbourne)
   const calculatedEndTime = useMemo(() => {
     if (!formData.scheduledStartTime) return '';
-    const start = new Date(formData.scheduledStartTime);
+    const start = parseMelbourneDateTime(formData.scheduledStartTime);
     const end = new Date(start.getTime() + formData.duration * 60 * 1000);
-    return end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return end.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', timeZone: 'Australia/Melbourne' });
   }, [formData.scheduledStartTime, formData.duration]);
 
-  // Calculate access time (1 hour before)
+  // Calculate access time (1 hour before, in Melbourne)
   const accessTime = useMemo(() => {
     if (!formData.scheduledStartTime) return '';
-    const start = new Date(formData.scheduledStartTime);
+    const start = parseMelbourneDateTime(formData.scheduledStartTime);
     const access = new Date(start.getTime() - 60 * 60 * 1000);
-    return access.toLocaleString([], { 
-      month: 'short', 
-      day: 'numeric', 
-      hour: '2-digit', 
-      minute: '2-digit' 
+    return access.toLocaleString('en-AU', {
+      timeZone: 'Australia/Melbourne',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
     });
   }, [formData.scheduledStartTime]);
 
@@ -91,9 +117,11 @@ export default function CreateInClassTestModal({
     if (!formData.scheduledStartTime) {
       newErrors.scheduledStartTime = 'Date and time are required';
     } else {
-      const startTime = new Date(formData.scheduledStartTime);
-      if (startTime < new Date()) {
-        newErrors.scheduledStartTime = 'Start time must be in the future';
+      const startTime = parseMelbourneDateTime(formData.scheduledStartTime);
+      // Compare against server-calibrated now (or fallback to client)
+      const nowMs = Date.now();
+      if (startTime.getTime() < nowMs) {
+        newErrors.scheduledStartTime = 'Start time must be in the future (Melbourne time)';
       }
     }
     
@@ -120,7 +148,7 @@ export default function CreateInClassTestModal({
         setUploadProgress(100);
       }
 
-      const startTime = new Date(formData.scheduledStartTime);
+      const startTime = parseMelbourneDateTime(formData.scheduledStartTime);
       const endTime = new Date(startTime.getTime() + formData.duration * 60 * 1000);
 
       const testData = {
