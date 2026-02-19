@@ -102,7 +102,19 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
 
   // ─── Init Fabric for a page ───────────────────────────────────────────────
   const initFabricCanvas = useCallback(async (pageIndex: number, wrapperEl: HTMLDivElement) => {
-    if (fabricCanvases.current.has(pageIndex)) return;
+    // If instance already exists, check if we need to re-attach to new DOM node
+    if (fabricCanvases.current.has(pageIndex)) {
+      const fc = fabricCanvases.current.get(pageIndex);
+      // Fabric wraps canvas in a .canvas-container div. Check if that container is inside our wrapper.
+      if (fc.wrapperEl && fc.wrapperEl.parentNode !== wrapperEl) {
+        // Re-attach existing canvas to new wrapper
+        wrapperEl.appendChild(fc.wrapperEl);
+        fc.setDimensions({ width: wrapperEl.clientWidth || 800, height: wrapperEl.clientHeight || 1100 });
+        fc.calcOffset();
+      }
+      return;
+    }
+
     const { fabric } = await import('fabric');
 
     const rect = wrapperEl.getBoundingClientRect();
@@ -322,10 +334,22 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
   }, [color, strokeWidth, scheduleAutoSave]);
 
   // ─── Page wrapper ref callback ────────────────────────────────────────────
+
   const setPageWrapperRef = useCallback((pageIndex: number) => (el: HTMLDivElement | null) => {
-    if (el && !pageWrappers.current.has(pageIndex)) {
+    // Handle unmount/change
+    const currentCached = pageWrappers.current.get(pageIndex);
+    
+    // If element is gone, remove from map
+    if (!el && currentCached) {
+        pageWrappers.current.delete(pageIndex);
+        return;
+    }
+
+    // If new element or changed element
+    if (el && currentCached !== el) {
       pageWrappers.current.set(pageIndex, el);
-      setTimeout(() => initFabricCanvas(pageIndex, el), 500);
+      // Use shorter timeout to reduce visible flicker
+      setTimeout(() => initFabricCanvas(pageIndex, el), 100);
     }
   }, [initFabricCanvas]);
 
