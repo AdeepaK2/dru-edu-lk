@@ -56,16 +56,10 @@ export default function StudentInClassTestDetailPage() {
   const downloadFile = async (url: string, filename: string) => {
     try {
       toast.loading('Preparing download...', { id: 'dl' });
-      const res = await fetch(url);
-      const blob = await res.blob();
-      const objectUrl = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = objectUrl;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(objectUrl);
+      // Route through server-side proxy to avoid CORS on Firebase Storage URLs
+      const proxyUrl = `/api/download-proxy?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename)}`;
+      // Open in new tab to handle errors gracefully if proxy fails (browser shows error instead of silent fail)
+      window.open(proxyUrl, '_blank');
       toast.dismiss('dl');
     } catch {
       toast.dismiss('dl');
