@@ -164,12 +164,33 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
       fabricCanvases.current.forEach((fc) => {
         if (!fc) return;
         if (tool === 'eraser') {
-          // Use a white brush as eraser (simple approach compatible with fabric v5)
-          fc.freeDrawingBrush = new fabric.PencilBrush(fc);
-          fc.freeDrawingBrush.color = 'rgba(255,255,255,1)';
-          fc.freeDrawingBrush.width = strokeWidth * 3;
+          // Use destination-out so eraser only removes student strokes,
+          // NOT the underlying PDF (which is a separate DOM element entirely)
+          const brush = new fabric.PencilBrush(fc);
+          // Any colour works — destination-out ignores colour, uses alpha only
+          brush.color = 'rgba(0,0,0,1)';
+          brush.width = strokeWidth * 4;
+          fc.freeDrawingBrush = brush;
           fc.isDrawingMode = true;
+
+          // After each eraser stroke is committed, flip it to destination-out
+          // so it punches transparent holes in the canvas overlay
+          const applyEraser = (e: any) => {
+            const path = e.path as fabric.Path;
+            if (!path) return;
+            path.set('globalCompositeOperation', 'destination-out');
+            fc.renderAll();
+            scheduleAutoSave();
+          };
+          // Remove any existing listener first to avoid stacking
+          fc.off('path:created', (fc as any).__eraserHandler);
+          (fc as any).__eraserHandler = applyEraser;
+          fc.on('path:created', applyEraser);
         } else {
+          // Restore normal pen — remove any eraser handler
+          fc.off('path:created', (fc as any).__eraserHandler);
+          (fc as any).__eraserHandler = null;
+
           fc.freeDrawingBrush = new fabric.PencilBrush(fc);
           fc.freeDrawingBrush.color = color;
           fc.freeDrawingBrush.width = strokeWidth;
