@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { X, Calendar, Clock, Upload, FileText, Check, AlertCircle, Info, Trash2 } from 'lucide-react';
 import { TestService } from '@/apiservices/testService';
 import { ExamPDFService } from '@/services/examPDFService';
@@ -38,6 +38,27 @@ export default function CreateInClassTestModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [melbourneNow, setMelbourneNow] = useState<string>('');
+
+  // Fetch server Melbourne time when modal opens to prefill the datetime picker
+  useEffect(() => {
+    if (!isOpen) return;
+    fetch('/api/server-time')
+      .then(r => r.json())
+      .then(data => {
+        const d = new Date(data.nowMs);
+        // sv-SE locale gives ISO-like YYYY-MM-DD HH:mm format
+        const melbStr = d.toLocaleString('sv-SE', {
+          timeZone: 'Australia/Melbourne',
+          year: 'numeric', month: '2-digit', day: '2-digit',
+          hour: '2-digit', minute: '2-digit',
+        }).replace(' ', 'T');
+        setMelbourneNow(melbStr);
+        // Pre-fill only if empty
+        setFormData(prev => prev.scheduledStartTime ? prev : { ...prev, scheduledStartTime: melbStr });
+      })
+      .catch(() => {});
+  }, [isOpen]);
 
   // Calculate end time
   const calculatedEndTime = useMemo(() => {
@@ -219,7 +240,8 @@ export default function CreateInClassTestModal({
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   <Calendar className="w-4 h-4 inline mr-1" />
-                  Date & Time <span className="text-red-500">*</span>
+                  Date &amp; Time <span className="text-red-500">*</span>
+                  <span className="ml-2 text-xs font-normal text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">🕐 Melbourne time</span>
                 </label>
                 <input
                   type="datetime-local"
@@ -232,6 +254,9 @@ export default function CreateInClassTestModal({
                     errors.scheduledStartTime ? 'border-red-500' : 'border-gray-300'
                   }`}
                 />
+                {melbourneNow && (
+                  <p className="mt-1 text-xs text-gray-400">Current Melbourne time: {melbourneNow.replace('T', ' ')}</p>
+                )}
                 {errors.scheduledStartTime && (
                   <p className="mt-1 text-sm text-red-600 flex items-center">
                     <AlertCircle className="w-4 h-4 mr-1" />

@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { Test } from '@/models/testSchema';
 import { Button, Card } from '@/components/ui';
-import { ArrowLeft, Calendar, Clock, Upload, AlertCircle, CheckCircle, Award, FileText, Eye } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, Upload, AlertCircle, CheckCircle, Award, FileText, Eye, Download } from 'lucide-react';
 import { InClassSubmission } from '@/models/inClassSubmissionSchema';
 import TestTimer from '@/components/student/TestTimer';
 import dynamic from 'next/dynamic';
@@ -47,6 +47,42 @@ export default function StudentInClassTestDetailPage() {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const canvasWriterRef = React.useRef<any>(null);
   const canvasSubmitRef = React.useRef<(() => void) | null>(null);
+  const [clockOffsetMs, setClockOffsetMs] = React.useState(0);
+  const [showTimeExpiredModal, setShowTimeExpiredModal] = React.useState(false);
+  const autoSubmitFiredRef = React.useRef(false);
+
+  // Download a file in-page by fetching as blob first (works for cross-origin Firebase URLs)
+  const downloadFile = async (url: string, filename: string) => {
+    try {
+      toast.loading('Preparing download...', { id: 'dl' });
+      const res = await fetch(url);
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = objectUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(objectUrl);
+      toast.dismiss('dl');
+    } catch {
+      toast.dismiss('dl');
+      toast.error('Download failed. Try again.');
+    }
+  };
+
+  // Calibrate client clock against server Melbourne time on mount
+  useEffect(() => {
+    fetch('/api/server-time')
+      .then(r => r.json())
+      .then(data => {
+        const offset = (data.nowMs as number) - Date.now();
+        setClockOffsetMs(offset);
+        console.log(`[ServerTime] Clock offset: ${offset > 0 ? '+' : ''}${offset}ms`);
+      })
+      .catch(() => console.warn('[ServerTime] Could not fetch server time, using client clock'));
+  }, []);
 
   useEffect(() => {
     if (!user || !testId) return;
@@ -112,23 +148,32 @@ export default function StudentInClassTestDetailPage() {
     };
   }, [user, testId, router]);
 
-  // Update canvas timer in real-time
+  // Update canvas timer in real-time (server-calibrated)
   useEffect(() => {
     if (!isWriting || !test) return;
 
     const updateTimer = () => {
       const startTime = (test as any).scheduledStartTime.toDate();
       const endTime = new Date(startTime.getTime() + (test as any).duration * 60 * 1000);
-      const now = new Date();
-      const remaining = Math.max(0, endTime.getTime() - now.getTime());
+      const adjustedNow = new Date(Date.now() + clockOffsetMs);
+      const remaining = Math.max(0, endTime.getTime() - adjustedNow.getTime());
       setCanvasTimeRemaining(remaining);
     };
 
-    updateTimer(); // Initial calculation
-    const interval = setInterval(updateTimer, 1000); // Update every second
-
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
-  }, [isWriting, test]);
+  }, [isWriting, test, clockOffsetMs]);
+
+  // Auto-submit when canvas timer hits zero
+  useEffect(() => {
+    if (!isWriting) return;
+    if (canvasTimeRemaining === 0 && !autoSubmitFiredRef.current) {
+      autoSubmitFiredRef.current = true;
+      setShowTimeExpiredModal(true);
+      if (canvasSubmitRef.current) canvasSubmitRef.current();
+    }
+  }, [canvasTimeRemaining, isWriting]);
 
   // Check for draft on mount (localStorage + Firestore)
   useEffect(() => {
@@ -174,7 +219,13 @@ export default function StudentInClassTestDetailPage() {
 
   const handleTimeExpired = () => {
     setTimeExpired(true);
-    toast.error('Time has expired! You can no longer submit answers.');
+    if (isWriting && !autoSubmitFiredRef.current) {
+      autoSubmitFiredRef.current = true;
+      setShowTimeExpiredModal(true);
+      if (canvasSubmitRef.current) canvasSubmitRef.current();
+    } else if (!isWriting) {
+      toast.error('Time has expired!');
+    }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -384,9 +435,8 @@ export default function StudentInClassTestDetailPage() {
 
   const isOffline = (test as any).submissionMethod === 'offline_collection';
   const scheduledTime = (test as any).scheduledStartTime?.toDate ? (test as any).scheduledStartTime.toDate() : new Date((test as any).scheduledStartTime);
-  const now = new Date();
-  const timeDiff = scheduledTime ? scheduledTime.getTime() - now.getTime() : 0;
-  // Unlock at the exact scheduled start time
+  const adjustedNow = new Date(Date.now() + clockOffsetMs);
+  const timeDiff = scheduledTime ? scheduledTime.getTime() - adjustedNow.getTime() : 0;
   const isLocked = timeDiff > 0; 
 
   if (isLocked) {
@@ -568,10 +618,21 @@ export default function StudentInClassTestDetailPage() {
                     <p className="text-sm text-gray-500">Click to view question paper</p>
                   </div>
                 </div>
-                <Button variant="outline" size="sm" className="flex items-center gap-2">
-                  <Eye className="w-4 h-4" />
-                  View
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" className="flex items-center gap-2"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      downloadFile((test as any).examPdfUrl, `${test.title || 'question-paper'}.pdf`);
+                    }}
+                  >
+                    <Download className="w-4 h-4" />
+                    Download
+                  </Button>
+                  <Button variant="outline" size="sm" className="flex items-center gap-2">
+                    <Eye className="w-4 h-4" />
+                    View
+                  </Button>
+                </div>
               </div>
             </Card>
           </div>
@@ -635,6 +696,16 @@ export default function StudentInClassTestDetailPage() {
                   )}
                   {timeExpired && (
                     <p className="text-sm text-gray-500 mt-2">Time Expired — submission locked</p>
+                  )}
+                  {/* Download answer sheet — always visible once submitted */}
+                  {submittedFile?.url && (
+                    <button
+                      className="mt-3 flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 transition-colors mx-auto"
+                      onClick={() => downloadFile(submittedFile.url, `answer-sheet-${test?.title || 'submission'}.pdf`)}
+                    >
+                      <Download className="w-4 h-4" />
+                      Download My Answer Sheet
+                    </button>
                   )}
                 </div>
               ) : (
@@ -796,6 +867,39 @@ export default function StudentInClassTestDetailPage() {
                 onRegisterSubmit={(fn) => { canvasSubmitRef.current = fn; }}
               />
             </div>
+
+            {/* Time Expired Blocking Modal */}
+            {showTimeExpiredModal && (
+              <div className="absolute inset-0 z-[200] flex items-center justify-center bg-black/70 backdrop-blur-sm">
+                <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full mx-4 text-center">
+                  <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Clock className="w-8 h-8 text-red-600" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Time&apos;s Up!</h2>
+                  <p className="text-gray-600 mb-6">
+                    {uploading
+                      ? 'Your answer is being submitted automatically…'
+                      : submittedFile
+                      ? 'Your answer has been submitted successfully.'
+                      : 'Time has expired. No submission was recorded.'}
+                  </p>
+                  {uploading && (
+                    <div className="flex items-center justify-center gap-2 mb-4">
+                      <div className="w-5 h-5 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                      <span className="text-sm text-gray-500">Submitting…</span>
+                    </div>
+                  )}
+                  {!uploading && (
+                    <button
+                      onClick={() => { setShowTimeExpiredModal(false); setIsWriting(false); }}
+                      className="w-full px-4 py-3 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800 transition-colors"
+                    >
+                      {submittedFile ? '✓ Close' : 'OK'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

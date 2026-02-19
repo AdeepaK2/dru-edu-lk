@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { Paintbrush, Eraser, Trash2, Undo, Redo, ZoomIn, ZoomOut, Save } from 'lucide-react';
+import { Paintbrush, Eraser, Ruler, Trash2, Undo, ZoomIn, ZoomOut, Save, CheckCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { PDFDocument } from 'pdf-lib';
@@ -10,26 +10,28 @@ pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/b
 
 interface CanvasWriterProps {
   pdfUrl?: string;
-  initialPageAnnotations?: Record<number, string>; // page (1-based) -> Fabric JSON string
-  onSave?: (pagesJson: Record<number, string>) => void; // called on auto-save (stroke data)
-  onSavePdf?: (file: File) => void; // called on final submit
+  initialPageAnnotations?: Record<number, string>;
+  onSave?: (pagesJson: Record<number, string>) => void;
+  onSavePdf?: (file: File) => void;
   onRegisterSubmit?: (fn: () => Promise<void>) => void;
   autoSaveKey?: string;
   className?: string;
-  // Legacy props kept for compatibility
   width?: number | string;
   height?: number | string;
   initialImage?: string;
   outputFormat?: 'image' | 'pdf';
 }
 
-const COLORS = ['#000000', '#EF4444', '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899'];
+type Tool = 'pen' | 'eraser' | 'ruler';
+
+const COLORS = ['#1a1a1a', '#EF4444', '#F97316', '#EAB308', '#22C55E', '#3B82F6', '#8B5CF6', '#EC4899'];
 const STROKE_SIZES = [2, 4, 6, 10, 16];
 
-// Per-page Fabric canvas manager
-interface PageCanvasState {
-  fabricCanvas: any | null;
-  containerEl: HTMLDivElement | null;
+// ─── Ruler overlay state ─────────────────────────────────────────────────────
+interface RulerLine {
+  x1: number; y1: number;
+  x2: number; y2: number;
+  pageIndex: number;
 }
 
 const CanvasWriter: React.FC<CanvasWriterProps> = ({
@@ -41,8 +43,8 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
   autoSaveKey,
   className = '',
 }) => {
-  const [tool, setTool] = useState<'pen' | 'eraser'>('pen');
-  const [color, setColor] = useState('#000000');
+  const [tool, setTool] = useState<Tool>('pen');
+  const [color, setColor] = useState('#1a1a1a');
   const [strokeWidth, setStrokeWidth] = useState(4);
   const [pdfScale, setPdfScale] = useState(1.0);
   const [numPages, setNumPages] = useState<number | null>(null);
@@ -51,37 +53,39 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Map of page index (0-based) -> fabric.Canvas instance
+  // Ruler drag state
+  const [rulerDrag, setRulerDrag] = useState<RulerLine | null>(null);
+  // Extra blank pages appended after the PDF
+  const [extraPages, setExtraPages] = useState<number[]>([]);
+  const extraPageIdCounter = useRef(0);
+  // Ref to track the scaled PDF page width so extra pages match
+  const pdfPageWidthRef = useRef<number>(0);
+
   const fabricCanvases = useRef<Map<number, any>>(new Map());
-  // Map of page index -> wrapper div (to size the fabric canvas)
   const pageWrappers = useRef<Map<number, HTMLDivElement>>(new Map());
-  // Auto-save debounce timer
   const autoSaveTimer = useRef<NodeJS.Timeout | null>(null);
-  // Track which pages have been initialised with saved strokes
   const initialisedPages = useRef<Set<number>>(new Set());
 
-  // Load PDF blob via proxy to avoid CORS
+  // ─── Load PDF ────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!pdfUrl) return;
     setLoadingPdf(true);
     fetch(`/api/pdf?url=${encodeURIComponent(pdfUrl)}`)
       .then(r => r.blob())
       .then(blob => { setPdfBlob(blob); setLoadingPdf(false); })
-      .catch(err => { console.error(err); toast.error('Failed to load PDF'); setLoadingPdf(false); });
+      .catch(() => { toast.error('Failed to load PDF'); setLoadingPdf(false); });
   }, [pdfUrl]);
 
-  // Collect all page JSON data
+  // ─── Collect JSON ─────────────────────────────────────────────────────────
   const collectPagesJson = useCallback((): Record<number, string> => {
     const result: Record<number, string> = {};
     fabricCanvases.current.forEach((fc, idx) => {
-      if (fc) {
-        result[idx + 1] = JSON.stringify(fc.toJSON());
-      }
+      if (fc) result[idx + 1] = JSON.stringify(fc.toJSON());
     });
     return result;
   }, []);
 
-  // Trigger auto-save (debounced)
+  // ─── Auto-save ────────────────────────────────────────────────────────────
   const scheduleAutoSave = useCallback(() => {
     if (!onSave) return;
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
@@ -89,28 +93,22 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
       const pagesJson = collectPagesJson();
       if (Object.keys(pagesJson).length > 0) {
         onSave(pagesJson);
-        // Also persist to localStorage as crash backup
         if (autoSaveKey) {
-          try {
-            localStorage.setItem(autoSaveKey, JSON.stringify({ timestamp: Date.now(), pages: pagesJson }));
-          } catch (_) {}
+          try { localStorage.setItem(autoSaveKey, JSON.stringify({ timestamp: Date.now(), pages: pagesJson })); } catch (_) {}
         }
       }
     }, 3000);
   }, [onSave, collectPagesJson, autoSaveKey]);
 
-  // Initialise a Fabric canvas on a page wrapper div
+  // ─── Init Fabric for a page ───────────────────────────────────────────────
   const initFabricCanvas = useCallback(async (pageIndex: number, wrapperEl: HTMLDivElement) => {
-    if (fabricCanvases.current.has(pageIndex)) return; // already initialised
-
-    // Dynamically import fabric (client-only)
+    if (fabricCanvases.current.has(pageIndex)) return;
     const { fabric } = await import('fabric');
 
     const rect = wrapperEl.getBoundingClientRect();
     const w = rect.width || wrapperEl.offsetWidth || 800;
     const h = rect.height || wrapperEl.offsetHeight || 1100;
 
-    // Create a canvas element inside the wrapper
     const canvasEl = document.createElement('canvas');
     canvasEl.width = w;
     canvasEl.height = h;
@@ -128,53 +126,45 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
       selection: false,
     });
 
-    // Set brush
     fc.freeDrawingBrush = new fabric.PencilBrush(fc);
     fc.freeDrawingBrush.color = color;
     fc.freeDrawingBrush.width = strokeWidth;
 
-    // Listen for drawing events to trigger auto-save
     fc.on('path:created', () => scheduleAutoSave());
-
     fabricCanvases.current.set(pageIndex, fc);
 
-    // Restore saved strokes if available
     const savedJson = initialPageAnnotations[pageIndex + 1];
     if (savedJson && !initialisedPages.current.has(pageIndex)) {
       initialisedPages.current.add(pageIndex);
       try {
         await new Promise<void>((resolve) => {
-          fc.loadFromJSON(JSON.parse(savedJson), () => {
-            fc.renderAll();
-            resolve();
-          });
+          fc.loadFromJSON(JSON.parse(savedJson), () => { fc.renderAll(); resolve(); });
         });
-        // Re-enable drawing mode after loading
         fc.isDrawingMode = true;
       } catch (e) {
-        console.error('[CanvasWriter] Failed to restore strokes for page', pageIndex + 1, e);
+        console.error('[CanvasWriter] Failed to restore strokes', e);
       }
     }
   }, [color, strokeWidth, scheduleAutoSave, initialPageAnnotations]);
 
-  // Update all fabric canvases when tool/color/strokeWidth changes
+  // ─── Sync tool/color/strokeWidth to all canvases ─────────────────────────
   useEffect(() => {
-    const updateBrushes = async () => {
+    const update = async () => {
       const { fabric } = await import('fabric');
       fabricCanvases.current.forEach((fc) => {
         if (!fc) return;
+
+        // Remove any existing eraser handler
+        fc.off('path:created', (fc as any).__eraserHandler);
+        (fc as any).__eraserHandler = null;
+
         if (tool === 'eraser') {
-          // Use destination-out so eraser only removes student strokes,
-          // NOT the underlying PDF (which is a separate DOM element entirely)
           const brush = new fabric.PencilBrush(fc);
-          // Any colour works — destination-out ignores colour, uses alpha only
-          brush.color = 'rgba(0,0,0,1)';
+          brush.color = 'rgba(0,0,0,0)'; // transparent preview
           brush.width = strokeWidth * 4;
           fc.freeDrawingBrush = brush;
           fc.isDrawingMode = true;
-
-          // After each eraser stroke is committed, flip it to destination-out
-          // so it punches transparent holes in the canvas overlay
+          // After commit, punch transparent hole
           const applyEraser = (e: any) => {
             const path = e.path as fabric.Path;
             if (!path) return;
@@ -182,15 +172,12 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
             fc.renderAll();
             scheduleAutoSave();
           };
-          // Remove any existing listener first to avoid stacking
-          fc.off('path:created', (fc as any).__eraserHandler);
           (fc as any).__eraserHandler = applyEraser;
           fc.on('path:created', applyEraser);
+        } else if (tool === 'ruler') {
+          // Ruler: disable fabric drawing; we handle it ourselves via React events
+          fc.isDrawingMode = false;
         } else {
-          // Restore normal pen — remove any eraser handler
-          fc.off('path:created', (fc as any).__eraserHandler);
-          (fc as any).__eraserHandler = null;
-
           fc.freeDrawingBrush = new fabric.PencilBrush(fc);
           fc.freeDrawingBrush.color = color;
           fc.freeDrawingBrush.width = strokeWidth;
@@ -198,10 +185,10 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
         }
       });
     };
-    updateBrushes();
-  }, [tool, color, strokeWidth]);
+    update();
+  }, [tool, color, strokeWidth, scheduleAutoSave]);
 
-  // Undo last stroke on all canvases (removes last path object)
+  // ─── Undo ─────────────────────────────────────────────────────────────────
   const handleUndo = () => {
     fabricCanvases.current.forEach((fc) => {
       if (!fc) return;
@@ -214,7 +201,7 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
     scheduleAutoSave();
   };
 
-  // Clear all canvases
+  // ─── Clear ────────────────────────────────────────────────────────────────
   const handleClear = () => {
     if (!confirm('Clear all drawings on all pages?')) return;
     fabricCanvases.current.forEach((fc) => {
@@ -226,81 +213,70 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
     scheduleAutoSave();
   };
 
-  // Manual save (strokes only)
+  // ─── Manual save ─────────────────────────────────────────────────────────
   const handleManualSave = useCallback(async () => {
     setIsSaving(true);
     try {
       const pagesJson = collectPagesJson();
-      if (onSave) {
-        onSave(pagesJson);
-        toast.success('Progress saved!');
-      }
-    } finally {
-      setIsSaving(false);
-    }
+      if (onSave) { onSave(pagesJson); toast.success('Progress saved!'); }
+    } finally { setIsSaving(false); }
   }, [collectPagesJson, onSave]);
 
-  // Final submit: render each page (PDF background + fabric strokes) into a PDF
+  // ─── Submit (generate PDF) ───────────────────────────────────────────────
   const handleSubmit = useCallback(async () => {
     if (!onSavePdf) return;
     setIsSubmitting(true);
     try {
       toast.loading('Generating PDF...', { id: 'pdf-gen' });
-
-      // First save strokes
       const pagesJson = collectPagesJson();
       if (onSave) onSave(pagesJson);
 
-      // Build PDF using pdf-lib
       const pdfDoc = await PDFDocument.create();
-
-      const pageElements = document.querySelectorAll('.react-pdf__Page');
       const { default: html2canvas } = await import('html2canvas');
 
+      // Capture all PDF pages
+      const pageElements = document.querySelectorAll('.react-pdf__Page');
       for (let i = 0; i < pageElements.length; i++) {
         const pageEl = pageElements[i] as HTMLElement;
-        const canvas = await html2canvas(pageEl, {
-          scale: 2,
-          useCORS: true,
-          logging: false,
-          allowTaint: true,
-        });
-
+        const canvas = await html2canvas(pageEl, { scale: 2, useCORS: true, logging: false, allowTaint: true });
         const imgData = canvas.toDataURL('image/jpeg', 0.92);
         const imgBytes = Uint8Array.from(atob(imgData.split(',')[1]), c => c.charCodeAt(0));
         const img = await pdfDoc.embedJpg(imgBytes);
-
         const page = pdfDoc.addPage([canvas.width / 2, canvas.height / 2]);
-        page.drawImage(img, {
-          x: 0,
-          y: 0,
-          width: canvas.width / 2,
-          height: canvas.height / 2,
-        });
+        page.drawImage(img, { x: 0, y: 0, width: canvas.width / 2, height: canvas.height / 2 });
+      }
+
+      // Capture extra blank pages (via wrapper divs that hold Fabric canvases)
+      const totalPdf = pageElements.length;
+      for (let j = 0; j < extraPages.length; j++) {
+        const fabricIndex = totalPdf + j;
+        const wrapperEl = pageWrappers.current.get(fabricIndex);
+        if (!wrapperEl) continue;
+        const canvas = await html2canvas(wrapperEl, { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' });
+        const imgData = canvas.toDataURL('image/jpeg', 0.92);
+        const imgBytes = Uint8Array.from(atob(imgData.split(',')[1]), c => c.charCodeAt(0));
+        const img = await pdfDoc.embedJpg(imgBytes);
+        const page = pdfDoc.addPage([canvas.width / 2, canvas.height / 2]);
+        page.drawImage(img, { x: 0, y: 0, width: canvas.width / 2, height: canvas.height / 2 });
       }
 
       const pdfBytes = await pdfDoc.save() as unknown as Uint8Array<ArrayBuffer>;
       const file = new File([pdfBytes], `answer-${Date.now()}.pdf`, { type: 'application/pdf' });
-
       toast.dismiss('pdf-gen');
       onSavePdf(file);
     } catch (err) {
       console.error('[CanvasWriter] Submit failed:', err);
       toast.dismiss('pdf-gen');
       toast.error('Failed to generate PDF. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [collectPagesJson, onSave, onSavePdf]);
+    } finally { setIsSubmitting(false); }
+  }, [collectPagesJson, onSave, onSavePdf, extraPages]);
 
-  // Register submit function with parent
+  // Register submit with parent
   useEffect(() => {
-    if (onRegisterSubmit) {
-      onRegisterSubmit(handleSubmit);
-    }
+    if (onRegisterSubmit) onRegisterSubmit(handleSubmit);
   }, [onRegisterSubmit, handleSubmit]);
 
-  // Cleanup on unmount
+  // Cleanup
   useEffect(() => {
     return () => {
       if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
@@ -309,158 +285,441 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
     };
   }, []);
 
-  // Callback ref for each page wrapper div
+  // ─── Ruler: commit a line to Fabric ──────────────────────────────────────
+  const commitRulerLine = useCallback(async (line: RulerLine) => {
+    const fc = fabricCanvases.current.get(line.pageIndex);
+    if (!fc) return;
+    const { fabric } = await import('fabric');
+    const fabricLine = new fabric.Line([line.x1, line.y1, line.x2, line.y2], {
+      stroke: color,
+      strokeWidth,
+      selectable: false,
+      evented: false,
+    });
+    // Distance label
+    const dx = line.x2 - line.x1;
+    const dy = line.y2 - line.y1;
+    const dist = Math.round(Math.sqrt(dx * dx + dy * dy));
+    const midX = (line.x1 + line.x2) / 2;
+    const midY = (line.y1 + line.y2) / 2;
+    const label = new fabric.Text(`${dist}px`, {
+      left: midX,
+      top: midY - 14,
+      fontSize: 11,
+      fill: color,
+      fontFamily: 'Inter, sans-serif',
+      originX: 'center',
+      originY: 'bottom',
+      selectable: false,
+      evented: false,
+      backgroundColor: 'rgba(255,255,255,0.75)',
+      padding: 2,
+    });
+    fc.add(fabricLine);
+    fc.add(label);
+    fc.renderAll();
+    scheduleAutoSave();
+  }, [color, strokeWidth, scheduleAutoSave]);
+
+  // ─── Page wrapper ref callback ────────────────────────────────────────────
   const setPageWrapperRef = useCallback((pageIndex: number) => (el: HTMLDivElement | null) => {
     if (el && !pageWrappers.current.has(pageIndex)) {
       pageWrappers.current.set(pageIndex, el);
-      // Wait for the PDF page to render before initialising fabric
       setTimeout(() => initFabricCanvas(pageIndex, el), 500);
     }
   }, [initFabricCanvas]);
 
+  // ─── Ruler drag distance (px → cm approx at 96dpi) ───────────────────────
+  const rulerDistance = rulerDrag
+    ? Math.round(Math.sqrt(
+        Math.pow(rulerDrag.x2 - rulerDrag.x1, 2) +
+        Math.pow(rulerDrag.y2 - rulerDrag.y1, 2)
+      ))
+    : 0;
+
+  // ─── Cursor style ─────────────────────────────────────────────────────────
+  const getCursor = (pageIndex: number) => {
+    if (tool === 'ruler') return 'crosshair';
+    if (tool === 'eraser') {
+      const s = strokeWidth * 4 + 8;
+      const half = s / 2;
+      return `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='${s}' height='${s}' viewBox='0 0 ${s} ${s}'%3E%3Crect x='2' y='2' width='${s - 4}' height='${s - 4}' rx='2' fill='rgba(255,255,255,0.85)' stroke='%23888' stroke-width='1.5'/%3E%3C/svg%3E") ${half} ${half}, cell`;
+    }
+    return 'crosshair';
+  };
+
+  // ─── Toolbar helpers ──────────────────────────────────────────────────────
+  const toolBtn = (t: Tool, icon: React.ReactNode, label: string) => (
+    <button
+      key={t}
+      title={label}
+      onClick={() => setTool(t)}
+      className={`relative flex items-center justify-center w-9 h-9 rounded-lg transition-all duration-150 group
+        ${tool === t
+          ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200'
+          : 'text-gray-500 hover:bg-gray-100 hover:text-gray-800'}`}
+    >
+      {icon}
+      <span className="absolute -bottom-7 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] bg-gray-800 text-white px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
+        {label}
+      </span>
+    </button>
+  );
+
   return (
-    <div className={`flex flex-col h-full ${className}`}>
-      {/* Toolbar */}
-      <div className="sticky top-0 z-20 flex flex-wrap items-center gap-2 px-3 py-2 bg-white border-b shadow-sm">
-        {/* Tool */}
-        <div className="flex items-center gap-1 border-r pr-2">
-          <button
-            onClick={() => setTool('pen')}
-            title="Pen"
-            className={`p-2 rounded-lg transition-colors ${tool === 'pen' ? 'bg-indigo-100 text-indigo-600' : 'hover:bg-gray-100 text-gray-600'}`}
-          >
-            <Paintbrush size={18} />
-          </button>
-          <button
-            onClick={() => setTool('eraser')}
-            title="Eraser"
-            className={`p-2 rounded-lg transition-colors ${tool === 'eraser' ? 'bg-red-100 text-red-600' : 'hover:bg-gray-100 text-gray-600'}`}
-          >
-            <Eraser size={18} />
-          </button>
+    <div className={`flex flex-col h-full bg-gray-50 ${className}`}>
+
+      {/* ── Toolbar ──────────────────────────────────────────────────────── */}
+      <div className="flex items-center gap-1 px-3 py-2 bg-white border-b border-gray-200 shadow-sm flex-wrap">
+
+        {/* Tool group */}
+        <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl mr-1">
+          {toolBtn('pen',    <Paintbrush size={17} />, 'Pen (draw)')}
+          {toolBtn('eraser', <Eraser size={17} />,     'Eraser')}
+          {toolBtn('ruler',  <Ruler size={17} />,      'Ruler (straight line)')}
         </div>
 
-        {/* Colors */}
-        <div className="flex items-center gap-1 border-r pr-2">
+        {/* Divider */}
+        <div className="w-px h-7 bg-gray-200 mx-1" />
+
+        {/* Color swatches */}
+        <div className="flex items-center gap-1.5">
           {COLORS.map(c => (
             <button
               key={c}
-              onClick={() => { setColor(c); setTool('pen'); }}
-              className={`w-5 h-5 rounded-full border-2 transition-transform ${color === c && tool === 'pen' ? 'border-gray-900 scale-125' : 'border-transparent hover:scale-110'}`}
+              title={c}
+              onClick={() => { setColor(c); if (tool === 'eraser' || tool === 'ruler') {} }}
+              className={`w-5 h-5 rounded-full transition-all duration-150
+                ${color === c
+                  ? 'ring-2 ring-offset-1 ring-indigo-500 scale-125'
+                  : 'hover:scale-110 opacity-80 hover:opacity-100'}`}
               style={{ backgroundColor: c }}
             />
           ))}
         </div>
 
-        {/* Stroke sizes */}
-        <div className="flex items-center gap-1 border-r pr-2">
+        {/* Divider */}
+        <div className="w-px h-7 bg-gray-200 mx-1" />
+
+        {/* Stroke size */}
+        <div className="flex items-center gap-1">
           {STROKE_SIZES.map(size => (
             <button
               key={size}
+              title={`${size}px`}
               onClick={() => setStrokeWidth(size)}
-              className={`w-7 h-7 flex items-center justify-center rounded-lg transition-colors ${strokeWidth === size ? 'bg-gray-200' : 'hover:bg-gray-100'}`}
+              className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all duration-150
+                ${strokeWidth === size ? 'bg-indigo-50 ring-1 ring-indigo-300' : 'hover:bg-gray-100'}`}
             >
               <div className="rounded-full bg-gray-700" style={{ width: size, height: size }} />
             </button>
           ))}
         </div>
 
+        {/* Divider */}
+        <div className="w-px h-7 bg-gray-200 mx-1" />
+
         {/* Zoom */}
-        <div className="flex items-center gap-1 border-r pr-2">
-          <button onClick={() => setPdfScale(s => Math.max(0.5, s - 0.25))} className="p-1.5 hover:bg-gray-100 rounded-lg" title="Zoom out"><ZoomOut size={16} /></button>
-          <span className="text-xs font-mono w-10 text-center">{Math.round(pdfScale * 100)}%</span>
-          <button onClick={() => setPdfScale(s => Math.min(3, s + 0.25))} className="p-1.5 hover:bg-gray-100 rounded-lg" title="Zoom in"><ZoomIn size={16} /></button>
+        <div className="flex items-center gap-0.5 bg-gray-100 rounded-lg px-1">
+          <button
+            onClick={() => setPdfScale(s => Math.max(0.5, +(s - 0.25).toFixed(2)))}
+            className="p-1.5 text-gray-500 hover:text-gray-800 transition-colors"
+            title="Zoom out"
+          >
+            <ZoomOut size={15} />
+          </button>
+          <span className="text-xs font-mono text-gray-600 w-11 text-center select-none">
+            {Math.round(pdfScale * 100)}%
+          </span>
+          <button
+            onClick={() => setPdfScale(s => Math.min(3, +(s + 0.25).toFixed(2)))}
+            className="p-1.5 text-gray-500 hover:text-gray-800 transition-colors"
+            title="Zoom in"
+          >
+            <ZoomIn size={15} />
+          </button>
         </div>
 
-        {/* Actions */}
+        {/* Right actions */}
         <div className="flex items-center gap-1 ml-auto">
-          <button onClick={handleUndo} className="p-2 hover:bg-gray-100 rounded-lg text-gray-600" title="Undo last stroke"><Undo size={16} /></button>
-          <button onClick={handleClear} className="p-2 hover:bg-red-50 rounded-lg text-red-500" title="Clear all"><Trash2 size={16} /></button>
           <button
-            onClick={handleManualSave}
-            disabled={isSaving}
-            className="p-2 hover:bg-green-50 rounded-lg text-green-600 disabled:opacity-50"
-            title="Save progress (Ctrl+S)"
+            onClick={handleUndo}
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-800 transition-colors"
+            title="Undo last stroke"
           >
-            <Save size={16} />
+            <Undo size={16} />
           </button>
+          <button
+            onClick={handleClear}
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+            title="Clear all drawings"
+          >
+            <Trash2 size={16} />
+          </button>
+          {onSave && (
+            <button
+              onClick={handleManualSave}
+              disabled={isSaving}
+              className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 disabled:opacity-40 transition-colors"
+              title="Save progress"
+            >
+              <Save size={14} />
+              {isSaving ? 'Saving…' : 'Save'}
+            </button>
+          )}
         </div>
       </div>
 
-      {/* PDF + Canvas area */}
+      {/* Ruler active banner */}
+      {tool === 'ruler' && (
+        <div className="flex items-center gap-2 px-4 py-1.5 bg-indigo-50 border-b border-indigo-100 text-indigo-700 text-xs font-medium">
+          <Ruler size={13} />
+          <span>Ruler mode — click and drag to draw a straight line. Release to commit.</span>
+          {rulerDrag && (
+            <span className="ml-auto font-mono bg-indigo-100 px-2 py-0.5 rounded-md">
+              {rulerDistance} px &nbsp;|&nbsp; ≈ {(rulerDistance / 37.8).toFixed(1)} cm
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* ── Drawing area ─────────────────────────────────────────────────── */}
       <div
-        className="flex-1 overflow-auto bg-gray-100"
-        style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}
+        className="flex-1 overflow-auto"
+        style={{ background: 'radial-gradient(circle at center, #e8eaf0 0%, #d5d9e3 100%)', WebkitOverflowScrolling: 'touch' }}
       >
         {loadingPdf && (
-          <div className="flex items-center justify-center h-full">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600" />
+          <div className="flex flex-col items-center justify-center h-64 gap-3">
+            <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+            <p className="text-sm text-gray-500">Loading exam paper…</p>
           </div>
         )}
 
         {pdfBlob && (
-          <div className="flex justify-center py-6 px-4">
+          <div className="min-h-full flex flex-col items-center py-8 px-4">
             <Document
               file={pdfBlob}
               onLoadSuccess={({ numPages }) => setNumPages(numPages)}
-              className="space-y-6"
             >
               {Array.from({ length: numPages || 0 }, (_, i) => (
-                <div key={i} className="relative shadow-xl rounded-sm overflow-hidden" style={{ display: 'inline-block' }}>
-                  {/* PDF page render */}
+                <div
+                  key={i}
+                  className="relative shadow-2xl rounded overflow-hidden mx-auto"
+                  style={{ display: 'block', marginBottom: '24px' }}
+                >
                   <Page
                     pageNumber={i + 1}
                     scale={pdfScale}
                     renderTextLayer={false}
                     renderAnnotationLayer={false}
+                    onRenderSuccess={i === 0 ? (page) => {
+                      // Record rendered width so extra pages can match
+                      pdfPageWidthRef.current = page.width * pdfScale;
+                    } : undefined}
                   />
-                  {/* Fabric.js drawing overlay — absolutely positioned over the PDF page */}
+
+                  {/* Fabric drawing overlay */}
                   <div
                     ref={setPageWrapperRef(i)}
                     className="absolute inset-0"
-                    style={{ cursor: tool === 'eraser' ? 'cell' : 'crosshair' }}
+                    style={{ cursor: getCursor(i) }}
+                    onMouseDown={tool === 'ruler' ? (e) => {
+                      const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
+                      const x = e.clientX - rect.left;
+                      const y = e.clientY - rect.top;
+                      setRulerDrag({ x1: x, y1: y, x2: x, y2: y, pageIndex: i });
+                    } : undefined}
+                    onMouseMove={tool === 'ruler' && rulerDrag ? (e) => {
+                      if (!rulerDrag || rulerDrag.pageIndex !== i) return;
+                      const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
+                      const x = e.clientX - rect.left;
+                      const y = e.clientY - rect.top;
+                      // Hold Shift to snap to 45° increments
+                      if (e.shiftKey) {
+                        const dx = x - rulerDrag.x1;
+                        const dy = y - rulerDrag.y1;
+                        const angle = Math.atan2(dy, dx);
+                        const snapped = Math.round(angle / (Math.PI / 4)) * (Math.PI / 4);
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        setRulerDrag(r => r ? { ...r, x2: r.x1 + Math.cos(snapped) * dist, y2: r.y1 + Math.sin(snapped) * dist } : r);
+                      } else {
+                        setRulerDrag(r => r ? { ...r, x2: x, y2: y } : r);
+                      }
+                    } : undefined}
+                    onMouseUp={tool === 'ruler' && rulerDrag ? () => {
+                      if (rulerDrag && rulerDrag.pageIndex === i) {
+                        commitRulerLine(rulerDrag);
+                        setRulerDrag(null);
+                      }
+                    } : undefined}
+                    onMouseLeave={tool === 'ruler' ? () => {
+                      if (rulerDrag && rulerDrag.pageIndex === i) {
+                        commitRulerLine(rulerDrag);
+                        setRulerDrag(null);
+                      }
+                    } : undefined}
                   />
+
+                  {/* Ruler live SVG preview */}
+                  {rulerDrag && rulerDrag.pageIndex === i && (
+                    <svg
+                      className="absolute inset-0 pointer-events-none"
+                      style={{ width: '100%', height: '100%', overflow: 'visible' }}
+                    >
+                      {/* Line */}
+                      <line
+                        x1={rulerDrag.x1} y1={rulerDrag.y1}
+                        x2={rulerDrag.x2} y2={rulerDrag.y2}
+                        stroke={color}
+                        strokeWidth={strokeWidth}
+                        strokeLinecap="round"
+                        strokeDasharray="6 3"
+                      />
+                      {/* End-point circle */}
+                      <circle cx={rulerDrag.x2} cy={rulerDrag.y2} r={5} fill={color} opacity={0.8} />
+                      {/* Distance label */}
+                      {rulerDistance > 4 && (
+                        <>
+                          <rect
+                            x={(rulerDrag.x1 + rulerDrag.x2) / 2 - 28}
+                            y={(rulerDrag.y1 + rulerDrag.y2) / 2 - 20}
+                            width={56} height={17} rx={4}
+                            fill="white" opacity={0.9}
+                          />
+                          <text
+                            x={(rulerDrag.x1 + rulerDrag.x2) / 2}
+                            y={(rulerDrag.y1 + rulerDrag.y2) / 2 - 7}
+                            textAnchor="middle"
+                            fontSize={11}
+                            fontFamily="monospace"
+                            fill={color}
+                            fontWeight="600"
+                          >
+                            {rulerDistance}px
+                          </text>
+                        </>
+                      )}
+                    </svg>
+                  )}
                 </div>
               ))}
             </Document>
+
+              {/* ── Extra blank pages ──────────────────────────────────── */}
+              {extraPages.map((pid, arrIdx) => {
+                // Fabric index starts after all PDF pages
+                const fabricIndex = (numPages || 0) + arrIdx;
+                return (
+                  <div key={pid} className="relative mx-auto" style={{ display: 'block', marginBottom: '24px' }}>
+                    {/* Page label */}
+                    <div className="absolute -top-6 left-0 text-[11px] text-gray-400 font-medium select-none">
+                      Extra page {arrIdx + 1}
+                    </div>
+                    {/* Blank white canvas */}
+                    <div
+                      ref={(el) => {
+                        if (el && !pageWrappers.current.has(fabricIndex)) {
+                          pageWrappers.current.set(fabricIndex, el);
+                          setTimeout(() => initFabricCanvas(fabricIndex, el), 200);
+                        }
+                      }}
+                      className="bg-white shadow-2xl rounded overflow-hidden"
+                      style={{
+                        width: pdfPageWidthRef.current || 794,
+                        height: Math.round((pdfPageWidthRef.current || 794) * 1.414), // A4 ratio
+                        cursor: getCursor(fabricIndex),
+                      }}
+                      onMouseDown={tool === 'ruler' ? (e) => {
+                        const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
+                        setRulerDrag({ x1: e.clientX - rect.left, y1: e.clientY - rect.top, x2: e.clientX - rect.left, y2: e.clientY - rect.top, pageIndex: fabricIndex });
+                      } : undefined}
+                      onMouseMove={tool === 'ruler' && rulerDrag ? (e) => {
+                        if (!rulerDrag || rulerDrag.pageIndex !== fabricIndex) return;
+                        const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
+                        const x = e.clientX - rect.left; const y = e.clientY - rect.top;
+                        if (e.shiftKey) {
+                          const dx = x - rulerDrag.x1; const dy = y - rulerDrag.y1;
+                          const angle = Math.atan2(dy, dx);
+                          const snapped = Math.round(angle / (Math.PI / 4)) * (Math.PI / 4);
+                          const dist = Math.sqrt(dx * dx + dy * dy);
+                          setRulerDrag(r => r ? { ...r, x2: r.x1 + Math.cos(snapped) * dist, y2: r.y1 + Math.sin(snapped) * dist } : r);
+                        } else {
+                          setRulerDrag(r => r ? { ...r, x2: x, y2: y } : r);
+                        }
+                      } : undefined}
+                      onMouseUp={tool === 'ruler' && rulerDrag ? () => {
+                        if (rulerDrag && rulerDrag.pageIndex === fabricIndex) { commitRulerLine(rulerDrag); setRulerDrag(null); }
+                      } : undefined}
+                      onMouseLeave={tool === 'ruler' ? () => {
+                        if (rulerDrag && rulerDrag.pageIndex === fabricIndex) { commitRulerLine(rulerDrag); setRulerDrag(null); }
+                      } : undefined}
+                    />
+                    {/* Ruler SVG preview for extra pages */}
+                    {rulerDrag && rulerDrag.pageIndex === fabricIndex && (
+                      <svg className="absolute inset-0 pointer-events-none" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
+                        <line x1={rulerDrag.x1} y1={rulerDrag.y1} x2={rulerDrag.x2} y2={rulerDrag.y2} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeDasharray="6 3" />
+                        <circle cx={rulerDrag.x2} cy={rulerDrag.y2} r={5} fill={color} opacity={0.8} />
+                        {rulerDistance > 4 && (
+                          <><rect x={(rulerDrag.x1 + rulerDrag.x2) / 2 - 28} y={(rulerDrag.y1 + rulerDrag.y2) / 2 - 20} width={56} height={17} rx={4} fill="white" opacity={0.9} />
+                          <text x={(rulerDrag.x1 + rulerDrag.x2) / 2} y={(rulerDrag.y1 + rulerDrag.y2) / 2 - 7} textAnchor="middle" fontSize={11} fontFamily="monospace" fill={color} fontWeight="600">{rulerDistance}px</text></>
+                        )}
+                      </svg>
+                    )}
+                  </div>
+                );
+              })}
+
+              {/* Add Page button */}
+              <button
+                onClick={() => {
+                  extraPageIdCounter.current += 1;
+                  setExtraPages(p => [...p, extraPageIdCounter.current]);
+                }}
+                className="flex items-center gap-2 px-5 py-3 mt-2 mb-8 rounded-xl border-2 border-dashed border-gray-300 text-gray-500 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50/50 transition-all text-sm font-medium select-none"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+                Add extra page
+              </button>
           </div>
         )}
 
         {/* Plain canvas (no PDF) */}
         {!pdfUrl && (
-          <div className="flex justify-center py-6 px-4">
+          <div className="flex justify-center py-8 px-4">
             <div
               ref={setPageWrapperRef(0)}
-              className="relative bg-white shadow-xl"
-              style={{ width: 800, height: 1100, cursor: tool === 'eraser' ? 'cell' : 'crosshair' }}
+              className="relative bg-white shadow-2xl rounded"
+              style={{ width: 800, height: 1100, cursor: getCursor(0) }}
             />
           </div>
         )}
       </div>
 
-      {/* Footer save button */}
+      {/* Footer */}
       {(onSave || onSavePdf) && (
-        <div className="flex justify-end gap-2 px-4 py-3 bg-white border-t">
+        <div className="flex items-center justify-end gap-2 px-4 py-2.5 bg-white border-t border-gray-200">
           {onSave && (
             <button
               onClick={handleManualSave}
               disabled={isSaving}
               className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium disabled:opacity-50 transition-colors"
             >
-              <Save size={15} />
-              {isSaving ? 'Saving...' : 'Save Progress'}
+              <Save size={14} />
+              {isSaving ? 'Saving…' : 'Save Progress'}
             </button>
           )}
           {onSavePdf && (
             <button
               onClick={handleSubmit}
               disabled={isSubmitting}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium disabled:opacity-50 transition-colors"
+              className="flex items-center gap-2 px-5 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium disabled:opacity-50 transition-colors shadow-sm"
             >
               {isSubmitting ? (
-                <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Submitting...</>
+                <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Submitting…</>
               ) : (
-                <>Submit Answer</>
+                <><CheckCircle size={15} /> Submit Answer</>
               )}
             </button>
           )}
