@@ -49,6 +49,7 @@ export default function StudentInClassTestDetailPage() {
   const canvasSubmitRef = React.useRef<(() => void) | null>(null);
   const [clockOffsetMs, setClockOffsetMs] = React.useState(0);
   const [showTimeExpiredModal, setShowTimeExpiredModal] = React.useState(false);
+  const [timerInitialized, setTimerInitialized] = React.useState(false);
   const autoSubmitFiredRef = React.useRef(false);
 
   // Download a file in-page by fetching as blob first (works for cross-origin Firebase URLs)
@@ -150,7 +151,10 @@ export default function StudentInClassTestDetailPage() {
 
   // Update canvas timer in real-time (server-calibrated)
   useEffect(() => {
-    if (!isWriting || !test) return;
+    if (!isWriting || !test) {
+      setTimerInitialized(false);
+      return;
+    }
 
     const updateTimer = () => {
       const startTime = (test as any).scheduledStartTime.toDate();
@@ -158,8 +162,10 @@ export default function StudentInClassTestDetailPage() {
       const adjustedNow = new Date(Date.now() + clockOffsetMs);
       const remaining = Math.max(0, endTime.getTime() - adjustedNow.getTime());
       setCanvasTimeRemaining(remaining);
+      setTimerInitialized(true);
     };
 
+    // Run immediately first
     updateTimer();
     const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
@@ -167,13 +173,15 @@ export default function StudentInClassTestDetailPage() {
 
   // Auto-submit when canvas timer hits zero
   useEffect(() => {
-    if (!isWriting) return;
+    if (!isWriting || !timerInitialized) return;
+    
+    // Only trigger if timer has ACTUALLY hit zero after initialization
     if (canvasTimeRemaining === 0 && !autoSubmitFiredRef.current) {
       autoSubmitFiredRef.current = true;
       setShowTimeExpiredModal(true);
       if (canvasSubmitRef.current) canvasSubmitRef.current();
     }
-  }, [canvasTimeRemaining, isWriting]);
+  }, [canvasTimeRemaining, isWriting, timerInitialized]);
 
   // Check for draft on mount (localStorage + Firestore)
   useEffect(() => {
