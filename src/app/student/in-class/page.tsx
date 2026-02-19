@@ -26,6 +26,15 @@ export default function StudentInClassTestsPage() {
   const [loading, setLoading] = useState(true);
   const [classes, setClasses] = useState<ClassInfo[]>([]);
   const [selectedClassId, setSelectedClassId] = useState<string>('all');
+  const [clockOffsetMs, setClockOffsetMs] = useState(0);
+
+  // Fetch server time to calibrate clock
+  useEffect(() => {
+    fetch('/api/server-time')
+      .then(r => r.json())
+      .then(data => setClockOffsetMs((data.nowMs as number) - Date.now()))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!user) {
@@ -133,7 +142,7 @@ export default function StudentInClassTestsPage() {
   };
 
   const getTestStatus = (test: Test) => {
-    const now = new Date();
+    const now = new Date(Date.now() + clockOffsetMs); // server-calibrated
     const scheduledTime = (test as any).scheduledStartTime?.toDate ? (test as any).scheduledStartTime.toDate() : new Date((test as any).scheduledStartTime);
     const duration = (test as any).duration || 0;
     const endTime = new Date(scheduledTime.getTime() + duration * 60 * 1000);
@@ -198,6 +207,7 @@ export default function StudentInClassTestsPage() {
     // Handle Firestore Timestamp
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
     return new Intl.DateTimeFormat('en-AU', {
+      timeZone: 'Australia/Melbourne',
       weekday: 'short',
       day: 'numeric',
       month: 'short',

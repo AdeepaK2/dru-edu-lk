@@ -415,6 +415,7 @@ export default function StudentInClassTestDetailPage() {
     if (!timestamp) return 'TBA';
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
     return new Intl.DateTimeFormat('en-AU', {
+      timeZone: 'Australia/Melbourne',
       weekday: 'short',
       day: 'numeric',
       month: 'short',
@@ -492,6 +493,7 @@ export default function StudentInClassTestDetailPage() {
           scheduledStartTime={(test as any).scheduledStartTime}
           duration={(test as any).duration}
           onTimeExpired={handleTimeExpired}
+          clockOffsetMs={clockOffsetMs}
         />
 
         {/* Draft Recovery Prompt */}
