@@ -49,22 +49,17 @@ export default function StudentInClassTestDetailPage() {
   const canvasSubmitRef = React.useRef<(() => void) | null>(null);
   const [clockOffsetMs, setClockOffsetMs] = React.useState(0);
   const [showTimeExpiredModal, setShowTimeExpiredModal] = React.useState(false);
+  const [timerInitialized, setTimerInitialized] = React.useState(false);
   const autoSubmitFiredRef = React.useRef(false);
 
   // Download a file in-page by fetching as blob first (works for cross-origin Firebase URLs)
   const downloadFile = async (url: string, filename: string) => {
     try {
       toast.loading('Preparing download...', { id: 'dl' });
-      const res = await fetch(url);
-      const blob = await res.blob();
-      const objectUrl = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = objectUrl;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(objectUrl);
+      // Route through server-side proxy to avoid CORS on Firebase Storage URLs
+      const proxyUrl = `/api/download-proxy?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename)}`;
+      // Open in new tab to handle errors gracefully if proxy fails (browser shows error instead of silent fail)
+      window.open(proxyUrl, '_blank');
       toast.dismiss('dl');
     } catch {
       toast.dismiss('dl');
@@ -150,7 +145,10 @@ export default function StudentInClassTestDetailPage() {
 
   // Update canvas timer in real-time (server-calibrated)
   useEffect(() => {
-    if (!isWriting || !test) return;
+    if (!isWriting || !test) {
+      setTimerInitialized(false);
+      return;
+    }
 
     const updateTimer = () => {
       const startTime = (test as any).scheduledStartTime.toDate();
@@ -158,8 +156,10 @@ export default function StudentInClassTestDetailPage() {
       const adjustedNow = new Date(Date.now() + clockOffsetMs);
       const remaining = Math.max(0, endTime.getTime() - adjustedNow.getTime());
       setCanvasTimeRemaining(remaining);
+      setTimerInitialized(true);
     };
 
+    // Run immediately first
     updateTimer();
     const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
@@ -167,13 +167,15 @@ export default function StudentInClassTestDetailPage() {
 
   // Auto-submit when canvas timer hits zero
   useEffect(() => {
-    if (!isWriting) return;
+    if (!isWriting || !timerInitialized) return;
+    
+    // Only trigger if timer has ACTUALLY hit zero after initialization
     if (canvasTimeRemaining === 0 && !autoSubmitFiredRef.current) {
       autoSubmitFiredRef.current = true;
       setShowTimeExpiredModal(true);
       if (canvasSubmitRef.current) canvasSubmitRef.current();
     }
-  }, [canvasTimeRemaining, isWriting]);
+  }, [canvasTimeRemaining, isWriting, timerInitialized]);
 
   // Check for draft on mount (localStorage + Firestore)
   useEffect(() => {
