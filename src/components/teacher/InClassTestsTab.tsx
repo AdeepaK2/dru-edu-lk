@@ -77,13 +77,14 @@ export default function InClassTestsTab({ classId, className, classSubject }: In
   };
 
   const formatDate = (timestamp: Timestamp) => {
-    return timestamp.toDate().toLocaleDateString('en-US', {
+    return new Intl.DateTimeFormat('en-AU', {
+      timeZone: 'Australia/Melbourne',
       weekday: 'short',
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
-    });
+    }).format(timestamp.toDate());
   };
 
   // Filter and Sort Logic
