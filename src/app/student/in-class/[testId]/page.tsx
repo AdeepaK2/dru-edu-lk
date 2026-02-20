@@ -836,7 +836,7 @@ export default function StudentInClassTestDetailPage() {
                     }
                   }}
                   disabled={uploading || timeExpired}
-                  className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-3 sm:px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors flex-shrink-0"
+                  className="bg-green-600 hover:bg-green-700 active:bg-green-800 active:scale-95 disabled:bg-gray-400 text-white px-3 sm:px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-all flex-shrink-0 select-none"
                 >
                   {uploading ? (
                     <>
@@ -851,10 +851,10 @@ export default function StudentInClassTestDetailPage() {
                     </>
                   )}
                 </button>
-                
+
                 <button
                   onClick={() => setIsWriting(false)}
-                  className="text-white hover:text-gray-300 px-2 sm:px-3 py-1 rounded flex-shrink-0"
+                  className="text-white hover:text-gray-300 active:text-gray-400 active:scale-95 px-2 sm:px-3 py-1 rounded transition-all flex-shrink-0 select-none"
                 >
                   Close
                 </button>
