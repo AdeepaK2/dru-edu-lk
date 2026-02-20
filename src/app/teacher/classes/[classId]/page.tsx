@@ -1334,7 +1334,7 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                         <div className="font-medium text-gray-900 dark:text-white truncate">
                           {material.title}
                         </div>
-                        {material.description && (
+                        {material.description && material.description !== group.materials[0]?.description && (
                           <div className="text-sm text-gray-600 dark:text-gray-300 truncate">
                             {material.description}
                           </div>
