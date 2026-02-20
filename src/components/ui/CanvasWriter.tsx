@@ -109,9 +109,14 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
       if (fc.wrapperEl && fc.wrapperEl.parentNode !== wrapperEl) {
         // Re-attach existing canvas to new wrapper
         wrapperEl.appendChild(fc.wrapperEl);
-        fc.setDimensions({ width: wrapperEl.clientWidth || 800, height: wrapperEl.clientHeight || 1100 });
-        fc.calcOffset();
       }
+      // Always sync dimensions to match current wrapper size
+      const rect = wrapperEl.getBoundingClientRect();
+      const w = rect.width || wrapperEl.offsetWidth || 800;
+      const h = rect.height || wrapperEl.offsetHeight || 1100;
+      fc.setDimensions({ width: w, height: h });
+      fc.calcOffset();
+      fc.renderAll();
       return;
     }
 
@@ -121,13 +126,10 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
     const w = rect.width || wrapperEl.offsetWidth || 800;
     const h = rect.height || wrapperEl.offsetHeight || 1100;
 
+    // Don't set CSS width/height — let Fabric manage both canvases at exact pixel size
     const canvasEl = document.createElement('canvas');
     canvasEl.width = w;
     canvasEl.height = h;
-    canvasEl.style.position = 'absolute';
-    canvasEl.style.inset = '0';
-    canvasEl.style.width = '100%';
-    canvasEl.style.height = '100%';
     wrapperEl.appendChild(canvasEl);
 
     const fc = new fabric.Canvas(canvasEl, {
@@ -141,6 +143,8 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
     fc.freeDrawingBrush = new fabric.PencilBrush(fc);
     fc.freeDrawingBrush.color = color;
     fc.freeDrawingBrush.width = strokeWidth;
+    // Reduce path decimation to preserve detail on long strokes
+    (fc.freeDrawingBrush as any).decimate = 2;
 
     fc.on('path:created', () => scheduleAutoSave());
     fabricCanvases.current.set(pageIndex, fc);
@@ -159,6 +163,27 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
     }
   }, [color, strokeWidth, scheduleAutoSave, initialPageAnnotations]);
 
+  // ─── Resize canvases when PDF scale changes ────────────────────────────────
+  useEffect(() => {
+    if (!numPages) return;
+    // Wait for PDF pages to re-render at new scale
+    const timer = setTimeout(() => {
+      fabricCanvases.current.forEach((fc, pageIndex) => {
+        const wrapper = pageWrappers.current.get(pageIndex);
+        if (!wrapper || !fc) return;
+        const rect = wrapper.getBoundingClientRect();
+        const w = rect.width || wrapper.offsetWidth;
+        const h = rect.height || wrapper.offsetHeight;
+        if (w > 0 && h > 0) {
+          fc.setDimensions({ width: w, height: h });
+          fc.calcOffset();
+          fc.renderAll();
+        }
+      });
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [pdfScale, numPages]);
+
   // ─── Sync tool/color/strokeWidth to all canvases ─────────────────────────
   useEffect(() => {
     const update = async () => {
@@ -172,15 +197,19 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
 
         if (tool === 'eraser') {
           const brush = new fabric.PencilBrush(fc);
-          brush.color = 'rgba(0,0,0,0)'; // transparent preview
+          brush.color = 'rgba(255,100,100,0.3)'; // visible preview while drawing
           brush.width = strokeWidth * 4;
+          (brush as any).decimate = 2;
           fc.freeDrawingBrush = brush;
           fc.isDrawingMode = true;
-          // After commit, punch transparent hole
+          // After commit, set opaque stroke + destination-out to erase
           const applyEraser = (e: any) => {
             const path = e.path as fabric.Path;
             if (!path) return;
-            path.set('globalCompositeOperation', 'destination-out');
+            path.set({
+              stroke: 'rgba(0,0,0,1)',
+              globalCompositeOperation: 'destination-out',
+            });
             fc.renderAll();
             scheduleAutoSave();
           };
@@ -190,9 +219,11 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
           // Ruler: disable fabric drawing; we handle it ourselves via React events
           fc.isDrawingMode = false;
         } else {
-          fc.freeDrawingBrush = new fabric.PencilBrush(fc);
-          fc.freeDrawingBrush.color = color;
-          fc.freeDrawingBrush.width = strokeWidth;
+          const brush = new fabric.PencilBrush(fc);
+          brush.color = color;
+          brush.width = strokeWidth;
+          (brush as any).decimate = 2;
+          fc.freeDrawingBrush = brush;
           fc.isDrawingMode = true;
         }
       });
@@ -264,7 +295,7 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
         const fabricIndex = totalPdf + j;
         const wrapperEl = pageWrappers.current.get(fabricIndex);
         if (!wrapperEl) continue;
-        const canvas = await html2canvas(wrapperEl, { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' });
+        const canvas = await html2canvas(wrapperEl, { scale: 2, useCORS: true, logging: false, allowTaint: true, backgroundColor: '#ffffff' });
         const imgData = canvas.toDataURL('image/jpeg', 0.92);
         const imgBytes = Uint8Array.from(atob(imgData.split(',')[1]), c => c.charCodeAt(0));
         const img = await pdfDoc.embedJpg(imgBytes);
@@ -362,7 +393,7 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
     : 0;
 
   // ─── Cursor style ─────────────────────────────────────────────────────────
-  const getCursor = (pageIndex: number) => {
+  const getCursor = (_pageIndex: number) => {
     if (tool === 'ruler') return 'crosshair';
     if (tool === 'eraser') {
       const s = strokeWidth * 4 + 8;
@@ -378,10 +409,10 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
       key={t}
       title={label}
       onClick={() => setTool(t)}
-      className={`relative flex items-center justify-center w-9 h-9 rounded-lg transition-all duration-150 group
+      className={`relative flex items-center justify-center w-10 h-10 rounded-lg transition-all duration-150 group select-none
         ${tool === t
-          ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200'
-          : 'text-gray-500 hover:bg-gray-100 hover:text-gray-800'}`}
+          ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200 active:bg-indigo-700 active:scale-95'
+          : 'text-gray-500 hover:bg-gray-100 hover:text-gray-800 active:bg-gray-200 active:scale-95'}`}
     >
       {icon}
       <span className="absolute -bottom-7 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] bg-gray-800 text-white px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
@@ -413,9 +444,9 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
               key={c}
               title={c}
               onClick={() => { setColor(c); if (tool === 'eraser' || tool === 'ruler') {} }}
-              className={`w-5 h-5 rounded-full transition-all duration-150
+              className={`w-7 h-7 rounded-full transition-all duration-150 select-none active:scale-90
                 ${color === c
-                  ? 'ring-2 ring-offset-1 ring-indigo-500 scale-125'
+                  ? 'ring-2 ring-offset-2 ring-indigo-500 scale-110'
                   : 'hover:scale-110 opacity-80 hover:opacity-100'}`}
               style={{ backgroundColor: c }}
             />
@@ -432,8 +463,8 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
               key={size}
               title={`${size}px`}
               onClick={() => setStrokeWidth(size)}
-              className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all duration-150
-                ${strokeWidth === size ? 'bg-indigo-50 ring-1 ring-indigo-300' : 'hover:bg-gray-100'}`}
+              className={`w-9 h-9 flex items-center justify-center rounded-lg transition-all duration-150 select-none active:scale-90
+                ${strokeWidth === size ? 'bg-indigo-50 ring-2 ring-indigo-400 shadow-sm' : 'hover:bg-gray-100 active:bg-gray-200'}`}
             >
               <div className="rounded-full bg-gray-700" style={{ width: size, height: size }} />
             </button>
@@ -447,20 +478,20 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
         <div className="flex items-center gap-0.5 bg-gray-100 rounded-lg px-1">
           <button
             onClick={() => setPdfScale(s => Math.max(0.5, +(s - 0.25).toFixed(2)))}
-            className="p-1.5 text-gray-500 hover:text-gray-800 transition-colors"
+            className="p-2 text-gray-500 hover:text-gray-800 active:bg-gray-200 active:scale-90 rounded-md transition-all select-none"
             title="Zoom out"
           >
-            <ZoomOut size={15} />
+            <ZoomOut size={16} />
           </button>
           <span className="text-xs font-mono text-gray-600 w-11 text-center select-none">
             {Math.round(pdfScale * 100)}%
           </span>
           <button
             onClick={() => setPdfScale(s => Math.min(3, +(s + 0.25).toFixed(2)))}
-            className="p-1.5 text-gray-500 hover:text-gray-800 transition-colors"
+            className="p-2 text-gray-500 hover:text-gray-800 active:bg-gray-200 active:scale-90 rounded-md transition-all select-none"
             title="Zoom in"
           >
-            <ZoomIn size={15} />
+            <ZoomIn size={16} />
           </button>
         </div>
 
@@ -468,14 +499,14 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
         <div className="flex items-center gap-1 ml-auto">
           <button
             onClick={handleUndo}
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-800 transition-colors"
+            className="w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-800 active:bg-gray-200 active:scale-90 transition-all select-none"
             title="Undo last stroke"
           >
             <Undo size={16} />
           </button>
           <button
             onClick={handleClear}
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+            className="w-9 h-9 flex items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-500 active:bg-red-100 active:scale-90 transition-all select-none"
             title="Clear all drawings"
           >
             <Trash2 size={16} />
@@ -484,7 +515,7 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
             <button
               onClick={handleManualSave}
               disabled={isSaving}
-              className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 disabled:opacity-40 transition-colors"
+              className="flex items-center gap-1.5 px-3 h-9 rounded-lg text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 active:scale-95 disabled:opacity-40 transition-all select-none"
               title="Save progress"
             >
               <Save size={14} />
@@ -647,7 +678,7 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
                           setTimeout(() => initFabricCanvas(fabricIndex, el), 200);
                         }
                       }}
-                      className="bg-white shadow-2xl rounded overflow-hidden"
+                      className="relative bg-white shadow-2xl rounded"
                       style={{
                         width: pdfPageWidthRef.current || 794,
                         height: Math.round((pdfPageWidthRef.current || 794) * 1.414), // A4 ratio
@@ -728,7 +759,7 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
             <button
               onClick={handleManualSave}
               disabled={isSaving}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium disabled:opacity-50 transition-colors"
+              className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 active:scale-[0.97] text-gray-700 rounded-lg text-sm font-medium disabled:opacity-50 transition-all select-none"
             >
               <Save size={14} />
               {isSaving ? 'Saving…' : 'Save Progress'}
@@ -738,7 +769,7 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
             <button
               onClick={handleSubmit}
               disabled={isSubmitting}
-              className="flex items-center gap-2 px-5 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium disabled:opacity-50 transition-colors shadow-sm"
+              className="flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-700 active:bg-green-800 active:scale-[0.97] text-white rounded-lg text-sm font-medium disabled:opacity-50 transition-all shadow-sm select-none"
             >
               {isSubmitting ? (
                 <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Submitting…</>
