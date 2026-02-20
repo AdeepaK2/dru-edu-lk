@@ -328,10 +328,14 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
     };
   }, []);
 
-  // ─── Ruler: commit a line to Fabric ──────────────────────────────────────
+  // ─── Ruler: commit a straight line to Fabric ─────────────────────────────
   const commitRulerLine = useCallback(async (line: RulerLine) => {
     const fc = fabricCanvases.current.get(line.pageIndex);
     if (!fc) return;
+    // Skip tiny accidental taps
+    const dx = line.x2 - line.x1;
+    const dy = line.y2 - line.y1;
+    if (Math.sqrt(dx * dx + dy * dy) < 4) return;
     const { fabric } = await import('fabric');
     const fabricLine = new fabric.Line([line.x1, line.y1, line.x2, line.y2], {
       stroke: color,
@@ -339,30 +343,40 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
       selectable: false,
       evented: false,
     });
-    // Distance label
-    const dx = line.x2 - line.x1;
-    const dy = line.y2 - line.y1;
-    const dist = Math.round(Math.sqrt(dx * dx + dy * dy));
-    const midX = (line.x1 + line.x2) / 2;
-    const midY = (line.y1 + line.y2) / 2;
-    const label = new fabric.Text(`${dist}px`, {
-      left: midX,
-      top: midY - 14,
-      fontSize: 11,
-      fill: color,
-      fontFamily: 'Inter, sans-serif',
-      originX: 'center',
-      originY: 'bottom',
-      selectable: false,
-      evented: false,
-      backgroundColor: 'rgba(255,255,255,0.75)',
-      padding: 2,
-    });
     fc.add(fabricLine);
-    fc.add(label);
     fc.renderAll();
     scheduleAutoSave();
   }, [color, strokeWidth, scheduleAutoSave]);
+
+  // ─── Ruler event helpers (mouse + touch) ─────────────────────────────────
+  const rulerStart = useCallback((pageIndex: number, clientX: number, clientY: number, rect: DOMRect) => {
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
+    setRulerDrag({ x1: x, y1: y, x2: x, y2: y, pageIndex });
+  }, []);
+
+  const rulerMove = useCallback((pageIndex: number, clientX: number, clientY: number, rect: DOMRect, shiftKey: boolean) => {
+    if (!rulerDrag || rulerDrag.pageIndex !== pageIndex) return;
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
+    if (shiftKey) {
+      const dx = x - rulerDrag.x1;
+      const dy = y - rulerDrag.y1;
+      const angle = Math.atan2(dy, dx);
+      const snapped = Math.round(angle / (Math.PI / 4)) * (Math.PI / 4);
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      setRulerDrag(r => r ? { ...r, x2: r.x1 + Math.cos(snapped) * dist, y2: r.y1 + Math.sin(snapped) * dist } : r);
+    } else {
+      setRulerDrag(r => r ? { ...r, x2: x, y2: y } : r);
+    }
+  }, [rulerDrag]);
+
+  const rulerEnd = useCallback((pageIndex: number) => {
+    if (rulerDrag && rulerDrag.pageIndex === pageIndex) {
+      commitRulerLine(rulerDrag);
+      setRulerDrag(null);
+    }
+  }, [rulerDrag, commitRulerLine]);
 
   // ─── Page wrapper ref callback ────────────────────────────────────────────
 
@@ -383,14 +397,6 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
       setTimeout(() => initFabricCanvas(pageIndex, el), 100);
     }
   }, [initFabricCanvas]);
-
-  // ─── Ruler drag distance (px → cm approx at 96dpi) ───────────────────────
-  const rulerDistance = rulerDrag
-    ? Math.round(Math.sqrt(
-        Math.pow(rulerDrag.x2 - rulerDrag.x1, 2) +
-        Math.pow(rulerDrag.y2 - rulerDrag.y1, 2)
-      ))
-    : 0;
 
   // ─── Cursor style ─────────────────────────────────────────────────────────
   const getCursor = (_pageIndex: number) => {
@@ -431,7 +437,7 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
         <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl mr-1">
           {toolBtn('pen',    <Paintbrush size={17} />, 'Pen (draw)')}
           {toolBtn('eraser', <Eraser size={17} />,     'Eraser')}
-          {toolBtn('ruler',  <Ruler size={17} />,      'Ruler (straight line)')}
+          {toolBtn('ruler',  <Ruler size={17} />,      'Straight line')}
         </div>
 
         {/* Divider */}
@@ -529,12 +535,7 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
       {tool === 'ruler' && (
         <div className="flex items-center gap-2 px-4 py-1.5 bg-indigo-50 border-b border-indigo-100 text-indigo-700 text-xs font-medium">
           <Ruler size={13} />
-          <span>Ruler mode — click and drag to draw a straight line. Release to commit.</span>
-          {rulerDrag && (
-            <span className="ml-auto font-mono bg-indigo-100 px-2 py-0.5 rounded-md">
-              {rulerDistance} px &nbsp;|&nbsp; ≈ {(rulerDistance / 37.8).toFixed(1)} cm
-            </span>
-          )}
+          <span>Straight line — drag to draw. Release to commit.</span>
         </div>
       )}
 
@@ -577,41 +578,28 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
                   <div
                     ref={setPageWrapperRef(i)}
                     className="absolute inset-0"
-                    style={{ cursor: getCursor(i) }}
+                    style={{ cursor: getCursor(i), touchAction: tool === 'ruler' ? 'none' : 'auto' }}
                     onMouseDown={tool === 'ruler' ? (e) => {
-                      const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
-                      const x = e.clientX - rect.left;
-                      const y = e.clientY - rect.top;
-                      setRulerDrag({ x1: x, y1: y, x2: x, y2: y, pageIndex: i });
+                      rulerStart(i, e.clientX, e.clientY, (e.currentTarget as HTMLDivElement).getBoundingClientRect());
                     } : undefined}
                     onMouseMove={tool === 'ruler' && rulerDrag ? (e) => {
-                      if (!rulerDrag || rulerDrag.pageIndex !== i) return;
-                      const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
-                      const x = e.clientX - rect.left;
-                      const y = e.clientY - rect.top;
-                      // Hold Shift to snap to 45° increments
-                      if (e.shiftKey) {
-                        const dx = x - rulerDrag.x1;
-                        const dy = y - rulerDrag.y1;
-                        const angle = Math.atan2(dy, dx);
-                        const snapped = Math.round(angle / (Math.PI / 4)) * (Math.PI / 4);
-                        const dist = Math.sqrt(dx * dx + dy * dy);
-                        setRulerDrag(r => r ? { ...r, x2: r.x1 + Math.cos(snapped) * dist, y2: r.y1 + Math.sin(snapped) * dist } : r);
-                      } else {
-                        setRulerDrag(r => r ? { ...r, x2: x, y2: y } : r);
-                      }
+                      rulerMove(i, e.clientX, e.clientY, (e.currentTarget as HTMLDivElement).getBoundingClientRect(), e.shiftKey);
                     } : undefined}
-                    onMouseUp={tool === 'ruler' && rulerDrag ? () => {
-                      if (rulerDrag && rulerDrag.pageIndex === i) {
-                        commitRulerLine(rulerDrag);
-                        setRulerDrag(null);
-                      }
+                    onMouseUp={tool === 'ruler' && rulerDrag ? () => rulerEnd(i) : undefined}
+                    onMouseLeave={tool === 'ruler' ? () => rulerEnd(i) : undefined}
+                    onTouchStart={tool === 'ruler' ? (e) => {
+                      e.preventDefault();
+                      const t = e.touches[0];
+                      rulerStart(i, t.clientX, t.clientY, (e.currentTarget as HTMLDivElement).getBoundingClientRect());
                     } : undefined}
-                    onMouseLeave={tool === 'ruler' ? () => {
-                      if (rulerDrag && rulerDrag.pageIndex === i) {
-                        commitRulerLine(rulerDrag);
-                        setRulerDrag(null);
-                      }
+                    onTouchMove={tool === 'ruler' && rulerDrag ? (e) => {
+                      e.preventDefault();
+                      const t = e.touches[0];
+                      rulerMove(i, t.clientX, t.clientY, (e.currentTarget as HTMLDivElement).getBoundingClientRect(), false);
+                    } : undefined}
+                    onTouchEnd={tool === 'ruler' ? (e) => {
+                      e.preventDefault();
+                      rulerEnd(i);
                     } : undefined}
                   />
 
@@ -632,28 +620,6 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
                       />
                       {/* End-point circle */}
                       <circle cx={rulerDrag.x2} cy={rulerDrag.y2} r={5} fill={color} opacity={0.8} />
-                      {/* Distance label */}
-                      {rulerDistance > 4 && (
-                        <>
-                          <rect
-                            x={(rulerDrag.x1 + rulerDrag.x2) / 2 - 28}
-                            y={(rulerDrag.y1 + rulerDrag.y2) / 2 - 20}
-                            width={56} height={17} rx={4}
-                            fill="white" opacity={0.9}
-                          />
-                          <text
-                            x={(rulerDrag.x1 + rulerDrag.x2) / 2}
-                            y={(rulerDrag.y1 + rulerDrag.y2) / 2 - 7}
-                            textAnchor="middle"
-                            fontSize={11}
-                            fontFamily="monospace"
-                            fill={color}
-                            fontWeight="600"
-                          >
-                            {rulerDistance}px
-                          </text>
-                        </>
-                      )}
                     </svg>
                   )}
                 </div>
@@ -683,41 +649,36 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
                         width: pdfPageWidthRef.current || 794,
                         height: Math.round((pdfPageWidthRef.current || 794) * 1.414), // A4 ratio
                         cursor: getCursor(fabricIndex),
+                        touchAction: tool === 'ruler' ? 'none' : 'auto',
                       }}
                       onMouseDown={tool === 'ruler' ? (e) => {
-                        const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
-                        setRulerDrag({ x1: e.clientX - rect.left, y1: e.clientY - rect.top, x2: e.clientX - rect.left, y2: e.clientY - rect.top, pageIndex: fabricIndex });
+                        rulerStart(fabricIndex, e.clientX, e.clientY, (e.currentTarget as HTMLDivElement).getBoundingClientRect());
                       } : undefined}
                       onMouseMove={tool === 'ruler' && rulerDrag ? (e) => {
-                        if (!rulerDrag || rulerDrag.pageIndex !== fabricIndex) return;
-                        const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
-                        const x = e.clientX - rect.left; const y = e.clientY - rect.top;
-                        if (e.shiftKey) {
-                          const dx = x - rulerDrag.x1; const dy = y - rulerDrag.y1;
-                          const angle = Math.atan2(dy, dx);
-                          const snapped = Math.round(angle / (Math.PI / 4)) * (Math.PI / 4);
-                          const dist = Math.sqrt(dx * dx + dy * dy);
-                          setRulerDrag(r => r ? { ...r, x2: r.x1 + Math.cos(snapped) * dist, y2: r.y1 + Math.sin(snapped) * dist } : r);
-                        } else {
-                          setRulerDrag(r => r ? { ...r, x2: x, y2: y } : r);
-                        }
+                        rulerMove(fabricIndex, e.clientX, e.clientY, (e.currentTarget as HTMLDivElement).getBoundingClientRect(), e.shiftKey);
                       } : undefined}
-                      onMouseUp={tool === 'ruler' && rulerDrag ? () => {
-                        if (rulerDrag && rulerDrag.pageIndex === fabricIndex) { commitRulerLine(rulerDrag); setRulerDrag(null); }
+                      onMouseUp={tool === 'ruler' && rulerDrag ? () => rulerEnd(fabricIndex) : undefined}
+                      onMouseLeave={tool === 'ruler' ? () => rulerEnd(fabricIndex) : undefined}
+                      onTouchStart={tool === 'ruler' ? (e) => {
+                        e.preventDefault();
+                        const t = e.touches[0];
+                        rulerStart(fabricIndex, t.clientX, t.clientY, (e.currentTarget as HTMLDivElement).getBoundingClientRect());
                       } : undefined}
-                      onMouseLeave={tool === 'ruler' ? () => {
-                        if (rulerDrag && rulerDrag.pageIndex === fabricIndex) { commitRulerLine(rulerDrag); setRulerDrag(null); }
+                      onTouchMove={tool === 'ruler' && rulerDrag ? (e) => {
+                        e.preventDefault();
+                        const t = e.touches[0];
+                        rulerMove(fabricIndex, t.clientX, t.clientY, (e.currentTarget as HTMLDivElement).getBoundingClientRect(), false);
+                      } : undefined}
+                      onTouchEnd={tool === 'ruler' ? (e) => {
+                        e.preventDefault();
+                        rulerEnd(fabricIndex);
                       } : undefined}
                     />
-                    {/* Ruler SVG preview for extra pages */}
+                    {/* Line SVG preview for extra pages */}
                     {rulerDrag && rulerDrag.pageIndex === fabricIndex && (
                       <svg className="absolute inset-0 pointer-events-none" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
                         <line x1={rulerDrag.x1} y1={rulerDrag.y1} x2={rulerDrag.x2} y2={rulerDrag.y2} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeDasharray="6 3" />
                         <circle cx={rulerDrag.x2} cy={rulerDrag.y2} r={5} fill={color} opacity={0.8} />
-                        {rulerDistance > 4 && (
-                          <><rect x={(rulerDrag.x1 + rulerDrag.x2) / 2 - 28} y={(rulerDrag.y1 + rulerDrag.y2) / 2 - 20} width={56} height={17} rx={4} fill="white" opacity={0.9} />
-                          <text x={(rulerDrag.x1 + rulerDrag.x2) / 2} y={(rulerDrag.y1 + rulerDrag.y2) / 2 - 7} textAnchor="middle" fontSize={11} fontFamily="monospace" fill={color} fontWeight="600">{rulerDistance}px</text></>
-                        )}
                       </svg>
                     )}
                   </div>
