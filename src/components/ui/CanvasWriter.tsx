@@ -450,11 +450,16 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
       const pdfDoc = await PDFDocument.create();
       const { default: html2canvas } = await import('html2canvas');
 
-      // Capture all PDF pages
+      // Capture all PDF pages.
+      // IMPORTANT: .react-pdf__Page only contains the PDF background canvas.
+      // The Fabric annotation overlay is a sibling div (absolute inset-0) inside
+      // the outer page wrapper — so we must capture parentElement (the wrapper)
+      // to include BOTH the PDF and the student's drawn annotations.
       const pageElements = document.querySelectorAll('.react-pdf__Page');
       for (let i = 0; i < pageElements.length; i++) {
         const pageEl = pageElements[i] as HTMLElement;
-        const canvas = await html2canvas(pageEl, { scale: 2, useCORS: true, logging: false, allowTaint: true });
+        const captureEl = (pageEl.parentElement ?? pageEl) as HTMLElement;
+        const canvas = await html2canvas(captureEl, { scale: 2, useCORS: true, logging: false, allowTaint: true });
         const imgData = canvas.toDataURL('image/jpeg', 0.92);
         const imgBytes = Uint8Array.from(atob(imgData.split(',')[1]), c => c.charCodeAt(0));
         const img = await pdfDoc.embedJpg(imgBytes);
