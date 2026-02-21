@@ -163,6 +163,11 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
     fc.freeDrawingBrush = new fabric.PencilBrush(fc);
     fc.freeDrawingBrush.color = colorRef.current;
     fc.freeDrawingBrush.width = strokeWidthRef.current;
+    // Disable pressure-based width variation (Fabric v6 PencilBrush uses pointer
+    // pressure to vary the live-preview stroke width; S Pen starts each stroke
+    // with low pressure so the preview looks thin while the committed path
+    // renders at the configured width — setting this to 0 makes them match).
+    (fc.freeDrawingBrush as any).pressureSensitivity = 0;
     // Reduce path decimation to preserve detail on long strokes
     (fc.freeDrawingBrush as any).decimate = 2;
 
@@ -354,9 +359,15 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
 
         if (tool === 'eraser') {
           const brush = new fabric.PencilBrush(fc);
-          brush.color = 'rgba(255,100,100,0.3)'; // visible preview while drawing
+          // Semi-transparent white gives a "correction-fluid" look during
+          // drawing — much less jarring than red before the path converts to
+          // destination-out on commit.
+          brush.color = 'rgba(255,255,255,0.55)';
           brush.width = strokeWidth * 4;
           (brush as any).decimate = 2;
+          // Disable pressure-based width variation so the eraser preview
+          // stays consistent in size throughout the stroke.
+          (brush as any).pressureSensitivity = 0;
           fc.freeDrawingBrush = brush;
           fc.isDrawingMode = true;
           // After commit, set opaque stroke + destination-out to erase.
@@ -381,6 +392,7 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
           brush.color = color;
           brush.width = strokeWidth;
           (brush as any).decimate = 2;
+          (brush as any).pressureSensitivity = 0;
           fc.freeDrawingBrush = brush;
           fc.isDrawingMode = true;
         }
@@ -438,11 +450,16 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
       const pdfDoc = await PDFDocument.create();
       const { default: html2canvas } = await import('html2canvas');
 
-      // Capture all PDF pages
+      // Capture all PDF pages.
+      // IMPORTANT: .react-pdf__Page only contains the PDF background canvas.
+      // The Fabric annotation overlay is a sibling div (absolute inset-0) inside
+      // the outer page wrapper — so we must capture parentElement (the wrapper)
+      // to include BOTH the PDF and the student's drawn annotations.
       const pageElements = document.querySelectorAll('.react-pdf__Page');
       for (let i = 0; i < pageElements.length; i++) {
         const pageEl = pageElements[i] as HTMLElement;
-        const canvas = await html2canvas(pageEl, { scale: 2, useCORS: true, logging: false, allowTaint: true });
+        const captureEl = (pageEl.parentElement ?? pageEl) as HTMLElement;
+        const canvas = await html2canvas(captureEl, { scale: 2, useCORS: true, logging: false, allowTaint: true });
         const imgData = canvas.toDataURL('image/jpeg', 0.92);
         const imgBytes = Uint8Array.from(atob(imgData.split(',')[1]), c => c.charCodeAt(0));
         const img = await pdfDoc.embedJpg(imgBytes);
