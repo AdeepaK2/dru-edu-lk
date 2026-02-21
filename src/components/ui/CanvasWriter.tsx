@@ -65,6 +65,7 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
   const pageWrappers = useRef<Map<number, HTMLDivElement>>(new Map());
   const autoSaveTimer = useRef<NodeJS.Timeout | null>(null);
   const initialisedPages = useRef<Set<number>>(new Set());
+  const extraPagesRestoredRef = useRef(false);
 
   // ─── Load PDF ────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -146,6 +147,13 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
     // Reduce path decimation to preserve detail on long strokes
     (fc.freeDrawingBrush as any).decimate = 2;
 
+    // Prevent browser scroll-detection hold from swallowing the first stylus/touch event.
+    // Without this, the start of every stroke (especially with a pen stylus) is clipped
+    // because the browser delays pointer events while deciding whether it's a scroll.
+    if ((fc as any).wrapperEl) ((fc as any).wrapperEl as HTMLElement).style.touchAction = 'none';
+    if ((fc as any).upperCanvasEl) ((fc as any).upperCanvasEl as HTMLElement).style.touchAction = 'none';
+    if ((fc as any).lowerCanvasEl) ((fc as any).lowerCanvasEl as HTMLElement).style.touchAction = 'none';
+
     fc.on('path:created', () => scheduleAutoSave());
     fabricCanvases.current.set(pageIndex, fc);
 
@@ -183,6 +191,28 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
     }, 300);
     return () => clearTimeout(timer);
   }, [pdfScale, numPages]);
+
+  // ─── Restore extra pages saved in initialPageAnnotations ─────────────────
+  // When the canvas remounts (page reload, Edit Answer re-open), saved strokes
+  // for extra-page indices exist in initialPageAnnotations but no divs are
+  // rendered for them yet. Detect how many extra pages were saved and add them
+  // back so their Fabric canvases can be initialised and strokes restored.
+  useEffect(() => {
+    if (!numPages || extraPagesRestoredRef.current) return;
+    extraPagesRestoredRef.current = true;
+
+    const savedKeys = Object.keys(initialPageAnnotations).map(Number);
+    const extraCount = savedKeys.filter(k => k > numPages).length;
+
+    if (extraCount > 0) {
+      const newPages: number[] = [];
+      for (let i = 0; i < extraCount; i++) {
+        extraPageIdCounter.current += 1;
+        newPages.push(extraPageIdCounter.current);
+      }
+      setExtraPages(newPages);
+    }
+  }, [numPages, initialPageAnnotations]);
 
   // ─── Sync tool/color/strokeWidth to all canvases ─────────────────────────
   useEffect(() => {
@@ -578,7 +608,7 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
                   <div
                     ref={setPageWrapperRef(i)}
                     className="absolute inset-0"
-                    style={{ cursor: getCursor(i), touchAction: tool === 'ruler' ? 'none' : 'auto' }}
+                    style={{ cursor: getCursor(i), touchAction: 'none' }}
                     onMouseDown={tool === 'ruler' ? (e) => {
                       rulerStart(i, e.clientX, e.clientY, (e.currentTarget as HTMLDivElement).getBoundingClientRect());
                     } : undefined}
@@ -638,18 +668,13 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
                     </div>
                     {/* Blank white canvas */}
                     <div
-                      ref={(el) => {
-                        if (el && !pageWrappers.current.has(fabricIndex)) {
-                          pageWrappers.current.set(fabricIndex, el);
-                          setTimeout(() => initFabricCanvas(fabricIndex, el), 200);
-                        }
-                      }}
+                      ref={setPageWrapperRef(fabricIndex)}
                       className="relative bg-white shadow-2xl rounded"
                       style={{
                         width: pdfPageWidthRef.current || 794,
                         height: Math.round((pdfPageWidthRef.current || 794) * 1.414), // A4 ratio
                         cursor: getCursor(fabricIndex),
-                        touchAction: tool === 'ruler' ? 'none' : 'auto',
+                        touchAction: 'none',
                       }}
                       onMouseDown={tool === 'ruler' ? (e) => {
                         rulerStart(fabricIndex, e.clientX, e.clientY, (e.currentTarget as HTMLDivElement).getBoundingClientRect());
