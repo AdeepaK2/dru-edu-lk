@@ -69,6 +69,13 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
   // (avoids cascading re-renders every time onSave updates draftAnnotations).
   const initialAnnotationsRef = useRef(initialPageAnnotations);
   initialAnnotationsRef.current = initialPageAnnotations;
+  // Keep onSave in a ref so scheduleAutoSave stays stable.
+  // Without this, the parent's 1-second timer recreates handleStrokeSave
+  // → scheduleAutoSave → initFabricCanvas → setPageWrapperRef → React ref
+  // cleanup → fc.renderAll() every second, which clears the Fabric upper
+  // canvas and wipes the in-progress stroke.
+  const onSaveRef = useRef(onSave);
+  onSaveRef.current = onSave;
 
   // ─── Load PDF ────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -91,18 +98,19 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
 
   // ─── Auto-save ────────────────────────────────────────────────────────────
   const scheduleAutoSave = useCallback(() => {
-    if (!onSave) return;
+    if (!onSaveRef.current) return;
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     autoSaveTimer.current = setTimeout(() => {
       const pagesJson = collectPagesJson();
       if (Object.keys(pagesJson).length > 0) {
-        onSave(pagesJson);
+        onSaveRef.current?.(pagesJson);
         if (autoSaveKey) {
           try { localStorage.setItem(autoSaveKey, JSON.stringify({ timestamp: Date.now(), pages: pagesJson })); } catch (_) {}
         }
       }
     }, 3000);
-  }, [onSave, collectPagesJson, autoSaveKey]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [collectPagesJson, autoSaveKey]);
 
   // ─── Init Fabric for a page ───────────────────────────────────────────────
   const initFabricCanvas = useCallback(async (pageIndex: number, wrapperEl: HTMLDivElement) => {
@@ -301,9 +309,10 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
     setIsSaving(true);
     try {
       const pagesJson = collectPagesJson();
-      if (onSave) { onSave(pagesJson); toast.success('Progress saved!'); }
+      if (onSaveRef.current) { onSaveRef.current(pagesJson); toast.success('Progress saved!'); }
     } finally { setIsSaving(false); }
-  }, [collectPagesJson, onSave]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [collectPagesJson]);
 
   // ─── Submit (generate PDF) ───────────────────────────────────────────────
   const handleSubmit = useCallback(async () => {
@@ -312,7 +321,7 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
     try {
       toast.loading('Generating PDF...', { id: 'pdf-gen' });
       const pagesJson = collectPagesJson();
-      if (onSave) onSave(pagesJson);
+      if (onSaveRef.current) onSaveRef.current(pagesJson);
 
       const pdfDoc = await PDFDocument.create();
       const { default: html2canvas } = await import('html2canvas');
@@ -352,7 +361,8 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
       toast.dismiss('pdf-gen');
       toast.error('Failed to generate PDF. Please try again.');
     } finally { setIsSubmitting(false); }
-  }, [collectPagesJson, onSave, onSavePdf, extraPages]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [collectPagesJson, onSavePdf, extraPages]);
 
   // Register submit with parent
   useEffect(() => {
