@@ -158,12 +158,46 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
     // Reduce path decimation to preserve detail on long strokes
     (fc.freeDrawingBrush as any).decimate = 2;
 
-    // Prevent browser scroll-detection hold from swallowing the first stylus/touch event.
-    // Without this, the start of every stroke (especially with a pen stylus) is clipped
-    // because the browser delays pointer events while deciding whether it's a scroll.
-    if ((fc as any).wrapperEl) ((fc as any).wrapperEl as HTMLElement).style.touchAction = 'none';
-    if ((fc as any).upperCanvasEl) ((fc as any).upperCanvasEl as HTMLElement).style.touchAction = 'none';
-    if ((fc as any).lowerCanvasEl) ((fc as any).lowerCanvasEl as HTMLElement).style.touchAction = 'none';
+    // ── Tablet / stylus optimisations ──────────────────────────────────────
+    // Apply to every element Fabric creates inside the wrapper.
+    const stylusStyle = (el: HTMLElement | undefined) => {
+      if (!el) return;
+      el.style.touchAction = 'none';           // no browser scroll/zoom hold
+      el.style.webkitUserSelect = 'none';       // no text selection
+      el.style.userSelect = 'none';
+      (el.style as any).webkitTouchCallout = 'none'; // no iOS callout menu
+      el.style.willChange = 'transform';        // GPU compositing hint
+    };
+    stylusStyle((fc as any).wrapperEl);
+    stylusStyle((fc as any).upperCanvasEl);
+    stylusStyle((fc as any).lowerCanvasEl);
+
+    // Palm rejection — block finger/touch events while the stylus (pen) is
+    // actively drawing.  Most OSes do this at the driver level, but some
+    // Android tablets and older iPadOS versions still let palm touches
+    // through to the browser.
+    const upper = (fc as any).upperCanvasEl as HTMLElement | undefined;
+    if (upper) {
+      let penActive = false;
+      const blockPalm = (e: PointerEvent) => {
+        if (e.pointerType === 'touch' && penActive) {
+          e.stopImmediatePropagation();
+          e.preventDefault();
+        }
+      };
+      upper.addEventListener('pointerdown', (e: PointerEvent) => {
+        if (e.pointerType === 'pen') penActive = true;
+        else blockPalm(e);
+      }, true);
+      upper.addEventListener('pointermove', blockPalm, true);
+      upper.addEventListener('pointerup', (e: PointerEvent) => {
+        if (e.pointerType === 'pen') {
+          // brief grace period — palm lift can lag behind pen lift
+          setTimeout(() => { penActive = false; }, 120);
+        }
+      }, true);
+      upper.addEventListener('pointercancel', () => { penActive = false; }, true);
+    }
 
     fc.on('path:created', () => scheduleAutoSave());
     fabricCanvases.current.set(pageIndex, fc);
@@ -231,6 +265,29 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
       return newPages;
     });
   }, [numPages, initialPageAnnotations]);
+
+  // ─── Prevent double-tap zoom & long-press context menu on the drawing area ─
+  useEffect(() => {
+    const scrollContainer = document.getElementById('canvas-writer-scroll');
+    if (!scrollContainer) return;
+
+    // Double-tap zoom prevention (fires before the browser zooms)
+    let lastTap = 0;
+    const preventDoubleTap = (e: TouchEvent) => {
+      const now = Date.now();
+      if (now - lastTap < 400) { e.preventDefault(); }
+      lastTap = now;
+    };
+    // Suppress long-press context menu
+    const preventCtx = (e: Event) => { e.preventDefault(); };
+
+    scrollContainer.addEventListener('touchstart', preventDoubleTap, { passive: false });
+    scrollContainer.addEventListener('contextmenu', preventCtx);
+    return () => {
+      scrollContainer.removeEventListener('touchstart', preventDoubleTap);
+      scrollContainer.removeEventListener('contextmenu', preventCtx);
+    };
+  }, []);
 
   // ─── Sync tool/color/strokeWidth to all canvases ─────────────────────────
   useEffect(() => {
@@ -591,8 +648,14 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
 
       {/* ── Drawing area ─────────────────────────────────────────────────── */}
       <div
+        id="canvas-writer-scroll"
         className="flex-1 overflow-auto"
-        style={{ background: 'radial-gradient(circle at center, #e8eaf0 0%, #d5d9e3 100%)', WebkitOverflowScrolling: 'touch' }}
+        style={{
+          background: 'radial-gradient(circle at center, #e8eaf0 0%, #d5d9e3 100%)',
+          WebkitOverflowScrolling: 'touch',
+          overscrollBehavior: 'contain',        // prevent pull-to-refresh / back-swipe
+          touchAction: 'pan-x pan-y',           // allow scroll, block pinch-zoom
+        }}
       >
         {loadingPdf && (
           <div className="flex flex-col items-center justify-center h-64 gap-3">
@@ -611,7 +674,7 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
                 <div
                   key={i}
                   className="relative shadow-2xl rounded overflow-hidden mx-auto"
-                  style={{ display: 'block', marginBottom: '24px' }}
+                  style={{ display: 'block', marginBottom: '24px', userSelect: 'none', WebkitUserSelect: 'none', willChange: 'transform' }}
                 >
                   <Page
                     pageNumber={i + 1}
@@ -681,7 +744,7 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
                 // Fabric index starts after all PDF pages
                 const fabricIndex = (numPages || 0) + arrIdx;
                 return (
-                  <div key={pid} className="relative mx-auto" style={{ display: 'block', marginBottom: '24px' }}>
+                  <div key={pid} className="relative mx-auto" style={{ display: 'block', marginBottom: '24px', userSelect: 'none', WebkitUserSelect: 'none', willChange: 'transform' }}>
                     {/* Page label */}
                     <div className="absolute -top-6 left-0 text-[11px] text-gray-400 font-medium select-none">
                       Extra page {arrIdx + 1}
@@ -752,7 +815,7 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
             <div
               ref={setPageWrapperRef(0)}
               className="relative bg-white shadow-2xl rounded"
-              style={{ width: 800, height: 1100, cursor: getCursor(0) }}
+              style={{ width: 800, height: 1100, cursor: getCursor(0), touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none', willChange: 'transform' }}
             />
           </div>
         )}
