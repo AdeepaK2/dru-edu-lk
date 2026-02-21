@@ -90,6 +90,31 @@ export class InClassSubmissionService {
     }
   }
 
+  // Upload a teacher-marked PDF to Firebase Storage and return the download URL
+  static async uploadMarkedPdf(file: Blob | File, testId: string, studentId: string): Promise<string> {
+    try {
+      const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage');
+      const { storage } = await import('@/utils/firebase-client');
+      const storageRef = ref(storage, `markedPdfs/${testId}/${studentId}_${Date.now()}.pdf`);
+      const result = await uploadBytes(storageRef, file);
+      return getDownloadURL(result.ref);
+    } catch (error) {
+      console.error('Error uploading marked PDF:', error);
+      throw error;
+    }
+  }
+
+  // Save the marked PDF URL back to the submission document
+  static async saveMarkedPdf(submissionId: string, markedPdfUrl: string): Promise<void> {
+    try {
+      const docRef = doc(firestore, this.COLLECTION, submissionId);
+      await updateDoc(docRef, { markedPdfUrl, updatedAt: Timestamp.now() });
+    } catch (error) {
+      console.error('Error saving marked PDF URL:', error);
+      throw error;
+    }
+  }
+
   // Update grade for a submission
   static async gradeSubmission(
     submissionId: string,

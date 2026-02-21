@@ -65,6 +65,8 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
   const pageWrappers = useRef<Map<number, HTMLDivElement>>(new Map());
   const autoSaveTimer = useRef<NodeJS.Timeout | null>(null);
   const initialisedPages = useRef<Set<number>>(new Set());
+  // Track which page the user last drew on so undo targets only that page
+  const lastDrawnPageRef = useRef<number | null>(null);
   // Keep annotations in a ref so initFabricCanvas doesn't need it as a dep
   // (avoids cascading re-renders every time onSave updates draftAnnotations).
   const initialAnnotationsRef = useRef(initialPageAnnotations);
@@ -76,6 +78,12 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
   // canvas and wipes the in-progress stroke.
   const onSaveRef = useRef(onSave);
   onSaveRef.current = onSave;
+  // Refs so initFabricCanvas doesn't re-create on every color/stroke change
+  // (the sync useEffect already pushes updates to all canvases afterwards).
+  const colorRef = useRef(color);
+  colorRef.current = color;
+  const strokeWidthRef = useRef(strokeWidth);
+  strokeWidthRef.current = strokeWidth;
 
   // ─── Load PDF ────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -153,8 +161,8 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
     });
 
     fc.freeDrawingBrush = new fabric.PencilBrush(fc);
-    fc.freeDrawingBrush.color = color;
-    fc.freeDrawingBrush.width = strokeWidth;
+    fc.freeDrawingBrush.color = colorRef.current;
+    fc.freeDrawingBrush.width = strokeWidthRef.current;
     // Reduce path decimation to preserve detail on long strokes
     (fc.freeDrawingBrush as any).decimate = 2;
 
@@ -172,34 +180,74 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
     stylusStyle((fc as any).upperCanvasEl);
     stylusStyle((fc as any).lowerCanvasEl);
 
-    // Palm rejection — block finger/touch events while the stylus (pen) is
-    // actively drawing.  Most OSes do this at the driver level, but some
-    // Android tablets and older iPadOS versions still let palm touches
-    // through to the browser.
+    // Palm rejection & S-Pen hover filtering ─────────────────────────────
+    // 1. Block finger/touch events while stylus is actively drawing.
+    // 2. Block pen hover events (pressure === 0) so Fabric doesn't start
+    //    drawing before the stylus physically touches the screen.
+    //    The S Pen (and other active styluses) emit pointermove with
+    //    pressure 0 while hovering — Fabric treats these as draw input.
     const upper = (fc as any).upperCanvasEl as HTMLElement | undefined;
     if (upper) {
       let penActive = false;
+      // Minimum pressure to accept a pen stroke — filters ghost contact
+      const PEN_PRESSURE_THRESHOLD = 0.01;
+
       const blockPalm = (e: PointerEvent) => {
         if (e.pointerType === 'touch' && penActive) {
           e.stopImmediatePropagation();
           e.preventDefault();
         }
       };
+
+      // Block pen hover (pressure 0) on pointerdown — the pen is near
+      // the screen but not touching yet.
       upper.addEventListener('pointerdown', (e: PointerEvent) => {
-        if (e.pointerType === 'pen') penActive = true;
-        else blockPalm(e);
+        if (e.pointerType === 'pen') {
+          if (e.pressure < PEN_PRESSURE_THRESHOLD) {
+            // Hover-triggered pointerdown — suppress so Fabric doesn't
+            // begin a stroke.
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            return;
+          }
+          penActive = true;
+        } else {
+          blockPalm(e);
+        }
       }, true);
-      upper.addEventListener('pointermove', blockPalm, true);
+
+      // Block pen pointermove when hovering (pressure 0) OR when
+      // penActive hasn't been set (pen moved before a valid pointerdown).
+      upper.addEventListener('pointermove', (e: PointerEvent) => {
+        if (e.pointerType === 'pen') {
+          if (e.pressure < PEN_PRESSURE_THRESHOLD || !penActive) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            return;
+          }
+        }
+        // Also apply palm rejection for touch events
+        blockPalm(e);
+      }, true);
+
       upper.addEventListener('pointerup', (e: PointerEvent) => {
         if (e.pointerType === 'pen') {
           // brief grace period — palm lift can lag behind pen lift
           setTimeout(() => { penActive = false; }, 120);
         }
       }, true);
+      // Reset penActive if stylus leaves the canvas mid-stroke so
+      // subsequent touch events are not permanently blocked.
+      upper.addEventListener('pointerleave', (e: PointerEvent) => {
+        if (e.pointerType === 'pen') penActive = false;
+      }, true);
       upper.addEventListener('pointercancel', () => { penActive = false; }, true);
     }
 
-    fc.on('path:created', () => scheduleAutoSave());
+    fc.on('path:created', () => {
+      lastDrawnPageRef.current = pageIndex;
+      scheduleAutoSave();
+    });
     fabricCanvases.current.set(pageIndex, fc);
 
     const savedJson = initialAnnotationsRef.current[pageIndex + 1];
@@ -214,8 +262,12 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
         console.error('[CanvasWriter] Failed to restore strokes', e);
       }
     }
+    // color and strokeWidth are intentionally excluded — they're accessed via
+    // colorRef/strokeWidthRef so initFabricCanvas stays stable and doesn't
+    // cause setPageWrapperRef to churn on every brush change.
+    // The sync useEffect below pushes updates to all live canvases instead.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [color, strokeWidth, scheduleAutoSave]);
+  }, [scheduleAutoSave]);
 
   // ─── Resize canvases when PDF scale changes ────────────────────────────────
   useEffect(() => {
@@ -307,7 +359,9 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
           (brush as any).decimate = 2;
           fc.freeDrawingBrush = brush;
           fc.isDrawingMode = true;
-          // After commit, set opaque stroke + destination-out to erase
+          // After commit, set opaque stroke + destination-out to erase.
+          // scheduleAutoSave is already called by the global path:created
+          // handler registered in initFabricCanvas — no double call here.
           const applyEraser = (e: any) => {
             const path = e.path as fabric.Path;
             if (!path) return;
@@ -316,7 +370,6 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
               globalCompositeOperation: 'destination-out',
             });
             fc.renderAll();
-            scheduleAutoSave();
           };
           (fc as any).__eraserHandler = applyEraser;
           fc.on('path:created', applyEraser);
@@ -338,15 +391,17 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
 
   // ─── Undo ─────────────────────────────────────────────────────────────────
   const handleUndo = () => {
-    fabricCanvases.current.forEach((fc) => {
-      if (!fc) return;
-      const objects = fc.getObjects();
-      if (objects.length > 0) {
-        fc.remove(objects[objects.length - 1]);
-        fc.renderAll();
-      }
-    });
-    scheduleAutoSave();
+    // Only undo on the page the user most recently drew on, not all pages.
+    const pageIndex = lastDrawnPageRef.current;
+    if (pageIndex === null) return;
+    const fc = fabricCanvases.current.get(pageIndex);
+    if (!fc) return;
+    const objects = fc.getObjects();
+    if (objects.length > 0) {
+      fc.remove(objects[objects.length - 1]);
+      fc.renderAll();
+      scheduleAutoSave();
+    }
   };
 
   // ─── Clear ────────────────────────────────────────────────────────────────
@@ -744,7 +799,7 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
                 // Fabric index starts after all PDF pages
                 const fabricIndex = (numPages || 0) + arrIdx;
                 return (
-                  <div key={pid} className="relative mx-auto" style={{ display: 'block', marginBottom: '24px', userSelect: 'none', WebkitUserSelect: 'none', willChange: 'transform' }}>
+                  <div key={pid} className="relative mx-auto overflow-hidden" style={{ display: 'block', marginBottom: '24px', userSelect: 'none', WebkitUserSelect: 'none', willChange: 'transform' }}>
                     {/* Page label */}
                     <div className="absolute -top-6 left-0 text-[11px] text-gray-400 font-medium select-none">
                       Extra page {arrIdx + 1}
