@@ -65,7 +65,10 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
   const pageWrappers = useRef<Map<number, HTMLDivElement>>(new Map());
   const autoSaveTimer = useRef<NodeJS.Timeout | null>(null);
   const initialisedPages = useRef<Set<number>>(new Set());
-  const extraPagesRestoredRef = useRef(false);
+  // Keep annotations in a ref so initFabricCanvas doesn't need it as a dep
+  // (avoids cascading re-renders every time onSave updates draftAnnotations).
+  const initialAnnotationsRef = useRef(initialPageAnnotations);
+  initialAnnotationsRef.current = initialPageAnnotations;
 
   // ─── Load PDF ────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -157,7 +160,7 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
     fc.on('path:created', () => scheduleAutoSave());
     fabricCanvases.current.set(pageIndex, fc);
 
-    const savedJson = initialPageAnnotations[pageIndex + 1];
+    const savedJson = initialAnnotationsRef.current[pageIndex + 1];
     if (savedJson && !initialisedPages.current.has(pageIndex)) {
       initialisedPages.current.add(pageIndex);
       try {
@@ -169,7 +172,8 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
         console.error('[CanvasWriter] Failed to restore strokes', e);
       }
     }
-  }, [color, strokeWidth, scheduleAutoSave, initialPageAnnotations]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [color, strokeWidth, scheduleAutoSave]);
 
   // ─── Resize canvases when PDF scale changes ────────────────────────────────
   useEffect(() => {
@@ -193,25 +197,31 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
   }, [pdfScale, numPages]);
 
   // ─── Restore extra pages saved in initialPageAnnotations ─────────────────
-  // When the canvas remounts (page reload, Edit Answer re-open), saved strokes
-  // for extra-page indices exist in initialPageAnnotations but no divs are
-  // rendered for them yet. Detect how many extra pages were saved and add them
-  // back so their Fabric canvases can be initialised and strokes restored.
+  // loadDraft in the parent is async – initialPageAnnotations may arrive AFTER
+  // numPages is already set.  By depending on both and using the functional
+  // form of setExtraPages we handle every ordering:
+  //   • PDF loads first, annotations arrive later  → effect re-runs with data
+  //   • Annotations arrive first, then PDF loads   → effect runs once with data
+  //   • User already added pages manually           → prev.length >= needed, noop
   useEffect(() => {
-    if (!numPages || extraPagesRestoredRef.current) return;
-    extraPagesRestoredRef.current = true;
+    if (!numPages) return;
 
-    const savedKeys = Object.keys(initialPageAnnotations).map(Number);
-    const extraCount = savedKeys.filter(k => k > numPages).length;
+    const savedKeys = Object.keys(initialPageAnnotations).map(Number).filter(k => !isNaN(k));
+    const neededExtraCount = savedKeys.filter(k => k > numPages).length;
 
-    if (extraCount > 0) {
-      const newPages: number[] = [];
-      for (let i = 0; i < extraCount; i++) {
+    if (neededExtraCount === 0) return;
+
+    setExtraPages(prev => {
+      // Already have enough (user added manually, or already restored)
+      if (prev.length >= neededExtraCount) return prev;
+
+      const newPages = [...prev];
+      for (let i = prev.length; i < neededExtraCount; i++) {
         extraPageIdCounter.current += 1;
         newPages.push(extraPageIdCounter.current);
       }
-      setExtraPages(newPages);
-    }
+      return newPages;
+    });
   }, [numPages, initialPageAnnotations]);
 
   // ─── Sync tool/color/strokeWidth to all canvases ─────────────────────────

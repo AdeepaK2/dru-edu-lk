@@ -322,11 +322,15 @@ export default function StudentInClassTestDetailPage() {
   const handleStrokeSave = async (strokePages: Record<number, string>) => {
     if (!user || !testId) return;
 
+    // Keep parent state in sync so Close → Reopen restores extra pages
+    // (without this, draftAnnotations stays at the value loaded on mount)
+    setDraftAnnotations(strokePages);
+
     try {
       console.log('[StrokeSave] Auto-saving stroke data to Firestore...');
       const db = getFirestore();
       const draftRef = doc(db, 'inClassTestDrafts', `${testId}_${user.uid}`);
-      
+
       await setDoc(draftRef, {
         testId,
         studentId: user.uid,
