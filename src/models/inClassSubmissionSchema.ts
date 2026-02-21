@@ -10,7 +10,8 @@ export interface InClassSubmission {
   
   // Submission details
   submissionType: 'online_upload' | 'offline_collection';
-  answerFileUrl?: string; // For online uploads
+  answerFileUrl?: string; // Student's uploaded answer PDF
+  markedPdfUrl?: string;  // Teacher's annotated/marked PDF visible to student
   submittedAt?: Timestamp;
   
   // Grading
