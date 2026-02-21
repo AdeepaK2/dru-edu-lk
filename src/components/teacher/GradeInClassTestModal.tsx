@@ -453,6 +453,8 @@ export default function GradeInClassTestModal({
         <TeacherAnnotateDrawer
           submission={annotatingStudent.submission}
           studentName={annotatingStudent.studentName}
+          totalMarks={totalMarks}
+          teacherId={teacherId}
           onClose={() => setAnnotatingStudent(null)}
           onSaved={handleAnnotationSaved}
         />
