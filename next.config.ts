@@ -30,7 +30,7 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
   // Move serverComponentsExternalPackages to root level
-  serverExternalPackages: ['firebase-admin'],
+  serverExternalPackages: ['firebase-admin', 'tldraw'],
   // Performance optimizations
   poweredByHeader: false,
   // Custom webpack configuration to avoid the minification issue
