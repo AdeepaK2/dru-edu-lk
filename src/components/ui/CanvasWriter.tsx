@@ -25,7 +25,6 @@ interface CanvasWriterProps {
 type Tool = 'pen' | 'eraser' | 'ruler';
 
 const COLORS = ['#1a1a1a', '#EF4444', '#F97316', '#EAB308', '#22C55E', '#3B82F6', '#8B5CF6', '#EC4899'];
-const STROKE_SIZES = [2, 4, 6, 10, 16];
 
 // ─── Ruler overlay state ─────────────────────────────────────────────────────
 interface RulerLine {
@@ -372,10 +371,9 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
 
         if (tool === 'eraser') {
           const brush = new fabric.PencilBrush(fc);
-          // Semi-transparent white gives a "correction-fluid" look during
-          // drawing — much less jarring than red before the path converts to
-          // destination-out on commit.
-          brush.color = 'rgba(255,255,255,0.55)';
+          // Use a subtle gray preview so the eraser path is clearly visible
+          // during drawing (white-on-white was invisible and looked like ink).
+          brush.color = 'rgba(140, 140, 140, 0.35)';
           brush.width = strokeWidth * 4;
           (brush as any).decimate = 2;
           // Disable pressure-based width variation so the eraser preview
@@ -383,6 +381,12 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
           (brush as any).pressureSensitivity = 0;
           fc.freeDrawingBrush = brush;
           fc.isDrawingMode = true;
+          // Show proper eraser rectangle cursor on the Fabric upper canvas.
+          // The wrapper div cursor is hidden by the upper canvas overlay, so
+          // we must set freeDrawingCursor directly on the Fabric instance.
+          const es = Math.round(strokeWidth * 4 + 8);
+          const eh = Math.floor(es / 2);
+          fc.freeDrawingCursor = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='${es}' height='${es}' viewBox='0 0 ${es} ${es}'%3E%3Crect x='2' y='2' width='${es - 4}' height='${es - 4}' rx='2' fill='rgba(255,255,255,0.9)' stroke='%23666' stroke-width='1.5'/%3E%3C/svg%3E") ${eh} ${eh}, cell`;
           // After commit, set opaque stroke + destination-out to erase.
           // scheduleAutoSave is already called by the global path:created
           // handler registered in initFabricCanvas — no double call here.
@@ -408,6 +412,8 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
           (brush as any).pressureSensitivity = 0;
           fc.freeDrawingBrush = brush;
           fc.isDrawingMode = true;
+          // Reset to standard crosshair for pen tool
+          fc.freeDrawingCursor = 'crosshair';
         }
       });
     };
@@ -684,19 +690,27 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
         {/* Divider */}
         <div className="w-px h-7 bg-gray-200 mx-1" />
 
-        {/* Stroke size */}
-        <div className="flex items-center gap-1">
-          {STROKE_SIZES.map(size => (
-            <button
-              key={size}
-              title={`${size}px`}
-              onClick={() => setStrokeWidth(size)}
-              className={`w-9 h-9 flex items-center justify-center rounded-lg transition-all duration-150 select-none active:scale-90
-                ${strokeWidth === size ? 'bg-indigo-50 ring-2 ring-indigo-400 shadow-sm' : 'hover:bg-gray-100 active:bg-gray-200'}`}
-            >
-              <div className="rounded-full bg-gray-700" style={{ width: size, height: size }} />
-            </button>
-          ))}
+        {/* Stroke size slider */}
+        <div className="flex items-center gap-2 px-1">
+          {/* Live dot preview */}
+          <div
+            className="rounded-full bg-gray-700 flex-shrink-0 transition-all duration-100"
+            style={{ width: Math.min(strokeWidth, 20), height: Math.min(strokeWidth, 20) }}
+          />
+          <input
+            type="range"
+            min={1}
+            max={20}
+            step={1}
+            value={strokeWidth}
+            onChange={e => setStrokeWidth(Number(e.target.value))}
+            title={`Stroke size: ${strokeWidth}px`}
+            className="w-20 accent-indigo-600 cursor-pointer"
+            style={{ height: 4 }}
+          />
+          <span className="text-[11px] font-mono text-gray-500 w-5 text-right select-none">
+            {strokeWidth}
+          </span>
         </div>
 
         {/* Divider */}
