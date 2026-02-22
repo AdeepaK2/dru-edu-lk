@@ -8,6 +8,8 @@ import { PDFDocument } from 'pdf-lib';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
+// ─── Types ───────────────────────────────────────────────────────────────────
+
 interface CanvasWriterProps {
   pdfUrl?: string;
   initialPageAnnotations?: Record<number, string>;
@@ -26,12 +28,66 @@ type Tool = 'pen' | 'eraser' | 'ruler';
 
 const COLORS = ['#1a1a1a', '#EF4444', '#F97316', '#EAB308', '#22C55E', '#3B82F6', '#8B5CF6', '#EC4899'];
 
-// ─── Ruler overlay state ─────────────────────────────────────────────────────
 interface RulerLine {
   x1: number; y1: number;
   x2: number; y2: number;
   pageIndex: number;
 }
+
+interface StrokePoint { x: number; y: number; }
+
+interface DrawnStroke {
+  points: StrokePoint[];
+  color: string;
+  width: number;
+  compositeOp: string; // 'source-over' | 'destination-out'
+}
+
+interface PageCanvasData {
+  canvas: HTMLCanvasElement;
+  ctx: CanvasRenderingContext2D;
+  strokes: DrawnStroke[];
+}
+
+// ─── Rendering helpers ───────────────────────────────────────────────────────
+
+function renderStroke(ctx: CanvasRenderingContext2D, stroke: DrawnStroke) {
+  const pts = stroke.points;
+  if (pts.length === 0) return;
+  ctx.globalCompositeOperation = stroke.compositeOp as GlobalCompositeOperation;
+  ctx.strokeStyle = stroke.color;
+  ctx.lineWidth = stroke.width;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  if (pts.length === 1) {
+    ctx.arc(pts[0].x, pts[0].y, stroke.width / 4, 0, Math.PI * 2);
+    ctx.fillStyle = stroke.color;
+    ctx.fill();
+    return;
+  }
+  ctx.moveTo(pts[0].x, pts[0].y);
+  if (pts.length === 2) {
+    ctx.lineTo(pts[1].x, pts[1].y);
+  } else {
+    for (let i = 1; i < pts.length - 1; i++) {
+      const mx = (pts[i].x + pts[i + 1].x) / 2;
+      const my = (pts[i].y + pts[i + 1].y) / 2;
+      ctx.quadraticCurveTo(pts[i].x, pts[i].y, mx, my);
+    }
+    ctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
+  }
+  ctx.stroke();
+}
+
+function renderAllStrokes(ctx: CanvasRenderingContext2D, strokes: DrawnStroke[], w: number, h: number) {
+  ctx.clearRect(0, 0, w, h);
+  ctx.globalCompositeOperation = 'source-over';
+  for (const s of strokes) renderStroke(ctx, s);
+  ctx.globalCompositeOperation = 'source-over';
+}
+
+// ─── Component ───────────────────────────────────────────────────────────────
 
 const CanvasWriter: React.FC<CanvasWriterProps> = ({
   pdfUrl,
@@ -45,8 +101,6 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
   const [tool, setTool] = useState<Tool>('pen');
   const [color, setColor] = useState('#1a1a1a');
   const [strokeWidth, setStrokeWidth] = useState(4);
-  // 'scroll': finger pans/scrolls the page, stylus draws (default for tablet)
-  // 'draw': finger draws on canvas
   const [fingerMode, setFingerMode] = useState<'draw' | 'scroll'>('scroll');
   const fingerModeRef = useRef<'draw' | 'scroll'>('scroll');
   fingerModeRef.current = fingerMode;
@@ -56,40 +110,29 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
   const [loadingPdf, setLoadingPdf] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Ruler drag state
   const [rulerDrag, setRulerDrag] = useState<RulerLine | null>(null);
-  // Extra blank pages appended after the PDF
   const [extraPages, setExtraPages] = useState<number[]>([]);
   const extraPageIdCounter = useRef(0);
-  // Ref to track the scaled PDF page width so extra pages match
   const pdfPageWidthRef = useRef<number>(0);
 
-  const fabricCanvases = useRef<Map<number, any>>(new Map());
+  // Canvas data per page (replaces fabricCanvases)
+  const pageCanvasData = useRef<Map<number, PageCanvasData>>(new Map());
   const pageWrappers = useRef<Map<number, HTMLDivElement>>(new Map());
   const autoSaveTimer = useRef<NodeJS.Timeout | null>(null);
   const initialisedPages = useRef<Set<number>>(new Set());
-  // Track which page the user last drew on so undo targets only that page
   const lastDrawnPageRef = useRef<number | null>(null);
-  // Keep annotations in a ref so initFabricCanvas doesn't need it as a dep
-  // (avoids cascading re-renders every time onSave updates draftAnnotations).
   const initialAnnotationsRef = useRef(initialPageAnnotations);
   initialAnnotationsRef.current = initialPageAnnotations;
-  // Keep onSave in a ref so scheduleAutoSave stays stable.
-  // Without this, the parent's 1-second timer recreates handleStrokeSave
-  // → scheduleAutoSave → initFabricCanvas → setPageWrapperRef → React ref
-  // cleanup → fc.renderAll() every second, which clears the Fabric upper
-  // canvas and wipes the in-progress stroke.
   const onSaveRef = useRef(onSave);
   onSaveRef.current = onSave;
-  // Refs so initFabricCanvas doesn't re-create on every color/stroke change
-  // (the sync useEffect already pushes updates to all canvases afterwards).
+  const toolRef = useRef(tool);
+  toolRef.current = tool;
   const colorRef = useRef(color);
   colorRef.current = color;
   const strokeWidthRef = useRef(strokeWidth);
   strokeWidthRef.current = strokeWidth;
 
-  // ─── Load PDF ────────────────────────────────────────────────────────────────
+  // ─── Load PDF ──────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!pdfUrl) return;
     setLoadingPdf(true);
@@ -99,16 +142,18 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
       .catch(() => { toast.error('Failed to load PDF'); setLoadingPdf(false); });
   }, [pdfUrl]);
 
-  // ─── Collect JSON ─────────────────────────────────────────────────────────
+  // ─── Collect JSON ──────────────────────────────────────────────────────────
   const collectPagesJson = useCallback((): Record<number, string> => {
     const result: Record<number, string> = {};
-    fabricCanvases.current.forEach((fc, idx) => {
-      if (fc) result[idx + 1] = JSON.stringify(fc.toJSON());
+    pageCanvasData.current.forEach((data, idx) => {
+      if (data.strokes.length > 0) {
+        result[idx + 1] = JSON.stringify({ version: 2, strokes: data.strokes });
+      }
     });
     return result;
   }, []);
 
-  // ─── Auto-save ────────────────────────────────────────────────────────────
+  // ─── Auto-save ─────────────────────────────────────────────────────────────
   const scheduleAutoSave = useCallback(() => {
     if (!onSaveRef.current) return;
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
@@ -124,246 +169,201 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [collectPagesJson, autoSaveKey]);
 
-  // ─── Init Fabric for a page ───────────────────────────────────────────────
-  const initFabricCanvas = useCallback(async (pageIndex: number, wrapperEl: HTMLDivElement) => {
-    // If instance already exists, check if we need to re-attach to new DOM node
-    if (fabricCanvases.current.has(pageIndex)) {
-      const fc = fabricCanvases.current.get(pageIndex);
-      // Fabric wraps canvas in a .canvas-container div. Check if that container is inside our wrapper.
-      if (fc.wrapperEl && fc.wrapperEl.parentNode !== wrapperEl) {
-        // Re-attach existing canvas to new wrapper
-        wrapperEl.appendChild(fc.wrapperEl);
-      }
-      // Always sync dimensions to match current wrapper size
+  // ─── Init canvas for a page ────────────────────────────────────────────────
+  const initCanvas = useCallback((pageIndex: number, wrapperEl: HTMLDivElement) => {
+    // Already exists — re-attach / resize
+    if (pageCanvasData.current.has(pageIndex)) {
+      const data = pageCanvasData.current.get(pageIndex)!;
+      if (data.canvas.parentNode !== wrapperEl) wrapperEl.appendChild(data.canvas);
       const rect = wrapperEl.getBoundingClientRect();
       const w = rect.width || wrapperEl.offsetWidth || 800;
       const h = rect.height || wrapperEl.offsetHeight || 1100;
-      fc.setDimensions({ width: w, height: h });
-      fc.calcOffset();
-      fc.renderAll();
+      if (data.canvas.width !== Math.round(w) || data.canvas.height !== Math.round(h)) {
+        data.canvas.width = w;
+        data.canvas.height = h;
+        renderAllStrokes(data.ctx, data.strokes, w, h);
+      }
       return;
     }
-
-    const { fabric } = await import('fabric');
 
     const rect = wrapperEl.getBoundingClientRect();
     const w = rect.width || wrapperEl.offsetWidth || 800;
     const h = rect.height || wrapperEl.offsetHeight || 1100;
 
-    // Don't set CSS width/height — let Fabric manage both canvases at exact pixel size
-    const canvasEl = document.createElement('canvas');
-    canvasEl.width = w;
-    canvasEl.height = h;
-    wrapperEl.appendChild(canvasEl);
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    canvas.style.touchAction = fingerModeRef.current === 'scroll' ? 'manipulation' : 'none';
+    canvas.style.userSelect = 'none';
+    canvas.style.webkitUserSelect = 'none';
+    (canvas.style as any).webkitTouchCallout = 'none';
+    wrapperEl.appendChild(canvas);
 
-    const fc = new fabric.Canvas(canvasEl, {
-      isDrawingMode: true,
-      width: w,
-      height: h,
-      backgroundColor: 'transparent',
-      selection: false,
+    const ctx = canvas.getContext('2d')!;
+    const data: PageCanvasData = { canvas, ctx, strokes: [] };
+    pageCanvasData.current.set(pageIndex, data);
+
+    // ── Pointer event handlers (Excalidraw-style) ────────────────────────
+    let isDrawing = false;
+    let currentStroke: DrawnStroke | null = null;
+    let lastPt: StrokePoint | null = null;
+    let penActive = false;
+    const PEN_THRESHOLD = 0.01;
+
+    const getCanvasXY = (e: PointerEvent): StrokePoint => {
+      const r = canvas.getBoundingClientRect();
+      return {
+        x: (e.clientX - r.left) * (canvas.width / r.width),
+        y: (e.clientY - r.top) * (canvas.height / r.height),
+      };
+    };
+
+    canvas.addEventListener('pointerdown', (e: PointerEvent) => {
+      // Pen hover filter
+      if (e.pointerType === 'pen' && e.pressure < PEN_THRESHOLD) {
+        e.preventDefault();
+        return;
+      }
+      if (e.pointerType === 'pen') penActive = true;
+
+      // Finger in scroll mode → don't draw (browser scrolls via touch-action)
+      if (e.pointerType === 'touch' && fingerModeRef.current === 'scroll') return;
+      // Palm rejection
+      if (e.pointerType === 'touch' && penActive) return;
+      // Ruler handled by React events
+      if (toolRef.current === 'ruler') return;
+
+      e.preventDefault();
+      canvas.setPointerCapture(e.pointerId);
+
+      const pt = getCanvasXY(e);
+      const isEraser = toolRef.current === 'eraser';
+      currentStroke = {
+        points: [pt],
+        color: isEraser ? 'rgba(0,0,0,1)' : colorRef.current,
+        width: isEraser ? strokeWidthRef.current * 4 : strokeWidthRef.current,
+        compositeOp: isEraser ? 'destination-out' : 'source-over',
+      };
+      lastPt = pt;
+      isDrawing = true;
+
+      // Draw a dot
+      ctx.globalCompositeOperation = currentStroke.compositeOp as GlobalCompositeOperation;
+      ctx.strokeStyle = currentStroke.color;
+      ctx.lineWidth = currentStroke.width;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      ctx.moveTo(pt.x, pt.y);
+      ctx.lineTo(pt.x + 0.1, pt.y);
+      ctx.stroke();
     });
 
-    fc.freeDrawingBrush = new fabric.PencilBrush(fc);
-    fc.freeDrawingBrush.color = colorRef.current;
-    fc.freeDrawingBrush.width = strokeWidthRef.current;
-    // Disable pressure-based width variation (Fabric v6 PencilBrush uses pointer
-    // pressure to vary the live-preview stroke width; S Pen starts each stroke
-    // with low pressure so the preview looks thin while the committed path
-    // renders at the configured width — setting this to 0 makes them match).
-    (fc.freeDrawingBrush as any).pressureSensitivity = 0;
-    // Reduce path decimation to preserve detail on long strokes
-    (fc.freeDrawingBrush as any).decimate = 2;
+    canvas.addEventListener('pointermove', (e: PointerEvent) => {
+      if (e.pointerType === 'pen' && e.pressure < PEN_THRESHOLD && !isDrawing) {
+        e.preventDefault();
+        return;
+      }
+      if (!isDrawing || !currentStroke || !lastPt) return;
+      e.preventDefault();
 
-    // ── Tablet / stylus optimisations ──────────────────────────────────────
-    // Apply to every element Fabric creates inside the wrapper.
-    const stylusStyle = (el: HTMLElement | undefined) => {
-      if (!el) return;
-      // touchAction is set dynamically based on fingerMode
-      el.style.touchAction = fingerModeRef.current === 'scroll' ? 'manipulation' : 'none';
-      el.style.webkitUserSelect = 'none';       // no text selection
-      el.style.userSelect = 'none';
-      (el.style as any).webkitTouchCallout = 'none'; // no iOS callout menu
-      el.style.willChange = 'transform';        // GPU compositing hint
-    };
-    stylusStyle((fc as any).wrapperEl);
-    stylusStyle((fc as any).upperCanvasEl);
-    stylusStyle((fc as any).lowerCanvasEl);
+      const pt = getCanvasXY(e);
+      currentStroke.points.push(pt);
 
-    // ── Finger / stylus input discrimination ─────────────────────────────
-    // Fabric v5.5.2 (enablePointerEvents: false) uses touchstart + mousedown,
-    // NOT pointerdown.  We use pointerdown ONLY to detect the input type
-    // (pen vs touch vs mouse), then block touchstart/mousedown from reaching
-    // Fabric when the finger should scroll instead of draw.
-    //
-    // Event order on mobile:
-    //   pointerdown → touchstart → (synthesized mousedown after touch ends)
-    // S Pen only fires pointerdown (no touchstart), then browser synthesises
-    // a mousedown which Fabric uses to draw.
-    //
-    // Listeners are on wrapperEl (parent of upperCanvasEl) in capture phase,
-    // which always fires before any listener on the child — regardless of
-    // when listeners were registered.
-    const wrapper = (fc as any).wrapperEl as HTMLElement | undefined;
-    if (wrapper && !(wrapper as any).__inputHandlersAttached) {
-      (wrapper as any).__inputHandlersAttached = true;
+      // Incremental draw
+      ctx.globalCompositeOperation = currentStroke.compositeOp as GlobalCompositeOperation;
+      ctx.strokeStyle = currentStroke.color;
+      ctx.lineWidth = currentStroke.width;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      ctx.moveTo(lastPt.x, lastPt.y);
+      ctx.lineTo(pt.x, pt.y);
+      ctx.stroke();
+      lastPt = pt;
+    });
 
-      let penActive = false;
-      let fingerTouchActive = false;
-      const PEN_PRESSURE_THRESHOLD = 0.01;
-
-      // ── pointerdown: detect input type + pen hover filtering ──────────
-      wrapper.addEventListener('pointerdown', (e: PointerEvent) => {
-        if (e.pointerType === 'pen') {
-          if (e.pressure < PEN_PRESSURE_THRESHOLD) {
-            // Pen hovering — preventDefault blocks synthesised mousedown
-            e.preventDefault();
-            return;
-          }
-          penActive = true;
-        } else if (e.pointerType === 'touch') {
-          fingerTouchActive = true;
-        }
-      }, true);
-
-      // ── touchstart: block Fabric when finger should scroll ────────────
-      // stopPropagation prevents Fabric's _onTouchStart on the child.
-      // NOT calling preventDefault lets the browser handle scroll/zoom
-      // natively via touch-action: manipulation.
-      wrapper.addEventListener('touchstart', (e: TouchEvent) => {
-        if (fingerModeRef.current === 'scroll' || penActive) {
-          e.stopPropagation();
-          // During active pen stroke, also prevent browser gestures
-          if (penActive) e.preventDefault();
-        }
-      }, { capture: true, passive: false } as AddEventListenerOptions);
-
-      // ── touchmove: keep blocking during ongoing gesture ───────────────
-      wrapper.addEventListener('touchmove', (e: TouchEvent) => {
-        if (fingerModeRef.current === 'scroll' || penActive) {
-          e.stopPropagation();
-          if (penActive) e.preventDefault();
-        }
-      }, { capture: true, passive: false } as AddEventListenerOptions);
-
-      // ── touchend / touchcancel: complete the blocking ─────────────────
-      wrapper.addEventListener('touchend', (e: TouchEvent) => {
-        if (fingerModeRef.current === 'scroll' || penActive) {
-          e.stopPropagation();
-        }
-      }, true);
-      wrapper.addEventListener('touchcancel', (e: TouchEvent) => {
-        if (fingerModeRef.current === 'scroll' || penActive) {
-          e.stopPropagation();
-        }
-      }, true);
-
-      // ── mousedown: block synthesised mouse events from finger ─────────
-      // When touchstart isn't preventDefault'd the browser synthesises
-      // mousedown/mouseup/click after the touch ends — block these so
-      // Fabric doesn't draw a dot from finger taps.
-      wrapper.addEventListener('mousedown', (e: MouseEvent) => {
-        if (fingerTouchActive && (fingerModeRef.current === 'scroll' || penActive)) {
-          e.stopPropagation();
-          e.preventDefault();
-        }
-        // S Pen mousedown (fingerTouchActive === false): let through
-        // so Fabric's _onMouseDown fires and starts drawing.
-      }, true);
-
-      // ── pointermove: pen hover filtering ──────────────────────────────
-      // Prevent synthesised mousemove from pen hover reaching Fabric's
-      // document-level mousemove handler.
-      wrapper.addEventListener('pointermove', (e: PointerEvent) => {
-        if (e.pointerType === 'pen' && (e.pressure < PEN_PRESSURE_THRESHOLD || !penActive)) {
-          e.preventDefault();
-        }
-      }, true);
-
-      // ── pointerup: reset state ────────────────────────────────────────
-      wrapper.addEventListener('pointerup', (e: PointerEvent) => {
-        if (e.pointerType === 'pen') {
-          // Grace period — palm lift can lag behind pen lift
-          setTimeout(() => { penActive = false; }, 120);
-        } else if (e.pointerType === 'touch') {
-          // Delay clearing to catch synthesised mousedown
-          setTimeout(() => { fingerTouchActive = false; }, 400);
-        }
-      }, true);
-      wrapper.addEventListener('pointerleave', (e: PointerEvent) => {
-        if (e.pointerType === 'pen') penActive = false;
-      }, true);
-      wrapper.addEventListener('pointercancel', (e: PointerEvent) => {
-        if (e.pointerType === 'pen') penActive = false;
-        if (e.pointerType === 'touch') fingerTouchActive = false;
-      }, true);
-    }
-
-    fc.on('path:created', () => {
+    const commitStroke = () => {
+      if (!isDrawing || !currentStroke) { isDrawing = false; return; }
+      data.strokes.push(currentStroke);
+      // Full re-render with smooth curves
+      renderAllStrokes(ctx, data.strokes, canvas.width, canvas.height);
+      currentStroke = null;
+      lastPt = null;
+      isDrawing = false;
+      ctx.globalCompositeOperation = 'source-over';
       lastDrawnPageRef.current = pageIndex;
       scheduleAutoSave();
-    });
-    fabricCanvases.current.set(pageIndex, fc);
+    };
 
+    canvas.addEventListener('pointerup', (e: PointerEvent) => {
+      if (e.pointerType === 'pen') setTimeout(() => { penActive = false; }, 120);
+      commitStroke();
+    });
+
+    canvas.addEventListener('pointerleave', (e: PointerEvent) => {
+      if (e.pointerType === 'pen') penActive = false;
+      commitStroke();
+    });
+
+    canvas.addEventListener('pointercancel', (e: PointerEvent) => {
+      if (e.pointerType === 'pen') penActive = false;
+      if (isDrawing) {
+        // Discard — re-render without current stroke
+        renderAllStrokes(ctx, data.strokes, canvas.width, canvas.height);
+      }
+      currentStroke = null;
+      lastPt = null;
+      isDrawing = false;
+      ctx.globalCompositeOperation = 'source-over';
+    });
+
+    // ── Load saved annotations ───────────────────────────────────────────
     const savedJson = initialAnnotationsRef.current[pageIndex + 1];
     if (savedJson && !initialisedPages.current.has(pageIndex)) {
       initialisedPages.current.add(pageIndex);
       try {
-        await new Promise<void>((resolve) => {
-          fc.loadFromJSON(JSON.parse(savedJson), () => { fc.renderAll(); resolve(); });
-        });
-        fc.isDrawingMode = true;
+        const parsed = JSON.parse(savedJson);
+        if (parsed.version === 2 && Array.isArray(parsed.strokes)) {
+          data.strokes = parsed.strokes;
+          renderAllStrokes(ctx, data.strokes, w, h);
+        }
+        // Old Fabric format (has objects array) cannot be loaded in new engine
       } catch (e) {
         console.error('[CanvasWriter] Failed to restore strokes', e);
       }
     }
-    // color and strokeWidth are intentionally excluded — they're accessed via
-    // colorRef/strokeWidthRef so initFabricCanvas stays stable and doesn't
-    // cause setPageWrapperRef to churn on every brush change.
-    // The sync useEffect below pushes updates to all live canvases instead.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scheduleAutoSave]);
 
   // ─── Resize canvases when PDF scale changes ────────────────────────────────
   useEffect(() => {
     if (!numPages) return;
-    // Wait for PDF pages to re-render at new scale
     const timer = setTimeout(() => {
-      fabricCanvases.current.forEach((fc, pageIndex) => {
+      pageCanvasData.current.forEach((data, pageIndex) => {
         const wrapper = pageWrappers.current.get(pageIndex);
-        if (!wrapper || !fc) return;
+        if (!wrapper) return;
         const rect = wrapper.getBoundingClientRect();
         const w = rect.width || wrapper.offsetWidth;
         const h = rect.height || wrapper.offsetHeight;
-        if (w > 0 && h > 0) {
-          fc.setDimensions({ width: w, height: h });
-          fc.calcOffset();
-          fc.renderAll();
+        if (w > 0 && h > 0 && (data.canvas.width !== Math.round(w) || data.canvas.height !== Math.round(h))) {
+          data.canvas.width = w;
+          data.canvas.height = h;
+          renderAllStrokes(data.ctx, data.strokes, w, h);
         }
       });
     }, 300);
     return () => clearTimeout(timer);
   }, [pdfScale, numPages]);
 
-  // ─── Restore extra pages saved in initialPageAnnotations ─────────────────
-  // loadDraft in the parent is async – initialPageAnnotations may arrive AFTER
-  // numPages is already set.  By depending on both and using the functional
-  // form of setExtraPages we handle every ordering:
-  //   • PDF loads first, annotations arrive later  → effect re-runs with data
-  //   • Annotations arrive first, then PDF loads   → effect runs once with data
-  //   • User already added pages manually           → prev.length >= needed, noop
+  // ─── Restore extra pages from saved annotations ────────────────────────────
   useEffect(() => {
     if (!numPages) return;
-
     const savedKeys = Object.keys(initialPageAnnotations).map(Number).filter(k => !isNaN(k));
     const neededExtraCount = savedKeys.filter(k => k > numPages).length;
-
     if (neededExtraCount === 0) return;
-
     setExtraPages(prev => {
-      // Already have enough (user added manually, or already restored)
       if (prev.length >= neededExtraCount) return prev;
-
       const newPages = [...prev];
       for (let i = prev.length; i < neededExtraCount; i++) {
         extraPageIdCounter.current += 1;
@@ -373,21 +373,17 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
     });
   }, [numPages, initialPageAnnotations]);
 
-  // ─── Prevent double-tap zoom & long-press context menu on the drawing area ─
+  // ─── Prevent double-tap zoom & long-press context menu ─────────────────────
   useEffect(() => {
     const scrollContainer = document.getElementById('canvas-writer-scroll');
     if (!scrollContainer) return;
-
-    // Double-tap zoom prevention (fires before the browser zooms)
     let lastTap = 0;
     const preventDoubleTap = (e: TouchEvent) => {
       const now = Date.now();
-      if (now - lastTap < 400) { e.preventDefault(); }
+      if (now - lastTap < 400) e.preventDefault();
       lastTap = now;
     };
-    // Suppress long-press context menu
     const preventCtx = (e: Event) => { e.preventDefault(); };
-
     scrollContainer.addEventListener('touchstart', preventDoubleTap, { passive: false });
     scrollContainer.addEventListener('contextmenu', preventCtx);
     return () => {
@@ -396,111 +392,36 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
     };
   }, []);
 
-  // ─── Sync tool/color/strokeWidth to all canvases ─────────────────────────
-  useEffect(() => {
-    const update = async () => {
-      const { fabric } = await import('fabric');
-      fabricCanvases.current.forEach((fc) => {
-        if (!fc) return;
-
-        // Remove any existing eraser handler — guard with truthy check
-        // because Fabric v5 Observable.off(event, falsy) removes ALL handlers!
-        if ((fc as any).__eraserHandler) {
-          fc.off('path:created', (fc as any).__eraserHandler);
-        }
-        (fc as any).__eraserHandler = null;
-
-        if (tool === 'eraser') {
-          const brush = new fabric.PencilBrush(fc);
-          // Use a subtle gray preview so the eraser path is clearly visible
-          // during drawing (white-on-white was invisible and looked like ink).
-          brush.color = 'rgba(140, 140, 140, 0.35)';
-          brush.width = strokeWidth * 4;
-          (brush as any).decimate = 2;
-          // Disable pressure-based width variation so the eraser preview
-          // stays consistent in size throughout the stroke.
-          (brush as any).pressureSensitivity = 0;
-          fc.freeDrawingBrush = brush;
-          fc.isDrawingMode = true;
-          // Show proper eraser rectangle cursor on the Fabric upper canvas.
-          // The wrapper div cursor is hidden by the upper canvas overlay, so
-          // we must set freeDrawingCursor directly on the Fabric instance.
-          const es = Math.round(strokeWidth * 4 + 8);
-          const eh = Math.floor(es / 2);
-          fc.freeDrawingCursor = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='${es}' height='${es}' viewBox='0 0 ${es} ${es}'%3E%3Crect x='2' y='2' width='${es - 4}' height='${es - 4}' rx='2' fill='rgba(255,255,255,0.9)' stroke='%23666' stroke-width='1.5'/%3E%3C/svg%3E") ${eh} ${eh}, cell`;
-          // After commit, set opaque stroke + destination-out to erase.
-          // scheduleAutoSave is already called by the global path:created
-          // handler registered in initFabricCanvas — no double call here.
-          const applyEraser = (e: any) => {
-            const path = e.path as fabric.Path;
-            if (!path) return;
-            path.set({
-              stroke: 'rgba(0,0,0,1)',
-              globalCompositeOperation: 'destination-out',
-            });
-            fc.renderAll();
-          };
-          (fc as any).__eraserHandler = applyEraser;
-          fc.on('path:created', applyEraser);
-        } else if (tool === 'ruler') {
-          // Ruler: disable fabric drawing; we handle it ourselves via React events
-          fc.isDrawingMode = false;
-        } else {
-          const brush = new fabric.PencilBrush(fc);
-          brush.color = color;
-          brush.width = strokeWidth;
-          (brush as any).decimate = 2;
-          (brush as any).pressureSensitivity = 0;
-          fc.freeDrawingBrush = brush;
-          fc.isDrawingMode = true;
-          // Reset to standard crosshair for pen tool
-          fc.freeDrawingCursor = 'crosshair';
-        }
-      });
-    };
-    update();
-  }, [tool, color, strokeWidth, scheduleAutoSave]);
-
-  // ─── Sync touchAction on Fabric elements when fingerMode changes ──────────
+  // ─── Sync touchAction when fingerMode changes ─────────────────────────────
   useEffect(() => {
     const ta = fingerMode === 'scroll' ? 'manipulation' : 'none';
-    fabricCanvases.current.forEach((fc) => {
-      if (!fc) return;
-      const setTA = (el: HTMLElement | undefined) => { if (el) el.style.touchAction = ta; };
-      setTA((fc as any).wrapperEl);
-      setTA((fc as any).upperCanvasEl);
-      setTA((fc as any).lowerCanvasEl);
+    pageCanvasData.current.forEach((data) => {
+      data.canvas.style.touchAction = ta;
     });
   }, [fingerMode]);
 
-  // ─── Undo ─────────────────────────────────────────────────────────────────
+  // ─── Undo ──────────────────────────────────────────────────────────────────
   const handleUndo = () => {
-    // Only undo on the page the user most recently drew on, not all pages.
     const pageIndex = lastDrawnPageRef.current;
     if (pageIndex === null) return;
-    const fc = fabricCanvases.current.get(pageIndex);
-    if (!fc) return;
-    const objects = fc.getObjects();
-    if (objects.length > 0) {
-      fc.remove(objects[objects.length - 1]);
-      fc.renderAll();
-      scheduleAutoSave();
-    }
+    const data = pageCanvasData.current.get(pageIndex);
+    if (!data || data.strokes.length === 0) return;
+    data.strokes.pop();
+    renderAllStrokes(data.ctx, data.strokes, data.canvas.width, data.canvas.height);
+    scheduleAutoSave();
   };
 
-  // ─── Clear ────────────────────────────────────────────────────────────────
+  // ─── Clear ─────────────────────────────────────────────────────────────────
   const handleClear = () => {
     if (!confirm('Clear all drawings on all pages?')) return;
-    fabricCanvases.current.forEach((fc) => {
-      if (!fc) return;
-      fc.clear();
-      fc.backgroundColor = 'transparent';
-      fc.renderAll();
+    pageCanvasData.current.forEach((data) => {
+      data.strokes = [];
+      data.ctx.clearRect(0, 0, data.canvas.width, data.canvas.height);
     });
     scheduleAutoSave();
   };
 
-  // ─── Manual save ─────────────────────────────────────────────────────────
+  // ─── Manual save ───────────────────────────────────────────────────────────
   const handleManualSave = useCallback(async () => {
     setIsSaving(true);
     try {
@@ -510,7 +431,7 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [collectPagesJson]);
 
-  // ─── Submit (generate PDF) ───────────────────────────────────────────────
+  // ─── Submit (generate PDF) ─────────────────────────────────────────────────
   const handleSubmit = useCallback(async () => {
     if (!onSavePdf) return;
     setIsSubmitting(true);
@@ -522,35 +443,27 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
       const pdfDoc = await PDFDocument.create();
       const { default: html2canvas } = await import('html2canvas');
 
-      // Capture all PDF pages.
-      // IMPORTANT: .react-pdf__Page only contains the PDF background canvas.
-      // The Fabric annotation overlay is a sibling div (absolute inset-0) inside
-      // the outer page wrapper — so we must capture parentElement (the wrapper)
-      // to include BOTH the PDF and the student's drawn annotations.
       const pageElements = document.querySelectorAll('.react-pdf__Page');
       for (let i = 0; i < pageElements.length; i++) {
-        const pageEl = pageElements[i] as HTMLElement;
-        const captureEl = (pageEl.parentElement ?? pageEl) as HTMLElement;
-        const canvas = await html2canvas(captureEl, { scale: 2, useCORS: true, logging: false, allowTaint: true });
-        const imgData = canvas.toDataURL('image/jpeg', 0.92);
+        const captureEl = (pageElements[i].parentElement ?? pageElements[i]) as HTMLElement;
+        const cvs = await html2canvas(captureEl, { scale: 2, useCORS: true, logging: false, allowTaint: true });
+        const imgData = cvs.toDataURL('image/jpeg', 0.92);
         const imgBytes = Uint8Array.from(atob(imgData.split(',')[1]), c => c.charCodeAt(0));
         const img = await pdfDoc.embedJpg(imgBytes);
-        const page = pdfDoc.addPage([canvas.width / 2, canvas.height / 2]);
-        page.drawImage(img, { x: 0, y: 0, width: canvas.width / 2, height: canvas.height / 2 });
+        const page = pdfDoc.addPage([cvs.width / 2, cvs.height / 2]);
+        page.drawImage(img, { x: 0, y: 0, width: cvs.width / 2, height: cvs.height / 2 });
       }
 
-      // Capture extra blank pages (via wrapper divs that hold Fabric canvases)
       const totalPdf = pageElements.length;
       for (let j = 0; j < extraPages.length; j++) {
-        const fabricIndex = totalPdf + j;
-        const wrapperEl = pageWrappers.current.get(fabricIndex);
+        const wrapperEl = pageWrappers.current.get(totalPdf + j);
         if (!wrapperEl) continue;
-        const canvas = await html2canvas(wrapperEl, { scale: 2, useCORS: true, logging: false, allowTaint: true, backgroundColor: '#ffffff' });
-        const imgData = canvas.toDataURL('image/jpeg', 0.92);
+        const cvs = await html2canvas(wrapperEl, { scale: 2, useCORS: true, logging: false, allowTaint: true, backgroundColor: '#ffffff' });
+        const imgData = cvs.toDataURL('image/jpeg', 0.92);
         const imgBytes = Uint8Array.from(atob(imgData.split(',')[1]), c => c.charCodeAt(0));
         const img = await pdfDoc.embedJpg(imgBytes);
-        const page = pdfDoc.addPage([canvas.width / 2, canvas.height / 2]);
-        page.drawImage(img, { x: 0, y: 0, width: canvas.width / 2, height: canvas.height / 2 });
+        const page = pdfDoc.addPage([cvs.width / 2, cvs.height / 2]);
+        page.drawImage(img, { x: 0, y: 0, width: cvs.width / 2, height: cvs.height / 2 });
       }
 
       const pdfBytes = await pdfDoc.save() as unknown as Uint8Array<ArrayBuffer>;
@@ -565,7 +478,6 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [collectPagesJson, onSavePdf, extraPages]);
 
-  // Register submit with parent
   useEffect(() => {
     if (onRegisterSubmit) onRegisterSubmit(handleSubmit);
   }, [onRegisterSubmit, handleSubmit]);
@@ -574,36 +486,34 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
   useEffect(() => {
     return () => {
       if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
-      fabricCanvases.current.forEach((fc) => fc?.dispose());
-      fabricCanvases.current.clear();
+      pageCanvasData.current.forEach((data) => {
+        data.canvas.remove();
+      });
+      pageCanvasData.current.clear();
     };
   }, []);
 
-  // ─── Ruler: commit a straight line to Fabric ─────────────────────────────
-  const commitRulerLine = useCallback(async (line: RulerLine) => {
-    const fc = fabricCanvases.current.get(line.pageIndex);
-    if (!fc) return;
-    // Skip tiny accidental taps
+  // ─── Ruler ─────────────────────────────────────────────────────────────────
+  const commitRulerLine = useCallback((line: RulerLine) => {
+    const data = pageCanvasData.current.get(line.pageIndex);
+    if (!data) return;
     const dx = line.x2 - line.x1;
     const dy = line.y2 - line.y1;
     if (Math.sqrt(dx * dx + dy * dy) < 4) return;
-    const { fabric } = await import('fabric');
-    const fabricLine = new fabric.Line([line.x1, line.y1, line.x2, line.y2], {
-      stroke: color,
-      strokeWidth,
-      selectable: false,
-      evented: false,
-    });
-    fc.add(fabricLine);
-    fc.renderAll();
+    const stroke: DrawnStroke = {
+      points: [{ x: line.x1, y: line.y1 }, { x: line.x2, y: line.y2 }],
+      color,
+      width: strokeWidth,
+      compositeOp: 'source-over',
+    };
+    data.strokes.push(stroke);
+    renderAllStrokes(data.ctx, data.strokes, data.canvas.width, data.canvas.height);
+    lastDrawnPageRef.current = line.pageIndex;
     scheduleAutoSave();
   }, [color, strokeWidth, scheduleAutoSave]);
 
-  // ─── Ruler event helpers (mouse + touch) ─────────────────────────────────
   const rulerStart = useCallback((pageIndex: number, clientX: number, clientY: number, rect: DOMRect) => {
-    const x = clientX - rect.left;
-    const y = clientY - rect.top;
-    setRulerDrag({ x1: x, y1: y, x2: x, y2: y, pageIndex });
+    setRulerDrag({ x1: clientX - rect.left, y1: clientY - rect.top, x2: clientX - rect.left, y2: clientY - rect.top, pageIndex });
   }, []);
 
   const rulerMove = useCallback((pageIndex: number, clientX: number, clientY: number, rect: DOMRect, shiftKey: boolean) => {
@@ -611,11 +521,11 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
     const x = clientX - rect.left;
     const y = clientY - rect.top;
     if (shiftKey) {
-      const dx = x - rulerDrag.x1;
-      const dy = y - rulerDrag.y1;
-      const angle = Math.atan2(dy, dx);
+      const dx2 = x - rulerDrag.x1;
+      const dy2 = y - rulerDrag.y1;
+      const angle = Math.atan2(dy2, dx2);
       const snapped = Math.round(angle / (Math.PI / 4)) * (Math.PI / 4);
-      const dist = Math.sqrt(dx * dx + dy * dy);
+      const dist = Math.sqrt(dx2 * dx2 + dy2 * dy2);
       setRulerDrag(r => r ? { ...r, x2: r.x1 + Math.cos(snapped) * dist, y2: r.y1 + Math.sin(snapped) * dist } : r);
     } else {
       setRulerDrag(r => r ? { ...r, x2: x, y2: y } : r);
@@ -630,27 +540,20 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
   }, [rulerDrag, commitRulerLine]);
 
   // ─── Page wrapper ref callback ────────────────────────────────────────────
-
   const setPageWrapperRef = useCallback((pageIndex: number) => (el: HTMLDivElement | null) => {
-    // Handle unmount/change
     const currentCached = pageWrappers.current.get(pageIndex);
-    
-    // If element is gone, remove from map
     if (!el && currentCached) {
-        pageWrappers.current.delete(pageIndex);
-        return;
+      pageWrappers.current.delete(pageIndex);
+      return;
     }
-
-    // If new element or changed element
     if (el && currentCached !== el) {
       pageWrappers.current.set(pageIndex, el);
-      // Use shorter timeout to reduce visible flicker
-      setTimeout(() => initFabricCanvas(pageIndex, el), 100);
+      setTimeout(() => initCanvas(pageIndex, el), 100);
     }
-  }, [initFabricCanvas]);
+  }, [initCanvas]);
 
   // ─── Cursor style ─────────────────────────────────────────────────────────
-  const getCursor = (_pageIndex: number) => {
+  const getCursor = () => {
     if (tool === 'ruler') return 'crosshair';
     if (tool === 'eraser') {
       const s = strokeWidth * 4 + 8;
@@ -683,15 +586,12 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
 
       {/* ── Toolbar ──────────────────────────────────────────────────────── */}
       <div className="flex items-center gap-1 px-3 py-2 bg-white border-b border-gray-200 shadow-sm flex-wrap">
-
-        {/* Tool group */}
         <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl mr-1">
           {toolBtn('pen',    <Paintbrush size={17} />, 'Pen (draw)')}
           {toolBtn('eraser', <Eraser size={17} />,     'Eraser')}
           {toolBtn('ruler',  <Ruler size={17} />,      'Straight line')}
         </div>
 
-        {/* Finger mode toggle */}
         <button
           title={fingerMode === 'scroll'
             ? 'Touch: Scroll & pan (click to let finger draw)'
@@ -709,16 +609,14 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
           </span>
         </button>
 
-        {/* Divider */}
         <div className="w-px h-7 bg-gray-200 mx-1" />
 
-        {/* Color swatches */}
         <div className="flex items-center gap-1.5">
           {COLORS.map(c => (
             <button
               key={c}
               title={c}
-              onClick={() => { setColor(c); if (tool === 'eraser' || tool === 'ruler') {} }}
+              onClick={() => setColor(c)}
               className={`w-7 h-7 rounded-full transition-all duration-150 select-none active:scale-90
                 ${color === c
                   ? 'ring-2 ring-offset-2 ring-indigo-500 scale-110'
@@ -728,91 +626,60 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
           ))}
         </div>
 
-        {/* Divider */}
         <div className="w-px h-7 bg-gray-200 mx-1" />
 
-        {/* Stroke size slider */}
         <div className="flex items-center gap-2 px-1">
-          {/* Live dot preview */}
           <div
             className="rounded-full bg-gray-700 flex-shrink-0 transition-all duration-100"
             style={{ width: Math.min(strokeWidth, 20), height: Math.min(strokeWidth, 20) }}
           />
           <input
-            type="range"
-            min={1}
-            max={20}
-            step={1}
-            value={strokeWidth}
+            type="range" min={1} max={20} step={1} value={strokeWidth}
             onChange={e => setStrokeWidth(Number(e.target.value))}
             title={`Stroke size: ${strokeWidth}px`}
             className="w-20 accent-indigo-600 cursor-pointer"
             style={{ height: 4 }}
           />
-          <span className="text-[11px] font-mono text-gray-500 w-5 text-right select-none">
-            {strokeWidth}
-          </span>
+          <span className="text-[11px] font-mono text-gray-500 w-5 text-right select-none">{strokeWidth}</span>
         </div>
 
-        {/* Divider */}
         <div className="w-px h-7 bg-gray-200 mx-1" />
 
-        {/* Zoom */}
         <div className="flex items-center gap-0.5 bg-gray-100 rounded-lg px-1">
           <button
             onClick={() => setPdfScale(s => Math.max(0.5, +(s - 0.25).toFixed(2)))}
             className="p-2 text-gray-500 hover:text-gray-800 active:bg-gray-200 active:scale-90 rounded-md transition-all select-none"
             title="Zoom out"
-          >
-            <ZoomOut size={16} />
-          </button>
-          <span className="text-xs font-mono text-gray-600 w-11 text-center select-none">
-            {Math.round(pdfScale * 100)}%
-          </span>
+          ><ZoomOut size={16} /></button>
+          <span className="text-xs font-mono text-gray-600 w-11 text-center select-none">{Math.round(pdfScale * 100)}%</span>
           <button
             onClick={() => setPdfScale(s => Math.min(3, +(s + 0.25).toFixed(2)))}
             className="p-2 text-gray-500 hover:text-gray-800 active:bg-gray-200 active:scale-90 rounded-md transition-all select-none"
             title="Zoom in"
-          >
-            <ZoomIn size={16} />
-          </button>
+          ><ZoomIn size={16} /></button>
         </div>
 
-        {/* Right actions */}
         <div className="flex items-center gap-1 ml-auto">
-          <button
-            onClick={handleUndo}
-            className="w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-800 active:bg-gray-200 active:scale-90 transition-all select-none"
-            title="Undo last stroke"
-          >
+          <button onClick={handleUndo} className="w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-800 active:bg-gray-200 active:scale-90 transition-all select-none" title="Undo last stroke">
             <Undo size={16} />
           </button>
-          <button
-            onClick={handleClear}
-            className="w-9 h-9 flex items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-500 active:bg-red-100 active:scale-90 transition-all select-none"
-            title="Clear all drawings"
-          >
+          <button onClick={handleClear} className="w-9 h-9 flex items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-500 active:bg-red-100 active:scale-90 transition-all select-none" title="Clear all drawings">
             <Trash2 size={16} />
           </button>
           {onSave && (
-            <button
-              onClick={handleManualSave}
-              disabled={isSaving}
+            <button onClick={handleManualSave} disabled={isSaving}
               className="flex items-center gap-1.5 px-3 h-9 rounded-lg text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 active:scale-95 disabled:opacity-40 transition-all select-none"
               title="Save progress"
             >
-              <Save size={14} />
-              {isSaving ? 'Saving…' : 'Save'}
+              <Save size={14} />{isSaving ? 'Saving…' : 'Save'}
             </button>
           )}
         </div>
       </div>
 
-      {/* Ruler active banner */}
       {tool === 'ruler' && (
         <div className="flex items-center gap-2 px-4 py-1.5 bg-indigo-50 border-b border-indigo-100 text-indigo-700 text-xs font-medium">
-          <Ruler size={13} />
-          <span>Straight line — drag to draw. Release to commit.</span>
+          <Ruler size={13} /><span>Straight line — drag to draw. Release to commit.</span>
         </div>
       )}
 
@@ -823,8 +690,8 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
         style={{
           background: 'radial-gradient(circle at center, #e8eaf0 0%, #d5d9e3 100%)',
           WebkitOverflowScrolling: 'touch',
-          overscrollBehavior: 'contain',        // prevent pull-to-refresh / back-swipe
-          touchAction: 'manipulation',           // allow scroll + pinch-zoom
+          overscrollBehavior: 'contain',
+          touchAction: 'manipulation',
         }}
       >
         {loadingPdf && (
@@ -836,72 +703,28 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
 
         {pdfBlob && (
           <div className="min-h-full flex flex-col items-center py-8 px-4">
-            <Document
-              file={pdfBlob}
-              onLoadSuccess={({ numPages }) => setNumPages(numPages)}
-            >
+            <Document file={pdfBlob} onLoadSuccess={({ numPages: n }) => setNumPages(n)}>
               {Array.from({ length: numPages || 0 }, (_, i) => (
-                <div
-                  key={i}
-                  className="relative shadow-2xl rounded overflow-hidden mx-auto"
-                  style={{ display: 'block', marginBottom: '24px', userSelect: 'none', WebkitUserSelect: 'none', willChange: 'transform' }}
-                >
-                  <Page
-                    pageNumber={i + 1}
-                    scale={pdfScale}
-                    renderTextLayer={false}
-                    renderAnnotationLayer={false}
-                    onRenderSuccess={i === 0 ? (page) => {
-                      // Record rendered width so extra pages can match
-                      pdfPageWidthRef.current = page.width * pdfScale;
-                    } : undefined}
-                  />
+                <div key={i} className="relative shadow-2xl rounded overflow-hidden mx-auto"
+                  style={{ display: 'block', marginBottom: '24px', userSelect: 'none', WebkitUserSelect: 'none', willChange: 'transform' }}>
+                  <Page pageNumber={i + 1} scale={pdfScale} renderTextLayer={false} renderAnnotationLayer={false}
+                    onRenderSuccess={i === 0 ? (page) => { pdfPageWidthRef.current = page.width * pdfScale; } : undefined} />
 
-                  {/* Fabric drawing overlay */}
-                  <div
-                    ref={setPageWrapperRef(i)}
-                    className="absolute inset-0"
-                    style={{ cursor: getCursor(i), touchAction: fingerMode === 'scroll' ? 'manipulation' : 'none' }}
-                    onMouseDown={tool === 'ruler' ? (e) => {
-                      rulerStart(i, e.clientX, e.clientY, (e.currentTarget as HTMLDivElement).getBoundingClientRect());
-                    } : undefined}
-                    onMouseMove={tool === 'ruler' && rulerDrag ? (e) => {
-                      rulerMove(i, e.clientX, e.clientY, (e.currentTarget as HTMLDivElement).getBoundingClientRect(), e.shiftKey);
-                    } : undefined}
+                  {/* Canvas drawing overlay */}
+                  <div ref={setPageWrapperRef(i)} className="absolute inset-0"
+                    style={{ cursor: getCursor(), touchAction: fingerMode === 'scroll' ? 'manipulation' : 'none' }}
+                    onMouseDown={tool === 'ruler' ? (e) => rulerStart(i, e.clientX, e.clientY, (e.currentTarget as HTMLDivElement).getBoundingClientRect()) : undefined}
+                    onMouseMove={tool === 'ruler' && rulerDrag ? (e) => rulerMove(i, e.clientX, e.clientY, (e.currentTarget as HTMLDivElement).getBoundingClientRect(), e.shiftKey) : undefined}
                     onMouseUp={tool === 'ruler' && rulerDrag ? () => rulerEnd(i) : undefined}
                     onMouseLeave={tool === 'ruler' ? () => rulerEnd(i) : undefined}
-                    onTouchStart={tool === 'ruler' ? (e) => {
-                      e.preventDefault();
-                      const t = e.touches[0];
-                      rulerStart(i, t.clientX, t.clientY, (e.currentTarget as HTMLDivElement).getBoundingClientRect());
-                    } : undefined}
-                    onTouchMove={tool === 'ruler' && rulerDrag ? (e) => {
-                      e.preventDefault();
-                      const t = e.touches[0];
-                      rulerMove(i, t.clientX, t.clientY, (e.currentTarget as HTMLDivElement).getBoundingClientRect(), false);
-                    } : undefined}
-                    onTouchEnd={tool === 'ruler' ? (e) => {
-                      e.preventDefault();
-                      rulerEnd(i);
-                    } : undefined}
+                    onTouchStart={tool === 'ruler' ? (e) => { e.preventDefault(); const t = e.touches[0]; rulerStart(i, t.clientX, t.clientY, (e.currentTarget as HTMLDivElement).getBoundingClientRect()); } : undefined}
+                    onTouchMove={tool === 'ruler' && rulerDrag ? (e) => { e.preventDefault(); const t = e.touches[0]; rulerMove(i, t.clientX, t.clientY, (e.currentTarget as HTMLDivElement).getBoundingClientRect(), false); } : undefined}
+                    onTouchEnd={tool === 'ruler' ? (e) => { e.preventDefault(); rulerEnd(i); } : undefined}
                   />
 
-                  {/* Ruler live SVG preview */}
                   {rulerDrag && rulerDrag.pageIndex === i && (
-                    <svg
-                      className="absolute inset-0 pointer-events-none"
-                      style={{ width: '100%', height: '100%', overflow: 'visible' }}
-                    >
-                      {/* Line */}
-                      <line
-                        x1={rulerDrag.x1} y1={rulerDrag.y1}
-                        x2={rulerDrag.x2} y2={rulerDrag.y2}
-                        stroke={color}
-                        strokeWidth={strokeWidth}
-                        strokeLinecap="round"
-                        strokeDasharray="6 3"
-                      />
-                      {/* End-point circle */}
+                    <svg className="absolute inset-0 pointer-events-none" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
+                      <line x1={rulerDrag.x1} y1={rulerDrag.y1} x2={rulerDrag.x2} y2={rulerDrag.y2} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeDasharray="6 3" />
                       <circle cx={rulerDrag.x2} cy={rulerDrag.y2} r={5} fill={color} opacity={0.8} />
                     </svg>
                   )}
@@ -909,107 +732,68 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
               ))}
             </Document>
 
-              {/* ── Extra blank pages ──────────────────────────────────── */}
-              {extraPages.map((pid, arrIdx) => {
-                // Fabric index starts after all PDF pages
-                const fabricIndex = (numPages || 0) + arrIdx;
-                return (
-                  <div key={pid} className="relative mx-auto overflow-hidden" style={{ display: 'block', marginBottom: '24px', userSelect: 'none', WebkitUserSelect: 'none', willChange: 'transform' }}>
-                    {/* Page label */}
-                    <div className="absolute -top-6 left-0 text-[11px] text-gray-400 font-medium select-none">
-                      Extra page {arrIdx + 1}
-                    </div>
-                    {/* Blank white canvas */}
-                    <div
-                      ref={setPageWrapperRef(fabricIndex)}
-                      className="relative bg-white shadow-2xl rounded"
-                      style={{
-                        width: pdfPageWidthRef.current || 794,
-                        height: Math.round((pdfPageWidthRef.current || 794) * 1.414), // A4 ratio
-                        cursor: getCursor(fabricIndex),
-                        touchAction: fingerMode === 'scroll' ? 'manipulation' : 'none',
-                      }}
-                      onMouseDown={tool === 'ruler' ? (e) => {
-                        rulerStart(fabricIndex, e.clientX, e.clientY, (e.currentTarget as HTMLDivElement).getBoundingClientRect());
-                      } : undefined}
-                      onMouseMove={tool === 'ruler' && rulerDrag ? (e) => {
-                        rulerMove(fabricIndex, e.clientX, e.clientY, (e.currentTarget as HTMLDivElement).getBoundingClientRect(), e.shiftKey);
-                      } : undefined}
-                      onMouseUp={tool === 'ruler' && rulerDrag ? () => rulerEnd(fabricIndex) : undefined}
-                      onMouseLeave={tool === 'ruler' ? () => rulerEnd(fabricIndex) : undefined}
-                      onTouchStart={tool === 'ruler' ? (e) => {
-                        e.preventDefault();
-                        const t = e.touches[0];
-                        rulerStart(fabricIndex, t.clientX, t.clientY, (e.currentTarget as HTMLDivElement).getBoundingClientRect());
-                      } : undefined}
-                      onTouchMove={tool === 'ruler' && rulerDrag ? (e) => {
-                        e.preventDefault();
-                        const t = e.touches[0];
-                        rulerMove(fabricIndex, t.clientX, t.clientY, (e.currentTarget as HTMLDivElement).getBoundingClientRect(), false);
-                      } : undefined}
-                      onTouchEnd={tool === 'ruler' ? (e) => {
-                        e.preventDefault();
-                        rulerEnd(fabricIndex);
-                      } : undefined}
-                    />
-                    {/* Line SVG preview for extra pages */}
-                    {rulerDrag && rulerDrag.pageIndex === fabricIndex && (
-                      <svg className="absolute inset-0 pointer-events-none" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
-                        <line x1={rulerDrag.x1} y1={rulerDrag.y1} x2={rulerDrag.x2} y2={rulerDrag.y2} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeDasharray="6 3" />
-                        <circle cx={rulerDrag.x2} cy={rulerDrag.y2} r={5} fill={color} opacity={0.8} />
-                      </svg>
-                    )}
-                  </div>
-                );
-              })}
+            {extraPages.map((pid, arrIdx) => {
+              const idx = (numPages || 0) + arrIdx;
+              return (
+                <div key={pid} className="relative mx-auto overflow-hidden" style={{ display: 'block', marginBottom: '24px', userSelect: 'none', WebkitUserSelect: 'none', willChange: 'transform' }}>
+                  <div className="absolute -top-6 left-0 text-[11px] text-gray-400 font-medium select-none">Extra page {arrIdx + 1}</div>
+                  <div ref={setPageWrapperRef(idx)} className="relative bg-white shadow-2xl rounded"
+                    style={{
+                      width: pdfPageWidthRef.current || 794,
+                      height: Math.round((pdfPageWidthRef.current || 794) * 1.414),
+                      cursor: getCursor(),
+                      touchAction: fingerMode === 'scroll' ? 'manipulation' : 'none',
+                    }}
+                    onMouseDown={tool === 'ruler' ? (e) => rulerStart(idx, e.clientX, e.clientY, (e.currentTarget as HTMLDivElement).getBoundingClientRect()) : undefined}
+                    onMouseMove={tool === 'ruler' && rulerDrag ? (e) => rulerMove(idx, e.clientX, e.clientY, (e.currentTarget as HTMLDivElement).getBoundingClientRect(), e.shiftKey) : undefined}
+                    onMouseUp={tool === 'ruler' && rulerDrag ? () => rulerEnd(idx) : undefined}
+                    onMouseLeave={tool === 'ruler' ? () => rulerEnd(idx) : undefined}
+                    onTouchStart={tool === 'ruler' ? (e) => { e.preventDefault(); const t = e.touches[0]; rulerStart(idx, t.clientX, t.clientY, (e.currentTarget as HTMLDivElement).getBoundingClientRect()); } : undefined}
+                    onTouchMove={tool === 'ruler' && rulerDrag ? (e) => { e.preventDefault(); const t = e.touches[0]; rulerMove(idx, t.clientX, t.clientY, (e.currentTarget as HTMLDivElement).getBoundingClientRect(), false); } : undefined}
+                    onTouchEnd={tool === 'ruler' ? (e) => { e.preventDefault(); rulerEnd(idx); } : undefined}
+                  />
+                  {rulerDrag && rulerDrag.pageIndex === idx && (
+                    <svg className="absolute inset-0 pointer-events-none" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
+                      <line x1={rulerDrag.x1} y1={rulerDrag.y1} x2={rulerDrag.x2} y2={rulerDrag.y2} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeDasharray="6 3" />
+                      <circle cx={rulerDrag.x2} cy={rulerDrag.y2} r={5} fill={color} opacity={0.8} />
+                    </svg>
+                  )}
+                </div>
+              );
+            })}
 
-              {/* Add Page button */}
-              <button
-                onClick={() => {
-                  extraPageIdCounter.current += 1;
-                  setExtraPages(p => [...p, extraPageIdCounter.current]);
-                }}
-                className="flex items-center gap-2 px-5 py-3 mt-2 mb-8 rounded-xl border-2 border-dashed border-gray-300 text-gray-500 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50/50 transition-all text-sm font-medium select-none"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 5v14M5 12h14" />
-                </svg>
-                Add extra page
-              </button>
+            <button
+              onClick={() => { extraPageIdCounter.current += 1; setExtraPages(p => [...p, extraPageIdCounter.current]); }}
+              className="flex items-center gap-2 px-5 py-3 mt-2 mb-8 rounded-xl border-2 border-dashed border-gray-300 text-gray-500 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50/50 transition-all text-sm font-medium select-none"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+              Add extra page
+            </button>
           </div>
         )}
 
-        {/* Plain canvas (no PDF) */}
         {!pdfUrl && (
           <div className="flex justify-center py-8 px-4">
-            <div
-              ref={setPageWrapperRef(0)}
-              className="relative bg-white shadow-2xl rounded"
-              style={{ width: 800, height: 1100, cursor: getCursor(0), touchAction: fingerMode === 'scroll' ? 'manipulation' : 'none', userSelect: 'none', WebkitUserSelect: 'none', willChange: 'transform' }}
+            <div ref={setPageWrapperRef(0)} className="relative bg-white shadow-2xl rounded"
+              style={{ width: 800, height: 1100, cursor: getCursor(), touchAction: fingerMode === 'scroll' ? 'manipulation' : 'none', userSelect: 'none', WebkitUserSelect: 'none', willChange: 'transform' }}
             />
           </div>
         )}
       </div>
 
-      {/* Footer */}
       {(onSave || onSavePdf) && (
         <div className="flex items-center justify-end gap-2 px-4 py-2.5 bg-white border-t border-gray-200">
           {onSave && (
-            <button
-              onClick={handleManualSave}
-              disabled={isSaving}
-              className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 active:scale-[0.97] text-gray-700 rounded-lg text-sm font-medium disabled:opacity-50 transition-all select-none"
-            >
-              <Save size={14} />
-              {isSaving ? 'Saving…' : 'Save Progress'}
+            <button onClick={handleManualSave} disabled={isSaving}
+              className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 active:scale-[0.97] text-gray-700 rounded-lg text-sm font-medium disabled:opacity-50 transition-all select-none">
+              <Save size={14} />{isSaving ? 'Saving…' : 'Save Progress'}
             </button>
           )}
           {onSavePdf && (
-            <button
-              onClick={handleSubmit}
-              disabled={isSubmitting}
-              className="flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-700 active:bg-green-800 active:scale-[0.97] text-white rounded-lg text-sm font-medium disabled:opacity-50 transition-all shadow-sm select-none"
-            >
+            <button onClick={handleSubmit} disabled={isSubmitting}
+              className="flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-700 active:bg-green-800 active:scale-[0.97] text-white rounded-lg text-sm font-medium disabled:opacity-50 transition-all shadow-sm select-none">
               {isSubmitting ? (
                 <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Submitting…</>
               ) : (
