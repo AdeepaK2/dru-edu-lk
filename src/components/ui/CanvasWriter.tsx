@@ -162,6 +162,11 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
       height: h,
       backgroundColor: 'transparent',
       selection: false,
+      // CRITICAL: Fabric v5 defaults to mousedown/touchstart events.
+      // enablePointerEvents makes it use pointerdown/pointermove/pointerup
+      // which carry pointerType ('pen'|'touch'|'mouse') — required for
+      // distinguishing stylus from finger in our capture-phase interceptor.
+      enablePointerEvents: true,
     });
 
     fc.freeDrawingBrush = new fabric.PencilBrush(fc);
@@ -180,7 +185,7 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
     const stylusStyle = (el: HTMLElement | undefined) => {
       if (!el) return;
       // touchAction is set dynamically based on fingerMode
-      el.style.touchAction = fingerModeRef.current === 'scroll' ? 'pan-x pan-y' : 'none';
+      el.style.touchAction = fingerModeRef.current === 'scroll' ? 'manipulation' : 'none';
       el.style.webkitUserSelect = 'none';       // no text selection
       el.style.userSelect = 'none';
       (el.style as any).webkitTouchCallout = 'none'; // no iOS callout menu
@@ -214,7 +219,7 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
           // Scroll mode: stop event reaching Fabric canvas (child element).
           // stopPropagation (not stopImmediate) is enough — we only need to
           // prevent the event travelling further down to upperCanvasEl.
-          // Do NOT call preventDefault so touch-action:pan-x pan-y can scroll.
+          // Do NOT call preventDefault so touch-action:manipulation can scroll/zoom.
           e.stopPropagation();
         } else if (penActive) {
           // Draw mode palm rejection: block touch while stylus is active.
@@ -261,6 +266,24 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
         if (e.pointerType === 'pen') penActive = false;
       }, true);
       fabricWrapper.addEventListener('pointercancel', () => { penActive = false; }, true);
+
+      // ── Safety net: block touch* events too ──────────────────────────
+      // Fabric v5 MAY still register touchstart/touchmove handlers even
+      // with enablePointerEvents:true.  These events don't carry
+      // pointerType, but on tablets the S Pen never generates touch*
+      // events (only pointer events with pointerType='pen'), so blocking
+      // ALL touch* events in scroll mode is safe.
+      fabricWrapper.addEventListener('touchstart', (e: TouchEvent) => {
+        if (fingerModeRef.current === 'scroll') {
+          e.stopPropagation();
+          // No preventDefault — let browser handle scroll
+        }
+      }, true);
+      fabricWrapper.addEventListener('touchmove', (e: TouchEvent) => {
+        if (fingerModeRef.current === 'scroll') {
+          e.stopPropagation();
+        }
+      }, true);
     }
 
     fc.on('path:created', () => {
@@ -367,8 +390,13 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
       fabricCanvases.current.forEach((fc) => {
         if (!fc) return;
 
-        // Remove any existing eraser handler
-        fc.off('path:created', (fc as any).__eraserHandler);
+        // Remove existing eraser handler (if any).
+        // IMPORTANT: guard with truthy check — Fabric v5's off(event, falsy)
+        // removes ALL handlers for that event, which would destroy the global
+        // path:created handler (auto-save + lastDrawnPageRef tracking).
+        if ((fc as any).__eraserHandler) {
+          fc.off('path:created', (fc as any).__eraserHandler);
+        }
         (fc as any).__eraserHandler = null;
 
         if (tool === 'eraser') {
@@ -424,7 +452,7 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
 
   // ─── Sync touchAction on Fabric elements when fingerMode changes ──────────
   useEffect(() => {
-    const ta = fingerMode === 'scroll' ? 'pan-x pan-y' : 'none';
+    const ta = fingerMode === 'scroll' ? 'manipulation' : 'none';
     fabricCanvases.current.forEach((fc) => {
       if (!fc) return;
       const setTA = (el: HTMLElement | undefined) => { if (el) el.style.touchAction = ta; };
@@ -785,7 +813,7 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
           background: 'radial-gradient(circle at center, #e8eaf0 0%, #d5d9e3 100%)',
           WebkitOverflowScrolling: 'touch',
           overscrollBehavior: 'contain',        // prevent pull-to-refresh / back-swipe
-          touchAction: 'pan-x pan-y',           // allow scroll, block pinch-zoom
+          touchAction: 'manipulation',            // allow scroll + pinch-zoom
         }}
       >
         {loadingPdf && (
@@ -822,7 +850,7 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
                   <div
                     ref={setPageWrapperRef(i)}
                     className="absolute inset-0"
-                    style={{ cursor: getCursor(i), touchAction: fingerMode === 'scroll' ? 'pan-x pan-y' : 'none' }}
+                    style={{ cursor: getCursor(i), touchAction: fingerMode === 'scroll' ? 'manipulation' : 'none' }}
                     onMouseDown={tool === 'ruler' ? (e) => {
                       rulerStart(i, e.clientX, e.clientY, (e.currentTarget as HTMLDivElement).getBoundingClientRect());
                     } : undefined}
@@ -888,7 +916,7 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
                         width: pdfPageWidthRef.current || 794,
                         height: Math.round((pdfPageWidthRef.current || 794) * 1.414), // A4 ratio
                         cursor: getCursor(fabricIndex),
-                        touchAction: fingerMode === 'scroll' ? 'pan-x pan-y' : 'none',
+                        touchAction: fingerMode === 'scroll' ? 'manipulation' : 'none',
                       }}
                       onMouseDown={tool === 'ruler' ? (e) => {
                         rulerStart(fabricIndex, e.clientX, e.clientY, (e.currentTarget as HTMLDivElement).getBoundingClientRect());
@@ -946,7 +974,7 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
             <div
               ref={setPageWrapperRef(0)}
               className="relative bg-white shadow-2xl rounded"
-              style={{ width: 800, height: 1100, cursor: getCursor(0), touchAction: fingerMode === 'scroll' ? 'pan-x pan-y' : 'none', userSelect: 'none', WebkitUserSelect: 'none', willChange: 'transform' }}
+              style={{ width: 800, height: 1100, cursor: getCursor(0), touchAction: fingerMode === 'scroll' ? 'manipulation' : 'none', userSelect: 'none', WebkitUserSelect: 'none', willChange: 'transform' }}
             />
           </div>
         )}
