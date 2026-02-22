@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { Paintbrush, Eraser, Ruler, Trash2, Undo, ZoomIn, ZoomOut, Save, CheckCircle } from 'lucide-react';
+import { Paintbrush, Eraser, Ruler, Trash2, Undo, ZoomIn, ZoomOut, Save, CheckCircle, Hand, PenLine } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { PDFDocument } from 'pdf-lib';
@@ -46,6 +46,11 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
   const [tool, setTool] = useState<Tool>('pen');
   const [color, setColor] = useState('#1a1a1a');
   const [strokeWidth, setStrokeWidth] = useState(4);
+  // 'scroll': finger pans/scrolls the page, stylus draws (default for tablet)
+  // 'draw': finger draws on canvas
+  const [fingerMode, setFingerMode] = useState<'draw' | 'scroll'>('scroll');
+  const fingerModeRef = useRef<'draw' | 'scroll'>('scroll');
+  fingerModeRef.current = fingerMode;
   const [pdfScale, setPdfScale] = useState(1.0);
   const [numPages, setNumPages] = useState<number | null>(null);
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
@@ -175,7 +180,8 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
     // Apply to every element Fabric creates inside the wrapper.
     const stylusStyle = (el: HTMLElement | undefined) => {
       if (!el) return;
-      el.style.touchAction = 'none';           // no browser scroll/zoom hold
+      // touchAction is set dynamically based on fingerMode
+      el.style.touchAction = fingerModeRef.current === 'scroll' ? 'pan-x pan-y' : 'none';
       el.style.webkitUserSelect = 'none';       // no text selection
       el.style.userSelect = 'none';
       (el.style as any).webkitTouchCallout = 'none'; // no iOS callout menu
@@ -198,9 +204,16 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
       const PEN_PRESSURE_THRESHOLD = 0.01;
 
       const blockPalm = (e: PointerEvent) => {
-        if (e.pointerType === 'touch' && penActive) {
-          e.stopImmediatePropagation();
-          e.preventDefault();
+        if (e.pointerType === 'touch') {
+          if (fingerModeRef.current === 'scroll') {
+            // Scroll mode: prevent Fabric from drawing, but do NOT preventDefault
+            // so the browser can still scroll via touchAction: pan-x pan-y
+            e.stopImmediatePropagation();
+          } else if (penActive) {
+            // Draw mode: palm rejection — block touch while pen is active
+            e.stopImmediatePropagation();
+            e.preventDefault();
+          }
         }
       };
 
@@ -400,6 +413,18 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
     };
     update();
   }, [tool, color, strokeWidth, scheduleAutoSave]);
+
+  // ─── Sync touchAction on Fabric elements when fingerMode changes ──────────
+  useEffect(() => {
+    const ta = fingerMode === 'scroll' ? 'pan-x pan-y' : 'none';
+    fabricCanvases.current.forEach((fc) => {
+      if (!fc) return;
+      const setTA = (el: HTMLElement | undefined) => { if (el) el.style.touchAction = ta; };
+      setTA((fc as any).wrapperEl);
+      setTA((fc as any).upperCanvasEl);
+      setTA((fc as any).lowerCanvasEl);
+    });
+  }, [fingerMode]);
 
   // ─── Undo ─────────────────────────────────────────────────────────────────
   const handleUndo = () => {
@@ -619,6 +644,24 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
           {toolBtn('ruler',  <Ruler size={17} />,      'Straight line')}
         </div>
 
+        {/* Finger mode toggle */}
+        <button
+          title={fingerMode === 'scroll'
+            ? 'Touch: Scroll & pan (click to let finger draw)'
+            : 'Touch: Draw (click to scroll with finger)'}
+          onClick={() => setFingerMode(m => m === 'scroll' ? 'draw' : 'scroll')}
+          className={`relative flex items-center gap-1.5 px-2.5 h-9 rounded-lg text-xs font-medium transition-all duration-150 select-none group
+            ${fingerMode === 'scroll'
+              ? 'bg-sky-100 text-sky-700 ring-1 ring-sky-300 hover:bg-sky-200'
+              : 'bg-orange-100 text-orange-700 ring-1 ring-orange-300 hover:bg-orange-200'}`}
+        >
+          {fingerMode === 'scroll' ? <Hand size={15} /> : <PenLine size={15} />}
+          <span className="hidden sm:inline">{fingerMode === 'scroll' ? 'Scroll' : 'Draw'}</span>
+          <span className="absolute -bottom-7 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] bg-gray-800 text-white px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
+            {fingerMode === 'scroll' ? 'Finger scrolls page' : 'Finger draws'}
+          </span>
+        </button>
+
         {/* Divider */}
         <div className="w-px h-7 bg-gray-200 mx-1" />
 
@@ -763,7 +806,7 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
                   <div
                     ref={setPageWrapperRef(i)}
                     className="absolute inset-0"
-                    style={{ cursor: getCursor(i), touchAction: 'none' }}
+                    style={{ cursor: getCursor(i), touchAction: fingerMode === 'scroll' ? 'pan-x pan-y' : 'none' }}
                     onMouseDown={tool === 'ruler' ? (e) => {
                       rulerStart(i, e.clientX, e.clientY, (e.currentTarget as HTMLDivElement).getBoundingClientRect());
                     } : undefined}
@@ -829,7 +872,7 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
                         width: pdfPageWidthRef.current || 794,
                         height: Math.round((pdfPageWidthRef.current || 794) * 1.414), // A4 ratio
                         cursor: getCursor(fabricIndex),
-                        touchAction: 'none',
+                        touchAction: fingerMode === 'scroll' ? 'pan-x pan-y' : 'none',
                       }}
                       onMouseDown={tool === 'ruler' ? (e) => {
                         rulerStart(fabricIndex, e.clientX, e.clientY, (e.currentTarget as HTMLDivElement).getBoundingClientRect());
@@ -887,7 +930,7 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
             <div
               ref={setPageWrapperRef(0)}
               className="relative bg-white shadow-2xl rounded"
-              style={{ width: 800, height: 1100, cursor: getCursor(0), touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none', willChange: 'transform' }}
+              style={{ width: 800, height: 1100, cursor: getCursor(0), touchAction: fingerMode === 'scroll' ? 'pan-x pan-y' : 'none', userSelect: 'none', WebkitUserSelect: 'none', willChange: 'transform' }}
             />
           </div>
         )}
