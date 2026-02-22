@@ -180,7 +180,7 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
     const stylusStyle = (el: HTMLElement | undefined) => {
       if (!el) return;
       // touchAction is set dynamically based on fingerMode
-      el.style.touchAction = fingerModeRef.current === 'scroll' ? 'pan-x pan-y' : 'none';
+      el.style.touchAction = fingerModeRef.current === 'scroll' ? 'manipulation' : 'none';
       el.style.webkitUserSelect = 'none';       // no text selection
       el.style.userSelect = 'none';
       (el.style as any).webkitTouchCallout = 'none'; // no iOS callout menu
@@ -190,75 +190,113 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
     stylusStyle((fc as any).upperCanvasEl);
     stylusStyle((fc as any).lowerCanvasEl);
 
-    // Palm rejection & S-Pen hover filtering ─────────────────────────────
-    // 1. Block finger/touch events while stylus is actively drawing.
-    // 2. Block pen hover events (pressure === 0) so Fabric doesn't start
-    //    drawing before the stylus physically touches the screen.
-    //    The S Pen (and other active styluses) emit pointermove with
-    //    pressure 0 while hovering — Fabric treats these as draw input.
-    const upper = (fc as any).upperCanvasEl as HTMLElement | undefined;
-    if (upper) {
+    // ── Finger / stylus input discrimination ─────────────────────────────
+    // Fabric v5.5.2 (enablePointerEvents: false) uses touchstart + mousedown,
+    // NOT pointerdown.  We use pointerdown ONLY to detect the input type
+    // (pen vs touch vs mouse), then block touchstart/mousedown from reaching
+    // Fabric when the finger should scroll instead of draw.
+    //
+    // Event order on mobile:
+    //   pointerdown → touchstart → (synthesized mousedown after touch ends)
+    // S Pen only fires pointerdown (no touchstart), then browser synthesises
+    // a mousedown which Fabric uses to draw.
+    //
+    // Listeners are on wrapperEl (parent of upperCanvasEl) in capture phase,
+    // which always fires before any listener on the child — regardless of
+    // when listeners were registered.
+    const wrapper = (fc as any).wrapperEl as HTMLElement | undefined;
+    if (wrapper && !(wrapper as any).__inputHandlersAttached) {
+      (wrapper as any).__inputHandlersAttached = true;
+
       let penActive = false;
-      // Minimum pressure to accept a pen stroke — filters ghost contact
+      let fingerTouchActive = false;
       const PEN_PRESSURE_THRESHOLD = 0.01;
 
-      const blockPalm = (e: PointerEvent) => {
-        if (e.pointerType === 'touch') {
-          if (fingerModeRef.current === 'scroll') {
-            // Scroll mode: prevent Fabric from drawing, but do NOT preventDefault
-            // so the browser can still scroll via touchAction: pan-x pan-y
-            e.stopImmediatePropagation();
-          } else if (penActive) {
-            // Draw mode: palm rejection — block touch while pen is active
-            e.stopImmediatePropagation();
-            e.preventDefault();
-          }
-        }
-      };
-
-      // Block pen hover (pressure 0) on pointerdown — the pen is near
-      // the screen but not touching yet.
-      upper.addEventListener('pointerdown', (e: PointerEvent) => {
+      // ── pointerdown: detect input type + pen hover filtering ──────────
+      wrapper.addEventListener('pointerdown', (e: PointerEvent) => {
         if (e.pointerType === 'pen') {
           if (e.pressure < PEN_PRESSURE_THRESHOLD) {
-            // Hover-triggered pointerdown — suppress so Fabric doesn't
-            // begin a stroke.
-            e.stopImmediatePropagation();
+            // Pen hovering — preventDefault blocks synthesised mousedown
             e.preventDefault();
             return;
           }
           penActive = true;
-        } else {
-          blockPalm(e);
+        } else if (e.pointerType === 'touch') {
+          fingerTouchActive = true;
         }
       }, true);
 
-      // Block pen pointermove when hovering (pressure 0) OR when
-      // penActive hasn't been set (pen moved before a valid pointerdown).
-      upper.addEventListener('pointermove', (e: PointerEvent) => {
-        if (e.pointerType === 'pen') {
-          if (e.pressure < PEN_PRESSURE_THRESHOLD || !penActive) {
-            e.stopImmediatePropagation();
-            e.preventDefault();
-            return;
-          }
+      // ── touchstart: block Fabric when finger should scroll ────────────
+      // stopPropagation prevents Fabric's _onTouchStart on the child.
+      // NOT calling preventDefault lets the browser handle scroll/zoom
+      // natively via touch-action: manipulation.
+      wrapper.addEventListener('touchstart', (e: TouchEvent) => {
+        if (fingerModeRef.current === 'scroll' || penActive) {
+          e.stopPropagation();
+          // During active pen stroke, also prevent browser gestures
+          if (penActive) e.preventDefault();
         }
-        // Also apply palm rejection for touch events
-        blockPalm(e);
+      }, { capture: true, passive: false } as AddEventListenerOptions);
+
+      // ── touchmove: keep blocking during ongoing gesture ───────────────
+      wrapper.addEventListener('touchmove', (e: TouchEvent) => {
+        if (fingerModeRef.current === 'scroll' || penActive) {
+          e.stopPropagation();
+          if (penActive) e.preventDefault();
+        }
+      }, { capture: true, passive: false } as AddEventListenerOptions);
+
+      // ── touchend / touchcancel: complete the blocking ─────────────────
+      wrapper.addEventListener('touchend', (e: TouchEvent) => {
+        if (fingerModeRef.current === 'scroll' || penActive) {
+          e.stopPropagation();
+        }
+      }, true);
+      wrapper.addEventListener('touchcancel', (e: TouchEvent) => {
+        if (fingerModeRef.current === 'scroll' || penActive) {
+          e.stopPropagation();
+        }
       }, true);
 
-      upper.addEventListener('pointerup', (e: PointerEvent) => {
+      // ── mousedown: block synthesised mouse events from finger ─────────
+      // When touchstart isn't preventDefault'd the browser synthesises
+      // mousedown/mouseup/click after the touch ends — block these so
+      // Fabric doesn't draw a dot from finger taps.
+      wrapper.addEventListener('mousedown', (e: MouseEvent) => {
+        if (fingerTouchActive && (fingerModeRef.current === 'scroll' || penActive)) {
+          e.stopPropagation();
+          e.preventDefault();
+        }
+        // S Pen mousedown (fingerTouchActive === false): let through
+        // so Fabric's _onMouseDown fires and starts drawing.
+      }, true);
+
+      // ── pointermove: pen hover filtering ──────────────────────────────
+      // Prevent synthesised mousemove from pen hover reaching Fabric's
+      // document-level mousemove handler.
+      wrapper.addEventListener('pointermove', (e: PointerEvent) => {
+        if (e.pointerType === 'pen' && (e.pressure < PEN_PRESSURE_THRESHOLD || !penActive)) {
+          e.preventDefault();
+        }
+      }, true);
+
+      // ── pointerup: reset state ────────────────────────────────────────
+      wrapper.addEventListener('pointerup', (e: PointerEvent) => {
         if (e.pointerType === 'pen') {
-          // brief grace period — palm lift can lag behind pen lift
+          // Grace period — palm lift can lag behind pen lift
           setTimeout(() => { penActive = false; }, 120);
+        } else if (e.pointerType === 'touch') {
+          // Delay clearing to catch synthesised mousedown
+          setTimeout(() => { fingerTouchActive = false; }, 400);
         }
       }, true);
-      // Reset penActive if stylus leaves the canvas mid-stroke so
-      // subsequent touch events are not permanently blocked.
-      upper.addEventListener('pointerleave', (e: PointerEvent) => {
+      wrapper.addEventListener('pointerleave', (e: PointerEvent) => {
         if (e.pointerType === 'pen') penActive = false;
       }, true);
-      upper.addEventListener('pointercancel', () => { penActive = false; }, true);
+      wrapper.addEventListener('pointercancel', (e: PointerEvent) => {
+        if (e.pointerType === 'pen') penActive = false;
+        if (e.pointerType === 'touch') fingerTouchActive = false;
+      }, true);
     }
 
     fc.on('path:created', () => {
@@ -365,8 +403,11 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
       fabricCanvases.current.forEach((fc) => {
         if (!fc) return;
 
-        // Remove any existing eraser handler
-        fc.off('path:created', (fc as any).__eraserHandler);
+        // Remove any existing eraser handler — guard with truthy check
+        // because Fabric v5 Observable.off(event, falsy) removes ALL handlers!
+        if ((fc as any).__eraserHandler) {
+          fc.off('path:created', (fc as any).__eraserHandler);
+        }
         (fc as any).__eraserHandler = null;
 
         if (tool === 'eraser') {
@@ -422,7 +463,7 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
 
   // ─── Sync touchAction on Fabric elements when fingerMode changes ──────────
   useEffect(() => {
-    const ta = fingerMode === 'scroll' ? 'pan-x pan-y' : 'none';
+    const ta = fingerMode === 'scroll' ? 'manipulation' : 'none';
     fabricCanvases.current.forEach((fc) => {
       if (!fc) return;
       const setTA = (el: HTMLElement | undefined) => { if (el) el.style.touchAction = ta; };
@@ -783,7 +824,7 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
           background: 'radial-gradient(circle at center, #e8eaf0 0%, #d5d9e3 100%)',
           WebkitOverflowScrolling: 'touch',
           overscrollBehavior: 'contain',        // prevent pull-to-refresh / back-swipe
-          touchAction: 'pan-x pan-y',           // allow scroll, block pinch-zoom
+          touchAction: 'manipulation',           // allow scroll + pinch-zoom
         }}
       >
         {loadingPdf && (
@@ -820,7 +861,7 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
                   <div
                     ref={setPageWrapperRef(i)}
                     className="absolute inset-0"
-                    style={{ cursor: getCursor(i), touchAction: fingerMode === 'scroll' ? 'pan-x pan-y' : 'none' }}
+                    style={{ cursor: getCursor(i), touchAction: fingerMode === 'scroll' ? 'manipulation' : 'none' }}
                     onMouseDown={tool === 'ruler' ? (e) => {
                       rulerStart(i, e.clientX, e.clientY, (e.currentTarget as HTMLDivElement).getBoundingClientRect());
                     } : undefined}
@@ -886,7 +927,7 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
                         width: pdfPageWidthRef.current || 794,
                         height: Math.round((pdfPageWidthRef.current || 794) * 1.414), // A4 ratio
                         cursor: getCursor(fabricIndex),
-                        touchAction: fingerMode === 'scroll' ? 'pan-x pan-y' : 'none',
+                        touchAction: fingerMode === 'scroll' ? 'manipulation' : 'none',
                       }}
                       onMouseDown={tool === 'ruler' ? (e) => {
                         rulerStart(fabricIndex, e.clientX, e.clientY, (e.currentTarget as HTMLDivElement).getBoundingClientRect());
@@ -944,7 +985,7 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
             <div
               ref={setPageWrapperRef(0)}
               className="relative bg-white shadow-2xl rounded"
-              style={{ width: 800, height: 1100, cursor: getCursor(0), touchAction: fingerMode === 'scroll' ? 'pan-x pan-y' : 'none', userSelect: 'none', WebkitUserSelect: 'none', willChange: 'transform' }}
+              style={{ width: 800, height: 1100, cursor: getCursor(0), touchAction: fingerMode === 'scroll' ? 'manipulation' : 'none', userSelect: 'none', WebkitUserSelect: 'none', willChange: 'transform' }}
             />
           </div>
         )}
