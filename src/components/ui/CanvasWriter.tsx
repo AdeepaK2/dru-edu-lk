@@ -219,11 +219,9 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
     };
 
     canvas.addEventListener('pointerdown', (e: PointerEvent) => {
-      // Pen hover filter
-      if (e.pointerType === 'pen' && e.pressure < PEN_THRESHOLD) {
-        e.preventDefault();
-        return;
-      }
+      // pointerdown only fires on physical contact — hovering only generates
+      // pointermove.  No pressure filter here; light/quick taps can report
+      // very low pressure on the first event and must not be rejected.
       if (e.pointerType === 'pen') penActive = true;
 
       // Finger in scroll mode → don't draw (browser scrolls via touch-action)
@@ -301,8 +299,18 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
       commitStroke();
     });
 
+    // With setPointerCapture, pointerup fires on the capturing element even
+    // if the pointer leaves the canvas.  pointerleave should NOT commit
+    // because it can fire mid-stroke on some browsers/devices and truncate
+    // the drawing.  We use lostpointercapture as a safety net instead.
     canvas.addEventListener('pointerleave', (e: PointerEvent) => {
       if (e.pointerType === 'pen') penActive = false;
+      // Do NOT commitStroke here — let pointerup handle it
+    });
+
+    canvas.addEventListener('lostpointercapture', () => {
+      // Fallback: if capture was lost without pointerup (e.g. system gesture),
+      // commit any in-progress stroke so it's not silently discarded.
       commitStroke();
     });
 
