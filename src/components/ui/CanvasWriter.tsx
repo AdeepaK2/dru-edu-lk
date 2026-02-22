@@ -191,74 +191,76 @@ const CanvasWriter: React.FC<CanvasWriterProps> = ({
     stylusStyle((fc as any).lowerCanvasEl);
 
     // Palm rejection & S-Pen hover filtering ─────────────────────────────
-    // 1. Block finger/touch events while stylus is actively drawing.
-    // 2. Block pen hover events (pressure === 0) so Fabric doesn't start
-    //    drawing before the stylus physically touches the screen.
-    //    The S Pen (and other active styluses) emit pointermove with
-    //    pressure 0 while hovering — Fabric treats these as draw input.
-    const upper = (fc as any).upperCanvasEl as HTMLElement | undefined;
-    if (upper) {
+    // KEY: listeners go on fc.wrapperEl (the .canvas-container div that is the
+    // PARENT of upperCanvasEl), NOT on upperCanvasEl itself.
+    //
+    // DOM spec: at the TARGET element, all listeners fire in registration order
+    // regardless of capture/bubble flag.  Since Fabric registers its handlers on
+    // upperCanvasEl first (during construction), our handlers added afterwards
+    // would fire AFTER Fabric — too late to block it.
+    //
+    // A capture-phase listener on an ANCESTOR always fires before any listener
+    // on the child/target, so placing listeners here guarantees we intercept
+    // every event before Fabric sees it.  fc.wrapperEl also survives outer-div
+    // re-mounts (it's moved via appendChild), so the listeners stay alive.
+    const fabricWrapper = (fc as any).wrapperEl as HTMLElement | undefined;
+    if (fabricWrapper) {
       let penActive = false;
-      // Minimum pressure to accept a pen stroke — filters ghost contact
       const PEN_PRESSURE_THRESHOLD = 0.01;
 
-      const blockPalm = (e: PointerEvent) => {
-        if (e.pointerType === 'touch') {
-          if (fingerModeRef.current === 'scroll') {
-            // Scroll mode: prevent Fabric from drawing, but do NOT preventDefault
-            // so the browser can still scroll via touchAction: pan-x pan-y
-            e.stopImmediatePropagation();
-          } else if (penActive) {
-            // Draw mode: palm rejection — block touch while pen is active
-            e.stopImmediatePropagation();
-            e.preventDefault();
-          }
+      const blockTouch = (e: PointerEvent) => {
+        if (e.pointerType !== 'touch') return;
+        if (fingerModeRef.current === 'scroll') {
+          // Scroll mode: stop event reaching Fabric canvas (child element).
+          // stopPropagation (not stopImmediate) is enough — we only need to
+          // prevent the event travelling further down to upperCanvasEl.
+          // Do NOT call preventDefault so touch-action:pan-x pan-y can scroll.
+          e.stopPropagation();
+        } else if (penActive) {
+          // Draw mode palm rejection: block touch while stylus is active.
+          e.stopPropagation();
+          e.preventDefault();
         }
       };
 
-      // Block pen hover (pressure 0) on pointerdown — the pen is near
-      // the screen but not touching yet.
-      upper.addEventListener('pointerdown', (e: PointerEvent) => {
+      fabricWrapper.addEventListener('pointerdown', (e: PointerEvent) => {
         if (e.pointerType === 'pen') {
           if (e.pressure < PEN_PRESSURE_THRESHOLD) {
-            // Hover-triggered pointerdown — suppress so Fabric doesn't
-            // begin a stroke.
-            e.stopImmediatePropagation();
+            // Hover — suppress so Fabric doesn't begin a ghost stroke.
+            e.stopPropagation();
             e.preventDefault();
             return;
           }
           penActive = true;
         } else {
-          blockPalm(e);
+          blockTouch(e);
         }
-      }, true);
+      }, true); // capture phase — fires before any listener on upperCanvasEl
 
-      // Block pen pointermove when hovering (pressure 0) OR when
-      // penActive hasn't been set (pen moved before a valid pointerdown).
-      upper.addEventListener('pointermove', (e: PointerEvent) => {
+      fabricWrapper.addEventListener('pointermove', (e: PointerEvent) => {
         if (e.pointerType === 'pen') {
           if (e.pressure < PEN_PRESSURE_THRESHOLD || !penActive) {
-            e.stopImmediatePropagation();
+            e.stopPropagation();
             e.preventDefault();
             return;
           }
+        } else {
+          blockTouch(e);
         }
-        // Also apply palm rejection for touch events
-        blockPalm(e);
       }, true);
 
-      upper.addEventListener('pointerup', (e: PointerEvent) => {
+      fabricWrapper.addEventListener('pointerup', (e: PointerEvent) => {
         if (e.pointerType === 'pen') {
-          // brief grace period — palm lift can lag behind pen lift
+          // Brief grace period — palm lift can lag behind pen lift.
           setTimeout(() => { penActive = false; }, 120);
         }
       }, true);
-      // Reset penActive if stylus leaves the canvas mid-stroke so
-      // subsequent touch events are not permanently blocked.
-      upper.addEventListener('pointerleave', (e: PointerEvent) => {
+
+      // Reset penActive if stylus leaves canvas mid-stroke.
+      fabricWrapper.addEventListener('pointerleave', (e: PointerEvent) => {
         if (e.pointerType === 'pen') penActive = false;
       }, true);
-      upper.addEventListener('pointercancel', () => { penActive = false; }, true);
+      fabricWrapper.addEventListener('pointercancel', () => { penActive = false; }, true);
     }
 
     fc.on('path:created', () => {
