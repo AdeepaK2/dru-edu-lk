@@ -1,24 +1,22 @@
 'use client';
 
-import 'tldraw/tldraw.css';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
+import { Stage, Layer, Line, Image as KonvaImage, Rect } from 'react-konva';
+import Konva from 'konva';
 import {
-  Tldraw,
-  Editor,
-  createTLStore,
-  loadSnapshot,
-  getSnapshot,
-  AssetRecordType,
-  createShapeId,
-  type TLUiComponents,
-  type TLShapeId,
-  type TLAsset,
-} from 'tldraw';
-import * as pdfjsLib from 'pdfjs-dist';
-import { PDFDocument } from 'pdf-lib';
-import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+  Pen,
+  Eraser,
+  Undo2,
+  Redo2,
+  ChevronLeft,
+  ChevronRight,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+} from 'lucide-react';
+import { useCanvasWriter } from './useCanvasWriter';
 
-// Configure pdfjs worker (same path as PDFViewer.tsx)
-pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdfjs/pdf.worker.min.mjs';
+// ── Props (preserved exactly for all consumers) ──────────────────────────────
 
 interface CanvasWriterProps {
   pdfUrl?: string;
@@ -32,545 +30,142 @@ interface CanvasWriterProps {
   onRegisterSubmit?: (fn: () => void) => void;
 }
 
-const RENDER_SCALE = 2;
-const AUTO_SAVE_INTERVAL = 3000;
+// ── Color presets ────────────────────────────────────────────────────────────
 
-export default function CanvasWriter({
-  pdfUrl,
-  height,
-  className,
-  onSave,
-  onSavePdf,
-  autoSaveKey,
-  initialPageAnnotations,
-  onRegisterSubmit,
-}: CanvasWriterProps) {
-  const [pdfPageImages, setPdfPageImages] = useState<string[]>([]);
-  const [pdfPageDimensions, setPdfPageDimensions] = useState<{ w: number; h: number }[]>([]);
-  const [isLoading, setIsLoading] = useState(!!pdfUrl);
-  const [loadError, setLoadError] = useState<string | null>(null);
+const COLOR_PRESETS = ['#1a1a1a', '#ef4444', '#3b82f6', '#22c55e', '#f59e0b'];
 
-  const editorRef = useRef<Editor | null>(null);
-  const autoSaveTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const backgroundShapeIdsRef = useRef<Map<number, TLShapeId>>(new Map());
-  const pdfRawBytesRef = useRef<ArrayBuffer | null>(null);
-  const hasSetupRef = useRef(false);
-  const storeRef = useRef(createTLStore());
+// ── Component ────────────────────────────────────────────────────────────────
 
-  // ── Load tldraw snapshot from localStorage on mount ───────────────────
+export default function CanvasWriter(props: CanvasWriterProps) {
+  const { height, className } = props;
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const stageRef = useRef<Konva.Stage>(null);
+  const [containerSize, setContainerSize] = useState({ w: 0, h: 0 });
+
+  // ── Measure container ──────────────────────────────────────────────────
   useEffect(() => {
-    if (!autoSaveKey) return;
-    const savedJson = localStorage.getItem(`${autoSaveKey}_tldraw`);
-    if (savedJson) {
-      try {
-        const snapshot = JSON.parse(savedJson);
-        loadSnapshot(storeRef.current, snapshot);
-      } catch {
-        console.warn('[CanvasWriter] Could not parse saved tldraw snapshot');
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (!containerRef.current) return;
+    const ro = new ResizeObserver((entries) => {
+      const { width, height: h } = entries[0].contentRect;
+      setContainerSize({ w: width, h });
+    });
+    ro.observe(containerRef.current);
+    return () => ro.disconnect();
   }, []);
 
-  // ── Load PDF pages to images ──────────────────────────────────────────
-  useEffect(() => {
-    if (!pdfUrl) {
-      setIsLoading(false);
-      return;
-    }
-
-    let cancelled = false;
-    let loadingTask: pdfjsLib.PDFDocumentLoadingTask | null = null;
-
-    const loadPdf = async () => {
-      setIsLoading(true);
-      setLoadError(null);
-      try {
-        const proxyUrl = `/api/pdf?url=${encodeURIComponent(pdfUrl)}`;
-        const response = await fetch(proxyUrl);
-        if (!response.ok) throw new Error(`PDF fetch failed: ${response.status}`);
-        const arrayBuffer = await response.arrayBuffer();
-        if (cancelled) return;
-
-        pdfRawBytesRef.current = arrayBuffer;
-
-        loadingTask = pdfjsLib.getDocument({ data: arrayBuffer.slice(0) });
-        const pdf = await loadingTask.promise;
-        if (cancelled) return;
-
-        const numPages = pdf.numPages;
-        const images: string[] = [];
-        const dims: { w: number; h: number }[] = [];
-
-        for (let i = 1; i <= numPages; i++) {
-          const page = await pdf.getPage(i);
-          const viewport = page.getViewport({ scale: RENDER_SCALE });
-          const canvas = document.createElement('canvas');
-          canvas.width = viewport.width;
-          canvas.height = viewport.height;
-          const ctx = canvas.getContext('2d')!;
-          // pdfjs-dist v5 requires `canvas` in RenderParameters
-          await page.render({ canvasContext: ctx, viewport, canvas } as any).promise;
-          images.push(canvas.toDataURL('image/png'));
-          dims.push({ w: viewport.width, h: viewport.height });
-        }
-
-        if (!cancelled) {
-          setPdfPageImages(images);
-          setPdfPageDimensions(dims);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setLoadError(err instanceof Error ? err.message : 'Failed to load PDF');
-        }
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    };
-
-    loadPdf();
-
-    return () => {
-      cancelled = true;
-      loadingTask?.destroy();
-    };
-  }, [pdfUrl]);
-
-  // ── Setup tldraw pages with PDF backgrounds ──────────────────────────
-  const setupPdfPages = useCallback(
-    (editor: Editor) => {
-      if (pdfPageImages.length === 0) return;
-
-      editor.run(
-        () => {
-          const existingPages = editor.getPages();
-
-          // Rename first page
-          editor.renamePage(existingPages[0].id, 'Page 1');
-
-          // Create additional pages
-          for (let i = 1; i < pdfPageImages.length; i++) {
-            editor.createPage({ name: `Page ${i + 1}` });
-          }
-
-          const allPages = editor.getPages();
-
-          for (let i = 0; i < pdfPageImages.length; i++) {
-            editor.setCurrentPage(allPages[i].id);
-
-            const { w, h } = pdfPageDimensions[i];
-            const assetId = AssetRecordType.createId();
-            const shapeId = createShapeId(`bg-page-${i}`);
-
-            const asset: TLAsset = AssetRecordType.create({
-              id: assetId,
-              type: 'image',
-              props: {
-                name: `page-${i + 1}.png`,
-                src: pdfPageImages[i],
-                w,
-                h,
-                mimeType: 'image/png',
-                isAnimated: false,
-              },
-            });
-
-            editor.createAssets([asset]);
-
-            editor.createShape({
-              id: shapeId,
-              type: 'image',
-              x: 0,
-              y: 0,
-              isLocked: true,
-              props: { assetId, w, h },
-            });
-
-            backgroundShapeIdsRef.current.set(i, shapeId);
-            editor.sendToBack([shapeId]);
-          }
-
-          // Return to page 1
-          editor.setCurrentPage(allPages[0].id);
-        },
-        { history: 'ignore' }
-      );
-    },
-    [pdfPageImages, pdfPageDimensions]
-  );
-
-  // ── Import legacy annotations as image shapes ─────────────────────────
-  const importLegacyAnnotations = useCallback(
-    (editor: Editor) => {
-      if (!initialPageAnnotations || Object.keys(initialPageAnnotations).length === 0) return;
-
-      const pages = editor.getPages();
-
-      editor.run(
-        () => {
-          for (const [pageNumStr, dataUrl] of Object.entries(initialPageAnnotations)) {
-            const pageIdx = parseInt(pageNumStr) - 1;
-            if (pageIdx < 0 || pageIdx >= pages.length) continue;
-            if (!dataUrl) continue;
-
-            editor.setCurrentPage(pages[pageIdx].id);
-
-            const { w, h } = pdfPageDimensions[pageIdx] ?? { w: 800, h: 1100 };
-            const assetId = AssetRecordType.createId();
-            const shapeId = createShapeId(`legacy-ann-${pageIdx}`);
-
-            const asset: TLAsset = AssetRecordType.create({
-              id: assetId,
-              type: 'image',
-              props: {
-                name: `annotation-page-${pageIdx + 1}.png`,
-                src: dataUrl,
-                w,
-                h,
-                mimeType: 'image/png',
-                isAnimated: false,
-              },
-            });
-
-            editor.createAssets([asset]);
-
-            editor.createShape({
-              id: shapeId,
-              type: 'image',
-              x: 0,
-              y: 0,
-              props: { assetId, w, h },
-            });
-          }
-
-          editor.setCurrentPage(pages[0].id);
-        },
-        { history: 'ignore' }
-      );
-    },
-    [initialPageAnnotations, pdfPageDimensions]
-  );
-
-  // ── Export annotation shapes per page as PNG data URLs ─────────────────
-  const exportAnnotationsPerPage = useCallback(
-    async (editor: Editor): Promise<Record<number, string>> => {
-      const result: Record<number, string> = {};
-      const pages = editor.getPages();
-      const currentPageId = editor.getCurrentPageId();
-
-      for (let i = 0; i < pages.length; i++) {
-        editor.setCurrentPage(pages[i].id);
-
-        const allShapeIds = [...editor.getCurrentPageShapeIds()];
-        const bgShapeId = backgroundShapeIdsRef.current.get(i);
-        const annotationIds = allShapeIds.filter((id) => id !== bgShapeId);
-
-        if (annotationIds.length === 0) continue;
-
-        try {
-          const { url } = await editor.toImageDataUrl(annotationIds, {
-            format: 'png',
-            background: false,
-            padding: 0,
-          });
-          result[i + 1] = url;
-        } catch {
-          // Skip pages that fail to export
-        }
-      }
-
-      editor.setCurrentPage(currentPageId);
-      return result;
-    },
-    []
-  );
-
-  // ── PDF export ────────────────────────────────────────────────────────
-  const handleSubmitPdf = useCallback(async () => {
-    const editor = editorRef.current;
-    if (!editor) return;
-
-    try {
-      if (pdfUrl && pdfRawBytesRef.current) {
-        // PDF overlay mode — merge annotations onto original PDF
-        const pdfDoc = await PDFDocument.load(pdfRawBytesRef.current);
-        const pdfPages = pdfDoc.getPages();
-        const tldrawPages = editor.getPages();
-        const currentPageId = editor.getCurrentPageId();
-
-        for (let i = 0; i < Math.min(pdfPages.length, tldrawPages.length); i++) {
-          editor.setCurrentPage(tldrawPages[i].id);
-
-          const allShapeIds = [...editor.getCurrentPageShapeIds()];
-          const bgShapeId = backgroundShapeIdsRef.current.get(i);
-          const annotationIds = allShapeIds.filter((id) => id !== bgShapeId);
-
-          if (annotationIds.length === 0) continue;
-
-          const { blob } = await editor.toImage(annotationIds, {
-            format: 'png',
-            background: false,
-            padding: 0,
-          });
-          const pngBytes = new Uint8Array(await blob.arrayBuffer());
-
-          const embeddedImage = await pdfDoc.embedPng(pngBytes);
-          const pdfPage = pdfPages[i];
-          const { width: pw, height: ph } = pdfPage.getSize();
-
-          pdfPage.drawImage(embeddedImage, { x: 0, y: 0, width: pw, height: ph });
-        }
-
-        editor.setCurrentPage(currentPageId);
-
-        const pdfBytes = await pdfDoc.save();
-        const file = new File([pdfBytes as BlobPart], 'annotated-answer.pdf', { type: 'application/pdf' });
-        onSavePdf?.(file);
-      } else {
-        // Plain canvas mode — create PDF from scratch
-        const allShapeIds = [...editor.getCurrentPageShapeIds()];
-        if (allShapeIds.length === 0) return;
-
-        const { blob } = await editor.toImage(allShapeIds, {
-          format: 'png',
-          background: true,
-          padding: 0,
-        });
-
-        const pdfDoc = await PDFDocument.create();
-        const pngBytes = new Uint8Array(await blob.arrayBuffer());
-        const img = await pdfDoc.embedPng(pngBytes);
-        const { width, height: imgHeight } = img;
-        const pdfPage = pdfDoc.addPage([width, imgHeight]);
-        pdfPage.drawImage(img, { x: 0, y: 0, width, height: imgHeight });
-
-        const pdfBytes = await pdfDoc.save();
-        const file = new File([pdfBytes as BlobPart], 'canvas-answer.pdf', { type: 'application/pdf' });
-        onSavePdf?.(file);
-      }
-    } catch (err) {
-      console.error('[CanvasWriter] PDF export failed:', err);
-    }
-  }, [pdfUrl, onSavePdf]);
-
-  // ── Auto-save ─────────────────────────────────────────────────────────
-  const startAutoSave = useCallback(
-    (editor: Editor) => {
-      if (autoSaveTimerRef.current) clearInterval(autoSaveTimerRef.current);
-
-      autoSaveTimerRef.current = setInterval(async () => {
-        // Save tldraw snapshot to localStorage (strip large base64 image assets)
-        if (autoSaveKey) {
-          try {
-            const snapshot = getSnapshot(editor.store);
-            const stripped = JSON.parse(JSON.stringify(snapshot));
-            // Remove base64 src from image assets to avoid localStorage quota issues
-            // document.store is { [recordId]: record }
-            const store = stripped?.document?.store;
-            if (store && typeof store === 'object') {
-              for (const key of Object.keys(store)) {
-                const rec = store[key];
-                if (rec?.typeName === 'asset' && rec?.props?.src?.startsWith('data:')) {
-                  rec.props.src = '';
-                }
-              }
-            }
-            localStorage.setItem(`${autoSaveKey}_tldraw`, JSON.stringify(stripped));
-          } catch (e) {
-            console.warn('[CanvasWriter] localStorage save failed', e);
-          }
-        }
-
-        // Export annotations and call onSave
-        if (onSave) {
-          try {
-            const strokePages = await exportAnnotationsPerPage(editor);
-            onSave(strokePages);
-          } catch (e) {
-            console.warn('[CanvasWriter] onSave export failed', e);
-          }
-        }
-      }, AUTO_SAVE_INTERVAL);
-    },
-    [autoSaveKey, onSave, exportAnnotationsPerPage]
-  );
-
-  // Cleanup auto-save on unmount
-  useEffect(() => {
-    return () => {
-      if (autoSaveTimerRef.current) clearInterval(autoSaveTimerRef.current);
-    };
-  }, []);
-
-  // ── Setup backgrounds after PDF images are ready ──────────────────────
-  useEffect(() => {
-    if (!editorRef.current) return;
-    if (pdfUrl && pdfPageImages.length === 0) return;
-    if (hasSetupRef.current) return;
-    hasSetupRef.current = true;
-
-    const editor = editorRef.current;
-
-    // Check if we already loaded a tldraw snapshot
-    const hasTldrawSnapshot = autoSaveKey && localStorage.getItem(`${autoSaveKey}_tldraw`);
-
-    if (pdfUrl && pdfPageImages.length > 0) {
-      if (hasTldrawSnapshot) {
-        // Snapshot restored page structure; just re-inject backgrounds
-        injectBackgroundsOnly(editor, pdfPageImages, pdfPageDimensions);
-      } else {
-        setupPdfPages(editor);
-        importLegacyAnnotations(editor);
-      }
-    }
-
-    // Start auto-save
-    if (onSave || autoSaveKey) {
-      startAutoSave(editor);
-    }
-  }, [
-    pdfUrl,
+  // ── Hook ───────────────────────────────────────────────────────────────
+  const {
     pdfPageImages,
-    pdfPageDimensions,
-    autoSaveKey,
-    onSave,
-    setupPdfPages,
-    importLegacyAnnotations,
-    startAutoSave,
-  ]);
+    isLoading,
+    loadError,
+    numPages,
+    getPageSize,
+    currentPage,
+    setCurrentPage,
+    pageLines,
+    activeTool,
+    setActiveTool,
+    strokeColor,
+    setStrokeColor,
+    strokeWidth,
+    setStrokeWidth,
+    draftImages,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    stageScale,
+    stagePos,
+    setStagePos,
+    zoomIn,
+    zoomOut,
+    resetZoom,
+    zoomTo,
+    handlePointerDown,
+    handlePointerMove,
+    handlePointerUp,
+    handleTouchStart,
+    handleTouchEnd,
+  } = useCanvasWriter({ ...props, stageRef, containerSize });
 
-  // ── Inject backgrounds into existing snapshot pages ───────────────────
-  function injectBackgroundsOnly(
-    editor: Editor,
-    pageImages: string[],
-    dims: { w: number; h: number }[]
-  ) {
-    const pages = editor.getPages();
+  // ── Pinch-to-zoom ─────────────────────────────────────────────────────
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    const content = stage.getContent();
+    if (!content) return;
 
-    editor.run(
-      () => {
-        for (let i = 0; i < Math.min(pages.length, pageImages.length); i++) {
-          editor.setCurrentPage(pages[i].id);
+    let lastDist = 0;
+    let lastCenter = { x: 0, y: 0 };
 
-          const shapeId = createShapeId(`bg-page-${i}`);
-          // Remove old background if exists
-          const existing = editor.getShape(shapeId);
-          if (existing) {
-            editor.deleteShape(shapeId);
-          }
+    const onPinch = (e: TouchEvent) => {
+      if (e.touches.length < 2) return;
+      e.preventDefault();
 
-          const { w, h } = dims[i];
-          const assetId = AssetRecordType.createId();
+      const t1 = e.touches[0];
+      const t2 = e.touches[1];
+      const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+      const center = {
+        x: (t1.clientX + t2.clientX) / 2,
+        y: (t1.clientY + t2.clientY) / 2,
+      };
 
-          const asset: TLAsset = AssetRecordType.create({
-            id: assetId,
-            type: 'image',
-            props: {
-              name: `page-${i + 1}.png`,
-              src: pageImages[i],
-              w,
-              h,
-              mimeType: 'image/png',
-              isAnimated: false,
-            },
-          });
-
-          editor.createAssets([asset]);
-
-          editor.createShape({
-            id: shapeId,
-            type: 'image',
-            x: 0,
-            y: 0,
-            isLocked: true,
-            props: { assetId, w, h },
-          });
-
-          backgroundShapeIdsRef.current.set(i, shapeId);
-          editor.sendToBack([shapeId]);
-        }
-
-        editor.setCurrentPage(pages[0].id);
-      },
-      { history: 'ignore' }
-    );
-  }
-
-  // ── Editor mount handler ──────────────────────────────────────────────
-  const handleMount = useCallback(
-    (editor: Editor) => {
-      editorRef.current = editor;
-
-      // Register submit callback for parent
-      if (onRegisterSubmit) {
-        onRegisterSubmit(() => handleSubmitPdf());
+      if (lastDist > 0) {
+        const ratio = dist / lastDist;
+        const newScale = Math.min(5, Math.max(0.3, stageScale * ratio));
+        zoomTo(newScale, center);
       }
 
-      // If PDF is already loaded (or no PDF), run setup immediately
-      if (!pdfUrl || pdfPageImages.length > 0) {
-        if (!hasSetupRef.current) {
-          hasSetupRef.current = true;
+      lastDist = dist;
+      lastCenter = center;
+    };
 
-          const hasTldrawSnapshot = autoSaveKey && localStorage.getItem(`${autoSaveKey}_tldraw`);
+    const onPinchEnd = () => {
+      lastDist = 0;
+    };
 
-          if (pdfUrl && pdfPageImages.length > 0) {
-            if (hasTldrawSnapshot) {
-              injectBackgroundsOnly(editor, pdfPageImages, pdfPageDimensions);
-            } else {
-              setupPdfPages(editor);
-              importLegacyAnnotations(editor);
-            }
-          }
+    content.addEventListener('touchmove', onPinch, { passive: false });
+    content.addEventListener('touchend', onPinchEnd);
+    return () => {
+      content.removeEventListener('touchmove', onPinch);
+      content.removeEventListener('touchend', onPinchEnd);
+    };
+  }, [stageScale, zoomTo]);
 
-          if (onSave || autoSaveKey) {
-            startAutoSave(editor);
-          }
-        }
-      }
+  // ── Mouse wheel zoom ──────────────────────────────────────────────────
+  const handleWheel = useCallback(
+    (e: Konva.KonvaEventObject<WheelEvent>) => {
+      e.evt.preventDefault();
+      const scaleBy = 1.08;
+      const stage = stageRef.current;
+      if (!stage) return;
+      const pointer = stage.getPointerPosition();
+      if (!pointer) return;
+
+      const direction = e.evt.deltaY > 0 ? -1 : 1;
+      const newScale = direction > 0 ? stageScale * scaleBy : stageScale / scaleBy;
+      zoomTo(newScale, pointer);
     },
-    [
-      pdfUrl,
-      pdfPageImages,
-      pdfPageDimensions,
-      autoSaveKey,
-      onSave,
-      onRegisterSubmit,
-      handleSubmitPdf,
-      setupPdfPages,
-      importLegacyAnnotations,
-      startAutoSave,
-    ]
+    [stageScale, zoomTo]
   );
 
-  // ── Custom UI components ──────────────────────────────────────────────
-  const components: TLUiComponents = useMemo(
-    () => ({
-      HelpMenu: null,
-      DebugMenu: null,
-      SharePanel: onSavePdf
-        ? () => (
-            <button
-              onClick={handleSubmitPdf}
-              style={{
-                padding: '6px 14px',
-                background: '#16a34a',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                fontSize: '13px',
-              }}
-            >
-              Submit Answer
-            </button>
-          )
-        : undefined,
-    }),
-    [onSavePdf, handleSubmitPdf]
+  // ── Stage drag end → update position ──────────────────────────────────
+  const handleDragEnd = useCallback(
+    (e: Konva.KonvaEventObject<DragEvent>) => {
+      setStagePos(e.target.position());
+    },
+    [setStagePos]
   );
 
-  // ── Render ────────────────────────────────────────────────────────────
+  // ── Current page data ─────────────────────────────────────────────────
+  const pageNum = currentPage + 1; // 1-based
+  const currentLines = pageLines[pageNum] || [];
+  const bgImage = pdfPageImages[currentPage] || null;
+  const draftImage = draftImages[pageNum] || null;
+  const pageSize = getPageSize(currentPage);
+
+  // ── Loading / error states ────────────────────────────────────────────
   if (isLoading) {
     return (
       <div
@@ -603,14 +198,234 @@ export default function CanvasWriter({
         width: '100%',
         height: height || '100%',
         minHeight: height || 600,
+        display: 'flex',
+        flexDirection: 'column',
         position: 'relative',
       }}
     >
-      <Tldraw
-        store={storeRef.current}
-        onMount={handleMount}
-        components={components}
-      />
+      {/* ── Toolbar ─────────────────────────────────────────────────────── */}
+      <div className="flex items-center gap-1.5 px-3 py-2 bg-gray-900 text-white overflow-x-auto shrink-0 select-none">
+        {/* Tool: Pen */}
+        <button
+          onClick={() => setActiveTool('pen')}
+          className={`p-2 rounded transition-colors ${
+            activeTool === 'pen' ? 'bg-blue-600' : 'hover:bg-gray-700'
+          }`}
+          title="Pen"
+        >
+          <Pen size={16} />
+        </button>
+        {/* Tool: Eraser */}
+        <button
+          onClick={() => setActiveTool('eraser')}
+          className={`p-2 rounded transition-colors ${
+            activeTool === 'eraser' ? 'bg-blue-600' : 'hover:bg-gray-700'
+          }`}
+          title="Eraser"
+        >
+          <Eraser size={16} />
+        </button>
+
+        <div className="w-px h-6 bg-gray-600 mx-1" />
+
+        {/* Color presets */}
+        {COLOR_PRESETS.map((c) => (
+          <button
+            key={c}
+            onClick={() => {
+              setStrokeColor(c);
+              setActiveTool('pen');
+            }}
+            style={{ background: c }}
+            className={`w-6 h-6 rounded-full border-2 shrink-0 transition-all ${
+              strokeColor === c && activeTool === 'pen'
+                ? 'border-white scale-110'
+                : 'border-transparent hover:border-gray-400'
+            }`}
+          />
+        ))}
+        <input
+          type="color"
+          value={strokeColor}
+          onChange={(e) => {
+            setStrokeColor(e.target.value);
+            setActiveTool('pen');
+          }}
+          className="w-6 h-6 rounded cursor-pointer border-0 bg-transparent shrink-0"
+          title="Custom color"
+        />
+
+        <div className="w-px h-6 bg-gray-600 mx-1" />
+
+        {/* Stroke width */}
+        <input
+          type="range"
+          min={1}
+          max={24}
+          value={strokeWidth}
+          onChange={(e) => setStrokeWidth(Number(e.target.value))}
+          className="w-20 shrink-0 accent-blue-500"
+          title={`Stroke: ${strokeWidth}px`}
+        />
+        <span className="text-[10px] text-gray-400 w-6 text-center shrink-0">
+          {strokeWidth}
+        </span>
+
+        <div className="w-px h-6 bg-gray-600 mx-1" />
+
+        {/* Undo / Redo */}
+        <button
+          onClick={undo}
+          disabled={!canUndo}
+          className="p-2 rounded hover:bg-gray-700 disabled:opacity-30 transition-colors"
+          title="Undo"
+        >
+          <Undo2 size={16} />
+        </button>
+        <button
+          onClick={redo}
+          disabled={!canRedo}
+          className="p-2 rounded hover:bg-gray-700 disabled:opacity-30 transition-colors"
+          title="Redo"
+        >
+          <Redo2 size={16} />
+        </button>
+
+        {/* Page navigation */}
+        {numPages > 1 && (
+          <>
+            <div className="w-px h-6 bg-gray-600 mx-1" />
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
+              disabled={currentPage === 0}
+              className="p-1.5 rounded hover:bg-gray-700 disabled:opacity-30 transition-colors"
+              title="Previous page"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <span className="text-xs font-medium w-12 text-center shrink-0">
+              {currentPage + 1} / {numPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(numPages - 1, p + 1))}
+              disabled={currentPage === numPages - 1}
+              className="p-1.5 rounded hover:bg-gray-700 disabled:opacity-30 transition-colors"
+              title="Next page"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </>
+        )}
+
+        <div className="w-px h-6 bg-gray-600 mx-1" />
+
+        {/* Zoom */}
+        <button
+          onClick={zoomOut}
+          className="p-2 rounded hover:bg-gray-700 transition-colors"
+          title="Zoom out"
+        >
+          <ZoomOut size={16} />
+        </button>
+        <span className="text-xs w-10 text-center shrink-0">
+          {Math.round(stageScale * 100)}%
+        </span>
+        <button
+          onClick={zoomIn}
+          className="p-2 rounded hover:bg-gray-700 transition-colors"
+          title="Zoom in"
+        >
+          <ZoomIn size={16} />
+        </button>
+        <button
+          onClick={resetZoom}
+          className="p-2 rounded hover:bg-gray-700 transition-colors"
+          title="Reset zoom"
+        >
+          <RotateCcw size={14} />
+        </button>
+      </div>
+
+      {/* ── Stage container ─────────────────────────────────────────────── */}
+      <div
+        ref={containerRef}
+        className="flex-1 overflow-hidden bg-gray-200 relative"
+        style={{ touchAction: 'none' }}
+      >
+        {containerSize.w > 0 && containerSize.h > 0 && (
+          <Stage
+            ref={stageRef}
+            width={containerSize.w}
+            height={containerSize.h}
+            scaleX={stageScale}
+            scaleY={stageScale}
+            x={stagePos.x}
+            y={stagePos.y}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+            onWheel={handleWheel}
+            onDragEnd={handleDragEnd}
+          >
+            {/* Background layer */}
+            <Layer listening={false}>
+              {bgImage ? (
+                <KonvaImage
+                  image={bgImage}
+                  x={0}
+                  y={0}
+                  width={pageSize.w}
+                  height={pageSize.h}
+                />
+              ) : (
+                <Rect
+                  x={0}
+                  y={0}
+                  width={pageSize.w}
+                  height={pageSize.h}
+                  fill="white"
+                  shadowColor="#00000020"
+                  shadowBlur={10}
+                  shadowOffsetY={2}
+                />
+              )}
+            </Layer>
+
+            {/* Draft annotation layer */}
+            {draftImage && (
+              <Layer listening={false}>
+                <KonvaImage
+                  image={draftImage}
+                  x={0}
+                  y={0}
+                  width={pageSize.w}
+                  height={pageSize.h}
+                />
+              </Layer>
+            )}
+
+            {/* Drawing layer */}
+            <Layer>
+              {currentLines.map((line, i) => (
+                <Line
+                  key={i}
+                  points={line.points}
+                  stroke={line.tool === 'eraser' ? '#ffffff' : line.color}
+                  strokeWidth={line.strokeWidth}
+                  tension={0.5}
+                  lineCap="round"
+                  lineJoin="round"
+                  globalCompositeOperation={
+                    line.tool === 'eraser' ? 'destination-out' : 'source-over'
+                  }
+                />
+              ))}
+            </Layer>
+          </Stage>
+        )}
+      </div>
     </div>
   );
 }
