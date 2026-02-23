@@ -359,12 +359,22 @@ export default function CanvasWriter({
       if (autoSaveTimerRef.current) clearInterval(autoSaveTimerRef.current);
 
       autoSaveTimerRef.current = setInterval(async () => {
-        // Save tldraw snapshot to localStorage
+        // Save tldraw snapshot to localStorage (strip large base64 image assets)
         if (autoSaveKey) {
           try {
             const snapshot = getSnapshot(editor.store);
-            // Strip background image asset srcs to save space
             const stripped = JSON.parse(JSON.stringify(snapshot));
+            // Remove base64 src from image assets to avoid localStorage quota issues
+            // document.store is { [recordId]: record }
+            const store = stripped?.document?.store;
+            if (store && typeof store === 'object') {
+              for (const key of Object.keys(store)) {
+                const rec = store[key];
+                if (rec?.typeName === 'asset' && rec?.props?.src?.startsWith('data:')) {
+                  rec.props.src = '';
+                }
+              }
+            }
             localStorage.setItem(`${autoSaveKey}_tldraw`, JSON.stringify(stripped));
           } catch (e) {
             console.warn('[CanvasWriter] localStorage save failed', e);
@@ -589,7 +599,12 @@ export default function CanvasWriter({
   return (
     <div
       className={className}
-      style={{ width: '100%', height: height || '100%', position: 'relative' }}
+      style={{
+        width: '100%',
+        height: height || '100%',
+        minHeight: height || 600,
+        position: 'relative',
+      }}
     >
       <Tldraw
         store={storeRef.current}
