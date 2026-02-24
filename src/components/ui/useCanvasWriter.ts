@@ -264,6 +264,7 @@ export function useCanvasWriter({
   // ── Pointer handlers ─────────────────────────────────────────────────────
   const handlePointerDown = useCallback(
     (e: KonvaEventObject<PointerEvent>) => {
+      e.evt.preventDefault();
       const pointerType = e.evt.pointerType;
       // Touch → pan/zoom only, don't draw
       if (pointerType === 'touch') return;
@@ -283,9 +284,10 @@ export function useCanvasWriter({
       };
 
       const page = currentPage + 1;
+      const newLine = { ...currentLineRef.current };
       setPageLines((prev) => ({
         ...prev,
-        [page]: [...(prev[page] || []), currentLineRef.current!],
+        [page]: [...(prev[page] || []), newLine],
       }));
     },
     [stageRef, strokeColor, strokeWidth, activeTool, currentPage]
@@ -293,6 +295,7 @@ export function useCanvasWriter({
 
   const handlePointerMove = useCallback(
     (e: KonvaEventObject<PointerEvent>) => {
+      e.evt.preventDefault();
       if (!isDrawingRef.current || !currentLineRef.current) return;
       if (e.evt.pointerType === 'touch') return;
 
@@ -309,9 +312,10 @@ export function useCanvasWriter({
       ];
 
       const page = currentPage + 1;
+      const updatedLine = { ...currentLineRef.current };
       setPageLines((prev) => {
         const lines = [...(prev[page] || [])];
-        lines[lines.length - 1] = { ...currentLineRef.current! };
+        lines[lines.length - 1] = updatedLine;
         return { ...prev, [page]: lines };
       });
     },
@@ -320,6 +324,7 @@ export function useCanvasWriter({
 
   const handlePointerUp = useCallback(
     (e: KonvaEventObject<PointerEvent>) => {
+      e.evt.preventDefault();
       if (!isDrawingRef.current) return;
       if (e.evt.pointerType === 'touch') return;
 
