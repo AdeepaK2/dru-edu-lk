@@ -174,31 +174,8 @@ export default function CanvasWriter(props: CanvasWriterProps) {
   const draftImage = draftImages[pageNum] || null;
   const pageSize = getPageSize(currentPage);
 
-  // ── Loading / error states ────────────────────────────────────────────
-  if (isLoading) {
-    return (
-      <div
-        className={`flex items-center justify-center ${className || ''}`}
-        style={{ height: height || 600 }}
-      >
-        <div className="flex flex-col items-center gap-2">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
-          <p className="text-sm text-gray-500">Loading PDF...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (loadError) {
-    return (
-      <div
-        className={`flex items-center justify-center ${className || ''}`}
-        style={{ height: height || 600 }}
-      >
-        <p className="text-red-600 text-sm">{loadError}</p>
-      </div>
-    );
-  }
+  // Ready to show the canvas (not loading, no error, container measured)
+  const stageReady = !isLoading && !loadError && containerSize.w > 0 && containerSize.h > 0;
 
   return (
     <div
@@ -212,7 +189,7 @@ export default function CanvasWriter(props: CanvasWriterProps) {
         position: 'relative',
       }}
     >
-      {/* ── Toolbar ─────────────────────────────────────────────────────── */}
+      {/* ── Toolbar (always visible) ────────────────────────────────────── */}
       <div className="flex items-center gap-1.5 px-3 py-2 bg-gray-900 text-white overflow-x-auto shrink-0 select-none">
         {/* Tool: Pen */}
         <button
@@ -355,13 +332,31 @@ export default function CanvasWriter(props: CanvasWriterProps) {
         </button>
       </div>
 
-      {/* ── Stage container ─────────────────────────────────────────────── */}
+      {/* ── Stage container (ALWAYS mounted so ResizeObserver can measure it) */}
       <div
         ref={containerRef}
         className="flex-1 overflow-hidden bg-gray-200 relative"
         style={{ touchAction: 'none' }}
       >
-        {containerSize.w > 0 && containerSize.h > 0 && (
+        {/* Loading overlay */}
+        {isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center z-10 bg-gray-200">
+            <div className="flex flex-col items-center gap-2">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+              <p className="text-sm text-gray-500">Loading PDF...</p>
+            </div>
+          </div>
+        )}
+
+        {/* Error overlay */}
+        {loadError && (
+          <div className="absolute inset-0 flex items-center justify-center z-10 bg-gray-200">
+            <p className="text-red-600 text-sm">{loadError}</p>
+          </div>
+        )}
+
+        {/* Konva Stage */}
+        {stageReady && (
           <Stage
             ref={stageRef}
             width={containerSize.w}
