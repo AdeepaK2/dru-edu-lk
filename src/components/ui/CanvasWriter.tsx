@@ -91,65 +91,7 @@ export default function CanvasWriter(props: CanvasWriterProps) {
     handleTouchEnd,
   } = useCanvasWriter({ ...props, stageRef, containerSize });
 
-  // ── Pinch-to-zoom and Pan (stable — reads refs, no dependency churn) ───
-  useEffect(() => {
-    const stage = stageRef.current;
-    if (!stage) return;
-    const content = stage.getContent();
-    if (!content) return;
 
-    let lastDist = 0;
-    let lastCenter: { x: number; y: number } | null = null;
-
-    const onPinch = (e: TouchEvent) => {
-      if (e.touches.length < 2) return;
-      e.preventDefault();
-
-      const t1 = e.touches[0];
-      const t2 = e.touches[1];
-      const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
-
-      // Center must be relative to the container, not the viewport
-      const rect = content.getBoundingClientRect();
-      const center = {
-        x: (t1.clientX + t2.clientX) / 2 - rect.left,
-        y: (t1.clientY + t2.clientY) / 2 - rect.top,
-      };
-
-      if (lastCenter) {
-        // Calculate panning change
-        const dx = center.x - lastCenter.x;
-        const dy = center.y - lastCenter.y;
-        panBy(dx, dy);
-      }
-
-      if (lastDist > 0) {
-        // Calculate zooming change
-        const ratio = dist / lastDist;
-        const s = stageRef.current;
-        if (s) {
-          const currentScale = s.scaleX();
-          const newScale = Math.min(5, Math.max(0.3, currentScale * ratio));
-          zoomTo(newScale, center);
-        }
-      }
-
-      lastDist = dist;
-      lastCenter = center;
-    };
-
-    const onPinchEnd = () => {
-      lastDist = 0;
-      lastCenter = null;
-    };
-
-    content.addEventListener('touchmove', onPinch, { passive: false });
-    content.addEventListener('touchend', onPinchEnd);
-    return () => {
-      content.removeEventListener('touchmove', onPinch);
-      content.removeEventListener('touchend', onPinchEnd);
-    };
-  }, [zoomTo, panBy]);
 
   // ── Mouse wheel zoom ──────────────────────────────────────────────────
   const handleWheel = useCallback(
