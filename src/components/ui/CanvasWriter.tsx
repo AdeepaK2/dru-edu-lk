@@ -78,6 +78,7 @@ export default function CanvasWriter(props: CanvasWriterProps) {
     stageScale,
     stagePos,
     setStagePos,
+    isDraggable,
     zoomIn,
     zoomOut,
     resetZoom,
@@ -89,7 +90,7 @@ export default function CanvasWriter(props: CanvasWriterProps) {
     handleTouchEnd,
   } = useCanvasWriter({ ...props, stageRef, containerSize });
 
-  // ── Pinch-to-zoom ─────────────────────────────────────────────────────
+  // ── Pinch-to-zoom (stable — reads refs, no dependency churn) ───────────
   useEffect(() => {
     const stage = stageRef.current;
     if (!stage) return;
@@ -97,7 +98,6 @@ export default function CanvasWriter(props: CanvasWriterProps) {
     if (!content) return;
 
     let lastDist = 0;
-    let lastCenter = { x: 0, y: 0 };
 
     const onPinch = (e: TouchEvent) => {
       if (e.touches.length < 2) return;
@@ -113,12 +113,16 @@ export default function CanvasWriter(props: CanvasWriterProps) {
 
       if (lastDist > 0) {
         const ratio = dist / lastDist;
-        const newScale = Math.min(5, Math.max(0.3, stageScale * ratio));
-        zoomTo(newScale, center);
+        // zoomTo reads scaleRef/posRef internally, so no stale closure issue
+        const stage = stageRef.current;
+        if (stage) {
+          const currentScale = stage.scaleX();
+          const newScale = Math.min(5, Math.max(0.3, currentScale * ratio));
+          zoomTo(newScale, center);
+        }
       }
 
       lastDist = dist;
-      lastCenter = center;
     };
 
     const onPinchEnd = () => {
@@ -131,7 +135,8 @@ export default function CanvasWriter(props: CanvasWriterProps) {
       content.removeEventListener('touchmove', onPinch);
       content.removeEventListener('touchend', onPinchEnd);
     };
-  }, [stageScale, zoomTo]);
+    // zoomTo is stable (uses refs), so this effect only runs once on mount
+  }, [zoomTo]);
 
   // ── Mouse wheel zoom ──────────────────────────────────────────────────
   const handleWheel = useCallback(
@@ -143,23 +148,27 @@ export default function CanvasWriter(props: CanvasWriterProps) {
       const pointer = stage.getPointerPosition();
       if (!pointer) return;
 
+      const currentScale = stage.scaleX();
       const direction = e.evt.deltaY > 0 ? -1 : 1;
-      const newScale = direction > 0 ? stageScale * scaleBy : stageScale / scaleBy;
+      const newScale = direction > 0 ? currentScale * scaleBy : currentScale / scaleBy;
       zoomTo(newScale, pointer);
     },
-    [stageScale, zoomTo]
+    [zoomTo]
   );
 
-  // ── Stage drag end → update position ──────────────────────────────────
+  // ── Stage drag end → update position state to stay in sync ─────────────
   const handleDragEnd = useCallback(
     (e: Konva.KonvaEventObject<DragEvent>) => {
-      setStagePos(e.target.position());
+      // Only update if the drag target is the stage itself (not a child shape)
+      if (e.target === stageRef.current) {
+        setStagePos(e.target.position());
+      }
     },
     [setStagePos]
   );
 
   // ── Current page data ─────────────────────────────────────────────────
-  const pageNum = currentPage + 1; // 1-based
+  const pageNum = currentPage + 1;
   const currentLines = pageLines[pageNum] || [];
   const bgImage = pdfPageImages[currentPage] || null;
   const draftImage = draftImages[pageNum] || null;
@@ -361,6 +370,7 @@ export default function CanvasWriter(props: CanvasWriterProps) {
             scaleY={stageScale}
             x={stagePos.x}
             y={stagePos.y}
+            draggable={isDraggable}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
