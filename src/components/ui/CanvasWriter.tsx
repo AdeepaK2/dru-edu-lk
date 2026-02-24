@@ -13,6 +13,7 @@ import {
   ZoomIn,
   ZoomOut,
   RotateCcw,
+  Ruler,
 } from 'lucide-react';
 import { useCanvasWriter } from './useCanvasWriter';
 
@@ -211,6 +212,16 @@ export default function CanvasWriter(props: CanvasWriterProps) {
           title="Eraser"
         >
           <Eraser size={16} />
+        </button>
+        {/* Tool: Straight Line (Ruler) */}
+        <button
+          onClick={() => setActiveTool('straight')}
+          className={`p-2 rounded transition-colors ${
+            activeTool === 'straight' ? 'bg-blue-600' : 'hover:bg-gray-700'
+          }`}
+          title="Straight Line"
+        >
+          <Ruler size={16} />
         </button>
 
         <div className="w-px h-6 bg-gray-600 mx-1" />

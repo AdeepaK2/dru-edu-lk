@@ -14,7 +14,7 @@ export interface LineData {
   points: number[];
   color: string;
   strokeWidth: number;
-  tool: 'pen' | 'eraser';
+  tool: 'pen' | 'eraser' | 'straight';
 }
 
 export type PageLines = Record<number, LineData[]>;
@@ -58,7 +58,7 @@ export function useCanvasWriter({
   // ── Drawing state ────────────────────────────────────────────────────────
   const [currentPage, setCurrentPage] = useState(0);
   const [pageLines, setPageLines] = useState<PageLines>({});
-  const [activeTool, setActiveTool] = useState<'pen' | 'eraser'>('pen');
+  const [activeTool, setActiveTool] = useState<'pen' | 'eraser' | 'straight'>('pen');
   const [strokeColor, setStrokeColor] = useState('#1a1a1a');
   const [strokeWidth, setStrokeWidth] = useState(3);
 
@@ -307,11 +307,17 @@ export function useCanvasWriter({
       const pos = stage.getRelativePointerPosition();
       if (!pos) return;
 
-      currentLineRef.current.points = [
-        ...currentLineRef.current.points,
-        pos.x,
-        pos.y,
-      ];
+      if (currentLineRef.current.tool === 'straight') {
+        const startX = currentLineRef.current.points[0];
+        const startY = currentLineRef.current.points[1];
+        currentLineRef.current.points = [startX, startY, pos.x, pos.y];
+      } else {
+        currentLineRef.current.points = [
+          ...currentLineRef.current.points,
+          pos.x,
+          pos.y,
+        ];
+      }
 
       const page = currentPage + 1;
       const updatedLine = { ...currentLineRef.current };
