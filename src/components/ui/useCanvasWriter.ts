@@ -593,6 +593,11 @@ export function useCanvasWriter({
         });
         onSavePdf?.(file);
       } else if (onSavePdf) {
+        // Fallback for blank canvas (no PDF URL)
+        // Find all pages that have either lines or draft images
+        const activePages = new Set([1, ...Object.keys(pageLines).map(Number), ...Object.keys(draftImages).map(Number)]);
+        const sortedPages = Array.from(activePages).sort((a, b) => a - b);
+        
         const ps = getPageSize(0);
         const div = document.createElement('div');
         div.style.position = 'absolute';
@@ -601,49 +606,76 @@ export function useCanvasWriter({
         document.body.appendChild(div);
 
         try {
-          const offStage = new Konva.Stage({
-            container: div,
-            width: ps.w,
-            height: ps.h,
-          });
-          const bgLayer = new Konva.Layer();
-          offStage.add(bgLayer);
-          bgLayer.add(
-            new Konva.Rect({ x: 0, y: 0, width: ps.w, height: ps.h, fill: 'white' })
-          );
+          const pdfDoc = await PDFDocument.create();
 
-          const drawLayer = new Konva.Layer();
-          offStage.add(drawLayer);
+          for (const pageNum of sortedPages) {
+            const lines = pageLines[pageNum];
+            const draftImg = draftImages[pageNum];
+            
+            if ((!lines || lines.length === 0) && !draftImg) continue;
 
-          const lines = pageLines[1] || [];
-          for (const line of lines) {
-            drawLayer.add(
-              new Konva.Line({
-                points: line.points,
-                stroke: line.tool === 'eraser' ? '#ffffff' : line.color,
-                strokeWidth: line.strokeWidth,
-                tension: 0.5,
-                lineCap: 'round',
-                lineJoin: 'round',
-                globalCompositeOperation:
-                  line.tool === 'eraser' ? 'destination-out' : 'source-over',
-              })
+            const offStage = new Konva.Stage({
+              container: div,
+              width: ps.w,
+              height: ps.h,
+            });
+            const bgLayer = new Konva.Layer();
+            offStage.add(bgLayer);
+            bgLayer.add(
+              new Konva.Rect({ x: 0, y: 0, width: ps.w, height: ps.h, fill: 'white' })
             );
+
+            // Draft Layer
+            if (draftImg) {
+              bgLayer.add(
+                new Konva.Image({
+                  image: draftImg,
+                  x: 0,
+                  y: 0,
+                  width: ps.w,
+                  height: ps.h,
+                })
+              );
+            }
+
+            // Drawing Layer
+            const drawLayer = new Konva.Layer();
+            offStage.add(drawLayer);
+
+            if (lines) {
+              for (const line of lines) {
+                drawLayer.add(
+                  new Konva.Line({
+                    points: line.points,
+                    stroke: line.tool === 'eraser' ? '#ffffff' : line.color,
+                    strokeWidth: line.strokeWidth,
+                    tension: 0.5,
+                    lineCap: 'round',
+                    lineJoin: 'round',
+                    globalCompositeOperation:
+                      line.tool === 'eraser' ? 'destination-out' : 'source-over',
+                  })
+                );
+              }
+            }
+
+            bgLayer.draw();
+            drawLayer.draw();
+            const dataUrl = offStage.toDataURL({ pixelRatio: RENDER_SCALE });
+            offStage.destroy();
+
+            const base64 = dataUrl.split(',')[1];
+            const pngBytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+
+            const img = await pdfDoc.embedPng(pngBytes);
+            const { width, height } = img;
+            const pdfPage = pdfDoc.addPage([width, height]);
+            pdfPage.drawImage(img, { x: 0, y: 0, width, height });
           }
 
-          bgLayer.draw();
-          drawLayer.draw();
-          const dataUrl = offStage.toDataURL({ pixelRatio: RENDER_SCALE });
-          offStage.destroy();
-
-          const base64 = dataUrl.split(',')[1];
-          const pngBytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
-
-          const pdfDoc = await PDFDocument.create();
-          const img = await pdfDoc.embedPng(pngBytes);
-          const { width, height } = img;
-          const pdfPage = pdfDoc.addPage([width, height]);
-          pdfPage.drawImage(img, { x: 0, y: 0, width, height });
+          if (pdfDoc.getPageCount() === 0) {
+            pdfDoc.addPage([ps.w, ps.h]); // guarantee at least one page
+          }
 
           const pdfBytes = await pdfDoc.save();
           const file = new File([pdfBytes as BlobPart], 'canvas-answer.pdf', {
