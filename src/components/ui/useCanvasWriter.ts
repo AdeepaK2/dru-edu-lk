@@ -385,6 +385,13 @@ export function useCanvasWriter({
     setStagePos({ x: 0, y: 0 });
   }, []);
 
+  const panBy = useCallback((dx: number, dy: number) => {
+    setStagePos((prev) => ({
+      x: prev.x + dx,
+      y: prev.y + dy,
+    }));
+  }, []);
+
   // ── Fit page to container (on page change, PDF load, or container resize) ─
   useEffect(() => {
     if (containerSize.w === 0 || containerSize.h === 0) return;
@@ -737,5 +744,6 @@ export function useCanvasWriter({
     handleTouchEnd,
     handleSubmit,
     triggerSave,
+    panBy,
   };
 }

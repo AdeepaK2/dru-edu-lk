@@ -82,6 +82,7 @@ export default function CanvasWriter(props: CanvasWriterProps) {
     zoomOut,
     resetZoom,
     zoomTo,
+    panBy,
     handlePointerDown,
     handlePointerMove,
     handlePointerUp,
@@ -89,7 +90,7 @@ export default function CanvasWriter(props: CanvasWriterProps) {
     handleTouchEnd,
   } = useCanvasWriter({ ...props, stageRef, containerSize });
 
-  // ── Pinch-to-zoom (stable — reads refs, no dependency churn) ───────────
+  // ── Pinch-to-zoom and Pan (stable — reads refs, no dependency churn) ───
   useEffect(() => {
     const stage = stageRef.current;
     if (!stage) return;
@@ -97,6 +98,7 @@ export default function CanvasWriter(props: CanvasWriterProps) {
     if (!content) return;
 
     let lastDist = 0;
+    let lastCenter: { x: number; y: number } | null = null;
 
     const onPinch = (e: TouchEvent) => {
       if (e.touches.length < 2) return;
@@ -113,7 +115,15 @@ export default function CanvasWriter(props: CanvasWriterProps) {
         y: (t1.clientY + t2.clientY) / 2 - rect.top,
       };
 
+      if (lastCenter) {
+        // Calculate panning change
+        const dx = center.x - lastCenter.x;
+        const dy = center.y - lastCenter.y;
+        panBy(dx, dy);
+      }
+
       if (lastDist > 0) {
+        // Calculate zooming change
         const ratio = dist / lastDist;
         const s = stageRef.current;
         if (s) {
@@ -124,10 +134,12 @@ export default function CanvasWriter(props: CanvasWriterProps) {
       }
 
       lastDist = dist;
+      lastCenter = center;
     };
 
     const onPinchEnd = () => {
       lastDist = 0;
+      lastCenter = null;
     };
 
     content.addEventListener('touchmove', onPinch, { passive: false });
@@ -136,8 +148,7 @@ export default function CanvasWriter(props: CanvasWriterProps) {
       content.removeEventListener('touchmove', onPinch);
       content.removeEventListener('touchend', onPinchEnd);
     };
-    // zoomTo is stable (uses refs), so this effect only runs once on mount
-  }, [zoomTo]);
+  }, [zoomTo, panBy]);
 
   // ── Mouse wheel zoom ──────────────────────────────────────────────────
   const handleWheel = useCallback(
