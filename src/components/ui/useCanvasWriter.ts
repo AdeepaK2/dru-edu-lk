@@ -63,6 +63,14 @@ export function useCanvasWriter({
   // ── Zoom / pan ───────────────────────────────────────────────────────────
   const [stageScale, setStageScale] = useState(1);
   const [stagePos, setStagePos] = useState({ x: 0, y: 0 });
+  // Draggable controlled via React state (not imperative stage.draggable())
+  const [isDraggable, setIsDraggable] = useState(false);
+
+  // Keep latest scale/pos in refs so pinch-to-zoom closures aren't stale
+  const scaleRef = useRef(stageScale);
+  const posRef = useRef(stagePos);
+  useEffect(() => { scaleRef.current = stageScale; }, [stageScale]);
+  useEffect(() => { posRef.current = stagePos; }, [stagePos]);
 
   // ── Drawing refs (mutable for performance) ───────────────────────────────
   const isDrawingRef = useRef(false);
@@ -79,10 +87,14 @@ export function useCanvasWriter({
   // ── Auto-save timer ──────────────────────────────────────────────────────
   const autoSaveTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // ── Fit-to-page tracking ─────────────────────────────────────────────────
+  const lastFitKeyRef = useRef('');
+
   // ── Computed ──────────────────────────────────────────────────────────────
   const numPages = pdfUrl ? pdfPageImages.length : 1;
 
-  // Page dimensions in CSS pixels (raster / RENDER_SCALE)
+  // Page dimensions in CSS pixels (raster / RENDER_SCALE).
+  // Stable: only depends on pdfPageDimensions (set once on PDF load).
   const getPageSize = useCallback(
     (pageIdx: number) => {
       if (pdfPageDimensions[pageIdx]) {
@@ -91,10 +103,10 @@ export function useCanvasWriter({
           h: pdfPageDimensions[pageIdx].h / RENDER_SCALE,
         };
       }
-      // Blank canvas — fill container
-      return { w: containerSize.w || 800, h: containerSize.h || 600 };
+      // Blank canvas — use fixed default (not containerSize, to avoid dependency churn)
+      return { w: 800, h: 600 };
     },
-    [pdfPageDimensions, containerSize]
+    [pdfPageDimensions]
   );
 
   // ── Load PDF pages ───────────────────────────────────────────────────────
@@ -261,8 +273,8 @@ export function useCanvasWriter({
       const stage = stageRef.current;
       if (!stage) return;
 
-      // Disable stage dragging while drawing
-      stage.draggable(false);
+      // Ensure stage is NOT draggable while drawing (declarative)
+      setIsDraggable(false);
 
       isDrawingRef.current = true;
       const pos = stage.getRelativePointerPosition();
@@ -329,59 +341,66 @@ export function useCanvasWriter({
     [currentPage, pushHistory]
   );
 
-  // ── Touch pan (single finger) ───────────────────────────────────────────
+  // ── Touch pan (single finger only — NOT stylus) ──────────────────────────
   const handleTouchStart = useCallback(
     (e: KonvaEventObject<TouchEvent>) => {
+      // On many devices a stylus ALSO fires touchstart.
+      // Only enable panning for genuine finger touches (not while drawing).
+      if (isDrawingRef.current) return;
       const touches = e.evt.touches;
       if (touches.length === 1) {
-        // Single finger → enable stage dragging for pan
-        const stage = stageRef.current;
-        if (stage && !isDrawingRef.current) {
-          stage.draggable(true);
-        }
+        setIsDraggable(true);
       }
     },
-    [stageRef]
+    []
   );
 
   const handleTouchEnd = useCallback(() => {
-    const stage = stageRef.current;
-    if (stage) {
-      stage.draggable(false);
-    }
-  }, [stageRef]);
+    setIsDraggable(false);
+  }, []);
 
-  // ── Zoom helpers ─────────────────────────────────────────────────────────
+  // ── Zoom helpers (use refs to avoid stale closures) ───────────────────────
+  const containerSizeRef = useRef(containerSize);
+  useEffect(() => { containerSizeRef.current = containerSize; }, [containerSize]);
+
   const zoomTo = useCallback(
     (newScale: number, center?: { x: number; y: number }) => {
       const clamped = Math.min(5, Math.max(0.3, newScale));
-      const c = center || { x: containerSize.w / 2, y: containerSize.h / 2 };
+      const oldScale = scaleRef.current;
+      const oldPos = posRef.current;
+      const cs = containerSizeRef.current;
+      const c = center || { x: cs.w / 2, y: cs.h / 2 };
       const newPos = {
-        x: c.x - (c.x - stagePos.x) * (clamped / stageScale),
-        y: c.y - (c.y - stagePos.y) * (clamped / stageScale),
+        x: c.x - (c.x - oldPos.x) * (clamped / oldScale),
+        y: c.y - (c.y - oldPos.y) * (clamped / oldScale),
       };
       setStageScale(clamped);
       setStagePos(newPos);
     },
-    [containerSize, stagePos, stageScale]
+    [] // stable — reads from refs
   );
 
-  const zoomIn = useCallback(() => zoomTo(stageScale * 1.2), [zoomTo, stageScale]);
-  const zoomOut = useCallback(() => zoomTo(stageScale / 1.2), [zoomTo, stageScale]);
+  const zoomIn = useCallback(() => zoomTo(scaleRef.current * 1.2), [zoomTo]);
+  const zoomOut = useCallback(() => zoomTo(scaleRef.current / 1.2), [zoomTo]);
   const resetZoom = useCallback(() => {
     setStageScale(1);
     setStagePos({ x: 0, y: 0 });
   }, []);
 
-  // ── Fit page to container on page change / PDF load ──────────────────────
+  // ── Fit page to container (only on page change or PDF load) ──────────────
   useEffect(() => {
     if (containerSize.w === 0 || containerSize.h === 0) return;
     const ps = getPageSize(currentPage);
     if (!ps.w || !ps.h) return;
 
+    // Only re-fit if something meaningful changed (page index or PDF load count)
+    const fitKey = `${currentPage}-${pdfPageImages.length}-${containerSize.w}-${containerSize.h}`;
+    if (fitKey === lastFitKeyRef.current) return;
+    lastFitKeyRef.current = fitKey;
+
     const scaleX = containerSize.w / ps.w;
     const scaleY = containerSize.h / ps.h;
-    const fitScale = Math.min(scaleX, scaleY, 1); // don't upscale past 1
+    const fitScale = Math.min(scaleX, scaleY, 1);
     const offsetX = (containerSize.w - ps.w * fitScale) / 2;
     const offsetY = (containerSize.h - ps.h * fitScale) / 2;
 
@@ -415,7 +434,6 @@ export function useCanvasWriter({
         const layer = new Konva.Layer();
         offStage.add(layer);
 
-        // Draw lines only (no background — annotations layer)
         for (const line of lines) {
           layer.add(
             new Konva.Line({
@@ -479,7 +497,6 @@ export function useCanvasWriter({
   const handleSubmit = useCallback(async () => {
     try {
       if (pdfUrl && pdfRawBytesRef.current && pdfPageImages.length > 0) {
-        // PDF overlay mode
         const pdfDoc = await PDFDocument.load(pdfRawBytesRef.current);
         const pdfPages = pdfDoc.getPages();
 
@@ -505,7 +522,6 @@ export function useCanvasWriter({
             const layer = new Konva.Layer();
             offStage.add(layer);
 
-            // Draft annotation image
             if (draftImages[pageNum]) {
               layer.add(
                 new Konva.Image({
@@ -518,7 +534,6 @@ export function useCanvasWriter({
               );
             }
 
-            // New strokes
             if (lines) {
               for (const line of lines) {
                 layer.add(
@@ -540,7 +555,6 @@ export function useCanvasWriter({
             const dataUrl = offStage.toDataURL({ pixelRatio: RENDER_SCALE });
             offStage.destroy();
 
-            // Convert data URL to bytes and embed into PDF
             const base64 = dataUrl.split(',')[1];
             const pngBytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
             const embeddedImage = await pdfDoc.embedPng(pngBytes);
@@ -558,7 +572,6 @@ export function useCanvasWriter({
         });
         onSavePdf?.(file);
       } else if (onSavePdf) {
-        // Plain canvas mode — create PDF from scratch
         const ps = getPageSize(0);
         const div = document.createElement('div');
         div.style.position = 'absolute';
@@ -631,14 +644,12 @@ export function useCanvasWriter({
   }, [onRegisterSubmit, handleSubmit]);
 
   return {
-    // PDF
     pdfPageImages,
     pdfPageDimensions,
     isLoading,
     loadError,
     numPages,
     getPageSize,
-    // Drawing
     currentPage,
     setCurrentPage,
     pageLines,
@@ -648,29 +659,25 @@ export function useCanvasWriter({
     setStrokeColor,
     strokeWidth,
     setStrokeWidth,
-    // Drafts
     draftImages,
-    // History
     undo,
     redo,
     canUndo,
     canRedo,
     historyVersion,
-    // Zoom/pan
     stageScale,
     stagePos,
     setStagePos,
+    isDraggable,
     zoomIn,
     zoomOut,
     resetZoom,
     zoomTo,
-    // Pointer handlers
     handlePointerDown,
     handlePointerMove,
     handlePointerUp,
     handleTouchStart,
     handleTouchEnd,
-    // Submit
     handleSubmit,
   };
 }
