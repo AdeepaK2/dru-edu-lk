@@ -28,6 +28,7 @@ interface CanvasWriterProps {
   autoSaveKey?: string;
   initialPageAnnotations?: Record<number, string>;
   onRegisterSubmit?: (fn: () => void) => void;
+  onRegisterSave?: (fn: () => Promise<void>) => void;
 }
 
 // ── Color presets ────────────────────────────────────────────────────────────

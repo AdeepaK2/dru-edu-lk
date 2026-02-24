@@ -47,6 +47,8 @@ export default function StudentInClassTestDetailPage() {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const canvasWriterRef = React.useRef<any>(null);
   const canvasSubmitRef = React.useRef<(() => void) | null>(null);
+  const canvasSaveRef = React.useRef<(() => Promise<void>) | null>(null);
+  const [savingProgress, setSavingProgress] = React.useState(false);
   const [clockOffsetMs, setClockOffsetMs] = React.useState(0);
   const [showTimeExpiredModal, setShowTimeExpiredModal] = React.useState(false);
   const [timerInitialized, setTimerInitialized] = React.useState(false);
@@ -856,6 +858,40 @@ export default function StudentInClassTestDetailPage() {
                   )}
                 </button>
 
+                {/* Save Progress Button */}
+                <button
+                  onClick={async () => {
+                    if (canvasSaveRef.current) {
+                      setSavingProgress(true);
+                      try {
+                        await canvasSaveRef.current();
+                        toast.success('Progress saved successfully');
+                      } catch (err) {
+                        toast.error('Failed to save progress');
+                      } finally {
+                        setSavingProgress(false);
+                      }
+                    } else {
+                      toast.error('Canvas not ready, please try again');
+                    }
+                  }}
+                  disabled={savingProgress || uploading || timeExpired}
+                  className="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 active:scale-95 disabled:bg-gray-400 text-white px-3 sm:px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-all flex-shrink-0 select-none"
+                >
+                  {savingProgress ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span className="hidden sm:inline">Saving...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="w-4 h-4" />
+                      <span className="hidden sm:inline">Save Progress</span>
+                      <span className="sm:hidden">Save</span>
+                    </>
+                  )}
+                </button>
+
                 <button
                   onClick={() => setIsWriting(false)}
                   className="text-white hover:text-gray-300 active:text-gray-400 active:scale-95 px-2 sm:px-3 py-1 rounded transition-all flex-shrink-0 select-none"
@@ -873,6 +909,7 @@ export default function StudentInClassTestDetailPage() {
                 autoSaveKey={user && testId ? `canvas_draft_${testId}_${user.uid}` : undefined}
                 initialPageAnnotations={draftAnnotations || {}}
                 onRegisterSubmit={(fn) => { canvasSubmitRef.current = fn; }}
+                onRegisterSave={(fn) => { canvasSaveRef.current = fn; }}
               />
             </div>
 

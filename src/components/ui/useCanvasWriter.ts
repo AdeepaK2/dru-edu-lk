@@ -26,6 +26,7 @@ export interface UseCanvasWriterProps {
   autoSaveKey?: string;
   initialPageAnnotations?: Record<number, string>;
   onRegisterSubmit?: (fn: () => void) => void;
+  onRegisterSave?: (fn: () => Promise<void>) => void;
   stageRef: React.RefObject<Konva.Stage | null>;
   containerSize: { w: number; h: number };
 }
@@ -43,6 +44,7 @@ export function useCanvasWriter({
   autoSaveKey,
   initialPageAnnotations,
   onRegisterSubmit,
+  onRegisterSave,
   stageRef,
   containerSize,
 }: UseCanvasWriterProps) {
@@ -413,7 +415,10 @@ export function useCanvasWriter({
     for (let i = 0; i < pages; i++) {
       const pageNum = i + 1;
       const lines = pageLines[pageNum];
-      if (!lines || lines.length === 0) continue;
+      const draftImg = draftImages[pageNum];
+      
+      // Only skip if there are NO new lines AND NO existing draft
+      if ((!lines || lines.length === 0) && !draftImg) continue;
 
       const ps = getPageSize(i);
       const div = document.createElement('div');
@@ -431,19 +436,35 @@ export function useCanvasWriter({
         const layer = new Konva.Layer();
         offStage.add(layer);
 
-        for (const line of lines) {
+        // Render previous draft underlying the new strokes, if it exists
+        if (draftImg) {
           layer.add(
-            new Konva.Line({
-              points: line.points,
-              stroke: line.tool === 'eraser' ? '#ffffff' : line.color,
-              strokeWidth: line.strokeWidth,
-              tension: 0.5,
-              lineCap: 'round',
-              lineJoin: 'round',
-              globalCompositeOperation:
-                line.tool === 'eraser' ? 'destination-out' : 'source-over',
+            new Konva.Image({
+              image: draftImg,
+              x: 0,
+              y: 0,
+              width: ps.w,
+              height: ps.h,
             })
           );
+        }
+
+        // Render newly drawn lines
+        if (lines) {
+          for (const line of lines) {
+            layer.add(
+              new Konva.Line({
+                points: line.points,
+                stroke: line.tool === 'eraser' ? '#ffffff' : line.color,
+                strokeWidth: line.strokeWidth,
+                tension: 0.5,
+                lineCap: 'round',
+                lineJoin: 'round',
+                globalCompositeOperation:
+                  line.tool === 'eraser' ? 'destination-out' : 'source-over',
+              })
+            );
+          }
         }
 
         layer.draw();
@@ -455,7 +476,30 @@ export function useCanvasWriter({
     }
 
     return result;
-  }, [pdfUrl, pdfPageImages.length, pageLines, getPageSize]);
+  }, [pdfUrl, pdfPageImages.length, pageLines, draftImages, getPageSize]);
+
+  // ── Trigger Manual or Auto Save ──────────────────────────────────────────
+  const triggerSave = useCallback(async () => {
+    try {
+      const exported = await exportAllPages();
+      if (Object.keys(exported).length === 0) return;
+
+      onSave?.(exported);
+
+      if (autoSaveKey) {
+        try {
+          localStorage.setItem(
+            autoSaveKey,
+            JSON.stringify({ pages: exported, timestamp: Date.now() })
+          );
+        } catch (e) {
+          console.warn('[CanvasWriter] localStorage save failed', e);
+        }
+      }
+    } catch (e) {
+      console.warn('[CanvasWriter] triggerSave failed', e);
+    }
+  }, [exportAllPages, onSave, autoSaveKey]);
 
   // ── Auto-save ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -463,32 +507,12 @@ export function useCanvasWriter({
 
     if (autoSaveTimerRef.current) clearInterval(autoSaveTimerRef.current);
 
-    autoSaveTimerRef.current = setInterval(async () => {
-      try {
-        const exported = await exportAllPages();
-        if (Object.keys(exported).length === 0) return;
-
-        onSave?.(exported);
-
-        if (autoSaveKey) {
-          try {
-            localStorage.setItem(
-              autoSaveKey,
-              JSON.stringify({ pages: exported, timestamp: Date.now() })
-            );
-          } catch (e) {
-            console.warn('[CanvasWriter] localStorage save failed', e);
-          }
-        }
-      } catch (e) {
-        console.warn('[CanvasWriter] auto-save failed', e);
-      }
-    }, AUTO_SAVE_INTERVAL);
+    autoSaveTimerRef.current = setInterval(triggerSave, AUTO_SAVE_INTERVAL);
 
     return () => {
       if (autoSaveTimerRef.current) clearInterval(autoSaveTimerRef.current);
     };
-  }, [onSave, autoSaveKey, exportAllPages]);
+  }, [onSave, autoSaveKey, triggerSave]);
 
   // ── PDF export (submit) ──────────────────────────────────────────────────
   const handleSubmit = useCallback(async () => {
@@ -640,6 +664,11 @@ export function useCanvasWriter({
     onRegisterSubmit?.(handleSubmit);
   }, [onRegisterSubmit, handleSubmit]);
 
+  // ── Register save callback ───────────────────────────────────────────────
+  useEffect(() => {
+    onRegisterSave?.(triggerSave);
+  }, [onRegisterSave, triggerSave]);
+
   return {
     pdfPageImages,
     pdfPageDimensions,
@@ -675,5 +704,6 @@ export function useCanvasWriter({
     handleTouchStart,
     handleTouchEnd,
     handleSubmit,
+    triggerSave,
   };
 }
