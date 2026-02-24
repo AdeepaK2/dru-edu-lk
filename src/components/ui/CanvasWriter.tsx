@@ -77,8 +77,6 @@ export default function CanvasWriter(props: CanvasWriterProps) {
     canRedo,
     stageScale,
     stagePos,
-    setStagePos,
-    isDraggable,
     zoomIn,
     zoomOut,
     resetZoom,
@@ -106,17 +104,19 @@ export default function CanvasWriter(props: CanvasWriterProps) {
       const t1 = e.touches[0];
       const t2 = e.touches[1];
       const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+
+      // Center must be relative to the container, not the viewport
+      const rect = content.getBoundingClientRect();
       const center = {
-        x: (t1.clientX + t2.clientX) / 2,
-        y: (t1.clientY + t2.clientY) / 2,
+        x: (t1.clientX + t2.clientX) / 2 - rect.left,
+        y: (t1.clientY + t2.clientY) / 2 - rect.top,
       };
 
       if (lastDist > 0) {
         const ratio = dist / lastDist;
-        // zoomTo reads scaleRef/posRef internally, so no stale closure issue
-        const stage = stageRef.current;
-        if (stage) {
-          const currentScale = stage.scaleX();
+        const s = stageRef.current;
+        if (s) {
+          const currentScale = s.scaleX();
           const newScale = Math.min(5, Math.max(0.3, currentScale * ratio));
           zoomTo(newScale, center);
         }
@@ -154,17 +154,6 @@ export default function CanvasWriter(props: CanvasWriterProps) {
       zoomTo(newScale, pointer);
     },
     [zoomTo]
-  );
-
-  // ── Stage drag end → update position state to stay in sync ─────────────
-  const handleDragEnd = useCallback(
-    (e: Konva.KonvaEventObject<DragEvent>) => {
-      // Only update if the drag target is the stage itself (not a child shape)
-      if (e.target === stageRef.current) {
-        setStagePos(e.target.position());
-      }
-    },
-    [setStagePos]
   );
 
   // ── Current page data ─────────────────────────────────────────────────
@@ -365,14 +354,12 @@ export default function CanvasWriter(props: CanvasWriterProps) {
             scaleY={stageScale}
             x={stagePos.x}
             y={stagePos.y}
-            draggable={isDraggable}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
             onWheel={handleWheel}
-            onDragEnd={handleDragEnd}
           >
             {/* Background layer */}
             <Layer listening={false}>
