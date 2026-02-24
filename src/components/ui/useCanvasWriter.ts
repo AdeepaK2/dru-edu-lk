@@ -63,8 +63,6 @@ export function useCanvasWriter({
   // ── Zoom / pan ───────────────────────────────────────────────────────────
   const [stageScale, setStageScale] = useState(1);
   const [stagePos, setStagePos] = useState({ x: 0, y: 0 });
-  // Draggable controlled via React state (not imperative stage.draggable())
-  const [isDraggable, setIsDraggable] = useState(false);
 
   // Keep latest scale/pos in refs so pinch-to-zoom closures aren't stale
   const scaleRef = useRef(stageScale);
@@ -273,9 +271,6 @@ export function useCanvasWriter({
       const stage = stageRef.current;
       if (!stage) return;
 
-      // Ensure stage is NOT draggable while drawing (declarative)
-      setIsDraggable(false);
-
       isDrawingRef.current = true;
       const pos = stage.getRelativePointerPosition();
       if (!pos) return;
@@ -341,22 +336,18 @@ export function useCanvasWriter({
     [currentPage, pushHistory]
   );
 
-  // ── Touch pan (single finger only — NOT stylus) ──────────────────────────
+  // ── Touch handlers (fingers = zoom only, no pan) ──────────────────────────
+  // Single-finger touch is ignored (no drag). Pinch-to-zoom is handled
+  // via native touchmove listener in CanvasWriter.tsx.
   const handleTouchStart = useCallback(
-    (e: KonvaEventObject<TouchEvent>) => {
-      // On many devices a stylus ALSO fires touchstart.
-      // Only enable panning for genuine finger touches (not while drawing).
-      if (isDrawingRef.current) return;
-      const touches = e.evt.touches;
-      if (touches.length === 1) {
-        setIsDraggable(true);
-      }
+    (_e: KonvaEventObject<TouchEvent>) => {
+      // no-op — pinch is handled externally on the DOM element
     },
     []
   );
 
   const handleTouchEnd = useCallback(() => {
-    setIsDraggable(false);
+    // no-op
   }, []);
 
   // ── Zoom helpers (use refs to avoid stale closures) ───────────────────────
@@ -387,20 +378,21 @@ export function useCanvasWriter({
     setStagePos({ x: 0, y: 0 });
   }, []);
 
-  // ── Fit page to container (only on page change or PDF load) ──────────────
+  // ── Fit page to container (on page change, PDF load, or container resize) ─
   useEffect(() => {
     if (containerSize.w === 0 || containerSize.h === 0) return;
     const ps = getPageSize(currentPage);
     if (!ps.w || !ps.h) return;
 
-    // Only re-fit if something meaningful changed (page index or PDF load count)
-    const fitKey = `${currentPage}-${pdfPageImages.length}-${containerSize.w}-${containerSize.h}`;
+    // Deduplicate — only re-fit when these inputs actually change
+    const fitKey = `${currentPage}-${pdfPageImages.length}-${Math.round(containerSize.w)}-${Math.round(containerSize.h)}`;
     if (fitKey === lastFitKeyRef.current) return;
     lastFitKeyRef.current = fitKey;
 
+    // Scale to fit entirely within the container (may scale up for small PDFs)
     const scaleX = containerSize.w / ps.w;
     const scaleY = containerSize.h / ps.h;
-    const fitScale = Math.min(scaleX, scaleY, 1);
+    const fitScale = Math.min(scaleX, scaleY);
     const offsetX = (containerSize.w - ps.w * fitScale) / 2;
     const offsetY = (containerSize.h - ps.h * fitScale) / 2;
 
@@ -668,7 +660,6 @@ export function useCanvasWriter({
     stageScale,
     stagePos,
     setStagePos,
-    isDraggable,
     zoomIn,
     zoomOut,
     resetZoom,
