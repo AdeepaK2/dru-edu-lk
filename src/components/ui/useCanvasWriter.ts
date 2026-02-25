@@ -29,10 +29,12 @@ export type PageLines = Record<number, LineData[]>;
 
 export interface UseCanvasWriterProps {
   pdfUrl?: string;
-  onSave?: (strokePages: Record<number, string>) => void;
+  /** Called with raw stroke JSON (not images) - much lighter and lossless */
+  onSave?: (strokePages: Record<number, LineData[]>) => void;
   onSavePdf?: (file: File) => void;
   autoSaveKey?: string;
-  initialPageAnnotations?: Record<number, string>;
+  /** Restore saved strokes as raw LineData vectors */
+  initialPageAnnotations?: Record<number, LineData[]>;
   onRegisterSubmit?: (fn: () => void) => void;
   onRegisterSave?: (fn: () => Promise<void>) => void;
   stageRef: React.RefObject<Konva.Stage | null>;
@@ -230,37 +232,23 @@ export function useCanvasWriter({
     };
   }, [pdfUrl]);
 
-  // ── Load draft annotations as images ─────────────────────────────────────
+  // ── Load draft annotations as JSON vectors ─────────────────────────────────
   useEffect(() => {
     if (!initialPageAnnotations) return;
     const entries = Object.entries(initialPageAnnotations);
     if (entries.length === 0) return;
 
-    const loaded: Record<number, HTMLImageElement> = {};
-    let remaining = entries.length;
-
-    entries.forEach(([pageStr, dataUrl]) => {
-      if (!dataUrl) {
-        remaining--;
-        return;
+    // Load the JSON vectors directly into pageLines (no image loading needed)
+    const restored: PageLines = {};
+    entries.forEach(([pageStr, lines]) => {
+      if (Array.isArray(lines) && lines.length > 0) {
+        restored[parseInt(pageStr)] = lines as LineData[];
       }
-      const pageNum = parseInt(pageStr);
-      const img = new window.Image();
-      img.src = dataUrl;
-      img.onload = () => {
-        loaded[pageNum] = img;
-        remaining--;
-        if (remaining <= 0) {
-          setDraftImages({ ...loaded });
-        }
-      };
-      img.onerror = () => {
-        remaining--;
-        if (remaining <= 0) {
-          setDraftImages({ ...loaded });
-        }
-      };
     });
+
+    if (Object.keys(restored).length > 0) {
+      setPageLines(restored);
+    }
   }, [initialPageAnnotations]);
 
   // ── History helpers ──────────────────────────────────────────────────────
@@ -638,7 +626,7 @@ export function useCanvasWriter({
                 lineCap: 'round',
                 lineJoin: 'round',
                 globalCompositeOperation:
-                  line.tool === 'eraser' ? 'destination-out' : 'source-over',
+                  'source-over',
               })
             );
           }
@@ -656,57 +644,30 @@ export function useCanvasWriter({
   }, [pdfUrl, pdfPageImages.length, pageLines, draftImages, getPageSize]);
 
   // ── Trigger Manual or Auto Save ──────────────────────────────────────────
+  // Saves raw stroke JSON (LineData[]) — fast, lossless, no rendering needed.
+  // PNGs are only generated once at submit time.
   const triggerSave = useCallback(async () => {
     try {
-      const exported = await exportAllPages();
-      if (Object.keys(exported).length === 0) return;
+      if (Object.keys(pageLines).length === 0) return;
 
-      onSave?.(exported);
+      // Pass raw vectors to parent (Firestore, etc.)
+      onSave?.(pageLines);
 
+      // Persist to localStorage for crash-recovery
       if (autoSaveKey) {
         try {
           localStorage.setItem(
             autoSaveKey,
-            JSON.stringify({ pages: exported, timestamp: Date.now() })
+            JSON.stringify({ pages: pageLines, timestamp: Date.now() })
           );
         } catch (e) {
           console.warn('[CanvasWriter] localStorage save failed', e);
         }
       }
-
-      // ── Bake strokes into draft images so they aren't double-rendered ──
-      // Load each exported data URL as an HTMLImageElement and store it as
-      // the new draft. Then clear pageLines for those pages so the live
-      // vector strokes are not drawn on top of the already-baked-in draft.
-      const newDraftImages: Record<number, HTMLImageElement> = {};
-      await Promise.all(
-        Object.entries(exported).map(([pageNumStr, dataUrl]) => {
-          return new Promise<void>((resolve) => {
-            const img = new Image();
-            img.onload = () => {
-              newDraftImages[Number(pageNumStr)] = img;
-              resolve();
-            };
-            img.onerror = () => resolve(); // don't block on failure
-            img.src = dataUrl;
-          });
-        })
-      );
-
-      setDraftImages((prev) => ({ ...prev, ...newDraftImages }));
-
-      // Clear live strokes for pages that were just baked in
-      setPageLines((prev) => {
-        const next = { ...prev };
-        for (const pageNumStr of Object.keys(exported)) {
-          delete next[Number(pageNumStr)];
-        }
-        return next;
-      });
     } catch (e) {
       console.warn('[CanvasWriter] triggerSave failed', e);
     }
-  }, [exportAllPages, onSave, autoSaveKey]);
+  }, [pageLines, onSave, autoSaveKey]);
 
   // ── Auto-save ────────────────────────────────────────────────────────────
   useEffect(() => {
