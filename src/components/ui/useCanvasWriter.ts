@@ -413,6 +413,7 @@ export function useCanvasWriter({
           if (lastCenterRef.current) {
             const dx = center.x - lastCenterRef.current.x;
             const dy = center.y - lastCenterRef.current.y;
+            // Native panning
             panBy(dx, dy);
           }
 
@@ -967,5 +968,6 @@ export function useCanvasWriter({
     scrollToPage,
     isDrawing,
     getPageOffset,
+    getTotalDocumentHeight,
   };
 }

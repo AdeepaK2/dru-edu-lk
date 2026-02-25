@@ -91,6 +91,7 @@ export default function CanvasWriter(props: CanvasWriterProps) {
     handleTouchEnd,
     isDrawing,
     getPageOffset,
+    getTotalDocumentHeight,
   } = useCanvasWriter({ ...props, stageRef, containerSize });
 
 
@@ -428,6 +429,41 @@ export default function CanvasWriter(props: CanvasWriterProps) {
             </Layer>
           </Stage>
         )}
+
+        {/* ── Custom Scrollbar Overlay ── */}
+        {stageReady && getTotalDocumentHeight() * stageScale > containerSize.h && (() => {
+          const totalH = getTotalDocumentHeight() * stageScale;
+          const viewportH = containerSize.h;
+          
+          // Calculate what percentage of the document is visible
+          const viewRatio = Math.min(1, viewportH / totalH);
+          const thumbHeight = Math.max(40, viewportH * viewRatio); // min height 40px
+          
+          // Calculate max scrollable pixels
+          const maxScrollPixelOffset = totalH - viewportH;
+          // Calculate current scroll offset (0 to maxScrollPixelOffset)
+          // stagePos.y is negative as we pan down. But there's a 20px padding max clamp.
+          const currentScroll = Math.max(0, -stagePos.y); 
+          
+          // Calculate percentage scrolled
+          const scrollPct = maxScrollPixelOffset > 0 ? (currentScroll / maxScrollPixelOffset) : 0;
+          
+          // Map percentage to thumb position
+          const maxThumbTop = viewportH - thumbHeight;
+          const thumbTop = scrollPct * maxThumbTop;
+
+          return (
+            <div className="absolute right-1 top-0 bottom-0 w-2 pointer-events-none z-20">
+              <div 
+                className="absolute w-full bg-black/30 rounded-full transition-all duration-75"
+                style={{
+                  height: `${thumbHeight}px`,
+                  top: `${thumbTop}px`,
+                }}
+              />
+            </div>
+          );
+        })()}
       </div>
     </div>
   );
