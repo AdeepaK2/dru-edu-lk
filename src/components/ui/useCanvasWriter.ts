@@ -68,10 +68,7 @@ export function useCanvasWriter({
   const [strokeColor, setStrokeColor] = useState('#1a1a1a');
   const [strokeWidth, setStrokeWidth] = useState(3);
 
-  // ── Multi-touch tracking (PointerEvents) ──────────────────────────────────
-  const activePointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
-  const lastCenterRef = useRef<{ x: number; y: number } | null>(null);
-  const lastDistRef = useRef<number>(0);
+
 
   // ── Zoom / pan ───────────────────────────────────────────────────────────
   const [stageScale, setStageScale] = useState(1);
@@ -335,13 +332,8 @@ export function useCanvasWriter({
       const pointerType = e.evt.pointerType;
 
       if (pointerType === 'touch') {
-        const stage = stageRef.current;
-        if (!stage) return;
-        const pos = stage.getPointerPosition();
-        if (pos) {
-          activePointersRef.current.set(pointerId, { x: pos.x, y: pos.y });
-        }
-        return; // Don't draw with touch
+        // Native touch scrolling handles panning/zooming externally
+        return;
       }
 
       const stage = stageRef.current;
@@ -391,45 +383,7 @@ export function useCanvasWriter({
       if (!stage) return;
 
       if (pointerType === 'touch') {
-        const pos = stage.getPointerPosition(); // Use absolute pointer position for screen tracking
-        if (!pos) return;
-        
-        activePointersRef.current.set(pointerId, { x: pos.x, y: pos.y });
-
-        const activeTouchIds = Array.from(activePointersRef.current.keys());
-
-        if (activeTouchIds.length >= 2) {
-          const id1 = activeTouchIds[0];
-          const id2 = activeTouchIds[1];
-          const t1 = activePointersRef.current.get(id1)!;
-          const t2 = activePointersRef.current.get(id2)!;
-
-          const dist = Math.hypot(t2.x - t1.x, t2.y - t1.y);
-          const center = {
-            x: (t1.x + t2.x) / 2,
-            y: (t1.y + t2.y) / 2,
-          };
-
-          if (lastCenterRef.current) {
-            const dx = center.x - lastCenterRef.current.x;
-            const dy = center.y - lastCenterRef.current.y;
-            // Native panning
-            panBy(dx, dy);
-          }
-
-          if (lastDistRef.current > 0) {
-            const ratio = dist / lastDistRef.current;
-            const currentScale = scaleRef.current;
-            const newScale = Math.min(5, Math.max(0.3, currentScale * ratio));
-            
-            // Adjust zoom to center
-            zoomTo(newScale, center);
-          }
-
-          lastDistRef.current = dist;
-          lastCenterRef.current = center;
-        }
-        return; // Don't draw with touch
+        return; // Native touch listener on DOM handles panning/zooming
       }
 
       if (!isDrawingRef.current || !currentLineRef.current) return;
@@ -480,11 +434,6 @@ export function useCanvasWriter({
       const pointerType = e.evt.pointerType;
 
       if (pointerType === 'touch') {
-        activePointersRef.current.delete(pointerId);
-        if (activePointersRef.current.size < 2) {
-          lastDistRef.current = 0;
-          lastCenterRef.current = null;
-        }
         return; // Don't draw with touch
       }
 

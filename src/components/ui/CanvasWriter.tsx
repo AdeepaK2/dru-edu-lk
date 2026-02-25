@@ -87,8 +87,6 @@ export default function CanvasWriter(props: CanvasWriterProps) {
     handlePointerDown,
     handlePointerMove,
     handlePointerUp,
-    handleTouchStart,
-    handleTouchEnd,
     isDrawing,
     getPageOffset,
     getTotalDocumentHeight,
@@ -115,17 +113,106 @@ export default function CanvasWriter(props: CanvasWriterProps) {
         zoomTo(newScale, pointer);
       } else {
         // Vertical & Horizontal Scrolling
-        // Typically shift+wheel provides deltaX, and regular wheel provides deltaY
         panBy(-e.evt.deltaX, -e.evt.deltaY);
       }
     },
     [zoomTo, panBy]
   );
 
-
+  // ── Native Mobile Touch (Pan & Zoom) ──────────────────────────────────
+  // Konva's synthetic pointer events are unreliable for multi-touch on mobile.
+  // We use standard DOM touch listeners for panning and zooming.
+  const lastTouchCenter = useRef<{ x: number, y: number } | null>(null);
+  const lastTouchDist = useRef<number>(0);
 
   // Ready to show the canvas (not loading, no error, container measured)
   const stageReady = !isLoading && !loadError && containerSize.w > 0 && containerSize.h > 0;
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || !stageReady) return;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        // e.preventDefault(); // Stop native browser zooming/panning
+        const t1 = e.touches[0];
+        const t2 = e.touches[1];
+        lastTouchDist.current = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+        lastTouchCenter.current = {
+          x: (t1.clientX + t2.clientX) / 2,
+          y: (t1.clientY + t2.clientY) / 2,
+        };
+      } else {
+        lastTouchDist.current = 0;
+        lastTouchCenter.current = null;
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        e.preventDefault(); // prevent native scroll strictly when two fingers are active
+        
+        const t1 = e.touches[0];
+        const t2 = e.touches[1];
+        const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+        const center = {
+          x: (t1.clientX + t2.clientX) / 2,
+          y: (t1.clientY + t2.clientY) / 2,
+        };
+
+        const stage = stageRef.current;
+        
+        // Panning map
+        if (lastTouchCenter.current) {
+          const dx = center.x - lastTouchCenter.current.x;
+          const dy = center.y - lastTouchCenter.current.y;
+          panBy(dx, dy);
+        }
+
+        // Zoom map
+        if (lastTouchDist.current > 0 && stage) {
+          const ratio = dist / lastTouchDist.current;
+          const currentScale = stage.scaleX();
+          const newScale = Math.min(5, Math.max(0.3, currentScale * ratio));
+          
+          // Map browser center coordinates to Konva container offsets
+          const containerRect = container.getBoundingClientRect();
+          const pointerPos = {
+            x: center.x - containerRect.left,
+            y: center.y - containerRect.top
+          };
+          zoomTo(newScale, pointerPos);
+        }
+
+        lastTouchDist.current = dist;
+        lastTouchCenter.current = center;
+      }
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (e.touches.length < 2) {
+        lastTouchDist.current = 0;
+        lastTouchCenter.current = null;
+      }
+    };
+
+    // passive: false is required so e.preventDefault() works during touchmove
+    container.addEventListener('touchstart', handleTouchStart, { passive: false });
+    container.addEventListener('touchmove', handleTouchMove, { passive: false });
+    container.addEventListener('touchend', handleTouchEnd, { passive: false });
+    container.addEventListener('touchcancel', handleTouchEnd, { passive: false });
+
+    return () => {
+      container.removeEventListener('touchstart', handleTouchStart);
+      container.removeEventListener('touchmove', handleTouchMove);
+      container.removeEventListener('touchend', handleTouchEnd);
+      container.removeEventListener('touchcancel', handleTouchEnd);
+    };
+  }, [stageReady, panBy, zoomTo]);
+
+
+
+
 
   return (
     <div
@@ -328,8 +415,6 @@ export default function CanvasWriter(props: CanvasWriterProps) {
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
             onWheel={handleWheel}
           >
             {/* Continuous document rendering */}
