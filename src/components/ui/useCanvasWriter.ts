@@ -324,166 +324,148 @@ export function useCanvasWriter({
     setHistoryVersion((v) => v + 1);
   }, [activeHistoryPage]);
 
-  // ── Pointer handlers ─────────────────────────────────────────────────────
+  // ── Stroke Helpers ───────────────────────────────────────────────────────
+  const beginStroke = useCallback((x: number, rawY: number) => {
+    const { pageIdx, localY, pageH } = getPageFromY(rawY);
+    const pageSize = getPageSize(pageIdx);
+    
+    // Ensure drawing starts strictly inside the PDF bounds
+    if (x < 0 || x > pageSize.w || localY < 0 || localY > pageH) {
+      return;
+    }
+
+    isDrawingRef.current = true;
+    setIsDrawing(true);
+    setActiveHistoryPage(pageIdx);
+    
+    currentLineRef.current = {
+      points: [x, localY],
+      color: strokeColor,
+      strokeWidth: strokeWidth,
+      tool: activeTool,
+      pageIdx
+    };
+
+    const page = pageIdx + 1;
+    const newLine = { ...currentLineRef.current };
+    setPageLines((prev) => ({
+      ...prev,
+      [page]: [...(prev[page] || []), newLine],
+    }));
+  }, [strokeColor, strokeWidth, activeTool, getPageFromY, getPageSize]);
+
+  const continueStroke = useCallback((x: number, rawY: number) => {
+    if (!isDrawingRef.current || !currentLineRef.current) return;
+
+    const startPageIdx = currentLineRef.current.pageIdx!;
+    const pageSize = getPageSize(startPageIdx);
+    const startPageOffset = getPageOffset(startPageIdx);
+    
+    const rawLocalY = rawY - startPageOffset;
+
+    // Clamp coordinates to strictly stay within the page's boundaries
+    const clampedX = Math.max(0, Math.min(x, pageSize.w));
+    const clampedY = Math.max(0, Math.min(rawLocalY, pageSize.h));
+
+    if (currentLineRef.current.tool === 'straight') {
+      const startX = currentLineRef.current.points[0];
+      const startY = currentLineRef.current.points[1];
+      currentLineRef.current.points = [startX, startY, clampedX, clampedY];
+    } else {
+      currentLineRef.current.points.push(clampedX, clampedY);
+    }
+
+    const page = startPageIdx + 1;
+    const updatedLine = { ...currentLineRef.current };
+    setPageLines((prev) => {
+      const lines = [...(prev[page] || [])];
+      lines[lines.length - 1] = updatedLine;
+      return { ...prev, [page]: lines };
+    });
+  }, [getPageSize, getPageOffset]);
+
+  const endStroke = useCallback(() => {
+    if (!isDrawingRef.current || !currentLineRef.current) return;
+    const pageIdx = currentLineRef.current.pageIdx!;
+    
+    isDrawingRef.current = false;
+    setIsDrawing(false);
+    currentLineRef.current = null;
+
+    const page = pageIdx + 1;
+    setPageLines((prev) => {
+      const lines = prev[page] || [];
+      pushHistory(page, lines);
+      return prev;
+    });
+  }, [pushHistory]);
+
+  const cancelStroke = useCallback(() => {
+    if (!isDrawingRef.current || !currentLineRef.current) return;
+    const pageIdx = currentLineRef.current.pageIdx!;
+    const page = pageIdx + 1;
+    
+    setPageLines((prev) => {
+      const lines = [...(prev[page] || [])];
+      lines.pop(); // discard the stroke completely
+      return { ...prev, [page]: lines };
+    });
+    
+    isDrawingRef.current = false;
+    setIsDrawing(false);
+    currentLineRef.current = null;
+  }, []);
+
+  // ── Pen / Mouse handlers ─────────────────────────────────────────────────
+  // We ignore pointerType === 'touch' because Konva's multi-touch PointerEvents are unreliable.
+  // Instead, we use native Konva Touch events for mobile.
   const handlePointerDown = useCallback(
     (e: KonvaEventObject<PointerEvent>) => {
+      if (e.evt.pointerType === 'touch') return;
       e.evt.preventDefault();
-      const pointerId = e.evt.pointerId;
-      const pointerType = e.evt.pointerType;
-
-      if (pointerType === 'touch') {
-        // Native touch scrolling handles panning/zooming externally
-        return;
-      }
-
+      
       const stage = stageRef.current;
       if (!stage) return;
-
       const rawPos = stage.getRelativePointerPosition();
-      if (!rawPos) return;
-
-      const { pageIdx, localY, pageH } = getPageFromY(rawPos.y);
-      const pageSize = getPageSize(pageIdx);
-      
-      // Ensure drawing starts strictly inside the PDF bounds
-      if (rawPos.x < 0 || rawPos.x > pageSize.w || localY < 0 || localY > pageH) {
-        return;
-      }
-
-      isDrawingRef.current = true;
-      setIsDrawing(true);
-      setActiveHistoryPage(pageIdx);
-      
-      // The current stroke is locked to the page it started on
-      currentLineRef.current = {
-        points: [rawPos.x, localY],
-        color: strokeColor,
-        strokeWidth: strokeWidth,
-        tool: activeTool,
-        pageIdx: pageIdx // track the page for this active stroke
-      };
-
-      const page = pageIdx + 1;
-      const newLine = { ...currentLineRef.current };
-      setPageLines((prev) => ({
-        ...prev,
-        [page]: [...(prev[page] || []), newLine],
-      }));
+      if (rawPos) beginStroke(rawPos.x, rawPos.y);
     },
-    [stageRef, strokeColor, strokeWidth, activeTool, getPageFromY, getPageSize]
+    [stageRef, beginStroke]
   );
 
   const handlePointerMove = useCallback(
     (e: KonvaEventObject<PointerEvent>) => {
+      if (e.evt.pointerType === 'touch') return;
       e.evt.preventDefault();
       
-      const pointerId = e.evt.pointerId;
-      const pointerType = e.evt.pointerType;
       const stage = stageRef.current;
       if (!stage) return;
-
-      if (pointerType === 'touch') {
-        return; // Native touch listener on DOM handles panning/zooming
-      }
-
-      if (!isDrawingRef.current || !currentLineRef.current) return;
-
       const rawPos = stage.getRelativePointerPosition();
-      if (!rawPos) return;
-
-      const startPageIdx = (currentLineRef.current as any).pageIdx;
-      const pageSize = getPageSize(startPageIdx);
-      const startPageOffset = getPageOffset(startPageIdx);
-      
-      // Calculate local Y relative to the page this stroke locked onto
-      const rawLocalY = rawPos.y - startPageOffset;
-
-      // Clamp coordinates to strictly stay within the page's boundaries
-      const pos = {
-        x: Math.max(0, Math.min(rawPos.x, pageSize.w)),
-        y: Math.max(0, Math.min(rawLocalY, pageSize.h)),
-      };
-
-      if (currentLineRef.current.tool === 'straight') {
-        const startX = currentLineRef.current.points[0];
-        const startY = currentLineRef.current.points[1];
-        currentLineRef.current.points = [startX, startY, pos.x, pos.y];
-      } else {
-        currentLineRef.current.points = [
-          ...currentLineRef.current.points,
-          pos.x,
-          pos.y,
-        ];
-      }
-
-      const page = startPageIdx + 1;
-      const updatedLine = { ...currentLineRef.current };
-      setPageLines((prev) => {
-        const lines = [...(prev[page] || [])];
-        lines[lines.length - 1] = updatedLine;
-        return { ...prev, [page]: lines };
-      });
+      if (rawPos) continueStroke(rawPos.x, rawPos.y);
     },
-    [stageRef, getPageSize, getPageOffset]
+    [stageRef, continueStroke]
   );
 
   const handlePointerUp = useCallback(
     (e: KonvaEventObject<PointerEvent>) => {
+      if (e.evt.pointerType === 'touch') return;
       e.evt.preventDefault();
-      const pointerId = e.evt.pointerId;
-      const pointerType = e.evt.pointerType;
-
-      if (pointerType === 'touch') {
-        return; // Don't draw with touch
-      }
-
-      const pageIdx = (currentLineRef.current as any).pageIdx;
-
-      isDrawingRef.current = false;
-      setIsDrawing(false);
-      currentLineRef.current = null;
-
-      const page = pageIdx + 1;
-      setPageLines((prev) => {
-        const lines = prev[page] || [];
-        pushHistory(page, lines);
-        return prev;
-      });
+      endStroke();
     },
-    [pushHistory]
+    [endStroke]
   );
 
-  // ── Touch handlers (fingers = zoom only, no pan) ──────────────────────────
-  // Single-finger touch is ignored (no drag). Pinch-to-zoom is handled
-  // via native touchmove listener in CanvasWriter.tsx.
-  const handleTouchStart = useCallback(
-    (_e: KonvaEventObject<TouchEvent>) => {
-      // no-op — pinch is handled externally on the DOM element
-    },
-    []
-  );
-
-  const handleTouchEnd = useCallback(() => {
-    // no-op
-  }, []);
-
-  // ── Zoom helpers (use refs to avoid stale closures) ───────────────────────
+  // ── Pan/Zoom constraints ──────────────────────────────────────────────────
   const containerSizeRef = useRef(containerSize);
   useEffect(() => { containerSizeRef.current = containerSize; }, [containerSize]);
 
-  // ── Pan/Zoom constraints ──────────────────────────────────────────────────
-  // Do not let pan drift way off into the gray area
   const clampPos = useCallback(
     (x: number, y: number, scale: number) => {
       const cs = containerSizeRef.current;
       const pad = 20;
 
-      const docW = getPageSize(0).w * scale; // Assume width is fairly uniform for bounds check
+      const docW = getPageSize(0).w * scale; 
       const docH = getTotalDocumentHeight() * scale;
 
-      // x minimums and maximums
-      // If doc is smaller than container width, keep it centered or freely padded, 
-      // but if it's larger, it shouldn't drift past its own edge + padding.
       const minX = Math.min(pad, cs.w - docW - pad);
       const maxX = Math.max(-pad, pad);
       
@@ -503,8 +485,7 @@ export function useCanvasWriter({
       const cs = containerSizeRef.current;
       const pad = 20;
       
-      // Compute minimum allowed scale: Fit the doc width to the container with 20px padding on each side
-      const docW = getPageSize(0).w || 800; // prevent divide by zero
+      const docW = getPageSize(0).w || 800;
       const minScale = Math.max(0.1, (cs.w - pad * 2) / docW);
 
       const clamped = Math.min(5, Math.max(minScale, newScale));
@@ -521,6 +502,108 @@ export function useCanvasWriter({
       setStagePos(clampedPos);
     },
     [clampPos, getPageSize]
+  );
+
+  const panBy = useCallback((dx: number, dy: number) => {
+    setStagePos((prev) => clampPos(prev.x + dx, prev.y + dy, scaleRef.current));
+  }, [clampPos]);
+  
+  // ── Touch handlers ────────────────────────────────────────────────────────
+  const lastTouchDistRef = useRef<number>(0);
+  const lastTouchCenterRef = useRef<{ x: number, y: number } | null>(null);
+
+  const handleTouchStart = useCallback(
+    (e: KonvaEventObject<TouchEvent>) => {
+      e.evt.preventDefault(); // prevent native scrolling behavior
+      const touches = e.evt.touches;
+      const stage = stageRef.current;
+      if (!stage) return;
+
+      if (touches.length === 1) {
+        // Prepare for 1-finger drawing
+        lastTouchDistRef.current = 0;
+        lastTouchCenterRef.current = null;
+        
+        stage.setPointersPositions(e.evt);
+        const rawPos = stage.getRelativePointerPosition();
+        if (rawPos) beginStroke(rawPos.x, rawPos.y);
+      } else if (touches.length === 2) {
+        // If 2 fingers touch DOWN, cancel any drawing that already started with the 1st finger
+        cancelStroke();
+
+        // Initialize pan / zoom references
+        const t1 = touches[0];
+        const t2 = touches[1];
+        lastTouchDistRef.current = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+        lastTouchCenterRef.current = {
+          x: (t1.clientX + t2.clientX) / 2,
+          y: (t1.clientY + t2.clientY) / 2,
+        };
+      }
+    },
+    [stageRef, beginStroke, cancelStroke]
+  );
+
+  const handleTouchMove = useCallback(
+    (e: KonvaEventObject<TouchEvent>) => {
+      e.evt.preventDefault();
+      const touches = e.evt.touches;
+      const stage = stageRef.current;
+      if (!stage) return;
+
+      if (touches.length === 1) {
+        // Continue drawing
+        stage.setPointersPositions(e.evt);
+        const rawPos = stage.getRelativePointerPosition();
+        if (rawPos) continueStroke(rawPos.x, rawPos.y);
+      } else if (touches.length === 2) {
+        // Continue panning/zooming
+        const t1 = touches[0];
+        const t2 = touches[1];
+        const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+        const center = {
+          x: (t1.clientX + t2.clientX) / 2,
+          y: (t1.clientY + t2.clientY) / 2,
+        };
+
+        if (lastTouchCenterRef.current) {
+          const dx = center.x - lastTouchCenterRef.current.x;
+          const dy = center.y - lastTouchCenterRef.current.y;
+          panBy(dx, dy);
+        }
+
+        if (lastTouchDistRef.current > 0) {
+          const ratio = dist / lastTouchDistRef.current;
+          const currentScale = scaleRef.current;
+          const newScale = Math.min(5, Math.max(0.3, currentScale * ratio));
+
+          // map screen coordinates to Konva container offsets to zoom towards fingers
+          const containerRect = stage.container().getBoundingClientRect();
+          const pointerPos = { x: center.x - containerRect.left, y: center.y - containerRect.top };
+          zoomTo(newScale, pointerPos);
+        }
+
+        lastTouchDistRef.current = dist;
+        lastTouchCenterRef.current = center;
+      }
+    },
+    [stageRef, continueStroke, panBy, zoomTo]
+  );
+
+  const handleTouchEnd = useCallback(
+    (e: KonvaEventObject<TouchEvent>) => {
+      e.evt.preventDefault();
+      const touches = e.evt.touches;
+      // if 0 fingers are on screen, process endStroke
+      if (touches.length === 0) {
+        endStroke();
+      } else if (touches.length === 1) {
+        // user had 2 fingers panning, lifted 1. We abort everything to prevent random strokes.
+        lastTouchDistRef.current = 0;
+        lastTouchCenterRef.current = null;
+      }
+    },
+    [endStroke]
   );
 
   const zoomIn = useCallback(() => zoomTo(scaleRef.current * 1.2), [zoomTo]);
@@ -541,10 +624,6 @@ export function useCanvasWriter({
     setStageScale(idealScale);
     setStagePos({ x: padding, y: padding }); // Top left padding
   }, [getPageSize]);
-
-  const panBy = useCallback((dx: number, dy: number) => {
-    setStagePos((prev) => clampPos(prev.x + dx, prev.y + dy, scaleRef.current));
-  }, [clampPos]);
 
   // ── Initial fit-to-width on load ───────────────────────────────────────
   useEffect(() => {
@@ -910,6 +989,7 @@ export function useCanvasWriter({
     handlePointerMove,
     handlePointerUp,
     handleTouchStart,
+    handleTouchMove,
     handleTouchEnd,
     handleSubmit,
     triggerSave,
