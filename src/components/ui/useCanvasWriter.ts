@@ -8,6 +8,13 @@ import type { KonvaEventObject } from 'konva/lib/Node';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdfjs/pdf.worker.min.mjs';
 
+// ── Constants ────────────────────────────────────────────────────────────────
+
+const RENDER_SCALE = 2;
+const AUTO_SAVE_INTERVAL = 3000;
+const MAX_HISTORY = 50;
+const PAGE_GAP = 20; // 20px gap in continuous scroll
+
 // ── Types ────────────────────────────────────────────────────────────────────
 
 export interface LineData {
@@ -15,6 +22,7 @@ export interface LineData {
   color: string;
   strokeWidth: number;
   tool: 'pen' | 'eraser' | 'straight';
+  pageIdx?: number;
 }
 
 export type PageLines = Record<number, LineData[]>;
@@ -31,9 +39,7 @@ export interface UseCanvasWriterProps {
   containerSize: { w: number; h: number };
 }
 
-const RENDER_SCALE = 2;
-const AUTO_SAVE_INTERVAL = 3000;
-const MAX_HISTORY = 50;
+
 
 // ── Hook ─────────────────────────────────────────────────────────────────────
 
@@ -56,7 +62,6 @@ export function useCanvasWriter({
   const pdfRawBytesRef = useRef<ArrayBuffer | null>(null);
 
   // ── Drawing state ────────────────────────────────────────────────────────
-  const [currentPage, setCurrentPage] = useState(0);
   const [pageLines, setPageLines] = useState<PageLines>({});
   const [activeTool, setActiveTool] = useState<'pen' | 'eraser' | 'straight'>('pen');
   const [strokeColor, setStrokeColor] = useState('#1a1a1a');
@@ -113,6 +118,49 @@ export function useCanvasWriter({
       return { w: 800, h: 600 };
     },
     [pdfPageDimensions]
+  );
+
+  // ── Continuous Scroll Layout ──────────────────────────────────────────────
+  const getPageOffset = useCallback(
+    (pageIdx: number): number => {
+      let offset = 0;
+      for (let i = 0; i < pageIdx; i++) {
+        offset += getPageSize(i).h + PAGE_GAP;
+      }
+      return offset;
+    },
+    [getPageSize]
+  );
+
+  const getTotalDocumentHeight = useCallback((): number => {
+    let total = 0;
+    for (let i = 0; i < numPages; i++) {
+      total += getPageSize(i).h;
+      if (i < numPages - 1) total += PAGE_GAP;
+    }
+    return total;
+  }, [numPages, getPageSize]);
+
+  // Maps an absolute Y pixel to a specific page index + local Y coordinate.
+  const getPageFromY = useCallback(
+    (absoluteY: number) => {
+      let offset = 0;
+      for (let i = 0; i < numPages; i++) {
+        const h = getPageSize(i).h;
+        if (absoluteY >= offset && absoluteY <= offset + h + PAGE_GAP) {
+          return { pageIdx: i, localY: absoluteY - offset, pageH: h };
+        }
+        offset += h + PAGE_GAP;
+      }
+      // Out of bounds bottom, snap to last page
+      const lastIdx = Math.max(0, numPages - 1);
+      return { 
+        pageIdx: lastIdx, 
+        localY: absoluteY - getPageOffset(lastIdx), 
+        pageH: getPageSize(lastIdx).h 
+      };
+    },
+    [numPages, getPageSize, getPageOffset]
   );
 
   // ── Load PDF pages ───────────────────────────────────────────────────────
@@ -240,26 +288,35 @@ export function useCanvasWriter({
     []
   );
 
+  // Allow undo/redo based on whichever page actually has history, 
+  // or globally cross-page. For continuous scroll, we can just look 
+  // at the page where the last stroke was drawn, or broadly track a 
+  // global timeline. 
+  // Since history is currently per-page, we'll track the "active page" 
+  // implicitly derived from the last stroke or default to page 0.
+  // We'll keep a soft reference to the last drawn page.
+  const [activeHistoryPage, setActiveHistoryPage] = useState(0);
+
   const canUndo =
-    (historyRef.current[currentPage + 1]?.length ?? 0) > 0 &&
-    (historyIndexRef.current[currentPage + 1] ?? 0) > 0;
+    (historyRef.current[activeHistoryPage + 1]?.length ?? 0) > 0 &&
+    (historyIndexRef.current[activeHistoryPage + 1] ?? 0) > 0;
 
   const canRedo =
-    (historyIndexRef.current[currentPage + 1] ?? 0) <
-    (historyRef.current[currentPage + 1]?.length ?? 1) - 1;
+    (historyIndexRef.current[activeHistoryPage + 1] ?? 0) <
+    (historyRef.current[activeHistoryPage + 1]?.length ?? 1) - 1;
 
   const undo = useCallback(() => {
-    const page = currentPage + 1;
+    const page = activeHistoryPage + 1;
     const idx = historyIndexRef.current[page];
     if (idx === undefined || idx <= 0) return;
     historyIndexRef.current[page] = idx - 1;
     const snapshot = historyRef.current[page][idx - 1];
     setPageLines((prev) => ({ ...prev, [page]: JSON.parse(JSON.stringify(snapshot)) }));
     setHistoryVersion((v) => v + 1);
-  }, [currentPage]);
+  }, [activeHistoryPage]);
 
   const redo = useCallback(() => {
-    const page = currentPage + 1;
+    const page = activeHistoryPage + 1;
     const idx = historyIndexRef.current[page];
     const maxIdx = (historyRef.current[page]?.length ?? 1) - 1;
     if (idx === undefined || idx >= maxIdx) return;
@@ -267,7 +324,7 @@ export function useCanvasWriter({
     const snapshot = historyRef.current[page][idx + 1];
     setPageLines((prev) => ({ ...prev, [page]: JSON.parse(JSON.stringify(snapshot)) }));
     setHistoryVersion((v) => v + 1);
-  }, [currentPage]);
+  }, [activeHistoryPage]);
 
   // ── Pointer handlers ─────────────────────────────────────────────────────
   const handlePointerDown = useCallback(
@@ -289,33 +346,38 @@ export function useCanvasWriter({
       const stage = stageRef.current;
       if (!stage) return;
 
-      const pos = stage.getRelativePointerPosition();
-      if (!pos) return;
+      const rawPos = stage.getRelativePointerPosition();
+      if (!rawPos) return;
 
-      const pageSize = getPageSize(currentPage);
+      const { pageIdx, localY, pageH } = getPageFromY(rawPos.y);
+      const pageSize = getPageSize(pageIdx);
+      
       // Ensure drawing starts strictly inside the PDF bounds
-      if (pos.x < 0 || pos.y < 0 || pos.x > pageSize.w || pos.y > pageSize.h) {
+      if (rawPos.x < 0 || rawPos.x > pageSize.w || localY < 0 || localY > pageH) {
         return;
       }
 
       isDrawingRef.current = true;
       setIsDrawing(true);
-
+      setActiveHistoryPage(pageIdx);
+      
+      // The current stroke is locked to the page it started on
       currentLineRef.current = {
-        points: [pos.x, pos.y],
+        points: [rawPos.x, localY],
         color: strokeColor,
         strokeWidth: strokeWidth,
         tool: activeTool,
+        pageIdx: pageIdx // track the page for this active stroke
       };
 
-      const page = currentPage + 1;
+      const page = pageIdx + 1;
       const newLine = { ...currentLineRef.current };
       setPageLines((prev) => ({
         ...prev,
         [page]: [...(prev[page] || []), newLine],
       }));
     },
-    [stageRef, strokeColor, strokeWidth, activeTool, currentPage]
+    [stageRef, strokeColor, strokeWidth, activeTool, getPageFromY, getPageSize]
   );
 
   const handlePointerMove = useCallback(
@@ -373,11 +435,17 @@ export function useCanvasWriter({
       const rawPos = stage.getRelativePointerPosition();
       if (!rawPos) return;
 
-      const pageSize = getPageSize(currentPage);
-      // Clamp coordinates to strictly stay within PDF bounds
+      const startPageIdx = (currentLineRef.current as any).pageIdx;
+      const pageSize = getPageSize(startPageIdx);
+      const startPageOffset = getPageOffset(startPageIdx);
+      
+      // Calculate local Y relative to the page this stroke locked onto
+      const rawLocalY = rawPos.y - startPageOffset;
+
+      // Clamp coordinates to strictly stay within the page's boundaries
       const pos = {
         x: Math.max(0, Math.min(rawPos.x, pageSize.w)),
-        y: Math.max(0, Math.min(rawPos.y, pageSize.h)),
+        y: Math.max(0, Math.min(rawLocalY, pageSize.h)),
       };
 
       if (currentLineRef.current.tool === 'straight') {
@@ -392,7 +460,7 @@ export function useCanvasWriter({
         ];
       }
 
-      const page = currentPage + 1;
+      const page = startPageIdx + 1;
       const updatedLine = { ...currentLineRef.current };
       setPageLines((prev) => {
         const lines = [...(prev[page] || [])];
@@ -400,7 +468,7 @@ export function useCanvasWriter({
         return { ...prev, [page]: lines };
       });
     },
-    [stageRef, currentPage]
+    [stageRef, getPageSize, getPageOffset]
   );
 
   const handlePointerUp = useCallback(
@@ -418,20 +486,20 @@ export function useCanvasWriter({
         return; // Don't draw with touch
       }
 
-      if (!isDrawingRef.current) return;
+      const pageIdx = (currentLineRef.current as any).pageIdx;
 
       isDrawingRef.current = false;
       setIsDrawing(false);
       currentLineRef.current = null;
 
-      const page = currentPage + 1;
+      const page = pageIdx + 1;
       setPageLines((prev) => {
         const lines = prev[page] || [];
         pushHistory(page, lines);
         return prev;
       });
     },
-    [currentPage, pushHistory]
+    [pushHistory]
   );
 
   // ── Touch handlers (fingers = zoom only, no pan) ──────────────────────────
@@ -452,58 +520,94 @@ export function useCanvasWriter({
   const containerSizeRef = useRef(containerSize);
   useEffect(() => { containerSizeRef.current = containerSize; }, [containerSize]);
 
+  // ── Pan/Zoom constraints ──────────────────────────────────────────────────
+  // Do not let pan drift way off into the gray area
+  const clampPos = useCallback(
+    (x: number, y: number, scale: number) => {
+      const cs = containerSizeRef.current;
+      const pad = 20;
+
+      const docW = getPageSize(0).w * scale; // Assume width is fairly uniform for bounds check
+      const docH = getTotalDocumentHeight() * scale;
+
+      // x minimums and maximums
+      // If doc is smaller than container width, keep it centered or freely padded, 
+      // but if it's larger, it shouldn't drift past its own edge + padding.
+      const minX = Math.min(pad, cs.w - docW - pad);
+      const maxX = Math.max(-pad, pad);
+      
+      const minY = Math.min(pad, cs.h - docH - pad);
+      const maxY = Math.max(-pad, pad);
+
+      return {
+        x: Math.max(minX, Math.min(maxX, x)),
+        y: Math.max(minY, Math.min(maxY, y)),
+      };
+    },
+    [getPageSize, getTotalDocumentHeight]
+  );
+
   const zoomTo = useCallback(
     (newScale: number, center?: { x: number; y: number }) => {
-      const clamped = Math.min(5, Math.max(0.3, newScale));
+      const cs = containerSizeRef.current;
+      const pad = 20;
+      
+      // Compute minimum allowed scale: Fit the doc width to the container with 20px padding on each side
+      const docW = getPageSize(0).w || 800; // prevent divide by zero
+      const minScale = Math.max(0.1, (cs.w - pad * 2) / docW);
+
+      const clamped = Math.min(5, Math.max(minScale, newScale));
       const oldScale = scaleRef.current;
       const oldPos = posRef.current;
-      const cs = containerSizeRef.current;
       const c = center || { x: cs.w / 2, y: cs.h / 2 };
-      const newPos = {
-        x: c.x - (c.x - oldPos.x) * (clamped / oldScale),
-        y: c.y - (c.y - oldPos.y) * (clamped / oldScale),
-      };
+      
+      let newX = c.x - (c.x - oldPos.x) * (clamped / oldScale);
+      let newY = c.y - (c.y - oldPos.y) * (clamped / oldScale);
+
+      const clampedPos = clampPos(newX, newY, clamped);
+
       setStageScale(clamped);
-      setStagePos(newPos);
+      setStagePos(clampedPos);
     },
-    [] // stable — reads from refs
+    [clampPos, getPageSize]
   );
 
   const zoomIn = useCallback(() => zoomTo(scaleRef.current * 1.2), [zoomTo]);
   const zoomOut = useCallback(() => zoomTo(scaleRef.current / 1.2), [zoomTo]);
   const resetZoom = useCallback(() => {
-    setStageScale(1);
-    setStagePos({ x: 0, y: 0 });
-  }, []);
+    // Determine the ideal fit-to-width scale
+    const cs = containerSizeRef.current;
+    if (cs.w === 0 || cs.h === 0) {
+      setStageScale(1);
+      setStagePos({ x: 0, y: 0 });
+      return;
+    }
+
+    const docW = getPageSize(0).w || 800;
+    const padding = 20;
+    const idealScale = Math.max(0.1, (cs.w - padding * 2) / docW);
+    
+    setStageScale(idealScale);
+    setStagePos({ x: padding, y: padding }); // Top left padding
+  }, [getPageSize]);
 
   const panBy = useCallback((dx: number, dy: number) => {
-    setStagePos((prev) => ({
-      x: prev.x + dx,
-      y: prev.y + dy,
-    }));
-  }, []);
+    setStagePos((prev) => clampPos(prev.x + dx, prev.y + dy, scaleRef.current));
+  }, [clampPos]);
 
-  // ── Fit page to container (on page change, PDF load, or container resize) ─
+  // ── Initial fit-to-width on load ───────────────────────────────────────
   useEffect(() => {
     if (containerSize.w === 0 || containerSize.h === 0) return;
-    const ps = getPageSize(currentPage);
+    const ps = getPageSize(0);
     if (!ps.w || !ps.h) return;
 
     // Deduplicate — only re-fit when these inputs actually change
-    const fitKey = `${currentPage}-${pdfPageImages.length}-${Math.round(containerSize.w)}-${Math.round(containerSize.h)}`;
+    const fitKey = `${pdfPageImages.length}-${Math.round(containerSize.w)}-${Math.round(containerSize.h)}`;
     if (fitKey === lastFitKeyRef.current) return;
     lastFitKeyRef.current = fitKey;
 
-    // Scale to fit entirely within the container (may scale up for small PDFs)
-    const scaleX = containerSize.w / ps.w;
-    const scaleY = containerSize.h / ps.h;
-    const fitScale = Math.min(scaleX, scaleY);
-    const offsetX = (containerSize.w - ps.w * fitScale) / 2;
-    const offsetY = (containerSize.h - ps.h * fitScale) / 2;
-
-    setStageScale(fitScale);
-    setStagePos({ x: offsetX, y: offsetY });
-  }, [currentPage, pdfPageImages.length, containerSize, getPageSize]);
+    resetZoom(); // Applies the fit-to-width with 20px padding naturally
+  }, [pdfPageImages.length, containerSize, getPageSize, resetZoom]);
 
   // ── Export all pages as PNG data URLs ─────────────────────────────────────
   const exportAllPages = useCallback(async (): Promise<Record<number, string>> => {
@@ -805,8 +909,6 @@ export function useCanvasWriter({
     loadError,
     numPages,
     getPageSize,
-    currentPage,
-    setCurrentPage,
     pageLines,
     activeTool,
     setActiveTool,
@@ -836,5 +938,6 @@ export function useCanvasWriter({
     triggerSave,
     panBy,
     isDrawing,
+    getPageOffset,
   };
 }

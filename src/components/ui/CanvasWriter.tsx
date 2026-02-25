@@ -63,8 +63,6 @@ export default function CanvasWriter(props: CanvasWriterProps) {
     loadError,
     numPages,
     getPageSize,
-    currentPage,
-    setCurrentPage,
     pageLines,
     activeTool,
     setActiveTool,
@@ -90,6 +88,7 @@ export default function CanvasWriter(props: CanvasWriterProps) {
     handleTouchStart,
     handleTouchEnd,
     isDrawing,
+    getPageOffset,
   } = useCanvasWriter({ ...props, stageRef, containerSize });
 
 
@@ -112,12 +111,7 @@ export default function CanvasWriter(props: CanvasWriterProps) {
     [zoomTo]
   );
 
-  // ── Current page data ─────────────────────────────────────────────────
-  const pageNum = currentPage + 1;
-  const currentLines = pageLines[pageNum] || [];
-  const bgImage = pdfPageImages[currentPage] || null;
-  const draftImage = draftImages[pageNum] || null;
-  const pageSize = getPageSize(currentPage);
+
 
   // Ready to show the canvas (not loading, no error, container measured)
   const stageReady = !isLoading && !loadError && containerSize.w > 0 && containerSize.h > 0;
@@ -232,31 +226,7 @@ export default function CanvasWriter(props: CanvasWriterProps) {
           <Redo2 size={16} />
         </button>
 
-        {/* Page navigation */}
-        {numPages > 1 && (
-          <>
-            <div className="w-px h-6 bg-gray-600 mx-1" />
-            <button
-              onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
-              disabled={currentPage === 0}
-              className="p-1.5 rounded hover:bg-gray-700 disabled:opacity-30 transition-colors"
-              title="Previous page"
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <span className="text-xs font-medium w-12 text-center shrink-0">
-              {currentPage + 1} / {numPages}
-            </span>
-            <button
-              onClick={() => setCurrentPage((p) => Math.min(numPages - 1, p + 1))}
-              disabled={currentPage === numPages - 1}
-              className="p-1.5 rounded hover:bg-gray-700 disabled:opacity-30 transition-colors"
-              title="Next page"
-            >
-              <ChevronRight size={16} />
-            </button>
-          </>
-        )}
+
 
         <div className="w-px h-6 bg-gray-600 mx-1" />
 
@@ -327,85 +297,100 @@ export default function CanvasWriter(props: CanvasWriterProps) {
             onTouchEnd={handleTouchEnd}
             onWheel={handleWheel}
           >
-            {/* Background layer */}
-            <Layer listening={false}>
-              {bgImage ? (
-                <KonvaImage
-                  image={bgImage}
-                  x={0}
-                  y={0}
-                  width={pageSize.w}
-                  height={pageSize.h}
-                />
-              ) : (
-                <Rect
-                  x={0}
-                  y={0}
-                  width={pageSize.w}
-                  height={pageSize.h}
-                  fill="white"
-                  shadowColor="#00000020"
-                  shadowBlur={10}
-                  shadowOffsetY={2}
-                />
-              )}
-            </Layer>
-
-            {/* Drawing layer (Current strokes + previous drafts) */}
+            {/* Continuous document rendering */}
             <Layer>
-              {draftImage && (
-                <KonvaImage
-                  image={draftImage}
-                  x={0}
-                  y={0}
-                  width={pageSize.w}
-                  height={pageSize.h}
-                />
-              )}
+              {Array.from({ length: numPages }).map((_, pageIndex) => {
+                const pageNum = pageIndex + 1;
+                const pageSize = getPageSize(pageIndex);
+                const bgImage = pdfPageImages[pageIndex] || null;
+                const draftImage = draftImages[pageNum] || null;
+                const lines = pageLines[pageNum] || [];
 
-              {currentLines.map((line, i) => (
-                <Line
-                  key={i}
-                  points={line.points}
-                  stroke={line.tool === 'eraser' ? '#ffffff' : line.color}
-                  strokeWidth={line.strokeWidth}
-                  tension={0.5}
-                  lineCap="round"
-                  lineJoin="round"
-                  globalCompositeOperation={
-                    line.tool === 'eraser' ? 'destination-out' : 'source-over'
-                  }
-                />
-              ))}
-
-              {/* Show length indicator when actively drawing a straight line */}
-              {activeTool === 'straight' && isDrawing && currentLines.length > 0 && (() => {
-                const activeLine = currentLines[currentLines.length - 1];
-                if (activeLine.points.length >= 4) {
-                  const x1 = activeLine.points[0];
-                  const y1 = activeLine.points[1];
-                  const x2 = activeLine.points[2];
-                  const y2 = activeLine.points[3];
-                  
-                  const dist = Math.hypot(x2 - x1, y2 - y1);
-                  const midX = (x1 + x2) / 2;
-                  const midY = (y1 + y2) / 2;
-
-                  return (
-                    <Label x={midX} y={midY} opacity={0.8}>
-                      <Tag fill="black" pointerDirection="down" pointerWidth={10} pointerHeight={10} lineJoin="round" shadowColor="black" shadowBlur={10} shadowOffsetX={2} shadowOffsetY={2} shadowOpacity={0.5} />
-                      <Text
-                        text={`${dist.toFixed(1)} px`}
-                        fontFamily="Inter, sans-serif"
-                        fontSize={14}
-                        padding={6}
-                        fill="white"
+                return (
+                  <Group key={pageIndex} y={getPageOffset(pageIndex)}>
+                    {/* Background page */}
+                    {bgImage ? (
+                      <KonvaImage
+                        listening={false}
+                        image={bgImage}
+                        x={0}
+                        y={0}
+                        width={pageSize.w}
+                        height={pageSize.h}
                       />
-                    </Label>
-                  );
-                }
-                return null;
-              })()}
+                    ) : (
+                      <Rect
+                        listening={false}
+                        x={0}
+                        y={0}
+                        width={pageSize.w}
+                        height={pageSize.h}
+                        fill="white"
+                        shadowColor="#00000020"
+                        shadowBlur={10}
+                        shadowOffsetY={2}
+                      />
+                    )}
+
+                    {/* Draft image */}
+                    {draftImage && (
+                      <KonvaImage
+                        image={draftImage}
+                        x={0}
+                        y={0}
+                        width={pageSize.w}
+                        height={pageSize.h}
+                      />
+                    )}
+
+                    {/* Active strokes */}
+                    {lines.map((line, i) => (
+                      <Line
+                        key={i}
+                        points={line.points}
+                        stroke={line.tool === 'eraser' ? '#ffffff' : line.color}
+                        strokeWidth={line.strokeWidth}
+                        tension={0.5}
+                        lineCap="round"
+                        lineJoin="round"
+                        globalCompositeOperation={
+                          line.tool === 'eraser' ? 'destination-out' : 'source-over'
+                        }
+                      />
+                    ))}
+
+                    {/* Show length indicator when actively drawing a straight line on THIS page */}
+                    {activeTool === 'straight' && isDrawing && lines.length > 0 && (() => {
+                      const activeLine = lines[lines.length - 1];
+                      // Only render distance if this page has the newly dragged line
+                      if (activeLine && activeLine.points && activeLine.points.length >= 4 && activeLine.pageIdx === pageIndex) {
+                        const x1 = activeLine.points[0];
+                        const y1 = activeLine.points[1];
+                        const x2 = activeLine.points[2];
+                        const y2 = activeLine.points[3];
+                        
+                        const dist = Math.hypot(x2 - x1, y2 - y1);
+                        const midX = (x1 + x2) / 2;
+                        const midY = (y1 + y2) / 2;
+
+                        return (
+                          <Label x={midX} y={midY} opacity={0.8}>
+                            <Tag fill="black" pointerDirection="down" pointerWidth={10} pointerHeight={10} lineJoin="round" shadowColor="black" shadowBlur={10} shadowOffsetX={2} shadowOffsetY={2} shadowOpacity={0.5} />
+                            <Text
+                              text={`${dist.toFixed(1)} px`}
+                              fontFamily="Inter, sans-serif"
+                              fontSize={14}
+                              padding={6}
+                              fill="white"
+                            />
+                          </Label>
+                        );
+                      }
+                      return null;
+                    })()}
+                  </Group>
+                );
+              })}
             </Layer>
           </Stage>
         )}
