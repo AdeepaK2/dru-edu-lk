@@ -101,21 +101,30 @@ export function useCanvasWriter({
   // ── Fit-to-page tracking ─────────────────────────────────────────────────
   const lastFitKeyRef = useRef('');
 
+  // ── Extra blank pages (student-added, appended after PDF pages) ────────────
+  const [extraPages, setExtraPages] = useState(0);
+
   // ── Computed ──────────────────────────────────────────────────────────────
-  const numPages = pdfUrl ? pdfPageImages.length : 1;
+  const pdfBasePages = pdfUrl ? pdfPageImages.length : 1;   // original pages
+  const numPages = pdfBasePages + extraPages;               // total (incl. added blanks)
 
   // Page dimensions in CSS pixels (raster / RENDER_SCALE).
   // Stable: only depends on pdfPageDimensions (set once on PDF load).
   const getPageSize = useCallback(
     (pageIdx: number) => {
+      // Original PDF pages
       if (pdfPageDimensions[pageIdx]) {
         return {
           w: pdfPageDimensions[pageIdx].w / RENDER_SCALE,
           h: pdfPageDimensions[pageIdx].h / RENDER_SCALE,
         };
       }
-      // Blank canvas — use fixed default (not containerSize, to avoid dependency churn)
-      return { w: 800, h: 600 };
+      // Extra blank pages: use the last known PDF page size (or sensible A4 default)
+      const lastDim = pdfPageDimensions[pdfPageDimensions.length - 1];
+      if (lastDim) {
+        return { w: lastDim.w / RENDER_SCALE, h: lastDim.h / RENDER_SCALE };
+      }
+      return { w: 800, h: 1100 }; // A4-ish blank canvas default
     },
     [pdfPageDimensions]
   );
@@ -313,14 +322,38 @@ export function useCanvasWriter({
   }, [activeHistoryPage]);
 
   // ── Pointer handlers ─────────────────────────────────────────────────────
+  // Track all active touch pointer IDs — so we can distinguish 1-finger (draw)
+  // from 2-finger (scroll / pinch-zoom, handled by the DOM touch handler).
+  const activeTouchPointers = useRef(new Set<number>());
+
   const handlePointerDown = useCallback(
     (e: KonvaEventObject<PointerEvent>) => {
       e.evt.preventDefault();
       const pointerType = e.evt.pointerType;
+      const pointerId   = e.evt.pointerId;
 
       if (pointerType === 'touch') {
-        // Native touch scrolling handles panning/zooming externally
-        return;
+        activeTouchPointers.current.add(pointerId);
+
+        if (activeTouchPointers.current.size > 1) {
+          // ── Second finger: cancel any in-progress stroke ──
+          // The DOM 2-finger handler will take over pan / pinch-zoom.
+          if (isDrawingRef.current && currentLineRef.current) {
+            const cancelPageIdx = (currentLineRef.current as any).pageIdx;
+            const cancelPage    = cancelPageIdx + 1;
+            // Remove the partial stroke that was started by the first finger
+            setPageLines((prev) => {
+              const lines = [...(prev[cancelPage] || [])];
+              lines.pop();
+              return { ...prev, [cancelPage]: lines };
+            });
+          }
+          isDrawingRef.current = false;
+          setIsDrawing(false);
+          currentLineRef.current = null;
+          return;
+        }
+        // ── First finger only: fall through to draw ──
       }
 
       const stage = stageRef.current;
@@ -331,8 +364,7 @@ export function useCanvasWriter({
 
       const { pageIdx, localY, pageH } = getPageFromY(rawPos.y);
       const pageSize = getPageSize(pageIdx);
-      
-      // Ensure drawing starts strictly inside the PDF bounds
+
       if (rawPos.x < 0 || rawPos.x > pageSize.w || localY < 0 || localY > pageH) {
         return;
       }
@@ -340,17 +372,16 @@ export function useCanvasWriter({
       isDrawingRef.current = true;
       setIsDrawing(true);
       setActiveHistoryPage(pageIdx);
-      
-      // The current stroke is locked to the page it started on
+
       currentLineRef.current = {
         points: [rawPos.x, localY],
         color: strokeColor,
         strokeWidth: strokeWidth,
         tool: activeTool,
-        pageIdx: pageIdx // track the page for this active stroke
+        pageIdx: pageIdx,
       };
 
-      const page = pageIdx + 1;
+      const page    = pageIdx + 1;
       const newLine = { ...currentLineRef.current };
       setPageLines((prev) => ({
         ...prev,
@@ -363,28 +394,23 @@ export function useCanvasWriter({
   const handlePointerMove = useCallback(
     (e: KonvaEventObject<PointerEvent>) => {
       e.evt.preventDefault();
-      
       const pointerType = e.evt.pointerType;
       const stage = stageRef.current;
       if (!stage) return;
 
-      if (pointerType === 'touch') {
-        return; // Native touch listener on DOM handles panning/zooming
-      }
+      // If 2+ touch fingers are active, let the DOM handler handle it
+      if (pointerType === 'touch' && activeTouchPointers.current.size > 1) return;
 
       if (!isDrawingRef.current || !currentLineRef.current) return;
 
       const rawPos = stage.getRelativePointerPosition();
       if (!rawPos) return;
 
-      const startPageIdx = (currentLineRef.current as any).pageIdx;
-      const pageSize = getPageSize(startPageIdx);
+      const startPageIdx    = (currentLineRef.current as any).pageIdx;
+      const pageSize        = getPageSize(startPageIdx);
       const startPageOffset = getPageOffset(startPageIdx);
-      
-      // Calculate local Y relative to the page this stroke locked onto
-      const rawLocalY = rawPos.y - startPageOffset;
+      const rawLocalY       = rawPos.y - startPageOffset;
 
-      // Clamp coordinates to strictly stay within the page's boundaries
       const pos = {
         x: Math.max(0, Math.min(rawPos.x, pageSize.w)),
         y: Math.max(0, Math.min(rawLocalY, pageSize.h)),
@@ -402,7 +428,7 @@ export function useCanvasWriter({
         ];
       }
 
-      const page = startPageIdx + 1;
+      const page        = startPageIdx + 1;
       const updatedLine = { ...currentLineRef.current };
       setPageLines((prev) => {
         const lines = [...(prev[page] || [])];
@@ -417,14 +443,18 @@ export function useCanvasWriter({
     (e: KonvaEventObject<PointerEvent>) => {
       e.evt.preventDefault();
       const pointerType = e.evt.pointerType;
+      const pointerId   = e.evt.pointerId;
 
       if (pointerType === 'touch') {
-        return; // Don't draw with touch
+        activeTouchPointers.current.delete(pointerId);
+        // If there are still other fingers down, don't finalise the stroke
+        if (activeTouchPointers.current.size > 0) return;
       }
 
-      const pageIdx = (currentLineRef.current as any).pageIdx;
+      if (!isDrawingRef.current || !currentLineRef.current) return;
 
-      isDrawingRef.current = false;
+      const pageIdx = (currentLineRef.current as any).pageIdx;
+      isDrawingRef.current  = false;
       setIsDrawing(false);
       currentLineRef.current = null;
 
@@ -556,6 +586,27 @@ export function useCanvasWriter({
     },
     [numPages, getPageOffset, clampPos]
   );
+
+  // ── Add / Remove extra blank pages ──────────────────────────────────────
+  const addPage = useCallback(() => {
+    setExtraPages((n) => n + 1);
+    // Scroll to the new page right after state update
+    setTimeout(() => {
+      scrollToPage(numPages); // numPages before +1, so that's the index of the new page
+    }, 50);
+  }, [numPages, scrollToPage]);
+
+  const removePage = useCallback(() => {
+    if (extraPages <= 0) return;
+    // Clear any strokes on the page being removed
+    const removedPageNum = numPages; // 1-indexed
+    setPageLines((prev) => {
+      const next = { ...prev };
+      delete next[removedPageNum];
+      return next;
+    });
+    setExtraPages((n) => Math.max(0, n - 1));
+  }, [extraPages, numPages]);
 
   // ── Track Visible Page ─────────────────────────────────────────────────
   useEffect(() => {
@@ -907,5 +958,10 @@ export function useCanvasWriter({
     getPageOffset,
     getTotalDocumentHeight,
     clampPos,
+    // Extra page controls
+    pdfBasePages,
+    extraPages,
+    addPage,
+    removePage,
   };
 }
