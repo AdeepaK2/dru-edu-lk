@@ -417,21 +417,17 @@ export default function CanvasWriter(props: CanvasWriterProps) {
             onPointerUp={handlePointerUp}
             onWheel={handleWheel}
           >
-            {/* Continuous document rendering */}
-            <Layer>
+            {/* ── Layer 1: Background (PDF pages / white rects) ─────────────────── */}
+            <Layer listening={false}>
               {Array.from({ length: numPages }).map((_, pageIndex) => {
                 const pageNum = pageIndex + 1;
                 const pageSize = getPageSize(pageIndex);
                 const bgImage = pdfPageImages[pageIndex] || null;
-                const draftImage = draftImages[pageNum] || null;
-                const lines = pageLines[pageNum] || [];
 
                 return (
                   <Group key={pageIndex} y={getPageOffset(pageIndex)}>
-                    {/* Background page */}
                     {bgImage ? (
                       <KonvaImage
-                        listening={false}
                         image={bgImage}
                         x={0}
                         y={0}
@@ -440,7 +436,6 @@ export default function CanvasWriter(props: CanvasWriterProps) {
                       />
                     ) : (
                       <Rect
-                        listening={false}
                         x={0}
                         y={0}
                         width={pageSize.w}
@@ -451,8 +446,31 @@ export default function CanvasWriter(props: CanvasWriterProps) {
                         shadowOffsetY={2}
                       />
                     )}
+                  </Group>
+                );
+              })}
+            </Layer>
 
-                    {/* Draft image */}
+            {/* ── Layer 2: Strokes (eraser uses destination-out, isolated here) ─ */}
+            <Layer>
+              {Array.from({ length: numPages }).map((_, pageIndex) => {
+                const pageNum = pageIndex + 1;
+                const pageSize = getPageSize(pageIndex);
+                const draftImage = draftImages[pageNum] || null;
+                const lines = pageLines[pageNum] || [];
+
+                return (
+                  <Group key={pageIndex} y={getPageOffset(pageIndex)}>
+                    {/* White backing rect so destination-out eraser only wipes this group */}
+                    <Rect
+                      listening={false}
+                      x={0} y={0}
+                      width={pageSize.w}
+                      height={pageSize.h}
+                      fill="transparent"
+                    />
+
+                    {/* Draft image (previously saved strokes, if any) */}
                     {draftImage && (
                       <KonvaImage
                         image={draftImage}
@@ -468,12 +486,14 @@ export default function CanvasWriter(props: CanvasWriterProps) {
                       <Line
                         key={i}
                         points={line.points}
-                        stroke={line.tool === 'eraser' ? '#ffffff' : line.color}
+                        stroke={line.tool === 'eraser' ? 'white' : line.color}
                         strokeWidth={line.strokeWidth}
                         tension={0.5}
                         lineCap="round"
                         lineJoin="round"
-                        globalCompositeOperation="source-over"
+                        globalCompositeOperation={
+                          line.tool === 'eraser' ? 'destination-out' : 'source-over'
+                        }
                       />
                     ))}
 
