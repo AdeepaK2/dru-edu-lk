@@ -78,6 +78,7 @@ export function useCanvasWriter({
   useEffect(() => { posRef.current = stagePos; }, [stagePos]);
 
   // ── Drawing refs (mutable for performance) ───────────────────────────────
+  const [isDrawing, setIsDrawing] = useState(false);
   const isDrawingRef = useRef(false);
   const currentLineRef = useRef<LineData | null>(null);
 
@@ -288,9 +289,17 @@ export function useCanvasWriter({
       const stage = stageRef.current;
       if (!stage) return;
 
-      isDrawingRef.current = true;
       const pos = stage.getRelativePointerPosition();
       if (!pos) return;
+
+      const pageSize = getPageSize(currentPage);
+      // Ensure drawing starts strictly inside the PDF bounds
+      if (pos.x < 0 || pos.y < 0 || pos.x > pageSize.w || pos.y > pageSize.h) {
+        return;
+      }
+
+      isDrawingRef.current = true;
+      setIsDrawing(true);
 
       currentLineRef.current = {
         points: [pos.x, pos.y],
@@ -361,8 +370,15 @@ export function useCanvasWriter({
 
       if (!isDrawingRef.current || !currentLineRef.current) return;
 
-      const pos = stage.getRelativePointerPosition();
-      if (!pos) return;
+      const rawPos = stage.getRelativePointerPosition();
+      if (!rawPos) return;
+
+      const pageSize = getPageSize(currentPage);
+      // Clamp coordinates to strictly stay within PDF bounds
+      const pos = {
+        x: Math.max(0, Math.min(rawPos.x, pageSize.w)),
+        y: Math.max(0, Math.min(rawPos.y, pageSize.h)),
+      };
 
       if (currentLineRef.current.tool === 'straight') {
         const startX = currentLineRef.current.points[0];
@@ -405,6 +421,7 @@ export function useCanvasWriter({
       if (!isDrawingRef.current) return;
 
       isDrawingRef.current = false;
+      setIsDrawing(false);
       currentLineRef.current = null;
 
       const page = currentPage + 1;
@@ -706,9 +723,12 @@ export function useCanvasWriter({
               new Konva.Rect({ x: 0, y: 0, width: ps.w, height: ps.h, fill: 'white' })
             );
 
-            // Draft Layer
+            // Drawing Layer (Draft + Lines)
+            const drawLayer = new Konva.Layer();
+            offStage.add(drawLayer);
+
             if (draftImg) {
-              bgLayer.add(
+              drawLayer.add(
                 new Konva.Image({
                   image: draftImg,
                   x: 0,
@@ -718,10 +738,6 @@ export function useCanvasWriter({
                 })
               );
             }
-
-            // Drawing Layer
-            const drawLayer = new Konva.Layer();
-            offStage.add(drawLayer);
 
             if (lines) {
               for (const line of lines) {
@@ -819,5 +835,6 @@ export function useCanvasWriter({
     handleSubmit,
     triggerSave,
     panBy,
+    isDrawing,
   };
 }
