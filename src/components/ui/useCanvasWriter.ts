@@ -62,6 +62,7 @@ export function useCanvasWriter({
   const pdfRawBytesRef = useRef<ArrayBuffer | null>(null);
 
   // ── Drawing state ────────────────────────────────────────────────────────
+  const [currentPage, setCurrentPage] = useState(0);
   const [pageLines, setPageLines] = useState<PageLines>({});
   const [activeTool, setActiveTool] = useState<'pen' | 'eraser' | 'straight'>('pen');
   const [strokeColor, setStrokeColor] = useState('#1a1a1a');
@@ -609,6 +610,30 @@ export function useCanvasWriter({
     resetZoom(); // Applies the fit-to-width with 20px padding naturally
   }, [pdfPageImages.length, containerSize, getPageSize, resetZoom]);
 
+  // ── Scroll to page helper ──────────────────────────────────────────────
+  const scrollToPage = useCallback(
+    (pageIdx: number) => {
+      const targetIdx = Math.max(0, Math.min(numPages - 1, pageIdx));
+      const targetY = -(getPageOffset(targetIdx) * scaleRef.current);
+      // Let panBy's clamping ensure we don't overscroll past the bounds
+      setStagePos((prev) => clampPos(prev.x, targetY, scaleRef.current));
+      setCurrentPage(targetIdx);
+    },
+    [numPages, getPageOffset, clampPos]
+  );
+
+  // ── Track Visible Page ─────────────────────────────────────────────────
+  useEffect(() => {
+    // Find what page is roughly at the center of the viewport
+    const viewportCenterY = -stagePos.y + (containerSize.h / 2);
+    // Convert screen Y to document absolute Y
+    const documentY = viewportCenterY / stageScale;
+    
+    // Check against layout
+    const { pageIdx } = getPageFromY(documentY);
+    setCurrentPage(pageIdx);
+  }, [stagePos.y, stageScale, containerSize.h, getPageFromY]);
+
   // ── Export all pages as PNG data URLs ─────────────────────────────────────
   const exportAllPages = useCallback(async (): Promise<Record<number, string>> => {
     const result: Record<number, string> = {};
@@ -909,6 +934,8 @@ export function useCanvasWriter({
     loadError,
     numPages,
     getPageSize,
+    currentPage,
+    setCurrentPage,
     pageLines,
     activeTool,
     setActiveTool,
@@ -937,6 +964,7 @@ export function useCanvasWriter({
     handleSubmit,
     triggerSave,
     panBy,
+    scrollToPage,
     isDrawing,
     getPageOffset,
   };

@@ -62,6 +62,7 @@ export default function CanvasWriter(props: CanvasWriterProps) {
     isLoading,
     loadError,
     numPages,
+    currentPage,
     getPageSize,
     pageLines,
     activeTool,
@@ -82,6 +83,7 @@ export default function CanvasWriter(props: CanvasWriterProps) {
     resetZoom,
     zoomTo,
     panBy,
+    scrollToPage,
     handlePointerDown,
     handlePointerMove,
     handlePointerUp,
@@ -93,22 +95,30 @@ export default function CanvasWriter(props: CanvasWriterProps) {
 
 
 
-  // ── Mouse wheel zoom ──────────────────────────────────────────────────
+  // ── Mouse wheel zoom and Vertical Scroll ──────────────────────────────
   const handleWheel = useCallback(
     (e: Konva.KonvaEventObject<WheelEvent>) => {
       e.evt.preventDefault();
-      const scaleBy = 1.08;
-      const stage = stageRef.current;
-      if (!stage) return;
-      const pointer = stage.getPointerPosition();
-      if (!pointer) return;
+      
+      if (e.evt.ctrlKey) {
+        // Pinch-to-zoom / Ctrl+Scroll Zoom
+        const scaleBy = 1.08;
+        const stage = stageRef.current;
+        if (!stage) return;
+        const pointer = stage.getPointerPosition();
+        if (!pointer) return;
 
-      const currentScale = stage.scaleX();
-      const direction = e.evt.deltaY > 0 ? -1 : 1;
-      const newScale = direction > 0 ? currentScale * scaleBy : currentScale / scaleBy;
-      zoomTo(newScale, pointer);
+        const currentScale = stage.scaleX();
+        const direction = e.evt.deltaY > 0 ? -1 : 1;
+        const newScale = direction > 0 ? currentScale * scaleBy : currentScale / scaleBy;
+        zoomTo(newScale, pointer);
+      } else {
+        // Vertical & Horizontal Scrolling
+        // Typically shift+wheel provides deltaX, and regular wheel provides deltaY
+        panBy(-e.evt.deltaX, -e.evt.deltaY);
+      }
     },
-    [zoomTo]
+    [zoomTo, panBy]
   );
 
 
@@ -226,7 +236,31 @@ export default function CanvasWriter(props: CanvasWriterProps) {
           <Redo2 size={16} />
         </button>
 
-
+        {/* Page navigation jump anchors */}
+        {numPages > 1 && (
+          <>
+            <div className="w-px h-6 bg-gray-600 mx-1" />
+            <button
+              onClick={() => scrollToPage(currentPage - 1)}
+              disabled={currentPage === 0}
+              className="p-1.5 rounded hover:bg-gray-700 disabled:opacity-30 transition-colors"
+              title="Previous page"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <span className="text-xs font-medium min-w-[3rem] text-center shrink-0">
+              {currentPage + 1} / {numPages}
+            </span>
+            <button
+              onClick={() => scrollToPage(currentPage + 1)}
+              disabled={currentPage === numPages - 1}
+              className="p-1.5 rounded hover:bg-gray-700 disabled:opacity-30 transition-colors"
+              title="Next page"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </>
+        )}
 
         <div className="w-px h-6 bg-gray-600 mx-1" />
 
