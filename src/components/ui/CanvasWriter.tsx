@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { Stage, Layer, Line, Image as KonvaImage, Rect } from 'react-konva';
+import { Stage, Layer, Line, Image as KonvaImage, Rect, Label, Tag, Text, Group } from 'react-konva';
 import Konva from 'konva';
 import {
   Pen,
@@ -89,6 +89,7 @@ export default function CanvasWriter(props: CanvasWriterProps) {
     handlePointerUp,
     handleTouchStart,
     handleTouchEnd,
+    isDrawing,
   } = useCanvasWriter({ ...props, stageRef, containerSize });
 
 
@@ -350,9 +351,9 @@ export default function CanvasWriter(props: CanvasWriterProps) {
               )}
             </Layer>
 
-            {/* Draft annotation layer */}
-            {draftImage && (
-              <Layer listening={false}>
+            {/* Drawing layer (Current strokes + previous drafts) */}
+            <Layer>
+              {draftImage && (
                 <KonvaImage
                   image={draftImage}
                   x={0}
@@ -360,11 +361,8 @@ export default function CanvasWriter(props: CanvasWriterProps) {
                   width={pageSize.w}
                   height={pageSize.h}
                 />
-              </Layer>
-            )}
+              )}
 
-            {/* Drawing layer */}
-            <Layer>
               {currentLines.map((line, i) => (
                 <Line
                   key={i}
@@ -379,6 +377,35 @@ export default function CanvasWriter(props: CanvasWriterProps) {
                   }
                 />
               ))}
+
+              {/* Show length indicator when actively drawing a straight line */}
+              {activeTool === 'straight' && isDrawing && currentLines.length > 0 && (() => {
+                const activeLine = currentLines[currentLines.length - 1];
+                if (activeLine.points.length >= 4) {
+                  const x1 = activeLine.points[0];
+                  const y1 = activeLine.points[1];
+                  const x2 = activeLine.points[2];
+                  const y2 = activeLine.points[3];
+                  
+                  const dist = Math.hypot(x2 - x1, y2 - y1);
+                  const midX = (x1 + x2) / 2;
+                  const midY = (y1 + y2) / 2;
+
+                  return (
+                    <Label x={midX} y={midY} opacity={0.8}>
+                      <Tag fill="black" pointerDirection="down" pointerWidth={10} pointerHeight={10} lineJoin="round" shadowColor="black" shadowBlur={10} shadowOffsetX={2} shadowOffsetY={2} shadowOpacity={0.5} />
+                      <Text
+                        text={`${dist.toFixed(1)} px`}
+                        fontFamily="Inter, sans-serif"
+                        fontSize={14}
+                        padding={6}
+                        fill="white"
+                      />
+                    </Label>
+                  );
+                }
+                return null;
+              })()}
             </Layer>
           </Stage>
         )}
