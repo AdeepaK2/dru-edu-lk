@@ -416,16 +416,16 @@ export function useCanvasWriter({
     currentLineRef.current = null;
   }, []);
 
-  // ── Pen / Mouse handlers ─────────────────────────────────────────────────
-  // We ignore pointerType === 'touch' because Konva's multi-touch PointerEvents are unreliable.
-  // Instead, we use native Konva Touch events for mobile.
   const handlePointerDown = useCallback(
     (e: KonvaEventObject<PointerEvent>) => {
-      if (e.evt.pointerType === 'touch') return;
       e.evt.preventDefault();
       
       const stage = stageRef.current;
       if (!stage) return;
+      
+      // If the DOM level touch handler says 2 fingers are down, do not draw
+      if ((window as any).__isPanning) return;
+
       const rawPos = stage.getRelativePointerPosition();
       if (rawPos) beginStroke(rawPos.x, rawPos.y);
     },
@@ -434,20 +434,25 @@ export function useCanvasWriter({
 
   const handlePointerMove = useCallback(
     (e: KonvaEventObject<PointerEvent>) => {
-      if (e.evt.pointerType === 'touch') return;
       e.evt.preventDefault();
       
       const stage = stageRef.current;
       if (!stage) return;
+
+      // If a second finger lands while drawing, cancel the stroke and swap to panning
+      if ((window as any).__isPanning) {
+        cancelStroke();
+        return;
+      }
+
       const rawPos = stage.getRelativePointerPosition();
       if (rawPos) continueStroke(rawPos.x, rawPos.y);
     },
-    [stageRef, continueStroke]
+    [stageRef, continueStroke, cancelStroke]
   );
 
   const handlePointerUp = useCallback(
     (e: KonvaEventObject<PointerEvent>) => {
-      if (e.evt.pointerType === 'touch') return;
       e.evt.preventDefault();
       endStroke();
     },
@@ -507,104 +512,6 @@ export function useCanvasWriter({
   const panBy = useCallback((dx: number, dy: number) => {
     setStagePos((prev) => clampPos(prev.x + dx, prev.y + dy, scaleRef.current));
   }, [clampPos]);
-  
-  // ── Touch handlers ────────────────────────────────────────────────────────
-  const lastTouchDistRef = useRef<number>(0);
-  const lastTouchCenterRef = useRef<{ x: number, y: number } | null>(null);
-
-  const handleTouchStart = useCallback(
-    (e: KonvaEventObject<TouchEvent>) => {
-      e.evt.preventDefault(); // prevent native scrolling behavior
-      const touches = e.evt.touches;
-      const stage = stageRef.current;
-      if (!stage) return;
-
-      if (touches.length === 1) {
-        // Prepare for 1-finger drawing
-        lastTouchDistRef.current = 0;
-        lastTouchCenterRef.current = null;
-        
-        stage.setPointersPositions(e.evt);
-        const rawPos = stage.getRelativePointerPosition();
-        if (rawPos) beginStroke(rawPos.x, rawPos.y);
-      } else if (touches.length === 2) {
-        // If 2 fingers touch DOWN, cancel any drawing that already started with the 1st finger
-        cancelStroke();
-
-        // Initialize pan / zoom references
-        const t1 = touches[0];
-        const t2 = touches[1];
-        lastTouchDistRef.current = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
-        lastTouchCenterRef.current = {
-          x: (t1.clientX + t2.clientX) / 2,
-          y: (t1.clientY + t2.clientY) / 2,
-        };
-      }
-    },
-    [stageRef, beginStroke, cancelStroke]
-  );
-
-  const handleTouchMove = useCallback(
-    (e: KonvaEventObject<TouchEvent>) => {
-      e.evt.preventDefault();
-      const touches = e.evt.touches;
-      const stage = stageRef.current;
-      if (!stage) return;
-
-      if (touches.length === 1) {
-        // Continue drawing
-        stage.setPointersPositions(e.evt);
-        const rawPos = stage.getRelativePointerPosition();
-        if (rawPos) continueStroke(rawPos.x, rawPos.y);
-      } else if (touches.length === 2) {
-        // Continue panning/zooming
-        const t1 = touches[0];
-        const t2 = touches[1];
-        const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
-        const center = {
-          x: (t1.clientX + t2.clientX) / 2,
-          y: (t1.clientY + t2.clientY) / 2,
-        };
-
-        if (lastTouchCenterRef.current) {
-          const dx = center.x - lastTouchCenterRef.current.x;
-          const dy = center.y - lastTouchCenterRef.current.y;
-          panBy(dx, dy);
-        }
-
-        if (lastTouchDistRef.current > 0) {
-          const ratio = dist / lastTouchDistRef.current;
-          const currentScale = scaleRef.current;
-          const newScale = Math.min(5, Math.max(0.3, currentScale * ratio));
-
-          // map screen coordinates to Konva container offsets to zoom towards fingers
-          const containerRect = stage.container().getBoundingClientRect();
-          const pointerPos = { x: center.x - containerRect.left, y: center.y - containerRect.top };
-          zoomTo(newScale, pointerPos);
-        }
-
-        lastTouchDistRef.current = dist;
-        lastTouchCenterRef.current = center;
-      }
-    },
-    [stageRef, continueStroke, panBy, zoomTo]
-  );
-
-  const handleTouchEnd = useCallback(
-    (e: KonvaEventObject<TouchEvent>) => {
-      e.evt.preventDefault();
-      const touches = e.evt.touches;
-      // if 0 fingers are on screen, process endStroke
-      if (touches.length === 0) {
-        endStroke();
-      } else if (touches.length === 1) {
-        // user had 2 fingers panning, lifted 1. We abort everything to prevent random strokes.
-        lastTouchDistRef.current = 0;
-        lastTouchCenterRef.current = null;
-      }
-    },
-    [endStroke]
-  );
 
   const zoomIn = useCallback(() => zoomTo(scaleRef.current * 1.2), [zoomTo]);
   const zoomOut = useCallback(() => zoomTo(scaleRef.current / 1.2), [zoomTo]);
@@ -988,9 +895,6 @@ export function useCanvasWriter({
     handlePointerDown,
     handlePointerMove,
     handlePointerUp,
-    handleTouchStart,
-    handleTouchMove,
-    handleTouchEnd,
     handleSubmit,
     triggerSave,
     panBy,
