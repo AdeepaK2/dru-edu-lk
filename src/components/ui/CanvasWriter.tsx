@@ -87,9 +87,6 @@ export default function CanvasWriter(props: CanvasWriterProps) {
     handlePointerDown,
     handlePointerMove,
     handlePointerUp,
-    handleTouchStart,
-    handleTouchMove,
-    handleTouchEnd,
     isDrawing,
     getPageOffset,
     getTotalDocumentHeight,
@@ -330,9 +327,6 @@ export default function CanvasWriter(props: CanvasWriterProps) {
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
             onWheel={handleWheel}
           >
             {/* Continuous document rendering */}
