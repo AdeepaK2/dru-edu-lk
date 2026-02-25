@@ -673,6 +673,36 @@ export function useCanvasWriter({
           console.warn('[CanvasWriter] localStorage save failed', e);
         }
       }
+
+      // ── Bake strokes into draft images so they aren't double-rendered ──
+      // Load each exported data URL as an HTMLImageElement and store it as
+      // the new draft. Then clear pageLines for those pages so the live
+      // vector strokes are not drawn on top of the already-baked-in draft.
+      const newDraftImages: Record<number, HTMLImageElement> = {};
+      await Promise.all(
+        Object.entries(exported).map(([pageNumStr, dataUrl]) => {
+          return new Promise<void>((resolve) => {
+            const img = new Image();
+            img.onload = () => {
+              newDraftImages[Number(pageNumStr)] = img;
+              resolve();
+            };
+            img.onerror = () => resolve(); // don't block on failure
+            img.src = dataUrl;
+          });
+        })
+      );
+
+      setDraftImages((prev) => ({ ...prev, ...newDraftImages }));
+
+      // Clear live strokes for pages that were just baked in
+      setPageLines((prev) => {
+        const next = { ...prev };
+        for (const pageNumStr of Object.keys(exported)) {
+          delete next[Number(pageNumStr)];
+        }
+        return next;
+      });
     } catch (e) {
       console.warn('[CanvasWriter] triggerSave failed', e);
     }
