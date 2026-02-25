@@ -14,6 +14,8 @@ import {
   ZoomOut,
   RotateCcw,
   Ruler,
+  PlusCircle,
+  MinusCircle,
 } from 'lucide-react';
 import { useCanvasWriter } from './useCanvasWriter';
 
@@ -92,6 +94,10 @@ export default function CanvasWriter(props: CanvasWriterProps) {
     getPageOffset,
     getTotalDocumentHeight,
     clampPos,
+    pdfBasePages,
+    extraPages,
+    addPage,
+    removePage,
   } = useCanvasWriter({ ...props, stageRef, containerSize });
 
   // ── Scrollbar drag state ─────────────────────────────────────────
@@ -421,6 +427,28 @@ export default function CanvasWriter(props: CanvasWriterProps) {
         >
           <RotateCcw size={14} />
         </button>
+
+        <div className="w-px h-6 bg-gray-600 mx-1" />
+
+        {/* Add / Remove extra pages */}
+        <button
+          onClick={addPage}
+          className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-green-700 hover:bg-green-600 transition-colors"
+          title="Add a blank page after the last page"
+        >
+          <PlusCircle size={13} />
+          Page
+        </button>
+        {extraPages > 0 && (
+          <button
+            onClick={removePage}
+            className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-red-800 hover:bg-red-700 transition-colors"
+            title={`Remove the last added page (${extraPages} added)`}
+          >
+            <MinusCircle size={13} />
+            Page
+          </button>
+        )}
       </div>
 
       {/* ── Stage container (ALWAYS mounted so ResizeObserver can measure it) */}
