@@ -88,6 +88,7 @@ export default function CanvasWriter(props: CanvasWriterProps) {
     handlePointerMove,
     handlePointerUp,
     handleTouchStart,
+    handleTouchMove,
     handleTouchEnd,
     isDrawing,
     getPageOffset,
@@ -115,17 +116,18 @@ export default function CanvasWriter(props: CanvasWriterProps) {
         zoomTo(newScale, pointer);
       } else {
         // Vertical & Horizontal Scrolling
-        // Typically shift+wheel provides deltaX, and regular wheel provides deltaY
         panBy(-e.evt.deltaX, -e.evt.deltaY);
       }
     },
     [zoomTo, panBy]
   );
 
-
-
   // Ready to show the canvas (not loading, no error, container measured)
   const stageReady = !isLoading && !loadError && containerSize.w > 0 && containerSize.h > 0;
+
+
+
+
 
   return (
     <div
@@ -329,6 +331,7 @@ export default function CanvasWriter(props: CanvasWriterProps) {
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
             onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
             onWheel={handleWheel}
           >
