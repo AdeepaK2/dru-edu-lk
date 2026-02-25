@@ -24,6 +24,7 @@ import { doc, getDoc, Timestamp, collection, query, where, onSnapshot, getFirest
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { firestore, storage } from '@/utils/firebase-client';
 import { InClassSubmissionService } from '@/services/inClassSubmissionService';
+import type { LineData } from '@/components/ui/useCanvasWriter';
 
 export default function StudentInClassTestDetailPage() {
   const router = useRouter();
@@ -42,7 +43,7 @@ export default function StudentInClassTestDetailPage() {
   const [showPdfModal, setShowPdfModal] = useState(false);
   const [isWriting, setIsWriting] = useState(false);
   const [canvasTimeRemaining, setCanvasTimeRemaining] = useState<number>(0);
-  const [draftAnnotations, setDraftAnnotations] = useState<Record<number, string> | null>(null);
+  const [draftAnnotations, setDraftAnnotations] = useState<Record<number, LineData[]> | null>(null);
   const [showDraftPrompt, setShowDraftPrompt] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const canvasWriterRef = React.useRef<any>(null);
@@ -321,15 +322,14 @@ export default function StudentInClassTestDetailPage() {
   };
 
   // Save strokes to Firestore (called automatically by CanvasWriter every 3s)
-  const handleStrokeSave = async (strokePages: Record<number, string>) => {
+  const handleStrokeSave = async (strokePages: Record<number, LineData[]>) => {
     if (!user || !testId) return;
 
     // Keep parent state in sync so Close → Reopen restores extra pages
-    // (without this, draftAnnotations stays at the value loaded on mount)
     setDraftAnnotations(strokePages);
 
     try {
-      console.log('[StrokeSave] Auto-saving stroke data to Firestore...');
+      console.log('[StrokeSave] Auto-saving stroke JSON to Firestore...');
       const db = getFirestore();
       const draftRef = doc(db, 'inClassTestDrafts', `${testId}_${user.uid}`);
 
@@ -341,7 +341,7 @@ export default function StudentInClassTestDetailPage() {
         lastSaved: Timestamp.now()
       });
 
-      console.log('[StrokeSave] Strokes saved successfully');
+      console.log('[StrokeSave] Stroke JSON saved successfully');
     } catch (error) {
       console.error('[StrokeSave] Error saving strokes:', error);
     }

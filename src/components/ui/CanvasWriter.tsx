@@ -24,10 +24,10 @@ interface CanvasWriterProps {
   height?: number;
   className?: string;
   outputFormat?: 'pdf';
-  onSave?: (strokePages: Record<number, string>) => void;
+  onSave?: (strokePages: Record<number, import('./useCanvasWriter').LineData[]>) => void;
   onSavePdf?: (file: File) => void;
   autoSaveKey?: string;
-  initialPageAnnotations?: Record<number, string>;
+  initialPageAnnotations?: Record<number, import('./useCanvasWriter').LineData[]>;
   onRegisterSubmit?: (fn: () => void) => void;
   onRegisterSave?: (fn: () => Promise<void>) => void;
 }
@@ -473,9 +473,7 @@ export default function CanvasWriter(props: CanvasWriterProps) {
                         tension={0.5}
                         lineCap="round"
                         lineJoin="round"
-                        globalCompositeOperation={
-                          line.tool === 'eraser' ? 'destination-out' : 'source-over'
-                        }
+                        globalCompositeOperation="source-over"
                       />
                     ))}
 
