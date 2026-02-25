@@ -78,6 +78,7 @@ export default function CanvasWriter(props: CanvasWriterProps) {
     canRedo,
     stageScale,
     stagePos,
+    setStagePos,
     zoomIn,
     zoomOut,
     resetZoom,
@@ -90,7 +91,50 @@ export default function CanvasWriter(props: CanvasWriterProps) {
     isDrawing,
     getPageOffset,
     getTotalDocumentHeight,
+    clampPos,
   } = useCanvasWriter({ ...props, stageRef, containerSize });
+
+  // ── Scrollbar drag state ─────────────────────────────────────────
+  const isDraggingScrollbar = useRef(false);
+  const scrollbarDragStartY = useRef(0);    // clientY when drag began
+  const scrollbarDragStartScrollY = useRef(0); // stagePos.y when drag began
+
+  const handleScrollbarPointerDown = useCallback((e: React.PointerEvent, thumbTop: number, thumbHeight: number, viewportH: number, maxScroll: number) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const trackEl = e.currentTarget.parentElement;
+    if (!trackEl) return;
+    const trackRect = trackEl.getBoundingClientRect();
+    const localY = e.clientY - trackRect.top;
+
+    if (localY >= thumbTop && localY <= thumbTop + thumbHeight) {
+      // Clicked on thumb — start drag
+      isDraggingScrollbar.current = true;
+      scrollbarDragStartY.current = e.clientY;
+      scrollbarDragStartScrollY.current = stagePos.y;
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } else {
+      // Clicked on track — jump to position
+      const clickPct = Math.max(0, Math.min(1, localY / (viewportH - thumbHeight)));
+      const newStageY = -(clickPct * maxScroll);
+      setStagePos(prev => clampPos(prev.x, newStageY, stageScale));
+    }
+  }, [stagePos.y, setStagePos, clampPos, stageScale]);
+
+  const handleScrollbarPointerMove = useCallback((e: React.PointerEvent, thumbHeight: number, viewportH: number, maxScroll: number) => {
+    if (!isDraggingScrollbar.current) return;
+    e.stopPropagation();
+    const dy = e.clientY - scrollbarDragStartY.current;
+    const scrollRange = viewportH - thumbHeight;
+    const scrollDelta = scrollRange > 0 ? (dy / scrollRange) * maxScroll : 0;
+    const newStageY = scrollbarDragStartScrollY.current - scrollDelta;
+    setStagePos(prev => clampPos(prev.x, newStageY, stageScale));
+  }, [setStagePos, clampPos, stageScale]);
+
+  const handleScrollbarPointerUp = useCallback((e: React.PointerEvent) => {
+    e.stopPropagation();
+    isDraggingScrollbar.current = false;
+  }, []);
 
 
 
@@ -533,37 +577,65 @@ export default function CanvasWriter(props: CanvasWriterProps) {
           </Stage>
         )}
 
-        {/* ── Custom Scrollbar Overlay ── */}
+        {/* ── Interactive Scrollbar ───────────────────────────────── */}
         {stageReady && getTotalDocumentHeight() * stageScale > containerSize.h && (() => {
           const totalH = getTotalDocumentHeight() * stageScale;
           const viewportH = containerSize.h;
-          
-          // Calculate what percentage of the document is visible
-          const viewRatio = Math.min(1, viewportH / totalH);
-          const thumbHeight = Math.max(40, viewportH * viewRatio); // min height 40px
-          
-          // Calculate max scrollable pixels
-          const maxScrollPixelOffset = totalH - viewportH;
-          // Calculate current scroll offset (0 to maxScrollPixelOffset)
-          // stagePos.y is negative as we pan down. But there's a 20px padding max clamp.
-          const currentScroll = Math.max(0, -stagePos.y); 
-          
-          // Calculate percentage scrolled
-          const scrollPct = maxScrollPixelOffset > 0 ? (currentScroll / maxScrollPixelOffset) : 0;
-          
-          // Map percentage to thumb position
-          const maxThumbTop = viewportH - thumbHeight;
-          const thumbTop = scrollPct * maxThumbTop;
+
+          const thumbHeight = Math.max(44, viewportH * (viewportH / totalH));
+          const maxScroll = totalH - viewportH;
+          const currentScroll = Math.max(0, -stagePos.y);
+          const scrollPct = maxScroll > 0 ? currentScroll / maxScroll : 0;
+          const thumbTop = scrollPct * (viewportH - thumbHeight);
 
           return (
-            <div className="absolute right-1 top-0 bottom-0 w-2 pointer-events-none z-20">
-              <div 
-                className="absolute w-full bg-black/30 rounded-full transition-all duration-75"
-                style={{
-                  height: `${thumbHeight}px`,
-                  top: `${thumbTop}px`,
-                }}
-              />
+            <div
+              className="absolute right-0 top-0 bottom-0 z-30 flex flex-col select-none"
+              style={{ width: 14 }}
+              onPointerDown={(e) => handleScrollbarPointerDown(e, thumbTop, thumbHeight, viewportH, maxScroll)}
+              onPointerMove={(e) => handleScrollbarPointerMove(e, thumbHeight, viewportH, maxScroll)}
+              onPointerUp={handleScrollbarPointerUp}
+              onPointerCancel={handleScrollbarPointerUp}
+            >
+              {/* Track */}
+              <div className="relative flex-1 bg-black/10 rounded-sm mx-1 cursor-pointer">
+
+                {/* Page-jump markers — one per page boundary */}
+                {numPages > 1 && Array.from({ length: numPages }).map((_, pi) => {
+                  const pageStartY = getPageOffset(pi) * stageScale;
+                  const markerPct = maxScroll > 0 ? pageStartY / maxScroll : 0;
+                  const markerTop = markerPct * (viewportH - thumbHeight) + (pi === 0 ? 0 : 0);
+                  const isCurrentPage = pi === currentPage;
+                  return (
+                    <div
+                      key={pi}
+                      title={`Page ${pi + 1}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        scrollToPage(pi);
+                      }}
+                      className={`absolute left-0 right-0 flex items-center justify-center cursor-pointer group`}
+                      style={{ top: Math.min(markerTop, viewportH - 16), height: 16, zIndex: 2 }}
+                    >
+                      {/* Tick line */}
+                      <div className={`h-px w-full transition-colors ${isCurrentPage ? 'bg-blue-500' : 'bg-black/20 group-hover:bg-blue-400'}`} />
+                      {/* Page label on hover */}
+                      <span
+                        className="absolute right-full mr-1.5 text-[9px] font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 text-white rounded px-1 py-0.5 pointer-events-none"
+                        style={{ top: '50%', transform: 'translateY(-50%)' }}
+                      >
+                        {pi + 1}
+                      </span>
+                    </div>
+                  );
+                })}
+
+                {/* Thumb */}
+                <div
+                  className="absolute left-0 right-0 rounded-sm bg-gray-500/70 hover:bg-blue-500/80 active:bg-blue-600 transition-colors cursor-grab active:cursor-grabbing"
+                  style={{ top: thumbTop, height: thumbHeight }}
+                />
+              </div>
             </div>
           );
         })()}

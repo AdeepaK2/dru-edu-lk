@@ -316,7 +316,6 @@ export function useCanvasWriter({
   const handlePointerDown = useCallback(
     (e: KonvaEventObject<PointerEvent>) => {
       e.evt.preventDefault();
-      const pointerId = e.evt.pointerId;
       const pointerType = e.evt.pointerType;
 
       if (pointerType === 'touch') {
@@ -365,7 +364,6 @@ export function useCanvasWriter({
     (e: KonvaEventObject<PointerEvent>) => {
       e.evt.preventDefault();
       
-      const pointerId = e.evt.pointerId;
       const pointerType = e.evt.pointerType;
       const stage = stageRef.current;
       if (!stage) return;
@@ -418,7 +416,6 @@ export function useCanvasWriter({
   const handlePointerUp = useCallback(
     (e: KonvaEventObject<PointerEvent>) => {
       e.evt.preventDefault();
-      const pointerId = e.evt.pointerId;
       const pointerType = e.evt.pointerType;
 
       if (pointerType === 'touch') {
@@ -909,5 +906,6 @@ export function useCanvasWriter({
     isDrawing,
     getPageOffset,
     getTotalDocumentHeight,
+    clampPos,
   };
 }
