@@ -184,7 +184,7 @@ export default function CanvasWriter(props: CanvasWriterProps) {
 
     const handleTouchStart = (e: TouchEvent) => {
       if (e.touches.length === 2) {
-        // e.preventDefault(); // Stop native browser zooming/panning
+        e.preventDefault(); // Prevent browser from stealing pinch/pan gestures
         const t1 = e.touches[0];
         const t2 = e.touches[1];
         lastTouchDist.current = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
@@ -201,7 +201,7 @@ export default function CanvasWriter(props: CanvasWriterProps) {
     const handleTouchMove = (e: TouchEvent) => {
       if (e.touches.length === 2) {
         e.preventDefault(); // prevent native scroll strictly when two fingers are active
-        
+
         const t1 = e.touches[0];
         const t2 = e.touches[1];
         const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
@@ -211,21 +211,20 @@ export default function CanvasWriter(props: CanvasWriterProps) {
         };
 
         const stage = stageRef.current;
-        
-        // Panning map
+
+        // Panning — guard against null lastTouchCenter (happens on 1→2 finger transition)
         if (lastTouchCenter.current) {
           const dx = center.x - lastTouchCenter.current.x;
           const dy = center.y - lastTouchCenter.current.y;
           panBy(dx, dy);
         }
 
-        // Zoom map
+        // Pinch-zoom
         if (lastTouchDist.current > 0 && stage) {
           const ratio = dist / lastTouchDist.current;
           const currentScale = stage.scaleX();
           const newScale = Math.min(5, Math.max(0.3, currentScale * ratio));
-          
-          // Map browser center coordinates to Konva container offsets
+
           const containerRect = container.getBoundingClientRect();
           const pointerPos = {
             x: center.x - containerRect.left,

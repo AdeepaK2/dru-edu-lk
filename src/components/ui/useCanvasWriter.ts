@@ -321,40 +321,11 @@ export function useCanvasWriter({
     setHistoryVersion((v) => v + 1);
   }, [activeHistoryPage]);
 
-  // ── Pointer handlers ─────────────────────────────────────────────────────
-  // Track all active touch pointer IDs — so we can distinguish 1-finger (draw)
-  // from 2-finger (scroll / pinch-zoom, handled by the DOM touch handler).
-  const activeTouchPointers = useRef(new Set<number>());
-
+  // ── Pointer handlers (stylus/mouse = draw; touch = blocked, DOM handler does pan) ──
   const handlePointerDown = useCallback(
     (e: KonvaEventObject<PointerEvent>) => {
       e.evt.preventDefault();
-      const pointerType = e.evt.pointerType;
-      const pointerId   = e.evt.pointerId;
-
-      if (pointerType === 'touch') {
-        activeTouchPointers.current.add(pointerId);
-
-        if (activeTouchPointers.current.size > 1) {
-          // ── Second finger: cancel any in-progress stroke ──
-          // The DOM 2-finger handler will take over pan / pinch-zoom.
-          if (isDrawingRef.current && currentLineRef.current) {
-            const cancelPageIdx = (currentLineRef.current as any).pageIdx;
-            const cancelPage    = cancelPageIdx + 1;
-            // Remove the partial stroke that was started by the first finger
-            setPageLines((prev) => {
-              const lines = [...(prev[cancelPage] || [])];
-              lines.pop();
-              return { ...prev, [cancelPage]: lines };
-            });
-          }
-          isDrawingRef.current = false;
-          setIsDrawing(false);
-          currentLineRef.current = null;
-          return;
-        }
-        // ── First finger only: fall through to draw ──
-      }
+      if (e.evt.pointerType === 'touch') return; // touch handled by DOM
 
       const stage = stageRef.current;
       if (!stage) return;
@@ -364,10 +335,7 @@ export function useCanvasWriter({
 
       const { pageIdx, localY, pageH } = getPageFromY(rawPos.y);
       const pageSize = getPageSize(pageIdx);
-
-      if (rawPos.x < 0 || rawPos.x > pageSize.w || localY < 0 || localY > pageH) {
-        return;
-      }
+      if (rawPos.x < 0 || rawPos.x > pageSize.w || localY < 0 || localY > pageH) return;
 
       isDrawingRef.current = true;
       setIsDrawing(true);
@@ -378,14 +346,13 @@ export function useCanvasWriter({
         color: strokeColor,
         strokeWidth: strokeWidth,
         tool: activeTool,
-        pageIdx: pageIdx,
+        pageIdx,
       };
 
-      const page    = pageIdx + 1;
-      const newLine = { ...currentLineRef.current };
+      const page = pageIdx + 1;
       setPageLines((prev) => ({
         ...prev,
-        [page]: [...(prev[page] || []), newLine],
+        [page]: [...(prev[page] || []), { ...currentLineRef.current! }],
       }));
     },
     [stageRef, strokeColor, strokeWidth, activeTool, getPageFromY, getPageSize]
@@ -394,14 +361,11 @@ export function useCanvasWriter({
   const handlePointerMove = useCallback(
     (e: KonvaEventObject<PointerEvent>) => {
       e.evt.preventDefault();
-      const pointerType = e.evt.pointerType;
+      if (e.evt.pointerType === 'touch') return;
+      if (!isDrawingRef.current || !currentLineRef.current) return;
+
       const stage = stageRef.current;
       if (!stage) return;
-
-      // If 2+ touch fingers are active, let the DOM handler handle it
-      if (pointerType === 'touch' && activeTouchPointers.current.size > 1) return;
-
-      if (!isDrawingRef.current || !currentLineRef.current) return;
 
       const rawPos = stage.getRelativePointerPosition();
       if (!rawPos) return;
@@ -410,22 +374,18 @@ export function useCanvasWriter({
       const pageSize        = getPageSize(startPageIdx);
       const startPageOffset = getPageOffset(startPageIdx);
       const rawLocalY       = rawPos.y - startPageOffset;
-
       const pos = {
         x: Math.max(0, Math.min(rawPos.x, pageSize.w)),
         y: Math.max(0, Math.min(rawLocalY, pageSize.h)),
       };
 
       if (currentLineRef.current.tool === 'straight') {
-        const startX = currentLineRef.current.points[0];
-        const startY = currentLineRef.current.points[1];
-        currentLineRef.current.points = [startX, startY, pos.x, pos.y];
-      } else {
         currentLineRef.current.points = [
-          ...currentLineRef.current.points,
-          pos.x,
-          pos.y,
+          currentLineRef.current.points[0], currentLineRef.current.points[1],
+          pos.x, pos.y,
         ];
+      } else {
+        currentLineRef.current.points = [...currentLineRef.current.points, pos.x, pos.y];
       }
 
       const page        = startPageIdx + 1;
@@ -442,26 +402,17 @@ export function useCanvasWriter({
   const handlePointerUp = useCallback(
     (e: KonvaEventObject<PointerEvent>) => {
       e.evt.preventDefault();
-      const pointerType = e.evt.pointerType;
-      const pointerId   = e.evt.pointerId;
-
-      if (pointerType === 'touch') {
-        activeTouchPointers.current.delete(pointerId);
-        // If there are still other fingers down, don't finalise the stroke
-        if (activeTouchPointers.current.size > 0) return;
-      }
-
+      if (e.evt.pointerType === 'touch') return;
       if (!isDrawingRef.current || !currentLineRef.current) return;
 
       const pageIdx = (currentLineRef.current as any).pageIdx;
-      isDrawingRef.current  = false;
+      isDrawingRef.current   = false;
       setIsDrawing(false);
       currentLineRef.current = null;
 
       const page = pageIdx + 1;
       setPageLines((prev) => {
-        const lines = prev[page] || [];
-        pushHistory(page, lines);
+        pushHistory(page, prev[page] || []);
         return prev;
       });
     },
