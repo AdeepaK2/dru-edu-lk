@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { X, Info, CheckCircle } from 'lucide-react';
+import { X, Info, CheckCircle, Send } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { InClassSubmission } from '@/models/inClassSubmissionSchema';
 import { InClassSubmissionService } from '@/services/inClassSubmissionService';
@@ -26,6 +26,9 @@ export default function TeacherAnnotateDrawer({
   onClose,
   onSaved,
 }: TeacherAnnotateDrawerProps) {
+  // Ref to CanvasWriter's PDF-export function (registered via onRegisterSubmit)
+  const submitCanvasRef = useRef<(() => void) | null>(null);
+
   // Holds the generated PDF file until teacher confirms marks
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [showMarkPopup, setShowMarkPopup] = useState(false);
@@ -34,15 +37,26 @@ export default function TeacherAnnotateDrawer({
   );
   const [feedback, setFeedback] = useState(submission.feedback ?? '');
   const [saving, setSaving] = useState(false);
+  const [generating, setGenerating] = useState(false);
 
-  // ── Step 1: CanvasWriter generates the PDF and hands it to us ─────────────
-  // Instead of saving immediately, we store the file and show the marks popup.
+  // ── Step 1: Teacher clicks "Submit Answer" → trigger PDF generation ──────────
+  const handleClickSubmit = () => {
+    if (!submitCanvasRef.current) {
+      toast.error('Canvas not ready yet — please wait a moment and try again.');
+      return;
+    }
+    setGenerating(true);
+    submitCanvasRef.current(); // triggers handleSubmit in CanvasWriter → calls onSavePdf
+  };
+
+  // ── Step 1b: CanvasWriter hands us the generated PDF ─────────────────────────
   const handleSavePdf = (file: File) => {
+    setGenerating(false);
     setPendingFile(file);
     setShowMarkPopup(true);
   };
 
-  // ── Step 2: Teacher fills in marks and clicks "Save Grade" ────────────────
+  // ── Step 2: Teacher fills in marks and clicks "Save Grade" ───────────────────
   const handleSaveGrade = async () => {
     const numMarks = parseFloat(marks);
     if (isNaN(numMarks) || numMarks < 0 || numMarks > totalMarks) {
@@ -56,7 +70,6 @@ export default function TeacherAnnotateDrawer({
 
     setSaving(true);
     try {
-      // Upload the annotated PDF
       const url = await InClassSubmissionService.uploadMarkedPdf(
         pendingFile,
         submission.testId,
@@ -64,7 +77,6 @@ export default function TeacherAnnotateDrawer({
       );
 
       if (submission.id) {
-        // Save grade and markedPdfUrl in parallel
         await Promise.all([
           InClassSubmissionService.gradeSubmission(
             submission.id,
@@ -76,7 +88,6 @@ export default function TeacherAnnotateDrawer({
           InClassSubmissionService.saveMarkedPdf(submission.id, url),
         ]);
       } else {
-        // No submission doc yet — create with everything at once
         await InClassSubmissionService.saveSubmission({
           ...submission,
           marks: numMarks,
@@ -99,36 +110,60 @@ export default function TeacherAnnotateDrawer({
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col bg-white">
+    <div className="fixed inset-0 z-[60] flex flex-col bg-white overflow-hidden">
 
-      {/* ── Header ─────────────────────────────────────────────────────── */}
+      {/* ── Header ────────────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between px-4 py-3 bg-gray-900 text-white shrink-0">
         <div>
           <p className="text-[11px] text-gray-400 uppercase tracking-widest">Annotating answer for</p>
           <h2 className="text-base font-semibold leading-tight">{studentName}</h2>
         </div>
-        <button
-          onClick={onClose}
-          title="Close"
-          className="p-2 rounded-lg hover:bg-gray-700 transition-colors"
-        >
-          <X size={18} />
-        </button>
+
+        {/* Submit Answer button — right side of header */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleClickSubmit}
+            disabled={generating}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-500 disabled:opacity-60 text-white text-sm font-semibold transition-colors"
+            title="Generate annotated PDF and enter marks"
+          >
+            {generating ? (
+              <>
+                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Generating…
+              </>
+            ) : (
+              <>
+                <Send size={14} />
+                Submit Answer
+              </>
+            )}
+          </button>
+          <button
+            onClick={onClose}
+            title="Close"
+            className="p-2 rounded-lg hover:bg-gray-700 transition-colors"
+          >
+            <X size={18} />
+          </button>
+        </div>
       </div>
 
-      {/* ── Hint banner ────────────────────────────────────────────────── */}
+      {/* ── Hint banner ──────────────────────────────────────────────────── */}
       <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 border-b border-amber-200 text-amber-800 text-xs shrink-0">
         <Info size={13} className="shrink-0" />
         <span>
-          Annotate the answer, then press <strong>Submit Answer</strong> in the toolbar to enter marks and save.
+          Annotate the answer with your notes, then press{' '}
+          <strong className="text-amber-900">Submit Answer</strong> above to enter marks and save.
         </span>
       </div>
 
-      {/* ── Canvas ─────────────────────────────────────────────────────── */}
-      <div className="flex-1 min-h-0 relative">
+      {/* ── Canvas ───────────────────────────────────────────────────────── */}
+      <div className="flex-1 min-h-0 overflow-hidden relative">
         <CanvasWriter
           pdfUrl={submission.answerFileUrl}
           onSavePdf={handleSavePdf}
+          onRegisterSubmit={(fn) => { submitCanvasRef.current = fn; }}
           className="h-full"
         />
 
