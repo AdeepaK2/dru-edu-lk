@@ -135,7 +135,7 @@ export default function TeacherAnnotateDrawer({
             ) : (
               <>
                 <Send size={14} />
-                Submit Answer
+                Submit Marks
               </>
             )}
           </button>
@@ -154,7 +154,7 @@ export default function TeacherAnnotateDrawer({
         <Info size={13} className="shrink-0" />
         <span>
           Annotate the answer with your notes, then press{' '}
-          <strong className="text-amber-900">Submit Answer</strong> above to enter marks and save.
+          <strong className="text-amber-900">Submit Marks</strong> above to enter marks and save.
         </span>
       </div>
 

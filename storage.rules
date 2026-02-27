@@ -84,12 +84,17 @@ service firebase.storage {
       allow read, write: if request.auth != null;
     }
 
-    // Allow students to upload in-class test submissions
+    // Allow authenticated users to upload in-class test submissions
     match /in-class-submissions/{testId}/{studentId}/{allPaths=**} {
       // Students can read/write their own submissions
       allow read, write: if request.auth != null && request.auth.uid == studentId;
       // Teachers can read all submissions for grading
       allow read: if request.auth != null;
+    }
+
+    // Allow authenticated teachers to upload marked/annotated PDFs
+    match /markedPdfs/{testId}/{allPaths=**} {
+      allow read, write: if request.auth != null;
     }
 
     // Default rule - deny all other access

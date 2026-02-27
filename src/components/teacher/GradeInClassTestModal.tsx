@@ -398,32 +398,33 @@ export default function GradeInClassTestModal({
                       {/* Save / absent — 1 col */}
                       <div className="md:col-span-1 flex flex-col items-end gap-2">
                         {student.submission?.status === 'absent' ? (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleMarkAbsent(student)}
-                            className="w-full text-gray-500"
-                          >
+                          // Student is marked absent — show Absent label (read-only)
+                          <span className="w-full text-center text-xs font-medium text-gray-400 py-1.5 px-2 border border-gray-200 rounded-md bg-gray-50">
                             Absent
-                          </Button>
+                          </span>
                         ) : (
                           <>
+                            {/* Save / Update grade */}
                             <Button
                               size="sm"
                               onClick={() => handleSaveGrade(student)}
                               disabled={!student.marks}
                               className="w-full"
                             >
-                              Save
+                              {student.submission?.status === 'graded' ? 'Update' : 'Save'}
                             </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleMarkAbsent(student)}
-                              className="w-full text-xs"
-                            >
-                              Mark Absent
-                            </Button>
+
+                            {/* Mark Absent — only shown if student has NOT submitted anything */}
+                            {!student.submission && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleMarkAbsent(student)}
+                                className="w-full text-xs"
+                              >
+                                Mark Absent
+                              </Button>
+                            )}
                           </>
                         )}
                       </div>
