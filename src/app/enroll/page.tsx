@@ -24,6 +24,7 @@ interface EnrollmentFormData {
   studentFirstName: string;
   studentLastName: string;
   studentEmail: string;
+  confirmStudentEmail: string;
   studentPhone: string;
   dateOfBirth: string;
   school: string;
@@ -31,6 +32,7 @@ interface EnrollmentFormData {
   // Parent Information
   parentName: string;
   parentEmail: string;
+  confirmParentEmail: string;
   parentPhone: string;
   relationship: 'Mother' | 'Father' | 'Guardian' | 'Other';
   
@@ -81,11 +83,13 @@ export default function EnrollmentPage() {
     studentFirstName: '',
     studentLastName: '',
     studentEmail: '',
+    confirmStudentEmail: '',
     studentPhone: '',
     dateOfBirth: '',
     school: '',
     parentName: '',
     parentEmail: '',
+    confirmParentEmail: '',
     parentPhone: '',
     relationship: 'Mother',
     selectedClassIds: [],
@@ -426,6 +430,14 @@ export default function EnrollmentPage() {
     if (!formData.parentEmail.trim()) errors.push('Parent/Guardian email is required');
     if (!formData.parentPhone.trim()) errors.push('Parent/Guardian phone number is required');
     
+    if (formData.studentEmail !== formData.confirmStudentEmail) {
+      errors.push('Student emails do not match');
+    }
+    
+    if (formData.parentEmail !== formData.confirmParentEmail) {
+      errors.push('Parent/Guardian emails do not match');
+    }
+    
     if (formData.selectedClassIds.length === 0) errors.push('Please select at least one class to enroll in');
     if (!formData.agreedToTerms) errors.push('You must agree to the terms and conditions');
     
@@ -645,11 +657,13 @@ export default function EnrollmentPage() {
         studentFirstName: '',
         studentLastName: '',
         studentEmail: '',
+        confirmStudentEmail: '',
         studentPhone: '',
         dateOfBirth: '',
         school: '',
         parentName: '',
         parentEmail: '',
+        confirmParentEmail: '',
         parentPhone: '',
         relationship: 'Mother',
         selectedClassIds: [],
@@ -774,6 +788,13 @@ export default function EnrollmentPage() {
                     required
                   />
                   <Input
+                    label="Confirm Student Email"
+                    type="email"
+                    value={formData.confirmStudentEmail}
+                    onChange={(e) => handleInputChange('confirmStudentEmail', e.target.value)}
+                    required
+                  />
+                  <Input
                     label="Mobile Phone"
                     value={formData.studentPhone}
                     onChange={(e) => handleInputChange('studentPhone', e.target.value)}
@@ -818,6 +839,13 @@ export default function EnrollmentPage() {
                     type="email"
                     value={formData.parentEmail}
                     onChange={(e) => handleInputChange('parentEmail', e.target.value)}
+                    required
+                  />
+                  <Input
+                    label="Confirm Parent/Guardian Email"
+                    type="email"
+                    value={formData.confirmParentEmail}
+                    onChange={(e) => handleInputChange('confirmParentEmail', e.target.value)}
                     required
                   />
                   <Input
