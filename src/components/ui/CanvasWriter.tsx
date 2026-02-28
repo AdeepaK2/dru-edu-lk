@@ -183,8 +183,10 @@ export default function CanvasWriter(props: CanvasWriterProps) {
     if (!container || !stageReady) return;
 
     const handleTouchStart = (e: TouchEvent) => {
+      // Always preventDefault to stop iPadOS Scribble from eating Apple Pencil events
+      e.preventDefault();
+
       if (e.touches.length === 2) {
-        e.preventDefault(); // Prevent browser from stealing pinch/pan gestures
         const t1 = e.touches[0];
         const t2 = e.touches[1];
         lastTouchDist.current = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
@@ -199,8 +201,11 @@ export default function CanvasWriter(props: CanvasWriterProps) {
     };
 
     const handleTouchMove = (e: TouchEvent) => {
+      // Always preventDefault for stylus/pencil touches to stop iPadOS Scribble
+      // from swallowing pointer events (known Safari bug since iPadOS 14).
+      e.preventDefault();
+
       if (e.touches.length === 2) {
-        e.preventDefault(); // prevent native scroll strictly when two fingers are active
 
         const t1 = e.touches[0];
         const t2 = e.touches[1];
