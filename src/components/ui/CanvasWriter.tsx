@@ -355,19 +355,27 @@ export default function CanvasWriter(props: CanvasWriterProps) {
 
         <div className="w-px h-6 bg-gray-600 mx-1" />
 
-        {/* Stroke width */}
-        <input
-          type="range"
-          min={1}
-          max={24}
-          value={strokeWidth}
-          onChange={(e) => setStrokeWidth(Number(e.target.value))}
-          className="w-20 shrink-0 accent-blue-500"
-          title={`Stroke: ${strokeWidth}px`}
-        />
-        <span className="text-[10px] text-gray-400 w-6 text-center shrink-0">
-          {strokeWidth}
-        </span>
+        {/* Stroke width presets */}
+        <div className="flex items-center gap-1 mx-1">
+          {[1.5, 2, 3, 4, 6].map((size) => (
+            <button
+              key={size}
+              onClick={() => setStrokeWidth(size)}
+              className={`w-6 h-6 flex items-center justify-center rounded transition-all ${
+                strokeWidth === size ? 'bg-gray-700' : 'hover:bg-gray-800'
+              }`}
+              title={`Stroke: ${size}px`}
+            >
+              <div
+                className="bg-white rounded-full transition-all"
+                style={{
+                  width: `${size + 1}px`, // Slight boost for visual clarity
+                  height: `${size + 1}px`,
+                }}
+              />
+            </button>
+          ))}
+        </div>
 
         <div className="w-px h-6 bg-gray-600 mx-1" />
 
