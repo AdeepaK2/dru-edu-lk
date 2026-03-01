@@ -22,10 +22,14 @@ export interface LineData {
   color: string;
   strokeWidth: number;
   tool: 'pen' | 'eraser' | 'straight';
-  pageIdx?: number;
+  pageId?: string; // e.g. 'pdf-0' or 'blank-1234'
 }
 
-export type PageLines = Record<number, LineData[]>;
+export type PageLines = Record<string, LineData[]>;
+
+export type PageConfig =
+  | { type: 'pdf'; pdfIndex: number; id: string }
+  | { type: 'blank'; id: string };
 
 export interface UseCanvasWriterProps {
   pdfUrl?: string;
@@ -33,7 +37,7 @@ export interface UseCanvasWriterProps {
   onSave?: (strokePages: Record<number, LineData[]>) => void;
   onSavePdf?: (file: File) => void;
   autoSaveKey?: string;
-  /** Restore saved strokes as raw LineData vectors */
+  /** Restore saved strokes as raw LineData vectors (indexed 1 to N sequentially) */
   initialPageAnnotations?: Record<number, LineData[]>;
   onRegisterSubmit?: (fn: () => void) => void;
   onRegisterSave?: (fn: () => Promise<void>) => void;
@@ -89,11 +93,11 @@ export function useCanvasWriter({
   const currentLineRef = useRef<LineData | null>(null);
 
   // ── Draft images ─────────────────────────────────────────────────────────
-  const [draftImages, setDraftImages] = useState<Record<number, HTMLImageElement>>({});
+  const [draftImages, setDraftImages] = useState<Record<string, HTMLImageElement>>({});
 
   // ── History (per-page undo/redo) ─────────────────────────────────────────
-  const historyRef = useRef<Record<number, LineData[][]>>({});
-  const historyIndexRef = useRef<Record<number, number>>({});
+  const historyRef = useRef<Record<string, LineData[][]>>({});
+  const historyIndexRef = useRef<Record<string, number>>({});
   const [historyVersion, setHistoryVersion] = useState(0);
 
   // ── Auto-save timer ──────────────────────────────────────────────────────
@@ -102,32 +106,34 @@ export function useCanvasWriter({
   // ── Fit-to-page tracking ─────────────────────────────────────────────────
   const lastFitKeyRef = useRef('');
 
-  // ── Extra blank pages (student-added, appended after PDF pages) ────────────
-  const [extraPages, setExtraPages] = useState(0);
+  // ── Page Sequence ────────────────────────────────────────────────────────
+  const [pageSequence, setPageSequence] = useState<PageConfig[]>([]);
 
   // ── Computed ──────────────────────────────────────────────────────────────
-  const pdfBasePages = pdfUrl ? pdfPageImages.length : 1;   // original pages
-  const numPages = pdfBasePages + extraPages;               // total (incl. added blanks)
+  const numPages = pageSequence.length;
 
   // Page dimensions in CSS pixels (raster / RENDER_SCALE).
-  // Stable: only depends on pdfPageDimensions (set once on PDF load).
   const getPageSize = useCallback(
     (pageIdx: number) => {
+      const config = pageSequence[pageIdx];
+      if (!config) return { w: 800, h: 1100 };
+
       // Original PDF pages
-      if (pdfPageDimensions[pageIdx]) {
+      if (config.type === 'pdf' && pdfPageDimensions[config.pdfIndex]) {
         return {
-          w: pdfPageDimensions[pageIdx].w / RENDER_SCALE,
-          h: pdfPageDimensions[pageIdx].h / RENDER_SCALE,
+          w: pdfPageDimensions[config.pdfIndex].w / RENDER_SCALE,
+          h: pdfPageDimensions[config.pdfIndex].h / RENDER_SCALE,
         };
       }
-      // Extra blank pages: use the last known PDF page size (or sensible A4 default)
-      const lastDim = pdfPageDimensions[pdfPageDimensions.length - 1];
-      if (lastDim) {
-        return { w: lastDim.w / RENDER_SCALE, h: lastDim.h / RENDER_SCALE };
+
+      // Extra blank pages: use the first PDF page size as a template (or sensible A4 default)
+      const templateDim = pdfPageDimensions[0];
+      if (templateDim) {
+        return { w: templateDim.w / RENDER_SCALE, h: templateDim.h / RENDER_SCALE };
       }
       return { w: 800, h: 1100 }; // A4-ish blank canvas default
     },
-    [pdfPageDimensions]
+    [pdfPageDimensions, pageSequence]
   );
 
   // ── Continuous Scroll Layout ──────────────────────────────────────────────
@@ -225,6 +231,14 @@ export function useCanvasWriter({
         if (!cancelled) {
           setPdfPageImages(images);
           setPdfPageDimensions(dims);
+          
+          // Initialize sequence
+          const initialSequence: PageConfig[] = images.map((_, i) => ({
+            type: 'pdf',
+            pdfIndex: i,
+            id: `pdf-${i}`
+          }));
+          setPageSequence(initialSequence);
         }
       } catch (err) {
         if (!cancelled) {
@@ -244,60 +258,76 @@ export function useCanvasWriter({
 
   // ── Load draft annotations as JSON vectors ─────────────────────────────────
   useEffect(() => {
-    if (!initialPageAnnotations) return;
+    // Wait for PDF to load so we have the base sequence
+    if (pdfUrl && pdfPageImages.length === 0) return;
+    if (!initialPageAnnotations) {
+      if (!pdfUrl && pageSequence.length === 0) {
+        // Fallback for no-PDF layout
+        setPageSequence([{ type: 'blank', id: 'blank-init' }]);
+      }
+      return;
+    }
     const entries = Object.entries(initialPageAnnotations);
-    if (entries.length === 0) return;
+    if (entries.length === 0) {
+      if (!pdfUrl && pageSequence.length === 0) {
+        setPageSequence([{ type: 'blank', id: 'blank-init' }]);
+      }
+      return;
+    }
 
-    // Load the JSON vectors directly into pageLines (no image loading needed)
+    const baseLen = pdfUrl ? pdfPageImages.length : 1;
+    let maxPageNum = 0;
+    entries.forEach(([pageStr]) => {
+      maxPageNum = Math.max(maxPageNum, parseInt(pageStr, 10));
+    });
+
+    const neededBlanks = Math.max(0, maxPageNum - baseLen);
+    
+    // Construct internal model mapping
     const restored: PageLines = {};
+    let seq = [...pageSequence];
+    if (!pdfUrl && seq.length === 0) {
+      seq = [{ type: 'blank', id: 'blank-init' }];
+    }
+
+    // Append necessary blanks so index 1..maxPageNum lines up
+    for (let i = 0; i < neededBlanks; i++) {
+      seq.push({ type: 'blank', id: `blank-restored-${i}` });
+    }
+    setPageSequence(seq);
+
     entries.forEach(([pageStr, lines]) => {
-      if (Array.isArray(lines) && lines.length > 0) {
-        restored[parseInt(pageStr)] = lines as LineData[];
+      const zeroIdx = parseInt(pageStr, 10) - 1;
+      const config = seq[zeroIdx];
+      if (Array.isArray(lines) && lines.length > 0 && config) {
+        // Rewrite the internal pageId back into the linestroke
+        const remappedLines = lines.map(l => ({ ...l, pageId: config.id }));
+        restored[config.id] = remappedLines as LineData[];
       }
     });
 
     if (Object.keys(restored).length > 0) {
       setPageLines(restored);
     }
-  }, [initialPageAnnotations]);
-
-  // ── Auto-restore extra pages ────────────────────────────────────────────
-  // If the loaded JSON contains strokes on pages beyond the base PDF length,
-  // automatically increment extraPages when the PDF finishes loading.
-  useEffect(() => {
-    if (pdfUrl && pdfPageImages.length === 0) return; // wait for PDF to load
-    if (!initialPageAnnotations) return;
-    
-    const base = pdfUrl ? pdfPageImages.length : 1;
-    let maxPageNum = 0;
-    
-    for (const str of Object.keys(initialPageAnnotations)) {
-      maxPageNum = Math.max(maxPageNum, parseInt(str, 10));
-    }
-    
-    const needed = Math.max(0, maxPageNum - base);
-    if (needed > 0) {
-      setExtraPages(prev => Math.max(prev, needed));
-    }
-  }, [pdfUrl, pdfPageImages.length, initialPageAnnotations]);
+  }, [initialPageAnnotations, pdfUrl, pdfPageImages.length]);
 
   // ── History helpers ──────────────────────────────────────────────────────
   const pushHistory = useCallback(
-    (page: number, lines: LineData[]) => {
-      if (!historyRef.current[page]) {
-        historyRef.current[page] = [[]];
-        historyIndexRef.current[page] = 0;
+    (pageId: string, lines: LineData[]) => {
+      if (!historyRef.current[pageId]) {
+        historyRef.current[pageId] = [[]];
+        historyIndexRef.current[pageId] = 0;
       }
-      const idx = historyIndexRef.current[page];
+      const idx = historyIndexRef.current[pageId];
       // Truncate any redo states
-      historyRef.current[page] = historyRef.current[page].slice(0, idx + 1);
+      historyRef.current[pageId] = historyRef.current[pageId].slice(0, idx + 1);
       // Push new snapshot (deep copy)
-      historyRef.current[page].push(JSON.parse(JSON.stringify(lines)));
+      historyRef.current[pageId].push(JSON.parse(JSON.stringify(lines)));
       // Cap history
-      if (historyRef.current[page].length > MAX_HISTORY) {
-        historyRef.current[page].shift();
+      if (historyRef.current[pageId].length > MAX_HISTORY) {
+        historyRef.current[pageId].shift();
       } else {
-        historyIndexRef.current[page]++;
+        historyIndexRef.current[pageId]++;
       }
       setHistoryVersion((v) => v + 1);
     },
@@ -311,36 +341,39 @@ export function useCanvasWriter({
   // Since history is currently per-page, we'll track the "active page" 
   // implicitly derived from the last stroke or default to page 0.
   // We'll keep a soft reference to the last drawn page.
-  const [activeHistoryPage, setActiveHistoryPage] = useState(0);
+  const [activeHistoryPageIdx, setActiveHistoryPageIdx] = useState(0);
+
+  // Safely get ID from sequence or fail gracefully
+  const activeHistoryPageId = pageSequence[activeHistoryPageIdx]?.id || 'unknown';
 
   const canUndo =
-    (historyRef.current[activeHistoryPage + 1]?.length ?? 0) > 0 &&
-    (historyIndexRef.current[activeHistoryPage + 1] ?? 0) > 0;
+    (historyRef.current[activeHistoryPageId]?.length ?? 0) > 0 &&
+    (historyIndexRef.current[activeHistoryPageId] ?? 0) > 0;
 
   const canRedo =
-    (historyIndexRef.current[activeHistoryPage + 1] ?? 0) <
-    (historyRef.current[activeHistoryPage + 1]?.length ?? 1) - 1;
+    (historyIndexRef.current[activeHistoryPageId] ?? 0) <
+    (historyRef.current[activeHistoryPageId]?.length ?? 1) - 1;
 
   const undo = useCallback(() => {
-    const page = activeHistoryPage + 1;
-    const idx = historyIndexRef.current[page];
+    const pageId = activeHistoryPageId;
+    const idx = historyIndexRef.current[pageId];
     if (idx === undefined || idx <= 0) return;
-    historyIndexRef.current[page] = idx - 1;
-    const snapshot = historyRef.current[page][idx - 1];
-    setPageLines((prev) => ({ ...prev, [page]: JSON.parse(JSON.stringify(snapshot)) }));
+    historyIndexRef.current[pageId] = idx - 1;
+    const snapshot = historyRef.current[pageId][idx - 1];
+    setPageLines((prev) => ({ ...prev, [pageId]: JSON.parse(JSON.stringify(snapshot)) }));
     setHistoryVersion((v) => v + 1);
-  }, [activeHistoryPage]);
+  }, [activeHistoryPageId]);
 
   const redo = useCallback(() => {
-    const page = activeHistoryPage + 1;
-    const idx = historyIndexRef.current[page];
-    const maxIdx = (historyRef.current[page]?.length ?? 1) - 1;
+    const pageId = activeHistoryPageId;
+    const idx = historyIndexRef.current[pageId];
+    const maxIdx = (historyRef.current[pageId]?.length ?? 1) - 1;
     if (idx === undefined || idx >= maxIdx) return;
-    historyIndexRef.current[page] = idx + 1;
-    const snapshot = historyRef.current[page][idx + 1];
-    setPageLines((prev) => ({ ...prev, [page]: JSON.parse(JSON.stringify(snapshot)) }));
+    historyIndexRef.current[pageId] = idx + 1;
+    const snapshot = historyRef.current[pageId][idx + 1];
+    setPageLines((prev) => ({ ...prev, [pageId]: JSON.parse(JSON.stringify(snapshot)) }));
     setHistoryVersion((v) => v + 1);
-  }, [activeHistoryPage]);
+  }, [activeHistoryPageId]);
 
   // ── Pointer handlers (stylus/mouse = draw; touch = blocked, DOM handler does pan) ──
   const handlePointerDown = useCallback(
@@ -355,28 +388,31 @@ export function useCanvasWriter({
       if (!rawPos) return;
 
       const { pageIdx, localY, pageH } = getPageFromY(rawPos.y);
+      const config = pageSequence[pageIdx];
+      if (!config) return;
+
       const pageSize = getPageSize(pageIdx);
       if (rawPos.x < 0 || rawPos.x > pageSize.w || localY < 0 || localY > pageH) return;
 
       isDrawingRef.current = true;
       setIsDrawing(true);
-      setActiveHistoryPage(pageIdx);
+      setActiveHistoryPageIdx(pageIdx);
 
       currentLineRef.current = {
         points: [rawPos.x, localY],
         color: strokeColor,
         strokeWidth: activeTool === 'eraser' ? eraserWidth : strokeWidth,
         tool: activeTool,
-        pageIdx,
+        pageId: config.id,
       };
 
-      const page = pageIdx + 1;
+      const pageId = config.id;
       setPageLines((prev) => ({
         ...prev,
-        [page]: [...(prev[page] || []), { ...currentLineRef.current! }],
+        [pageId]: [...(prev[pageId] || []), { ...currentLineRef.current! }],
       }));
     },
-    [stageRef, strokeColor, strokeWidth, activeTool, getPageFromY, getPageSize]
+    [stageRef, strokeColor, strokeWidth, eraserWidth, activeTool, getPageFromY, getPageSize, pageSequence]
   );
 
   const handlePointerMove = useCallback(
@@ -391,7 +427,10 @@ export function useCanvasWriter({
       const rawPos = stage.getRelativePointerPosition();
       if (!rawPos) return;
 
-      const startPageIdx    = (currentLineRef.current as any).pageIdx;
+      const startPageId = (currentLineRef.current as any).pageId;
+      const startPageIdx = pageSequence.findIndex(p => p.id === startPageId);
+      if (startPageIdx === -1) return;
+
       const pageSize        = getPageSize(startPageIdx);
       const startPageOffset = getPageOffset(startPageIdx);
       const rawLocalY       = rawPos.y - startPageOffset;
@@ -409,15 +448,14 @@ export function useCanvasWriter({
         currentLineRef.current.points = [...currentLineRef.current.points, pos.x, pos.y];
       }
 
-      const page        = startPageIdx + 1;
       const updatedLine = { ...currentLineRef.current };
       setPageLines((prev) => {
-        const lines = [...(prev[page] || [])];
+        const lines = [...(prev[startPageId] || [])];
         lines[lines.length - 1] = updatedLine;
-        return { ...prev, [page]: lines };
+        return { ...prev, [startPageId]: lines };
       });
     },
-    [stageRef, getPageSize, getPageOffset]
+    [stageRef, getPageSize, getPageOffset, pageSequence]
   );
 
   const handlePointerUp = useCallback(
@@ -426,14 +464,13 @@ export function useCanvasWriter({
       if (e.evt.pointerType === 'touch') return;
       if (!isDrawingRef.current || !currentLineRef.current) return;
 
-      const pageIdx = (currentLineRef.current as any).pageIdx;
+      const pageId = (currentLineRef.current as any).pageId;
       isDrawingRef.current   = false;
       setIsDrawing(false);
       currentLineRef.current = null;
 
-      const page = pageIdx + 1;
       setPageLines((prev) => {
-        pushHistory(page, prev[page] || []);
+        pushHistory(pageId, prev[pageId] || []);
         return prev;
       });
     },
@@ -561,24 +598,45 @@ export function useCanvasWriter({
 
   // ── Add / Remove extra blank pages ──────────────────────────────────────
   const addPage = useCallback(() => {
-    setExtraPages((n) => n + 1);
-    // Scroll to the new page right after state update
-    setTimeout(() => {
-      scrollToPage(numPages); // numPages before +1, so that's the index of the new page
-    }, 50);
-  }, [numPages, scrollToPage]);
-
-  const removePage = useCallback(() => {
-    if (extraPages <= 0) return;
-    // Clear any strokes on the page being removed
-    const removedPageNum = numPages; // 1-indexed
-    setPageLines((prev) => {
-      const next = { ...prev };
-      delete next[removedPageNum];
+    // Insert after current page
+    const insertAfterIdx = Math.max(0, currentPage);
+    const newId = `blank-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    
+    setPageSequence(prev => {
+      const next = [...prev];
+      next.splice(insertAfterIdx + 1, 0, { type: 'blank', id: newId });
       return next;
     });
-    setExtraPages((n) => Math.max(0, n - 1));
-  }, [extraPages, numPages]);
+
+    // Scroll to the new page right after state update
+    setTimeout(() => {
+      scrollToPage(insertAfterIdx + 1);
+    }, 50);
+  }, [currentPage, scrollToPage]);
+
+  const removePage = useCallback(() => {
+    const config = pageSequence[currentPage];
+    if (!config || config.type === 'pdf') return; // Cannot delete original PDF pages
+    
+    // Clear any strokes on the page being removed
+    const idToRemove = config.id;
+    setPageLines((prev) => {
+      const next = { ...prev };
+      delete next[idToRemove];
+      return next;
+    });
+    
+    setPageSequence(prev => {
+      const next = [...prev];
+      next.splice(currentPage, 1);
+      return next;
+    });
+
+    // Nudge zoom to auto-fix scroll
+    setTimeout(() => {
+      setStagePos(prev => clampPos(prev.x, prev.y, scaleRef.current));
+    }, 50);
+  }, [currentPage, pageSequence, clampPos]);
 
   // ── Track Visible Page ─────────────────────────────────────────────────
   useEffect(() => {
@@ -596,11 +654,11 @@ export function useCanvasWriter({
   const exportAllPages = useCallback(async (): Promise<Record<number, string>> => {
     const result: Record<number, string> = {};
 
-    const pages = pdfUrl ? pdfPageImages.length : 1;
-    for (let i = 0; i < pages; i++) {
-      const pageNum = i + 1;
-      const lines = pageLines[pageNum];
-      const draftImg = draftImages[pageNum];
+    for (let i = 0; i < pageSequence.length; i++) {
+      const config = pageSequence[i];
+      const pageNum = i + 1; // Translate back to 1-based index for the outside world
+      const lines = pageLines[config.id];
+      const draftImg = draftImages[config.id];
       
       // Only skip if there are NO new lines AND NO existing draft
       if ((!lines || lines.length === 0) && !draftImg) continue;
@@ -661,24 +719,35 @@ export function useCanvasWriter({
     }
 
     return result;
-  }, [pdfUrl, pdfPageImages.length, pageLines, draftImages, getPageSize]);
+  }, [pageSequence, pageLines, draftImages, getPageSize]);
 
   // ── Trigger Manual or Auto Save ──────────────────────────────────────────
   // Saves raw stroke JSON (LineData[]) — fast, lossless, no rendering needed.
-  // PNGs are only generated once at submit time.
+  // Translates id-based pageLines into strict sequential 1-based indexes.
   const triggerSave = useCallback(async () => {
     try {
       if (Object.keys(pageLines).length === 0) return;
 
+      const sequentialPages: Record<number, LineData[]> = {};
+      for (let i = 0; i < pageSequence.length; i++) {
+        const config = pageSequence[i];
+        const lines = pageLines[config.id];
+        if (lines && lines.length > 0) {
+          // Remove internal pageId from saved data so it's clean and backwards-compatible
+          const cleanLines = lines.map(({ pageId, ...rest }) => rest);
+          sequentialPages[i + 1] = cleanLines as LineData[];
+        }
+      }
+
       // Pass raw vectors to parent (Firestore, etc.)
-      onSave?.(pageLines);
+      onSave?.(sequentialPages);
 
       // Persist to localStorage for crash-recovery
       if (autoSaveKey) {
         try {
           localStorage.setItem(
             autoSaveKey,
-            JSON.stringify({ pages: pageLines, timestamp: Date.now() })
+            JSON.stringify({ pages: sequentialPages, timestamp: Date.now() })
           );
         } catch (e) {
           console.warn('[CanvasWriter] localStorage save failed', e);
@@ -705,17 +774,44 @@ export function useCanvasWriter({
   // ── PDF export (submit) ──────────────────────────────────────────────────
   const handleSubmit = useCallback(async () => {
     try {
-      if (pdfUrl && pdfRawBytesRef.current && pdfPageImages.length > 0) {
-        const pdfDoc = await PDFDocument.load(pdfRawBytesRef.current);
-        const pdfPages = pdfDoc.getPages();
+      // Create a fresh blank PDF document to assemble everything in sequential order
+      const finalPdfDoc = await PDFDocument.create();
+      
+      // Load the original document if we have one so we can copy its pages
+      let originalPdfDoc: PDFDocument | null = null;
+      let originalPages: import('pdf-lib').PDFPage[] = [];
+      if (pdfUrl && pdfRawBytesRef.current) {
+        originalPdfDoc = await PDFDocument.load(pdfRawBytesRef.current);
+        originalPages = originalPdfDoc.getPages();
+      }
 
-        for (let i = 0; i < Math.min(pdfPages.length, pdfPageImages.length); i++) {
-          const pageNum = i + 1;
-          const lines = pageLines[pageNum];
-          const hasDraft = !!draftImages[pageNum];
-          if ((!lines || lines.length === 0) && !hasDraft) continue;
+      // Build the final PDF matching our pageSequence
+      for (let i = 0; i < pageSequence.length; i++) {
+        const config = pageSequence[i];
+        const lines = pageLines[config.id];
+        const draftImgUrl = draftImages[config.id];
+        
+        let pdfPage: import('pdf-lib').PDFPage;
+        let pWidth = 800;
+        let pHeight = 1100;
 
+        if (config.type === 'pdf' && originalPdfDoc && originalPages[config.pdfIndex]) {
+          // Copy over the native PDF page
+          const [copiedPage] = await finalPdfDoc.copyPages(originalPdfDoc, [config.pdfIndex]);
+          pdfPage = finalPdfDoc.addPage(copiedPage);
+          const size = pdfPage.getSize();
+          pWidth = size.width;
+          pHeight = size.height;
+        } else {
+          // Blank page requested
           const ps = getPageSize(i);
+          pWidth = ps.w;
+          pHeight = ps.h;
+          pdfPage = finalPdfDoc.addPage([pWidth, pHeight]);
+        }
+
+        // If there are annotations or strokes on this page, render them and stamp onto the page
+        if ((lines && lines.length > 0) || draftImgUrl) {
           const div = document.createElement('div');
           div.style.position = 'absolute';
           div.style.left = '-9999px';
@@ -725,20 +821,18 @@ export function useCanvasWriter({
           try {
             const offStage = new Konva.Stage({
               container: div,
-              width: ps.w,
-              height: ps.h,
+              width: pWidth,
+              height: pHeight,
             });
             const layer = new Konva.Layer();
             offStage.add(layer);
 
-            if (draftImages[pageNum]) {
+            if (draftImgUrl) {
               layer.add(
                 new Konva.Image({
-                  image: draftImages[pageNum],
-                  x: 0,
-                  y: 0,
-                  width: ps.w,
-                  height: ps.h,
+                  image: draftImgUrl as any,
+                  x: 0, y: 0,
+                  width: pWidth, height: pHeight,
                 })
               );
             }
@@ -766,194 +860,30 @@ export function useCanvasWriter({
 
             const base64 = dataUrl.split(',')[1];
             const pngBytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
-            const embeddedImage = await pdfDoc.embedPng(pngBytes);
-            const pdfPage = pdfPages[i];
-            const { width: pw, height: ph } = pdfPage.getSize();
-            pdfPage.drawImage(embeddedImage, { x: 0, y: 0, width: pw, height: ph });
+            const embeddedImage = await finalPdfDoc.embedPng(pngBytes);
+            pdfPage.drawImage(embeddedImage, { x: 0, y: 0, width: pWidth, height: pHeight });
           } finally {
             document.body.removeChild(div);
           }
-        }
-
-        // ── Append extra blank pages that the user added via "+Page" ──
-        for (let i = pdfPageImages.length; i < pdfPageImages.length + extraPages; i++) {
-          const pageNum = i + 1;
-          const lines = pageLines[pageNum];
-          const hasDraft = !!draftImages[pageNum];
-          
-          if ((!lines || lines.length === 0) && !hasDraft) continue;
-
-          const ps = getPageSize(i);
-          const div = document.createElement('div');
-          div.style.position = 'absolute';
-          div.style.left = '-9999px';
-          div.style.top = '-9999px';
-          document.body.appendChild(div);
-
-          try {
-            const offStage = new Konva.Stage({
-              container: div,
-              width: ps.w,
-              height: ps.h,
-            });
-            const bgLayer = new Konva.Layer();
-            offStage.add(bgLayer);
-            bgLayer.add(
-              new Konva.Rect({ x: 0, y: 0, width: ps.w, height: ps.h, fill: 'white' })
-            );
-
-            // Drawing Layer (Draft + Lines)
-            const drawLayer = new Konva.Layer();
-            offStage.add(drawLayer);
-
-            if (draftImages[pageNum]) {
-              drawLayer.add(
-                new Konva.Image({
-                  image: draftImages[pageNum],
-                  x: 0,
-                  y: 0,
-                  width: ps.w,
-                  height: ps.h,
-                })
-              );
-            }
-
-            if (lines) {
-              for (const line of lines) {
-                drawLayer.add(
-                  new Konva.Line({
-                    points: line.points,
-                    stroke: line.tool === 'eraser' ? '#ffffff' : line.color,
-                    strokeWidth: line.strokeWidth,
-                    tension: 0.5,
-                    lineCap: 'round',
-                    lineJoin: 'round',
-                    globalCompositeOperation:
-                      line.tool === 'eraser' ? 'destination-out' : 'source-over',
-                  })
-                );
-              }
-            }
-
-            bgLayer.draw();
-            drawLayer.draw();
-            const dataUrl = offStage.toDataURL({ pixelRatio: RENDER_SCALE });
-            offStage.destroy();
-
-            const base64 = dataUrl.split(',')[1];
-            const pngBytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
-
-            const img = await pdfDoc.embedPng(pngBytes);
-            const { width, height } = img;
-            const pdfPage = pdfDoc.addPage([width, height]);
-            pdfPage.drawImage(img, { x: 0, y: 0, width, height });
-          } finally {
-            document.body.removeChild(div);
-          }
-        }
-
-        const pdfBytes = await pdfDoc.save();
-        const file = new File([pdfBytes as BlobPart], 'annotated-answer.pdf', {
-          type: 'application/pdf',
-        });
-        onSavePdf?.(file);
-      } else if (onSavePdf) {
-        // Fallback for blank canvas (no PDF URL)
-        // Find all pages that have either lines or draft images
-        const activePages = new Set([1, ...Object.keys(pageLines).map(Number), ...Object.keys(draftImages).map(Number)]);
-        const sortedPages = Array.from(activePages).sort((a, b) => a - b);
-        
-        const ps = getPageSize(0);
-        const div = document.createElement('div');
-        div.style.position = 'absolute';
-        div.style.left = '-9999px';
-        div.style.top = '-9999px';
-        document.body.appendChild(div);
-
-        try {
-          const pdfDoc = await PDFDocument.create();
-
-          for (const pageNum of sortedPages) {
-            const lines = pageLines[pageNum];
-            const draftImg = draftImages[pageNum];
-            
-            if ((!lines || lines.length === 0) && !draftImg) continue;
-
-            const offStage = new Konva.Stage({
-              container: div,
-              width: ps.w,
-              height: ps.h,
-            });
-            const bgLayer = new Konva.Layer();
-            offStage.add(bgLayer);
-            bgLayer.add(
-              new Konva.Rect({ x: 0, y: 0, width: ps.w, height: ps.h, fill: 'white' })
-            );
-
-            // Drawing Layer (Draft + Lines)
-            const drawLayer = new Konva.Layer();
-            offStage.add(drawLayer);
-
-            if (draftImg) {
-              drawLayer.add(
-                new Konva.Image({
-                  image: draftImg,
-                  x: 0,
-                  y: 0,
-                  width: ps.w,
-                  height: ps.h,
-                })
-              );
-            }
-
-            if (lines) {
-              for (const line of lines) {
-                drawLayer.add(
-                  new Konva.Line({
-                    points: line.points,
-                    stroke: line.tool === 'eraser' ? '#ffffff' : line.color,
-                    strokeWidth: line.strokeWidth,
-                    tension: 0.5,
-                    lineCap: 'round',
-                    lineJoin: 'round',
-                    globalCompositeOperation:
-                      line.tool === 'eraser' ? 'destination-out' : 'source-over',
-                  })
-                );
-              }
-            }
-
-            bgLayer.draw();
-            drawLayer.draw();
-            const dataUrl = offStage.toDataURL({ pixelRatio: RENDER_SCALE });
-            offStage.destroy();
-
-            const base64 = dataUrl.split(',')[1];
-            const pngBytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
-
-            const img = await pdfDoc.embedPng(pngBytes);
-            const { width, height } = img;
-            const pdfPage = pdfDoc.addPage([width, height]);
-            pdfPage.drawImage(img, { x: 0, y: 0, width, height });
-          }
-
-          if (pdfDoc.getPageCount() === 0) {
-            pdfDoc.addPage([ps.w, ps.h]); // guarantee at least one page
-          }
-
-          const pdfBytes = await pdfDoc.save();
-          const file = new File([pdfBytes as BlobPart], 'canvas-answer.pdf', {
-            type: 'application/pdf',
-          });
-          onSavePdf(file);
-        } finally {
-          document.body.removeChild(div);
         }
       }
+
+      if (finalPdfDoc.getPageCount() === 0) {
+        // Fallback for absolutely empty
+        const s = getPageSize(0);
+        finalPdfDoc.addPage([s.w, s.h]);
+      }
+
+      const pdfBytes = await finalPdfDoc.save();
+      const filename = pdfUrl ? 'annotated-answer.pdf' : 'canvas-answer.pdf';
+      const file = new File([pdfBytes as BlobPart], filename, {
+        type: 'application/pdf',
+      });
+      onSavePdf?.(file);
     } catch (err) {
       console.error('[CanvasWriter] PDF export failed:', err);
     }
-  }, [pdfUrl, pdfPageImages, pageLines, draftImages, getPageSize, onSavePdf, extraPages]);
+  }, [pdfUrl, pageSequence, pageLines, draftImages, getPageSize, onSavePdf]);
 
   // ── Register submit callback ─────────────────────────────────────────────
   useEffect(() => {
@@ -1009,9 +939,8 @@ export function useCanvasWriter({
     getPageOffset,
     getTotalDocumentHeight,
     clampPos,
-    // Extra page controls
-    pdfBasePages,
-    extraPages,
+    // New sequence controls
+    pageSequence,
     addPage,
     removePage,
   };
