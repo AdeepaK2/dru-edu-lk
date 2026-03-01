@@ -590,7 +590,7 @@ export default function CanvasWriter(props: CanvasWriterProps) {
                     {/* Inline Remove Button for Blank Pages */}
                     {isBlank && (
                       <Label
-                        x={pageSize.w - 110}
+                        x={pageSize.w - 100}
                         y={10}
                         onPointerDown={(e) => {
                           e.cancelBubble = true; // Prevent drawing from triggering immediately
@@ -613,21 +613,23 @@ export default function CanvasWriter(props: CanvasWriterProps) {
                         }}
                       >
                         <Tag
-                          fill="#b91c1c" // red-700
-                          cornerRadius={4}
+                          fill="#fef2f2" // red-50
+                          stroke="#fca5a5" // red-300 border
+                          strokeWidth={1}
+                          cornerRadius={6}
                           lineJoin="round"
                           shadowColor="black"
-                          shadowBlur={5}
+                          shadowBlur={2}
                           shadowOffsetX={0}
-                          shadowOffsetY={2}
-                          shadowOpacity={0.2}
+                          shadowOffsetY={1}
+                          shadowOpacity={0.05}
                         />
                         <Text
                           text="✕ Remove Page"
                           fontFamily="Inter, sans-serif"
-                          fontSize={12}
-                          padding={8}
-                          fill="white"
+                          fontSize={11}
+                          padding={6}
+                          fill="#991b1b" // red-800 text
                         />
                       </Label>
                     )}
