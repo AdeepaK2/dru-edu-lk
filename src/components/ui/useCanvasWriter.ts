@@ -105,8 +105,6 @@ export function useCanvasWriter({
 
   // ── Fit-to-page tracking ─────────────────────────────────────────────────
   const lastFitKeyRef = useRef('');
-  // ── Annotation restore guard (run once only) ───────────────────────────
-  const annotationsRestoredRef = useRef(false);
 
   // ── Page Sequence ────────────────────────────────────────────────────────
   const [pageSequence, setPageSequence] = useState<PageConfig[]>([]);
@@ -262,43 +260,47 @@ export function useCanvasWriter({
   useEffect(() => {
     // Wait for PDF to load so we have the base sequence
     if (pdfUrl && pdfPageImages.length === 0) return;
-
-    // No-PDF fallback: ensure at least one blank page exists
-    if (!pdfUrl && pageSequence.length === 0) {
-      setPageSequence([{ type: 'blank', id: 'blank-init' }]);
-      return; // Let next render cycle pick up the sequence
+    if (!initialPageAnnotations) {
+      if (!pdfUrl && pageSequence.length === 0) {
+        // Fallback for no-PDF layout
+        setPageSequence([{ type: 'blank', id: 'blank-init' }]);
+      }
+      return;
+    }
+    const entries = Object.entries(initialPageAnnotations);
+    if (entries.length === 0) {
+      if (!pdfUrl && pageSequence.length === 0) {
+        setPageSequence([{ type: 'blank', id: 'blank-init' }]);
+      }
+      return;
     }
 
-    // Only restore annotations once to prevent re-render loops
-    if (annotationsRestoredRef.current) return;
-    if (!initialPageAnnotations) return;
-    const entries = Object.entries(initialPageAnnotations);
-    if (entries.length === 0) return;
-
-    annotationsRestoredRef.current = true;
-
-    const baseLen = pdfUrl ? pdfPageImages.length : pageSequence.length;
+    const baseLen = pdfUrl ? pdfPageImages.length : 1;
     let maxPageNum = 0;
     entries.forEach(([pageStr]) => {
       maxPageNum = Math.max(maxPageNum, parseInt(pageStr, 10));
     });
 
     const neededBlanks = Math.max(0, maxPageNum - baseLen);
-
+    
     // Construct internal model mapping
     const restored: PageLines = {};
-    const seq = [...pageSequence];
+    let seq = [...pageSequence];
+    if (!pdfUrl && seq.length === 0) {
+      seq = [{ type: 'blank', id: 'blank-init' }];
+    }
 
     // Append necessary blanks so index 1..maxPageNum lines up
     for (let i = 0; i < neededBlanks; i++) {
       seq.push({ type: 'blank', id: `blank-restored-${i}` });
     }
-    if (neededBlanks > 0) setPageSequence(seq);
+    setPageSequence(seq);
 
     entries.forEach(([pageStr, lines]) => {
       const zeroIdx = parseInt(pageStr, 10) - 1;
       const config = seq[zeroIdx];
       if (Array.isArray(lines) && lines.length > 0 && config) {
+        // Rewrite the internal pageId back into the linestroke
         const remappedLines = lines.map(l => ({ ...l, pageId: config.id }));
         restored[config.id] = remappedLines as LineData[];
       }
@@ -307,7 +309,7 @@ export function useCanvasWriter({
     if (Object.keys(restored).length > 0) {
       setPageLines(restored);
     }
-  }, [initialPageAnnotations, pdfUrl, pdfPageImages.length, pageSequence]);
+  }, [initialPageAnnotations, pdfUrl, pdfPageImages.length]);
 
   // ── History helpers ──────────────────────────────────────────────────────
   const pushHistory = useCallback(
@@ -595,29 +597,27 @@ export function useCanvasWriter({
   );
 
   // ── Add / Remove extra blank pages ──────────────────────────────────────
-  const addPage = useCallback((insertAfterIdx?: number) => {
-    const targetIdx = insertAfterIdx !== undefined ? insertAfterIdx : Math.max(0, currentPage);
-    const newPageIdx = targetIdx + 1;
+  const addPage = useCallback(() => {
+    // Insert after current page
+    const insertAfterIdx = Math.max(0, currentPage);
     const newId = `blank-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-
+    
     setPageSequence(prev => {
       const next = [...prev];
-      next.splice(newPageIdx, 0, { type: 'blank', id: newId });
+      next.splice(insertAfterIdx + 1, 0, { type: 'blank', id: newId });
       return next;
     });
 
-    // Scroll to the new page after React commits
-    requestAnimationFrame(() => {
-      scrollToPage(newPageIdx);
-    });
+    // Scroll to the new page right after state update
+    setTimeout(() => {
+      scrollToPage(insertAfterIdx + 1);
+    }, 50);
   }, [currentPage, scrollToPage]);
 
-  const removePage = useCallback((removalIdx?: number) => {
-    const targetIdx = removalIdx !== undefined ? removalIdx : currentPage;
-    const config = pageSequence[targetIdx];
+  const removePage = useCallback(() => {
+    const config = pageSequence[currentPage];
     if (!config || config.type === 'pdf') return; // Cannot delete original PDF pages
-    if (pageSequence.length <= 1) return; // Must keep at least one page
-
+    
     // Clear any strokes on the page being removed
     const idToRemove = config.id;
     setPageLines((prev) => {
@@ -625,17 +625,17 @@ export function useCanvasWriter({
       delete next[idToRemove];
       return next;
     });
-
+    
     setPageSequence(prev => {
       const next = [...prev];
-      next.splice(targetIdx, 1);
+      next.splice(currentPage, 1);
       return next;
     });
 
     // Nudge zoom to auto-fix scroll
-    requestAnimationFrame(() => {
+    setTimeout(() => {
       setStagePos(prev => clampPos(prev.x, prev.y, scaleRef.current));
-    });
+    }, 50);
   }, [currentPage, pageSequence, clampPos]);
 
   // ── Track Visible Page ─────────────────────────────────────────────────
@@ -726,16 +726,17 @@ export function useCanvasWriter({
   // Translates id-based pageLines into strict sequential 1-based indexes.
   const triggerSave = useCallback(async () => {
     try {
-      if (pageSequence.length === 0) return;
+      if (Object.keys(pageLines).length === 0) return;
 
       const sequentialPages: Record<number, LineData[]> = {};
       for (let i = 0; i < pageSequence.length; i++) {
         const config = pageSequence[i];
-        const lines = pageLines[config.id] || [];
-        // Remove internal pageId from saved data so it's clean and backwards-compatible
-        // Always write the entry (even empty []) so blank pages are preserved on reload
-        const cleanLines = lines.map(({ pageId, ...rest }) => rest);
-        sequentialPages[i + 1] = cleanLines as LineData[];
+        const lines = pageLines[config.id];
+        if (lines && lines.length > 0) {
+          // Remove internal pageId from saved data so it's clean and backwards-compatible
+          const cleanLines = lines.map(({ pageId, ...rest }) => rest);
+          sequentialPages[i + 1] = cleanLines as LineData[];
+        }
       }
 
       // Pass raw vectors to parent (Firestore, etc.)
@@ -755,7 +756,7 @@ export function useCanvasWriter({
     } catch (e) {
       console.warn('[CanvasWriter] triggerSave failed', e);
     }
-  }, [pageLines, pageSequence, onSave, autoSaveKey]);
+  }, [pageLines, onSave, autoSaveKey]);
 
   // ── Auto-save ────────────────────────────────────────────────────────────
   useEffect(() => {

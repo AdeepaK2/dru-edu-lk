@@ -477,16 +477,16 @@ export default function CanvasWriter(props: CanvasWriterProps) {
 
         {/* Add / Remove pages relative to scroll */}
         <button
-          onClick={() => addPage()}
+          onClick={addPage}
           className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-green-700 hover:bg-green-600 transition-colors"
           title={`Insert a blank page after page ${currentPage + 1}`}
         >
           <PlusCircle size={13} />
           Page
         </button>
-        {pageSequence[currentPage]?.type === 'blank' && pageSequence.length > 1 && (
+        {pageSequence[currentPage]?.type === 'blank' && (
           <button
-            onClick={() => removePage()}
+            onClick={removePage}
             className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-red-800 hover:bg-red-700 transition-colors"
             title={`Remove blank page ${currentPage + 1}`}
           >
@@ -562,112 +562,6 @@ export default function CanvasWriter(props: CanvasWriterProps) {
                         shadowOffsetY={2}
                       />
                     )}
-
-                    {/* Page Number Indicator */}
-                    <Text
-                      x={0}
-                      y={pageSize.h - 25}
-                      width={pageSize.w}
-                      text={`- ${pageIndex + 1} -`}
-                      align="center"
-                      fontSize={12}
-                      fontFamily="Inter, sans-serif"
-                      fill={bgImage ? "rgba(0,0,0,0.6)" : "#9ca3af"}
-                    />
-                  </Group>
-                );
-              })}
-            </Layer>
-
-            {/* ── Layer 1.5: Interactive UI Layer for Delete Buttons ── */}
-            <Layer>
-              {pageSequence.map((config, pageIndex) => {
-                const pageSize = getPageSize(pageIndex);
-                const isBlank = config.type === 'blank';
-
-                return (
-                  <Group key={`ui-${pageIndex}`} y={getPageOffset(pageIndex)}>
-                    {/* Inline Remove Button for Blank Pages */}
-                    {isBlank && pageSequence.length > 1 && (
-                      <Label
-                        x={pageSize.w - 110}
-                        y={10}
-                        onClick={(e) => {
-                          e.cancelBubble = true;
-                          removePage(pageIndex);
-                        }}
-                        onTap={(e) => {
-                          e.cancelBubble = true;
-                          removePage(pageIndex);
-                        }}
-                        onMouseEnter={(e) => {
-                          const stage = e.target.getStage();
-                          if (stage) stage.container().style.cursor = 'pointer';
-                        }}
-                        onMouseLeave={(e) => {
-                          const stage = e.target.getStage();
-                          if (stage) stage.container().style.cursor = 'default';
-                        }}
-                      >
-                        <Tag
-                          fill="#b91c1c" // red-700
-                          cornerRadius={4}
-                          lineJoin="round"
-                          shadowColor="black"
-                          shadowBlur={5}
-                          shadowOffsetX={0}
-                          shadowOffsetY={2}
-                          shadowOpacity={0.2}
-                        />
-                        <Text
-                          text="✕ Remove Page"
-                          fontFamily="Inter, sans-serif"
-                          fontSize={12}
-                          padding={8}
-                          fill="white"
-                        />
-                      </Label>
-                    )}
-
-                    {/* Inline Add Page Button (Bottom Center) */}
-                    <Label
-                      x={pageSize.w / 2 - 50}
-                      y={pageSize.h - 15}
-                      onClick={(e) => {
-                        e.cancelBubble = true;
-                        addPage(pageIndex);
-                      }}
-                      onTap={(e) => {
-                        e.cancelBubble = true;
-                        addPage(pageIndex);
-                      }}
-                      onMouseEnter={(e) => {
-                        const stage = e.target.getStage();
-                        if (stage) stage.container().style.cursor = 'pointer';
-                      }}
-                      onMouseLeave={(e) => {
-                        const stage = e.target.getStage();
-                        if (stage) stage.container().style.cursor = 'default';
-                      }}
-                    >
-                      <Tag
-                        fill="#15803d" // green-700
-                        cornerRadius={12}
-                        lineJoin="round"
-                        shadowColor="black"
-                        shadowBlur={5}
-                        shadowOffsetX={0}
-                        shadowOffsetY={2}
-                        shadowOpacity={0.2}
-                      />
-                      <Text
-                        text="+ Add Page"
-                        fontFamily="Inter, sans-serif"
-                        fontSize={12}
-                        padding={6}
-                        fill="white"
-                      />
-                    </Label>
                   </Group>
                 );
               })}

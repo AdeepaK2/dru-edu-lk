@@ -907,7 +907,7 @@ export default function StudentInClassTestDetailPage() {
                 onSave={handleStrokeSave}
                 onSavePdf={handleCanvasSave}
                 autoSaveKey={user && testId ? `canvas_draft_${testId}_${user.uid}` : undefined}
-                initialPageAnnotations={draftAnnotations ?? undefined}
+                initialPageAnnotations={draftAnnotations || {}}
                 onRegisterSubmit={(fn) => { canvasSubmitRef.current = fn; }}
                 onRegisterSave={(fn) => { canvasSaveRef.current = fn; }}
               />
