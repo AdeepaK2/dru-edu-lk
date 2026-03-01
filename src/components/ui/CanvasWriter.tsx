@@ -477,7 +477,7 @@ export default function CanvasWriter(props: CanvasWriterProps) {
 
         {/* Add / Remove pages relative to scroll */}
         <button
-          onClick={addPage}
+          onClick={() => addPage()}
           className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-green-700 hover:bg-green-600 transition-colors"
           title={`Insert a blank page after page ${currentPage + 1}`}
         >
@@ -486,7 +486,7 @@ export default function CanvasWriter(props: CanvasWriterProps) {
         </button>
         {pageSequence[currentPage]?.type === 'blank' && pageSequence.length > 1 && (
           <button
-            onClick={removePage}
+            onClick={() => removePage()}
             className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-red-800 hover:bg-red-700 transition-colors"
             title={`Remove blank page ${currentPage + 1}`}
           >
