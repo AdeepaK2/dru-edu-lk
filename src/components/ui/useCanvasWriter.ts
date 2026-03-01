@@ -597,25 +597,26 @@ export function useCanvasWriter({
   );
 
   // ── Add / Remove extra blank pages ──────────────────────────────────────
-  const addPage = useCallback(() => {
-    // Insert after current page
-    const insertAfterIdx = Math.max(0, currentPage);
+  const addPage = useCallback((insertAfterIdx?: number) => {
+    // Insert after current page if index not provided
+    const targetIdx = insertAfterIdx !== undefined ? insertAfterIdx : Math.max(0, currentPage);
     const newId = `blank-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     
     setPageSequence(prev => {
       const next = [...prev];
-      next.splice(insertAfterIdx + 1, 0, { type: 'blank', id: newId });
+      next.splice(targetIdx + 1, 0, { type: 'blank', id: newId });
       return next;
     });
 
     // Scroll to the new page right after state update
     setTimeout(() => {
-      scrollToPage(insertAfterIdx + 1);
+      scrollToPage(targetIdx + 1);
     }, 50);
   }, [currentPage, scrollToPage]);
 
-  const removePage = useCallback(() => {
-    const config = pageSequence[currentPage];
+  const removePage = useCallback((removalIdx?: number) => {
+    const targetIdx = removalIdx !== undefined ? removalIdx : currentPage;
+    const config = pageSequence[targetIdx];
     if (!config || config.type === 'pdf') return; // Cannot delete original PDF pages
     
     // Clear any strokes on the page being removed
@@ -628,7 +629,7 @@ export function useCanvasWriter({
     
     setPageSequence(prev => {
       const next = [...prev];
-      next.splice(currentPage, 1);
+      next.splice(targetIdx, 1);
       return next;
     });
 
