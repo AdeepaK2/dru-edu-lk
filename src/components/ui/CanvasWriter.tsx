@@ -16,6 +16,7 @@ import {
   Ruler,
   PlusCircle,
   MinusCircle,
+  Palette,
 } from 'lucide-react';
 import { useCanvasWriter } from './useCanvasWriter';
 
@@ -36,7 +37,7 @@ interface CanvasWriterProps {
 
 // ── Color presets ────────────────────────────────────────────────────────────
 
-const COLOR_PRESETS = ['#1a1a1a', '#ef4444', '#3b82f6', '#22c55e', '#f59e0b'];
+const COLOR_PRESETS = ['#3b82f6', '#1a1a1a', '#22c55e', '#a855f7'];
 
 // ── Component ────────────────────────────────────────────────────────────────
 
@@ -331,16 +332,26 @@ export default function CanvasWriter(props: CanvasWriterProps) {
             }`}
           />
         ))}
-        <input
-          type="color"
-          value={strokeColor}
-          onChange={(e) => {
-            setStrokeColor(e.target.value);
-            setActiveTool('pen');
-          }}
-          className="w-6 h-6 rounded cursor-pointer border-0 bg-transparent shrink-0"
+        {/* Custom Color Picker (Palette Icon) */}
+        <label
+          className={`flex items-center justify-center w-6 h-6 rounded cursor-pointer transition-colors relative ${
+            !COLOR_PRESETS.includes(strokeColor) && activeTool === 'pen'
+              ? 'bg-gray-700 text-blue-400'
+              : 'text-gray-400 hover:text-white hover:bg-gray-700'
+          }`}
           title="Custom color"
-        />
+        >
+          <Palette size={16} />
+          <input
+            type="color"
+            value={strokeColor}
+            onChange={(e) => {
+              setStrokeColor(e.target.value);
+              setActiveTool('pen');
+            }}
+            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+          />
+        </label>
 
         <div className="w-px h-6 bg-gray-600 mx-1" />
 
