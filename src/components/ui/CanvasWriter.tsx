@@ -37,7 +37,7 @@ interface CanvasWriterProps {
 
 // ── Color presets ────────────────────────────────────────────────────────────
 
-const COLOR_PRESETS = ['#3b82f6', '#1a1a1a', '#22c55e', '#a855f7'];
+const COLOR_PRESETS = ['#2833d7', '#1a1a1a', '#22c55e', '#a855f7'];
 
 // ── Component ────────────────────────────────────────────────────────────────
 
@@ -74,6 +74,8 @@ export default function CanvasWriter(props: CanvasWriterProps) {
     setStrokeColor,
     strokeWidth,
     setStrokeWidth,
+    eraserWidth,
+    setEraserWidth,
     draftImages,
     undo,
     redo,
@@ -95,8 +97,7 @@ export default function CanvasWriter(props: CanvasWriterProps) {
     getPageOffset,
     getTotalDocumentHeight,
     clampPos,
-    pdfBasePages,
-    extraPages,
+    pageSequence,
     addPage,
     removePage,
   } = useCanvasWriter({ ...props, stageRef, containerSize });
@@ -355,19 +356,48 @@ export default function CanvasWriter(props: CanvasWriterProps) {
 
         <div className="w-px h-6 bg-gray-600 mx-1" />
 
-        {/* Stroke width */}
-        <input
-          type="range"
-          min={1}
-          max={24}
-          value={strokeWidth}
-          onChange={(e) => setStrokeWidth(Number(e.target.value))}
-          className="w-20 shrink-0 accent-blue-500"
-          title={`Stroke: ${strokeWidth}px`}
-        />
-        <span className="text-[10px] text-gray-400 w-6 text-center shrink-0">
-          {strokeWidth}
-        </span>
+        {/* Stroke / Eraser width presets */}
+        <div className="flex items-center gap-1 mx-1">
+          {activeTool === 'eraser' ? (
+            [5, 10, 20, 30, 50].map((size) => (
+              <button
+                key={size}
+                onClick={() => setEraserWidth(size)}
+                className={`w-6 h-6 flex items-center justify-center rounded transition-all ${
+                  eraserWidth === size ? 'bg-gray-700' : 'hover:bg-gray-800'
+                }`}
+                title={`Eraser Size: ${size}px`}
+              >
+                <div
+                  className="bg-white rounded-full transition-all border border-gray-400"
+                  style={{
+                    width: `${Math.min(size * 0.4, 20)}px`,
+                    height: `${Math.min(size * 0.4, 20)}px`,
+                  }}
+                />
+              </button>
+            ))
+          ) : (
+            [1.5, 2, 3, 4, 6].map((size) => (
+              <button
+                key={size}
+                onClick={() => setStrokeWidth(size)}
+                className={`w-6 h-6 flex items-center justify-center rounded transition-all ${
+                  strokeWidth === size ? 'bg-gray-700' : 'hover:bg-gray-800'
+                }`}
+                title={`Stroke: ${size}px`}
+              >
+                <div
+                  className="bg-white rounded-full transition-all"
+                  style={{
+                    width: `${size + 1}px`, // Slight boost for visual clarity
+                    height: `${size + 1}px`,
+                  }}
+                />
+              </button>
+            ))
+          )}
+        </div>
 
         <div className="w-px h-6 bg-gray-600 mx-1" />
 
@@ -445,20 +475,20 @@ export default function CanvasWriter(props: CanvasWriterProps) {
 
         <div className="w-px h-6 bg-gray-600 mx-1" />
 
-        {/* Add / Remove extra pages */}
+        {/* Add / Remove pages relative to scroll */}
         <button
           onClick={addPage}
           className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-green-700 hover:bg-green-600 transition-colors"
-          title="Add a blank page after the last page"
+          title={`Insert a blank page after page ${currentPage + 1}`}
         >
           <PlusCircle size={13} />
           Page
         </button>
-        {extraPages > 0 && (
+        {pageSequence[currentPage]?.type === 'blank' && (
           <button
             onClick={removePage}
             className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-red-800 hover:bg-red-700 transition-colors"
-            title={`Remove the last added page (${extraPages} added)`}
+            title={`Remove blank page ${currentPage + 1}`}
           >
             <MinusCircle size={13} />
             Page
@@ -506,10 +536,9 @@ export default function CanvasWriter(props: CanvasWriterProps) {
           >
             {/* ── Layer 1: Background (PDF pages / white rects) ─────────────────── */}
             <Layer listening={false}>
-              {Array.from({ length: numPages }).map((_, pageIndex) => {
-                const pageNum = pageIndex + 1;
+              {pageSequence.map((config, pageIndex) => {
                 const pageSize = getPageSize(pageIndex);
-                const bgImage = pdfPageImages[pageIndex] || null;
+                const bgImage = config.type === 'pdf' ? pdfPageImages[config.pdfIndex] : null;
 
                 return (
                   <Group key={pageIndex} y={getPageOffset(pageIndex)}>
@@ -540,14 +569,13 @@ export default function CanvasWriter(props: CanvasWriterProps) {
 
             {/* ── Layer 2: Strokes (eraser uses destination-out, isolated here) ─ */}
             <Layer>
-              {Array.from({ length: numPages }).map((_, pageIndex) => {
-                const pageNum = pageIndex + 1;
+              {pageSequence.map((config, pageIndex) => {
                 const pageSize = getPageSize(pageIndex);
-                const draftImage = draftImages[pageNum] || null;
-                const lines = pageLines[pageNum] || [];
+                const draftImage = draftImages[config.id] || null;
+                const lines = pageLines[config.id] || [];
 
                 return (
-                  <Group key={pageIndex} y={getPageOffset(pageIndex)}>
+                  <Group key={config.id} y={getPageOffset(pageIndex)}>
                     {/* White backing rect so destination-out eraser only wipes this group */}
                     <Rect
                       listening={false}
@@ -588,7 +616,7 @@ export default function CanvasWriter(props: CanvasWriterProps) {
                     {activeTool === 'straight' && isDrawing && lines.length > 0 && (() => {
                       const activeLine = lines[lines.length - 1];
                       // Only render distance if this page has the newly dragged line
-                      if (activeLine && activeLine.points && activeLine.points.length >= 4 && activeLine.pageIdx === pageIndex) {
+                      if (activeLine && activeLine.points && activeLine.points.length >= 4 && activeLine.pageId === config.id) {
                         const x1 = activeLine.points[0];
                         const y1 = activeLine.points[1];
                         const x2 = activeLine.points[2];
