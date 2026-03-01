@@ -260,6 +260,26 @@ export function useCanvasWriter({
     }
   }, [initialPageAnnotations]);
 
+  // ── Auto-restore extra pages ────────────────────────────────────────────
+  // If the loaded JSON contains strokes on pages beyond the base PDF length,
+  // automatically increment extraPages when the PDF finishes loading.
+  useEffect(() => {
+    if (pdfUrl && pdfPageImages.length === 0) return; // wait for PDF to load
+    if (!initialPageAnnotations) return;
+    
+    const base = pdfUrl ? pdfPageImages.length : 1;
+    let maxPageNum = 0;
+    
+    for (const str of Object.keys(initialPageAnnotations)) {
+      maxPageNum = Math.max(maxPageNum, parseInt(str, 10));
+    }
+    
+    const needed = Math.max(0, maxPageNum - base);
+    if (needed > 0) {
+      setExtraPages(prev => Math.max(prev, needed));
+    }
+  }, [pdfUrl, pdfPageImages.length, initialPageAnnotations]);
+
   // ── History helpers ──────────────────────────────────────────────────────
   const pushHistory = useCallback(
     (page: number, lines: LineData[]) => {
