@@ -106,6 +106,9 @@ export function useCanvasWriter({
   // ── Fit-to-page tracking ─────────────────────────────────────────────────
   const lastFitKeyRef = useRef('');
 
+  // ── Guard: only restore annotations once ───────────────────────────────
+  const annotationsRestoredRef = useRef(false);
+
   // ── Page Sequence ────────────────────────────────────────────────────────
   // If no PDF, start with one blank page immediately so addPage / drawing works right away
   const [pageSequence, setPageSequence] = useState<PageConfig[]>(
@@ -264,9 +267,13 @@ export function useCanvasWriter({
     // Wait for PDF to load so we have the base sequence
     if (pdfUrl && pdfPageImages.length === 0) return;
     if (!initialPageAnnotations) return;
+    // Only restore once to prevent re-render cascades
+    if (annotationsRestoredRef.current) return;
 
     const entries = Object.entries(initialPageAnnotations);
     if (entries.length === 0) return;
+
+    annotationsRestoredRef.current = true;
 
     const baseLen = pdfUrl ? pdfPageImages.length : 1;
     let maxPageNum = 0;
