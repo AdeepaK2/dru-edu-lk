@@ -18,7 +18,7 @@ import {
   MinusCircle,
   Palette,
 } from 'lucide-react';
-import { useCanvasWriter } from './useCanvasWriter';
+import { useCanvasWriter, PAGE_GAP } from './useCanvasWriter';
 
 // ── Props (preserved exactly for all consumers) ──────────────────────────────
 
@@ -477,7 +477,7 @@ export default function CanvasWriter(props: CanvasWriterProps) {
 
         {/* Add / Remove pages relative to scroll */}
         <button
-          onClick={addPage}
+          onClick={() => addPage()}
           className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-green-700 hover:bg-green-600 transition-colors"
           title={`Insert a blank page after page ${currentPage + 1}`}
         >
@@ -710,6 +710,38 @@ export default function CanvasWriter(props: CanvasWriterProps) {
             </div>
           );
         })()}
+
+        {/* ── "Add Page" buttons at every page boundary ───────────── */}
+        {stageReady && (
+          <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 20 }}>
+            {pageSequence.map((_, i) => {
+              // Position the button in the gap after page i
+              const gapCenterY =
+                (getPageOffset(i) + getPageSize(i).h + PAGE_GAP / 2) * stageScale + stagePos.y;
+              const buttonX =
+                (getPageSize(i).w / 2) * stageScale + stagePos.x;
+
+              // Skip if off-screen (with some margin)
+              if (gapCenterY < -40 || gapCenterY > containerSize.h + 40) return null;
+
+              return (
+                <button
+                  key={`add-page-${i}`}
+                  onClick={() => addPage(i)}
+                  className="pointer-events-auto absolute flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-green-600 hover:bg-green-500 active:bg-green-700 text-white shadow-md hover:shadow-lg transition-all -translate-x-1/2 -translate-y-1/2 opacity-60 hover:opacity-100"
+                  style={{
+                    left: buttonX,
+                    top: gapCenterY,
+                  }}
+                  title={`Insert blank page after page ${i + 1}`}
+                >
+                  <PlusCircle size={12} />
+                  Add Page
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

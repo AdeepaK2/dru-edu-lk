@@ -13,7 +13,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdfjs/pdf.worker.min.mjs';
 const RENDER_SCALE = 2;
 const AUTO_SAVE_INTERVAL = 3000;
 const MAX_HISTORY = 50;
-const PAGE_GAP = 20; // 20px gap in continuous scroll
+export const PAGE_GAP = 20; // 20px gap in continuous scroll
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -597,9 +597,9 @@ export function useCanvasWriter({
   );
 
   // ── Add / Remove extra blank pages ──────────────────────────────────────
-  const addPage = useCallback(() => {
-    // Insert after current page
-    const insertAfterIdx = Math.max(0, currentPage);
+  const addPage = useCallback((afterIndex?: number) => {
+    // Insert after the specified page, or the current page if not given
+    const insertAfterIdx = Math.max(0, afterIndex ?? currentPage);
     const newId = `blank-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     
     setPageSequence(prev => {
