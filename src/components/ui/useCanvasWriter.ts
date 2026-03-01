@@ -107,7 +107,10 @@ export function useCanvasWriter({
   const lastFitKeyRef = useRef('');
 
   // ── Page Sequence ────────────────────────────────────────────────────────
-  const [pageSequence, setPageSequence] = useState<PageConfig[]>([]);
+  // If no PDF, start with one blank page immediately so addPage / drawing works right away
+  const [pageSequence, setPageSequence] = useState<PageConfig[]>(
+    pdfUrl ? [] : [{ type: 'blank', id: 'blank-init' }]
+  );
 
   // ── Computed ──────────────────────────────────────────────────────────────
   const numPages = pageSequence.length;
@@ -260,20 +263,10 @@ export function useCanvasWriter({
   useEffect(() => {
     // Wait for PDF to load so we have the base sequence
     if (pdfUrl && pdfPageImages.length === 0) return;
-    if (!initialPageAnnotations) {
-      if (!pdfUrl && pageSequence.length === 0) {
-        // Fallback for no-PDF layout
-        setPageSequence([{ type: 'blank', id: 'blank-init' }]);
-      }
-      return;
-    }
+    if (!initialPageAnnotations) return;
+
     const entries = Object.entries(initialPageAnnotations);
-    if (entries.length === 0) {
-      if (!pdfUrl && pageSequence.length === 0) {
-        setPageSequence([{ type: 'blank', id: 'blank-init' }]);
-      }
-      return;
-    }
+    if (entries.length === 0) return;
 
     const baseLen = pdfUrl ? pdfPageImages.length : 1;
     let maxPageNum = 0;
@@ -282,13 +275,10 @@ export function useCanvasWriter({
     });
 
     const neededBlanks = Math.max(0, maxPageNum - baseLen);
-    
-    // Construct internal model mapping
+
+    // Construct internal model mapping — start from current sequence
     const restored: PageLines = {};
     let seq = [...pageSequence];
-    if (!pdfUrl && seq.length === 0) {
-      seq = [{ type: 'blank', id: 'blank-init' }];
-    }
 
     // Append necessary blanks so index 1..maxPageNum lines up
     for (let i = 0; i < neededBlanks; i++) {
@@ -600,24 +590,26 @@ export function useCanvasWriter({
   const addPage = useCallback((insertAfterIdx?: number) => {
     // Insert after current page if index not provided
     const targetIdx = insertAfterIdx !== undefined ? insertAfterIdx : Math.max(0, currentPage);
+    const newPageIdx = targetIdx + 1;
     const newId = `blank-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-    
+
     setPageSequence(prev => {
       const next = [...prev];
-      next.splice(targetIdx + 1, 0, { type: 'blank', id: newId });
+      next.splice(newPageIdx, 0, { type: 'blank', id: newId });
       return next;
     });
 
-    // Scroll to the new page right after state update
-    setTimeout(() => {
-      scrollToPage(targetIdx + 1);
-    }, 50);
+    // Wait for React to commit the new sequence before scrolling
+    requestAnimationFrame(() => {
+      setTimeout(() => scrollToPage(newPageIdx), 0);
+    });
   }, [currentPage, scrollToPage]);
 
   const removePage = useCallback((removalIdx?: number) => {
     const targetIdx = removalIdx !== undefined ? removalIdx : currentPage;
     const config = pageSequence[targetIdx];
     if (!config || config.type === 'pdf') return; // Cannot delete original PDF pages
+    if (pageSequence.length <= 1) return; // Must keep at least one page
     
     // Clear any strokes on the page being removed
     const idToRemove = config.id;
@@ -727,7 +719,7 @@ export function useCanvasWriter({
   // Translates id-based pageLines into strict sequential 1-based indexes.
   const triggerSave = useCallback(async () => {
     try {
-      if (Object.keys(pageLines).length === 0) return;
+      if (pageSequence.length === 0) return;
 
       const sequentialPages: Record<number, LineData[]> = {};
       for (let i = 0; i < pageSequence.length; i++) {
@@ -758,7 +750,7 @@ export function useCanvasWriter({
     } catch (e) {
       console.warn('[CanvasWriter] triggerSave failed', e);
     }
-  }, [pageLines, onSave, autoSaveKey]);
+  }, [pageLines, pageSequence, onSave, autoSaveKey]);
 
   // ── Auto-save ────────────────────────────────────────────────────────────
   useEffect(() => {

@@ -484,7 +484,7 @@ export default function CanvasWriter(props: CanvasWriterProps) {
           <PlusCircle size={13} />
           Page
         </button>
-        {pageSequence[currentPage]?.type === 'blank' && (
+        {pageSequence[currentPage]?.type === 'blank' && pageSequence.length > 1 && (
           <button
             onClick={() => removePage()}
             className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-red-800 hover:bg-red-700 transition-colors"
@@ -587,8 +587,8 @@ export default function CanvasWriter(props: CanvasWriterProps) {
 
                 return (
                   <Group key={`ui-${pageIndex}`} y={getPageOffset(pageIndex)}>
-                    {/* Inline Remove Button for Blank Pages */}
-                    {isBlank && (
+                    {/* Inline Remove Button for Blank Pages (hide if it's the last page) */}
+                    {isBlank && pageSequence.length > 1 && (
                       <Label
                         x={pageSize.w - 100}
                         y={10}
