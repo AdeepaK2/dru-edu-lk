@@ -562,6 +562,116 @@ export default function CanvasWriter(props: CanvasWriterProps) {
                         shadowOffsetY={2}
                       />
                     )}
+
+                    {/* Page Number Indicator */}
+                    <Text
+                      x={0}
+                      y={pageSize.h - 25}
+                      width={pageSize.w}
+                      text={`- ${pageIndex + 1} -`}
+                      align="center"
+                      fontSize={12}
+                      fontFamily="Inter, sans-serif"
+                      fill={bgImage ? "rgba(0,0,0,0.6)" : "#9ca3af"}
+                    />
+                  </Group>
+                );
+              })}
+            </Layer>
+
+            {/* ── Layer 1.5: Interactive UI Layer for Delete Buttons ── */}
+            <Layer>
+              {pageSequence.map((config, pageIndex) => {
+                const pageSize = getPageSize(pageIndex);
+                const isBlank = config.type === 'blank';
+
+                return (
+                  <Group key={`ui-${pageIndex}`} y={getPageOffset(pageIndex)}>
+                    {/* Inline Remove Button for Blank Pages */}
+                    {isBlank && (
+                      <Label
+                        x={pageSize.w - 110}
+                        y={10}
+                        onClick={(e) => {
+                          e.cancelBubble = true;
+                          scrollToPage(pageIndex);
+                          setTimeout(() => removePage(), 0);
+                        }}
+                        onTap={(e) => {
+                          e.cancelBubble = true;
+                          scrollToPage(pageIndex);
+                          setTimeout(() => removePage(), 0);
+                        }}
+                        onMouseEnter={(e) => {
+                          const stage = e.target.getStage();
+                          if (stage) stage.container().style.cursor = 'pointer';
+                        }}
+                        onMouseLeave={(e) => {
+                          const stage = e.target.getStage();
+                          if (stage) stage.container().style.cursor = 'default';
+                        }}
+                      >
+                        <Tag
+                          fill="#b91c1c" // red-700
+                          cornerRadius={4}
+                          lineJoin="round"
+                          shadowColor="black"
+                          shadowBlur={5}
+                          shadowOffsetX={0}
+                          shadowOffsetY={2}
+                          shadowOpacity={0.2}
+                        />
+                        <Text
+                          text="✕ Remove Page"
+                          fontFamily="Inter, sans-serif"
+                          fontSize={12}
+                          padding={8}
+                          fill="white"
+                        />
+                      </Label>
+                    )}
+
+                    {/* Inline Add Page Button (Bottom Center) */}
+                    <Label
+                      x={pageSize.w / 2 - 50}
+                      y={pageSize.h - 15}
+                      onClick={(e) => {
+                        e.cancelBubble = true;
+                        scrollToPage(pageIndex);
+                        setTimeout(() => addPage(), 0);
+                      }}
+                      onTap={(e) => {
+                        e.cancelBubble = true;
+                        scrollToPage(pageIndex);
+                        setTimeout(() => addPage(), 0);
+                      }}
+                      onMouseEnter={(e) => {
+                        const stage = e.target.getStage();
+                        if (stage) stage.container().style.cursor = 'pointer';
+                      }}
+                      onMouseLeave={(e) => {
+                        const stage = e.target.getStage();
+                        if (stage) stage.container().style.cursor = 'default';
+                      }}
+                    >
+                      <Tag
+                        fill="#15803d" // green-700
+                        cornerRadius={12}
+                        lineJoin="round"
+                        shadowColor="black"
+                        shadowBlur={5}
+                        shadowOffsetX={0}
+                        shadowOffsetY={2}
+                        shadowOpacity={0.2}
+                      />
+                      <Text
+                        text="+ Add Page"
+                        fontFamily="Inter, sans-serif"
+                        fontSize={12}
+                        padding={6}
+                        fill="white"
+                      />
+                    </Label>
                   </Group>
                 );
               })}
