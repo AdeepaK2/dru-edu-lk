@@ -732,12 +732,13 @@ export function useCanvasWriter({
       const sequentialPages: Record<number, LineData[]> = {};
       for (let i = 0; i < pageSequence.length; i++) {
         const config = pageSequence[i];
-        const lines = pageLines[config.id];
-        if (lines && lines.length > 0) {
-          // Remove internal pageId from saved data so it's clean and backwards-compatible
-          const cleanLines = lines.map(({ pageId, ...rest }) => rest);
-          sequentialPages[i + 1] = cleanLines as LineData[];
-        }
+        const lines = pageLines[config.id] || [];
+        // We MUST preserve blank pages even if they have no lines yet,
+        // otherwise they disappear on reload. For PDF pages without lines,
+        // it's okay if they are empty, but for consistency we write an empty array
+        // to signify the page exists in the sequence.
+        const cleanLines = lines.map(({ pageId, ...rest }) => rest);
+        sequentialPages[i + 1] = cleanLines as LineData[];
       }
 
       // Pass raw vectors to parent (Firestore, etc.)
@@ -869,8 +870,8 @@ export function useCanvasWriter({
         }
       }
 
+      // Check if document is completely empty, add fallback if so
       if (finalPdfDoc.getPageCount() === 0) {
-        // Fallback for absolutely empty
         const s = getPageSize(0);
         finalPdfDoc.addPage([s.w, s.h]);
       }
