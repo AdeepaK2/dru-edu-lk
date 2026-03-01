@@ -27,10 +27,11 @@ interface CanvasWriterProps {
   height?: number;
   className?: string;
   outputFormat?: 'pdf';
-  onSave?: (strokePages: Record<number, import('./useCanvasWriter').LineData[]>) => void;
+  onSave?: (strokePages: Record<number, import('./useCanvasWriter').LineData[]>, pageSequence: import('./useCanvasWriter').PageConfig[]) => void;
   onSavePdf?: (file: File) => void;
   autoSaveKey?: string;
   initialPageAnnotations?: Record<number, import('./useCanvasWriter').LineData[]>;
+  initialPageSequence?: import('./useCanvasWriter').PageConfig[];
   onRegisterSubmit?: (fn: () => void) => void;
   onRegisterSave?: (fn: () => Promise<void>) => void;
 }

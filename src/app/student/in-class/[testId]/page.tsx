@@ -24,7 +24,7 @@ import { doc, getDoc, Timestamp, collection, query, where, onSnapshot, getFirest
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { firestore, storage } from '@/utils/firebase-client';
 import { InClassSubmissionService } from '@/services/inClassSubmissionService';
-import type { LineData } from '@/components/ui/useCanvasWriter';
+import type { LineData, PageConfig } from '@/components/ui/useCanvasWriter';
 
 export default function StudentInClassTestDetailPage() {
   const router = useRouter();
@@ -44,6 +44,7 @@ export default function StudentInClassTestDetailPage() {
   const [isWriting, setIsWriting] = useState(false);
   const [canvasTimeRemaining, setCanvasTimeRemaining] = useState<number>(0);
   const [draftAnnotations, setDraftAnnotations] = useState<Record<number, LineData[]> | null>(null);
+  const [draftPageSequence, setDraftPageSequence] = useState<PageConfig[] | null>(null);
   const [showDraftPrompt, setShowDraftPrompt] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const canvasWriterRef = React.useRef<any>(null);
@@ -195,6 +196,9 @@ export default function StudentInClassTestDetailPage() {
           const firestoreData = draftDoc.data();
           if (firestoreData.strokePages && Object.keys(firestoreData.strokePages).length > 0) {
             setDraftAnnotations(firestoreData.strokePages);
+            if (firestoreData.pageSequence) {
+              setDraftPageSequence(firestoreData.pageSequence);
+            }
             // Don't show prompt - just load the strokes automatically
             console.log('[Recovery] Loaded saved strokes from Firestore:', new Date(firestoreData.lastSaved.toDate()).toLocaleString());
             toast.success('Your previous work has been loaded');
@@ -205,11 +209,14 @@ export default function StudentInClassTestDetailPage() {
         // Fallback to localStorage for crash recovery
         const autoSaveKey = `canvas_draft_${testId}_${user.uid}`;
         const draftJson = localStorage.getItem(autoSaveKey);
-        
+
         if (draftJson) {
           const draft = JSON.parse(draftJson);
           if (draft.pages && Object.keys(draft.pages).length > 0) {
             setDraftAnnotations(draft.pages);
+            if (draft.pageSequence) {
+              setDraftPageSequence(draft.pageSequence);
+            }
             setShowDraftPrompt(true); // Only show prompt for localStorage recovery
             console.log('[Recovery] Found localStorage draft from', new Date(draft.timestamp).toLocaleString());
           }
@@ -322,11 +329,12 @@ export default function StudentInClassTestDetailPage() {
   };
 
   // Save strokes to Firestore (called automatically by CanvasWriter every 3s)
-  const handleStrokeSave = async (strokePages: Record<number, LineData[]>) => {
+  const handleStrokeSave = async (strokePages: Record<number, LineData[]>, pageSequence: PageConfig[]) => {
     if (!user || !testId) return;
 
     // Keep parent state in sync so Close → Reopen restores extra pages
     setDraftAnnotations(strokePages);
+    setDraftPageSequence(pageSequence);
 
     try {
       console.log('[StrokeSave] Auto-saving stroke JSON to Firestore...');
@@ -338,6 +346,7 @@ export default function StudentInClassTestDetailPage() {
         studentId: user.uid,
         studentEmail: user.email,
         strokePages,
+        pageSequence,
         lastSaved: Timestamp.now()
       });
 
@@ -908,6 +917,7 @@ export default function StudentInClassTestDetailPage() {
                 onSavePdf={handleCanvasSave}
                 autoSaveKey={user && testId ? `canvas_draft_${testId}_${user.uid}` : undefined}
                 initialPageAnnotations={draftAnnotations || {}}
+                initialPageSequence={draftPageSequence || undefined}
                 onRegisterSubmit={(fn) => { canvasSubmitRef.current = fn; }}
                 onRegisterSave={(fn) => { canvasSaveRef.current = fn; }}
               />
