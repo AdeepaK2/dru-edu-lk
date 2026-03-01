@@ -477,7 +477,7 @@ export default function CanvasWriter(props: CanvasWriterProps) {
 
         {/* Add / Remove pages relative to scroll */}
         <button
-          onClick={() => addPage()}
+          onClick={addPage}
           className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-green-700 hover:bg-green-600 transition-colors"
           title={`Insert a blank page after page ${currentPage + 1}`}
         >
@@ -486,7 +486,7 @@ export default function CanvasWriter(props: CanvasWriterProps) {
         </button>
         {pageSequence[currentPage]?.type === 'blank' && pageSequence.length > 1 && (
           <button
-            onClick={() => removePage()}
+            onClick={removePage}
             className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-red-800 hover:bg-red-700 transition-colors"
             title={`Remove blank page ${currentPage + 1}`}
           >
@@ -587,14 +587,11 @@ export default function CanvasWriter(props: CanvasWriterProps) {
 
                 return (
                   <Group key={`ui-${pageIndex}`} y={getPageOffset(pageIndex)}>
-                    {/* Inline Remove Button for Blank Pages (hide if it's the last page) */}
+                    {/* Inline Remove Button for Blank Pages */}
                     {isBlank && pageSequence.length > 1 && (
                       <Label
-                        x={pageSize.w - 100}
+                        x={pageSize.w - 110}
                         y={10}
-                        onPointerDown={(e) => {
-                          e.cancelBubble = true; // Prevent drawing from triggering immediately
-                        }}
                         onClick={(e) => {
                           e.cancelBubble = true;
                           removePage(pageIndex);
@@ -613,34 +610,29 @@ export default function CanvasWriter(props: CanvasWriterProps) {
                         }}
                       >
                         <Tag
-                          fill="#fef2f2" // red-50
-                          stroke="#fca5a5" // red-300 border
-                          strokeWidth={1}
-                          cornerRadius={6}
+                          fill="#b91c1c" // red-700
+                          cornerRadius={4}
                           lineJoin="round"
                           shadowColor="black"
-                          shadowBlur={2}
+                          shadowBlur={5}
                           shadowOffsetX={0}
-                          shadowOffsetY={1}
-                          shadowOpacity={0.05}
+                          shadowOffsetY={2}
+                          shadowOpacity={0.2}
                         />
                         <Text
                           text="✕ Remove Page"
                           fontFamily="Inter, sans-serif"
-                          fontSize={11}
-                          padding={6}
-                          fill="#991b1b" // red-800 text
+                          fontSize={12}
+                          padding={8}
+                          fill="white"
                         />
                       </Label>
                     )}
 
-                    {/* Inline Add Page Button (Spanning bottom of page) */}
+                    {/* Inline Add Page Button (Bottom Center) */}
                     <Label
-                      x={20}
-                      y={pageSize.h - 12}
-                      onPointerDown={(e) => {
-                        e.cancelBubble = true; // Prevent drawing from triggering immediately
-                      }}
+                      x={pageSize.w / 2 - 50}
+                      y={pageSize.h - 15}
                       onClick={(e) => {
                         e.cancelBubble = true;
                         addPage(pageIndex);
@@ -651,37 +643,29 @@ export default function CanvasWriter(props: CanvasWriterProps) {
                       }}
                       onMouseEnter={(e) => {
                         const stage = e.target.getStage();
-                        if (stage) {
-                          stage.container().style.cursor = 'pointer';
-                        }
+                        if (stage) stage.container().style.cursor = 'pointer';
                       }}
                       onMouseLeave={(e) => {
                         const stage = e.target.getStage();
-                        if (stage) {
-                          stage.container().style.cursor = 'default';
-                        }
+                        if (stage) stage.container().style.cursor = 'default';
                       }}
                     >
                       <Tag
-                        fill="#f3f4f6" // gray-100 default
-                        stroke="#d1d5db" // gray-300 border
-                        strokeWidth={1}
-                        cornerRadius={6}
+                        fill="#15803d" // green-700
+                        cornerRadius={12}
                         lineJoin="round"
                         shadowColor="black"
-                        shadowBlur={2}
+                        shadowBlur={5}
                         shadowOffsetX={0}
-                        shadowOffsetY={1}
-                        shadowOpacity={0.1}
+                        shadowOffsetY={2}
+                        shadowOpacity={0.2}
                       />
                       <Text
-                        text="+ Add Blank Page Here"
+                        text="+ Add Page"
                         fontFamily="Inter, sans-serif"
                         fontSize={12}
-                        padding={8}
-                        width={pageSize.w - 40}
-                        align="center"
-                        fill="#4b5563" // gray-600 outline look
+                        padding={6}
+                        fill="white"
                       />
                     </Label>
                   </Group>

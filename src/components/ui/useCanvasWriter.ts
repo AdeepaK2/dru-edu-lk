@@ -105,15 +105,11 @@ export function useCanvasWriter({
 
   // ── Fit-to-page tracking ─────────────────────────────────────────────────
   const lastFitKeyRef = useRef('');
-
-  // ── Guard: only restore annotations once ───────────────────────────────
+  // ── Annotation restore guard (run once only) ───────────────────────────
   const annotationsRestoredRef = useRef(false);
 
   // ── Page Sequence ────────────────────────────────────────────────────────
-  // If no PDF, start with one blank page immediately so addPage / drawing works right away
-  const [pageSequence, setPageSequence] = useState<PageConfig[]>(
-    pdfUrl ? [] : [{ type: 'blank', id: 'blank-init' }]
-  );
+  const [pageSequence, setPageSequence] = useState<PageConfig[]>([]);
 
   // ── Computed ──────────────────────────────────────────────────────────────
   const numPages = pageSequence.length;
@@ -266,16 +262,22 @@ export function useCanvasWriter({
   useEffect(() => {
     // Wait for PDF to load so we have the base sequence
     if (pdfUrl && pdfPageImages.length === 0) return;
-    if (!initialPageAnnotations) return;
-    // Only restore once to prevent re-render cascades
-    if (annotationsRestoredRef.current) return;
 
+    // No-PDF fallback: ensure at least one blank page exists
+    if (!pdfUrl && pageSequence.length === 0) {
+      setPageSequence([{ type: 'blank', id: 'blank-init' }]);
+      return; // Let next render cycle pick up the sequence
+    }
+
+    // Only restore annotations once to prevent re-render loops
+    if (annotationsRestoredRef.current) return;
+    if (!initialPageAnnotations) return;
     const entries = Object.entries(initialPageAnnotations);
     if (entries.length === 0) return;
 
     annotationsRestoredRef.current = true;
 
-    const baseLen = pdfUrl ? pdfPageImages.length : 1;
+    const baseLen = pdfUrl ? pdfPageImages.length : pageSequence.length;
     let maxPageNum = 0;
     entries.forEach(([pageStr]) => {
       maxPageNum = Math.max(maxPageNum, parseInt(pageStr, 10));
@@ -283,21 +285,20 @@ export function useCanvasWriter({
 
     const neededBlanks = Math.max(0, maxPageNum - baseLen);
 
-    // Construct internal model mapping — start from current sequence
+    // Construct internal model mapping
     const restored: PageLines = {};
-    let seq = [...pageSequence];
+    const seq = [...pageSequence];
 
     // Append necessary blanks so index 1..maxPageNum lines up
     for (let i = 0; i < neededBlanks; i++) {
       seq.push({ type: 'blank', id: `blank-restored-${i}` });
     }
-    setPageSequence(seq);
+    if (neededBlanks > 0) setPageSequence(seq);
 
     entries.forEach(([pageStr, lines]) => {
       const zeroIdx = parseInt(pageStr, 10) - 1;
       const config = seq[zeroIdx];
       if (Array.isArray(lines) && lines.length > 0 && config) {
-        // Rewrite the internal pageId back into the linestroke
         const remappedLines = lines.map(l => ({ ...l, pageId: config.id }));
         restored[config.id] = remappedLines as LineData[];
       }
@@ -306,7 +307,7 @@ export function useCanvasWriter({
     if (Object.keys(restored).length > 0) {
       setPageLines(restored);
     }
-  }, [initialPageAnnotations, pdfUrl, pdfPageImages.length]);
+  }, [initialPageAnnotations, pdfUrl, pdfPageImages.length, pageSequence]);
 
   // ── History helpers ──────────────────────────────────────────────────────
   const pushHistory = useCallback(
@@ -595,7 +596,6 @@ export function useCanvasWriter({
 
   // ── Add / Remove extra blank pages ──────────────────────────────────────
   const addPage = useCallback((insertAfterIdx?: number) => {
-    // Insert after current page if index not provided
     const targetIdx = insertAfterIdx !== undefined ? insertAfterIdx : Math.max(0, currentPage);
     const newPageIdx = targetIdx + 1;
     const newId = `blank-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
@@ -606,9 +606,9 @@ export function useCanvasWriter({
       return next;
     });
 
-    // Wait for React to commit the new sequence before scrolling
+    // Scroll to the new page after React commits
     requestAnimationFrame(() => {
-      setTimeout(() => scrollToPage(newPageIdx), 0);
+      scrollToPage(newPageIdx);
     });
   }, [currentPage, scrollToPage]);
 
@@ -617,7 +617,7 @@ export function useCanvasWriter({
     const config = pageSequence[targetIdx];
     if (!config || config.type === 'pdf') return; // Cannot delete original PDF pages
     if (pageSequence.length <= 1) return; // Must keep at least one page
-    
+
     // Clear any strokes on the page being removed
     const idToRemove = config.id;
     setPageLines((prev) => {
@@ -625,7 +625,7 @@ export function useCanvasWriter({
       delete next[idToRemove];
       return next;
     });
-    
+
     setPageSequence(prev => {
       const next = [...prev];
       next.splice(targetIdx, 1);
@@ -633,9 +633,9 @@ export function useCanvasWriter({
     });
 
     // Nudge zoom to auto-fix scroll
-    setTimeout(() => {
+    requestAnimationFrame(() => {
       setStagePos(prev => clampPos(prev.x, prev.y, scaleRef.current));
-    }, 50);
+    });
   }, [currentPage, pageSequence, clampPos]);
 
   // ── Track Visible Page ─────────────────────────────────────────────────
@@ -732,10 +732,8 @@ export function useCanvasWriter({
       for (let i = 0; i < pageSequence.length; i++) {
         const config = pageSequence[i];
         const lines = pageLines[config.id] || [];
-        // We MUST preserve blank pages even if they have no lines yet,
-        // otherwise they disappear on reload. For PDF pages without lines,
-        // it's okay if they are empty, but for consistency we write an empty array
-        // to signify the page exists in the sequence.
+        // Remove internal pageId from saved data so it's clean and backwards-compatible
+        // Always write the entry (even empty []) so blank pages are preserved on reload
         const cleanLines = lines.map(({ pageId, ...rest }) => rest);
         sequentialPages[i + 1] = cleanLines as LineData[];
       }
@@ -869,8 +867,8 @@ export function useCanvasWriter({
         }
       }
 
-      // Check if document is completely empty, add fallback if so
       if (finalPdfDoc.getPageCount() === 0) {
+        // Fallback for absolutely empty
         const s = getPageSize(0);
         finalPdfDoc.addPage([s.w, s.h]);
       }
