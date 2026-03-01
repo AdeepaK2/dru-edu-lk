@@ -209,14 +209,38 @@ const HomeworkTab: React.FC<HomeworkTabProps> = ({ classData, classId }) => {
     }
   };
 
-  // ... (formatDate, isOverdue helpers unchanged) ...
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc'); // 'desc' = recent to past
 
   const filteredItems = displayItems.filter(item => {
-    if (filter === 'all') return true;
-    if (filter === 'active') return !isActuallyClosed(item);
-    if (filter === 'closed') return isActuallyClosed(item);
+    // 1. Tab filter
+    if (filter === 'active' && isActuallyClosed(item)) return false;
+    if (filter === 'closed' && !isActuallyClosed(item)) return false;
+    
+    // 2. Search filter (only if there's a query)
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      if (!item.title.toLowerCase().includes(q) && !(item.description || '').toLowerCase().includes(q)) {
+        return false;
+      }
+    }
+    
     return true;
+  }).sort((a, b) => {
+    // 3. Sort logic
+    // By default, displayItems is already sorted by dueDate ascending in loadData
+    if (filter === 'closed') {
+      return sortOrder === 'desc' 
+        ? b.dueDate.getTime() - a.dueDate.getTime() // Recent to past
+        : a.dueDate.getTime() - b.dueDate.getTime(); // Past to recent
+    }
+    return 0; // Keep default sorting for other tabs
   });
+
+  // Reset search when tab changes
+  useEffect(() => {
+    setSearchQuery('');
+  }, [filter]);
 
   // ... (getStatusBadge unchanged - logic updated to use item) ...
 
@@ -287,6 +311,38 @@ const HomeworkTab: React.FC<HomeworkTabProps> = ({ classData, classId }) => {
       {error && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
           {error}
+        </div>
+      )}
+
+      {/* Search and Sort (Closed Tab Only) */}
+      {filter === 'closed' && (
+        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-gray-50 p-4 rounded-lg border border-gray-100">
+          <div className="relative w-full sm:w-96">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <input
+              type="text"
+              placeholder="Search passed assignments..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            />
+          </div>
+          
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <span className="text-sm text-gray-500 font-medium whitespace-nowrap">Sort by:</span>
+            <select
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value as 'desc' | 'asc')}
+              className="block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+            >
+              <option value="desc">Recent to Past</option>
+              <option value="asc">Past to Recent</option>
+            </select>
+          </div>
         </div>
       )}
 
