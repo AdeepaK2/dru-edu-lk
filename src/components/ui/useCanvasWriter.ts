@@ -754,6 +754,83 @@ export function useCanvasWriter({
           }
         }
 
+        // ── Append extra blank pages that the user added via "+Page" ──
+        for (let i = pdfPageImages.length; i < pdfPageImages.length + extraPages; i++) {
+          const pageNum = i + 1;
+          const lines = pageLines[pageNum];
+          const hasDraft = !!draftImages[pageNum];
+          
+          if ((!lines || lines.length === 0) && !hasDraft) continue;
+
+          const ps = getPageSize(i);
+          const div = document.createElement('div');
+          div.style.position = 'absolute';
+          div.style.left = '-9999px';
+          div.style.top = '-9999px';
+          document.body.appendChild(div);
+
+          try {
+            const offStage = new Konva.Stage({
+              container: div,
+              width: ps.w,
+              height: ps.h,
+            });
+            const bgLayer = new Konva.Layer();
+            offStage.add(bgLayer);
+            bgLayer.add(
+              new Konva.Rect({ x: 0, y: 0, width: ps.w, height: ps.h, fill: 'white' })
+            );
+
+            // Drawing Layer (Draft + Lines)
+            const drawLayer = new Konva.Layer();
+            offStage.add(drawLayer);
+
+            if (draftImages[pageNum]) {
+              drawLayer.add(
+                new Konva.Image({
+                  image: draftImages[pageNum],
+                  x: 0,
+                  y: 0,
+                  width: ps.w,
+                  height: ps.h,
+                })
+              );
+            }
+
+            if (lines) {
+              for (const line of lines) {
+                drawLayer.add(
+                  new Konva.Line({
+                    points: line.points,
+                    stroke: line.tool === 'eraser' ? '#ffffff' : line.color,
+                    strokeWidth: line.strokeWidth,
+                    tension: 0.5,
+                    lineCap: 'round',
+                    lineJoin: 'round',
+                    globalCompositeOperation:
+                      line.tool === 'eraser' ? 'destination-out' : 'source-over',
+                  })
+                );
+              }
+            }
+
+            bgLayer.draw();
+            drawLayer.draw();
+            const dataUrl = offStage.toDataURL({ pixelRatio: RENDER_SCALE });
+            offStage.destroy();
+
+            const base64 = dataUrl.split(',')[1];
+            const pngBytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+
+            const img = await pdfDoc.embedPng(pngBytes);
+            const { width, height } = img;
+            const pdfPage = pdfDoc.addPage([width, height]);
+            pdfPage.drawImage(img, { x: 0, y: 0, width, height });
+          } finally {
+            document.body.removeChild(div);
+          }
+        }
+
         const pdfBytes = await pdfDoc.save();
         const file = new File([pdfBytes as BlobPart], 'annotated-answer.pdf', {
           type: 'application/pdf',
@@ -855,7 +932,7 @@ export function useCanvasWriter({
     } catch (err) {
       console.error('[CanvasWriter] PDF export failed:', err);
     }
-  }, [pdfUrl, pdfPageImages, pageLines, draftImages, getPageSize, onSavePdf]);
+  }, [pdfUrl, pdfPageImages, pageLines, draftImages, getPageSize, onSavePdf, extraPages]);
 
   // ── Register submit callback ─────────────────────────────────────────────
   useEffect(() => {
