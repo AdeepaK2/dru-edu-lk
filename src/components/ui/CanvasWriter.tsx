@@ -37,7 +37,7 @@ interface CanvasWriterProps {
 
 // ── Color presets ────────────────────────────────────────────────────────────
 
-const COLOR_PRESETS = ['#3b82f6', '#1a1a1a', '#22c55e', '#a855f7'];
+const COLOR_PRESETS = ['#2833d7', '#1a1a1a', '#22c55e', '#a855f7'];
 
 // ── Component ────────────────────────────────────────────────────────────────
 
@@ -74,6 +74,8 @@ export default function CanvasWriter(props: CanvasWriterProps) {
     setStrokeColor,
     strokeWidth,
     setStrokeWidth,
+    eraserWidth,
+    setEraserWidth,
     draftImages,
     undo,
     redo,
@@ -355,26 +357,47 @@ export default function CanvasWriter(props: CanvasWriterProps) {
 
         <div className="w-px h-6 bg-gray-600 mx-1" />
 
-        {/* Stroke width presets */}
+        {/* Stroke / Eraser width presets */}
         <div className="flex items-center gap-1 mx-1">
-          {[1.5, 2, 3, 4, 6].map((size) => (
-            <button
-              key={size}
-              onClick={() => setStrokeWidth(size)}
-              className={`w-6 h-6 flex items-center justify-center rounded transition-all ${
-                strokeWidth === size ? 'bg-gray-700' : 'hover:bg-gray-800'
-              }`}
-              title={`Stroke: ${size}px`}
-            >
-              <div
-                className="bg-white rounded-full transition-all"
-                style={{
-                  width: `${size + 1}px`, // Slight boost for visual clarity
-                  height: `${size + 1}px`,
-                }}
-              />
-            </button>
-          ))}
+          {activeTool === 'eraser' ? (
+            [5, 10, 20, 30, 50].map((size) => (
+              <button
+                key={size}
+                onClick={() => setEraserWidth(size)}
+                className={`w-6 h-6 flex items-center justify-center rounded transition-all ${
+                  eraserWidth === size ? 'bg-gray-700' : 'hover:bg-gray-800'
+                }`}
+                title={`Eraser Size: ${size}px`}
+              >
+                <div
+                  className="bg-white rounded-full transition-all border border-gray-400"
+                  style={{
+                    width: `${Math.min(size * 0.4, 20)}px`,
+                    height: `${Math.min(size * 0.4, 20)}px`,
+                  }}
+                />
+              </button>
+            ))
+          ) : (
+            [1.5, 2, 3, 4, 6].map((size) => (
+              <button
+                key={size}
+                onClick={() => setStrokeWidth(size)}
+                className={`w-6 h-6 flex items-center justify-center rounded transition-all ${
+                  strokeWidth === size ? 'bg-gray-700' : 'hover:bg-gray-800'
+                }`}
+                title={`Stroke: ${size}px`}
+              >
+                <div
+                  className="bg-white rounded-full transition-all"
+                  style={{
+                    width: `${size + 1}px`, // Slight boost for visual clarity
+                    height: `${size + 1}px`,
+                  }}
+                />
+              </button>
+            ))
+          )}
         </div>
 
         <div className="w-px h-6 bg-gray-600 mx-1" />

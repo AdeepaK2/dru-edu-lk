@@ -69,6 +69,7 @@ export function useCanvasWriter({
   const [activeTool, setActiveTool] = useState<'pen' | 'eraser' | 'straight'>('pen');
   const [strokeColor, setStrokeColor] = useState('#1a1a1a');
   const [strokeWidth, setStrokeWidth] = useState(3);
+  const [eraserWidth, setEraserWidth] = useState(20);
 
 
 
@@ -364,7 +365,7 @@ export function useCanvasWriter({
       currentLineRef.current = {
         points: [rawPos.x, localY],
         color: strokeColor,
-        strokeWidth: strokeWidth,
+        strokeWidth: activeTool === 'eraser' ? eraserWidth : strokeWidth,
         tool: activeTool,
         pageIdx,
       };
@@ -980,6 +981,8 @@ export function useCanvasWriter({
     setStrokeColor,
     strokeWidth,
     setStrokeWidth,
+    eraserWidth,
+    setEraserWidth,
     draftImages,
     undo,
     redo,
