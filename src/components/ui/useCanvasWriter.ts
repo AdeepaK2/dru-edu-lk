@@ -34,11 +34,13 @@ export type PageConfig =
 export interface UseCanvasWriterProps {
   pdfUrl?: string;
   /** Called with raw stroke JSON (not images) - much lighter and lossless */
-  onSave?: (strokePages: Record<number, LineData[]>) => void;
+  onSave?: (strokePages: Record<number, LineData[]>, pageSequence: PageConfig[]) => void;
   onSavePdf?: (file: File) => void;
   autoSaveKey?: string;
   /** Restore saved strokes as raw LineData vectors (indexed 1 to N sequentially) */
   initialPageAnnotations?: Record<number, LineData[]>;
+  /** Restore the exact page structure (PDF + blank positions) from a previous save */
+  initialPageSequence?: PageConfig[];
   onRegisterSubmit?: (fn: () => void) => void;
   onRegisterSave?: (fn: () => Promise<void>) => void;
   stageRef: React.RefObject<Konva.Stage | null>;
@@ -55,6 +57,7 @@ export function useCanvasWriter({
   onSavePdf,
   autoSaveKey,
   initialPageAnnotations,
+  initialPageSequence,
   onRegisterSubmit,
   onRegisterSave,
   stageRef,
@@ -275,27 +278,40 @@ export function useCanvasWriter({
       return;
     }
 
-    const baseLen = pdfUrl ? pdfPageImages.length : 1;
-    let maxPageNum = 0;
-    entries.forEach(([pageStr]) => {
-      maxPageNum = Math.max(maxPageNum, parseInt(pageStr, 10));
-    });
+    // Construct the page sequence for restoration
+    let seq: PageConfig[];
 
-    const neededBlanks = Math.max(0, maxPageNum - baseLen);
-    
-    // Construct internal model mapping
-    const restored: PageLines = {};
-    let seq = [...pageSequence];
-    if (!pdfUrl && seq.length === 0) {
-      seq = [{ type: 'blank', id: 'blank-init' }];
+    if (initialPageSequence && initialPageSequence.length > 0) {
+      // We have the exact page structure from the previous save — use it.
+      // Re-map PDF pages to use current pdfPageImages, keep blanks as-is.
+      seq = initialPageSequence.map((config) => {
+        if (config.type === 'pdf') {
+          return { type: 'pdf' as const, pdfIndex: config.pdfIndex, id: config.id };
+        }
+        return { type: 'blank' as const, id: config.id };
+      });
+    } else {
+      // Legacy fallback: no saved pageSequence — guess by appending blanks at the end
+      const baseLen = pdfUrl ? pdfPageImages.length : 1;
+      let maxPageNum = 0;
+      entries.forEach(([pageStr]) => {
+        maxPageNum = Math.max(maxPageNum, parseInt(pageStr, 10));
+      });
+      const neededBlanks = Math.max(0, maxPageNum - baseLen);
+
+      seq = [...pageSequence];
+      if (!pdfUrl && seq.length === 0) {
+        seq = [{ type: 'blank', id: 'blank-init' }];
+      }
+      for (let i = 0; i < neededBlanks; i++) {
+        seq.push({ type: 'blank', id: `blank-restored-${i}` });
+      }
     }
 
-    // Append necessary blanks so index 1..maxPageNum lines up
-    for (let i = 0; i < neededBlanks; i++) {
-      seq.push({ type: 'blank', id: `blank-restored-${i}` });
-    }
     setPageSequence(seq);
 
+    // Map strokes from sequential 1-based indexes back to page IDs
+    const restored: PageLines = {};
     entries.forEach(([pageStr, lines]) => {
       const zeroIdx = parseInt(pageStr, 10) - 1;
       const config = seq[zeroIdx];
@@ -309,7 +325,7 @@ export function useCanvasWriter({
     if (Object.keys(restored).length > 0) {
       setPageLines(restored);
     }
-  }, [initialPageAnnotations, pdfUrl, pdfPageImages.length]);
+  }, [initialPageAnnotations, initialPageSequence, pdfUrl, pdfPageImages.length]);
 
   // ── History helpers ──────────────────────────────────────────────────────
   const pushHistory = useCallback(
@@ -739,15 +755,15 @@ export function useCanvasWriter({
         }
       }
 
-      // Pass raw vectors to parent (Firestore, etc.)
-      onSave?.(sequentialPages);
+      // Pass raw vectors + page structure to parent (Firestore, etc.)
+      onSave?.(sequentialPages, pageSequence);
 
       // Persist to localStorage for crash-recovery
       if (autoSaveKey) {
         try {
           localStorage.setItem(
             autoSaveKey,
-            JSON.stringify({ pages: sequentialPages, timestamp: Date.now() })
+            JSON.stringify({ pages: sequentialPages, pageSequence, timestamp: Date.now() })
           );
         } catch (e) {
           console.warn('[CanvasWriter] localStorage save failed', e);
