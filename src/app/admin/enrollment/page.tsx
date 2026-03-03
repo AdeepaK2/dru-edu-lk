@@ -23,6 +23,10 @@ import {
   Eye
 } from 'lucide-react';
 import { EnrollmentRequestDocument } from '@/models/enrollmentRequestSchema';
+import { Student } from '@/models/studentSchema';
+import { createStudentEnrollment } from '@/services/studentEnrollmentService';
+import { firestore } from '@/utils/firebase-client';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 
 type FilterStatus = 'all' | 'pending' | 'approved' | 'rejected';
 
@@ -94,6 +98,83 @@ export default function AdminEnrollmentPage() {
     setProcessing(requestId);
     
     try {
+      // Find the explicit request we are updating
+      const requestToUpdate = enrollmentRequests.find(r => r.id === requestId);
+      
+      if (status === 'Approved' && requestToUpdate) {
+        // 1. Check if the student already exists
+        const studentsQuery = query(
+          collection(firestore, 'students'),
+          where('email', '==', requestToUpdate.student.email)
+        );
+        const existingStudentSnapshot = await getDocs(studentsQuery);
+        
+        let studentId: string;
+        
+        if (!existingStudentSnapshot.empty) {
+          // Student exists
+          studentId = existingStudentSnapshot.docs[0].id;
+        } else {
+          // 2. Create the student if they don't exist
+          const newStudent: Omit<Student, 'id'> = {
+            name: requestToUpdate.student.name,
+            email: requestToUpdate.student.email,
+            phone: requestToUpdate.student.phone,
+            dateOfBirth: requestToUpdate.student.dateOfBirth,
+            year: requestToUpdate.student.year,
+            school: requestToUpdate.student.school,
+            status: 'Active',
+            enrollmentDate: new Date().toISOString().split('T')[0],
+            coursesEnrolled: 0,
+            avatar: requestToUpdate.student.name.substring(0, 2).toUpperCase(),
+            parent: {
+              name: requestToUpdate.parent.name,
+              email: requestToUpdate.parent.email,
+              phone: requestToUpdate.parent.phone,
+            },
+            payment: {
+              status: 'Pending',
+              method: '',
+              lastPayment: 'N/A'
+            },
+          };
+          
+          const studentResponse = await fetch('/api/student', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newStudent),
+          });
+          
+          if (!studentResponse.ok) {
+            const errorData = await studentResponse.json();
+            throw new Error(`Failed to create student account: ${errorData.error || errorData.message || 'Unknown error'}`);
+          }
+          
+          const createdStudent = await studentResponse.json();
+          studentId = createdStudent.id;
+        }
+        
+        // 3. Create the enrollment tracking record
+        try {
+          await createStudentEnrollment({
+            studentId: studentId,
+            classId: requestToUpdate.classId,
+            studentName: requestToUpdate.student.name,
+            studentEmail: requestToUpdate.student.email,
+            className: requestToUpdate.className,
+            subject: requestToUpdate.subject,
+            enrolledAt: new Date(),
+            status: 'Active',
+            attendance: 0,
+            notes: requestToUpdate.additionalNotes || undefined,
+          });
+        } catch (enrollmentError) {
+          console.error("Failed to create student enrollment record", enrollmentError);
+          // Let it continue to approve the request, but log the error
+        }
+      }
+
+      // Finally, update the request status
       const response = await fetch('/api/enrollment-request', {
         method: 'PUT',
         headers: {
@@ -103,6 +184,7 @@ export default function AdminEnrollmentPage() {
           id: requestId,
           status,
           adminResponse: message,
+          ...(status === 'Approved' ? { processedAt: new Date().toISOString() } : {})
         }),
       });
 
@@ -112,13 +194,14 @@ export default function AdminEnrollmentPage() {
         setShowResponseModal(false);
         setResponseMessage('');
         setSelectedRequest(null);
+        alert(`Request updated successfully!${status === 'Approved' ? ' Student account and enrollment created.' : ''}`);
       } else {
         const errorData = await response.json();
         alert('Failed to update request: ' + (errorData.error || 'Unknown error'));
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating enrollment request:', error);
-      alert('Failed to update request. Please try again.');
+      alert(error.message || 'Failed to update request. Please try again.');
     } finally {
       setProcessing(null);
     }
