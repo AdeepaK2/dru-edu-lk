@@ -61,6 +61,9 @@ export default function StudentLogin() {
         case 'auth/wrong-password':
           setError('Incorrect password. Please try again.');
           break;
+        case 'auth/invalid-credential':
+          setError('Incorrect email or password. Please try again.');
+          break;
         case 'auth/invalid-email':
           setError('Please enter a valid email address.');
           break;

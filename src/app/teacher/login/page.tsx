@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
 import { auth, googleProvider } from '@/utils/firebase-client';
-import { GraduationCap, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
+import { GraduationCap, Eye, EyeOff, AlertCircle, Loader2, KeyRound } from 'lucide-react';
 import { Button, Input } from '@/components/ui';
 
 export default function TeacherLogin() {
@@ -60,6 +60,9 @@ export default function TeacherLogin() {
           break;
         case 'auth/wrong-password':
           setError('Incorrect password. Please try again.');
+          break;
+        case 'auth/invalid-credential':
+          setError('Incorrect email or password. Please try again.');
           break;
         case 'auth/invalid-email':
           setError('Please enter a valid email address.');
@@ -245,6 +248,19 @@ export default function TeacherLogin() {
                 'Sign In'
               )}
             </Button>
+
+            {/* Forgot Password Link */}
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => router.push('/teacher/login/password-reset')}
+                className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium inline-flex items-center space-x-1"
+                disabled={loading}
+              >
+                <KeyRound className="w-4 h-4" />
+                <span>Forgot your password?</span>
+              </button>
+            </div>
           </form>
 
           {/* Footer Links */}
