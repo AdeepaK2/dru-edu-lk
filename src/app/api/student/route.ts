@@ -53,20 +53,6 @@ export async function POST(req: NextRequest) {
     
     const studentData = validatedData.data;
     
-    // Check if a student with this email already exists
-    try {
-      await firebaseAdmin.authentication.getUserByEmail(studentData.email);
-      return NextResponse.json(
-        { error: "Student with this email already exists" },
-        { status: 409 }
-      );
-    } catch (error: any) {
-      // If the error is not about user not found, rethrow
-      if (error.code !== 'auth/user-not-found') {
-        throw error;
-      }
-    }
-    
     // Generate random password for the student
     const generatedPassword = generateRandomPassword(10);
     
@@ -78,13 +64,42 @@ export async function POST(req: NextRequest) {
       .join('')
       .toUpperCase()
       .slice(0, 2);
-    
-    // Create the user in Firebase Auth
-    const userRecord = await firebaseAdmin.authentication.createUser(
-      studentData.email, 
-      generatedPassword, 
-      studentData.name
-    );
+
+    let userRecord: admin.auth.UserRecord;
+
+    // Check if a student with this email already exists
+    try {
+      const existingUser = await firebaseAdmin.authentication.getUserByEmail(studentData.email);
+      
+      // If the user exists in Auth, check if they exist in Firestore
+      const studentDoc = await firebaseAdmin.firestore.getDoc('students', existingUser.uid);
+      if (studentDoc) {
+        // User exists in BOTH Auth and Firestore, this is a legitimate conflict
+        return NextResponse.json(
+          { error: "Student with this email already exists" },
+          { status: 409 }
+        );
+      }
+      
+      // Orphaned Auth user found (in Auth but not in Firestore). Recover the account.
+      console.log('Found orphaned auth user, recovering UID:', existingUser.uid);
+      userRecord = await firebaseAdmin.authentication.updateUser(existingUser.uid, {
+        password: generatedPassword,
+        displayName: studentData.name
+      });
+    } catch (error: any) {
+      // If the error is about user not found, this is the normal flow
+      if (error.code === 'auth/user-not-found') {
+        // Create the user in Firebase Auth
+        userRecord = await firebaseAdmin.authentication.createUser(
+          studentData.email, 
+          generatedPassword, 
+          studentData.name
+        );
+      } else {
+        throw error; // Rethrow other errors
+      }
+    }
     
     // Generate student number using server-side counter
     let studentNumber: string | undefined;
