@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { 
-  BookOpen, 
-  FileText, 
-  GraduationCap, 
-  Users, 
+import {
+  BookOpen,
+  FileText,
+  GraduationCap,
+  Users,
   Calendar,
   Clock,
   Award,
@@ -41,7 +41,7 @@ import { ClassScheduleFirestoreService } from '@/apiservices/classScheduleFirest
 import { ClassDocument } from '@/models/classSchema';
 import { getEnrollmentsByClass } from '@/services/studentEnrollmentService';
 import { StudentEnrollment } from '@/models/studentEnrollmentSchema';
-import { 
+import {
   getStudyMaterialsByClassGroupedByWeek,
   getStudyMaterialsByClassGroupedByLesson,
   getStudyMaterialsByClassGrouped,
@@ -76,10 +76,10 @@ import AttendanceTab from '@/components/teacher/AttendanceTab';
 import HomeworkTab from '@/components/teacher/HomeworkTab';
 import ZoomLinkModal from '@/components/modals/ZoomLinkModal';
 import RemarkModal from '@/components/teacher/RemarkModal';
-import { 
-  StudentRemark, 
+import {
+  StudentRemark,
   StudentRemarkData,
-  getRemarkColor 
+  getRemarkColor
 } from '@/models/studentRemarkSchema';
 import { StudentRemarkFirestoreService } from '@/apiservices/studentRemarkFirestoreService';
 import InClassTestsTab from '@/components/teacher/InClassTestsTab';
@@ -95,7 +95,7 @@ export default function ClassDetails() {
   const params = useParams();
   const classId = params.classId as string;
   const { teacher } = useTeacherAuth();
-  
+
   const [activeTab, setActiveTab] = useState('study-materials');
   const [classData, setClassData] = useState<ClassDocument | null>(null);
   const [loading, setLoading] = useState(true);
@@ -127,16 +127,16 @@ export default function ClassDetails() {
     try {
       setAutoScheduleLoading(true);
       console.log('🔄 Auto-scheduling classes for next week...', classDoc.name);
-      
+
       // Check if class has a schedule configured
       if (!classDoc.schedule || classDoc.schedule.length === 0) {
         console.log('⚠️ No schedule configured for this class, skipping auto-scheduling');
         return;
       }
-      
+
       // Auto-schedule for the next 7 days
       const scheduledCount = await ClassScheduleFirestoreService.autoScheduleForClass(classDoc, 7);
-      
+
       if (scheduledCount > 0) {
         console.log(`✅ Auto-scheduled ${scheduledCount} classes for next week`);
       } else {
@@ -168,11 +168,11 @@ export default function ClassDetails() {
   const handleUpdateZoomLink = async (zoomLink: string) => {
     try {
       setUpdatingZoom(true);
-      
+
       await ClassFirestoreService.updateZoomLink(classId, zoomLink);
-      
+
       // Update the local state
-      setClassData(prevClass => 
+      setClassData(prevClass =>
         prevClass ? { ...prevClass, zoomLink: zoomLink.trim() || undefined } : null
       );
 
@@ -283,7 +283,7 @@ export default function ClassDetails() {
           console.log('🔍 Page Debug: Class data loaded:', classDoc);
           console.log('🔍 Page Debug: Teacher ID:', classDoc.teacherId);
           console.log('🔍 Page Debug: Class Name:', classDoc.name);
-          
+
           // Auto-schedule classes for next week if needed
           autoScheduleClasses(classDoc);
         } else {
@@ -480,7 +480,7 @@ export default function ClassDetails() {
                     <span>Join Meeting</span>
                   </button>
                 ) : null}
-                
+
                 <button
                   onClick={() => handleOpenZoomModal(classData?.zoomLink || '')}
                   className="bg-white/10 hover:bg-white/20 text-white py-2 px-4 rounded-lg flex items-center space-x-2 transition-colors text-sm font-medium border border-white/20"
@@ -490,13 +490,13 @@ export default function ClassDetails() {
                   <span>{classData?.zoomLink ? 'Edit' : 'Add'} Link</span>
                 </button>
               </div>
-              
+
               <div className="w-16 h-16 bg-blue-400/30 rounded-full flex items-center justify-center">
                 <Award className="w-8 h-8 text-white" />
               </div>
             </div>
           </div>
-          
+
           {/* Mobile Zoom Controls */}
           <div className="md:hidden mt-4 pt-4 border-t border-white/20">
             <div className="flex items-center justify-center space-x-2">
@@ -510,7 +510,7 @@ export default function ClassDetails() {
                   <span>Join Meeting</span>
                 </button>
               ) : null}
-              
+
               <button
                 onClick={() => handleOpenZoomModal(classData?.zoomLink || '')}
                 className="bg-white/10 hover:bg-white/20 text-white py-2 px-4 rounded-lg flex items-center space-x-2 transition-colors text-sm font-medium border border-white/20"
@@ -530,25 +530,23 @@ export default function ClassDetails() {
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
-                
+
                 return (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                      isActive
+                    className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${isActive
                         ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                         : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-                    }`}
+                      }`}
                   >
                     <Icon className="w-5 h-5" />
                     <span>{tab.label}</span>
                     {tab.count !== undefined && (
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        isActive 
+                      <span className={`px-2 py-1 text-xs rounded-full ${isActive
                           ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'
                           : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
-                      }`}>
+                        }`}>
                         {tab.count}
                       </span>
                     )}
@@ -562,17 +560,17 @@ export default function ClassDetails() {
           <div className="p-6">
             {activeTab === 'study-materials' && <StudyMaterialsTab classId={classId} />}
             {activeTab === 'in-class' && (
-              <InClassTestsTab 
-                classId={classId} 
-                className={classData?.name || ''} 
-                classSubject={classData?.subject || ''} 
+              <InClassTestsTab
+                classId={classId}
+                className={classData?.name || ''}
+                classSubject={classData?.subject || ''}
               />
             )}
             {activeTab === 'homework' && <HomeworkTab classData={classData} classId={classId} />}
             {activeTab === 'students' && (
-              <StudentsTab 
-                classId={classId} 
-                enrollments={enrollments} 
+              <StudentsTab
+                classId={classId}
+                enrollments={enrollments}
                 loading={enrollmentsLoading}
                 classRemarks={classRemarks}
                 handleOpenRemarkModal={handleOpenRemarkModal}
@@ -581,8 +579,8 @@ export default function ClassDetails() {
             )}
             {activeTab === 'attendance' && <AttendanceTab classData={classData} classId={classId} />}
             {activeTab === 'messages' && (
-              <MessagesTab 
-                classId={classId} 
+              <MessagesTab
+                classId={classId}
                 enrollments={enrollments}
                 classData={classData}
               />
@@ -653,7 +651,7 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
   const [editManualInstruction, setEditManualInstruction] = useState('');
   const [editAllowLateSubmission, setEditAllowLateSubmission] = useState(true);
   const [editLateSubmissionDays, setEditLateSubmissionDays] = useState(3);
-  
+
   // Per-material homework state - tracks individual homework settings for each material
   const [materialHomeworkSettings, setMaterialHomeworkSettings] = useState<Record<string, {
     isHomework: boolean;
@@ -671,7 +669,7 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
       try {
         const data = await ClassFirestoreService.getClassById(classId);
         setClassData(data);
-        
+
         // Load lessons for badge display
         if (data?.subjectId) {
           const { LessonFirestoreService } = await import('@/apiservices/lessonFirestoreService');
@@ -741,13 +739,13 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
 
   const getCompletionData = (material: any) => {
     const completedStudentIds = material.completedBy || [];
-    const completed = enrollments.filter(enrollment => 
+    const completed = enrollments.filter(enrollment =>
       completedStudentIds.includes(enrollment.studentId)
     );
-    const notCompleted = enrollments.filter(enrollment => 
+    const notCompleted = enrollments.filter(enrollment =>
       !completedStudentIds.includes(enrollment.studentId)
     );
-    
+
     return { completed, notCompleted };
   };
 
@@ -758,7 +756,7 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
 
   const confirmDelete = async () => {
     if (!materialToDelete) return;
-    
+
     try {
       setDeleteLoading(true);
       await deleteStudyMaterial(materialToDelete.id);
@@ -814,22 +812,22 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
     // Initialize per-material homework settings for all materials (group or single)
     const materialsToInit = (group?.isGroup && group.materials) ? group.materials : [material];
     const homeworkSettings: Record<string, any> = {};
-    
+
     materialsToInit.forEach((mat: any) => {
       // For groups, properties are directly on the material object
       // For single material, it might be the material object itself
-      
+
       // Check if we need to parse date
       let formattedDueDate = '';
       if (mat.dueDate) {
-          try {
-            formattedDueDate = (typeof mat.dueDate === 'object' && 'toDate' in mat.dueDate 
-              ? mat.dueDate.toDate() 
-              : new Date(mat.dueDate)
-            ).toISOString().slice(0, 16);
-          } catch (e) {
-            console.error('Error parsing date:', e);
-          }
+        try {
+          formattedDueDate = (typeof mat.dueDate === 'object' && 'toDate' in mat.dueDate
+            ? mat.dueDate.toDate()
+            : new Date(mat.dueDate)
+          ).toISOString().slice(0, 16);
+        } catch (e) {
+          console.error('Error parsing date:', e);
+        }
       }
 
       homeworkSettings[mat.id] = {
@@ -852,14 +850,14 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
 
   const handleEditSubmit = async (editedData: any) => {
     if (!materialToEdit) return;
-    
+
     try {
       setEditLoading(true);
-      
+
       // Determine groupId and groupTitle ONCE before the loop
       let groupId: string | undefined;
       let groupTitle: string | undefined;
-      
+
       console.log(' Debug groupId assignment:', {
         editingGroup: !!editingGroup,
         editingGroupGroupId: editingGroup?.groupId,
@@ -869,7 +867,7 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
         firstMaterialGroupId: materialToEdit.materials?.[0]?.groupId,
         newFilesToAddLength: newFilesToAdd.length
       });
-      
+
       if (editingGroup && editingGroup.isGroup && editingGroup.groupId) {
         // When editing a real group (has groupId), use the existing groupId
         groupId = editingGroup.groupId;
@@ -914,17 +912,17 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
         console.log('📤 Uploading new files:', newFilesToAdd.length);
         const { StudyMaterialStorageService } = await import('@/apiservices/studyMaterialStorageService');
         const { createStudyMaterial } = await import('@/apiservices/studyMaterialFirestoreService');
-        
+
         let uploadedCount = 0;
         const totalFiles = newFilesToAdd.length;
-        
+
         for (const fileItem of newFilesToAdd) {
           try {
             let fileUrl = '';
             let fileName = '';
             let fileSize = 0;
             let mimeType = '';
-            
+
             if (fileItem.fileType === 'link') {
               fileUrl = fileItem.externalUrl;
               fileName = fileItem.title;
@@ -932,19 +930,19 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
               mimeType = 'text/html';
             } else if (fileItem.file) {
               console.log(`📤 Uploading file: ${fileItem.file.name}`);
-              
+
               const uploadResult = await StudyMaterialStorageService.uploadStudyMaterial(
                 fileItem.file,
                 classData!.id,
                 materialToEdit.id
               );
-              
+
               fileUrl = uploadResult as string;
               fileName = fileItem.file.name;
               fileSize = fileItem.file.size;
               mimeType = fileItem.file.type;
             }
-            
+
             // Create new material in the same group
             // Use current edit state for homework fields
             const materialData: StudyMaterialData = {
@@ -971,7 +969,7 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
               tags: fileItem.tags || [],
               uploadedAt: new Date(),
               viewCount: 0,
-              
+
               // Apply homework settings to new files too
               // Apply homework settings from the UI configuration
               isHomework: fileItem.isHomework || false,
@@ -982,18 +980,18 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
               allowLateSubmission: fileItem.isHomework ? (fileItem.allowLateSubmission !== false) : true,
               lateSubmissionDays: fileItem.isHomework ? (fileItem.lateSubmissionDays || 3) : 3
             };
-            
+
             await createStudyMaterial(materialData);
             uploadedCount++;
             setUploadProgress((uploadedCount / totalFiles) * 100);
             console.log(`✅ Uploaded ${uploadedCount}/${totalFiles} files`);
-            
+
           } catch (error) {
             console.error('Error uploading file:', fileItem.title, error);
           }
         }
       }
-      
+
       // Step 2: Remove selected files
       if (filesToRemove.length > 0) {
         console.log('🗑️ Removing files:', filesToRemove);
@@ -1006,7 +1004,7 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
           }
         }
       }
-      
+
       // Step 3: Update main material properties
 
 
@@ -1015,11 +1013,11 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
         const materialsToUpdate = materialToEdit.materials.filter(
           (m: any) => !filesToRemove.includes(m.id)
         );
-        
+
         // Update all materials in the group with their individual homework settings
         for (const material of materialsToUpdate) {
           const materialSettings = materialHomeworkSettings[material.id] || {};
-          
+
           await updateStudyMaterial(material.id, {
             groupTitle: editedData.title,
             description: editedData.description,
@@ -1040,14 +1038,14 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
         // Converting single material to group or adding to existing single material group
         const originalMaterial = materialToEdit.materials[0];
         if (originalMaterial && !filesToRemove.includes(originalMaterial.id)) {
-            const materialSettings = materialHomeworkSettings[originalMaterial.id] || {};
-            
-            const updateData: any = {
+          const materialSettings = materialHomeworkSettings[originalMaterial.id] || {};
+
+          const updateData: any = {
             groupId: groupId,
             groupTitle: editedData.title,
             description: editedData.description,
             isRequired: editedData.isRequired,
-            
+
             // Per-file homework settings
             isHomework: materialSettings.isHomework || false,
             homeworkType: materialSettings.isHomework ? materialSettings.homeworkType : undefined,
@@ -1057,52 +1055,52 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
             allowLateSubmission: materialSettings.isHomework ? materialSettings.allowLateSubmission : true,
             lateSubmissionDays: materialSettings.isHomework ? materialSettings.lateSubmissionDays : 3
           };
-          
+
           // Only update title if we're creating a new group (not if we're adding to existing group)
           if (!editingGroup.groupId) {
             updateData.title = editedData.title;
           }
-          
+
           await updateStudyMaterial(originalMaterial.id, updateData);
         }
       } else {
         // For single materials, update normally utilizing per-file settings
         const materialSettings = materialHomeworkSettings[materialToEdit.id] || {};
-        
+
         const updateData: any = {
-           description: editedData.description,
-           isRequired: editedData.isRequired,
-           
-           // Per-file homework settings
-           isHomework: materialSettings.isHomework || false,
-           homeworkType: materialSettings.isHomework ? materialSettings.homeworkType : undefined,
-           dueDate: (materialSettings.isHomework && materialSettings.dueDate) ? new Date(materialSettings.dueDate) : undefined,
-           maxMarks: (materialSettings.isHomework && materialSettings.homeworkType === 'submission') ? materialSettings.maxMarks : undefined,
-           manualInstruction: (materialSettings.isHomework && materialSettings.homeworkType === 'manual') ? materialSettings.manualInstruction : undefined,
-           allowLateSubmission: materialSettings.isHomework ? materialSettings.allowLateSubmission : true,
-           lateSubmissionDays: materialSettings.isHomework ? materialSettings.lateSubmissionDays : 3
+          description: editedData.description,
+          isRequired: editedData.isRequired,
+
+          // Per-file homework settings
+          isHomework: materialSettings.isHomework || false,
+          homeworkType: materialSettings.isHomework ? materialSettings.homeworkType : undefined,
+          dueDate: (materialSettings.isHomework && materialSettings.dueDate) ? new Date(materialSettings.dueDate) : undefined,
+          maxMarks: (materialSettings.isHomework && materialSettings.homeworkType === 'submission') ? materialSettings.maxMarks : undefined,
+          manualInstruction: (materialSettings.isHomework && materialSettings.homeworkType === 'manual') ? materialSettings.manualInstruction : undefined,
+          allowLateSubmission: materialSettings.isHomework ? materialSettings.allowLateSubmission : true,
+          lateSubmissionDays: materialSettings.isHomework ? materialSettings.lateSubmissionDays : 3
         };
 
         if (groupId) {
-             // If part of a group (even single), update Group Title, preserve File Title (unless changed)
-             updateData.groupTitle = groupTitle; 
-             updateData.groupId = groupId;
-             
-             // Check if file title was changed in the input list
-             const currentFileTitle = materialToEdit.materials?.find((m:any) => m.id === materialToEdit.id)?.title || materialToEdit.title;
-             if (currentFileTitle) {
-                updateData.title = currentFileTitle;
-             }
+          // If part of a group (even single), update Group Title, preserve File Title (unless changed)
+          updateData.groupTitle = groupTitle;
+          updateData.groupId = groupId;
+
+          // Check if file title was changed in the input list
+          const currentFileTitle = materialToEdit.materials?.find((m: any) => m.id === materialToEdit.id)?.title || materialToEdit.title;
+          if (currentFileTitle) {
+            updateData.title = currentFileTitle;
+          }
         } else {
-             // Pure single file (no group), update Title (which acts as both)
-             // But valid file title might be in materials array if user edited it there
-             const currentFileTitle = materialToEdit.materials?.find((m:any) => m.id === materialToEdit.id)?.title;
-             updateData.title = currentFileTitle || editedData.title;
+          // Pure single file (no group), update Title (which acts as both)
+          // But valid file title might be in materials array if user edited it there
+          const currentFileTitle = materialToEdit.materials?.find((m: any) => m.id === materialToEdit.id)?.title;
+          updateData.title = currentFileTitle || editedData.title;
         }
 
         await updateStudyMaterial(materialToEdit.id, updateData);
       }
-      
+
       await refreshMaterials();
       setShowEditModal(false);
       setMaterialToEdit(null);
@@ -1110,7 +1108,7 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
       setNewFilesToAdd([]);
       setFilesToRemove([]);
       setUploadProgress(0);
-      
+
     } catch (error) {
       console.error('Error updating study material:', error);
       alert('Failed to update study material. Please try again.');
@@ -1196,7 +1194,7 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
               <option value="link">Links</option>
               <option value="required">Required Only</option>
             </select>
-            <Button 
+            <Button
               className="flex items-center space-x-2"
               onClick={() => openUploadModal()}
             >
@@ -1206,231 +1204,230 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
           </div>
         </div>
 
-      {/* Timeline View */}
-      {studyMaterials.length === 0 ? (
-        <div className="text-center py-12">
-          <BookOpen className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No Study Materials</h3>
-          <p className="text-gray-500 dark:text-gray-400 mb-6">
-            Get started by uploading your first study material.
-          </p>
-          <Button onClick={() => openUploadModal()}>
-            <Upload className="w-4 h-4 mr-2" />
-            Upload Material
-          </Button>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {studyMaterials.map((group: any, index: number) => (
-            <div key={group.id || index} className="border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow">
-              {/* Group Header */}
-              <div className="p-6 border-b border-gray-100 dark:border-gray-700">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-start space-x-4 flex-1">
-                    <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                      {group.isGroup ? (
-                        <div className="text-blue-600 font-bold text-xs">
-                          {group.totalFiles}
-                        </div>
-                      ) : (
-                        getFileIcon(group.materials[0]?.fileType || 'other')
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <h5 className="text-lg font-medium text-gray-900 dark:text-white truncate">
-                          {group.groupTitle || group.materials[0]?.title}
-                        </h5>
-                        {group.isGroup && (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
-                            📁 {group.totalFiles} files
-                          </span>
+        {/* Timeline View */}
+        {studyMaterials.length === 0 ? (
+          <div className="text-center py-12">
+            <BookOpen className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No Study Materials</h3>
+            <p className="text-gray-500 dark:text-gray-400 mb-6">
+              Get started by uploading your first study material.
+            </p>
+            <Button onClick={() => openUploadModal()}>
+              <Upload className="w-4 h-4 mr-2" />
+              Upload Material
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {studyMaterials.map((group: any, index: number) => (
+              <div key={group.id || index} className="border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow">
+                {/* Group Header */}
+                <div className="p-6 border-b border-gray-100 dark:border-gray-700">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-start space-x-4 flex-1">
+                      <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                        {group.isGroup ? (
+                          <div className="text-blue-600 font-bold text-xs">
+                            {group.totalFiles}
+                          </div>
+                        ) : (
+                          getFileIcon(group.materials[0]?.fileType || 'other')
                         )}
-                        {group.lessonId && (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
-                            📚 {group.lessonName || getLessonBadge(group.lessonId)}
-                          </span>
-                        )}
-                        {!group.lessonId && (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
-                            📂 General
-                          </span>
-                        )}
-                      </div>
-                      {/* Show description if available (for both groups and single files) */}
-                      {(group.materials[0]?.description) && (
-                        <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                          {group.materials[0].description}
-                        </div>
-                      )}
-                      <div className="flex items-center space-x-3 mb-2">
-                        {group.fileTypes.map((fileType: string) => (
-                          <span key={fileType} className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getFileTypeColor(fileType)}`}>
-                            {fileType.toUpperCase()}
-                          </span>
-                        ))}
-                        {group.isRequired && (
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-300">
-                            Required
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center space-x-6 text-xs text-gray-500 dark:text-gray-400">
-                        <span>{new Date(group.uploadedAt?.toDate ? group.uploadedAt.toDate() : group.uploadedAt).toLocaleDateString()}</span>
-                        {group.totalDownloads > 0 && (
-                          <span>{group.totalDownloads} downloads</span>
-                        )}
-                        <span>{group.completedBy.length} students completed</span>
-                      </div>
-                      <div className="flex items-center space-x-6 text-xs text-gray-500 dark:text-gray-400">
-                        <span>{new Date(group.uploadedAt?.toDate ? group.uploadedAt.toDate() : group.uploadedAt).toLocaleDateString()}</span>
-                        {group.totalDownloads > 0 && (
-                          <span>{group.totalDownloads} downloads</span>
-                        )}
-                        {!group.isGroup && group.materials[0]?.completedBy && (
-                            <span>{group.materials[0].completedBy.length} students completed</span>
-                        )}
-                        {group.isGroup && (
-                            <span>view completion details</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex space-x-2 flex-shrink-0">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => openCompletionModal(group)}
-                      className="flex items-center space-x-1"
-                    >
-                      <CheckCircle className="w-4 h-4" />
-                      <span className="hidden sm:inline">View Completion</span>
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleEditMaterial(
-                        group.materials[0], 
-                        group.isGroup ? group : null
-                      )}
-                      className="flex items-center space-x-1"
-                    >
-                      <Edit className="w-4 h-4" />
-                      <span className="hidden sm:inline">Edit</span>
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Files in Group */}
-              <div className="p-6 space-y-3">
-                {group.materials.map((material: any) => (
-                  <div key={material.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-                    <div className="flex items-center space-x-3 flex-1">
-                      <div className="w-8 h-8 bg-white dark:bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0 border">
-                        {getFileIcon(material.fileType)}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="font-medium text-gray-900 dark:text-white truncate">
-                          {material.title}
+                        <div className="flex items-center space-x-3 mb-2">
+                          <h5 className="text-lg font-medium text-gray-900 dark:text-white truncate">
+                            {group.groupTitle || group.materials[0]?.title}
+                          </h5>
+                          {group.isGroup && (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
+                              📁 {group.totalFiles} files
+                            </span>
+                          )}
+                          {group.lessonId && (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
+                              📚 {group.lessonName || getLessonBadge(group.lessonId)}
+                            </span>
+                          )}
+                          {!group.lessonId && (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+                              📂 General
+                            </span>
+                          )}
                         </div>
-                        {material.description && material.description !== group.materials[0]?.description && (
-                          <div className="text-sm text-gray-600 dark:text-gray-300 truncate">
-                            {material.description}
+                        {/* Show description if available (for both groups and single files) */}
+                        {(group.materials[0]?.description) && (
+                          <div className="text-sm text-gray-600 dark:text-gray-400 mb-2 whitespace-pre-wrap">
+                            {group.materials[0].description}
                           </div>
                         )}
-                        <div className="text-xs text-gray-500 dark:text-gray-400">
-                          {material.formattedFileSize || '2.3 MB'}
-                        </div>
-                        <div className="flex items-center gap-2 mt-1">
-                          {/* Homework Badge */}
-                          {material.isHomework && (
-                             <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300">
-                               📝 Homework
-                             </span>
+                        <div className="flex items-center space-x-3 mb-2">
+                          {group.fileTypes.map((fileType: string) => (
+                            <span key={fileType} className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getFileTypeColor(fileType)}`}>
+                              {fileType.toUpperCase()}
+                            </span>
+                          ))}
+                          {group.isRequired && (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-300">
+                              Required
+                            </span>
                           )}
-                          {/* Homework Type Badge */}
-                          {material.isHomework && (
-                             <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                                 material.homeworkType === 'manual' 
-                                 ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-300' 
-                                 : 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-300'
-                             }`}>
-                               {material.homeworkType === 'manual' ? '🤲 Manual' : '📤 Online'}
-                             </span>
+                        </div>
+                        <div className="flex items-center space-x-6 text-xs text-gray-500 dark:text-gray-400">
+                          <span>{new Date(group.uploadedAt?.toDate ? group.uploadedAt.toDate() : group.uploadedAt).toLocaleDateString()}</span>
+                          {group.totalDownloads > 0 && (
+                            <span>{group.totalDownloads} downloads</span>
+                          )}
+                          <span>{group.completedBy.length} students completed</span>
+                        </div>
+                        <div className="flex items-center space-x-6 text-xs text-gray-500 dark:text-gray-400">
+                          <span>{new Date(group.uploadedAt?.toDate ? group.uploadedAt.toDate() : group.uploadedAt).toLocaleDateString()}</span>
+                          {group.totalDownloads > 0 && (
+                            <span>{group.totalDownloads} downloads</span>
+                          )}
+                          {!group.isGroup && group.materials[0]?.completedBy && (
+                            <span>{group.materials[0].completedBy.length} students completed</span>
+                          )}
+                          {group.isGroup && (
+                            <span>view completion details</span>
                           )}
                         </div>
                       </div>
                     </div>
                     <div className="flex space-x-2 flex-shrink-0">
-                      {material.fileType === 'link' ? (
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => window.open(material.externalUrl || material.fileUrl, '_blank')}
-                          className="flex items-center space-x-1"
-                        >
-                          <ExternalLink className="w-4 h-4" />
-                        </Button>
-                      ) : (
-                        <>
-                          {material.fileType?.toLowerCase() === 'pdf' && (
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => {
-                                setCurrentPdfMaterial(material);
-                                setPdfViewerOpen(true);
-                              }}
-                              className="flex items-center space-x-1"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                          )}
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => {
-                              if (material.fileUrl) {
-                                const link = document.createElement('a');
-                                link.href = material.fileUrl;
-                                link.download = material.title || 'download';
-                                link.target = '_blank';
-                                document.body.appendChild(link);
-                                link.click();
-                                document.body.removeChild(link);
-                                incrementDownloadCount(material.id);
-                              }
-                            }}
-                            className="flex items-center space-x-1"
-                          >
-                            <Download className="w-4 h-4" />
-                          </Button>
-                        </>
-                      )}
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
-                        onClick={() => handleEditMaterial(material)}
+                        onClick={() => openCompletionModal(group)}
+                        className="flex items-center space-x-1"
+                      >
+                        <CheckCircle className="w-4 h-4" />
+                        <span className="hidden sm:inline">View Completion</span>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditMaterial(
+                          group.materials[0],
+                          group.isGroup ? group : null
+                        )}
+                        className="flex items-center space-x-1"
                       >
                         <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleDeleteMaterial(material)}
-                        className="text-red-600 hover:text-red-700 hover:border-red-300"
-                      >
-                        <Trash2 className="w-4 h-4" />
+                        <span className="hidden sm:inline">Edit</span>
                       </Button>
                     </div>
                   </div>
-                ))}
+                </div>
+
+                {/* Files in Group */}
+                <div className="p-6 space-y-3">
+                  {group.materials.map((material: any) => (
+                    <div key={material.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                      <div className="flex items-center space-x-3 flex-1">
+                        <div className="w-8 h-8 bg-white dark:bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0 border">
+                          {getFileIcon(material.fileType)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-gray-900 dark:text-white truncate">
+                            {material.title}
+                          </div>
+                          {material.description && material.description !== group.materials[0]?.description && (
+                            <div className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-wrap">
+                              {material.description}
+                            </div>
+                          )}
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            {material.formattedFileSize || '2.3 MB'}
+                          </div>
+                          <div className="flex items-center gap-2 mt-1">
+                            {/* Homework Badge */}
+                            {material.isHomework && (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300">
+                                📝 Homework
+                              </span>
+                            )}
+                            {/* Homework Type Badge */}
+                            {material.isHomework && (
+                              <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${material.homeworkType === 'manual'
+                                  ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-300'
+                                  : 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-300'
+                                }`}>
+                                {material.homeworkType === 'manual' ? '🤲 Manual' : '📤 Online'}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex space-x-2 flex-shrink-0">
+                        {material.fileType === 'link' ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => window.open(material.externalUrl || material.fileUrl, '_blank')}
+                            className="flex items-center space-x-1"
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                          </Button>
+                        ) : (
+                          <>
+                            {material.fileType?.toLowerCase() === 'pdf' && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setCurrentPdfMaterial(material);
+                                  setPdfViewerOpen(true);
+                                }}
+                                className="flex items-center space-x-1"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                            )}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                if (material.fileUrl) {
+                                  const link = document.createElement('a');
+                                  link.href = material.fileUrl;
+                                  link.download = material.title || 'download';
+                                  link.target = '_blank';
+                                  document.body.appendChild(link);
+                                  link.click();
+                                  document.body.removeChild(link);
+                                  incrementDownloadCount(material.id);
+                                }
+                              }}
+                              className="flex items-center space-x-1"
+                            >
+                              <Download className="w-4 h-4" />
+                            </Button>
+                          </>
+                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditMaterial(material)}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteMaterial(material)}
+                          className="text-red-600 hover:text-red-700 hover:border-red-300"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Upload Modal */}
@@ -1479,7 +1476,7 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
 
               {(() => {
                 const { completed, notCompleted } = getCompletionData(selectedMaterial);
-                
+
                 return (
                   <div className="space-y-6">
                     {/* Summary */}
@@ -1578,7 +1575,7 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
 
             {/* Footer */}
             <div className="flex justify-end p-6 border-t border-gray-200 dark:border-gray-700">
-              <Button 
+              <Button
                 variant="outline"
                 onClick={() => setShowCompletionModal(false)}
               >
@@ -1622,7 +1619,7 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                   </p>
                 </div>
               </div>
-              
+
               <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4">
                 <div className="flex items-start space-x-2">
                   <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
@@ -1631,7 +1628,7 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                       This action cannot be undone
                     </p>
                     <p className="text-red-700 dark:text-red-300">
-                      This will permanently delete the study material and remove it from all students' access. 
+                      This will permanently delete the study material and remove it from all students' access.
                       Any completion data will also be lost.
                     </p>
                   </div>
@@ -1649,14 +1646,14 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
 
             {/* Footer */}
             <div className="flex justify-end space-x-3 p-6 border-t border-gray-200 dark:border-gray-700">
-              <Button 
+              <Button
                 variant="outline"
                 onClick={() => setShowDeleteConfirm(false)}
                 disabled={deleteLoading}
               >
                 Cancel
               </Button>
-              <Button 
+              <Button
                 onClick={confirmDelete}
                 disabled={deleteLoading}
                 className="bg-red-600 hover:bg-red-700 text-white"
@@ -1704,7 +1701,7 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
 
             {/* Scrollable Content */}
             <div className="flex-1 overflow-y-auto">
-              <form 
+              <form
                 onSubmit={(e) => {
                   e.preventDefault();
                   const formData = new FormData(e.currentTarget);
@@ -1719,7 +1716,7 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                 {/* Basic Information */}
                 <div className="space-y-4">
                   <h4 className="font-medium text-gray-900 dark:text-white">Basic Information</h4>
-                  
+
                   {/* Material Info */}
                   <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
                     <div className="flex items-center space-x-3 mb-3">
@@ -1759,7 +1756,7 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                   {/* Title Field */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                       Title *
+                      Title *
                     </label>
                     <input
                       type="text"
@@ -1809,16 +1806,15 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                         {(materialToEdit.materials?.length || 1) - filesToRemove.length} files
                       </span>
                     </div>
-                    
+
                     <div className="space-y-2 max-h-60 overflow-y-auto">
                       {(materialToEdit.materials || [materialToEdit]).map((material: any) => (
-                        <div 
-                          key={material.id} 
-                          className={`rounded-lg border transition-all ${
-                            filesToRemove.includes(material.id)
+                        <div
+                          key={material.id}
+                          className={`rounded-lg border transition-all ${filesToRemove.includes(material.id)
                               ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 opacity-50'
                               : 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-600'
-                          }`}
+                            }`}
                         >
                           <div className="flex items-center justify-between p-3">
                             <div className="flex items-center space-x-3 flex-1">
@@ -1833,7 +1829,7 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                                     e.stopPropagation();
                                     const newTitle = e.target.value;
                                     setMaterialToEdit((prev: any) => {
-                                      const updatedMaterials = (prev.materials || [prev]).map((m: any) => 
+                                      const updatedMaterials = (prev.materials || [prev]).map((m: any) =>
                                         m.id === material.id ? { ...m, title: newTitle } : m
                                       );
                                       // If single material (not group), also update top-level title to match? 
@@ -1842,13 +1838,12 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                                     });
                                   }}
                                   disabled={filesToRemove.includes(material.id)}
-                                  className={`w-full px-2 py-1 text-sm border border-transparent hover:border-gray-300 focus:border-blue-500 rounded bg-transparent focus:bg-white dark:focus:bg-gray-700 transition-colors ${
-                                    filesToRemove.includes(material.id) ? 'line-through text-gray-400' : 'text-gray-900 dark:text-white font-medium'
-                                  }`}
+                                  className={`w-full px-2 py-1 text-sm border border-transparent hover:border-gray-300 focus:border-blue-500 rounded bg-transparent focus:bg-white dark:focus:bg-gray-700 transition-colors ${filesToRemove.includes(material.id) ? 'line-through text-gray-400' : 'text-gray-900 dark:text-white font-medium'
+                                    }`}
                                   placeholder="File title"
                                 />
                                 {material.description && (
-                                  <div className="text-sm text-gray-600 dark:text-gray-300 truncate">
+                                  <div className="text-sm text-gray-600 dark:text-gray-400 mb-2 whitespace-pre-wrap">
                                     {material.description}
                                   </div>
                                 )}
@@ -1862,7 +1857,7 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                                 </div>
                               </div>
                             </div>
-                            
+
                             <div className="flex items-center space-x-2">
                               {/* Homework Toggle */}
                               <label className="inline-flex items-center cursor-pointer" title={materialHomeworkSettings[material.id]?.isHomework ? "Mark as not homework" : "Mark as homework"}>
@@ -1889,11 +1884,11 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                                 />
                                 <span className="ml-1.5 text-xs text-gray-700 dark:text-gray-300 hidden sm:inline">HW</span>
                               </label>
-                              
+
                               {material.fileType === 'link' ? (
-                                <Button 
+                                <Button
                                   type="button"
-                                  variant="outline" 
+                                  variant="outline"
                                   size="sm"
                                   onClick={() => window.open(material.externalUrl || material.fileUrl, '_blank')}
                                   disabled={filesToRemove.includes(material.id)}
@@ -1902,9 +1897,9 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                                   <ExternalLink className="w-4 h-4" />
                                 </Button>
                               ) : (
-                                <Button 
+                                <Button
                                   type="button"
-                                  variant="outline" 
+                                  variant="outline"
                                   size="sm"
                                   onClick={() => {
                                     if (material.fileUrl) {
@@ -1920,10 +1915,10 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                                   <Download className="w-4 h-4" />
                                 </Button>
                               )}
-                              
-                              <Button 
+
+                              <Button
                                 type="button"
-                                variant="outline" 
+                                variant="outline"
                                 size="sm"
                                 onClick={() => {
                                   if (filesToRemove.includes(material.id)) {
@@ -1932,11 +1927,10 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                                     setFilesToRemove(prev => [...prev, material.id]);
                                   }
                                 }}
-                                className={`flex items-center space-x-1 ${
-                                  filesToRemove.includes(material.id)
+                                className={`flex items-center space-x-1 ${filesToRemove.includes(material.id)
                                     ? 'bg-green-50 text-green-600 border-green-300 hover:bg-green-100'
                                     : 'text-red-600 hover:text-red-700 hover:border-red-300'
-                                }`}
+                                  }`}
                               >
                                 {filesToRemove.includes(material.id) ? (
                                   <>
@@ -1956,155 +1950,153 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                           {/* Per-File Homework Configuration - Expanded when checked */}
                           {materialHomeworkSettings[material.id]?.isHomework && (
                             <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600 animate-in slide-in-from-top-2 duration-200 p-3">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                  <div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    Due Date *
+                                  </label>
+                                  <input
+                                    type="datetime-local"
+                                    value={materialHomeworkSettings[material.id]?.dueDate || ''}
+                                    onChange={(e) => {
+                                      setMaterialHomeworkSettings(prev => ({
+                                        ...prev,
+                                        [material.id]: { ...prev[material.id], dueDate: e.target.value }
+                                      }));
+                                    }}
+                                    className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-1 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
+                                  />
+                                </div>
+
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    Submission Type
+                                  </label>
+                                  <div className="flex rounded-md shadow-sm" role="group">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setMaterialHomeworkSettings(prev => ({
+                                          ...prev,
+                                          [material.id]: {
+                                            ...prev[material.id],
+                                            homeworkType: 'manual',
+                                            // Reset unneeded fields when switching to manual
+                                            maxMarks: undefined,
+                                            allowLateSubmission: true,
+                                            lateSubmissionDays: 3
+                                          }
+                                        }));
+                                      }}
+                                      className={`px-3 py-1.5 text-xs font-medium border rounded-l-lg flex-1 ${(materialHomeworkSettings[material.id]?.homeworkType || 'manual') === 'manual'
+                                          ? 'bg-purple-600 text-white border-purple-600'
+                                          : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50'
+                                        }`}
+                                    >
+                                      Manual
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setMaterialHomeworkSettings(prev => ({
+                                          ...prev,
+                                          [material.id]: {
+                                            ...prev[material.id],
+                                            homeworkType: 'submission',
+                                            // Initialize fields when switching to submission
+                                            maxMarks: prev[material.id]?.maxMarks || 100,
+                                            allowLateSubmission: prev[material.id]?.allowLateSubmission !== false,
+                                            lateSubmissionDays: prev[material.id]?.lateSubmissionDays || 3
+                                          }
+                                        }));
+                                      }}
+                                      className={`px-3 py-1.5 text-xs font-medium border border-l-0 rounded-r-lg flex-1 ${materialHomeworkSettings[material.id]?.homeworkType === 'submission'
+                                          ? 'bg-purple-600 text-white border-purple-600'
+                                          : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50'
+                                        }`}
+                                    >
+                                      File Upload
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {(materialHomeworkSettings[material.id]?.homeworkType || 'manual') === 'manual' ? (
+                                  <div className="md:col-span-2">
                                     <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                      Due Date *
+                                      Instructions for Student
                                     </label>
                                     <input
-                                      type="datetime-local"
-                                      value={materialHomeworkSettings[material.id]?.dueDate || ''}
+                                      type="text"
+                                      value={materialHomeworkSettings[material.id]?.manualInstruction || ''}
                                       onChange={(e) => {
                                         setMaterialHomeworkSettings(prev => ({
                                           ...prev,
-                                          [material.id]: { ...prev[material.id], dueDate: e.target.value }
+                                          [material.id]: { ...prev[material.id], manualInstruction: e.target.value }
                                         }));
                                       }}
+                                      placeholder="e.g. Read chapter 5 and answer questions on page 120"
                                       className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-1 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
                                     />
                                   </div>
-                                  
-                                  <div>
-                                      <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                        Submission Type
-                                      </label>
-                                      <div className="flex rounded-md shadow-sm" role="group">
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            setMaterialHomeworkSettings(prev => ({
-                                              ...prev,
-                                              [material.id]: { 
-                                                ...prev[material.id], 
-                                                homeworkType: 'manual',
-                                                // Reset unneeded fields when switching to manual
-                                                maxMarks: undefined,
-                                                allowLateSubmission: true,
-                                                lateSubmissionDays: 3
-                                              }
-                                            }));
-                                          }}
-                                          className={`px-3 py-1.5 text-xs font-medium border rounded-l-lg flex-1 ${
-                                            (materialHomeworkSettings[material.id]?.homeworkType || 'manual') === 'manual'
-                                              ? 'bg-purple-600 text-white border-purple-600'
-                                              : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50'
-                                          }`}
-                                        >
-                                          Manual
-                                        </button>
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                             setMaterialHomeworkSettings(prev => ({
-                                              ...prev,
-                                              [material.id]: { 
-                                                ...prev[material.id], 
-                                                homeworkType: 'submission',
-                                                // Initialize fields when switching to submission
-                                                maxMarks: prev[material.id]?.maxMarks || 100,
-                                                allowLateSubmission: prev[material.id]?.allowLateSubmission !== false,
-                                                lateSubmissionDays: prev[material.id]?.lateSubmissionDays || 3
-                                              }
-                                            }));
-                                          }}
-                                          className={`px-3 py-1.5 text-xs font-medium border border-l-0 rounded-r-lg flex-1 ${
-                                            materialHomeworkSettings[material.id]?.homeworkType === 'submission'
-                                              ? 'bg-purple-600 text-white border-purple-600'
-                                              : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50'
-                                          }`}
-                                        >
-                                          File Upload
-                                        </button>
-                                      </div>
-                                  </div>
-
-                                  {(materialHomeworkSettings[material.id]?.homeworkType || 'manual') === 'manual' ? (
-                                      <div className="md:col-span-2">
+                                ) : (
+                                  <div className="md:col-span-2">
+                                    <div className="flex items-center space-x-4">
+                                      <div className="flex-1">
                                         <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                          Instructions for Student
+                                          Max Marks
                                         </label>
                                         <input
-                                          type="text"
-                                          value={materialHomeworkSettings[material.id]?.manualInstruction || ''}
+                                          type="number"
+                                          min="0"
+                                          value={materialHomeworkSettings[material.id]?.maxMarks || 100}
                                           onChange={(e) => {
                                             setMaterialHomeworkSettings(prev => ({
                                               ...prev,
-                                              [material.id]: { ...prev[material.id], manualInstruction: e.target.value }
+                                              [material.id]: { ...prev[material.id], maxMarks: parseInt(e.target.value) || 0 }
                                             }));
                                           }}
-                                          placeholder="e.g. Read chapter 5 and answer questions on page 120"
+                                          placeholder="100"
                                           className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-1 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
                                         />
                                       </div>
-                                  ) : (
-                                      <div className="md:col-span-2">
-                                          <div className="flex items-center space-x-4">
-                                              <div className="flex-1">
-                                                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                                    Max Marks
-                                                  </label>
-                                                  <input
-                                                    type="number"
-                                                    min="0"
-                                                    value={materialHomeworkSettings[material.id]?.maxMarks || 100}
-                                                    onChange={(e) => {
-                                                      setMaterialHomeworkSettings(prev => ({
-                                                        ...prev,
-                                                        [material.id]: { ...prev[material.id], maxMarks: parseInt(e.target.value) || 0 }
-                                                      }));
-                                                    }}
-                                                    placeholder="100"
-                                                    className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-1 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
-                                                  />
-                                              </div>
-                                                <div className="flex-1 pt-5">
-                                                    <label className="flex items-center space-x-2 cursor-pointer">
-                                                    <input
-                                                      type="checkbox"
-                                                      checked={materialHomeworkSettings[material.id]?.allowLateSubmission !== false}
-                                                      onChange={(e) => {
-                                                        setMaterialHomeworkSettings(prev => ({
-                                                          ...prev,
-                                                          [material.id]: { ...prev[material.id], allowLateSubmission: e.target.checked }
-                                                        }));
-                                                      }}
-                                                      className="w-4 h-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
-                                                    />
-                                                    <span className="text-xs text-gray-700 dark:text-gray-300">Allow late submission</span>
-                                                  </label>
-                                                    {materialHomeworkSettings[material.id]?.allowLateSubmission !== false && (
-                                                      <div className="mt-1 flex items-center space-x-2">
-                                                          <span className="text-xs text-gray-500">Days allowed:</span>
-                                                          <input 
-                                                              type="number" 
-                                                              min="0"
-                                                              max="30"
-                                                              value={materialHomeworkSettings[material.id]?.lateSubmissionDays || 3}
-                                                              onChange={(e) => {
-                                                                setMaterialHomeworkSettings(prev => ({
-                                                                  ...prev,
-                                                                  [material.id]: { ...prev[material.id], lateSubmissionDays: parseInt(e.target.value) || 0 }
-                                                                }));
-                                                              }}
-                                                              className="w-16 px-1 py-0.5 text-xs border border-gray-300 rounded"
-                                                          />
-                                                      </div>
-                                                    )}
-                                                </div>
+                                      <div className="flex-1 pt-5">
+                                        <label className="flex items-center space-x-2 cursor-pointer">
+                                          <input
+                                            type="checkbox"
+                                            checked={materialHomeworkSettings[material.id]?.allowLateSubmission !== false}
+                                            onChange={(e) => {
+                                              setMaterialHomeworkSettings(prev => ({
+                                                ...prev,
+                                                [material.id]: { ...prev[material.id], allowLateSubmission: e.target.checked }
+                                              }));
+                                            }}
+                                            className="w-4 h-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+                                          />
+                                          <span className="text-xs text-gray-700 dark:text-gray-300">Allow late submission</span>
+                                        </label>
+                                        {materialHomeworkSettings[material.id]?.allowLateSubmission !== false && (
+                                          <div className="mt-1 flex items-center space-x-2">
+                                            <span className="text-xs text-gray-500">Days allowed:</span>
+                                            <input
+                                              type="number"
+                                              min="0"
+                                              max="30"
+                                              value={materialHomeworkSettings[material.id]?.lateSubmissionDays || 3}
+                                              onChange={(e) => {
+                                                setMaterialHomeworkSettings(prev => ({
+                                                  ...prev,
+                                                  [material.id]: { ...prev[material.id], lateSubmissionDays: parseInt(e.target.value) || 0 }
+                                                }));
+                                              }}
+                                              className="w-16 px-1 py-0.5 text-xs border border-gray-300 rounded"
+                                            />
                                           </div>
+                                        )}
                                       </div>
-                                  )}
-                                </div>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           )}
                         </div>
@@ -2154,7 +2146,7 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                         <Upload className="w-4 h-4" />
                         <span>Upload Files</span>
                       </Button>
-                      
+
                       <Button
                         type="button"
                         variant="outline"
@@ -2185,7 +2177,7 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                             <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center flex-shrink-0">
                               {getFileIcon(fileItem.fileType)}
                             </div>
-                            
+
                             <div className="flex-1 space-y-3">
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div>
@@ -2196,7 +2188,7 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                                     type="text"
                                     value={fileItem.title}
                                     onChange={(e) => {
-                                      setNewFilesToAdd(prev => prev.map(item => 
+                                      setNewFilesToAdd(prev => prev.map(item =>
                                         item.id === fileItem.id ? { ...item, title: e.target.value } : item
                                       ));
                                     }}
@@ -2204,7 +2196,7 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                                     placeholder="Enter title"
                                   />
                                 </div>
-                                
+
                                 {fileItem.fileType === 'link' && (
                                   <div>
                                     <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -2214,7 +2206,7 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                                       type="url"
                                       value={fileItem.externalUrl || ''}
                                       onChange={(e) => {
-                                        setNewFilesToAdd(prev => prev.map(item => 
+                                        setNewFilesToAdd(prev => prev.map(item =>
                                           item.id === fileItem.id ? { ...item, externalUrl: e.target.value } : item
                                         ));
                                       }}
@@ -2233,7 +2225,7 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                                       id={`required_${fileItem.id}`}
                                       checked={fileItem.isRequired}
                                       onChange={(e) => {
-                                        setNewFilesToAdd(prev => prev.map(item => 
+                                        setNewFilesToAdd(prev => prev.map(item =>
                                           item.id === fileItem.id ? { ...item, isRequired: e.target.checked } : item
                                         ));
                                       }}
@@ -2250,9 +2242,9 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                                       id={`homework_${fileItem.id}`}
                                       checked={fileItem.isHomework || false}
                                       onChange={(e) => {
-                                        setNewFilesToAdd(prev => prev.map(item => 
-                                          item.id === fileItem.id ? { 
-                                            ...item, 
+                                        setNewFilesToAdd(prev => prev.map(item =>
+                                          item.id === fileItem.id ? {
+                                            ...item,
                                             isHomework: e.target.checked,
                                             // Initialize defaults if enabling
                                             homeworkType: item.homeworkType || 'manual',
@@ -2301,135 +2293,133 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                                         type="datetime-local"
                                         value={fileItem.dueDate || ''}
                                         onChange={(e) => {
-                                          setNewFilesToAdd(prev => prev.map(item => 
+                                          setNewFilesToAdd(prev => prev.map(item =>
                                             item.id === fileItem.id ? { ...item, dueDate: e.target.value } : item
                                           ));
                                         }}
                                         className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-1 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
                                       />
                                     </div>
-                                    
+
                                     <div>
-                                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                          Submission Type
-                                        </label>
-                                        <div className="flex rounded-md shadow-sm" role="group">
-                                          <button
-                                            type="button"
-                                            onClick={() => {
-                                              setNewFilesToAdd(prev => prev.map(item => 
-                                                item.id === fileItem.id ? { 
-                                                  ...item, 
-                                                  homeworkType: 'manual',
-                                                  maxMarks: undefined,
-                                                  allowLateSubmission: true,
-                                                  lateSubmissionDays: 3
-                                                } : item
-                                              ));
-                                            }}
-                                            className={`px-3 py-1.5 text-xs font-medium border rounded-l-lg flex-1 ${
-                                              (fileItem.homeworkType || 'manual') === 'manual'
-                                                ? 'bg-purple-600 text-white border-purple-600'
-                                                : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50'
+                                      <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Submission Type
+                                      </label>
+                                      <div className="flex rounded-md shadow-sm" role="group">
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setNewFilesToAdd(prev => prev.map(item =>
+                                              item.id === fileItem.id ? {
+                                                ...item,
+                                                homeworkType: 'manual',
+                                                maxMarks: undefined,
+                                                allowLateSubmission: true,
+                                                lateSubmissionDays: 3
+                                              } : item
+                                            ));
+                                          }}
+                                          className={`px-3 py-1.5 text-xs font-medium border rounded-l-lg flex-1 ${(fileItem.homeworkType || 'manual') === 'manual'
+                                              ? 'bg-purple-600 text-white border-purple-600'
+                                              : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50'
                                             }`}
-                                          >
-                                            Manual
-                                          </button>
-                                          <button
-                                            type="button"
-                                            onClick={() => {
-                                                setNewFilesToAdd(prev => prev.map(item => 
-                                                item.id === fileItem.id ? { 
-                                                  ...item, 
-                                                  homeworkType: 'submission',
-                                                  maxMarks: item.maxMarks || 100,
-                                                  allowLateSubmission: item.allowLateSubmission !== false,
-                                                  lateSubmissionDays: item.lateSubmissionDays || 3
-                                                } : item
-                                              ));
-                                            }}
-                                            className={`px-3 py-1.5 text-xs font-medium border border-l-0 rounded-r-lg flex-1 ${
-                                              fileItem.homeworkType === 'submission'
-                                                ? 'bg-purple-600 text-white border-purple-600'
-                                                : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50'
+                                        >
+                                          Manual
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setNewFilesToAdd(prev => prev.map(item =>
+                                              item.id === fileItem.id ? {
+                                                ...item,
+                                                homeworkType: 'submission',
+                                                maxMarks: item.maxMarks || 100,
+                                                allowLateSubmission: item.allowLateSubmission !== false,
+                                                lateSubmissionDays: item.lateSubmissionDays || 3
+                                              } : item
+                                            ));
+                                          }}
+                                          className={`px-3 py-1.5 text-xs font-medium border border-l-0 rounded-r-lg flex-1 ${fileItem.homeworkType === 'submission'
+                                              ? 'bg-purple-600 text-white border-purple-600'
+                                              : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50'
                                             }`}
-                                          >
-                                            File Upload
-                                          </button>
-                                        </div>
+                                        >
+                                          File Upload
+                                        </button>
+                                      </div>
                                     </div>
 
                                     {(fileItem.homeworkType || 'manual') === 'manual' ? (
-                                        <div className="md:col-span-2">
-                                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                            Instructions for Student
-                                          </label>
-                                          <input
-                                            type="text"
-                                            value={fileItem.manualInstruction || ''}
-                                            onChange={(e) => {
-                                              setNewFilesToAdd(prev => prev.map(item => 
-                                                item.id === fileItem.id ? { ...item, manualInstruction: e.target.value } : item
-                                              ));
-                                            }}
-                                            placeholder="e.g. Read chapter 5 and answer questions on page 120"
-                                            className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-1 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
-                                          />
-                                        </div>
+                                      <div className="md:col-span-2">
+                                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                          Instructions for Student
+                                        </label>
+                                        <input
+                                          type="text"
+                                          value={fileItem.manualInstruction || ''}
+                                          onChange={(e) => {
+                                            setNewFilesToAdd(prev => prev.map(item =>
+                                              item.id === fileItem.id ? { ...item, manualInstruction: e.target.value } : item
+                                            ));
+                                          }}
+                                          placeholder="e.g. Read chapter 5 and answer questions on page 120"
+                                          className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-1 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
+                                        />
+                                      </div>
                                     ) : (
-                                        <div className="md:col-span-2">
-                                            <div className="flex items-center space-x-4">
-                                                <div className="flex-1">
-                                                      <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                                      Max Marks
-                                                    </label>
-                                                    <input
-                                                      type="number"
-                                                      min="0"
-                                                      value={fileItem.maxMarks || 100}
-                                                      onChange={(e) => {
-                                                        setNewFilesToAdd(prev => prev.map(item => 
-                                                          item.id === fileItem.id ? { ...item, maxMarks: parseInt(e.target.value) || 0 } : item
-                                                        ));
-                                                      }}
-                                                      placeholder="100"
-                                                      className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-1 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
-                                                    />
-                                                </div>
-                                                  <div className="flex-1 pt-5">
-                                                      <label className="flex items-center space-x-2 cursor-pointer">
-                                                      <input
-                                                        type="checkbox"
-                                                        checked={fileItem.allowLateSubmission !== false}
-                                                        onChange={(e) => {
-                                                          setNewFilesToAdd(prev => prev.map(item => 
-                                                            item.id === fileItem.id ? { ...item, allowLateSubmission: e.target.checked } : item
-                                                          ));
-                                                        }}
-                                                        className="w-4 h-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
-                                                      />
-                                                      <span className="text-xs text-gray-700 dark:text-gray-300">Allow late submission</span>
-                                                    </label>
-                                                      {fileItem.allowLateSubmission !== false && (
-                                                        <div className="mt-1 flex items-center space-x-2">
-                                                            <span className="text-xs text-gray-500">Days allowed:</span>
-                                                            <input 
-                                                                type="number" 
-                                                                min="0"
-                                                                max="30"
-                                                                value={fileItem.lateSubmissionDays || 3}
-                                                                onChange={(e) => {
-                                                                  setNewFilesToAdd(prev => prev.map(item => 
-                                                                    item.id === fileItem.id ? { ...item, lateSubmissionDays: parseInt(e.target.value) || 0 } : item
-                                                                  ));
-                                                                }}
-                                                                className="w-16 px-1 py-0.5 text-xs border border-gray-300 rounded"
-                                                            />
-                                                        </div>
-                                                      )}
-                                                  </div>
-                                            </div>
+                                      <div className="md:col-span-2">
+                                        <div className="flex items-center space-x-4">
+                                          <div className="flex-1">
+                                            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                              Max Marks
+                                            </label>
+                                            <input
+                                              type="number"
+                                              min="0"
+                                              value={fileItem.maxMarks || 100}
+                                              onChange={(e) => {
+                                                setNewFilesToAdd(prev => prev.map(item =>
+                                                  item.id === fileItem.id ? { ...item, maxMarks: parseInt(e.target.value) || 0 } : item
+                                                ));
+                                              }}
+                                              placeholder="100"
+                                              className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-1 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
+                                            />
+                                          </div>
+                                          <div className="flex-1 pt-5">
+                                            <label className="flex items-center space-x-2 cursor-pointer">
+                                              <input
+                                                type="checkbox"
+                                                checked={fileItem.allowLateSubmission !== false}
+                                                onChange={(e) => {
+                                                  setNewFilesToAdd(prev => prev.map(item =>
+                                                    item.id === fileItem.id ? { ...item, allowLateSubmission: e.target.checked } : item
+                                                  ));
+                                                }}
+                                                className="w-4 h-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+                                              />
+                                              <span className="text-xs text-gray-700 dark:text-gray-300">Allow late submission</span>
+                                            </label>
+                                            {fileItem.allowLateSubmission !== false && (
+                                              <div className="mt-1 flex items-center space-x-2">
+                                                <span className="text-xs text-gray-500">Days allowed:</span>
+                                                <input
+                                                  type="number"
+                                                  min="0"
+                                                  max="30"
+                                                  value={fileItem.lateSubmissionDays || 3}
+                                                  onChange={(e) => {
+                                                    setNewFilesToAdd(prev => prev.map(item =>
+                                                      item.id === fileItem.id ? { ...item, lateSubmissionDays: parseInt(e.target.value) || 0 } : item
+                                                    ));
+                                                  }}
+                                                  className="w-16 px-1 py-0.5 text-xs border border-gray-300 rounded"
+                                                />
+                                              </div>
+                                            )}
+                                          </div>
                                         </div>
+                                      </div>
                                     )}
                                   </div>
                                 </div>
@@ -2463,7 +2453,7 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                       <span className="text-gray-600 dark:text-gray-300">{Math.round(uploadProgress)}%</span>
                     </div>
                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                      <div 
+                      <div
                         className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                         style={{ width: `${uploadProgress}%` }}
                       />
@@ -2507,9 +2497,9 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                   </span>
                 )}
               </div>
-              
+
               <div className="flex space-x-3">
-                <Button 
+                <Button
                   type="button"
                   variant="outline"
                   onClick={() => {
@@ -2523,7 +2513,7 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                 >
                   Cancel
                 </Button>
-                <Button 
+                <Button
                   type="submit"
                   disabled={editLoading}
                   className="bg-blue-600 hover:bg-blue-700 text-white"
@@ -2536,7 +2526,7 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                         title: formData.get('title') as string,
                         description: formData.get('description') as string,
                         isRequired: formData.get('isRequired') === 'on',
-                         // Pass current state values
+                        // Pass current state values
                         isHomework: editIsHomework,
                         homeworkType: editHomeworkType,
                         dueDate: editDueDate,
@@ -2582,16 +2572,16 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
 }
 
 // Students Tab Component
-function StudentsTab({ 
-  classId, 
-  enrollments, 
+function StudentsTab({
+  classId,
+  enrollments,
   loading,
   classRemarks,
   handleOpenRemarkModal,
   savingRemark
-}: { 
-  classId: string; 
-  enrollments: StudentEnrollment[]; 
+}: {
+  classId: string;
+  enrollments: StudentEnrollment[];
   loading: boolean;
   classRemarks: Map<string, StudentRemark>;
   handleOpenRemarkModal: (studentId: string, studentName: string) => void;
@@ -2612,7 +2602,7 @@ function StudentsTab({
       try {
         setStudentsLoading(true);
         const { StudentFirestoreService } = await import('@/apiservices/studentFirestoreService');
-        
+
         // Get full student documents for each enrollment
         const studentsPromises = enrollments.map(async (enrollment) => {
           try {
@@ -2704,7 +2694,7 @@ function StudentsTab({
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400">Total Students</p>
         </div>
-        
+
         <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 text-center">
           <div className="w-8 h-8 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mx-auto mb-2">
             <BookOpen className="w-4 h-4 text-green-600 dark:text-green-400" />
@@ -2744,8 +2734,8 @@ function StudentsTab({
             {searchTerm ? 'No students found' : 'No students enrolled'}
           </h4>
           <p className="text-gray-600 dark:text-gray-400 mb-4">
-            {searchTerm 
-              ? 'Try adjusting your search criteria' 
+            {searchTerm
+              ? 'Try adjusting your search criteria'
               : 'Add students to this class to get started.'
             }
           </p>
@@ -2771,22 +2761,21 @@ function StudentsTab({
                           {student.studentName.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
                         </span>
                       </div>
-                      
+
                       {/* Student Details */}
                       <div className="flex-1">
                         <div className="flex items-center space-x-3">
                           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                             {student.studentName}
                           </h3>
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            student.status === 'Active' 
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${student.status === 'Active'
                               ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
                               : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300'
-                          }`}>
+                            }`}>
                             {student.status}
                           </span>
                         </div>
-                        
+
                         <div className="mt-1 space-y-1">
                           <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
                             <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -2799,13 +2788,13 @@ function StudentsTab({
                             <Calendar className="w-4 h-4 mr-2" />
                             Enrolled: {student.enrolledAt.toLocaleDateString()}
                           </div>
-                          
+
                           {/* Teacher Remark Display */}
                           {classRemarks.get(student.studentId) && (
                             <div className="flex items-center text-sm">
                               <MessageSquare className="w-4 h-4 mr-2 text-blue-500" />
                               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRemarkColor(classRemarks.get(student.studentId)!.remarkLevel)}`}>
-                                {classRemarks.get(student.studentId)!.remarkLevel === 'Custom' 
+                                {classRemarks.get(student.studentId)!.remarkLevel === 'Custom'
                                   ? (classRemarks.get(student.studentId)!.customRemark || classRemarks.get(student.studentId)!.remarkLevel)
                                   : classRemarks.get(student.studentId)!.remarkLevel
                                 }
@@ -2815,7 +2804,7 @@ function StudentsTab({
                               )}
                             </div>
                           )}
-                          
+
                           {/* Parent Information */}
                           {student.parent && (
                             <div className="mt-3 pt-2 border-t border-gray-200 dark:border-gray-600">
@@ -2835,7 +2824,7 @@ function StudentsTab({
                                       <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
                                       <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
                                     </svg>
-                                    <a 
+                                    <a
                                       href={`mailto:${student.parent.email}`}
                                       className="hover:text-blue-600 dark:hover:text-blue-400 hover:underline"
                                     >
@@ -2848,7 +2837,7 @@ function StudentsTab({
                                     <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                                       <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
                                     </svg>
-                                    <a 
+                                    <a
                                       href={`tel:${student.parent.phone}`}
                                       className="hover:text-blue-600 dark:hover:text-blue-400 hover:underline"
                                     >
@@ -2890,12 +2879,12 @@ function StudentsTab({
 }
 
 // Messages Tab Component
-function MessagesTab({ 
-  classId, 
+function MessagesTab({
+  classId,
   enrollments,
   classData
-}: { 
-  classId: string; 
+}: {
+  classId: string;
   enrollments: any[];
   classData: any;
 }) {
@@ -2907,22 +2896,20 @@ function MessagesTab({
       <div className="flex space-x-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
         <button
           onClick={() => setSelectedMode('message')}
-          className={`flex-1 flex items-center justify-center space-x-3 px-6 py-4 rounded-md text-base font-medium transition-colors ${
-            selectedMode === 'message'
+          className={`flex-1 flex items-center justify-center space-x-3 px-6 py-4 rounded-md text-base font-medium transition-colors ${selectedMode === 'message'
               ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow'
               : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-          }`}
+            }`}
         >
           <MessageSquare className="w-5 h-5" />
           <span>Messages</span>
         </button>
         <button
           onClick={() => setSelectedMode('mail')}
-          className={`flex-1 flex items-center justify-center space-x-3 px-6 py-4 rounded-md text-base font-medium transition-colors ${
-            selectedMode === 'mail'
+          className={`flex-1 flex items-center justify-center space-x-3 px-6 py-4 rounded-md text-base font-medium transition-colors ${selectedMode === 'mail'
               ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow'
               : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-          }`}
+            }`}
         >
           <Send className="w-5 h-5" />
           <span>Email</span>
@@ -2931,16 +2918,16 @@ function MessagesTab({
 
       {/* Conditional Content */}
       {selectedMode === 'message' && (
-        <Message 
-          classId={classId} 
+        <Message
+          classId={classId}
           enrollments={enrollments}
           classData={classData}
         />
       )}
-      
+
       {selectedMode === 'mail' && (
-        <Mail 
-          classId={classId} 
+        <Mail
+          classId={classId}
           enrollments={enrollments}
           classData={classData}
         />
