@@ -3,12 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { 
-  BookOpen, 
-  FileText, 
-  PlayCircle, 
-  ExternalLink, 
-  FileIcon, 
+import {
+  BookOpen,
+  FileText,
+  PlayCircle,
+  ExternalLink,
+  FileIcon,
   CheckCircle,
   Clock,
   Download,
@@ -49,7 +49,7 @@ export default function StudentClassPage() {
   const classId = params.classId as string;
   const { student, loading: authLoading } = useStudentAuth();
   const { openPDFViewer } = usePDFViewer();
-  
+
   const [classData, setClassData] = useState<ClassDocument | null>(null);
   const [weeklyMaterials, setWeeklyMaterials] = useState<WeeklyMaterials[]>([]);
   const [lessons, setLessons] = useState<any[]>([]);
@@ -121,7 +121,7 @@ export default function StudentClassPage() {
 
     try {
       const isCompleted = material.completedBy?.includes(student.id) || false;
-      
+
       if (isCompleted) {
         await unmarkMaterialCompleted(material.id, student.id);
       } else {
@@ -129,7 +129,7 @@ export default function StudentClassPage() {
       }
 
       // Update local state
-      setWeeklyMaterials(prevWeeks => 
+      setWeeklyMaterials(prevWeeks =>
         prevWeeks.map(week => ({
           ...week,
           materials: week.materials.map(mat => {
@@ -214,7 +214,7 @@ export default function StudentClassPage() {
     .map(week => ({
       ...week,
       materials: week.materials.filter(material => {
-        const matchesSearch = searchTerm === '' || 
+        const matchesSearch = searchTerm === '' ||
           material.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
           material.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           material.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -232,13 +232,13 @@ export default function StudentClassPage() {
 
   // Calculate progress stats
   const totalMaterials = weeklyMaterials.reduce((sum, week) => sum + week.materials.length, 0);
-  const completedMaterials = weeklyMaterials.reduce((sum, week) => 
+  const completedMaterials = weeklyMaterials.reduce((sum, week) =>
     sum + week.materials.filter(m => m.completedBy?.includes(student?.id || '') || false).length, 0
   );
-  const requiredMaterials = weeklyMaterials.reduce((sum, week) => 
+  const requiredMaterials = weeklyMaterials.reduce((sum, week) =>
     sum + week.materials.filter(m => m.isRequired).length, 0
   );
-  const completedRequiredMaterials = weeklyMaterials.reduce((sum, week) => 
+  const completedRequiredMaterials = weeklyMaterials.reduce((sum, week) =>
     sum + week.materials.filter(m => m.isRequired && (m.completedBy?.includes(student?.id || '') || false)).length, 0
   );
 
@@ -280,8 +280,8 @@ export default function StudentClassPage() {
     <div className="p-6 space-y-6">
       {/* Header with Back Button */}
       <div className="flex items-center space-x-4 mb-6">
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           size="sm"
           onClick={() => router.push('/student/dashboard')}
           className="flex items-center space-x-2"
@@ -363,7 +363,7 @@ export default function StudentClassPage() {
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
             Class Resources
           </h2>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Videos */}
             <Link href={`/student/classes/${classData?.id}/videos`}>
@@ -442,7 +442,7 @@ export default function StudentClassPage() {
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Study Materials</h2>
-          
+
           <div className="flex flex-col sm:flex-row gap-3">
             {/* Type Filter */}
             <select
@@ -483,7 +483,7 @@ export default function StudentClassPage() {
             {weeklyMaterials.length === 0 ? 'No Study Materials Available' : 'No Materials Match Your Filters'}
           </h3>
           <p className="text-gray-500 dark:text-gray-400">
-            {weeklyMaterials.length === 0 
+            {weeklyMaterials.length === 0
               ? 'Your teacher hasn\'t uploaded any study materials yet. Check back later.'
               : 'Try adjusting your search terms or filters to find materials.'
             }
@@ -496,7 +496,7 @@ export default function StudentClassPage() {
             const weekCompleted = weekData.materials.filter(m => m.completedBy?.includes(student?.id || '') || false).length;
             const weekTotal = weekData.materials.length;
             const weekProgress = weekTotal > 0 ? Math.round((weekCompleted / weekTotal) * 100) : 0;
-            
+
             return (
               <div key={weekData.week} className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
                 {/* Week Header */}
@@ -529,16 +529,15 @@ export default function StudentClassPage() {
                       </p>
                     </div>
                   </div>
-                  
+
                   {/* Progress Bar */}
                   <div className="mt-3">
                     <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
-                      <div 
-                        className={`h-2 rounded-full transition-all duration-300 ${
-                          weekProgress >= 80 ? 'bg-green-500' :
-                          weekProgress >= 60 ? 'bg-blue-500' :
-                          weekProgress >= 40 ? 'bg-yellow-500' : 'bg-red-500'
-                        }`}
+                      <div
+                        className={`h-2 rounded-full transition-all duration-300 ${weekProgress >= 80 ? 'bg-green-500' :
+                            weekProgress >= 60 ? 'bg-blue-500' :
+                              weekProgress >= 40 ? 'bg-yellow-500' : 'bg-red-500'
+                          }`}
                         style={{ width: `${weekProgress}%` }}
                       ></div>
                     </div>
@@ -559,7 +558,7 @@ export default function StudentClassPage() {
                               <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center flex-shrink-0">
                                 {getFileIcon(material.fileType || 'other')}
                               </div>
-                              
+
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center space-x-3 mb-2">
                                   <h5 className="text-lg font-medium text-gray-900 dark:text-white truncate">
@@ -576,7 +575,7 @@ export default function StudentClassPage() {
                                     </span>
                                   )}
                                 </div>
-                                
+
                                 <div className="flex items-center space-x-3 mb-2">
                                   <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getFileTypeColor(material.fileType || 'other')}`}>
                                     {(material.fileType || 'FILE').toUpperCase()}
@@ -593,9 +592,9 @@ export default function StudentClassPage() {
                                     </span>
                                   )}
                                 </div>
-                                
+
                                 {material.description && (
-                                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-3 line-clamp-2">
+                                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-3 whitespace-pre-wrap">
                                     {material.description}
                                   </p>
                                 )}
@@ -606,8 +605,8 @@ export default function StudentClassPage() {
                               {/* Action Buttons */}
                               <div className="flex space-x-2">
                                 {material.fileType === 'link' ? (
-                                  <Button 
-                                    variant="outline" 
+                                  <Button
+                                    variant="outline"
                                     size="sm"
                                     onClick={() => handleMaterialAction(material, 'view')}
                                     className="flex items-center space-x-1"
@@ -617,15 +616,15 @@ export default function StudentClassPage() {
                                   </Button>
                                 ) : (
                                   <>
-                                    <Button 
-                                      variant="outline" 
+                                    <Button
+                                      variant="outline"
                                       size="sm"
                                       onClick={() => handleMaterialAction(material, 'view')}
                                     >
                                       <Eye className="w-4 h-4" />
                                     </Button>
-                                    <Button 
-                                      variant="outline" 
+                                    <Button
+                                      variant="outline"
                                       size="sm"
                                       onClick={() => handleMaterialAction(material, 'download')}
                                     >
@@ -639,11 +638,10 @@ export default function StudentClassPage() {
                               <Button
                                 onClick={() => handleCompletionToggle(material)}
                                 disabled={isProcessing}
-                                className={`flex items-center space-x-1 ${
-                                  isCompleted 
-                                    ? 'bg-green-600 hover:bg-green-700 text-white' 
+                                className={`flex items-center space-x-1 ${isCompleted
+                                    ? 'bg-green-600 hover:bg-green-700 text-white'
                                     : 'bg-blue-600 hover:bg-blue-700 text-white'
-                                }`}
+                                  }`}
                                 size="sm"
                               >
                                 {isProcessing ? (
