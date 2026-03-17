@@ -101,6 +101,8 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
   const [enrolledStudents, setEnrolledStudents] = useState<EnrollmentWithParent[]>([]);
   const [studentAttendance, setStudentAttendance] = useState<{[key: string]: 'present' | 'absent' | 'late'}>({});
   const [selectedAbsentStudents, setSelectedAbsentStudents] = useState<Set<string>>(new Set());
+  const [selectedAbsentForEmail, setSelectedAbsentForEmail] = useState<Set<string>>(new Set());
+  const [sendingAbsenceEmails, setSendingAbsenceEmails] = useState(false);
   const [attendanceHistory, setAttendanceHistory] = useState<any[]>([]);
   const [loadingStudents, setLoadingStudents] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
@@ -681,6 +683,7 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
       });
       setStudentAttendance(initialAttendance);
       setSelectedAbsentStudents(new Set());
+      setSelectedAbsentForEmail(new Set());
       
       console.log('✅ Loaded students for attendance:', students.length);
     } catch (error) {
@@ -689,6 +692,7 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
       setEnrolledStudents([]);
       setStudentAttendance({});
       setSelectedAbsentStudents(new Set());
+      setSelectedAbsentForEmail(new Set());
     } finally {
       setLoadingStudents(false);
     }
@@ -698,10 +702,23 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
       ...prev,
       [studentId]: status
     }));
+
+    if (status === 'absent') {
+      setSelectedAbsentForEmail(prev => {
+        const newSet = new Set(prev);
+        newSet.add(studentId);
+        return newSet;
+      });
+    }
     
     // Remove from absent selection if changing from absent
     if (status !== 'absent') {
       setSelectedAbsentStudents(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(studentId);
+        return newSet;
+      });
+      setSelectedAbsentForEmail(prev => {
         const newSet = new Set(prev);
         newSet.delete(studentId);
         return newSet;
@@ -720,6 +737,11 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
           ...prevAttendance,
           [studentId]: 'absent'
         }));
+        setSelectedAbsentForEmail(prevEmail => {
+          const emailSet = new Set(prevEmail);
+          emailSet.add(studentId);
+          return emailSet;
+        });
       } else {
         newSet.delete(studentId);
         // Reset to present
@@ -727,6 +749,11 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
           ...prevAttendance,
           [studentId]: 'present'
         }));
+        setSelectedAbsentForEmail(prevEmail => {
+          const emailSet = new Set(prevEmail);
+          emailSet.delete(studentId);
+          return emailSet;
+        });
       }
       return newSet;
     });
@@ -739,7 +766,75 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
       updatedAttendance[studentId] = 'absent';
     });
     setStudentAttendance(updatedAttendance);
+    setSelectedAbsentForEmail(prev => {
+      const newSet = new Set(prev);
+      selectedAbsentStudents.forEach(studentId => newSet.add(studentId));
+      return newSet;
+    });
     setSelectedAbsentStudents(new Set()); // Clear selection
+  };
+
+  const handleSendSelectedAbsenceEmails = async () => {
+    if (!selectedSchedule) return;
+
+    const selectedStudents = enrolledStudents.filter(student =>
+      selectedAbsentForEmail.has(student.studentId) &&
+      studentAttendance[student.studentId] === 'absent'
+    );
+
+    if (selectedStudents.length === 0) {
+      alert('Please select absent students to email.');
+      return;
+    }
+
+    setSendingAbsenceEmails(true);
+    try {
+      const scheduleDate = selectedSchedule.scheduledDate instanceof Timestamp
+        ? selectedSchedule.scheduledDate.toDate()
+        : selectedSchedule.scheduledDate;
+
+      const classDate = scheduleDate.toISOString().split('T')[0];
+      const classTime = `${formatTime(selectedSchedule.startTime)} - ${formatTime(selectedSchedule.endTime)}`;
+
+      const emailPromises = selectedStudents
+        .filter(student => student.parent?.email)
+        .map(async (student) => {
+          try {
+            const mailId = await MailService.sendAbsenceNotificationEmail(
+              student.parent!.name || 'Parent/Guardian',
+              student.parent!.email,
+              student.studentName,
+              selectedSchedule.className,
+              selectedSchedule.subjectName || 'Subject',
+              classDate,
+              classTime,
+              teacherName || selectedSchedule.teacherName || 'Teacher'
+            );
+            return { success: true, student: student.studentName, mailId };
+          } catch (emailError) {
+            console.error('❌ Failed to send absence notification for', student.studentName, ':', emailError);
+            return { success: false, student: student.studentName, error: emailError };
+          }
+        });
+
+      const skippedEmails = selectedStudents.length - emailPromises.length;
+      let successfulEmails = 0;
+      let failedEmails = 0;
+
+      if (emailPromises.length > 0) {
+        const emailResults = await Promise.all(emailPromises);
+        successfulEmails = emailResults.filter(result => result.success).length;
+        failedEmails = emailResults.filter(result => !result.success).length;
+      }
+
+      alert(`📧 Absence emails completed.\n\nSelected absent students: ${selectedStudents.length}\nSent: ${successfulEmails}\nFailed: ${failedEmails}\nSkipped (no parent email): ${skippedEmails}`);
+      setSelectedAbsentForEmail(new Set());
+    } catch (error) {
+      console.error('❌ Error sending selected absence emails:', error);
+      alert('Failed to send absence emails. Please try again.');
+    } finally {
+      setSendingAbsenceEmails(false);
+    }
   };
 
   // Save attendance data
@@ -783,72 +878,9 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
       });
       await ClassScheduleFirestoreService.markAttendance(selectedSchedule.id, studentAttendanceData);
 
-      // Get absent students for email notifications
-      const absentStudents = enrolledStudents.filter(student => 
-        studentAttendance[student.studentId] === 'absent'
-      );
-
-      console.log('📧 Found', absentStudents.length, 'absent students to notify');
-
-      // Send absence notification emails to parents
-      const emailPromises = absentStudents
-        .filter(student => student.parent?.email) // Only send emails if parent email exists
-        .map(async (student) => {
-        try {
-          console.log('📤 Sending absence notification for student:', student.studentName);
-          
-          const scheduleDate = selectedSchedule.scheduledDate instanceof Timestamp 
-            ? selectedSchedule.scheduledDate.toDate() 
-            : selectedSchedule.scheduledDate;
-          
-          const classDate = scheduleDate.toISOString().split('T')[0];
-          const classTime = `${formatTime(selectedSchedule.startTime)} - ${formatTime(selectedSchedule.endTime)}`;
-          
-          const mailId = await MailService.sendAbsenceNotificationEmail(
-            student.parent!.name || 'Parent/Guardian', // Fallback if parent name is missing
-            student.parent!.email, // Using actual parent email from student data
-            student.studentName,
-            selectedSchedule.className,
-            selectedSchedule.subjectName || 'Subject',
-            classDate,
-            classTime,
-            teacherName || selectedSchedule.teacherName || 'Teacher'
-          );
-          
-          console.log('✅ Absence notification sent for', student.studentName, 'Mail ID:', mailId);
-          return { success: true, student: student.studentName, mailId };
-        } catch (emailError) {
-          console.error('❌ Failed to send absence notification for', student.studentName, ':', emailError);
-          return { success: false, student: student.studentName, error: emailError };
-        }
-      });
-
-      // Wait for all emails to be sent (but don't fail attendance saving if emails fail)
-      let successfulEmails = 0;
-      let failedEmails = 0;
-      const skippedEmails = absentStudents.length - emailPromises.length;
-
-      if (emailPromises.length > 0) {
-        try {
-          console.log('⏳ Waiting for', emailPromises.length, 'absence notification emails...');
-          const emailResults = await Promise.all(emailPromises);
-          successfulEmails = emailResults.filter(result => result.success).length;
-          failedEmails = emailResults.filter(result => !result.success).length;
-          console.log('📊 Email notification results:', {
-            successful: successfulEmails,
-            failed: failedEmails,
-            skipped: skippedEmails,
-            totalAbsent: absentStudents.length
-          });
-        } catch (emailError) {
-          console.warn('⚠️ Some absence notification emails failed:', emailError);
-          failedEmails = emailPromises.length;
-        }
-      }
-      
       console.log('✅ Attendance data saved to Firebase successfully!');
 
-      alert(`✅ Attendance saved successfully!\n\nSummary:\nPresent: ${presentCount}\nAbsent: ${absentCount}\nLate: ${lateCount}\nAttendance Rate: ${attendanceRate}%\n\n📧 Parent absence emails:\nSent: ${successfulEmails}\nFailed: ${failedEmails}\nSkipped (no parent email): ${skippedEmails}\n\n💾 Attendance data saved to database for future reference`);
+      alert(`✅ Attendance saved successfully!\n\nSummary:\nPresent: ${presentCount}\nAbsent: ${absentCount}\nLate: ${lateCount}\nAttendance Rate: ${attendanceRate}%\n\nUse "Send Email to Selected Absent" to notify parents manually.`);
       
       // Close modal and refresh data
       setShowAttendanceModal(false);
@@ -857,6 +889,8 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
       setIsEditingAttendance(false); // Reset editing flag
       setLoadingStudents(false); // Reset loading state
       setEnrolledStudents([]); // Clear students list
+      setSelectedAbsentStudents(new Set());
+      setSelectedAbsentForEmail(new Set());
       
       // Add a small delay to ensure Firebase write is complete before reloading
       console.log('🔄 Reloading scheduled classes to reflect attendance changes...');
@@ -1668,6 +1702,8 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
                   setLoadingStudents(false);
                   setEnrolledStudents([]);
                   setStudentAttendance({});
+                  setSelectedAbsentStudents(new Set());
+                  setSelectedAbsentForEmail(new Set());
                 }}
                 className="text-gray-400 hover:text-gray-600"
               >
@@ -1729,6 +1765,9 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
                   <p className="text-sm text-gray-600 mb-4">
                     All students start as <strong>Present</strong>. Use individual buttons or select multiple students for bulk marking as absent.
                   </p>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Parent emails are manual. Mark absentees first, then use the email checkbox for each absent student and click <strong>Send Email to Selected Absent</strong>.
+                  </p>
                   
                   {/* Easy Mode - Bulk Selection */}
                   {enrolledStudents.length > 0 && (
@@ -1761,6 +1800,7 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
                     {enrolledStudents.map((student) => {
                       const currentStatus = studentAttendance[student.studentId] || 'present';
                       const isSelectedForAbsent = selectedAbsentStudents.has(student.studentId);
+                      const isSelectedForEmail = selectedAbsentForEmail.has(student.studentId);
                       
                       return (
                         <div key={student.studentId} className={`border rounded-lg p-3 transition-colors ${
@@ -1778,6 +1818,27 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
                               <div>
                                 <p className="font-medium">{student.studentName}</p>
                                 <p className="text-sm text-gray-500">{student.studentEmail}</p>
+                                {currentStatus === 'absent' && (
+                                  <label className="mt-1 inline-flex items-center gap-2 text-xs text-gray-700">
+                                    <input
+                                      type="checkbox"
+                                      checked={isSelectedForEmail}
+                                      onChange={(e) => {
+                                        setSelectedAbsentForEmail(prev => {
+                                          const newSet = new Set(prev);
+                                          if (e.target.checked) {
+                                            newSet.add(student.studentId);
+                                          } else {
+                                            newSet.delete(student.studentId);
+                                          }
+                                          return newSet;
+                                        });
+                                      }}
+                                      className="h-3.5 w-3.5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                    />
+                                    Send email
+                                  </label>
+                                )}
                               </div>
                             </div>
                             <div className="flex gap-2">
@@ -1882,10 +1943,20 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
                       setEnrolledStudents([]);
                       setStudentAttendance({});
                       setSelectedAbsentStudents(new Set());
+                      setSelectedAbsentForEmail(new Set());
                     }}
                     className="px-4 py-2 text-gray-600 border rounded hover:bg-gray-50"
                   >
                     Cancel
+                  </button>
+                  <button
+                    onClick={handleSendSelectedAbsenceEmails}
+                    disabled={selectedAbsentForEmail.size === 0 || sendingAbsenceEmails}
+                    className="px-4 py-2 bg-indigo-500 text-white rounded hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {sendingAbsenceEmails
+                      ? 'Sending Emails...'
+                      : `Send Email to Selected Absent (${selectedAbsentForEmail.size})`}
                   </button>
                   <button
                     onClick={handleSaveAttendance}
@@ -1905,6 +1976,8 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
                     setLoadingStudents(false);
                     setEnrolledStudents([]);
                     setStudentAttendance({});
+                    setSelectedAbsentStudents(new Set());
+                    setSelectedAbsentForEmail(new Set());
                   }}
                   className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
                 >
@@ -2036,10 +2109,16 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
                         // Populate current attendance data for editing
                         if (selectedSchedule?.attendance?.students) {
                           const currentAttendance: { [key: string]: 'present' | 'absent' | 'late' } = {};
+                          const absentForEmail = new Set<string>();
                           selectedSchedule.attendance.students.forEach(student => {
                             currentAttendance[student.studentId] = student.status;
+                            if (student.status === 'absent') {
+                              absentForEmail.add(student.studentId);
+                            }
                           });
                           setStudentAttendance(currentAttendance);
+                          setSelectedAbsentStudents(new Set());
+                          setSelectedAbsentForEmail(absentForEmail);
                         }
                         
                         // Validate attendance time (for editing, we're more lenient)
