@@ -651,6 +651,9 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
   const [editManualInstruction, setEditManualInstruction] = useState('');
   const [editAllowLateSubmission, setEditAllowLateSubmission] = useState(true);
   const [editLateSubmissionDays, setEditLateSubmissionDays] = useState(3);
+  const [inlineEditingMaterialId, setInlineEditingMaterialId] = useState<string | null>(null);
+  const [inlineMaterialTitle, setInlineMaterialTitle] = useState('');
+  const [inlineRenameLoading, setInlineRenameLoading] = useState(false);
 
   // Per-material homework state - tracks individual homework settings for each material
   const [materialHomeworkSettings, setMaterialHomeworkSettings] = useState<Record<string, {
@@ -768,6 +771,44 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
       alert('Failed to delete study material. Please try again.');
     } finally {
       setDeleteLoading(false);
+    }
+  };
+
+  const startInlineRename = (material: any) => {
+    setInlineEditingMaterialId(material.id);
+    setInlineMaterialTitle(material.title || '');
+  };
+
+  const cancelInlineRename = () => {
+    if (inlineRenameLoading) return;
+    setInlineEditingMaterialId(null);
+    setInlineMaterialTitle('');
+  };
+
+  const saveInlineRename = async (material: any) => {
+    const trimmedTitle = inlineMaterialTitle.trim();
+
+    if (!trimmedTitle) {
+      alert('Material name cannot be empty.');
+      return;
+    }
+
+    if (trimmedTitle === (material.title || '')) {
+      cancelInlineRename();
+      return;
+    }
+
+    try {
+      setInlineRenameLoading(true);
+      await updateStudyMaterial(material.id, { title: trimmedTitle });
+      await refreshMaterials();
+      setInlineEditingMaterialId(null);
+      setInlineMaterialTitle('');
+    } catch (renameError) {
+      console.error('Error renaming study material:', renameError);
+      alert('Failed to rename material. Please try again.');
+    } finally {
+      setInlineRenameLoading(false);
     }
   };
 
@@ -1329,9 +1370,50 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                           {getFileIcon(material.fileType)}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="font-medium text-gray-900 dark:text-white truncate">
-                            {material.title}
-                          </div>
+                          {inlineEditingMaterialId === material.id ? (
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="text"
+                                value={inlineMaterialTitle}
+                                onChange={(e) => setInlineMaterialTitle(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    saveInlineRename(material);
+                                  }
+                                  if (e.key === 'Escape') {
+                                    e.preventDefault();
+                                    cancelInlineRename();
+                                  }
+                                }}
+                                disabled={inlineRenameLoading}
+                                autoFocus
+                                className="w-full px-2 py-1 text-sm border border-blue-300 dark:border-blue-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => saveInlineRename(material)}
+                                disabled={inlineRenameLoading}
+                              >
+                                Save
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={cancelInlineRename}
+                                disabled={inlineRenameLoading}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="font-medium text-gray-900 dark:text-white truncate">
+                              {material.title}
+                            </div>
+                          )}
                           {material.description && material.description !== group.materials[0]?.description && (
                             <div className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-wrap">
                               {material.description}
@@ -1404,6 +1486,18 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                               <Download className="w-4 h-4" />
                             </Button>
                           </>
+                        )}
+                        {group.isGroup && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => startInlineRename(material)}
+                            disabled={inlineRenameLoading && inlineEditingMaterialId === material.id}
+                            className="flex items-center space-x-1"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                            <span className="hidden sm:inline">Rename</span>
+                          </Button>
                         )}
                         <Button
                           variant="outline"

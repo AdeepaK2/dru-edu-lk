@@ -52,6 +52,36 @@ export async function POST(req: NextRequest) {
     }
     
     const studentData = validatedData.data;
+    const normalizedEmail = studentData.email.trim().toLowerCase();
+
+    // Guard against cross-role account collisions (teacher/admin with same email)
+    const emailVariants = Array.from(new Set([studentData.email.trim(), normalizedEmail]));
+    const [teacherEmailConflictSnapshots, adminEmailConflictSnapshots] = await Promise.all([
+      Promise.all(
+        emailVariants.map((email) =>
+          firebaseAdmin.db.collection('teachers').where('email', '==', email).limit(1).get()
+        )
+      ),
+      Promise.all(
+        emailVariants.map((email) =>
+          firebaseAdmin.db.collection('admins').where('email', '==', email).limit(1).get()
+        )
+      )
+    ]);
+
+    const hasTeacherEmailConflict = teacherEmailConflictSnapshots.some((snapshot) => !snapshot.empty);
+    const hasAdminEmailConflict = adminEmailConflictSnapshots.some((snapshot) => !snapshot.empty);
+
+    if (hasTeacherEmailConflict || hasAdminEmailConflict) {
+      const conflictingRole = hasTeacherEmailConflict ? 'teacher' : 'admin';
+      return NextResponse.json(
+        {
+          error: `Email is already assigned to an existing ${conflictingRole} account`,
+          message: `Cannot create a student with an email that belongs to a ${conflictingRole}.`
+        },
+        { status: 409 }
+      );
+    }
     
     // Generate random password for the student
     const generatedPassword = generateRandomPassword(10);
@@ -69,14 +99,47 @@ export async function POST(req: NextRequest) {
 
     // Check if a student with this email already exists
     try {
-      const existingUser = await firebaseAdmin.authentication.getUserByEmail(studentData.email);
+      const existingUser = await firebaseAdmin.authentication.getUserByEmail(normalizedEmail);
       
-      // If the user exists in Auth, check if they exist in Firestore
-      const studentDoc = await firebaseAdmin.firestore.getDoc('students', existingUser.uid);
+      // If the user exists in Auth, check role ownership across profile collections
+      const [studentDoc, teacherDoc, adminDoc] = await Promise.all([
+        firebaseAdmin.firestore.getDoc('students', existingUser.uid),
+        firebaseAdmin.firestore.getDoc('teachers', existingUser.uid),
+        firebaseAdmin.firestore.getDoc('admins', existingUser.uid)
+      ]);
       if (studentDoc) {
         // User exists in BOTH Auth and Firestore, this is a legitimate conflict
         return NextResponse.json(
           { error: "Student with this email already exists" },
+          { status: 409 }
+        );
+      }
+
+      const existingClaims = existingUser.customClaims || {};
+      const hasTeacherProfile = Boolean(teacherDoc);
+      const hasAdminProfile = Boolean(adminDoc);
+      const hasNonStudentClaims = Boolean(
+        existingClaims.teacher ||
+        existingClaims.admin ||
+        (existingClaims.role && existingClaims.role !== 'student')
+      );
+
+      if (hasTeacherProfile || hasAdminProfile || hasNonStudentClaims) {
+        const conflictingRoles: string[] = [];
+        if (hasTeacherProfile || existingClaims.teacher || existingClaims.role === 'teacher') {
+          conflictingRoles.push('teacher');
+        }
+        if (hasAdminProfile || existingClaims.admin || existingClaims.role === 'admin') {
+          conflictingRoles.push('admin');
+        }
+
+        const conflictingRoleLabel = conflictingRoles.length > 0 ? conflictingRoles.join('/') : 'non-student';
+
+        return NextResponse.json(
+          {
+            error: "Email already belongs to a non-student account",
+            message: `Cannot recover existing ${conflictingRoleLabel} account as student.`
+          },
           { status: 409 }
         );
       }
@@ -92,7 +155,7 @@ export async function POST(req: NextRequest) {
       if (error.code === 'auth/user-not-found') {
         // Create the user in Firebase Auth
         userRecord = await firebaseAdmin.authentication.createUser(
-          studentData.email, 
+          normalizedEmail, 
           generatedPassword, 
           studentData.name
         );
@@ -129,7 +192,7 @@ export async function POST(req: NextRequest) {
     // Prepare student document data
     const studentDocument: Omit<StudentDocument, 'id'> = {
       name: studentData.name,
-      email: studentData.email,
+      email: normalizedEmail,
       phone: studentData.phone,
       dateOfBirth: studentData.dateOfBirth || '', // Safe fallback for optional field
       year: studentData.year || '', // Safe fallback for optional field
@@ -160,7 +223,7 @@ export async function POST(req: NextRequest) {
       // Create student document in Firestore
       firebaseAdmin.firestore.setDoc('students', userRecord.uid, studentDocument),
       // Queue welcome email via Nodemailer SMTP
-      sendStudentWelcomeEmail(studentData.email, studentData.name, generatedPassword)
+      sendStudentWelcomeEmail(normalizedEmail, studentData.name, generatedPassword)
     ]);
     
     // Clear cache
@@ -171,7 +234,7 @@ export async function POST(req: NextRequest) {
         message: "Student created successfully and welcome email sent", 
         id: userRecord.uid,
         name: studentData.name, 
-        email: studentData.email,
+        email: normalizedEmail,
         avatar: initials
       },
       { status: 201 }
@@ -495,10 +558,49 @@ export async function DELETE(req: NextRequest) {
     
     // Step 2: Only proceed with student deletion if enrollments were successfully deleted
     try {
-      await Promise.all([
-        firebaseAdmin.authentication.deleteUser(id),
-        firebaseAdmin.firestore.deleteDoc('students', id)
+      const [teacherDoc, adminDoc] = await Promise.all([
+        firebaseAdmin.firestore.getDoc('teachers', id),
+        firebaseAdmin.firestore.getDoc('admins', id)
       ]);
+
+      const hasTeacherProfile = Boolean(teacherDoc);
+      const hasAdminProfile = Boolean(adminDoc);
+      const shouldRetainAuthUser = hasTeacherProfile || hasAdminProfile;
+
+      if (shouldRetainAuthUser) {
+        // Keep Auth user for surviving roles and remove only the student profile
+        await firebaseAdmin.firestore.deleteDoc('students', id);
+
+        try {
+          const authUser = await firebaseAdmin.authentication.getUser(id);
+          const updatedClaims: Record<string, any> = { ...(authUser.customClaims || {}) };
+          delete updatedClaims.student;
+
+          if (hasTeacherProfile) {
+            updatedClaims.teacher = true;
+            updatedClaims.role = 'teacher';
+          }
+          if (hasAdminProfile) {
+            updatedClaims.admin = true;
+            if (!updatedClaims.role) {
+              updatedClaims.role = 'admin';
+            }
+          }
+
+          await firebaseAdmin.authentication.setCustomClaims(id, updatedClaims);
+        } catch (claimsError: any) {
+          // If Auth user is already missing, keep deletion successful but log for manual recovery
+          if (claimsError.code !== 'auth/user-not-found') {
+            throw claimsError;
+          }
+          console.warn(`Auth user ${id} not found while restoring claims after student deletion.`);
+        }
+      } else {
+        await Promise.all([
+          firebaseAdmin.authentication.deleteUser(id),
+          firebaseAdmin.firestore.deleteDoc('students', id)
+        ]);
+      }
     } catch (studentDeletionError: any) {
       console.error('Failed to delete student after enrollments were deleted:', studentDeletionError);
       // This is a critical state - enrollments are deleted but student deletion failed
