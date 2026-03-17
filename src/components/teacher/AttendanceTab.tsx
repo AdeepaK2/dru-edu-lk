@@ -805,7 +805,7 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
           const classTime = `${formatTime(selectedSchedule.startTime)} - ${formatTime(selectedSchedule.endTime)}`;
           
           const mailId = await MailService.sendAbsenceNotificationEmail(
-            student.parent!.name, // Using actual parent name from student data
+            student.parent!.name || 'Parent/Guardian', // Fallback if parent name is missing
             student.parent!.email, // Using actual parent email from student data
             student.studentName,
             selectedSchedule.className,
@@ -824,24 +824,31 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
       });
 
       // Wait for all emails to be sent (but don't fail attendance saving if emails fail)
-      let emailResults: PromiseSettledResult<{ success: boolean; student: string; mailId?: string; error?: any }>[] = [];
+      let successfulEmails = 0;
+      let failedEmails = 0;
+      const skippedEmails = absentStudents.length - emailPromises.length;
+
       if (emailPromises.length > 0) {
         try {
           console.log('⏳ Waiting for', emailPromises.length, 'absence notification emails...');
-          emailResults = await Promise.allSettled(emailPromises);
-          const successful = emailResults.filter(r => r.status === 'fulfilled').length;
-          const failed = emailResults.filter(r => r.status === 'rejected').length;
-          console.log('📊 Email notification results:', { successful, failed, total: emailPromises.length });
+          const emailResults = await Promise.all(emailPromises);
+          successfulEmails = emailResults.filter(result => result.success).length;
+          failedEmails = emailResults.filter(result => !result.success).length;
+          console.log('📊 Email notification results:', {
+            successful: successfulEmails,
+            failed: failedEmails,
+            skipped: skippedEmails,
+            totalAbsent: absentStudents.length
+          });
         } catch (emailError) {
           console.warn('⚠️ Some absence notification emails failed:', emailError);
+          failedEmails = emailPromises.length;
         }
       }
       
       console.log('✅ Attendance data saved to Firebase successfully!');
-      
-      const successfulEmails = emailResults.filter(r => r.status === 'fulfilled').length;
-      
-      alert(`✅ Attendance saved successfully!\n\nSummary:\nPresent: ${presentCount}\nAbsent: ${absentCount}\nLate: ${lateCount}\nAttendance Rate: ${attendanceRate}%\n\n📧 Sent ${successfulEmails} absence notification emails to parents\n\n💾 Attendance data saved to database for future reference`);
+
+      alert(`✅ Attendance saved successfully!\n\nSummary:\nPresent: ${presentCount}\nAbsent: ${absentCount}\nLate: ${lateCount}\nAttendance Rate: ${attendanceRate}%\n\n📧 Parent absence emails:\nSent: ${successfulEmails}\nFailed: ${failedEmails}\nSkipped (no parent email): ${skippedEmails}\n\n💾 Attendance data saved to database for future reference`);
       
       // Close modal and refresh data
       setShowAttendanceModal(false);
