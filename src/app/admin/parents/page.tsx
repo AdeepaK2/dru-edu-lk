@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { AlertCircle, Users, Send, CheckCircle, XCircle, Clock, Mail, Phone, User, UserPlus, Search, Filter } from 'lucide-react';
+import { AlertCircle, Users, Send, CheckCircle, XCircle, Clock, Mail, Phone, User, UserPlus, Search, Filter, RefreshCcw, History } from 'lucide-react';
+import { collection, query, where, getDocs, getDoc, orderBy, limit, doc } from 'firebase/firestore';
+import { firestore } from '@/utils/firebase-client';
 
 interface Student {
   id: string;
@@ -43,6 +45,24 @@ interface ExistingParentInfo {
   pendingInvites?: ParentInvite[];
 }
 
+interface ProblematicStudent {
+  id: string;
+  name: string;
+  email: string;
+  parentName: string;
+  parentEmail: string;
+}
+
+interface EmailChangeLog {
+  id: string;
+  studentId: string;
+  studentName: string;
+  studentEmail: string;
+  oldParentEmail: string;
+  newParentEmail: string;
+  changedAt: string;
+}
+
 export default function ParentManagementPage() {
   const router = useRouter();
   const [students, setStudents] = useState<Student[]>([]);
@@ -55,14 +75,75 @@ export default function ParentManagementPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [existingParentInfo, setExistingParentInfo] = useState<ExistingParentInfo | null>(null);
   const [invites, setInvites] = useState<ParentInvite[]>([]);
-  const [activeTab, setActiveTab] = useState<'create' | 'invites'>('create');
+  const [activeTab, setActiveTab] = useState<'create' | 'invites' | 'emailIssues'>('create');
   const [message, setMessage] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
   const [parentGroups, setParentGroups] = useState<Map<string, Student[]>>(new Map());
+
+  // Email Issues state
+  const [problematicStudents, setProblematicStudents] = useState<ProblematicStudent[]>([]);
+  const [emailChangeLogs, setEmailChangeLogs] = useState<EmailChangeLog[]>([]);
+  const [issuesLoading, setIssuesLoading] = useState(false);
+  const [sendingEmails, setSendingEmails] = useState<string[]>([]);
+  const [sentEmails, setSentEmails] = useState<string[]>([]);
 
   useEffect(() => {
     loadStudents();
     loadInvites();
   }, []);
+
+  const loadEmailIssues = useCallback(async () => {
+    setIssuesLoading(true);
+    try {
+      // Find students where parent.email === student email
+      const studentsSnap = await getDocs(collection(firestore, 'students'));
+      const problems: ProblematicStudent[] = [];
+      studentsSnap.forEach(d => {
+        const data = d.data();
+        if (data.email && data.parent?.email && data.email.toLowerCase() === data.parent.email.toLowerCase()) {
+          problems.push({ id: d.id, name: data.name, email: data.email, parentName: data.parent.name || '', parentEmail: data.parent.email });
+        }
+      });
+      setProblematicStudents(problems);
+
+      // Load email change history
+      const logsSnap = await getDocs(query(collection(firestore, 'parentEmailChangeLogs'), orderBy('changedAt', 'desc'), limit(50)));
+      const logs: EmailChangeLog[] = logsSnap.docs.map(d => ({ id: d.id, ...d.data() } as EmailChangeLog));
+      setEmailChangeLogs(logs);
+    } catch (err) {
+      console.error('Error loading email issues:', err);
+    } finally {
+      setIssuesLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'emailIssues') loadEmailIssues();
+  }, [activeTab, loadEmailIssues]);
+
+  const sendUpdateEmail = async (studentId: string, studentName: string, parentEmail: string, parentName: string) => {
+    setSendingEmails(prev => [...prev, studentId]);
+    try {
+      const res = await fetch('/api/parent/send-email-update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ studentId, studentName, parentEmail, parentName }),
+      });
+      if (res.ok) setSentEmails(prev => [...prev, studentId]);
+      else setMessage({ type: 'error', text: `Failed to send email to ${parentEmail}` });
+    } catch {
+      setMessage({ type: 'error', text: `Failed to send email to ${parentEmail}` });
+    } finally {
+      setSendingEmails(prev => prev.filter(id => id !== studentId));
+    }
+  };
+
+  const sendAllUpdateEmails = async () => {
+    for (const s of problematicStudents) {
+      if (!sentEmails.includes(s.id)) {
+        await sendUpdateEmail(s.id, s.name, s.parentEmail, s.parentName);
+      }
+    }
+  };
 
   const loadStudents = async () => {
     try {
@@ -288,7 +369,7 @@ export default function ParentManagementPage() {
 
         {/* Tabs */}
         <div className="mb-6 border-b border-gray-200">
-          <div className="flex gap-4">
+          <div className="flex gap-4 flex-wrap">
             <button
               onClick={() => setActiveTab('create')}
               className={`px-4 py-2 font-medium border-b-2 transition-colors ${
@@ -311,6 +392,22 @@ export default function ParentManagementPage() {
               <Mail className="w-4 h-4 inline mr-2" />
               Invites ({invites.filter(i => i.inviteStatus === 'pending').length})
             </button>
+            <button
+              onClick={() => setActiveTab('emailIssues')}
+              className={`px-4 py-2 font-medium border-b-2 transition-colors ${
+                activeTab === 'emailIssues'
+                  ? 'border-orange-500 text-orange-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <AlertCircle className="w-4 h-4 inline mr-2" />
+              Email Issues
+              {problematicStudents.length > 0 && (
+                <span className="ml-2 bg-orange-100 text-orange-700 text-xs font-bold px-2 py-0.5 rounded-full">
+                  {problematicStudents.length}
+                </span>
+              )}
+            </button>
           </div>
         </div>
 
@@ -330,7 +427,7 @@ export default function ParentManagementPage() {
           </div>
         )}
 
-        {activeTab === 'create' ? (
+        {activeTab === 'create' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Parent Information Form */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -534,8 +631,9 @@ export default function ParentManagementPage() {
               </button>
             </div>
           </div>
-        ) : (
-          /* Invites List */
+        )}
+
+        {activeTab === 'invites' && (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200">
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -562,49 +660,173 @@ export default function ParentManagementPage() {
                         <div>
                           <p className="font-medium text-gray-900">{invite.parentName}</p>
                           <p className="text-sm text-gray-500">{invite.parentEmail}</p>
-                          {invite.parentPhone && (
-                            <p className="text-xs text-gray-400">{invite.parentPhone}</p>
-                          )}
+                          {invite.parentPhone && (<p className="text-xs text-gray-400">{invite.parentPhone}</p>)}
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm">
-                          {invite.students.map((student, idx) => (
-                            <div key={idx} className="text-gray-700">{student.name}</div>
-                          ))}
+                          {invite.students.map((student, idx) => (<div key={idx} className="text-gray-700">{student.name}</div>))}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(invite.sentAt).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(invite.expiresAt).toLocaleDateString()}
-                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(invite.sentAt).toLocaleDateString()}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(invite.expiresAt).toLocaleDateString()}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         {invite.inviteStatus === 'pending' && (
-                          <button
-                            onClick={() => handleCancelInvite(invite.id)}
-                            className="text-red-600 hover:text-red-800 font-medium"
-                          >
-                            Cancel
-                          </button>
+                          <button onClick={() => handleCancelInvite(invite.id)} className="text-red-600 hover:text-red-800 font-medium">Cancel</button>
                         )}
-                        {invite.inviteStatus === 'accepted' && (
-                          <span className="text-green-600 font-medium">✓ Accepted</span>
-                        )}
+                        {invite.inviteStatus === 'accepted' && (<span className="text-green-600 font-medium">✓ Accepted</span>)}
                       </td>
                     </tr>
                   ))}
                   {invites.length === 0 && (
-                    <tr>
-                      <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
-                        <Mail className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                        <p>No invites sent yet</p>
-                      </td>
-                    </tr>
+                    <tr><td colSpan={6} className="px-6 py-12 text-center text-gray-500"><Mail className="w-12 h-12 mx-auto mb-3 text-gray-300" /><p>No invites sent yet</p></td></tr>
                   )}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'emailIssues' && (
+          /* Email Issues Tab */
+          <div className="space-y-8">
+            {/* Summary Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="bg-orange-50 border border-orange-200 rounded-xl p-5">
+                <p className="text-sm text-orange-600 font-medium">Students with Duplicate Email</p>
+                <p className="text-4xl font-bold text-orange-700 mt-1">{problematicStudents.length}</p>
+              </div>
+              <div className="bg-green-50 border border-green-200 rounded-xl p-5">
+                <p className="text-sm text-green-600 font-medium">Emails Sent This Session</p>
+                <p className="text-4xl font-bold text-green-700 mt-1">{sentEmails.length}</p>
+              </div>
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
+                <p className="text-sm text-blue-600 font-medium">Total Email Changes Logged</p>
+                <p className="text-4xl font-bold text-blue-700 mt-1">{emailChangeLogs.length}</p>
+              </div>
+            </div>
+
+            {/* Problematic Students Table */}
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+              <div className="p-5 border-b border-gray-200 flex items-center justify-between flex-wrap gap-3">
+                <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5 text-orange-500" />
+                  Students Where Parent Email = Student Email
+                </h2>
+                <div className="flex gap-3">
+                  <button
+                    onClick={loadEmailIssues}
+                    disabled={issuesLoading}
+                    className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50"
+                  >
+                    <RefreshCcw className={`w-4 h-4 ${issuesLoading ? 'animate-spin' : ''}`} />
+                    Refresh
+                  </button>
+                  {problematicStudents.length > 0 && (
+                    <button
+                      onClick={sendAllUpdateEmails}
+                      disabled={sendingEmails.length > 0}
+                      className="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white rounded-lg text-sm font-medium"
+                    >
+                      <Send className="w-4 h-4" />
+                      Send Update Email to All ({problematicStudents.filter(s => !sentEmails.includes(s.id)).length} remaining)
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {issuesLoading ? (
+                <div className="p-10 text-center text-gray-400">
+                  <RefreshCcw className="w-8 h-8 animate-spin mx-auto mb-2" />
+                  Loading...
+                </div>
+              ) : problematicStudents.length === 0 ? (
+                <div className="p-10 text-center">
+                  <CheckCircle className="w-10 h-10 text-green-400 mx-auto mb-2" />
+                  <p className="text-gray-500">No issues found! All parent emails are distinct.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Student</th>
+                        <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Shared Email</th>
+                        <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Parent Name</th>
+                        <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {problematicStudents.map(s => (
+                        <tr key={s.id} className={sentEmails.includes(s.id) ? 'bg-green-50' : 'hover:bg-gray-50'}>
+                          <td className="px-5 py-4 font-medium text-gray-900">{s.name}</td>
+                          <td className="px-5 py-4 text-gray-600">{s.email}</td>
+                          <td className="px-5 py-4 text-gray-600">{s.parentName || <span className="text-gray-400 italic">—</span>}</td>
+                          <td className="px-5 py-4">
+                            {sentEmails.includes(s.id) ? (
+                              <span className="flex items-center gap-1 text-green-600 font-medium text-xs">
+                                <CheckCircle className="w-4 h-4" /> Email Sent
+                              </span>
+                            ) : (
+                              <button
+                                onClick={() => sendUpdateEmail(s.id, s.name, s.parentEmail, s.parentName)}
+                                disabled={sendingEmails.includes(s.id)}
+                                className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white rounded-md text-xs font-medium"
+                              >
+                                <Send className="w-3 h-3" />
+                                {sendingEmails.includes(s.id) ? 'Sending...' : 'Send Email'}
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Change History */}
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+              <div className="p-5 border-b border-gray-200">
+                <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                  <History className="w-5 h-5 text-blue-500" />
+                  Parent Email Change History
+                  <span className="text-xs text-gray-400 font-normal ml-1">(most recent 50)</span>
+                </h2>
+              </div>
+              {emailChangeLogs.length === 0 ? (
+                <div className="p-8 text-center text-gray-400">
+                  <History className="w-8 h-8 mx-auto mb-2" />
+                  No changes have been made yet.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Student</th>
+                        <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Old Email</th>
+                        <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">New Email</th>
+                        <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Changed At</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {emailChangeLogs.map(log => (
+                        <tr key={log.id} className="hover:bg-gray-50">
+                          <td className="px-5 py-4">
+                            <p className="font-medium text-gray-900">{log.studentName}</p>
+                            <p className="text-xs text-gray-400">{log.studentEmail}</p>
+                          </td>
+                          <td className="px-5 py-4 text-red-500 line-through">{log.oldParentEmail}</td>
+                          <td className="px-5 py-4 text-green-600 font-medium">{log.newParentEmail}</td>
+                          <td className="px-5 py-4 text-gray-500">{log.changedAt ? new Date(log.changedAt).toLocaleString() : '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
         )}
