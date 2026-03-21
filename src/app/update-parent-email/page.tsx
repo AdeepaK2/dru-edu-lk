@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
+import { collection, query, where, getDocs, updateDoc, doc, addDoc } from 'firebase/firestore';
 import { firestore } from '@/utils/firebase-client';
 
 export default function UpdateParentEmail() {
@@ -52,13 +52,23 @@ export default function UpdateParentEmail() {
       }
 
       // Update parent.email for all matching student records (usually just 1)
-      let updatedCount = 0;
       for (const studentDoc of querySnapshot.docs) {
+        const data = studentDoc.data();
+        const oldParentEmail = data.parent?.email || '';
         const studentRef = doc(firestore, 'students', studentDoc.id);
         await updateDoc(studentRef, {
           'parent.email': newParentEmail.toLowerCase()
         });
-        updatedCount++;
+
+        // Log the change to Firestore for admin audit trail
+        await addDoc(collection(firestore, 'parentEmailChangeLogs'), {
+          studentId: studentDoc.id,
+          studentName: data.name || '',
+          studentEmail: data.email || '',
+          oldParentEmail: oldParentEmail,
+          newParentEmail: newParentEmail.toLowerCase(),
+          changedAt: new Date().toISOString(),
+        });
       }
 
       setSuccess(true);
