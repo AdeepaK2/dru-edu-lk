@@ -214,7 +214,7 @@ export async function POST(req: NextRequest) {
     };
     
     // Perform operations in parallel for better performance
-    await Promise.all([
+    const results = await Promise.all([
       // Set custom claims for student role
       firebaseAdmin.authentication.setCustomClaims(userRecord.uid, { 
         student: true,
@@ -226,16 +226,21 @@ export async function POST(req: NextRequest) {
       sendStudentWelcomeEmail(normalizedEmail, studentData.name, generatedPassword)
     ]);
     
+    // Check if the email was successfully sent
+    const emailResult = results[2];
+    
     // Clear cache
     cacheUtils.invalidate('students');
     
     return NextResponse.json(
       { 
-        message: "Student created successfully and welcome email sent", 
+        message: "Student created successfully", 
         id: userRecord.uid,
         name: studentData.name, 
         email: normalizedEmail,
-        avatar: initials
+        avatar: initials,
+        emailSuccess: emailResult.success,
+        ...(emailResult.success ? {} : { emailError: "Student created, but the welcome email failed to send." })
       },
       { status: 201 }
     );

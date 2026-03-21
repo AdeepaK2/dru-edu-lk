@@ -676,7 +676,34 @@ export default function StudentsManagement() {
       setActionLoading(null);
     }
   };
-  // Filter and sort students based on search term
+
+  // Handle resend welcome email
+  const handleResendWelcomeEmail = async (student: StudentDocument) => {
+    setActionLoading(`resend-${student.id}`);
+    
+    try {
+      const response = await fetch('/api/student/resend-welcome', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ studentId: student.id }),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.details || data.error || 'Failed to resend welcome email');
+      }
+      
+      showSuccess(`Welcome email successfully sent to ${student.name}`);
+    } catch (error) {
+      console.error('Error resending welcome email:', error);
+      showError(error instanceof Error ? error.message : 'Failed to resend welcome email');
+    } finally {
+      setActionLoading(null);
+    }
+  };
   const filteredStudents = useMemo(() => {
     if (!students) return [];
     
@@ -1660,6 +1687,21 @@ export default function StudentsManagement() {
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-center">
                       <div className="flex justify-center space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleResendWelcomeEmail(student)}
+                          disabled={actionLoading !== null}
+                          className="text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 disabled:opacity-50"
+                          title="Resend Welcome Email"
+                        >
+                          {actionLoading === `resend-${student.id}` ? (
+                            <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin mr-1" />
+                          ) : (
+                            <Mail className="w-4 h-4 mr-1" />
+                          )}
+                          Resend Email
+                        </Button>
                         <Button
                           variant="outline"
                           size="sm"
