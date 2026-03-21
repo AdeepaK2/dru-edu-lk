@@ -43,6 +43,9 @@ export const enrollmentRequestSchema = z.object({
   agreedToTerms: z.boolean().refine(val => val === true, {
     message: 'You must agree to terms and conditions'
   }),
+}).refine(data => data.student.email.toLowerCase() !== data.parent.email.toLowerCase(), {
+  message: "Student email and Parent/Guardian email cannot be the same. Please use different emails.",
+  path: ["parent", "email"]
 });
 
 // Enrollment request update schema for admin actions

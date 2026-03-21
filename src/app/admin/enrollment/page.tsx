@@ -97,6 +97,8 @@ export default function AdminEnrollmentPage() {
   const handleStatusUpdate = async (requestId: string, status: 'Approved' | 'Rejected', message?: string) => {
     setProcessing(requestId);
     
+    let emailWarning = '';
+
     try {
       // Find the explicit request we are updating
       const requestToUpdate = enrollmentRequests.find(r => r.id === requestId);
@@ -152,6 +154,10 @@ export default function AdminEnrollmentPage() {
           
           const createdStudent = await studentResponse.json();
           studentId = createdStudent.id;
+          
+          if (createdStudent.emailSuccess === false) {
+            emailWarning = '\n\nWARNING: Student created successfully, but the welcome email failed to send. Please resend it from the Students page.';
+          }
         }
         
         // 3. Create the enrollment tracking record
@@ -194,7 +200,7 @@ export default function AdminEnrollmentPage() {
         setShowResponseModal(false);
         setResponseMessage('');
         setSelectedRequest(null);
-        alert(`Request updated successfully!${status === 'Approved' ? ' Student account and enrollment created.' : ''}`);
+        alert(`Request updated successfully!${status === 'Approved' ? ' Student account and enrollment created.' : ''}${emailWarning}`);
       } else {
         const errorData = await response.json();
         alert('Failed to update request: ' + (errorData.error || 'Unknown error'));

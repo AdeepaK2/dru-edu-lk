@@ -437,6 +437,14 @@ export default function EnrollmentPage() {
     if (formData.parentEmail !== formData.confirmParentEmail) {
       errors.push('Parent/Guardian emails do not match');
     }
+
+    if (
+      formData.studentEmail &&
+      formData.parentEmail &&
+      formData.studentEmail.toLowerCase() === formData.parentEmail.toLowerCase()
+    ) {
+      errors.push('Student email and Parent/Guardian email cannot be the same');
+    }
     
     if (formData.selectedClassIds.length === 0) errors.push('Please select at least one class to enroll in');
     if (!formData.agreedToTerms) errors.push('You must agree to the terms and conditions');
