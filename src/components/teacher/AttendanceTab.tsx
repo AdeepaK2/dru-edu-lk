@@ -880,6 +880,17 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ classData, classId }) => 
 
       console.log('✅ Attendance data saved to Firebase successfully!');
 
+      // Notify parents about their child's attendance (fire-and-forget)
+      MobileNotificationService.notifyAttendanceMarked(
+        selectedSchedule.classId,
+        studentAttendanceData.map(s => ({
+          studentId: s.studentId,
+          studentName: s.studentName,
+          status: s.status,
+        })),
+        selectedSchedule.className,
+      );
+
       alert(`✅ Attendance saved successfully!\n\nSummary:\nPresent: ${presentCount}\nAbsent: ${absentCount}\nLate: ${lateCount}\nAttendance Rate: ${attendanceRate}%\n\nUse "Send Email to Selected Absent" to notify parents manually.`);
       
       // Close modal and refresh data
