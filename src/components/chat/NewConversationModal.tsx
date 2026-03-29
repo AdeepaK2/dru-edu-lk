@@ -40,73 +40,68 @@ export default function NewConversationModal({
       try {
         let endpoint = '';
         
+        // Fetch users based on role
+        // /api/parents returns { parents: [...] }
+        // /api/teacher returns flat array [...]
+        // /api/student returns { students: [...] }
+        const fetchParents = async () => {
+          const res = await fetch('/api/parents');
+          const data = await res.json();
+          return (data.parents || []).map((p: any) => ({
+            id: p.id,
+            name: p.name || p.email,
+            email: p.email,
+            role: 'parent' as const,
+          }));
+        };
+
+        const fetchTeachers = async () => {
+          const res = await fetch('/api/teacher');
+          const data = await res.json();
+          // Teacher route returns flat array
+          const list = Array.isArray(data) ? data : (data.teachers || []);
+          return list.map((t: any) => ({
+            id: t.id,
+            name: t.name || `${t.firstName || ''} ${t.lastName || ''}`.trim() || t.email,
+            email: t.email,
+            role: 'teacher' as const,
+          }));
+        };
+
+        const fetchStudents = async () => {
+          const res = await fetch('/api/student');
+          const data = await res.json();
+          const list = Array.isArray(data) ? data : (data.students || []);
+          return list.map((s: any) => ({
+            id: s.id,
+            name: s.name || `${s.firstName || ''} ${s.lastName || ''}`.trim() || s.email,
+            email: s.email,
+            role: 'student' as const,
+          }));
+        };
+
+        let allUsers: User[] = [];
+
         if (currentUserRole === 'admin') {
-          // Admins can chat with everyone - fetch all users
-          const [parentsRes, teachersRes, studentsRes] = await Promise.all([
-            fetch('/api/parents'),
-            fetch('/api/teachers'),
-            fetch('/api/students'),
+          const [parents, teachers, students] = await Promise.all([
+            fetchParents(),
+            fetchTeachers(),
+            fetchStudents(),
           ]);
-
-          const [parentsData, teachersData, studentsData] = await Promise.all([
-            parentsRes.json(),
-            teachersRes.json(),
-            studentsRes.json(),
-          ]);
-
-          const allUsers: User[] = [
-            ...(parentsData.parents || []).map((p: any) => ({
-              id: p.id,
-              name: p.name,
-              email: p.email,
-              role: 'parent' as const,
-            })),
-            ...(teachersData.teachers || []).map((t: any) => ({
-              id: t.id,
-              name: t.name,
-              email: t.email,
-              role: 'teacher' as const,
-            })),
-            ...(studentsData.students || []).map((s: any) => ({
-              id: s.id,
-              name: s.name,
-              email: s.email,
-              role: 'student' as const,
-            })),
-          ];
-
-          setUsers(allUsers);
-          setFilteredUsers(allUsers);
+          allUsers = [...parents, ...teachers, ...students];
         } else if (currentUserRole === 'teacher') {
-          // Teachers can chat with parents and students
-          const [parentsRes, studentsRes] = await Promise.all([
-            fetch('/api/parents'),
-            fetch('/api/students'),
+          const [parents, students] = await Promise.all([
+            fetchParents(),
+            fetchStudents(),
           ]);
-
-          const [parentsData, studentsData] = await Promise.all([
-            parentsRes.json(),
-            studentsRes.json(),
-          ]);
-
-          const teacherUsers: User[] = [
-            ...(parentsData.parents || []).map((p: any) => ({
-              id: p.id,
-              name: p.name,
-              email: p.email,
-              role: 'parent' as const,
-            })),
-            ...(studentsData.students || []).map((s: any) => ({
-              id: s.id,
-              name: s.name,
-              email: s.email,
-              role: 'student' as const,
-            })),
-          ];
-
-          setUsers(teacherUsers);
-          setFilteredUsers(teacherUsers);
+          allUsers = [...parents, ...students];
         }
+
+        // Filter out current user
+        allUsers = allUsers.filter(u => u.id !== currentUserId);
+
+        setUsers(allUsers);
+        setFilteredUsers(allUsers);
       } catch (error) {
         console.error('Error fetching users:', error);
       } finally {
