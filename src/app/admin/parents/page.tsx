@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { AlertCircle, Users, Send, CheckCircle, XCircle, Clock, Mail, Phone, User, UserPlus, Search, Filter, RefreshCcw, History } from 'lucide-react';
+import { AlertCircle, Users, Send, CheckCircle, XCircle, User, UserPlus, Search, RefreshCcw, History } from 'lucide-react';
 import { collection, query, where, getDocs, getDoc, orderBy, limit, doc } from 'firebase/firestore';
 import { firestore } from '@/utils/firebase-client';
 
@@ -74,8 +74,7 @@ export default function ParentManagementPage() {
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [existingParentInfo, setExistingParentInfo] = useState<ExistingParentInfo | null>(null);
-  const [invites, setInvites] = useState<ParentInvite[]>([]);
-  const [activeTab, setActiveTab] = useState<'create' | 'invites' | 'emailIssues'>('create');
+  const [activeTab, setActiveTab] = useState<'create' | 'emailIssues'>('create');
   const [message, setMessage] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
   const [parentGroups, setParentGroups] = useState<Map<string, Student[]>>(new Map());
 
@@ -88,7 +87,6 @@ export default function ParentManagementPage() {
 
   useEffect(() => {
     loadStudents();
-    loadInvites();
   }, []);
 
   const loadEmailIssues = useCallback(async () => {
@@ -171,18 +169,6 @@ export default function ParentManagementPage() {
     }
   };
 
-  const loadInvites = async () => {
-    try {
-      const response = await fetch('/api/parent/invites');
-      if (response.ok) {
-        const data = await response.json();
-        setInvites(data.invites || []);
-      }
-    } catch (error) {
-      console.error('Error loading invites:', error);
-    }
-  };
-
   const checkExistingParent = async (email: string) => {
     if (!email || !email.includes('@')) {
       setExistingParentInfo(null);
@@ -232,10 +218,9 @@ export default function ParentManagementPage() {
     });
   };
 
-  const selectAllSiblings = (parentEmail: string) => {
-    const siblings = parentGroups.get(parentEmail.toLowerCase()) || [];
+  const selectAllSiblings = (siblings: Student[]) => {
     const siblingIds = siblings.map(s => s.id);
-    setSelectedStudents(siblingIds);
+    setSelectedStudents(prev => Array.from(new Set([...prev, ...siblingIds])));
     
     // Auto-fill parent info
     if (siblings.length > 0 && siblings[0].parent) {
@@ -285,7 +270,6 @@ export default function ParentManagementPage() {
         setExistingParentInfo(null);
         
         // Reload data
-        loadInvites();
         loadStudents();
       } else {
         setMessage({ type: 'error', text: data.error || 'Failed to send invite' });
@@ -298,25 +282,6 @@ export default function ParentManagementPage() {
     }
   };
 
-  const handleCancelInvite = async (inviteId: string) => {
-    if (!confirm('Are you sure you want to cancel this invite?')) return;
-
-    try {
-      const response = await fetch(`/api/parent/invites/${inviteId}/cancel`, {
-        method: 'POST',
-      });
-
-      if (response.ok) {
-        setMessage({ type: 'success', text: 'Invite cancelled successfully' });
-        loadInvites();
-      } else {
-        setMessage({ type: 'error', text: 'Failed to cancel invite' });
-      }
-    } catch (error) {
-      console.error('Error cancelling invite:', error);
-      setMessage({ type: 'error', text: 'Failed to cancel invite' });
-    }
-  };
 
   const filteredStudents = students.filter(student =>
     student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -338,20 +303,6 @@ export default function ParentManagementPage() {
       filteredParentGroups.set(`no-parent-${student.id}`, [student]);
     }
   });
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'accepted':
-        return <CheckCircle className="w-5 h-5 text-green-500" />;
-      case 'pending':
-        return <Clock className="w-5 h-5 text-yellow-500" />;
-      case 'expired':
-      case 'cancelled':
-        return <XCircle className="w-5 h-5 text-red-500" />;
-      default:
-        return <AlertCircle className="w-5 h-5 text-gray-500" />;
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -380,17 +331,6 @@ export default function ParentManagementPage() {
             >
               <UserPlus className="w-4 h-4 inline mr-2" />
               Send Invite
-            </button>
-            <button
-              onClick={() => setActiveTab('invites')}
-              className={`px-4 py-2 font-medium border-b-2 transition-colors ${
-                activeTab === 'invites'
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <Mail className="w-4 h-4 inline mr-2" />
-              Invites ({invites.filter(i => i.inviteStatus === 'pending').length})
             </button>
             <button
               onClick={() => setActiveTab('emailIssues')}
@@ -561,7 +501,7 @@ export default function ParentManagementPage() {
                           </div>
                           {hasMultipleChildren && (
                             <button
-                              onClick={() => selectAllSiblings(parentEmail)}
+                              onClick={() => selectAllSiblings(groupStudents)}
                               className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md transition-colors"
                             >
                               Select All
@@ -629,60 +569,6 @@ export default function ParentManagementPage() {
                 <Send className="w-5 h-5" />
                 {loading ? 'Sending Invite...' : `Send Invite to ${selectedStudents.length} Student${selectedStudents.length !== 1 ? 's' : ''}`}
               </button>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'invites' && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Parent</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Students</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sent</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expires</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {invites.map((invite) => (
-                    <tr key={invite.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          {getStatusIcon(invite.inviteStatus)}
-                          <span className="text-sm font-medium capitalize">{invite.inviteStatus}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div>
-                          <p className="font-medium text-gray-900">{invite.parentName}</p>
-                          <p className="text-sm text-gray-500">{invite.parentEmail}</p>
-                          {invite.parentPhone && (<p className="text-xs text-gray-400">{invite.parentPhone}</p>)}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm">
-                          {invite.students.map((student, idx) => (<div key={idx} className="text-gray-700">{student.name}</div>))}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(invite.sentAt).toLocaleDateString()}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(invite.expiresAt).toLocaleDateString()}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        {invite.inviteStatus === 'pending' && (
-                          <button onClick={() => handleCancelInvite(invite.id)} className="text-red-600 hover:text-red-800 font-medium">Cancel</button>
-                        )}
-                        {invite.inviteStatus === 'accepted' && (<span className="text-green-600 font-medium">✓ Accepted</span>)}
-                      </td>
-                    </tr>
-                  ))}
-                  {invites.length === 0 && (
-                    <tr><td colSpan={6} className="px-6 py-12 text-center text-gray-500"><Mail className="w-12 h-12 mx-auto mb-3 text-gray-300" /><p>No invites sent yet</p></td></tr>
-                  )}
-                </tbody>
-              </table>
             </div>
           </div>
         )}
