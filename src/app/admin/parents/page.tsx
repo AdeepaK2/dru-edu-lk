@@ -88,12 +88,12 @@ export default function ParentManagementPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-            <Users className="w-8 h-8 text-blue-600" />
+            <Users className="w-8 h-8 text-gray-700" />
             Parent Management
           </h1>
           <p className="mt-2 text-gray-600">
@@ -104,9 +104,9 @@ export default function ParentManagementPage() {
         {/* Messages */}
         {message && (
           <div className={`mb-6 p-4 rounded-lg flex items-start gap-3 ${
-            message.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' :
-            message.type === 'error' ? 'bg-red-50 text-red-800 border border-red-200' :
-            'bg-blue-50 text-blue-800 border border-blue-200'
+            message.type === 'success' ? 'bg-gray-50 text-gray-800 border border-gray-200' :
+            message.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' :
+            'bg-gray-50 text-gray-800 border border-gray-200'
           }`}>
             {message.type === 'success' ? <CheckCircle className="w-5 h-5 mt-0.5" /> :
              message.type === 'error' ? <XCircle className="w-5 h-5 mt-0.5" /> :
@@ -119,17 +119,17 @@ export default function ParentManagementPage() {
         <div className="space-y-8">
             {/* Summary Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="bg-orange-50 border border-orange-200 rounded-xl p-5">
-                <p className="text-sm text-orange-600 font-medium">Students with Duplicate Email</p>
-                <p className="text-4xl font-bold text-orange-700 mt-1">{problematicStudents.length}</p>
+              <div className="bg-white border border-gray-200 rounded-xl p-5">
+                <p className="text-sm text-gray-600 font-medium">Students with Duplicate Email</p>
+                <p className="text-4xl font-bold text-gray-900 mt-1">{problematicStudents.length}</p>
               </div>
-              <div className="bg-green-50 border border-green-200 rounded-xl p-5">
-                <p className="text-sm text-green-600 font-medium">Emails Sent This Session</p>
-                <p className="text-4xl font-bold text-green-700 mt-1">{sentEmails.length}</p>
+              <div className="bg-white border border-gray-200 rounded-xl p-5">
+                <p className="text-sm text-gray-600 font-medium">Emails Sent This Session</p>
+                <p className="text-4xl font-bold text-gray-900 mt-1">{sentEmails.length}</p>
               </div>
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
-                <p className="text-sm text-blue-600 font-medium">Total Email Changes Logged</p>
-                <p className="text-4xl font-bold text-blue-700 mt-1">{emailChangeLogs.length}</p>
+              <div className="bg-white border border-gray-200 rounded-xl p-5">
+                <p className="text-sm text-gray-600 font-medium">Total Email Changes Logged</p>
+                <p className="text-4xl font-bold text-gray-900 mt-1">{emailChangeLogs.length}</p>
               </div>
             </div>
 
@@ -137,7 +137,7 @@ export default function ParentManagementPage() {
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
               <div className="p-5 border-b border-gray-200 flex items-center justify-between flex-wrap gap-3">
                 <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                  <AlertCircle className="w-5 h-5 text-orange-500" />
+                  <AlertCircle className="w-5 h-5 text-gray-500" />
                   Students Where Parent Email = Student Email
                 </h2>
                 <div className="flex gap-3">
@@ -153,7 +153,7 @@ export default function ParentManagementPage() {
                     <button
                       onClick={sendAllUpdateEmails}
                       disabled={sendingEmails.length > 0}
-                      className="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white rounded-lg text-sm font-medium"
+                      className="flex items-center gap-2 px-4 py-2 bg-gray-900 hover:bg-gray-800 disabled:bg-gray-400 text-white rounded-lg text-sm font-medium"
                     >
                       <Send className="w-4 h-4" />
                       Send Update Email to All ({problematicStudents.filter(s => !sentEmails.includes(s.id)).length} remaining)
@@ -169,7 +169,7 @@ export default function ParentManagementPage() {
                 </div>
               ) : problematicStudents.length === 0 ? (
                 <div className="p-10 text-center">
-                  <CheckCircle className="w-10 h-10 text-green-400 mx-auto mb-2" />
+                  <CheckCircle className="w-10 h-10 text-gray-400 mx-auto mb-2" />
                   <p className="text-gray-500">No issues found! All parent emails are distinct.</p>
                 </div>
               ) : (
@@ -185,20 +185,20 @@ export default function ParentManagementPage() {
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                       {problematicStudents.map(s => (
-                        <tr key={s.id} className={sentEmails.includes(s.id) ? 'bg-green-50' : 'hover:bg-gray-50'}>
+                        <tr key={s.id} className={sentEmails.includes(s.id) ? 'bg-gray-50' : 'hover:bg-gray-50'}>
                           <td className="px-5 py-4 font-medium text-gray-900">{s.name}</td>
                           <td className="px-5 py-4 text-gray-600">{s.email}</td>
                           <td className="px-5 py-4 text-gray-600">{s.parentName || <span className="text-gray-400 italic">—</span>}</td>
                           <td className="px-5 py-4">
                             {sentEmails.includes(s.id) ? (
-                              <span className="flex items-center gap-1 text-green-600 font-medium text-xs">
+                              <span className="flex items-center gap-1 text-gray-700 font-medium text-xs">
                                 <CheckCircle className="w-4 h-4" /> Email Sent
                               </span>
                             ) : (
                               <button
                                 onClick={() => sendUpdateEmail(s.id, s.name, s.parentEmail, s.parentName)}
                                 disabled={sendingEmails.includes(s.id)}
-                                className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white rounded-md text-xs font-medium"
+                                className="flex items-center gap-1 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 disabled:bg-gray-400 text-white rounded-md text-xs font-medium"
                               >
                                 <Send className="w-3 h-3" />
                                 {sendingEmails.includes(s.id) ? 'Sending...' : 'Send Email'}
@@ -245,8 +245,8 @@ export default function ParentManagementPage() {
                             <p className="font-medium text-gray-900">{log.studentName}</p>
                             <p className="text-xs text-gray-400">{log.studentEmail}</p>
                           </td>
-                          <td className="px-5 py-4 text-red-500 line-through">{log.oldParentEmail}</td>
-                          <td className="px-5 py-4 text-green-600 font-medium">{log.newParentEmail}</td>
+                          <td className="px-5 py-4 text-gray-500 line-through">{log.oldParentEmail}</td>
+                          <td className="px-5 py-4 text-gray-900 font-medium">{log.newParentEmail}</td>
                           <td className="px-5 py-4 text-gray-500">{log.changedAt ? new Date(log.changedAt).toLocaleString() : '—'}</td>
                         </tr>
                       ))}
