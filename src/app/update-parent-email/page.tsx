@@ -41,7 +41,10 @@ function UpdateParentEmailForm() {
       }
 
       try {
-        const response = await fetch(`/api/parent/email-update-request?studentId=${encodeURIComponent(studentId)}`);
+        const response = await fetch(
+          `/api/parent/email-update-request?studentId=${encodeURIComponent(studentId)}`,
+          { cache: 'no-store' },
+        );
         const data = await response.json().catch(() => ({}));
 
         if (!response.ok) {
@@ -69,6 +72,10 @@ function UpdateParentEmailForm() {
         };
         setStudent(summary);
         setRequesterName(summary.parentName || '');
+
+        if (!summary.email) {
+          setStudentError('Student email could not be loaded for this link. Please contact the administrator.');
+        }
       } catch (err) {
         console.error('Error loading student for parent email request:', err);
         setStudent(null);
@@ -101,6 +108,11 @@ function UpdateParentEmailForm() {
 
     if (!newParentEmail.trim()) {
       setError('Please enter the new parent email address.');
+      return;
+    }
+
+    if (!student.email.trim()) {
+      setError('Student email could not be loaded. Please contact the administrator.');
       return;
     }
 
@@ -190,12 +202,14 @@ function UpdateParentEmailForm() {
               <div className="mt-1">
                 <input
                   id="studentEmail"
-                  name="studentEmail"
+                  name="studentEmailReadonly"
                   type="email"
                   readOnly
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  autoComplete="off"
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 text-gray-900 font-medium placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   value={student?.email || ''}
                   placeholder={studentLoading ? 'Loading student email...' : 'Student email'}
+                  style={{ WebkitTextFillColor: '#111827', opacity: 1 }}
                 />
               </div>
             </div>
