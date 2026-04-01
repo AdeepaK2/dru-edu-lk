@@ -4,11 +4,6 @@ import { withAuth, validateRequestBody, checkRateLimit, AuthenticatedRequest } f
 import { VideoPurchaseData } from '@/models/videoPurchaseSchema';
 import { firebaseAdmin } from '@/utils/firebase-server';
 
-// Initialize Stripe
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-07-30.basil',
-});
-
 interface CreatePaymentIntentRequest {
   videoId: string;
   returnUrl?: string;
@@ -16,6 +11,18 @@ interface CreatePaymentIntentRequest {
 
 async function createPaymentIntentHandler(request: AuthenticatedRequest): Promise<NextResponse> {
   try {
+    const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+    if (!stripeSecretKey) {
+      return NextResponse.json(
+        { error: 'Stripe is not configured: missing STRIPE_SECRET_KEY' },
+        { status: 500 }
+      );
+    }
+
+    const stripe = new Stripe(stripeSecretKey, {
+      apiVersion: '2025-07-30.basil',
+    });
+
     console.log('🔄 Payment intent creation started for user:', request.user.uid);
     console.log('👤 User details:', {
       uid: request.user.uid,

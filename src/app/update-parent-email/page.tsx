@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { Suspense, useEffect, useMemo, useState } from 'react';
 import { addDoc, collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
 import { useSearchParams } from 'next/navigation';
 import { firestore } from '@/utils/firebase-client';
@@ -13,7 +13,7 @@ interface StudentSummary {
   parentEmail: string;
 }
 
-export default function UpdateParentEmail() {
+function UpdateParentEmailForm() {
   const searchParams = useSearchParams();
   const studentId = searchParams.get('studentId')?.trim() || '';
 
@@ -266,5 +266,19 @@ export default function UpdateParentEmail() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function UpdateParentEmailPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+          <p className="text-sm text-gray-500">Loading parent email update form...</p>
+        </div>
+      }
+    >
+      <UpdateParentEmailForm />
+    </Suspense>
   );
 }
