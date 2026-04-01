@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertCircle, Users, Send, CheckCircle, XCircle, RefreshCcw, History } from 'lucide-react';
+import { AlertCircle, Users, Send, CheckCircle, XCircle, RefreshCcw, History, Search } from 'lucide-react';
 import { collection, query, getDocs, orderBy, limit, doc, getDoc, writeBatch } from 'firebase/firestore';
 import { firestore } from '@/utils/firebase-client';
 
@@ -59,6 +59,7 @@ export default function ParentManagementPage() {
   const [sendingEmails, setSendingEmails] = useState<string[]>([]);
   const [sentEmails, setSentEmails] = useState<string[]>([]);
   const [approvingRequests, setApprovingRequests] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const loadData = useCallback(async () => {
     setIssuesLoading(true);
@@ -223,6 +224,48 @@ export default function ParentManagementPage() {
     () => updateRequests.filter((request) => request.status === 'pending').length,
     [updateRequests],
   );
+  const normalizedSearchQuery = useMemo(() => searchQuery.trim().toLowerCase(), [searchQuery]);
+
+  const filteredProblematicStudents = useMemo(() => {
+    if (!normalizedSearchQuery) return problematicStudents;
+    return problematicStudents.filter((student) =>
+      [
+        student.id,
+        student.name,
+        student.email,
+        student.parentName,
+        student.parentEmail,
+      ].some((value) => (value || '').toLowerCase().includes(normalizedSearchQuery)),
+    );
+  }, [problematicStudents, normalizedSearchQuery]);
+
+  const filteredUpdateRequests = useMemo(() => {
+    if (!normalizedSearchQuery) return updateRequests;
+    return updateRequests.filter((request) =>
+      [
+        request.studentId,
+        request.studentName,
+        request.studentEmail,
+        request.currentParentEmail,
+        request.requestedParentEmail,
+        request.requesterName,
+        request.status,
+      ].some((value) => (value || '').toLowerCase().includes(normalizedSearchQuery)),
+    );
+  }, [updateRequests, normalizedSearchQuery]);
+
+  const filteredEmailChangeLogs = useMemo(() => {
+    if (!normalizedSearchQuery) return emailChangeLogs;
+    return emailChangeLogs.filter((log) =>
+      [
+        log.studentId,
+        log.studentName,
+        log.studentEmail,
+        log.oldParentEmail,
+        log.newParentEmail,
+      ].some((value) => (value || '').toLowerCase().includes(normalizedSearchQuery)),
+    );
+  }, [emailChangeLogs, normalizedSearchQuery]);
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
@@ -308,6 +351,23 @@ export default function ParentManagementPage() {
           </button>
         </div>
 
+        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-4">
+          <label htmlFor="studentSearch" className="mb-2 block text-sm font-medium text-gray-700">
+            Search Student
+          </label>
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <input
+              id="studentSearch"
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by student name, student email, parent email, or ID"
+              className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-3 text-sm text-gray-800 placeholder-gray-400 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-200"
+            />
+          </div>
+        </div>
+
         {activeTab === 'issues' && (
           <div className="space-y-8">
             <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
@@ -338,6 +398,10 @@ export default function ParentManagementPage() {
                   <CheckCircle className="mx-auto mb-2 h-10 w-10 text-gray-400" />
                   <p className="text-gray-500">No issues found. All parent emails are distinct.</p>
                 </div>
+              ) : filteredProblematicStudents.length === 0 ? (
+                <div className="p-10 text-center text-gray-500">
+                  No students match your search.
+                </div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
@@ -350,7 +414,7 @@ export default function ParentManagementPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                      {problematicStudents.map((student) => (
+                      {filteredProblematicStudents.map((student) => (
                         <tr key={student.id} className={sentEmails.includes(student.id) ? 'bg-gray-50' : 'hover:bg-gray-50'}>
                           <td className="px-5 py-4 font-medium text-gray-900">{student.name}</td>
                           <td className="px-5 py-4 text-gray-600">{student.email}</td>
@@ -395,6 +459,10 @@ export default function ParentManagementPage() {
                   <History className="mx-auto mb-2 h-8 w-8" />
                   No changes have been made yet.
                 </div>
+              ) : filteredEmailChangeLogs.length === 0 ? (
+                <div className="p-8 text-center text-gray-500">
+                  No history entries match your search.
+                </div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
@@ -407,7 +475,7 @@ export default function ParentManagementPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                      {emailChangeLogs.map((log) => (
+                      {filteredEmailChangeLogs.map((log) => (
                         <tr key={log.id} className="hover:bg-gray-50">
                           <td className="px-5 py-4">
                             <p className="font-medium text-gray-900">{log.studentName}</p>
@@ -446,6 +514,10 @@ export default function ParentManagementPage() {
               <div className="p-10 text-center text-gray-500">
                 No update requests found.
               </div>
+            ) : filteredUpdateRequests.length === 0 ? (
+              <div className="p-10 text-center text-gray-500">
+                No update requests match your search.
+              </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -460,7 +532,7 @@ export default function ParentManagementPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {updateRequests.map((request) => (
+                    {filteredUpdateRequests.map((request) => (
                       <tr key={request.id} className="hover:bg-gray-50">
                         <td className="px-5 py-4">
                           <p className="font-medium text-gray-900">{request.studentName}</p>
