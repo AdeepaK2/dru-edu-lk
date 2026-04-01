@@ -1,9 +1,7 @@
 'use client';
 
 import React, { Suspense, useEffect, useMemo, useState } from 'react';
-import { addDoc, collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
 import { useSearchParams } from 'next/navigation';
-import { firestore } from '@/utils/firebase-client';
 
 interface StudentSummary {
   id: string;
@@ -43,23 +41,31 @@ function UpdateParentEmailForm() {
       }
 
       try {
-        const studentRef = doc(firestore, 'students', studentId);
-        const studentSnap = await getDoc(studentRef);
+        const response = await fetch(`/api/parent/email-update-request?studentId=${encodeURIComponent(studentId)}`);
+        const data = await response.json().catch(() => ({}));
 
-        if (!studentSnap.exists()) {
+        if (!response.ok) {
+          setStudent(null);
+          setStudentError(data?.error || 'Student record was not found. Please contact the administrator.');
+          setStudentLoading(false);
+          return;
+        }
+
+        const studentData = data?.student;
+
+        if (!studentData?.id) {
           setStudent(null);
           setStudentError('Student record was not found. Please contact the administrator.');
           setStudentLoading(false);
           return;
         }
 
-        const data = studentSnap.data();
         const summary: StudentSummary = {
-          id: studentSnap.id,
-          name: data.name || '',
-          email: data.email || '',
-          parentName: data.parent?.name || '',
-          parentEmail: data.parent?.email || '',
+          id: studentData.id,
+          name: studentData.name || '',
+          email: studentData.email || '',
+          parentName: studentData.parentName || '',
+          parentEmail: studentData.parentEmail || '',
         };
         setStudent(summary);
         setRequesterName(summary.parentName || '');
@@ -115,31 +121,23 @@ function UpdateParentEmailForm() {
     setLoading(true);
 
     try {
-      // Prevent duplicate pending requests for the same student.
-      const pendingSnap = await getDocs(
-        query(collection(firestore, 'parentEmailUpdateRequests'), where('studentId', '==', student.id)),
-      );
-      const hasPendingRequest = pendingSnap.docs.some((requestDoc) => {
-        const status = requestDoc.data()?.status || 'pending';
-        return status === 'pending';
+      const response = await fetch('/api/parent/email-update-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          studentId: student.id,
+          requesterName: requesterName.trim(),
+          newParentEmail: normalizedNewParentEmail,
+        }),
       });
 
-      if (hasPendingRequest) {
-        setError('A pending request already exists for this student. Please wait for admin approval.');
+      const responseData = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        setError(responseData?.error || 'An error occurred while submitting your request. Please try again.');
         setLoading(false);
         return;
       }
-
-      await addDoc(collection(firestore, 'parentEmailUpdateRequests'), {
-        studentId: student.id,
-        studentName: student.name,
-        studentEmail: normalizedStudentEmail,
-        currentParentEmail: normalizedCurrentParentEmail,
-        requestedParentEmail: normalizedNewParentEmail,
-        requesterName: requesterName.trim() || null,
-        status: 'pending',
-        requestedAt: new Date().toISOString(),
-      });
 
       setSuccess(true);
       setNewParentEmail('');
