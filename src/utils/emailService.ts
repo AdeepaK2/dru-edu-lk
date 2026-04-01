@@ -78,16 +78,22 @@ function getSenderInfo(): { email: string; name: string } {
 /**
  * Send an email using Nodemailer
  */
-async function sendEmail(to: string, subject: string, html: string): Promise<{ success: boolean; messageId?: string; error?: string }> {
+async function sendEmail(
+  to: string,
+  subject: string,
+  html: string,
+  senderNameOverride?: string,
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
   console.log(`📧 Sending email to: ${to}`);
   console.log(`📧 Subject: ${subject}`);
   
   try {
     const transport = getTransporter();
     const sender = getSenderInfo();
+    const senderName = senderNameOverride?.trim() || sender.name;
     
     const result = await transport.sendMail({
-      from: `"${sender.name}" <${sender.email}>`,
+      from: `"${senderName}" <${sender.email}>`,
       to: to,
       subject: subject,
       html: html,
@@ -349,6 +355,7 @@ export async function sendParentEmailUpdateRequiredEmail(
   appUrl?: string,
   adminWhatsApp?: string,
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  const parentEmailSenderName = 'Dru Education';
   const baseUrl = appUrl || process.env.NEXT_PUBLIC_APP_URL || 'https://www.drueducation.com';
   const updateLink = `${baseUrl}/update-parent-email?studentId=${studentId}`;
   const sanitizedWhatsApp = (adminWhatsApp || process.env.NEXT_PUBLIC_ADMIN_WHATSAPP || '').replace(/[^0-9]/g, '');
@@ -357,10 +364,10 @@ export async function sendParentEmailUpdateRequiredEmail(
     ? `<p>If you need help, contact the administrator via WhatsApp: <a href="https://wa.me/${sanitizedWhatsApp}">Contact Administrator</a></p>`
     : '<p>Please contact the administrator to update the parent email address.</p>';
 
-  const subject = 'DRU EDU - Urgent: Parent Email Update Required';
+  const subject = `${parentEmailSenderName} - Urgent: Parent Email Update Required`;
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto; padding: 20px; color: #111827;">
-      <h1 style="color: #4F46E5; margin-bottom: 8px;">DRU EDU</h1>
+      <h1 style="color: #4F46E5; margin-bottom: 8px;">${parentEmailSenderName}</h1>
       <h2 style="margin-top: 0;">Hello ${parentName || 'Parent'},</h2>
       <p>
         Our records show that your parent email address is the same as your student
@@ -382,7 +389,7 @@ export async function sendParentEmailUpdateRequiredEmail(
     </div>
   `;
 
-  return sendEmail(parentEmail, subject, html);
+  return sendEmail(parentEmail, subject, html, parentEmailSenderName);
 }
 
 /**
