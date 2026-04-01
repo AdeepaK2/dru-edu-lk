@@ -27,6 +27,11 @@ function UpdateParentEmailForm() {
 
   const adminWhatsApp = process.env.NEXT_PUBLIC_ADMIN_WHATSAPP || '+61400000000';
   const whatsappDigits = adminWhatsApp.replace(/[^0-9]/g, '');
+  const labelClassName = 'block text-sm font-medium text-gray-700 dark:text-gray-200';
+  const editableInputClassName =
+    'appearance-none block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm [-webkit-text-fill-color:#111827] dark:[-webkit-text-fill-color:#f3f4f6]';
+  const readOnlyInputClassName =
+    'appearance-none block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 font-medium placeholder-gray-400 dark:placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm [-webkit-text-fill-color:#111827] dark:[-webkit-text-fill-color:#f3f4f6]';
 
   useEffect(() => {
     const loadStudent = async () => {
@@ -162,18 +167,18 @@ function UpdateParentEmailForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-gray-100">
           Request Parent Email Update
         </h2>
-        <p className="mt-2 text-center text-sm text-gray-600 max-w">
+        <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-300 max-w">
           Submit your request. Admin will review and approve before any student record is changed.
         </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+        <div className="bg-white dark:bg-gray-900 py-8 px-4 shadow sm:rounded-lg sm:px-10">
           <form className="space-y-6" onSubmit={handleSubmit}>
             {error && (
               <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
@@ -196,7 +201,7 @@ function UpdateParentEmailForm() {
             )}
 
             <div>
-              <label htmlFor="studentEmail" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="studentEmail" className={labelClassName}>
                 Student Email Address
               </label>
               <div className="mt-1">
@@ -206,16 +211,16 @@ function UpdateParentEmailForm() {
                   type="email"
                   readOnly
                   autoComplete="off"
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 text-gray-900 font-medium placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className={readOnlyInputClassName}
                   value={student?.email || ''}
                   placeholder={studentLoading ? 'Loading student email...' : 'Student email'}
-                  style={{ WebkitTextFillColor: '#111827', opacity: 1 }}
+                  style={{ opacity: 1 }}
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="requesterName" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="requesterName" className={labelClassName}>
                 Parent Name (Optional)
               </label>
               <div className="mt-1">
@@ -223,7 +228,7 @@ function UpdateParentEmailForm() {
                   id="requesterName"
                   name="requesterName"
                   type="text"
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className={editableInputClassName}
                   value={requesterName}
                   onChange={(e) => setRequesterName(e.target.value)}
                   placeholder="Parent or guardian name"
@@ -232,7 +237,7 @@ function UpdateParentEmailForm() {
             </div>
 
             <div>
-              <label htmlFor="newParentEmail" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="newParentEmail" className={labelClassName}>
                 Requested New Parent Email
               </label>
               <div className="mt-1">
@@ -241,7 +246,7 @@ function UpdateParentEmailForm() {
                   name="newParentEmail"
                   type="email"
                   required
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className={editableInputClassName}
                   value={newParentEmail}
                   onChange={(e) => setNewParentEmail(e.target.value)}
                   placeholder="parent@example.com"
