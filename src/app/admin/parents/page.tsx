@@ -70,8 +70,18 @@ export default function ParentManagementPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ studentId, studentName, parentEmail, parentName }),
       });
-      if (res.ok) setSentEmails(prev => [...prev, studentId]);
-      else setMessage({ type: 'error', text: `Failed to send email to ${parentEmail}` });
+      if (res.ok) {
+        setSentEmails(prev => [...prev, studentId]);
+      } else {
+        let errorMessage = `Failed to send email to ${parentEmail}`;
+        try {
+          const data = await res.json();
+          if (data?.error) errorMessage = `Failed to send email to ${parentEmail}: ${data.error}`;
+        } catch {
+          // Keep the generic message if response is not JSON.
+        }
+        setMessage({ type: 'error', text: errorMessage });
+      }
     } catch {
       setMessage({ type: 'error', text: `Failed to send email to ${parentEmail}` });
     } finally {
