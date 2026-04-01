@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminFirestore } from '@/utils/firebase-admin';
+import firebaseAdmin from '@/utils/firebase-server';
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
@@ -14,6 +14,23 @@ function isValidStudentId(studentId: string): boolean {
   return trimmed.length >= 6 && trimmed.length <= 128 && /^[a-zA-Z0-9_-]+$/.test(trimmed);
 }
 
+async function resolveStudentEmail(studentId: string, studentData: any): Promise<string> {
+  const directEmail = normalizeEmail(
+    studentData?.email || studentData?.studentEmail || studentData?.contact?.email || '',
+  );
+
+  if (directEmail) {
+    return directEmail;
+  }
+
+  try {
+    const authUser = await firebaseAdmin.authentication.getUser(studentId);
+    return normalizeEmail(authUser?.email || '');
+  } catch {
+    return '';
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const studentId = request.nextUrl.searchParams.get('studentId')?.trim() || '';
@@ -22,19 +39,20 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid studentId' }, { status: 400 });
     }
 
-    const studentSnap = await adminFirestore.collection('students').doc(studentId).get();
+    const studentSnap = await firebaseAdmin.db.collection('students').doc(studentId).get();
 
     if (!studentSnap.exists) {
       return NextResponse.json({ error: 'Student record was not found' }, { status: 404 });
     }
 
     const data = studentSnap.data() || {};
+    const studentEmail = await resolveStudentEmail(studentId, data);
 
     return NextResponse.json({
       student: {
         id: studentSnap.id,
         name: data.name || '',
-        email: data.email || '',
+        email: studentEmail,
         parentName: data.parent?.name || '',
         parentEmail: data.parent?.email || '',
       },
@@ -64,15 +82,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Please provide a valid parent email address.' }, { status: 400 });
     }
 
-    const studentSnap = await adminFirestore.collection('students').doc(studentId).get();
+    const studentSnap = await firebaseAdmin.db.collection('students').doc(studentId).get();
 
     if (!studentSnap.exists) {
       return NextResponse.json({ error: 'Student record was not found' }, { status: 404 });
     }
 
     const studentData = studentSnap.data() || {};
-    const studentEmail = normalizeEmail(studentData.email || '');
+    const studentEmail = await resolveStudentEmail(studentId, studentData);
     const currentParentEmail = normalizeEmail(studentData.parent?.email || '');
+
+    if (!studentEmail) {
+      return NextResponse.json(
+        { error: 'Student email is not available for this record. Please contact the administrator.' },
+        { status: 422 },
+      );
+    }
 
     if (requestedParentEmail === studentEmail) {
       return NextResponse.json(
@@ -88,7 +113,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const existingRequestsSnap = await adminFirestore
+    const existingRequestsSnap = await firebaseAdmin.db
       .collection('parentEmailUpdateRequests')
       .where('studentId', '==', studentId)
       .limit(20)
@@ -106,7 +131,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    await adminFirestore.collection('parentEmailUpdateRequests').add({
+    await firebaseAdmin.db.collection('parentEmailUpdateRequests').add({
       studentId,
       studentName: studentData.name || '',
       studentEmail,
