@@ -354,7 +354,7 @@ export async function sendParentEmailUpdateRequiredEmail(
   const sanitizedWhatsApp = (adminWhatsApp || process.env.NEXT_PUBLIC_ADMIN_WHATSAPP || '').replace(/[^0-9]/g, '');
 
   const whatsappSection = sanitizedWhatsApp
-    ? `<p>Please contact the administrator to make this change via WhatsApp: <a href="https://wa.me/${sanitizedWhatsApp}">Contact Administrator</a></p>`
+    ? `<p>If you need help, contact the administrator via WhatsApp: <a href="https://wa.me/${sanitizedWhatsApp}">Contact Administrator</a></p>`
     : '<p>Please contact the administrator to update the parent email address.</p>';
 
   const subject = 'DRU EDU - Urgent: Parent Email Update Required';
@@ -367,7 +367,9 @@ export async function sendParentEmailUpdateRequiredEmail(
         <strong>${studentName || ''}</strong>'s email. Parent email must be different from the student email.
       </p>
       <p>
-        Please contact the administrator to change the parent email to a different email address.
+        Please use the button below to submit a parent email update request. The admin team will review and approve the request before changing records.
+      </p>
+      <p>
         If this is not updated within <strong>one week</strong>, your student account will be deactivated.
       </p>
       ${whatsappSection}
