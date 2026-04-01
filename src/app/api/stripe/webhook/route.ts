@@ -3,12 +3,6 @@ import Stripe from 'stripe';
 import { VideoPurchaseServerService } from '@/apiservices/videoPurchaseServerService';
 import { firebaseAdmin } from '@/utils/firebase-server';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-07-30.basil',
-});
-
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
-
 // Security: IP allowlist for Stripe webhooks (optional but recommended)
 const STRIPE_WEBHOOK_IPS = [
   '3.18.12.63',
@@ -27,6 +21,29 @@ const STRIPE_WEBHOOK_IPS = [
 
 export async function POST(request: NextRequest) {
   try {
+    const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+    if (!stripeSecretKey) {
+      console.error('Missing Stripe secret key configuration');
+      return NextResponse.json(
+        { error: 'Stripe configuration error' },
+        { status: 500 }
+      );
+    }
+
+    if (!webhookSecret) {
+      console.error('Missing webhook secret configuration');
+      return NextResponse.json(
+        { error: 'Webhook configuration error' },
+        { status: 500 }
+      );
+    }
+
+    const stripe = new Stripe(stripeSecretKey, {
+      apiVersion: '2025-07-30.basil',
+    });
+
     // Optional: Verify request comes from Stripe IP
     const forwardedFor = request.headers.get('x-forwarded-for');
     const realIP = request.headers.get('x-real-ip');
@@ -46,14 +63,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Missing signature' },
         { status: 400 }
-      );
-    }
-
-    if (!webhookSecret) {
-      console.error('Missing webhook secret configuration');
-      return NextResponse.json(
-        { error: 'Webhook configuration error' },
-        { status: 500 }
       );
     }
 
