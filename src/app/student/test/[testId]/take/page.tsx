@@ -48,6 +48,10 @@ export default function TestTakePage() {
   const [remainingTime, setRemainingTime] = useState<number>(0);
   const [timeExpired, setTimeExpired] = useState(false);
   const [isResumingAttempt, setIsResumingAttempt] = useState(false);
+
+  // Grace period state - 2 minutes for student to submit after time expires
+  const [graceMode, setGraceMode] = useState(false);
+  const [graceTimeRemaining, setGraceTimeRemaining] = useState(120); // 2 minutes in seconds
   
   // Connection state
   const [isOnline, setIsOnline] = useState(true); // Default to true for SSR
@@ -252,8 +256,10 @@ export default function TestTakePage() {
           // This allows students to reconnect and continue if they still have time
           if (timeCalc.isExpired && timeCalc.timeRemaining <= 0) {
             console.log('⏰ Test time has expired (0 seconds remaining)');
-            setTimeExpired(true);
-            // Let the timer effect handle auto-submit naturally
+            if (!graceMode) {
+              setGraceMode(true);
+              setGraceTimeRemaining(120);
+            }
           } else if (timeCalc.timeRemaining > 0) {
             // Test still has time - allow student to continue!
             console.log('✅ Test still active - student can continue with', timeCalc.timeRemaining, 'seconds remaining');
@@ -335,9 +341,11 @@ export default function TestTakePage() {
           
           if (timeCalc.isExpired) {
             clearInterval(checkDeadline);
-            setTimeExpired(true);
-            console.log('⏰ Untimed test deadline expired, auto-submitting...');
-            await handleAutoSubmit();
+            if (!graceMode) {
+              console.log('⏰ Untimed test deadline expired, entering grace period...');
+              setGraceMode(true);
+              setGraceTimeRemaining(120);
+            }
           }
         } catch (error) {
           console.error('Error checking deadline:', error);
@@ -395,9 +403,11 @@ export default function TestTakePage() {
             
             if (timeCalc.isExpired) {
               clearInterval(interval);
-              setTimeExpired(true);
-              console.log('⏰ Time expired, auto-submitting test...');
-              await handleAutoSubmit();
+              if (!graceMode) {
+                console.log('⏰ Time expired, entering grace period...');
+                setGraceMode(true);
+                setGraceTimeRemaining(120);
+              }
               return;
             }
           } else {
@@ -408,9 +418,11 @@ export default function TestTakePage() {
             
             if (estimatedTime <= 0) {
               clearInterval(interval);
-              setTimeExpired(true);
-              console.log('⏰ Time expired (server unavailable), auto-submitting...');
-              handleAutoSubmit();
+              if (!graceMode) {
+                console.log('⏰ Time expired (server unavailable), entering grace period...');
+                setGraceMode(true);
+                setGraceTimeRemaining(120);
+              }
               return;
             }
           }
@@ -422,9 +434,11 @@ export default function TestTakePage() {
           
           if (estimatedTime <= 0) {
             clearInterval(interval);
-            setTimeExpired(true);
-            console.log('⏰ Time expired (local countdown), auto-submitting...');
-            handleAutoSubmit();
+            if (!graceMode) {
+              console.log('⏰ Time expired (local countdown), entering grace period...');
+              setGraceMode(true);
+              setGraceTimeRemaining(120);
+            }
             return;
           }
         }
@@ -438,9 +452,11 @@ export default function TestTakePage() {
         
         if (estimatedTime <= 0) {
           clearInterval(interval);
-          setTimeExpired(true);
-          console.log('⏰ Time expired (error fallback), auto-submitting...');
-          handleAutoSubmit();
+          if (!graceMode) {
+            console.log('⏰ Time expired (error fallback), entering grace period...');
+            setGraceMode(true);
+            setGraceTimeRemaining(120);
+          }
           return;
         }
       }
@@ -449,6 +465,26 @@ export default function TestTakePage() {
     return () => clearInterval(interval);
   }, [test, attemptId, remainingTime]);
 
+  // Grace period countdown - 2 minutes for student to submit after time expires
+  useEffect(() => {
+    if (!graceMode) return;
+
+    const graceInterval = setInterval(() => {
+      setGraceTimeRemaining(prev => {
+        if (prev <= 1) {
+          clearInterval(graceInterval);
+          // Grace period over - force auto-submit
+          setTimeExpired(true);
+          handleAutoSubmit();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(graceInterval);
+  }, [graceMode]);
+
   // Check for expired attempts on page load/reconnection
   const checkAttemptStatus = async (attemptId: string) => {
     try {
@@ -456,9 +492,11 @@ export default function TestTakePage() {
       const timeCalc = await AttemptManagementService.updateAttemptTime(attemptId);
       
       if (timeCalc.isExpired) {
-        console.log('⏰ Test has expired during disconnection, auto-submitting...');
-        setTimeExpired(true);
-        await handleAutoSubmit();
+        console.log('⏰ Test has expired during disconnection, entering grace period...');
+        if (!graceMode) {
+          setGraceMode(true);
+          setGraceTimeRemaining(120);
+        }
         return false; // Test expired
       }
       
@@ -1028,9 +1066,11 @@ export default function TestTakePage() {
           
           // Check if already expired
           if (calculatedRemainingTime <= 0) {
-            console.log('⏰ Attempt has already expired based on Firestore data, auto-submitting...');
-            setTimeExpired(true);
-            await handleAutoSubmit();
+            console.log('⏰ Attempt has already expired based on Firestore data, entering grace period...');
+            if (!graceMode) {
+              setGraceMode(true);
+              setGraceTimeRemaining(120);
+            }
             setLoading(false);
             return;
           }
@@ -1119,9 +1159,11 @@ export default function TestTakePage() {
           const finalTimeCalc = await AttemptManagementService.updateAttemptTime(newAttemptId);
           
           if (finalTimeCalc.isExpired) {
-            console.log('⏰ Attempt expired during setup, auto-submitting...');
-            setTimeExpired(true);
-            await handleAutoSubmit();
+            console.log('⏰ Attempt expired during setup, entering grace period...');
+            if (!graceMode) {
+              setGraceMode(true);
+              setGraceTimeRemaining(120);
+            }
             setLoading(false);
             return;
           }
@@ -1676,7 +1718,7 @@ export default function TestTakePage() {
     );
   }
 
-  // Time expired dialog
+  // Time expired - auto-submitted after grace period
   if (timeExpired) {
     return (
       <StudentLayout>
@@ -1686,7 +1728,7 @@ export default function TestTakePage() {
               Time Expired
             </h1>
           </div>
-          
+
           <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-md p-6 text-center">
             <AlertTriangle className="mx-auto h-12 w-12 text-orange-500 mb-4" />
             <h2 className="text-xl font-semibold text-orange-800 dark:text-orange-200 mb-2">
@@ -2348,6 +2390,36 @@ export default function TestTakePage() {
   // Main test taking interface
   return (
     <StudentLayout>
+      {/* Grace period overlay - blocks test interaction, shows submit button */}
+      {graceMode && !timeExpired && (
+        <div className="fixed inset-0 z-[90] bg-black bg-opacity-70 flex items-center justify-center">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-8 max-w-md mx-4 text-center border-4 border-red-500">
+            <AlertTriangle className="mx-auto h-16 w-16 text-red-600 mb-4" />
+            <h2 className="text-2xl font-bold text-red-700 dark:text-red-400 mb-2">
+              Time Exceeded
+            </h2>
+            <p className="text-gray-700 dark:text-gray-300 mb-4">
+              Your test time has ended. Please submit your current work now.
+            </p>
+            <div className="bg-red-100 dark:bg-red-900/40 rounded-lg p-4 mb-6">
+              <p className="text-sm text-red-600 dark:text-red-400 mb-1">Auto-submit in</p>
+              <p className="text-4xl font-bold font-mono text-red-700 dark:text-red-300">
+                {Math.floor(graceTimeRemaining / 60)}:{(graceTimeRemaining % 60).toString().padStart(2, '0')}
+              </p>
+            </div>
+            <Button
+              onClick={() => {
+                setTimeExpired(true);
+                handleAutoSubmit();
+              }}
+              className="w-full bg-red-600 hover:bg-red-700 text-white text-lg py-3"
+            >
+              Submit Test Now
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Navigation panel overlay */}
       {renderNavigationPanel()}
       
@@ -2481,10 +2553,15 @@ export default function TestTakePage() {
                     </span>
                   </div>
                 </div>
+              ) : graceMode ? (
+                <div className="flex items-center p-2 rounded-md bg-red-600 text-white animate-pulse">
+                  <AlertTriangle className="h-5 w-5 mr-2" />
+                  <span className="font-mono font-bold">TIME EXCEEDED</span>
+                </div>
               ) : (
                 <div className={`flex items-center p-2 rounded-md ${
-                  remainingTime < 300 
-                    ? 'bg-red-50 text-red-800 dark:bg-red-900/30 dark:text-red-300' 
+                  remainingTime < 300
+                    ? 'bg-red-50 text-red-800 dark:bg-red-900/30 dark:text-red-300'
                     : 'bg-blue-50 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
                 }`}>
                   <Clock className="h-5 w-5 mr-2" />

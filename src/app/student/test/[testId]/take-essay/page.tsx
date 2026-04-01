@@ -48,7 +48,11 @@ export default function TakeEssayTestPage() {
   // Timer state
   const [remainingTime, setRemainingTime] = useState<number>(0);
   const [timeExpired, setTimeExpired] = useState(false);
-  
+
+  // Grace period state - 2 minutes for student to submit after time expires
+  const [graceMode, setGraceMode] = useState(false);
+  const [graceTimeRemaining, setGraceTimeRemaining] = useState(120);
+
   // Connection state
   const [isOnline, setIsOnline] = useState(true);
   
@@ -217,11 +221,14 @@ export default function TakeEssayTestPage() {
         const timeCalc = await AttemptManagementService.updateAttemptTime(attemptIdFromUrl);
         
         if (timeCalc.isExpired) {
-          setTimeExpired(true);
-          await handleAutoSubmit();
+          if (!graceMode) {
+            console.log('⏰ Essay test time expired, entering grace period...');
+            setGraceMode(true);
+            setGraceTimeRemaining(120);
+          }
           return;
         }
-        
+
         setRemainingTime(timeCalc.timeRemaining);
         
         // Load existing submission if any
@@ -270,8 +277,11 @@ export default function TakeEssayTestPage() {
         
         if (timeCalc) {
           if (timeCalc.isExpired) {
-            setTimeExpired(true);
-            await handleAutoSubmit();
+            if (!graceMode) {
+              console.log('⏰ Essay heartbeat: time expired, entering grace period...');
+              setGraceMode(true);
+              setGraceTimeRemaining(120);
+            }
             return;
           }
           setRemainingTime(timeCalc.timeRemaining);
@@ -283,6 +293,25 @@ export default function TakeEssayTestPage() {
     
     return () => clearInterval(interval);
   }, [test, attemptId, remainingTime]);
+
+  // Grace period countdown - 2 minutes for student to submit after time expires
+  useEffect(() => {
+    if (!graceMode) return;
+
+    const graceInterval = setInterval(() => {
+      setGraceTimeRemaining(prev => {
+        if (prev <= 1) {
+          clearInterval(graceInterval);
+          setTimeExpired(true);
+          handleAutoSubmit();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(graceInterval);
+  }, [graceMode]);
 
   // Handle PDF upload
   const handlePdfUpload = async (attachment: PdfAttachment) => {
@@ -588,6 +617,36 @@ export default function TakeEssayTestPage() {
   // Main essay test interface
   return (
     <StudentLayout>
+      {/* Grace period overlay - blocks test interaction, shows submit button */}
+      {graceMode && !timeExpired && (
+        <div className="fixed inset-0 z-[90] bg-black bg-opacity-70 flex items-center justify-center">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-8 max-w-md mx-4 text-center border-4 border-red-500">
+            <AlertTriangle className="mx-auto h-16 w-16 text-red-600 mb-4" />
+            <h2 className="text-2xl font-bold text-red-700 dark:text-red-400 mb-2">
+              Time Exceeded
+            </h2>
+            <p className="text-gray-700 dark:text-gray-300 mb-4">
+              Your test time has ended. Please submit your current work now.
+            </p>
+            <div className="bg-red-100 dark:bg-red-900/40 rounded-lg p-4 mb-6">
+              <p className="text-sm text-red-600 dark:text-red-400 mb-1">Auto-submit in</p>
+              <p className="text-4xl font-bold font-mono text-red-700 dark:text-red-300">
+                {Math.floor(graceTimeRemaining / 60)}:{(graceTimeRemaining % 60).toString().padStart(2, '0')}
+              </p>
+            </div>
+            <Button
+              onClick={() => {
+                setTimeExpired(true);
+                handleAutoSubmit();
+              }}
+              className="w-full bg-red-600 hover:bg-red-700 text-white text-lg py-3"
+            >
+              Submit Test Now
+            </Button>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-6">
         {/* Header with timer */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 sticky top-0 z-10">
@@ -602,14 +661,21 @@ export default function TakeEssayTestPage() {
             </div>
             
             <div className="flex items-center mt-4 md:mt-0 space-x-4">
-              <div className={`flex items-center p-2 rounded-md ${
-                remainingTime < 300 
-                  ? 'bg-red-50 text-red-800 dark:bg-red-900/30 dark:text-red-300' 
-                  : 'bg-blue-50 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
-              }`}>
-                <Clock className="h-5 w-5 mr-2" />
-                <span className="font-mono font-medium">{formatTime(remainingTime)}</span>
-              </div>
+              {graceMode ? (
+                <div className="flex items-center p-2 rounded-md bg-red-600 text-white animate-pulse">
+                  <AlertTriangle className="h-5 w-5 mr-2" />
+                  <span className="font-mono font-bold">TIME EXCEEDED</span>
+                </div>
+              ) : (
+                <div className={`flex items-center p-2 rounded-md ${
+                  remainingTime < 300
+                    ? 'bg-red-50 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+                    : 'bg-blue-50 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+                }`}>
+                  <Clock className="h-5 w-5 mr-2" />
+                  <span className="font-mono font-medium">{formatTime(remainingTime)}</span>
+                </div>
+              )}
               
               <button 
                 onClick={requestFullscreen}
