@@ -16,7 +16,8 @@ import {
   Library,
   Calendar,
   FileCheck,
-  MessageCircle
+  MessageCircle,
+  AlertCircle
 } from 'lucide-react';
 
 // Define sidebar menu items with Lucide icons
@@ -31,6 +32,7 @@ const menuItems = [
   { label: 'Video Portal', icon: <Video size={20} />, path: '/admin/videos' },
   { label: 'Meetings', icon: <Video size={20} />, path: '/admin/meetings' },
   { label: 'Documents', icon: <FileCheck size={20} />, path: '/admin/documents' },
+  { label: 'Parent Issues', icon: <AlertCircle size={20} />, path: '/admin/parents' },
   { label: 'Transactions', icon: <CreditCard size={20} />, path: '/admin/transactions' },
   { label: 'Question Banks', icon: <FileQuestion size={20} />, path: '/admin/question-banks' },
 ];
