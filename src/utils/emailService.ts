@@ -339,6 +339,51 @@ export async function sendTeacherWelcomeEmail(
 }
 
 /**
+ * Send parent email update required notification
+ */
+export async function sendParentEmailUpdateRequiredEmail(
+  parentEmail: string,
+  studentId: string,
+  studentName: string,
+  parentName?: string,
+  appUrl?: string,
+  adminWhatsApp?: string,
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  const baseUrl = appUrl || process.env.NEXT_PUBLIC_APP_URL || 'https://www.drueducation.com';
+  const updateLink = `${baseUrl}/update-parent-email?studentId=${studentId}`;
+  const sanitizedWhatsApp = (adminWhatsApp || process.env.NEXT_PUBLIC_ADMIN_WHATSAPP || '').replace(/[^0-9]/g, '');
+
+  const whatsappSection = sanitizedWhatsApp
+    ? `<p>Please contact the administrator to make this change via WhatsApp: <a href="https://wa.me/${sanitizedWhatsApp}">Contact Administrator</a></p>`
+    : '<p>Please contact the administrator to update the parent email address.</p>';
+
+  const subject = 'DRU EDU - Urgent: Parent Email Update Required';
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto; padding: 20px; color: #111827;">
+      <h1 style="color: #4F46E5; margin-bottom: 8px;">DRU EDU</h1>
+      <h2 style="margin-top: 0;">Hello ${parentName || 'Parent'},</h2>
+      <p>
+        Our records show that your parent email address is the same as your student
+        <strong>${studentName || ''}</strong>'s email. Parent email must be different from the student email.
+      </p>
+      <p>
+        Please contact the administrator to change the parent email to a different email address.
+        If this is not updated within <strong>one week</strong>, your student account will be deactivated.
+      </p>
+      ${whatsappSection}
+      <div style="text-align:center; margin: 28px 0;">
+        <a href="${updateLink}" style="background:#4F46E5;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">
+          Update Parent Email
+        </a>
+      </div>
+      <p style="color:#6B7280;font-size:12px;">If you received this by mistake, please ignore this email.</p>
+    </div>
+  `;
+
+  return sendEmail(parentEmail, subject, html);
+}
+
+/**
  * Generic function to send any email
  */
 export async function sendGenericEmail(
