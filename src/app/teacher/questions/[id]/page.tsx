@@ -266,6 +266,16 @@ export default function TeacherQuestionBankDetail() {
     setTempLessonId('');
   };
 
+  const normalizeQuestionNumber = (value: string) => value.toLowerCase().replace(/\s+/g, '');
+
+  const extractQuestionNumberDigits = (value: string) => {
+    const normalizedValue = normalizeQuestionNumber(value);
+    const match = normalizedValue.match(/^(?:question|q|m|e)?(\d+)$/);
+    return match?.[1] || null;
+  };
+
+  const isNumericQuestionSearch = (value: string) => extractQuestionNumberDigits(value) !== null;
+
   // Enhanced filter function
   const filteredQuestions = questions.filter(question => {
     // If no search term, only apply type and difficulty filters
@@ -276,15 +286,21 @@ export default function TeacherQuestionBankDetail() {
     }
 
     const searchLower = searchTerm.toLowerCase().trim();
+    const normalizedSearch = normalizeQuestionNumber(searchTerm);
+    const searchDigits = extractQuestionNumberDigits(searchTerm);
+    const normalizedQuestionTitle = normalizeQuestionNumber(question.title);
+    const titleDigits = extractQuestionNumberDigits(question.title);
     
-    // Search by question number (Q1, Q2, etc.)
-    const questionIndex = questions.indexOf(question) + 1;
-    const questionNumber = `q${questionIndex}`;
-    const matchesQuestionNumber = questionNumber.includes(searchLower) || 
-                                   `question ${questionIndex}`.includes(searchLower);
+    // Search by the saved question number (for example M1500 / E1500).
+    // Numeric searches such as "1500" should only match that exact question number.
+    const matchesQuestionNumber = isNumericQuestionSearch(searchTerm)
+      ? normalizedQuestionTitle === normalizedSearch || titleDigits === searchDigits
+      : false;
 
     // Search by title
-    const matchesTitle = question.title.toLowerCase().includes(searchLower);
+    const matchesTitle = isNumericQuestionSearch(searchTerm)
+      ? false
+      : question.title.toLowerCase().includes(searchLower);
     
     // Search by content
     const matchesContent = question.content?.toLowerCase().includes(searchLower) || false;
@@ -687,7 +703,7 @@ export default function TeacherQuestionBankDetail() {
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                       <Input
                         type="text"
-                        placeholder="Search by question number (Q1), content, answers, topic..."
+                        placeholder="Search by question number (M1500, E1500, 1500), content, answers, topic..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="pl-10 pr-10"
@@ -713,7 +729,7 @@ export default function TeacherQuestionBankDetail() {
                     <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                       <h4 className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-2">Search Tips:</h4>
                       <ul className="text-xs text-blue-700 dark:text-blue-400 space-y-1">
-                        <li>• Type "Q1" or "Question 1" to find specific questions by number</li>
+                        <li>• Type "M1500", "E1500", "1500", or "Question 1500" to find an exact question number</li>
                         <li>• Search question content, MCQ options, or essay answers</li>
                         <li>• Search by difficulty: "easy", "medium", "hard"</li>
                         <li>• Search by type: "mcq", "multiple choice", "essay"</li>
@@ -784,13 +800,13 @@ export default function TeacherQuestionBankDetail() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {filteredQuestions.map((question, index) => (
+                  {filteredQuestions.map((question) => (
                     <div key={question.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center space-x-2 mb-2">
                             <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                              Q{index + 1} ({question.title})
+                              Question No: {question.title}
                             </span>
                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                               question.type === 'mcq' 
@@ -862,9 +878,7 @@ export default function TeacherQuestionBankDetail() {
                             </span>
                           </div>
                           
-                          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                            Question {index + 1}
-                          </h3>
+                          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">{question.title}</h3>
                           
                           <div className="mb-2">
                             {question.content && (
