@@ -46,6 +46,15 @@ export class RetestRequestService {
   }
 
   /**
+   * Remove undefined fields from an object before writing to Firestore
+   */
+  private static removeUndefined(obj: Record<string, any>): Record<string, any> {
+    return Object.fromEntries(
+      Object.entries(obj).filter(([, v]) => v !== undefined)
+    );
+  }
+
+  /**
    * Check if a test's completion date is more than 7 days ago
    */
   static isTestOlderThanOneWeek(test: Test): boolean {
@@ -157,7 +166,7 @@ export class RetestRequestService {
 
       await setDoc(
         doc(firestore, this.COLLECTIONS.RETEST_REQUESTS, requestId),
-        request
+        this.removeUndefined(request as Record<string, any>)
       );
 
       console.log('✅ Retest request created successfully');
@@ -475,8 +484,8 @@ export class RetestRequestService {
         newTestData.isUntimed = scheduling.isUntimed || false;
       }
 
-      // 7. Create the new test in Firestore
-      const newTestRef = await addDoc(collection(firestore, this.COLLECTIONS.TESTS), newTestData);
+      // 7. Create the new test in Firestore (strip undefined fields)
+      const newTestRef = await addDoc(collection(firestore, this.COLLECTIONS.TESTS), this.removeUndefined(newTestData));
       const retestId = newTestRef.id;
 
       // 8. Complete test number assignment
