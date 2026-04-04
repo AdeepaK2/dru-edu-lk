@@ -135,6 +135,7 @@ export default function StudentRetakes() {
   const formatDate = (timestamp: any): string => {
     const date = convertTimestamp(timestamp);
     return date.toLocaleDateString('en-AU', {
+      timeZone: 'Australia/Melbourne',
       day: 'numeric',
       month: 'short',
       year: 'numeric'

@@ -15,6 +15,36 @@ interface ApproveRetestModalProps {
   onRetestApproved: () => void;
 }
 
+const MELBOURNE_TZ = 'Australia/Melbourne';
+
+/**
+ * Format a Date as a datetime-local input value in Melbourne time.
+ * e.g.  April 5 2026, 9 AM Melbourne → "2026-04-05T09:00"
+ */
+function toMelbourneInputValue(date: Date): string {
+  // sv-SE locale gives ISO-like "YYYY-MM-DD HH:MM:SS" in the given timezone
+  return date
+    .toLocaleString('sv-SE', { timeZone: MELBOURNE_TZ })
+    .slice(0, 16)
+    .replace(' ', 'T');
+}
+
+/**
+ * Parse a datetime-local string entered by the user as Melbourne local time
+ * and return the correct UTC Date.
+ * e.g. "2026-04-05T09:00" (Melbourne) → Date representing April 4 22:00 UTC (UTC+11)
+ */
+function fromMelbourneInputValue(localString: string): Date {
+  // Step 1: treat the string as UTC temporarily
+  const asUTC = new Date(localString + ':00Z');
+  // Step 2: find what Melbourne shows at that UTC instant
+  const melbStr = asUTC.toLocaleString('sv-SE', { timeZone: MELBOURNE_TZ });
+  const melbAsUTC = new Date(melbStr.replace(' ', 'T') + 'Z');
+  // Step 3: offset = how many ms Melbourne is ahead of UTC (positive = ahead)
+  // actual UTC for the Melbourne local time = asUTC - (melbAsUTC - asUTC)
+  return new Date(2 * asUTC.getTime() - melbAsUTC.getTime());
+}
+
 export default function ApproveRetestModal({
   isOpen,
   onClose,
@@ -35,16 +65,19 @@ export default function ApproveRetestModal({
   const [success, setSuccess] = useState(false);
 
   const setDefaultTimes = () => {
-    // Default: start tomorrow, end in 1 week
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(9, 0, 0, 0);
-    setStartTime(tomorrow.toISOString().slice(0, 16));
+    // Default: start tomorrow 9 AM Melbourne, end 1 week later 11:59 PM Melbourne
+    const tomorrowUTC = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    // Get "tomorrow 09:00 Melbourne" by finding Melbourne's date+1 and setting 09:00
+    const tomorrowMelbStr = tomorrowUTC
+      .toLocaleString('sv-SE', { timeZone: MELBOURNE_TZ })
+      .slice(0, 10); // "YYYY-MM-DD" in Melbourne
+    setStartTime(`${tomorrowMelbStr}T09:00`);
 
-    const nextWeek = new Date(tomorrow);
-    nextWeek.setDate(nextWeek.getDate() + 7);
-    nextWeek.setHours(23, 59, 0, 0);
-    setEndTime(nextWeek.toISOString().slice(0, 16));
+    const nextWeekUTC = new Date(tomorrowUTC.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const nextWeekMelbStr = nextWeekUTC
+      .toLocaleString('sv-SE', { timeZone: MELBOURNE_TZ })
+      .slice(0, 10);
+    setEndTime(`${nextWeekMelbStr}T23:59`);
   };
 
   React.useEffect(() => {
@@ -62,9 +95,10 @@ export default function ApproveRetestModal({
       return;
     }
 
-    const startDate = new Date(startTime);
+    // Parse input values as Melbourne local time → correct UTC Dates
+    const startDate = fromMelbourneInputValue(startTime);
     if (startDate <= new Date()) {
-      setError('Start time must be in the future.');
+      setError('Start time must be in the future (Melbourne time).');
       return;
     }
 
@@ -74,7 +108,7 @@ export default function ApproveRetestModal({
     }
 
     if (testType === 'flexible') {
-      const endDate = new Date(endTime);
+      const endDate = fromMelbourneInputValue(endTime);
       if (endDate <= startDate) {
         setError('End time must be after start time.');
         return;
@@ -95,7 +129,7 @@ export default function ApproveRetestModal({
         schedulingData.bufferTime = bufferTime;
       } else {
         schedulingData.availableFrom = startDate;
-        schedulingData.availableTo = new Date(endTime);
+        schedulingData.availableTo = fromMelbourneInputValue(endTime);
         schedulingData.duration = isUntimed ? 0 : duration;
         schedulingData.isUntimed = isUntimed;
       }
@@ -230,17 +264,23 @@ export default function ApproveRetestModal({
 
               {/* Scheduling */}
               <div className="space-y-4">
+                {/* Melbourne timezone notice */}
+                <div className="flex items-center space-x-1 text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 rounded px-3 py-1.5">
+                  <Clock className="w-3 h-3 flex-shrink-0" />
+                  <span>All times are in Melbourne time (AEST/AEDT)</span>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     <Calendar className="w-4 h-4 inline mr-1" />
-                    {testType === 'live' ? 'Start Time' : 'Available From'}
+                    {testType === 'live' ? 'Start Time (Melbourne)' : 'Available From (Melbourne)'}
                   </label>
                   <input
                     type="datetime-local"
                     value={startTime}
                     onChange={(e) => setStartTime(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                    min={new Date().toISOString().slice(0, 16)}
+                    min={toMelbourneInputValue(new Date())}
                   />
                 </div>
 
@@ -248,14 +288,14 @@ export default function ApproveRetestModal({
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       <Calendar className="w-4 h-4 inline mr-1" />
-                      Available Until
+                      Available Until (Melbourne)
                     </label>
                     <input
                       type="datetime-local"
                       value={endTime}
                       onChange={(e) => setEndTime(e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                      min={startTime || new Date().toISOString().slice(0, 16)}
+                      min={startTime || toMelbourneInputValue(new Date())}
                     />
                   </div>
                 )}
