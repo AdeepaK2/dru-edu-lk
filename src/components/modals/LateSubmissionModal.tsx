@@ -30,6 +30,19 @@ interface StudentWithSubmissionStatus {
   submissionStatus?: string;
 }
 
+// ── Melbourne timezone helpers ──────────────────────────────────────────────
+const MELBOURNE_TZ = 'Australia/Melbourne';
+function toMelbourneInputValue(date: Date): string {
+  return date.toLocaleString('sv-SE', { timeZone: MELBOURNE_TZ }).slice(0, 16).replace(' ', 'T');
+}
+function fromMelbourneInputValue(localString: string): Date {
+  const asUTC = new Date(localString + ':00Z');
+  const melbStr = asUTC.toLocaleString('sv-SE', { timeZone: MELBOURNE_TZ });
+  const melbAsUTC = new Date(melbStr.replace(' ', 'T') + 'Z');
+  return new Date(2 * asUTC.getTime() - melbAsUTC.getTime());
+}
+// ───────────────────────────────────────────────────────────────────────────
+
 export default function LateSubmissionModal({
   isOpen,
   onClose,
@@ -53,11 +66,10 @@ export default function LateSubmissionModal({
   }, [isOpen, test.id]);
 
   const setDefaultDeadline = () => {
-    // Set default deadline to 7 days from now
+    // Set default deadline to 7 days from now, shown in Melbourne time
     const defaultDate = new Date();
     defaultDate.setDate(defaultDate.getDate() + 7);
-    const formattedDate = defaultDate.toISOString().slice(0, 16); // Format for datetime-local input
-    setNewDeadline(formattedDate);
+    setNewDeadline(toMelbourneInputValue(defaultDate));
   };
 
   const loadStudentsAndSubmissions = async () => {
@@ -188,9 +200,9 @@ export default function LateSubmissionModal({
       return;
     }
 
-    const deadlineDate = new Date(newDeadline);
+    const deadlineDate = fromMelbourneInputValue(newDeadline);
     if (deadlineDate <= new Date()) {
-      setError('New deadline must be in the future.');
+      setError('New deadline must be in the future (Melbourne time).');
       return;
     }
 
@@ -355,7 +367,7 @@ export default function LateSubmissionModal({
                         value={newDeadline}
                         onChange={(e) => setNewDeadline(e.target.value)}
                         className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                        min={new Date().toISOString().slice(0, 16)}
+                        min={toMelbourneInputValue(new Date())}
                       />
                     </div>
                   </div>
