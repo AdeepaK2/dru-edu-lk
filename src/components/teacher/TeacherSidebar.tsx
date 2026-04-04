@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
@@ -18,13 +18,15 @@ import {
   Book,
   DollarSign,
   FileSpreadsheet,
-  MessageCircle
+  MessageCircle,
+  RefreshCw
 } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/utils/firebase-client';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui';
 import { useTeacherNavigation } from '@/hooks/useTeacherNavigation';
+import { RetestRequestService } from '@/apiservices/retestRequestService';
 
 interface SidebarItem {
   id: string;
@@ -58,6 +60,12 @@ const sidebarItems: SidebarItem[] = [
     label: 'Tests & Quizzes',
     href: '/teacher/tests',
     icon: FileText,
+  },
+  {
+    id: 'retest-requests',
+    label: 'Retest Requests',
+    href: '/teacher/retest-requests',
+    icon: RefreshCw,
   },
   {
     id: 'questions',
@@ -123,6 +131,31 @@ export default function TeacherSidebar({ teacher, isOpen, onToggle }: TeacherSid
   const pathname = usePathname();
   const router = useRouter();
   const { navigateWithLoading, preloadRoute } = useTeacherNavigation();
+  const [pendingRetestCount, setPendingRetestCount] = useState(0);
+
+  // Load pending retest request count for badge
+  useEffect(() => {
+    const loadPendingCount = async () => {
+      try {
+        const uid = auth.currentUser?.uid;
+        if (uid) {
+          const count = await RetestRequestService.getPendingRetestCount(uid);
+          setPendingRetestCount(count);
+        }
+      } catch (error) {
+        console.error('Error loading pending retest count:', error);
+      }
+    };
+    loadPendingCount();
+  }, [pathname]); // Refresh on navigation
+
+  // Apply badge to retest-requests sidebar item
+  const itemsWithBadges = sidebarItems.map(item => {
+    if (item.id === 'retest-requests' && pendingRetestCount > 0) {
+      return { ...item, badge: String(pendingRetestCount) };
+    }
+    return item;
+  });
 
   const handleLogout = async () => {
     try {
@@ -211,7 +244,7 @@ export default function TeacherSidebar({ teacher, isOpen, onToggle }: TeacherSid
 
         {/* Navigation */}
         <nav className="flex-1 px-4 py-6 space-y-2">
-          {sidebarItems.map((item) => {
+          {itemsWithBadges.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
             

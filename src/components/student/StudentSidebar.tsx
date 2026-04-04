@@ -19,7 +19,8 @@ import {
   ShoppingCart,
   PlayCircle,
   FileCheck,
-  FileSpreadsheet
+  FileSpreadsheet,
+  RefreshCw
 } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/utils/firebase-client';
@@ -79,10 +80,16 @@ function buildSidebarItems(upcomingQuizCount: number): SidebarItem[] {
       badge: upcomingQuizCount > 0 ? String(upcomingQuizCount) : undefined,
     },
     {
+      id: 'retakes',
+      label: 'Retakes',
+      href: '/student/retakes',
+      icon: RefreshCw,
+    },
+    {
       id: 'in-class',
       label: 'In-Class Assignments',
       href: '/student/in-class',
-      icon: FileCheck, 
+      icon: FileCheck,
     },
     {
       id: 'homework',
