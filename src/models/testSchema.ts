@@ -117,6 +117,14 @@ export interface BaseTest {
   // Exam PDF (for essay questions)
   examPdfUrl?: string; // URL to the generated exam PDF in Firebase Storage
   
+  // Retest metadata (set when this test is a retest of an older test)
+  isRetest?: boolean;
+  originalTestId?: string; // ID of the original test being retested
+  originalTestTitle?: string;
+  originalTestNumber?: number;
+  originalDisplayNumber?: string;
+  retestApprovedBy?: string; // Teacher name who approved the retest
+
   // Status and timing
   status: TestStatus;
   isDeleted?: boolean; // For soft deletion

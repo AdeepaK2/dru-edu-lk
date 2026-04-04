@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Clock, Calendar, AlertCircle, FileText, CheckCircle, Play, ArrowRight, BookOpen, Filter, Info, ChevronDown, ChevronRight, ChevronUp, Users, Plus, CalendarDays } from 'lucide-react';
+import { Clock, Calendar, AlertCircle, FileText, CheckCircle, Play, ArrowRight, BookOpen, Filter, Info, ChevronDown, ChevronRight, ChevronUp, Users, Plus, CalendarDays, RefreshCw } from 'lucide-react';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button, Input, Select } from '@/components/ui';
@@ -12,6 +12,9 @@ import { Timestamp } from 'firebase/firestore';
 import { Test, LiveTest, FlexibleTest } from '@/models/testSchema';
 import { StudentEnrollment } from '@/models/studentEnrollmentSchema';
 import { TestExtensionService } from '@/apiservices/testExtensionService';
+import { RetestRequestService } from '@/apiservices/retestRequestService';
+import { RetestRequest } from '@/models/retestRequestSchema';
+import RetestRequestModal from '@/components/modals/RetestRequestModal';
 
 // Import student layout from other components or use a local version for now
 const StudentLayout = ({ children }: { children: React.ReactNode }) => children;
@@ -34,6 +37,9 @@ export default function StudentTests() {
   const [expandedCompletedSections, setExpandedCompletedSections] = useState<Set<string>>(new Set());
   const [expandedCustomTests, setExpandedCustomTests] = useState(false);
   const [lateSubmissionApprovals, setLateSubmissionApprovals] = useState<Record<string, any>>({});
+  const [retestRequests, setRetestRequests] = useState<Record<string, RetestRequest>>({});
+  const [showRetestModal, setShowRetestModal] = useState(false);
+  const [selectedTestForRetest, setSelectedTestForRetest] = useState<{ test: Test; classId: string; className: string } | null>(null);
   
   // Fetch student data
   useEffect(() => {
@@ -116,6 +122,37 @@ export default function StudentTests() {
       console.error('Error loading late submission approvals:', error);
       return {};
     }
+  };
+
+  // Function to load retest requests for the student
+  const loadRetestRequests = async () => {
+    try {
+      const requests = await RetestRequestService.getStudentRetestRequests(student?.id || '');
+      const requestsMap: Record<string, RetestRequest> = {};
+      requests.forEach((request) => {
+        // Key by testId - keep the most recent request per test
+        if (!requestsMap[request.testId] || request.createdAt.seconds > requestsMap[request.testId].createdAt.seconds) {
+          requestsMap[request.testId] = request;
+        }
+      });
+      setRetestRequests(requestsMap);
+      console.log('✅ Loaded retest requests:', requests.length);
+      return requestsMap;
+    } catch (error) {
+      console.error('Error loading retest requests:', error);
+      return {};
+    }
+  };
+
+  // Helper to check if a test is older than 1 week
+  const isTestOlderThanOneWeek = (test: Test): boolean => {
+    return RetestRequestService.isTestOlderThanOneWeek(test);
+  };
+
+  // Handle opening retest request modal
+  const handleRequestRetest = (test: Test, classId: string, className: string) => {
+    setSelectedTestForRetest({ test, classId, className });
+    setShowRetestModal(true);
   };
 
   // Function to load test attempts for the student
@@ -362,6 +399,7 @@ export default function StudentTests() {
       // OPTIMIZATION: Start independent fetches immediately
       const attemptsPromise = loadTestAttempts();
       const approvalsPromise = loadLateSubmissionApprovals();
+      const retestRequestsPromise = loadRetestRequests();
       
       // Enrollments are needed for the test listener, so await them first
       // But don't wait for attempts/approvals yet
@@ -380,7 +418,7 @@ export default function StudentTests() {
       const listenerPromise = setupTestListener(classIds);
       
       // Wait for everything to complete
-      await Promise.all([attemptsPromise, approvalsPromise, listenerPromise]);
+      await Promise.all([attemptsPromise, approvalsPromise, retestRequestsPromise, listenerPromise]);
       
       return await listenerPromise; // Return the cleanup function from listener
     } catch (error) {
@@ -2105,6 +2143,43 @@ export default function StudentTests() {
                                 <ButtonIcon className="w-5 h-5 mr-2" />
                                 {buttonConfig.text}
                               </Button>
+                              {/* Retest Request Button for custom tests */}
+                              {hasAttempted && isTestOlderThanOneWeek(test) && !test.isRetest && test.classIds?.[0] && (() => {
+                                const retestRequest = retestRequests[test.id];
+                                if (retestRequest?.status === 'pending') {
+                                  return (
+                                    <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-bold bg-yellow-100 text-yellow-800 border-2 border-yellow-400">
+                                      <Clock className="w-4 h-4 mr-1" />
+                                      Retest Requested
+                                    </span>
+                                  );
+                                }
+                                if (retestRequest?.status === 'approved') {
+                                  return (
+                                    <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-bold bg-green-100 text-green-800 border-2 border-green-400">
+                                      <CheckCircle className="w-4 h-4 mr-1" />
+                                      Retest Approved
+                                    </span>
+                                  );
+                                }
+                                if (retestRequest?.status === 'denied') {
+                                  return (
+                                    <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-bold bg-red-100 text-red-800 border-2 border-red-400">
+                                      <AlertCircle className="w-4 h-4 mr-1" />
+                                      Retest Denied
+                                    </span>
+                                  );
+                                }
+                                return (
+                                  <Button
+                                    onClick={() => handleRequestRetest(test, test.classIds[0], test.classNames?.[0] || '')}
+                                    className="inline-flex items-center px-4 py-2 rounded-full font-bold text-sm bg-blue-100 hover:bg-blue-200 text-blue-700 border-2 border-blue-400 transform hover:scale-105 transition-all"
+                                  >
+                                    <RefreshCw className="w-4 h-4 mr-1" />
+                                    Request Retest
+                                  </Button>
+                                );
+                              })()}
                             </div>
                           </div>
                         </div>
@@ -2594,6 +2669,43 @@ export default function StudentTests() {
                                       <ButtonIcon className="w-5 h-5 mr-2" />
                                       {buttonConfig.text}
                                     </Button>
+                                    {/* Retest Request Button */}
+                                    {hasAttempted && isTestOlderThanOneWeek(test) && !test.isRetest && (() => {
+                                      const retestRequest = retestRequests[test.id];
+                                      if (retestRequest?.status === 'pending') {
+                                        return (
+                                          <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-bold bg-yellow-100 text-yellow-800 border-2 border-yellow-400">
+                                            <Clock className="w-4 h-4 mr-1" />
+                                            Retest Requested
+                                          </span>
+                                        );
+                                      }
+                                      if (retestRequest?.status === 'approved') {
+                                        return (
+                                          <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-bold bg-green-100 text-green-800 border-2 border-green-400">
+                                            <CheckCircle className="w-4 h-4 mr-1" />
+                                            Retest Approved
+                                          </span>
+                                        );
+                                      }
+                                      if (retestRequest?.status === 'denied') {
+                                        return (
+                                          <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-bold bg-red-100 text-red-800 border-2 border-red-400">
+                                            <AlertCircle className="w-4 h-4 mr-1" />
+                                            Retest Denied
+                                          </span>
+                                        );
+                                      }
+                                      return (
+                                        <Button
+                                          onClick={() => handleRequestRetest(test, classId, classData.enrollment.className)}
+                                          className="inline-flex items-center px-4 py-2 rounded-full font-bold text-sm bg-blue-100 hover:bg-blue-200 text-blue-700 border-2 border-blue-400 transform hover:scale-105 transition-all"
+                                        >
+                                          <RefreshCw className="w-4 h-4 mr-1" />
+                                          Request Retest
+                                        </Button>
+                                      );
+                                    })()}
                                   </div>
                                 </div>
                               </div>
@@ -2608,6 +2720,25 @@ export default function StudentTests() {
             </div>
           );
         })}
+
+        {/* Retest Request Modal */}
+        {selectedTestForRetest && (
+          <RetestRequestModal
+            isOpen={showRetestModal}
+            onClose={() => {
+              setShowRetestModal(false);
+              setSelectedTestForRetest(null);
+            }}
+            test={selectedTestForRetest.test}
+            classId={selectedTestForRetest.classId}
+            className={selectedTestForRetest.className}
+            studentId={student?.id || ''}
+            studentName={student?.name || ''}
+            onRequestSubmitted={() => {
+              loadRetestRequests();
+            }}
+          />
+        )}
 
         {/* No Tests */}
         {Object.keys(testsByClass).length === 0 && customTests.length === 0 && (
