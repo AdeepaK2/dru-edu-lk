@@ -23,6 +23,19 @@ interface UseTemplateModalProps {
   }>;
 }
 
+// ── Melbourne timezone helpers ──────────────────────────────────────────────
+const MELBOURNE_TZ = 'Australia/Melbourne';
+function toMelbourneInputValue(date: Date): string {
+  return date.toLocaleString('sv-SE', { timeZone: MELBOURNE_TZ }).slice(0, 16).replace(' ', 'T');
+}
+function fromMelbourneInputValue(localString: string): Date {
+  const asUTC = new Date(localString + ':00Z');
+  const melbStr = asUTC.toLocaleString('sv-SE', { timeZone: MELBOURNE_TZ });
+  const melbAsUTC = new Date(melbStr.replace(' ', 'T') + 'Z');
+  return new Date(2 * asUTC.getTime() - melbAsUTC.getTime());
+}
+// ───────────────────────────────────────────────────────────────────────────
+
 export default function UseTemplateModal({
   isOpen,
   onClose,
@@ -53,30 +66,23 @@ export default function UseTemplateModal({
   // Initialize form with template data
   useEffect(() => {
     if (isOpen && template) {
-      // Default dates
+      // Default dates in Melbourne time
       const now = new Date();
       const oneWeekLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-      
-      // Format for datetime-local input: YYYY-MM-DDTHH:mm
-      const formatDate = (date: Date) => {
-        return new Date(date.getTime() - date.getTimezoneOffset() * 60000)
-          .toISOString()
-          .slice(0, 16);
-      };
 
       setFormData({
         title: template.title,
-        testNumber: '', 
+        testNumber: '',
         description: template.description || '',
         instructions: template.instructions || '',
         targetClassIds: [],
         type: 'flexible', // Default to flexible
-        availableFrom: formatDate(now),
-        availableTo: formatDate(oneWeekLater),
+        availableFrom: toMelbourneInputValue(now),
+        availableTo: toMelbourneInputValue(oneWeekLater),
         duration: template.config.totalQuestions * 2, // Rough estimate default if missing
         attemptsAllowed: 1,
         isUntimed: false,
-        scheduledStartTime: formatDate(now),
+        scheduledStartTime: toMelbourneInputValue(now),
         bufferTime: 5,
       });
     }
@@ -135,10 +141,11 @@ export default function UseTemplateModal({
 
       let finalTestData;
 
-      // Add scheduling details
+      // Add scheduling details (parse inputs as Melbourne time)
       if (formData.type === 'flexible') {
-        // Validation: End date must be after start date
-        if (new Date(formData.availableTo) <= new Date(formData.availableFrom)) {
+        const fromDate = fromMelbourneInputValue(formData.availableFrom);
+        const toDate = fromMelbourneInputValue(formData.availableTo);
+        if (toDate <= fromDate) {
           alert('Due date must be after available from date');
           setIsSubmitting(false);
           return;
@@ -147,14 +154,14 @@ export default function UseTemplateModal({
         finalTestData = {
           ...baseTestData,
           type: 'flexible' as const,
-          availableFrom: Timestamp.fromDate(new Date(formData.availableFrom)),
-          availableTo: Timestamp.fromDate(new Date(formData.availableTo)),
+          availableFrom: Timestamp.fromDate(fromDate),
+          availableTo: Timestamp.fromDate(toDate),
           duration: formData.duration,
           attemptsAllowed: formData.attemptsAllowed,
           isUntimed: formData.isUntimed,
         };
       } else {
-        const startTime = new Date(formData.scheduledStartTime);
+        const startTime = fromMelbourneInputValue(formData.scheduledStartTime);
         const endTime = new Date(startTime.getTime() + (formData.duration + formData.bufferTime) * 60 * 1000);
         
         finalTestData = {
@@ -308,11 +315,15 @@ export default function UseTemplateModal({
 
             {formData.type === 'flexible' ? (
               <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">All times are in Melbourne time (AEST/AEDT)</p>
+                </div>
                 <div>
                   <label className="block text-xs text-gray-500 mb-1">Available From</label>
                   <input
                     type="datetime-local"
                     value={formData.availableFrom}
+                    min={toMelbourneInputValue(new Date())}
                     onChange={(e) => setFormData({ ...formData, availableFrom: e.target.value })}
                     className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   />
@@ -322,6 +333,7 @@ export default function UseTemplateModal({
                   <input
                     type="datetime-local"
                     value={formData.availableTo}
+                    min={formData.availableFrom || toMelbourneInputValue(new Date())}
                     onChange={(e) => setFormData({ ...formData, availableTo: e.target.value })}
                     className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   />
@@ -338,11 +350,15 @@ export default function UseTemplateModal({
               </div>
             ) : (
                <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">All times are in Melbourne time (AEST/AEDT)</p>
+                </div>
                 <div>
                   <label className="block text-xs text-gray-500 mb-1">Start Time</label>
                   <input
                     type="datetime-local"
                     value={formData.scheduledStartTime}
+                    min={toMelbourneInputValue(new Date())}
                     onChange={(e) => setFormData({ ...formData, scheduledStartTime: e.target.value })}
                     className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   />

@@ -2544,7 +2544,8 @@ export default function TestTakePage() {
                   <div className="flex flex-col">
                     <span className="text-xs font-medium">Due by:</span>
                     <span className="font-mono text-sm font-medium">
-                      {new Date((test as any).availableTo?.seconds * 1000).toLocaleDateString('en-AU', {
+                      {new Date((test as any).availableTo?.seconds * 1000).toLocaleString('en-AU', {
+                        timeZone: 'Australia/Melbourne',
                         month: 'short',
                         day: 'numeric',
                         hour: '2-digit',
