@@ -78,6 +78,9 @@ export interface QuestionBank {
   totalQuestions: number;
   mcqCount: number;
   essayCount: number;
+  // Server-side sequence trackers to avoid duplicate M/E numbering under concurrent creates
+  nextMcqSequence?: number;
+  nextEssaySequence?: number;
   // Timestamps
   createdAt: Timestamp;
   updatedAt: Timestamp;

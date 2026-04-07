@@ -266,12 +266,49 @@ export default function TeacherQuestionBankDetail() {
     setTempLessonId('');
   };
 
-  const normalizeQuestionNumber = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const decodeHtmlEntities = (value: string) => {
+    if (typeof window === 'undefined') return value;
+    const txt = document.createElement('textarea');
+    txt.innerHTML = value;
+    return txt.value;
+  };
+
+  const sanitizeQuestionIdentifier = (value: string) => {
+    const decoded = decodeHtmlEntities(value || '');
+    return decoded
+      .normalize('NFKC')
+      .replace(/[\u200B-\u200D\uFEFF]/g, '')
+      .replace(/\u00A0/g, ' ')
+      .trim()
+      .toLowerCase();
+  };
+
+  const normalizeQuestionNumber = (value: string) => sanitizeQuestionIdentifier(value).replace(/[^a-z0-9]/g, '');
 
   const extractQuestionNumberDigits = (value: string) => {
     const normalizedValue = normalizeQuestionNumber(value);
-    const match = normalizedValue.match(/^(?:question|q|m|e)?(\d+)$/);
-    return match?.[1] || null;
+    const exactMatch = normalizedValue.match(/^(?:question|q|m|e)?(\d+)$/);
+    if (exactMatch?.[1]) {
+      return exactMatch[1];
+    }
+
+    // Fallback for malformed values like HTML entities or hidden separators around the number.
+    const relaxedMatch = sanitizeQuestionIdentifier(value).match(/(?:^|\b)(?:question|q|m|e)?\s*(\d+)(?:\b|$)/i);
+    return relaxedMatch?.[1] || null;
+  };
+
+  const getQuestionSearchTokens = (question: Question) => {
+    const titleNormalized = normalizeQuestionNumber(question.title || '');
+    const titleDigits = extractQuestionNumberDigits(question.title || '');
+    const referenceNormalized = normalizeQuestionNumber(question.reference || '');
+    const referenceDigits = extractQuestionNumberDigits(question.reference || '');
+
+    return {
+      titleNormalized,
+      titleDigits,
+      referenceNormalized,
+      referenceDigits
+    };
   };
 
   const isNumericQuestionSearch = (value: string) => extractQuestionNumberDigits(value) !== null;
@@ -289,13 +326,15 @@ export default function TeacherQuestionBankDetail() {
     const isNumericSearch = isNumericQuestionSearch(searchTerm);
     const normalizedSearch = normalizeQuestionNumber(searchTerm);
     const searchDigits = extractQuestionNumberDigits(searchTerm);
-    const normalizedQuestionTitle = normalizeQuestionNumber(question.title);
-    const titleDigits = extractQuestionNumberDigits(question.title);
+    const tokens = getQuestionSearchTokens(question);
     
     // Search by the saved question number (for example M1500 / E1500).
     // Numeric searches such as "1500" should only match that exact question number.
     const matchesQuestionNumber = isNumericSearch
-      ? normalizedQuestionTitle === normalizedSearch || titleDigits === searchDigits
+      ? tokens.titleNormalized === normalizedSearch ||
+        tokens.titleDigits === searchDigits ||
+        tokens.referenceNormalized === normalizedSearch ||
+        tokens.referenceDigits === searchDigits
       : false;
 
     // For numeric-only searches, don't search content/options/topic.
@@ -414,11 +453,9 @@ export default function TeacherQuestionBankDetail() {
     try {
       console.log('🔍 Creating question with data:', questionData);
       
-      // Create the question
-      const newQuestionId = await questionService.createQuestion(questionData);
-      
-      // Add to question bank
-      await questionBankService.addQuestionsToBank(bankId, [newQuestionId]);
+      // Create the question and attach to bank atomically.
+      // Number allocation (M/E sequence) is handled server-side in a transaction.
+      const newQuestionId = await questionBankService.createQuestionInBank(bankId, questionData);
       
       // Get the new question and add to local state
       const newQuestion = await questionService.getQuestion(newQuestionId);
