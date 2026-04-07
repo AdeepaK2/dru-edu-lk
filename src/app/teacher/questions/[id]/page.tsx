@@ -266,7 +266,7 @@ export default function TeacherQuestionBankDetail() {
     setTempLessonId('');
   };
 
-  const normalizeQuestionNumber = (value: string) => value.toLowerCase().replace(/\s+/g, '');
+  const normalizeQuestionNumber = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, '');
 
   const extractQuestionNumberDigits = (value: string) => {
     const normalizedValue = normalizeQuestionNumber(value);
@@ -286,6 +286,7 @@ export default function TeacherQuestionBankDetail() {
     }
 
     const searchLower = searchTerm.toLowerCase().trim();
+    const isNumericSearch = isNumericQuestionSearch(searchTerm);
     const normalizedSearch = normalizeQuestionNumber(searchTerm);
     const searchDigits = extractQuestionNumberDigits(searchTerm);
     const normalizedQuestionTitle = normalizeQuestionNumber(question.title);
@@ -293,12 +294,21 @@ export default function TeacherQuestionBankDetail() {
     
     // Search by the saved question number (for example M1500 / E1500).
     // Numeric searches such as "1500" should only match that exact question number.
-    const matchesQuestionNumber = isNumericQuestionSearch(searchTerm)
+    const matchesQuestionNumber = isNumericSearch
       ? normalizedQuestionTitle === normalizedSearch || titleDigits === searchDigits
       : false;
 
+    // For numeric-only searches, don't search content/options/topic.
+    // This prevents question "1520" from appearing while searching "1519"
+    // just because 1519 appears inside its content.
+    if (isNumericSearch) {
+      const matchesTypeFilter = filterType === 'all' || question.type === filterType;
+      const matchesDifficultyFilter = filterDifficulty === 'all' || question.difficultyLevel === filterDifficulty;
+      return matchesQuestionNumber && matchesTypeFilter && matchesDifficultyFilter;
+    }
+
     // Search by title
-    const matchesTitle = isNumericQuestionSearch(searchTerm)
+    const matchesTitle = isNumericSearch
       ? false
       : question.title.toLowerCase().includes(searchLower);
     
