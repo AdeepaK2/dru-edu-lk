@@ -150,10 +150,60 @@ export const questionBankService = {
   async createQuestionBank(bank: Omit<QuestionBank, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
     const bankRef = await addDoc(collection(db, QUESTION_BANKS_COLLECTION), {
       ...bank,
+      nextMcqSequence: bank.nextMcqSequence ?? bank.mcqCount ?? 0,
+      nextEssaySequence: bank.nextEssaySequence ?? bank.essayCount ?? 0,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
     return bankRef.id;
+  },
+
+  // Create a question and add it to a bank atomically.
+  // This prevents duplicate question numbers under concurrent writes.
+  async createQuestionInBank(
+    bankId: string,
+    question: Omit<Question, 'id' | 'createdAt' | 'updatedAt'>
+  ): Promise<string> {
+    const bankRef = doc(db, QUESTION_BANKS_COLLECTION, bankId);
+    const questionRef = doc(collection(db, QUESTIONS_COLLECTION));
+
+    await runTransaction(db, async transaction => {
+      const bankDoc = await transaction.get(bankRef);
+      if (!bankDoc.exists()) {
+        throw new Error('Question bank not found');
+      }
+
+      const bankData = bankDoc.data() as QuestionBank;
+      const currentMcqCount = bankData.mcqCount || 0;
+      const currentEssayCount = bankData.essayCount || 0;
+      const currentTotal = bankData.totalQuestions || 0;
+
+      const isMcq = question.type === 'mcq';
+      const currentSequence = isMcq
+        ? (bankData.nextMcqSequence ?? currentMcqCount)
+        : (bankData.nextEssaySequence ?? currentEssayCount);
+      const nextSequence = currentSequence + 1;
+      const generatedTitle = `${isMcq ? 'M' : 'E'}${nextSequence}`;
+
+      transaction.set(questionRef, {
+        ...question,
+        title: generatedTitle,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+
+      transaction.update(bankRef, {
+        questionIds: [...(bankData.questionIds || []), questionRef.id],
+        totalQuestions: currentTotal + 1,
+        mcqCount: isMcq ? currentMcqCount + 1 : currentMcqCount,
+        essayCount: isMcq ? currentEssayCount : currentEssayCount + 1,
+        nextMcqSequence: isMcq ? nextSequence : (bankData.nextMcqSequence ?? currentMcqCount),
+        nextEssaySequence: isMcq ? (bankData.nextEssaySequence ?? currentEssayCount) : nextSequence,
+        updatedAt: serverTimestamp()
+      });
+    });
+
+    return questionRef.id;
   },
 
   // Get a question bank by ID
