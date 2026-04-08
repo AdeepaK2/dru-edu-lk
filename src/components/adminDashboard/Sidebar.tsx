@@ -3,21 +3,22 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { 
-  LayoutDashboard, 
-  Users, 
-  GraduationCap, 
+import {
+  LayoutDashboard,
+  Users,
+  GraduationCap,
   BookOpen,
-  Video, 
-  CreditCard, 
-  FileQuestion, 
-  Settings, 
+  Video,
+  CreditCard,
+  FileQuestion,
+  Settings,
   LogOut,
   Library,
   Calendar,
   FileCheck,
   MessageCircle,
-  AlertCircle
+  AlertCircle,
+  Quote
 } from 'lucide-react';
 
 // Define sidebar menu items with Lucide icons
@@ -35,6 +36,7 @@ const menuItems = [
   { label: 'Parent Issues', icon: <AlertCircle size={20} />, path: '/admin/parents' },
   { label: 'Transactions', icon: <CreditCard size={20} />, path: '/admin/transactions' },
   { label: 'Question Banks', icon: <FileQuestion size={20} />, path: '/admin/question-banks' },
+  { label: 'Testimonials', icon: <Quote size={20} />, path: '/admin/testimonials' },
 ];
 
 interface SidebarProps {
