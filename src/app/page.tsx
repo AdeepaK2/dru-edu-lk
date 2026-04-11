@@ -4,6 +4,18 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import { Footer, ChatBot } from "@/components/ui";
 import { useState } from "react";
+import {
+  BarChart3,
+  Briefcase,
+  Calculator,
+  CircleDollarSign,
+  ClipboardList,
+  FlaskConical,
+  LineChart,
+  Sigma,
+  Target,
+  Zap,
+} from "lucide-react";
 
 export default function Home() {
   const jsonLd = {
@@ -850,52 +862,52 @@ export default function Home() {
               {[
                 {
                   name: "VCE Math Methods",
-                  icon: "📊",
+                  icon: BarChart3,
                   color: "from-blue-500 to-cyan-500",
                 },
                 {
                   name: "VCE Specialist Math",
-                  icon: "🔢",
+                  icon: Calculator,
                   color: "from-purple-500 to-pink-500",
                 },
                 {
                   name: "VCE Chemistry",
-                  icon: "🧪",
+                  icon: FlaskConical,
                   color: "from-green-500 to-teal-500",
                 },
                 {
                   name: "VCE Physics",
-                  icon: "⚡",
+                  icon: Zap,
                   color: "from-yellow-500 to-orange-500",
                 },
                 {
                   name: "VCE Accounting",
-                  icon: "💼",
+                  icon: Briefcase,
                   color: "from-emerald-500 to-cyan-500",
                 },
                 {
                   name: "VCE General Maths",
-                  icon: "📈",
+                  icon: LineChart,
                   color: "from-indigo-500 to-blue-500",
                 },
                 {
                   name: "VCE Business Management",
-                  icon: "📋",
+                  icon: ClipboardList,
                   color: "from-orange-500 to-red-500",
                 },
                 {
                   name: "VCE Economics",
-                  icon: "💰",
+                  icon: CircleDollarSign,
                   color: "from-amber-500 to-yellow-500",
                 },
                 {
                   name: "Mathematics (Y6-Y10)",
-                  icon: "🔢",
+                  icon: Sigma,
                   color: "from-slate-500 to-gray-600",
                 },
                 {
                   name: "Selective School Prep",
-                  icon: "🎯",
+                  icon: Target,
                   color: "from-rose-500 to-pink-500",
                 },
               ].map((subject, index) => (
@@ -907,7 +919,7 @@ export default function Home() {
                   <div
                     className={`w-16 h-16 bg-gradient-to-br ${subject.color} rounded-xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 group-hover:rotate-12 transition-all duration-500 shadow-lg`}
                   >
-                    <span className="text-3xl group-hover:scale-110 transition-transform duration-300">{subject.icon}</span>
+                    <subject.icon className="w-8 h-8 text-white group-hover:scale-110 transition-transform duration-300" strokeWidth={2.2} />
                   </div>
                   <h3 className="text-lg font-bold text-[#01143d] text-center group-hover:text-[#0088e0] transition-colors">
                     {subject.name}

@@ -49,6 +49,11 @@ export default function TestTakePage() {
   const [timeExpired, setTimeExpired] = useState(false);
   const [isResumingAttempt, setIsResumingAttempt] = useState(false);
 
+  // Refs for timer interval to read without causing effect restarts
+  const remainingTimeRef = useRef<number>(0);
+  const graceModeRef = useRef(false);
+  const isResumingAttemptRef = useRef(false);
+
   // Grace period state - 2 minutes for student to submit after time expires
   const [graceMode, setGraceMode] = useState(false);
   const [graceTimeRemaining, setGraceTimeRemaining] = useState(120); // 2 minutes in seconds
@@ -325,23 +330,35 @@ export default function TestTakePage() {
     }
   };
 
+  // Keep refs in sync with state so the timer interval can read latest values
+  // without being in the dependency array (which would restart the interval every second)
+  useEffect(() => { remainingTimeRef.current = remainingTime; }, [remainingTime]);
+  useEffect(() => { graceModeRef.current = graceMode; }, [graceMode]);
+  useEffect(() => { isResumingAttemptRef.current = isResumingAttempt; }, [isResumingAttempt]);
+
   // Timer effect with attempt management integration and auto-submit
+  // IMPORTANT: Does NOT depend on remainingTime — uses remainingTimeRef instead.
+  // Previously, remainingTime in the dep array caused the effect to restart every second,
+  // which reset serverSyncCounter to 0 on every tick. This meant the server sync condition
+  // (serverSyncCounter > 3) was NEVER met, so the timer ran 100% client-side with zero
+  // server synchronization. The stale Realtime DB state could then produce incorrect
+  // time calculations on reconnection, causing one student's test to auto-submit early.
   useEffect(() => {
     if (!test || !attemptId) return;
-    
+
     // NEW: Skip timer for untimed tests
     if ((test as any).isUntimed) {
       console.log('⏱️ Untimed test detected - no countdown timer, only deadline check');
-      
+
       // For untimed tests, just check deadline periodically
       const checkDeadline = setInterval(async () => {
         try {
           const { AttemptManagementService } = await import('@/apiservices/attemptManagementService');
           const timeCalc = await AttemptManagementService.updateAttemptTime(attemptId);
-          
+
           if (timeCalc.isExpired) {
             clearInterval(checkDeadline);
-            if (!graceMode) {
+            if (!graceModeRef.current) {
               console.log('⏰ Untimed test deadline expired, entering grace period...');
               setGraceMode(true);
               setGraceTimeRemaining(120);
@@ -351,28 +368,39 @@ export default function TestTakePage() {
           console.error('Error checking deadline:', error);
         }
       }, 60000); // Check every minute for untimed tests
-      
+
       return () => clearInterval(checkDeadline);
     }
-    
+
     // EXISTING: Timer logic for timed tests
-    if (remainingTime <= 0) return;
-    
     let serverSyncCounter = 0;
     let lastServerSync = Date.now();
-    let lastServerTime = remainingTime;
-    
-    console.log('⏰ Timer useEffect starting with remaining time:', remainingTime, 'seconds');
-    
+    let lastServerTime = remainingTimeRef.current;
+    let timerStarted = lastServerTime > 0;
+
+    console.log('⏰ Timer useEffect starting with remaining time:', lastServerTime, 'seconds');
+
     const interval = setInterval(async () => {
       try {
+        // Wait for remaining time to be initialized by the loading logic
+        if (!timerStarted) {
+          const currentTime = remainingTimeRef.current;
+          if (currentTime <= 0) return; // Not yet initialized
+          // Timer just became ready — initialize tracking vars
+          timerStarted = true;
+          lastServerSync = Date.now();
+          lastServerTime = currentTime;
+          console.log('⏰ Timer started with remaining time:', currentTime, 'seconds');
+          return; // Start counting from next tick
+        }
+
         serverSyncCounter++;
         const now = Date.now();
-        
+
         // Calculate current estimated time for sync frequency decisions
         const elapsedSinceLastSync = Math.floor((now - lastServerSync) / 1000);
         const currentEstimatedTime = Math.max(0, lastServerTime - elapsedSinceLastSync);
-        
+
         // Determine sync frequency based on remaining time
         let syncInterval = 10; // Default: sync every 10 seconds
         if (currentEstimatedTime <= 300) { // Last 5 minutes
@@ -381,29 +409,29 @@ export default function TestTakePage() {
         if (currentEstimatedTime <= 60) { // Last minute
           syncInterval = 2; // Sync every 2 seconds
         }
-        
+
         // For the first few ticks or when resuming, don't sync with server to avoid overriding resumed time
         // This gives time for the UI to show the correct resumed time
-        const shouldSyncWithServer = serverSyncCounter % syncInterval === 0 && 
-                                   serverSyncCounter > 3 && 
-                                   !isResumingAttempt;
-        
+        const shouldSyncWithServer = serverSyncCounter % syncInterval === 0 &&
+                                   serverSyncCounter > 3 &&
+                                   !isResumingAttemptRef.current;
+
         if (shouldSyncWithServer) {
-          console.log('🔄 Syncing time with server... (tick:', serverSyncCounter, ', isResuming:', isResumingAttempt, ')');
+          console.log('🔄 Syncing time with server... (tick:', serverSyncCounter, ')');
           const { AttemptManagementService } = await import('@/apiservices/attemptManagementService');
           const timeCalc = await AttemptManagementService.updateAttemptTime(attemptId);
-          
+
           if (timeCalc) {
             // Update with accurate server time
             setRemainingTime(timeCalc.timeRemaining);
             lastServerSync = now;
             lastServerTime = timeCalc.timeRemaining;
-            
+
             console.log('✅ Server sync - remaining time:', timeCalc.timeRemaining);
-            
+
             if (timeCalc.isExpired) {
               clearInterval(interval);
-              if (!graceMode) {
+              if (!graceModeRef.current) {
                 console.log('⏰ Time expired, entering grace period...');
                 setGraceMode(true);
                 setGraceTimeRemaining(120);
@@ -412,13 +440,12 @@ export default function TestTakePage() {
             }
           } else {
             // Server failed, use local countdown
-            const elapsedSinceLastSync = Math.floor((now - lastServerSync) / 1000);
             const estimatedTime = Math.max(0, lastServerTime - elapsedSinceLastSync);
             setRemainingTime(estimatedTime);
-            
+
             if (estimatedTime <= 0) {
               clearInterval(interval);
-              if (!graceMode) {
+              if (!graceModeRef.current) {
                 console.log('⏰ Time expired (server unavailable), entering grace period...');
                 setGraceMode(true);
                 setGraceTimeRemaining(120);
@@ -428,13 +455,12 @@ export default function TestTakePage() {
           }
         } else {
           // Between server syncs, use precise local countdown
-          const elapsedSinceLastSync = Math.floor((now - lastServerSync) / 1000);
           const estimatedTime = Math.max(0, lastServerTime - elapsedSinceLastSync);
           setRemainingTime(estimatedTime);
-          
+
           if (estimatedTime <= 0) {
             clearInterval(interval);
-            if (!graceMode) {
+            if (!graceModeRef.current) {
               console.log('⏰ Time expired (local countdown), entering grace period...');
               setGraceMode(true);
               setGraceTimeRemaining(120);
@@ -449,10 +475,10 @@ export default function TestTakePage() {
         const elapsedSinceLastSync = Math.floor((now - lastServerSync) / 1000);
         const estimatedTime = Math.max(0, lastServerTime - elapsedSinceLastSync);
         setRemainingTime(estimatedTime);
-        
+
         if (estimatedTime <= 0) {
           clearInterval(interval);
-          if (!graceMode) {
+          if (!graceModeRef.current) {
             console.log('⏰ Time expired (error fallback), entering grace period...');
             setGraceMode(true);
             setGraceTimeRemaining(120);
@@ -461,9 +487,9 @@ export default function TestTakePage() {
         }
       }
     }, 1000);
-    
+
     return () => clearInterval(interval);
-  }, [test, attemptId, remainingTime]);
+  }, [test, attemptId]);
 
   // Grace period countdown - 2 minutes for student to submit after time expires
   useEffect(() => {

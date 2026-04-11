@@ -46,7 +46,9 @@ const Navbar: React.FC = () => {
           <div className="hidden md:block">
             <div className="ml-10 flex items-center space-x-6">
               <Link href="/about" className="text-white/90 hover:text-white hover:bg-white/10 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">About</Link>
-              
+
+              <Link href="/testimonials" className="text-white/90 hover:text-white hover:bg-white/10 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">Testimonials</Link>
+
               {/* Courses page link */}
               <Link href="/courses" className="text-white/90 hover:text-white hover:bg-white/10 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">Courses</Link>
               
@@ -110,13 +112,20 @@ const Navbar: React.FC = () => {
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 bg-white/10 rounded-lg mt-2 backdrop-blur-md border border-white/20">
               <Link 
-                href="/about" 
+                href="/about"
                 className="text-white/90 hover:text-white hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium transition-all duration-200"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 About
               </Link>
-              <Link 
+              <Link
+                href="/testimonials"
+                className="text-white/90 hover:text-white hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium transition-all duration-200"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Testimonials
+              </Link>
+              <Link
                 href="/courses" 
                 className="text-white/90 hover:text-white hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium transition-all duration-200"
                 onClick={() => setIsMobileMenuOpen(false)}
