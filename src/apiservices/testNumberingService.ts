@@ -459,15 +459,19 @@ export class TestNumberingService {
       }
       
       const testsSnapshot = await getDocs(testsQuery);
-      const tests = testsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      
+      const tests = testsSnapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        // Retests carry the original's "(Test N)" text in their title — never let them
+        // contribute to the next-available calculation.
+        .filter((t: any) => t.isRetest !== true);
+
       console.log('🔍 Found tests for class:', tests.length);
-      
+
       // Extract test numbers from test titles
       // Look for patterns like "Test 1", "Test 2", "(Test 3)", etc.
       const testNumberPattern = /\(?\s*Test\s+(\d+)\s*\)?/i;
       const usedNumbers: number[] = [];
-      
+
       tests.forEach((test: any) => {
         if (test.title) {
           const match = test.title.match(testNumberPattern);

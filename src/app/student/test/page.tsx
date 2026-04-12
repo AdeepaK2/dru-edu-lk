@@ -346,15 +346,17 @@ export default function StudentTests() {
           console.log('📝 Student ID:', student?.id);
           console.log('📝 Class IDs:', classIds);
           const allTests = await TestService.getStudentTests(student?.id || '', classIds);
-          console.log('✅ Loaded tests via hybrid system:', allTests.length);
-          console.log('📊 Test details:', allTests.map(test => ({
+          // Retests live in the dedicated /student/retakes page; never show them in the main test list.
+          const visibleTests = allTests.filter(t => t.isRetest !== true);
+          console.log('✅ Loaded tests via hybrid system:', visibleTests.length, '(filtered out', allTests.length - visibleTests.length, 'retests)');
+          console.log('📊 Test details:', visibleTests.map(test => ({
             id: test.id,
             title: test.title,
             assignmentType: test.assignmentType,
             classIds: test.classIds,
             subjectName: test.subjectName
           })));
-          setTests(allTests);
+          setTests(visibleTests);
           setLoading(false);
         } catch (error) {
           console.error('❌ Error loading tests via hybrid system:', error);
