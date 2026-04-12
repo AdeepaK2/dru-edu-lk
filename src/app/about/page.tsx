@@ -1,10 +1,10 @@
-‘use client’;
+'use client';
 
-import React from ‘react’;
-import Image from ‘next/image’;
-import Link from ‘next/link’;
-import Navbar from ‘@/components/Navbar’;
-import { Footer, ChatBot } from ‘@/components/ui’;
+import React from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import Navbar from '@/components/Navbar';
+import { Footer, ChatBot } from '@/components/ui';
 
 export default function AboutPage() {
   return (
