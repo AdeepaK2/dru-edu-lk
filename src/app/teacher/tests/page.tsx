@@ -407,7 +407,7 @@ export default function TeacherTests() {
     return allClasses.find(cls => cls.id === selectedClassId);
   };
 
-  // Get tests for selected class (excluding custom/student-based tests)
+  // Get tests for selected class (excluding custom/student-based tests and retests)
   const getTestsForClass = (classId: string) => {
     const allTestsToCheck = activeTab === 'main' ? tests : coTests;
     return allTestsToCheck.filter(test => {
@@ -416,8 +416,23 @@ export default function TeacherTests() {
       if (isCustomTest) {
         return false;
       }
-      
+
+      // Retests live in their own Retakes view, not the main class test list
+      if (test.isRetest === true) {
+        return false;
+      }
+
       // Only include tests assigned to this specific class
+      return test.classIds.includes(classId);
+    });
+  };
+
+  // Get retake tests for a specific class (used by the Retakes view)
+  const getRetakesForClass = (classId: string) => {
+    const allTestsToCheck = activeTab === 'main' ? tests : coTests;
+    return allTestsToCheck.filter(test => {
+      if (test.assignmentType === 'student-based') return false;
+      if (test.isRetest !== true) return false;
       return test.classIds.includes(classId);
     });
   };
@@ -895,7 +910,7 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
                       {activeTab === 'main' ? 'My Tests' : 'Co-Class Tests'}
                     </p>
                     <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                      {activeTab === 'main' ? tests.length : coTests.length}
+                      {(activeTab === 'main' ? tests : coTests).filter(t => t.isRetest !== true).length}
                     </p>
                   </div>
                 </div>
@@ -910,6 +925,7 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
                     </p>
                     <p className="text-2xl font-bold text-gray-900 dark:text-white">
                       {(activeTab === 'main' ? tests : coTests).filter(test => {
+                        if (test.isRetest === true) return false;
                         const status = getTestStatus(test);
                         return status.status === 'live' || status.status === 'active';
                       }).length}
@@ -926,7 +942,7 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
                       Upcoming
                     </p>
                     <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                      {(activeTab === 'main' ? tests : coTests).filter(test => getTestStatus(test).status === 'upcoming').length}
+                      {(activeTab === 'main' ? tests : coTests).filter(test => test.isRetest !== true && getTestStatus(test).status === 'upcoming').length}
                     </p>
                   </div>
                 </div>
@@ -940,7 +956,7 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
                       Completed
                     </p>
                     <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                      {(activeTab === 'main' ? tests : coTests).filter(test => getTestStatus(test).status === 'completed').length}
+                      {(activeTab === 'main' ? tests : coTests).filter(test => test.isRetest !== true && getTestStatus(test).status === 'completed').length}
                     </p>
                   </div>
                 </div>

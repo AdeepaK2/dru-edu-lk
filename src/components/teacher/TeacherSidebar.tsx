@@ -68,6 +68,12 @@ const sidebarItems: SidebarItem[] = [
     icon: RefreshCw,
   },
   {
+    id: 'retakes',
+    label: 'Retakes',
+    href: '/teacher/retakes',
+    icon: RefreshCw,
+  },
+  {
     id: 'questions',
     label: 'Question Bank',
     href: '/teacher/questions',

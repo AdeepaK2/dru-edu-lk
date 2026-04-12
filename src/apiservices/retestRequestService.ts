@@ -16,7 +16,6 @@ import {
 } from 'firebase/firestore';
 import { Test, FlexibleTest, LiveTest, InClassTest } from '@/models/testSchema';
 import { RetestRequest, RetestRequestSummary } from '@/models/retestRequestSchema';
-import { TestNumberingService } from './testNumberingService';
 import { v4 as uuidv4 } from 'uuid';
 
 export class RetestRequestService {
@@ -392,24 +391,14 @@ export class RetestRequestService {
         throw new Error('A retest already exists for this test and class');
       }
 
-      // 3. Get the class info for test numbering
+      // 3. Get the class info
       const classId = params.classId;
       const className = originalTest.classNames?.[originalTest.classIds?.indexOf(classId)] || '';
 
-      // 4. Get next test number
-      const numberResult = await TestNumberingService.getNextTestNumber(
-        classId,
-        className,
-        originalTest.subjectId,
-        originalTest.subjectName,
-        params.teacherId,
-        params.teacherName
-      );
-
-      // 5. Build the new retest title
+      // 4. Build the new retest title
       const retestTitle = `${originalTest.title} (Retest)`;
 
-      // 6. Build new test data by cloning original
+      // 5. Build new test data by cloning original
       const now = Timestamp.now();
       const scheduling = params.schedulingData;
 
@@ -431,18 +420,18 @@ export class RetestRequestService {
 
       const newTestData: any = {
         ...baseTestData,
-        // New identity
+        // New identity — retests do NOT consume the class test number sequence
         title: retestTitle,
-        testNumber: numberResult.testNumber,
-        displayNumber: numberResult.displayNumber,
-        numberAssignmentId: numberResult.assignmentId,
+        testNumber: null,
+        displayNumber: null,
+        numberAssignmentId: null,
 
         // Retest metadata
         isRetest: true,
         originalTestId: originalTest.id,
         originalTestTitle: originalTest.title,
-        originalTestNumber: originalTest.testNumber,
-        originalDisplayNumber: originalTest.displayNumber,
+        originalTestNumber: originalTest.testNumber ?? null,
+        originalDisplayNumber: originalTest.displayNumber ?? null,
         retestApprovedBy: params.teacherName,
 
         // Assign only to the specific class
@@ -484,18 +473,11 @@ export class RetestRequestService {
         newTestData.isUntimed = scheduling.isUntimed || false;
       }
 
-      // 7. Create the new test in Firestore (strip undefined fields)
+      // 6. Create the new test in Firestore (strip undefined fields)
       const newTestRef = await addDoc(collection(firestore, this.COLLECTIONS.TESTS), this.removeUndefined(newTestData));
       const retestId = newTestRef.id;
 
-      // 8. Complete test number assignment
-      await TestNumberingService.completeTestNumberAssignment(
-        numberResult.assignmentId,
-        retestId,
-        retestTitle
-      );
-
-      // 9. Update all pending retest requests for this test+class to approved
+      // 7. Update all pending retest requests for this test+class to approved
       const requestsRef = collection(firestore, this.COLLECTIONS.RETEST_REQUESTS);
       const pendingQuery = query(
         requestsRef,
@@ -629,6 +611,35 @@ export class RetestRequestService {
       return retakeTests;
     } catch (error) {
       console.error('Error getting student retakes:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get retake tests created by a teacher (tests where isRetest is true).
+   * Used by the teacher Retakes page so retakes don't pollute the main tests list.
+   */
+  static async getTeacherRetakes(teacherId: string): Promise<Test[]> {
+    try {
+      const testsRef = collection(firestore, this.COLLECTIONS.TESTS);
+      const q = query(
+        testsRef,
+        where('teacherId', '==', teacherId),
+        where('isRetest', '==', true)
+      );
+
+      const snapshot = await getDocs(q);
+      const retakes: Test[] = [];
+      snapshot.forEach((doc) => {
+        const test = { id: doc.id, ...doc.data() } as Test;
+        if (test.isDeleted === true) return;
+        retakes.push(test);
+      });
+
+      retakes.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+      return retakes;
+    } catch (error) {
+      console.error('Error getting teacher retakes:', error);
       return [];
     }
   }
