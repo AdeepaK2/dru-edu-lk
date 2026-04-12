@@ -2146,7 +2146,7 @@ export default function StudentTests() {
                                 {buttonConfig.text}
                               </Button>
                               {/* Retest Request Button for custom tests */}
-                              {hasAttempted && isTestOlderThanOneWeek(test) && !test.isRetest && test.classIds?.[0] && (() => {
+                              {isTestOlderThanOneWeek(test) && !test.isRetest && test.classIds?.[0] && (() => {
                                 const retestRequest = retestRequests[test.id];
                                 if (retestRequest?.status === 'pending') {
                                   return (
@@ -2672,7 +2672,7 @@ export default function StudentTests() {
                                       {buttonConfig.text}
                                     </Button>
                                     {/* Retest Request Button */}
-                                    {hasAttempted && isTestOlderThanOneWeek(test) && !test.isRetest && (() => {
+                                    {isTestOlderThanOneWeek(test) && !test.isRetest && (() => {
                                       const retestRequest = retestRequests[test.id];
                                       if (retestRequest?.status === 'pending') {
                                         return (

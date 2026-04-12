@@ -300,7 +300,7 @@ export default function StudentRetakes() {
 
                     {/* Improvement Indicator */}
                     <div className="flex items-center justify-center">
-                      {retakeSubmission && improvement !== null ? (
+                      {retakeSubmission && originalSubmission && improvement !== null ? (
                         <div className={`text-center p-4 rounded-lg ${
                           improvement > 0
                             ? 'bg-green-50 dark:bg-green-900/20'
@@ -340,12 +340,24 @@ export default function StudentRetakes() {
                               : 'No Change'}
                           </div>
                         </div>
+                      ) : retakeSubmission && !originalSubmission ? (
+                        <div className="text-center p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20">
+                          <CheckCircle className="w-8 h-8 text-blue-600 mx-auto mb-1" />
+                          <div className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                            First attempt
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            No prior score to compare
+                          </div>
+                        </div>
                       ) : (
                         <div className="text-center">
                           <ArrowRight className="w-8 h-8 text-gray-300 mx-auto mb-2" />
                           <div className="text-sm text-gray-400">
                             {status === 'completed' && !retakeSubmission
-                              ? 'Not attempted'
+                              ? 'Retake not attempted'
+                              : !originalSubmission
+                              ? 'Take the retest — this will be your first attempt'
                               : 'Take the retest to see comparison'}
                           </div>
                         </div>
