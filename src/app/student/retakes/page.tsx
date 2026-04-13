@@ -20,7 +20,6 @@ import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui';
 import { RetestRequestService } from '@/apiservices/retestRequestService';
-import { getEnrollmentsByStudent } from '@/services/studentEnrollmentService';
 import { Test, FlexibleTest, LiveTest } from '@/models/testSchema';
 import { Timestamp } from 'firebase/firestore';
 
@@ -86,22 +85,9 @@ export default function StudentRetakes() {
       setLoading(true);
       setError(null);
 
-      // Get student's class enrollments
-      const enrollments = await getEnrollmentsByStudent(student?.id || '');
-      const classIds = enrollments
-        .filter(e => e.status === 'Active')
-        .map(e => e.classId);
-
-      if (classIds.length === 0) {
-        setRetakes([]);
-        setLoading(false);
-        return;
-      }
-
-      // Get all retake tests
+      // Get all retake tests the student is explicitly allowed to take
       const retakeTests = await RetestRequestService.getStudentRetakes(
-        student?.id || '',
-        classIds
+        student?.id || ''
       );
 
       // Get comparisons for each retake

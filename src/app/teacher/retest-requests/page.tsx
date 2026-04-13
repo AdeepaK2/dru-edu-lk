@@ -10,7 +10,6 @@ import {
   ChevronDown,
   ChevronUp,
   AlertCircle,
-  Filter,
   MessageSquare,
   Info
 } from 'lucide-react';
@@ -35,14 +34,12 @@ export default function TeacherRetestRequests() {
   const [denyNote, setDenyNote] = useState('');
   const [processingDeny, setProcessingDeny] = useState(false);
 
-  // Approve modal state
+  // Per-student approve modal
   const [showApproveModal, setShowApproveModal] = useState(false);
-  const [selectedSummary, setSelectedSummary] = useState<RetestRequestSummary | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState<RetestRequest | null>(null);
 
   useEffect(() => {
-    if (!authLoading && teacher) {
-      loadRequests();
-    }
+    if (!authLoading && teacher) loadRequests();
   }, [teacher, authLoading]);
 
   const loadRequests = async () => {
@@ -68,19 +65,15 @@ export default function TeacherRetestRequests() {
     });
   };
 
-  const handleApproveRetest = (summary: RetestRequestSummary) => {
-    setSelectedSummary(summary);
+  const handleApproveRequest = (request: RetestRequest) => {
+    setSelectedRequest(request);
     setShowApproveModal(true);
   };
 
   const handleDenyRequest = async (requestId: string) => {
     try {
       setProcessingDeny(true);
-      await RetestRequestService.denyRetestRequest(
-        requestId,
-        teacher?.id || '',
-        denyNote.trim() || undefined
-      );
+      await RetestRequestService.denyRetestRequest(requestId, teacher?.id || '', denyNote.trim() || undefined);
       setDenyingRequestId(null);
       setDenyNote('');
       await loadRequests();
@@ -94,11 +87,7 @@ export default function TeacherRetestRequests() {
   const handleDenyAll = async (testId: string, classId: string) => {
     try {
       setProcessingDeny(true);
-      await RetestRequestService.denyAllRetestRequests(
-        testId,
-        classId,
-        teacher?.id || ''
-      );
+      await RetestRequestService.denyAllRetestRequests(testId, classId, teacher?.id || '');
       await loadRequests();
     } catch (err) {
       console.error('Error denying all requests:', err);
@@ -116,15 +105,11 @@ export default function TeacherRetestRequests() {
 
   const formatDate = (timestamp: any): string => {
     return convertTimestamp(timestamp).toLocaleDateString('en-AU', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+      day: 'numeric', month: 'short', year: 'numeric',
+      hour: '2-digit', minute: '2-digit'
     });
   };
 
-  // Filter summaries based on active tab
   const filteredSummaries = summaries.filter(summary => {
     if (activeFilter === 'all') return true;
     if (activeFilter === 'pending') return summary.pendingRequests > 0;
@@ -140,22 +125,19 @@ export default function TeacherRetestRequests() {
       case 'pending':
         return (
           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-            <Clock className="w-3 h-3 mr-1" />
-            Pending
+            <Clock className="w-3 h-3 mr-1" />Pending
           </span>
         );
       case 'approved':
         return (
           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-            <CheckCircle className="w-3 h-3 mr-1" />
-            Approved
+            <CheckCircle className="w-3 h-3 mr-1" />Approved
           </span>
         );
       case 'denied':
         return (
           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-            <XCircle className="w-3 h-3 mr-1" />
-            Denied
+            <XCircle className="w-3 h-3 mr-1" />Denied
           </span>
         );
       default:
@@ -172,11 +154,9 @@ export default function TeacherRetestRequests() {
             <div className="flex items-center space-x-3">
               <RefreshCw className="h-8 w-8 text-blue-600" />
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                  Retest Requests
-                </h1>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Retest Requests</h1>
                 <p className="text-gray-600 dark:text-gray-400 mt-1">
-                  Review student requests for retaking completed tests.
+                  Review and approve retake requests per student.
                 </p>
               </div>
             </div>
@@ -190,12 +170,12 @@ export default function TeacherRetestRequests() {
 
         {/* Filter Tabs */}
         <div className="flex space-x-2 mb-6 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
-          {[
+          {([
             { key: 'all' as FilterTab, label: 'All', count: summaries.length },
             { key: 'pending' as FilterTab, label: 'Pending', count: summaries.filter(s => s.pendingRequests > 0).length },
             { key: 'approved' as FilterTab, label: 'Approved', count: summaries.filter(s => s.approvedRequests > 0).length },
             { key: 'denied' as FilterTab, label: 'Denied', count: summaries.filter(s => s.deniedRequests > 0).length },
-          ].map(tab => (
+          ]).map(tab => (
             <button
               key={tab.key}
               onClick={() => setActiveFilter(tab.key)}
@@ -214,7 +194,7 @@ export default function TeacherRetestRequests() {
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-4" />
               <p className="text-gray-600 dark:text-gray-300">Loading requests...</p>
             </div>
           </div>
@@ -260,9 +240,7 @@ export default function TeacherRetestRequests() {
                             {summary.testTitle}
                           </h3>
                           {summary.displayNumber && (
-                            <span className="text-sm text-blue-600 font-medium">
-                              {summary.displayNumber}
-                            </span>
+                            <span className="text-sm text-blue-600 font-medium">{summary.displayNumber}</span>
                           )}
                         </div>
                         <div className="flex items-center space-x-4 mt-1 text-sm text-gray-500 dark:text-gray-400">
@@ -272,7 +250,6 @@ export default function TeacherRetestRequests() {
                       </div>
 
                       <div className="flex items-center space-x-4">
-                        {/* Vote Count */}
                         <div className="text-center">
                           <div className="flex items-center space-x-1">
                             <Users className="w-4 h-4 text-blue-600" />
@@ -280,12 +257,8 @@ export default function TeacherRetestRequests() {
                               {summary.totalRequests}
                             </span>
                           </div>
-                          <div className="text-xs text-gray-500">
-                            request{summary.totalRequests !== 1 ? 's' : ''}
-                          </div>
+                          <div className="text-xs text-gray-500">request{summary.totalRequests !== 1 ? 's' : ''}</div>
                         </div>
-
-                        {/* Status Counts */}
                         <div className="flex items-center space-x-2">
                           {summary.pendingRequests > 0 && (
                             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold bg-yellow-100 text-yellow-800">
@@ -298,8 +271,6 @@ export default function TeacherRetestRequests() {
                             </span>
                           )}
                         </div>
-
-                        {/* Expand Icon */}
                         {isExpanded ? (
                           <ChevronUp className="w-5 h-5 text-gray-400" />
                         ) : (
@@ -312,30 +283,21 @@ export default function TeacherRetestRequests() {
                   {/* Expanded Details */}
                   {isExpanded && (
                     <div className="border-t border-gray-200 dark:border-gray-700">
-                      {/* Action Buttons */}
+                      {/* Deny All bar — only shown when there are pending requests */}
                       {pendingReqs.length > 0 && (
                         <div className="px-6 py-3 bg-gray-50 dark:bg-gray-900/50 flex items-center justify-between">
                           <span className="text-sm text-gray-600 dark:text-gray-400">
-                            {pendingReqs.length} pending request{pendingReqs.length !== 1 ? 's' : ''}
+                            {pendingReqs.length} pending request{pendingReqs.length !== 1 ? 's' : ''} — approve each student individually below
                           </span>
-                          <div className="flex items-center space-x-3">
-                            <Button
-                              onClick={() => handleDenyAll(summary.testId, summary.classId)}
-                              variant="outline"
-                              disabled={processingDeny}
-                              className="text-red-600 border-red-300 hover:bg-red-50 text-sm"
-                            >
-                              <XCircle className="w-4 h-4 mr-1" />
-                              Deny All
-                            </Button>
-                            <Button
-                              onClick={() => handleApproveRetest(summary)}
-                              className="bg-green-600 hover:bg-green-700 text-white text-sm"
-                            >
-                              <CheckCircle className="w-4 h-4 mr-1" />
-                              Approve Retest for Class
-                            </Button>
-                          </div>
+                          <Button
+                            onClick={() => handleDenyAll(summary.testId, summary.classId)}
+                            variant="outline"
+                            disabled={processingDeny}
+                            className="text-red-600 border-red-300 hover:bg-red-50 text-sm"
+                          >
+                            <XCircle className="w-4 h-4 mr-1" />
+                            Deny All
+                          </Button>
                         </div>
                       )}
 
@@ -370,11 +332,11 @@ export default function TeacherRetestRequests() {
                                 )}
                               </div>
 
-                              {/* Individual Actions */}
+                              {/* Per-student actions */}
                               {request.status === 'pending' && (
-                                <div className="ml-4">
+                                <div className="ml-4 flex items-center space-x-2">
                                   {denyingRequestId === request.id ? (
-                                    <div className="flex items-center space-x-2">
+                                    <>
                                       <input
                                         type="text"
                                         value={denyNote}
@@ -390,25 +352,31 @@ export default function TeacherRetestRequests() {
                                         Deny
                                       </Button>
                                       <Button
-                                        onClick={() => {
-                                          setDenyingRequestId(null);
-                                          setDenyNote('');
-                                        }}
+                                        onClick={() => { setDenyingRequestId(null); setDenyNote(''); }}
                                         variant="outline"
                                         className="text-xs px-2 py-1"
                                       >
                                         Cancel
                                       </Button>
-                                    </div>
+                                    </>
                                   ) : (
-                                    <Button
-                                      onClick={() => setDenyingRequestId(request.id)}
-                                      variant="outline"
-                                      className="text-red-600 border-red-200 hover:bg-red-50 text-xs"
-                                    >
-                                      <XCircle className="w-3 h-3 mr-1" />
-                                      Deny
-                                    </Button>
+                                    <>
+                                      <Button
+                                        onClick={() => handleApproveRequest(request)}
+                                        className="bg-green-600 hover:bg-green-700 text-white text-xs px-2 py-1"
+                                      >
+                                        <CheckCircle className="w-3 h-3 mr-1" />
+                                        Approve
+                                      </Button>
+                                      <Button
+                                        onClick={() => setDenyingRequestId(request.id)}
+                                        variant="outline"
+                                        className="text-red-600 border-red-200 hover:bg-red-50 text-xs px-2 py-1"
+                                      >
+                                        <XCircle className="w-3 h-3 mr-1" />
+                                        Deny
+                                      </Button>
+                                    </>
                                   )}
                                 </div>
                               )}
@@ -424,20 +392,15 @@ export default function TeacherRetestRequests() {
           </div>
         )}
 
-        {/* Approve Modal */}
-        {selectedSummary && (
+        {/* Per-student Approve Modal */}
+        {selectedRequest && (
           <ApproveRetestModal
             isOpen={showApproveModal}
-            onClose={() => {
-              setShowApproveModal(false);
-              setSelectedSummary(null);
-            }}
-            summary={selectedSummary}
+            onClose={() => { setShowApproveModal(false); setSelectedRequest(null); }}
+            request={selectedRequest}
             teacherId={teacher?.id || ''}
             teacherName={teacher?.name || ''}
-            onRetestApproved={() => {
-              loadRequests();
-            }}
+            onApproved={() => { loadRequests(); }}
           />
         )}
       </div>
