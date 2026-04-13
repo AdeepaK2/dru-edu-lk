@@ -611,6 +611,44 @@ export class RetestRequestService {
   }
 
   /**
+   * For approved requests: fetch the retake test doc and the student's submission.
+   * Returns two maps keyed by retestTestId so the UI can join per-request.
+   */
+  static async getRetakeDetailsForApproved(
+    approvedRequests: RetestRequest[]
+  ): Promise<{ tests: Map<string, Test>; submissions: Map<string, any> }> {
+    const retestTestIds = approvedRequests
+      .map((r) => r.retestTestId)
+      .filter(Boolean) as string[];
+
+    const tests = new Map<string, Test>();
+    const submissions = new Map<string, any>(); // keyed by retestTestId
+
+    if (retestTestIds.length === 0) return { tests, submissions };
+
+    // Fetch retake test docs in batches of 30
+    const testsRef = collection(firestore, this.COLLECTIONS.TESTS);
+    for (let i = 0; i < retestTestIds.length; i += 30) {
+      const chunk = retestTestIds.slice(i, i + 30);
+      const snap = await getDocs(query(testsRef, where('__name__', 'in', chunk)));
+      snap.forEach((d) => tests.set(d.id, { id: d.id, ...d.data() } as Test));
+    }
+
+    // Fetch submissions in batches of 30
+    const subsRef = collection(firestore, this.COLLECTIONS.STUDENT_SUBMISSIONS);
+    for (let i = 0; i < retestTestIds.length; i += 30) {
+      const chunk = retestTestIds.slice(i, i + 30);
+      const snap = await getDocs(query(subsRef, where('testId', 'in', chunk)));
+      snap.forEach((d) => {
+        const data = { id: d.id, ...d.data() } as any;
+        submissions.set(data.testId, data);
+      });
+    }
+
+    return { tests, submissions };
+  }
+
+  /**
    * Get submission data for comparison (original + retest)
    */
   static async getRetakeComparison(
