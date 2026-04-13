@@ -135,10 +135,10 @@ export class RetestRequestService {
         throw new Error('You already have a pending retest request for this test');
       }
 
-      // Check if a retest already exists for this test
-      const existingRetest = await this.getExistingRetestForTest(params.testId, params.classId);
+      // Check if a retake already exists for this student + test
+      const existingRetest = await this.getExistingRetestForStudent(params.testId, params.studentId);
       if (existingRetest) {
-        throw new Error('A retest has already been created for this test. Check your Retakes tab.');
+        throw new Error('A retake has already been created for you for this test. Check your Retakes tab.');
       }
 
       // Create the request
@@ -239,11 +239,12 @@ export class RetestRequestService {
   }
 
   /**
-   * Check if a retest already exists for a given original test and class
+   * Check if a retake test already exists for a specific student + original test.
+   * Since each approval creates one test per student, we check allowedStudentIds.
    */
-  static async getExistingRetestForTest(
+  static async getExistingRetestForStudent(
     originalTestId: string,
-    classId: string
+    studentId: string
   ): Promise<Test | null> {
     try {
       const testsRef = collection(firestore, this.COLLECTIONS.TESTS);
@@ -251,16 +252,16 @@ export class RetestRequestService {
         testsRef,
         where('originalTestId', '==', originalTestId),
         where('isRetest', '==', true),
-        where('classIds', 'array-contains', classId)
+        where('allowedStudentIds', 'array-contains', studentId)
       );
 
       const snapshot = await getDocs(q);
       if (snapshot.empty) return null;
 
-      const doc = snapshot.docs[0];
-      return { id: doc.id, ...doc.data() } as Test;
+      const d = snapshot.docs[0];
+      return { id: d.id, ...d.data() } as Test;
     } catch (error) {
-      console.error('Error checking existing retest:', error);
+      console.error('Error checking existing retest for student:', error);
       return null;
     }
   }
@@ -351,58 +352,46 @@ export class RetestRequestService {
   }
 
   /**
-   * Approve retest for a whole class - creates a new test
+   * Approve a single student's retest request — creates one retake test for that student only.
+   * The teacher sets the schedule per student, so two students can have different windows.
    */
-  static async approveRetestForClass(params: {
-    testId: string;
-    classId: string;
+  static async approveRetestForStudent(params: {
+    requestId: string;
     teacherId: string;
     teacherName: string;
     reviewNote?: string;
-    // Scheduling for the new test
     schedulingData: {
       type: 'live' | 'flexible';
-      // For live tests
       scheduledStartTime?: Date;
-      duration?: number; // minutes
-      bufferTime?: number; // minutes
-      // For flexible tests
+      duration?: number;
+      bufferTime?: number;
       availableFrom?: Date;
       availableTo?: Date;
       isUntimed?: boolean;
     };
   }): Promise<{ retestId: string; retestTitle: string }> {
     try {
-      console.log('🔄 Approving retest for class:', {
-        testId: params.testId,
-        classId: params.classId
-      });
+      // 1. Load the request
+      const requestDoc = await getDoc(doc(firestore, this.COLLECTIONS.RETEST_REQUESTS, params.requestId));
+      if (!requestDoc.exists()) throw new Error('Retest request not found');
+      const request = { id: requestDoc.id, ...requestDoc.data() } as RetestRequest;
 
-      // 1. Fetch the original test
-      const testDoc = await getDoc(doc(firestore, this.COLLECTIONS.TESTS, params.testId));
-      if (!testDoc.exists()) {
-        throw new Error('Original test not found');
-      }
+      if (request.status !== 'pending') throw new Error('This request has already been reviewed');
+
+      // 2. Load the original test
+      const testDoc = await getDoc(doc(firestore, this.COLLECTIONS.TESTS, request.testId));
+      if (!testDoc.exists()) throw new Error('Original test not found');
       const originalTest = { id: testDoc.id, ...testDoc.data() } as Test;
 
-      // 2. Check if a retest already exists
-      const existingRetest = await this.getExistingRetestForTest(params.testId, params.classId);
-      if (existingRetest) {
-        throw new Error('A retest already exists for this test and class');
-      }
+      // 3. Guard: no duplicate retake for this student + original test
+      const existingRetest = await this.getExistingRetestForStudent(request.testId, request.studentId);
+      if (existingRetest) throw new Error('A retake already exists for this student for this test');
 
-      // 3. Get the class info
-      const classId = params.classId;
-      const className = originalTest.classNames?.[originalTest.classIds?.indexOf(classId)] || '';
+      // 4. Resolve class name
+      const classIdx = originalTest.classIds?.indexOf(request.classId) ?? -1;
+      const className = classIdx >= 0 ? (originalTest.classNames?.[classIdx] || '') : '';
 
-      // 4. Build the new retest title
-      const retestTitle = `${originalTest.title} (Retest)`;
-
-      // 5. Build new test data by cloning original
-      const now = Timestamp.now();
-      const scheduling = params.schedulingData;
-
-      // Remove fields that shouldn't be cloned
+      // 5. Clone original test, strip identity fields
       const {
         id: _id,
         createdAt: _createdAt,
@@ -414,19 +403,20 @@ export class RetestRequestService {
         testNumber: _testNumber,
         displayNumber: _displayNumber,
         numberAssignmentId: _numberAssignmentId,
-        // Remove type-specific timing fields that will be replaced
         ...baseTestData
       } = originalTest as any;
 
+      const now = Timestamp.now();
+      const scheduling = params.schedulingData;
+      const retestTitle = `${originalTest.title} (Retake)`;
+
       const newTestData: any = {
         ...baseTestData,
-        // New identity — retests do NOT consume the class test number sequence
         title: retestTitle,
         testNumber: null,
         displayNumber: null,
         numberAssignmentId: null,
 
-        // Retest metadata
         isRetest: true,
         originalTestId: originalTest.id,
         originalTestTitle: originalTest.title,
@@ -434,27 +424,24 @@ export class RetestRequestService {
         originalDisplayNumber: originalTest.displayNumber ?? null,
         retestApprovedBy: params.teacherName,
 
-        // Assign only to the specific class
-        classIds: [classId],
+        // Only this student may access the retake
+        allowedStudentIds: [request.studentId],
+
+        classIds: [request.classId],
         classNames: [className],
         assignmentType: 'class-based',
 
-        // Status
         status: 'scheduled',
-
-        // Timestamps
         createdAt: now,
         updatedAt: now
       };
 
-      // Set type-specific scheduling
+      // 6. Apply scheduling
       if (scheduling.type === 'live') {
         newTestData.type = 'live';
         newTestData.scheduledStartTime = Timestamp.fromDate(scheduling.scheduledStartTime!);
-        newTestData.duration = scheduling.duration || originalTest.type === 'live'
-          ? (originalTest as LiveTest).duration
-          : 60;
-        newTestData.bufferTime = scheduling.bufferTime || 5;
+        newTestData.duration = scheduling.duration ?? (originalTest.type === 'live' ? (originalTest as LiveTest).duration : 60);
+        newTestData.bufferTime = scheduling.bufferTime ?? 5;
         newTestData.studentJoinTime = Timestamp.fromDate(scheduling.scheduledStartTime!);
         const endTime = new Date(scheduling.scheduledStartTime!.getTime() +
           (newTestData.duration + newTestData.bufferTime) * 60 * 1000);
@@ -466,43 +453,32 @@ export class RetestRequestService {
         newTestData.type = 'flexible';
         newTestData.availableFrom = Timestamp.fromDate(scheduling.availableFrom!);
         newTestData.availableTo = Timestamp.fromDate(scheduling.availableTo!);
-        newTestData.duration = scheduling.duration || (originalTest.type === 'flexible'
-          ? (originalTest as FlexibleTest).duration
-          : 60);
+        newTestData.duration = scheduling.duration ?? (originalTest.type === 'flexible' ? (originalTest as FlexibleTest).duration : 60);
         newTestData.attemptsAllowed = 1;
-        newTestData.isUntimed = scheduling.isUntimed || false;
+        newTestData.isUntimed = scheduling.isUntimed ?? false;
       }
 
-      // 6. Create the new test in Firestore (strip undefined fields)
-      const newTestRef = await addDoc(collection(firestore, this.COLLECTIONS.TESTS), this.removeUndefined(newTestData));
+      // 7. Write the new retake test
+      const newTestRef = await addDoc(
+        collection(firestore, this.COLLECTIONS.TESTS),
+        this.removeUndefined(newTestData)
+      );
       const retestId = newTestRef.id;
 
-      // 7. Update all pending retest requests for this test+class to approved
-      const requestsRef = collection(firestore, this.COLLECTIONS.RETEST_REQUESTS);
-      const pendingQuery = query(
-        requestsRef,
-        where('testId', '==', params.testId),
-        where('classId', '==', params.classId),
-        where('status', '==', 'pending')
-      );
+      // 8. Mark the request approved
+      await updateDoc(doc(firestore, this.COLLECTIONS.RETEST_REQUESTS, params.requestId), {
+        status: 'approved',
+        reviewedAt: now,
+        reviewedBy: params.teacherId,
+        reviewNote: params.reviewNote || '',
+        retestTestId: retestId,
+        updatedAt: now
+      });
 
-      const pendingSnapshot = await getDocs(pendingQuery);
-      const updatePromises = pendingSnapshot.docs.map((requestDoc) =>
-        updateDoc(doc(firestore, this.COLLECTIONS.RETEST_REQUESTS, requestDoc.id), {
-          status: 'approved',
-          reviewedAt: now,
-          reviewedBy: params.teacherId,
-          reviewNote: params.reviewNote || '',
-          retestTestId: retestId,
-          updatedAt: now
-        })
-      );
-      await Promise.all(updatePromises);
-
-      console.log('✅ Retest approved and created successfully:', retestId);
+      console.log('✅ Retake approved for student:', request.studentName, retestId);
       return { retestId, retestTitle };
     } catch (error) {
-      console.error('❌ Error approving retest:', error);
+      console.error('❌ Error approving retake for student:', error);
       throw error;
     }
   }
@@ -573,39 +549,29 @@ export class RetestRequestService {
   }
 
   /**
-   * Get retake tests for a student (tests where isRetest is true)
-   * Used for the Retakes tab
+   * Get retake tests for a student.
+   * Only returns tests where the student was explicitly allowed (i.e. they requested the retest).
+   * Uses the allowedStudentIds field so non-requesting classmates never see these tests.
    */
-  static async getStudentRetakes(
-    studentId: string,
-    classIds: string[]
-  ): Promise<Test[]> {
+  static async getStudentRetakes(studentId: string): Promise<Test[]> {
     try {
-      if (classIds.length === 0) return [];
+      const testsRef = collection(firestore, this.COLLECTIONS.TESTS);
+      const q = query(
+        testsRef,
+        where('isRetest', '==', true),
+        where('allowedStudentIds', 'array-contains', studentId)
+      );
 
+      const snapshot = await getDocs(q);
       const retakeTests: Test[] = [];
-
-      // Query in batches of 10 (Firestore limit for array-contains)
-      for (const classId of classIds) {
-        const testsRef = collection(firestore, this.COLLECTIONS.TESTS);
-        const q = query(
-          testsRef,
-          where('classIds', 'array-contains', classId),
-          where('isRetest', '==', true)
-        );
-
-        const snapshot = await getDocs(q);
-        snapshot.forEach((doc) => {
-          const test = { id: doc.id, ...doc.data() } as Test;
-          // Avoid duplicates from multi-class queries
-          if (!retakeTests.find((t) => t.id === test.id)) {
-            retakeTests.push(test);
-          }
-        });
-      }
+      snapshot.forEach((doc) => {
+        const test = { id: doc.id, ...doc.data() } as Test;
+        if (test.isDeleted === true) return;
+        retakeTests.push(test);
+      });
 
       // Sort by creation date (newest first)
-      retakeTests.sort((a, b) => b.createdAt.seconds - a.createdAt.seconds);
+      retakeTests.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
 
       console.log(`✅ Retrieved ${retakeTests.length} retake tests for student ${studentId}`);
       return retakeTests;

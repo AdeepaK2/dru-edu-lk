@@ -124,6 +124,7 @@ export interface BaseTest {
   originalTestNumber?: number;
   originalDisplayNumber?: string;
   retestApprovedBy?: string; // Teacher name who approved the retest
+  allowedStudentIds?: string[]; // Only these students can access the retake (populated from retest requests)
 
   // Status and timing
   status: TestStatus;
