@@ -19,10 +19,11 @@ import {
 import TeacherLayout from '@/components/teacher/TeacherLayout';
 import { useTeacherAuth } from '@/hooks/useTeacherAuth';
 import { Button } from '@/components/ui';
-import { RetestRequestService } from '@/apiservices/retestRequestService';
+import { BulkApproveRetestResult, RetestRequestService } from '@/apiservices/retestRequestService';
 import { RetestRequestSummary, RetestRequest } from '@/models/retestRequestSchema';
 import { Test, FlexibleTest, LiveTest } from '@/models/testSchema';
 import ApproveRetestModal from '@/components/modals/ApproveRetestModal';
+import ApproveAllRetestsModal from '@/components/modals/ApproveAllRetestsModal';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -101,6 +102,11 @@ export default function TeacherRetestRequests() {
   // Approve modal
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<RetestRequest | null>(null);
+  const [showApproveAllModal, setShowApproveAllModal] = useState(false);
+  const [bulkPendingRequests, setBulkPendingRequests] = useState<RetestRequest[]>([]);
+  const [processingApproveAll, setProcessingApproveAll] = useState(false);
+  const [bulkApproveResult, setBulkApproveResult] = useState<BulkApproveRetestResult | null>(null);
+  const [bulkApproveError, setBulkApproveError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && teacher) loadRequests();
@@ -171,6 +177,8 @@ export default function TeacherRetestRequests() {
     setDetailTab('pending');
     setRetakeTests(new Map());
     setSubmissions(new Map());
+    setBulkApproveResult(null);
+    setBulkApproveError(null);
   };
 
   const goToTest = (summary: RetestRequestSummary) => {
@@ -180,6 +188,8 @@ export default function TeacherRetestRequests() {
     setDetailTab(summary.pendingRequests > 0 ? 'pending' : 'approved');
     setRetakeTests(new Map());
     setSubmissions(new Map());
+    setBulkApproveResult(null);
+    setBulkApproveError(null);
   };
 
   const goBack = () => {
@@ -198,6 +208,17 @@ export default function TeacherRetestRequests() {
   const handleApproveRequest = (request: RetestRequest) => {
     setSelectedRequest(request);
     setShowApproveModal(true);
+  };
+
+  const openApproveAllModal = (pendingRequests: RetestRequest[]) => {
+    setBulkPendingRequests(pendingRequests);
+    setShowApproveAllModal(true);
+  };
+
+  const closeApproveAllModal = () => {
+    if (processingApproveAll) return;
+    setShowApproveAllModal(false);
+    setBulkPendingRequests([]);
   };
 
   const handleDenyRequest = async (requestId: string) => {
@@ -226,6 +247,33 @@ export default function TeacherRetestRequests() {
     }
   };
 
+  const handleApproveAllPending = async () => {
+    if (!selectedSummary) return;
+
+    try {
+      setProcessingApproveAll(true);
+      setBulkApproveError(null);
+      setBulkApproveResult(null);
+
+      const result = await RetestRequestService.approveAllPendingRetestRequests({
+        testId: selectedSummary.testId,
+        classId: selectedSummary.classId,
+        teacherId: teacher?.id || '',
+        teacherName: teacher?.name || ''
+      });
+
+      setBulkApproveResult(result);
+      setShowApproveAllModal(false);
+      setBulkPendingRequests([]);
+      await loadRequests();
+    } catch (err) {
+      console.error(err);
+      setBulkApproveError('Failed to approve all pending retest requests. Please try again.');
+    } finally {
+      setProcessingApproveAll(false);
+    }
+  };
+
   // ── Score helpers ────────────────────────────────────────────────────────────
 
   const getScore = (sub: any, test: Test | undefined) => {
@@ -237,6 +285,7 @@ export default function TeacherRetestRequests() {
   };
 
   const totalPending = summaries.reduce((n, s) => n + s.pendingRequests, 0);
+  const hasBulkResult = !!bulkApproveResult || !!bulkApproveError;
 
   // ── Breadcrumb header ────────────────────────────────────────────────────────
 
@@ -314,6 +363,63 @@ export default function TeacherRetestRequests() {
     <TeacherLayout>
       <div className="max-w-6xl mx-auto px-4 py-8">
         <Header />
+        {hasBulkResult && (
+          <div className={`mb-5 rounded-xl border p-4 ${
+            bulkApproveError
+              ? 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800'
+              : bulkApproveResult?.failed
+              ? 'bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800'
+              : 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800'
+          }`}>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                {bulkApproveError ? (
+                  <p className="text-sm font-medium text-red-700 dark:text-red-300">{bulkApproveError}</p>
+                ) : bulkApproveResult ? (
+                  <>
+                    {bulkApproveResult.total === 0 ? (
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        No pending requests were available to approve.
+                      </p>
+                    ) : bulkApproveResult.failed === 0 ? (
+                      <p className="text-sm font-medium text-green-700 dark:text-green-300">
+                        Successfully approved {bulkApproveResult.approved} request{bulkApproveResult.approved !== 1 ? 's' : ''}.
+                      </p>
+                    ) : (
+                      <p className="text-sm font-medium text-yellow-800 dark:text-yellow-300">
+                        Approved {bulkApproveResult.approved} request{bulkApproveResult.approved !== 1 ? 's' : ''}, failed {bulkApproveResult.failed}.
+                      </p>
+                    )}
+                    {bulkApproveResult.errors.length > 0 && (
+                      <div className="mt-2 space-y-1">
+                        {bulkApproveResult.errors.slice(0, 5).map((error) => (
+                          <p key={error.requestId} className="text-xs text-yellow-800 dark:text-yellow-300">
+                            {error.studentName}: {error.message}
+                          </p>
+                        ))}
+                        {bulkApproveResult.errors.length > 5 && (
+                          <p className="text-xs text-yellow-800 dark:text-yellow-300">
+                            +{bulkApproveResult.errors.length - 5} more error{bulkApproveResult.errors.length - 5 !== 1 ? 's' : ''}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </>
+                ) : null}
+              </div>
+              <Button
+                variant="outline"
+                className="text-xs px-2 py-1"
+                onClick={() => {
+                  setBulkApproveResult(null);
+                  setBulkApproveError(null);
+                }}
+              >
+                Dismiss
+              </Button>
+            </div>
+          </div>
+        )}
 
         {loading ? (
           <div className="flex items-center justify-center py-24">
@@ -499,14 +605,23 @@ export default function TeacherRetestRequests() {
                     <span className="text-sm text-yellow-700 dark:text-yellow-400 font-medium">
                       {pending.length} student{pending.length !== 1 ? 's' : ''} waiting for a decision
                     </span>
-                    <Button
-                      onClick={() => handleDenyAll(selectedSummary.testId, selectedSummary.classId)}
-                      variant="outline"
-                      disabled={processingDeny}
-                      className="text-red-600 border-red-300 hover:bg-red-50 text-xs"
-                    >
-                      <XCircle className="w-3 h-3 mr-1" />Deny All
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        onClick={() => openApproveAllModal(pending)}
+                        disabled={processingApproveAll || processingDeny}
+                        className="bg-green-600 hover:bg-green-700 text-white text-xs"
+                      >
+                        <CheckCircle className="w-3 h-3 mr-1" />Accept All Pending
+                      </Button>
+                      <Button
+                        onClick={() => handleDenyAll(selectedSummary.testId, selectedSummary.classId)}
+                        variant="outline"
+                        disabled={processingDeny || processingApproveAll}
+                        className="text-red-600 border-red-300 hover:bg-red-50 text-xs"
+                      >
+                        <XCircle className="w-3 h-3 mr-1" />Deny All
+                      </Button>
+                    </div>
                   </div>
 
                   {pending.map((request) => (
@@ -539,12 +654,13 @@ export default function TeacherRetestRequests() {
                               />
                               <Button
                                 onClick={() => handleDenyRequest(request.id)}
-                                disabled={processingDeny}
+                                disabled={processingDeny || processingApproveAll}
                                 className="bg-red-600 hover:bg-red-700 text-white text-xs px-2 py-1"
                               >Deny</Button>
                               <Button
                                 onClick={() => { setDenyingRequestId(null); setDenyNote(''); }}
                                 variant="outline"
+                                disabled={processingDeny || processingApproveAll}
                                 className="text-xs px-2 py-1"
                               >Cancel</Button>
                             </>
@@ -552,6 +668,7 @@ export default function TeacherRetestRequests() {
                             <>
                               <Button
                                 onClick={() => handleApproveRequest(request)}
+                                disabled={processingApproveAll}
                                 className="bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1.5"
                               >
                                 <CheckCircle className="w-3 h-3 mr-1" />Approve
@@ -559,6 +676,7 @@ export default function TeacherRetestRequests() {
                               <Button
                                 onClick={() => setDenyingRequestId(request.id)}
                                 variant="outline"
+                                disabled={processingApproveAll}
                                 className="text-red-600 border-red-200 hover:bg-red-50 text-xs px-3 py-1.5"
                               >
                                 <XCircle className="w-3 h-3 mr-1" />Deny
@@ -737,6 +855,16 @@ export default function TeacherRetestRequests() {
             onApproved={() => loadRequests()}
           />
         )}
+
+        <ApproveAllRetestsModal
+          isOpen={showApproveAllModal}
+          onClose={closeApproveAllModal}
+          onConfirm={handleApproveAllPending}
+          pendingRequests={bulkPendingRequests}
+          testTitle={selectedSummary?.testTitle || ''}
+          className={selectedSummary?.className || ''}
+          submitting={processingApproveAll}
+        />
       </div>
     </TeacherLayout>
   );
