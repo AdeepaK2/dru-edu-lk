@@ -6,11 +6,12 @@ export async function GET() {
   try {
     const snapshot = await firebaseAdmin.db
       .collection('testimonials')
-      .where('status', '==', 'approved')
       .orderBy('submittedAt', 'desc')
       .get();
 
-    const testimonials: PublicTestimonial[] = snapshot.docs.map((doc) => {
+    const testimonials: PublicTestimonial[] = snapshot.docs
+      .filter((doc) => doc.data().status === 'approved')
+      .map((doc) => {
       const d = doc.data() as Omit<TestimonialDocument, 'id'>;
       return {
         id: doc.id,
@@ -25,9 +26,12 @@ export async function GET() {
         featured: d.featured,
         photoUrl: d.displayPhoto && d.photoStoragePath ? `/api/testimonials/photo/${doc.id}` : undefined,
         socialUrl: d.displaySocialLink ? d.socialUrl ?? undefined : undefined,
-        submittedAt: d.submittedAt.toDate().toISOString(),
+        submittedAt:
+          typeof d.submittedAt?.toDate === 'function'
+            ? d.submittedAt.toDate().toISOString()
+            : new Date().toISOString(),
       };
-    });
+      });
 
     // Put featured ones first
     testimonials.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
