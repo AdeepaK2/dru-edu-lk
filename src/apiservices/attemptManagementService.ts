@@ -168,21 +168,27 @@ export class AttemptManagementService {
     attempt: Partial<TestAttempt> & { lateSubmissionApprovalId?: string },
     test: Test
   ): Promise<number | null> {
-    if (attempt.endTime) {
-      return this.timestampToMs(attempt.endTime);
-    }
+    const attemptEndTimeMs = attempt.endTime ? this.timestampToMs(attempt.endTime) : null;
 
     if (test.type === 'flexible') {
       const flexTest = test as FlexibleTest;
-      return this.timestampToMs(flexTest.availableTo);
+      const testDeadlineMs = this.timestampToMs(flexTest.availableTo);
+      if (attemptEndTimeMs !== null && testDeadlineMs !== null) {
+        return Math.min(attemptEndTimeMs, testDeadlineMs);
+      }
+      return attemptEndTimeMs ?? testDeadlineMs;
     }
 
     if (test.type === 'live') {
       const liveTest = test as LiveTest;
-      return this.timestampToMs(liveTest.actualEndTime);
+      const liveEndTimeMs = this.timestampToMs(liveTest.actualEndTime);
+      if (attemptEndTimeMs !== null && liveEndTimeMs !== null) {
+        return Math.min(attemptEndTimeMs, liveEndTimeMs);
+      }
+      return attemptEndTimeMs ?? liveEndTimeMs;
     }
 
-    return null;
+    return attemptEndTimeMs;
   }
 
   private static async repairRealtimeAttemptState(
@@ -195,9 +201,17 @@ export class AttemptManagementService {
       const stateRef = ref(db, `${this.REALTIME_PATHS.ATTEMPTS}/${attemptId}`);
       const snapshot = await get(stateRef);
       const existingState = snapshot.exists() ? snapshot.val() as Partial<RealtimeAttemptState> : null;
-      const expectedStatus = authoritativeState.isExpired
-        ? 'expired'
-        : (attempt.status === 'paused' ? 'paused' : 'in_progress');
+      const isSubmitted = attempt.status === 'submitted' || attempt.status === 'auto_submitted';
+      const shouldPreserveOfflineState = !isSubmitted && (
+        existingState?.isOnline === false ||
+        existingState?.status === 'paused' ||
+        existingState?.disconnectedAt !== undefined
+      );
+      const expectedStatus = isSubmitted
+        ? attempt.status
+        : authoritativeState.isExpired
+          ? 'expired'
+          : (shouldPreserveOfflineState || attempt.status === 'paused' ? 'paused' : 'in_progress');
 
       const shouldRepair = !existingState ||
         typeof existingState.timeRemaining !== 'number' ||
@@ -214,7 +228,7 @@ export class AttemptManagementService {
         testId: attempt.testId,
         studentId: attempt.studentId,
         status: expectedStatus,
-        isActive: !authoritativeState.isExpired,
+        isActive: !authoritativeState.isExpired && !isSubmitted && !shouldPreserveOfflineState,
         lastHeartbeat: authoritativeState.authoritativeNowMs,
         sessionStartTime: existingState?.sessionStartTime || authoritativeState.authoritativeNowMs,
         totalTimeSpent: existingState?.totalTimeSpent ?? attempt.timeSpent ?? 0,
@@ -222,7 +236,13 @@ export class AttemptManagementService {
         currentQuestionIndex: existingState?.currentQuestionIndex ?? attempt.currentQuestionIndex ?? 0,
         questionsVisited: existingState?.questionsVisited ?? [],
         isOnline: existingState?.isOnline ?? true,
-        disconnectedAt: authoritativeState.isExpired ? existingState?.disconnectedAt : undefined,
+        disconnectedAt: isSubmitted
+          ? undefined
+          : shouldPreserveOfflineState
+            ? existingState?.disconnectedAt
+            : authoritativeState.isExpired
+            ? existingState?.disconnectedAt
+            : undefined,
         connectionId: existingState?.connectionId || this.generateConnectionId(),
         userAgent: existingState?.userAgent || (typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown'),
         tabId: existingState?.tabId || this.generateTabId(),

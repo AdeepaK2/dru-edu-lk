@@ -54,6 +54,7 @@ export default function TestTakePage() {
   const remainingTimeRef = useRef<number>(0);
   const graceModeRef = useRef(false);
   const isResumingAttemptRef = useRef(false);
+  const authoritativeExpiryFailureCountRef = useRef(0);
 
   // Grace period state - 2 minutes for student to submit after time expires
   const [graceMode, setGraceMode] = useState(false);
@@ -114,9 +115,11 @@ export default function TestTakePage() {
   const enterGraceMode = async (
     source: ExpirySource,
     attemptIdOverride: string = attemptId,
-    diagnostics?: Awaited<ReturnType<typeof getAuthoritativeAttemptState>>
+    diagnostics?: Awaited<ReturnType<typeof getAuthoritativeAttemptState>> | null
   ) => {
-    const authoritativeState = diagnostics ?? await getAuthoritativeAttemptState(source, attemptIdOverride);
+    const authoritativeState = diagnostics !== undefined
+      ? diagnostics
+      : await getAuthoritativeAttemptState(source, attemptIdOverride);
 
     console.log('⏰ Entering grace mode:', {
       attemptId: attemptIdOverride,
@@ -140,10 +143,45 @@ export default function TestTakePage() {
     attemptIdOverride: string = attemptId
   ) => {
     const authoritativeState = await getAuthoritativeAttemptState(source, attemptIdOverride);
+    const MAX_AUTHORITATIVE_EXPIRY_FAILURES = 3;
 
     if (!authoritativeState) {
+      authoritativeExpiryFailureCountRef.current += 1;
+      console.warn('⚠️ Authoritative expiry recheck unavailable at local timer expiry:', {
+        attemptId: attemptIdOverride,
+        source,
+        failureCount: authoritativeExpiryFailureCountRef.current
+      });
+
+      if (authoritativeExpiryFailureCountRef.current >= MAX_AUTHORITATIVE_EXPIRY_FAILURES) {
+        console.warn('⚠️ Falling back to grace mode after repeated authoritative expiry check failures:', {
+          attemptId: attemptIdOverride,
+          source,
+          failureCount: authoritativeExpiryFailureCountRef.current
+        });
+        authoritativeExpiryFailureCountRef.current = 0;
+        await enterGraceMode(source, attemptIdOverride, null);
+        return {
+          totalTimeAllowed: 0,
+          timeSpent: 0,
+          timeRemaining: 0,
+          offlineTime: 0,
+          isExpired: true,
+          canContinue: false,
+          timeUntilExpiry: 0,
+          authoritativeNowMs: Date.now(),
+          clientNowMs: Date.now(),
+          clockSkewMs: 0,
+          firestoreEndTimeMs: undefined,
+          rtdbTimeRemaining: null,
+          expirySource: source
+        };
+      }
+
       return null;
     }
+
+    authoritativeExpiryFailureCountRef.current = 0;
 
     if (authoritativeState.isExpired) {
       await enterGraceMode(source, attemptIdOverride, authoritativeState);
