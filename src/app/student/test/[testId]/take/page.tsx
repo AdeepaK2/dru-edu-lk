@@ -16,6 +16,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 // Import student layout from other components or use a local version for now
 const StudentLayout = ({ children }: { children: React.ReactNode }) => children;
+type ExpirySource = 'resume' | 'reconnect' | 'timer' | 'load';
 
 export default function TestTakePage() {
   const router = useRouter();
@@ -53,6 +54,7 @@ export default function TestTakePage() {
   const remainingTimeRef = useRef<number>(0);
   const graceModeRef = useRef(false);
   const isResumingAttemptRef = useRef(false);
+  const authoritativeExpiryFailureCountRef = useRef(0);
 
   // Grace period state - 2 minutes for student to submit after time expires
   const [graceMode, setGraceMode] = useState(false);
@@ -88,6 +90,118 @@ export default function TestTakePage() {
   
   // Get current question - use displayQuestions instead of test.questions
   const currentQuestion = displayQuestions[currentIndex] || null;
+
+  const getAuthoritativeAttemptState = async (
+    source: ExpirySource,
+    attemptIdOverride: string = attemptId
+  ) => {
+    if (!attemptIdOverride) {
+      return null;
+    }
+
+    try {
+      const { AttemptManagementService } = await import('@/apiservices/attemptManagementService');
+      return await AttemptManagementService.getAuthoritativeAttemptState(attemptIdOverride, source);
+    } catch (stateError) {
+      console.error('Failed to fetch authoritative attempt state:', {
+        attemptId: attemptIdOverride,
+        source,
+        error: stateError
+      });
+      return null;
+    }
+  };
+
+  const enterGraceMode = async (
+    source: ExpirySource,
+    attemptIdOverride: string = attemptId,
+    diagnostics?: Awaited<ReturnType<typeof getAuthoritativeAttemptState>> | null
+  ) => {
+    const authoritativeState = diagnostics !== undefined
+      ? diagnostics
+      : await getAuthoritativeAttemptState(source, attemptIdOverride);
+
+    console.log('⏰ Entering grace mode:', {
+      attemptId: attemptIdOverride,
+      clientNowMs: Date.now(),
+      authoritativeNowMs: authoritativeState?.authoritativeNowMs ?? null,
+      clockSkewMs: authoritativeState?.clockSkewMs ?? null,
+      firestoreEndTimeMs: authoritativeState?.firestoreEndTimeMs ?? null,
+      rtdbTimeRemaining: authoritativeState?.rtdbTimeRemaining ?? null,
+      timeRemaining: authoritativeState?.timeRemaining ?? null,
+      expirySource: source
+    });
+
+    if (!graceModeRef.current) {
+      setGraceMode(true);
+      setGraceTimeRemaining(120);
+    }
+  };
+
+  const confirmAuthoritativeExpiry = async (
+    source: ExpirySource,
+    attemptIdOverride: string = attemptId
+  ) => {
+    const authoritativeState = await getAuthoritativeAttemptState(source, attemptIdOverride);
+    const MAX_AUTHORITATIVE_EXPIRY_FAILURES = 3;
+
+    if (!authoritativeState) {
+      authoritativeExpiryFailureCountRef.current += 1;
+      console.warn('⚠️ Authoritative expiry recheck unavailable at local timer expiry:', {
+        attemptId: attemptIdOverride,
+        source,
+        failureCount: authoritativeExpiryFailureCountRef.current
+      });
+
+      if (authoritativeExpiryFailureCountRef.current >= MAX_AUTHORITATIVE_EXPIRY_FAILURES) {
+        console.warn('⚠️ Falling back to grace mode after repeated authoritative expiry check failures:', {
+          attemptId: attemptIdOverride,
+          source,
+          failureCount: authoritativeExpiryFailureCountRef.current
+        });
+        authoritativeExpiryFailureCountRef.current = 0;
+        await enterGraceMode(source, attemptIdOverride, null);
+        return {
+          totalTimeAllowed: 0,
+          timeSpent: 0,
+          timeRemaining: 0,
+          offlineTime: 0,
+          isExpired: true,
+          canContinue: false,
+          timeUntilExpiry: 0,
+          authoritativeNowMs: Date.now(),
+          clientNowMs: Date.now(),
+          clockSkewMs: 0,
+          firestoreEndTimeMs: undefined,
+          rtdbTimeRemaining: null,
+          expirySource: source
+        };
+      }
+
+      return null;
+    }
+
+    authoritativeExpiryFailureCountRef.current = 0;
+
+    if (authoritativeState.isExpired) {
+      await enterGraceMode(source, attemptIdOverride, authoritativeState);
+      return authoritativeState;
+    }
+
+    console.log('✅ Prevented early grace mode after authoritative recheck:', {
+      attemptId: attemptIdOverride,
+      source,
+      clientNowMs: Date.now(),
+      authoritativeNowMs: authoritativeState.authoritativeNowMs,
+      clockSkewMs: authoritativeState.clockSkewMs,
+      firestoreEndTimeMs: authoritativeState.firestoreEndTimeMs ?? null,
+      rtdbTimeRemaining: authoritativeState.rtdbTimeRemaining ?? null,
+      restoredTimeRemaining: authoritativeState.timeRemaining
+    });
+
+    setRemainingTime(authoritativeState.timeRemaining);
+    return authoritativeState;
+  };
   
   // Image viewer functions
   const openImageViewer = (imageUrl: string) => {
@@ -260,11 +374,8 @@ export default function TestTakePage() {
           // The timer will naturally hit 0 and trigger auto-submit if truly expired
           // This allows students to reconnect and continue if they still have time
           if (timeCalc.isExpired && timeCalc.timeRemaining <= 0) {
-            console.log('⏰ Test time has expired (0 seconds remaining)');
-            if (!graceMode) {
-              setGraceMode(true);
-              setGraceTimeRemaining(120);
-            }
+            console.log('⏰ Test time has expired after authoritative reconnect check');
+            await enterGraceMode('reconnect');
           } else if (timeCalc.timeRemaining > 0) {
             // Test still has time - allow student to continue!
             console.log('✅ Test still active - student can continue with', timeCalc.timeRemaining, 'seconds remaining');
@@ -358,11 +469,7 @@ export default function TestTakePage() {
 
           if (timeCalc.isExpired) {
             clearInterval(checkDeadline);
-            if (!graceModeRef.current) {
-              console.log('⏰ Untimed test deadline expired, entering grace period...');
-              setGraceMode(true);
-              setGraceTimeRemaining(120);
-            }
+            await enterGraceMode('timer');
           }
         } catch (error) {
           console.error('Error checking deadline:', error);
@@ -431,11 +538,7 @@ export default function TestTakePage() {
 
             if (timeCalc.isExpired) {
               clearInterval(interval);
-              if (!graceModeRef.current) {
-                console.log('⏰ Time expired, entering grace period...');
-                setGraceMode(true);
-                setGraceTimeRemaining(120);
-              }
+              await enterGraceMode('timer');
               return;
             }
           } else {
@@ -444,11 +547,14 @@ export default function TestTakePage() {
             setRemainingTime(estimatedTime);
 
             if (estimatedTime <= 0) {
-              clearInterval(interval);
-              if (!graceModeRef.current) {
-                console.log('⏰ Time expired (server unavailable), entering grace period...');
-                setGraceMode(true);
-                setGraceTimeRemaining(120);
+              const authoritativeState = await confirmAuthoritativeExpiry('timer');
+              if (authoritativeState?.isExpired) {
+                clearInterval(interval);
+                return;
+              }
+              if (authoritativeState) {
+                lastServerSync = Date.now();
+                lastServerTime = authoritativeState.timeRemaining;
               }
               return;
             }
@@ -459,11 +565,14 @@ export default function TestTakePage() {
           setRemainingTime(estimatedTime);
 
           if (estimatedTime <= 0) {
-            clearInterval(interval);
-            if (!graceModeRef.current) {
-              console.log('⏰ Time expired (local countdown), entering grace period...');
-              setGraceMode(true);
-              setGraceTimeRemaining(120);
+            const authoritativeState = await confirmAuthoritativeExpiry('timer');
+            if (authoritativeState?.isExpired) {
+              clearInterval(interval);
+              return;
+            }
+            if (authoritativeState) {
+              lastServerSync = Date.now();
+              lastServerTime = authoritativeState.timeRemaining;
             }
             return;
           }
@@ -477,11 +586,14 @@ export default function TestTakePage() {
         setRemainingTime(estimatedTime);
 
         if (estimatedTime <= 0) {
-          clearInterval(interval);
-          if (!graceModeRef.current) {
-            console.log('⏰ Time expired (error fallback), entering grace period...');
-            setGraceMode(true);
-            setGraceTimeRemaining(120);
+          const authoritativeState = await confirmAuthoritativeExpiry('timer');
+          if (authoritativeState?.isExpired) {
+            clearInterval(interval);
+            return;
+          }
+          if (authoritativeState) {
+            lastServerSync = Date.now();
+            lastServerTime = authoritativeState.timeRemaining;
           }
           return;
         }
@@ -518,11 +630,8 @@ export default function TestTakePage() {
       const timeCalc = await AttemptManagementService.updateAttemptTime(attemptId);
       
       if (timeCalc.isExpired) {
-        console.log('⏰ Test has expired during disconnection, entering grace period...');
-        if (!graceMode) {
-          setGraceMode(true);
-          setGraceTimeRemaining(120);
-        }
+        console.log('⏰ Test has expired during disconnection after authoritative update');
+        await enterGraceMode('load', attemptId);
         return false; // Test expired
       }
       
@@ -1068,35 +1177,20 @@ export default function TestTakePage() {
             console.warn('⚠️ Could not store student info in localStorage:', storageError);
           }
           
-          // 🔥 CRITICAL: Calculate remaining time based on Firestore data for resumed attempts
-          // This avoids potential issues with real-time database state corruption
-          console.log('⏰ Calculating remaining time from Firestore attempt data...');
-          let calculatedRemainingTime = 0;
+          const authoritativeAttemptState = await AttemptManagementService.getAuthoritativeAttemptState(newAttemptId, 'resume');
+          setRemainingTime(authoritativeAttemptState.timeRemaining);
+          console.log('✅ Restored remaining time for resumed attempt:', {
+            attemptId: newAttemptId,
+            timeRemaining: authoritativeAttemptState.timeRemaining,
+            authoritativeNowMs: authoritativeAttemptState.authoritativeNowMs,
+            clientNowMs: authoritativeAttemptState.clientNowMs,
+            clockSkewMs: authoritativeAttemptState.clockSkewMs,
+            firestoreEndTimeMs: authoritativeAttemptState.firestoreEndTimeMs ?? null,
+            rtdbTimeRemaining: authoritativeAttemptState.rtdbTimeRemaining ?? null
+          });
           
-          if (activeAttempt.endTime) {
-            const endTime = activeAttempt.endTime.toDate ? activeAttempt.endTime.toDate() : new Date(activeAttempt.endTime.seconds * 1000);
-            calculatedRemainingTime = Math.max(0, Math.floor((endTime.getTime() - Date.now()) / 1000));
-          } else if (activeAttempt.startedAt && activeAttempt.totalTimeAllowed) {
-            const startTime = activeAttempt.startedAt.toDate ? activeAttempt.startedAt.toDate() : new Date(activeAttempt.startedAt.seconds * 1000);
-            const endTime = new Date(startTime.getTime() + (activeAttempt.totalTimeAllowed * 1000));
-            calculatedRemainingTime = Math.max(0, Math.floor((endTime.getTime() - Date.now()) / 1000));
-          } else if (activeAttempt.timeRemaining) {
-            calculatedRemainingTime = activeAttempt.timeRemaining;
-          }
-          
-          console.log('⏰ Calculated remaining time from Firestore:', calculatedRemainingTime, 'seconds');
-          
-          // Set the calculated remaining time directly instead of using AttemptManagementService
-          setRemainingTime(calculatedRemainingTime);
-          console.log('✅ Set remaining time for resumed attempt:', calculatedRemainingTime, 'seconds');
-          
-          // Check if already expired
-          if (calculatedRemainingTime <= 0) {
-            console.log('⏰ Attempt has already expired based on Firestore data, entering grace period...');
-            if (!graceMode) {
-              setGraceMode(true);
-              setGraceTimeRemaining(120);
-            }
+          if (authoritativeAttemptState.isExpired) {
+            await enterGraceMode('resume', newAttemptId, authoritativeAttemptState);
             setLoading(false);
             return;
           }
@@ -1185,11 +1279,7 @@ export default function TestTakePage() {
           const finalTimeCalc = await AttemptManagementService.updateAttemptTime(newAttemptId);
           
           if (finalTimeCalc.isExpired) {
-            console.log('⏰ Attempt expired during setup, entering grace period...');
-            if (!graceMode) {
-              setGraceMode(true);
-              setGraceTimeRemaining(120);
-            }
+            await enterGraceMode('load', newAttemptId);
             setLoading(false);
             return;
           }
@@ -1651,7 +1741,17 @@ export default function TestTakePage() {
     
     try {
       setLoading(true);
-      console.log('⏰ Auto-submitting test due to time expiry...');
+      const authoritativeState = await getAuthoritativeAttemptState('timer');
+      console.log('⏰ Auto-submitting test due to time expiry:', {
+        attemptId,
+        clientNowMs: Date.now(),
+        authoritativeNowMs: authoritativeState?.authoritativeNowMs ?? null,
+        clockSkewMs: authoritativeState?.clockSkewMs ?? null,
+        firestoreEndTimeMs: authoritativeState?.firestoreEndTimeMs ?? null,
+        rtdbTimeRemaining: authoritativeState?.rtdbTimeRemaining ?? null,
+        timeRemaining: authoritativeState?.timeRemaining ?? null,
+        expirySource: 'timer'
+      });
       
       // Import services
       const { RealtimeTestService } = await import('@/apiservices/realtimeTestService');

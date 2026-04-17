@@ -38,6 +38,15 @@ import {
 import { Test, FlexibleTest, LiveTest } from '@/models/testSchema';
 import { QuestionShuffleService } from './questionShuffleService';
 
+export interface AuthoritativeAttemptState extends TimeCalculation {
+  authoritativeNowMs: number;
+  clientNowMs: number;
+  clockSkewMs: number;
+  firestoreEndTimeMs?: number;
+  rtdbTimeRemaining?: number | null;
+  expirySource: 'resume' | 'reconnect' | 'timer' | 'background' | 'load' | 'submitted';
+}
+
 export class AttemptManagementService {
   private static COLLECTIONS = {
     ATTEMPTS: 'testAttempts',
@@ -48,6 +57,11 @@ export class AttemptManagementService {
     ATTEMPTS: 'activeAttempts',
     HEARTBEATS: 'heartbeats'
   };
+
+  private static AUTHORITATIVE_TIME_CACHE_MS = 60000;
+  private static authoritativeTimeCache:
+    | { fetchedAtMs: number; offsetMs: number }
+    | null = null;
 
   // Helper function to remove undefined values recursively
   private static removeUndefinedValues(obj: any): any {
@@ -75,6 +89,248 @@ export class AttemptManagementService {
     }
     
     return obj;
+  }
+
+  private static timestampToMs(timestamp: any): number | null {
+    if (!timestamp) return null;
+    if (typeof timestamp.toMillis === 'function') return timestamp.toMillis();
+    if (typeof timestamp.toDate === 'function') return timestamp.toDate().getTime();
+    if (typeof timestamp.seconds === 'number') {
+      const nanos = typeof timestamp.nanoseconds === 'number' ? timestamp.nanoseconds : 0;
+      return (timestamp.seconds * 1000) + Math.floor(nanos / 1000000);
+    }
+    if (timestamp instanceof Date) return timestamp.getTime();
+    if (typeof timestamp === 'number') return timestamp;
+    if (typeof timestamp === 'string') {
+      const parsed = new Date(timestamp).getTime();
+      return Number.isNaN(parsed) ? null : parsed;
+    }
+    return null;
+  }
+
+  private static async getAuthoritativeTimeDetails(): Promise<{
+    authoritativeNowMs: number;
+    clientNowMs: number;
+    clockSkewMs: number;
+  }> {
+    const clientNowMs = Date.now();
+
+    if (typeof window === 'undefined') {
+      return {
+        authoritativeNowMs: clientNowMs,
+        clientNowMs,
+        clockSkewMs: 0
+      };
+    }
+
+    const cached = this.authoritativeTimeCache;
+    if (cached && (clientNowMs - cached.fetchedAtMs) < this.AUTHORITATIVE_TIME_CACHE_MS) {
+      return {
+        authoritativeNowMs: clientNowMs + cached.offsetMs,
+        clientNowMs,
+        clockSkewMs: cached.offsetMs
+      };
+    }
+
+    try {
+      const response = await fetch('/api/server-time', { cache: 'no-store' });
+      if (!response.ok) {
+        throw new Error(`Server time request failed: ${response.status}`);
+      }
+
+      const payload = await response.json() as { nowMs?: number };
+      if (typeof payload.nowMs !== 'number') {
+        throw new Error('Server time response missing nowMs');
+      }
+
+      const offsetMs = payload.nowMs - clientNowMs;
+      this.authoritativeTimeCache = {
+        fetchedAtMs: clientNowMs,
+        offsetMs
+      };
+
+      return {
+        authoritativeNowMs: clientNowMs + offsetMs,
+        clientNowMs,
+        clockSkewMs: offsetMs
+      };
+    } catch (error) {
+      console.warn('⚠️ Falling back to client clock for authoritative time:', error);
+      return {
+        authoritativeNowMs: clientNowMs,
+        clientNowMs,
+        clockSkewMs: 0
+      };
+    }
+  }
+
+  private static async getEffectiveAttemptDeadlineMs(
+    attempt: Partial<TestAttempt> & { lateSubmissionApprovalId?: string },
+    test: Test
+  ): Promise<number | null> {
+    const attemptEndTimeMs = attempt.endTime ? this.timestampToMs(attempt.endTime) : null;
+
+    if (test.type === 'flexible') {
+      const flexTest = test as FlexibleTest;
+      const testDeadlineMs = this.timestampToMs(flexTest.availableTo);
+      if (attemptEndTimeMs !== null && testDeadlineMs !== null) {
+        return Math.min(attemptEndTimeMs, testDeadlineMs);
+      }
+      return attemptEndTimeMs ?? testDeadlineMs;
+    }
+
+    if (test.type === 'live') {
+      const liveTest = test as LiveTest;
+      const liveEndTimeMs = this.timestampToMs(liveTest.actualEndTime);
+      if (attemptEndTimeMs !== null && liveEndTimeMs !== null) {
+        return Math.min(attemptEndTimeMs, liveEndTimeMs);
+      }
+      return attemptEndTimeMs ?? liveEndTimeMs;
+    }
+
+    return attemptEndTimeMs;
+  }
+
+  private static async repairRealtimeAttemptState(
+    attemptId: string,
+    attempt: TestAttemptWithShuffling,
+    authoritativeState: AuthoritativeAttemptState
+  ): Promise<void> {
+    try {
+      const db = getDatabase();
+      const stateRef = ref(db, `${this.REALTIME_PATHS.ATTEMPTS}/${attemptId}`);
+      const snapshot = await get(stateRef);
+      const existingState = snapshot.exists() ? snapshot.val() as Partial<RealtimeAttemptState> : null;
+      const isSubmitted = attempt.status === 'submitted' || attempt.status === 'auto_submitted';
+      const shouldPreserveOfflineState = !isSubmitted && (
+        existingState?.isOnline === false ||
+        existingState?.status === 'paused' ||
+        existingState?.disconnectedAt !== undefined
+      );
+      const expectedStatus = isSubmitted
+        ? attempt.status
+        : authoritativeState.isExpired
+          ? 'expired'
+          : (shouldPreserveOfflineState || attempt.status === 'paused' ? 'paused' : 'in_progress');
+
+      const shouldRepair = !existingState ||
+        typeof existingState.timeRemaining !== 'number' ||
+        Math.abs((existingState.timeRemaining ?? 0) - authoritativeState.timeRemaining) > 5 ||
+        (existingState.timeRemaining ?? 0) <= 0 && authoritativeState.timeRemaining > 0 ||
+        existingState.status !== expectedStatus;
+
+      if (!shouldRepair) {
+        return;
+      }
+
+      const repairedState: Partial<RealtimeAttemptState> = {
+        attemptId,
+        testId: attempt.testId,
+        studentId: attempt.studentId,
+        status: expectedStatus,
+        isActive: !authoritativeState.isExpired && !isSubmitted && !shouldPreserveOfflineState,
+        lastHeartbeat: authoritativeState.authoritativeNowMs,
+        sessionStartTime: existingState?.sessionStartTime || authoritativeState.authoritativeNowMs,
+        totalTimeSpent: existingState?.totalTimeSpent ?? attempt.timeSpent ?? 0,
+        timeRemaining: authoritativeState.timeRemaining,
+        currentQuestionIndex: existingState?.currentQuestionIndex ?? attempt.currentQuestionIndex ?? 0,
+        questionsVisited: existingState?.questionsVisited ?? [],
+        isOnline: existingState?.isOnline ?? true,
+        disconnectedAt: isSubmitted
+          ? undefined
+          : shouldPreserveOfflineState
+            ? existingState?.disconnectedAt
+            : authoritativeState.isExpired
+            ? existingState?.disconnectedAt
+            : undefined,
+        connectionId: existingState?.connectionId || this.generateConnectionId(),
+        userAgent: existingState?.userAgent || (typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown'),
+        tabId: existingState?.tabId || this.generateTabId(),
+        windowId: existingState?.windowId || this.generateWindowId()
+      };
+
+      await update(stateRef, repairedState);
+      console.log('🔧 Repaired realtime attempt state:', {
+        attemptId,
+        timeRemaining: authoritativeState.timeRemaining,
+        expectedStatus,
+        previousTimeRemaining: existingState?.timeRemaining ?? null
+      });
+    } catch (error) {
+      console.warn('⚠️ Failed to repair realtime attempt state:', { attemptId, error });
+    }
+  }
+
+  static async getAuthoritativeAttemptState(
+    attemptId: string,
+    source: AuthoritativeAttemptState['expirySource'] = 'load'
+  ): Promise<AuthoritativeAttemptState> {
+    const timeDetails = await this.getAuthoritativeTimeDetails();
+    const attemptDoc = await getDoc(doc(firestore, this.COLLECTIONS.ATTEMPTS, attemptId));
+
+    if (!attemptDoc.exists()) {
+      throw new Error('Attempt not found');
+    }
+
+    const attempt = attemptDoc.data() as TestAttemptWithShuffling;
+    const test = await this.getTest(attempt.testId);
+    if (!test) {
+      throw new Error('Test not found');
+    }
+
+    const stateSnapshot = await get(ref(getDatabase(), `${this.REALTIME_PATHS.ATTEMPTS}/${attemptId}`));
+    const realtimeState = stateSnapshot.exists() ? stateSnapshot.val() as Partial<RealtimeAttemptState> : null;
+    const rtdbTimeRemaining = typeof realtimeState?.timeRemaining === 'number'
+      ? realtimeState.timeRemaining
+      : null;
+
+    const firestoreEndTimeMs = await this.getEffectiveAttemptDeadlineMs(attempt, test);
+    const isSubmitted = attempt.status === 'submitted' || attempt.status === 'auto_submitted';
+
+    let timeRemaining = 0;
+    let expirySource: AuthoritativeAttemptState['expirySource'] = source;
+
+    if (!isSubmitted && firestoreEndTimeMs !== null) {
+      timeRemaining = Math.max(0, Math.floor((firestoreEndTimeMs - timeDetails.authoritativeNowMs) / 1000));
+    } else if (isSubmitted) {
+      expirySource = 'submitted';
+    }
+
+    if (!isSubmitted && test.type === 'flexible' && (test as FlexibleTest).isUntimed) {
+      expirySource = timeRemaining <= 0 ? source : source;
+    }
+
+    const authoritativeState: AuthoritativeAttemptState = {
+      totalTimeAllowed: attempt.totalTimeAllowed || 0,
+      timeSpent: attempt.timeSpent || 0,
+      timeRemaining,
+      offlineTime: 0,
+      isExpired: isSubmitted ? true : timeRemaining <= 0,
+      canContinue: !isSubmitted && timeRemaining > 0,
+      timeUntilExpiry: timeRemaining,
+      authoritativeNowMs: timeDetails.authoritativeNowMs,
+      clientNowMs: timeDetails.clientNowMs,
+      clockSkewMs: timeDetails.clockSkewMs,
+      firestoreEndTimeMs: firestoreEndTimeMs ?? undefined,
+      rtdbTimeRemaining,
+      expirySource
+    };
+
+    await this.repairRealtimeAttemptState(attemptId, attempt, authoritativeState);
+
+    console.log('🧭 Authoritative attempt state:', {
+      attemptId,
+      source,
+      authoritativeNowMs: authoritativeState.authoritativeNowMs,
+      clientNowMs: authoritativeState.clientNowMs,
+      clockSkewMs: authoritativeState.clockSkewMs,
+      firestoreEndTimeMs: authoritativeState.firestoreEndTimeMs,
+      rtdbTimeRemaining: authoritativeState.rtdbTimeRemaining,
+      timeRemaining: authoritativeState.timeRemaining,
+      isExpired: authoritativeState.isExpired
+    });
+
+    return authoritativeState;
   }
 
   // Create a new test attempt
@@ -133,7 +389,8 @@ export class AttemptManagementService {
         ? Number.MAX_SAFE_INTEGER // Essentially infinite time per session for untimed tests
         : this.getTestDuration(test) * 60; // Convert to seconds for timed tests
       
-      const startTime = Timestamp.now();
+      const timeDetails = await this.getAuthoritativeTimeDetails();
+      const startTime = Timestamp.fromMillis(timeDetails.authoritativeNowMs);
       
       // 🆕 FLEXIBLE TEST FIX: For timed flexible tests, cap duration by deadline
       // If student starts at 11:55 with 30-min test, but deadline is 12:00,
@@ -141,8 +398,8 @@ export class AttemptManagementService {
       // 🆕 LATE SUBMISSION FIX: Check for late submission approval and use new deadline
       let lateSubmissionApprovalId: string | undefined;
       
-      if (!isUntimed && test.type === 'flexible' && (test as any).availableTo) {
-        let effectiveDeadline = (test as any).availableTo;
+      let effectiveDeadline = test.type === 'flexible' ? (test as any).availableTo : undefined;
+      if (test.type === 'flexible' && (test as any).availableTo) {
         
         // Check for late submission approval with extended deadline
         try {
@@ -184,7 +441,7 @@ export class AttemptManagementService {
       
       // For untimed tests, endTime is the test deadline, not duration-based
       const endTime = isUntimed && test.type === 'flexible'
-        ? (test as any).availableTo
+        ? effectiveDeadline
         : new Timestamp(startTime.seconds + timeAllowed, startTime.nanoseconds);
 
       console.log(`⏱️ Test type: ${isUntimed ? 'UNTIMED' : 'TIMED'}, timeAllowed: ${timeAllowed}`);
@@ -268,8 +525,8 @@ export class AttemptManagementService {
         maxScore: test.totalMarks,
         
         // Metadata
-        createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now()
+        createdAt: Timestamp.fromMillis(timeDetails.authoritativeNowMs),
+        updatedAt: Timestamp.fromMillis(timeDetails.authoritativeNowMs)
       };
 
       // Clean the attempt object to remove any undefined values
@@ -292,7 +549,8 @@ export class AttemptManagementService {
       console.log('▶️ Starting attempt:', attemptId);
 
       const db = getDatabase();
-      const now = Date.now();
+      const timeDetails = await this.getAuthoritativeTimeDetails();
+      const now = timeDetails.authoritativeNowMs;
 
       // Get attempt from Firestore
       const attemptDoc = await getDoc(doc(firestore, this.COLLECTIONS.ATTEMPTS, attemptId));
@@ -306,8 +564,8 @@ export class AttemptManagementService {
       await updateDoc(doc(firestore, this.COLLECTIONS.ATTEMPTS, attemptId), {
         status: 'in_progress',
         sessionStartTime: now,
-        lastActiveAt: Timestamp.now(),
-        updatedAt: Timestamp.now()
+        lastActiveAt: Timestamp.fromMillis(now),
+        updatedAt: Timestamp.fromMillis(now)
       });
 
       // Create real-time state
@@ -354,7 +612,8 @@ export class AttemptManagementService {
   static async updateAttemptTime(attemptId: string): Promise<TimeCalculation> {
     try {
       const db = getDatabase();
-      const now = Date.now();
+      const timeDetails = await this.getAuthoritativeTimeDetails();
+      const now = timeDetails.authoritativeNowMs;
 
       // Get current real-time state
       const stateRef = ref(db, `${this.REALTIME_PATHS.ATTEMPTS}/${attemptId}`);
@@ -410,26 +669,14 @@ export class AttemptManagementService {
       }
       const attempt = attemptDoc.data() as any;
       
+      const authoritativeState = await this.getAuthoritativeAttemptState(attemptId, 'timer');
+
       // NEW: Handle untimed tests differently
       if (attempt.isUntimedTest === true) {
-        console.log('⏱️ Processing untimed test - only checking deadline');
-        
-        // Get test to check deadline
-        const test = await this.getTest(attempt.testId);
-        if (!test || test.type !== 'flexible') {
-          throw new Error('Test not found or invalid type for untimed test');
-        }
-        
-        const now = Timestamp.now();
-        const deadline = (test as any).availableTo;
-        
-        // Check if past deadline
-        const isExpired = now.seconds >= deadline.seconds;
-        
         // Calculate session time for tracking purposes only
         let sessionTime = 0;
         if (state.isOnline && state.sessionStartTime) {
-          sessionTime = Math.floor((now.toMillis() - state.sessionStartTime) / 1000);
+          sessionTime = Math.floor((timeDetails.authoritativeNowMs - state.sessionStartTime) / 1000);
         }
         
         // Update cumulative time spent
@@ -439,60 +686,53 @@ export class AttemptManagementService {
         // Update states
         const updates: any = {
           totalTimeSpent: newTotalTimeSpent,
-          timeRemaining: isExpired ? 0 : Number.MAX_SAFE_INTEGER,
-          lastHeartbeat: now.toMillis()
+          timeRemaining: authoritativeState.timeRemaining,
+          lastHeartbeat: timeDetails.authoritativeNowMs
         };
         
         if (state.isOnline) {
-          updates.sessionStartTime = now.toMillis(); // Reset for next calculation
+          updates.sessionStartTime = timeDetails.authoritativeNowMs; // Reset for next calculation
         }
         
         await update(stateRef, updates);
         
         // Periodic Firestore update (improved reliability)
         const lastFirestoreUpdate = (state as any).lastFirestoreUpdate || 0;
-        const timeSinceLastFirestoreUpdate = now.toMillis() - lastFirestoreUpdate;
+        const timeSinceLastFirestoreUpdate = timeDetails.authoritativeNowMs - lastFirestoreUpdate;
         const FIRESTORE_UPDATE_INTERVAL = 30000; // 30 seconds
         
         if (timeSinceLastFirestoreUpdate >= FIRESTORE_UPDATE_INTERVAL) {
           await updateDoc(doc(firestore, this.COLLECTIONS.ATTEMPTS, attemptId), {
             totalTimeSpentAcrossSessions: newTotalTimeSpent,
             timeSpent: newTotalTimeSpent,
-            lastActiveAt: now,
-            updatedAt: now
+            lastActiveAt: Timestamp.fromMillis(timeDetails.authoritativeNowMs),
+            updatedAt: Timestamp.fromMillis(timeDetails.authoritativeNowMs)
           });
           
           // Track when we updated Firestore
-          await update(stateRef, { lastFirestoreUpdate: now.toMillis() });
+          await update(stateRef, { lastFirestoreUpdate: timeDetails.authoritativeNowMs });
         }
         
         const timeCalc: TimeCalculation = {
           totalTimeAllowed: Number.MAX_SAFE_INTEGER,
           timeSpent: newTotalTimeSpent,
-          timeRemaining: isExpired ? 0 : Number.MAX_SAFE_INTEGER,
+          timeRemaining: authoritativeState.timeRemaining,
           offlineTime: 0,
-          isExpired: isExpired,
-          canContinue: !isExpired,
-          timeUntilExpiry: isExpired ? 0 : (deadline.seconds - now.seconds)
+          isExpired: authoritativeState.isExpired,
+          canContinue: authoritativeState.canContinue,
+          timeUntilExpiry: authoritativeState.timeUntilExpiry
         };
         
         // ⚠️ IMPORTANT: Only mark as expired if student is OFFLINE
         // If online, return isExpired = true and let CLIENT handle auto-submit
-        if (isExpired && !state.isOnline) {
+        if (authoritativeState.isExpired && !state.isOnline) {
           console.log('⏰ Untimed test deadline expired (student offline) - marking for background auto-submit');
           await this.markAttemptAsExpired(attemptId);
-        } else if (isExpired && state.isOnline) {
+        } else if (authoritativeState.isExpired && state.isOnline) {
           console.log('⏰ Untimed test deadline expired (student online) - letting client handle auto-submit');
         }
         
         return timeCalc;
-      }
-      
-      // EXISTING: Handle timed tests
-      // Get test to check for flexible test deadline
-      const test = await this.getTest(attempt.testId);
-      if (!test) {
-        throw new Error('Test not found');
       }
       
       // Calculate time spent in current session (only if online)
@@ -512,29 +752,8 @@ export class AttemptManagementService {
       // Ensure totalTimeSpent is never null or undefined
       const currentTotalTimeSpent = state.totalTimeSpent ?? 0;
       const newTotalTimeSpent = currentTotalTimeSpent + sessionTime;
-      let newTimeRemaining = Math.max(0, (state.timeRemaining ?? 0) - sessionTime);
-      
-      // 🆕 FLEXIBLE TEST FIX: Check if deadline has passed (for timed flexible tests)
-      // If student starts at 11:55 with 30-min test, but deadline is 12:00,
-      // they should only get 5 minutes, not 30!
-      if (test.type === 'flexible' && (test as any).availableTo) {
-        const deadline = (test as any).availableTo;
-        const deadlineSeconds = deadline.seconds || (deadline.toMillis ? deadline.toMillis() / 1000 : 0);
-        // Use consistent time source (milliseconds for precision)
-        const nowMillis = now;
-        const deadlineMillis = deadlineSeconds * 1000;
-        const timeUntilDeadlineMs = Math.max(0, deadlineMillis - nowMillis);
-        const timeUntilDeadline = Math.floor(timeUntilDeadlineMs / 1000);
-        
-        // Use whichever is LESS: remaining duration OR time until deadline
-        if (timeUntilDeadline < newTimeRemaining) {
-          console.log(`⏰ Flexible test deadline constraint: ${timeUntilDeadline}s until deadline vs ${newTimeRemaining}s remaining`);
-          newTimeRemaining = timeUntilDeadline;
-        }
-      }
-      
-      // Check if attempt should be marked as expired
-      const isExpired = newTimeRemaining <= 0;
+      const newTimeRemaining = authoritativeState.timeRemaining;
+      const isExpired = authoritativeState.isExpired;
       
       // Only mark as expired, DON'T auto-submit here
       // Let the client-side timer or background job handle actual submission
@@ -567,8 +786,8 @@ export class AttemptManagementService {
         await updateDoc(doc(firestore, this.COLLECTIONS.ATTEMPTS, attemptId), {
           timeSpent: newTotalTimeSpent,
           timeRemaining: newTimeRemaining,
-          lastActiveAt: Timestamp.now(),
-          updatedAt: Timestamp.now()
+          lastActiveAt: Timestamp.fromMillis(timeDetails.authoritativeNowMs),
+          updatedAt: Timestamp.fromMillis(timeDetails.authoritativeNowMs)
         });
         
         // Track when we updated Firestore
@@ -585,6 +804,18 @@ export class AttemptManagementService {
         timeUntilExpiry: newTimeRemaining
       };
 
+      console.log('⏱️ Authoritative timed update:', {
+        attemptId,
+        authoritativeNowMs: timeDetails.authoritativeNowMs,
+        clientNowMs: timeDetails.clientNowMs,
+        clockSkewMs: timeDetails.clockSkewMs,
+        firestoreEndTimeMs: authoritativeState.firestoreEndTimeMs,
+        rtdbTimeRemaining: authoritativeState.rtdbTimeRemaining,
+        timeSpent: newTotalTimeSpent,
+        timeRemaining: newTimeRemaining,
+        isExpired
+      });
+
       return timeCalc;
     } catch (error) {
       console.error('Error updating attempt time:', error);
@@ -598,13 +829,14 @@ export class AttemptManagementService {
   static async markAttemptAsExpired(attemptId: string): Promise<void> {
     try {
       const db = getDatabase();
+      const { authoritativeNowMs } = await this.getAuthoritativeTimeDetails();
       
       // Update real-time state to mark as expired
       await update(ref(db, `${this.REALTIME_PATHS.ATTEMPTS}/${attemptId}`), {
         status: 'expired',
         timeRemaining: 0,
         isExpired: true,
-        expiredAt: Date.now()
+        expiredAt: authoritativeNowMs
       });
       
       // ⚠️ IMPORTANT: Do NOT change Firestore status here!
@@ -614,7 +846,7 @@ export class AttemptManagementService {
       // - Client-side handleAutoSubmit() for online students
       await updateDoc(doc(firestore, this.COLLECTIONS.ATTEMPTS, attemptId), {
         timeRemaining: 0,
-        updatedAt: Timestamp.now()
+        updatedAt: Timestamp.fromMillis(authoritativeNowMs)
       });
       
       console.log('⏰ Attempt marked as expired (timeRemaining = 0)');
@@ -627,7 +859,8 @@ export class AttemptManagementService {
   static async handleDisconnection(attemptId: string): Promise<void> {
     try {
       const db = getDatabase();
-      const now = Date.now();
+      const { authoritativeNowMs } = await this.getAuthoritativeTimeDetails();
+      const now = authoritativeNowMs;
 
       // Update real-time state
       await update(ref(db, `${this.REALTIME_PATHS.ATTEMPTS}/${attemptId}`), {
@@ -651,7 +884,8 @@ export class AttemptManagementService {
   static async handleReconnection(attemptId: string): Promise<TimeCalculation> {
     try {
       const db = getDatabase();
-      const now = Date.now();
+      const authoritativeState = await this.getAuthoritativeAttemptState(attemptId, 'reconnect');
+      const now = authoritativeState.authoritativeNowMs;
 
       // Get current state
       const stateRef = ref(db, `${this.REALTIME_PATHS.ATTEMPTS}/${attemptId}`);
@@ -688,71 +922,18 @@ export class AttemptManagementService {
         };
       }
       
-      // Get test to check deadline
-      const test = await this.getTest(attemptData.testId);
-      if (!test) {
-        throw new Error('Test not found');
-      }
-      
-      // Calculate actual time remaining based on DEADLINE, not timer countdown
-      // IMPORTANT: Use state.timeRemaining as the baseline, but verify against deadline
-      let actualTimeRemaining = state.timeRemaining ?? 0;
-      let isExpiredByDeadline = false;
-      
-      // Only check deadline if we have a valid timeRemaining from state
-      // If timeRemaining is already 0 or negative, it means timer ran out before disconnect
-      const hasTimeFromTimer = actualTimeRemaining > 0;
-      
-      if (test.type === 'flexible') {
-        const flexTest = test as any;
-        if (flexTest.availableTo) {
-          const deadline = flexTest.availableTo;
-          const deadlineMs = deadline.seconds ? deadline.seconds * 1000 : (deadline.toMillis ? deadline.toMillis() : 0);
-          const timeUntilDeadlineMs = Math.max(0, deadlineMs - now);
-          const timeUntilDeadline = Math.floor(timeUntilDeadlineMs / 1000);
-          
-          // Check if deadline has passed
-          isExpiredByDeadline = timeUntilDeadline <= 0;
-          
-          if (hasTimeFromTimer) {
-            // Use whichever is LESS: timer countdown OR time until deadline
-            actualTimeRemaining = Math.min(state.timeRemaining ?? 0, timeUntilDeadline);
-            console.log('🔌 Reconnection check - Timer:', state.timeRemaining, 's, Deadline:', timeUntilDeadline, 's, Using:', actualTimeRemaining, 's');
-          } else {
-            // Timer was already at 0 - check if deadline still allows continuation
-            if (!isExpiredByDeadline) {
-              console.warn('⚠️ Timer at 0 but deadline not reached - this should not happen in normal flow');
-            }
-            console.log('🔌 Reconnection check - Timer was 0, Deadline:', timeUntilDeadline, 's');
-          }
-        }
-      } else if (test.type === 'live') {
-        const liveTest = test as any;
-        if (liveTest.actualEndTime) {
-          const endTime = liveTest.actualEndTime;
-          const endTimeMs = endTime.seconds ? endTime.seconds * 1000 : (endTime.toMillis ? endTime.toMillis() : 0);
-          const timeUntilEndMs = Math.max(0, endTimeMs - now);
-          const timeUntilEnd = Math.floor(timeUntilEndMs / 1000);
-          
-          // Check if end time has passed
-          isExpiredByDeadline = timeUntilEnd <= 0;
-          
-          if (hasTimeFromTimer) {
-            actualTimeRemaining = Math.min(state.timeRemaining ?? 0, timeUntilEnd);
-            console.log('🔌 Reconnection check - Timer:', state.timeRemaining, 's, End time:', timeUntilEnd, 's, Using:', actualTimeRemaining, 's');
-          } else {
-            console.log('🔌 Reconnection check - Timer was 0, End time:', timeUntilEnd, 's');
-          }
-        }
-      }
-      
-      // Test is expired ONLY if:
-      // 1. Timer countdown reached 0, OR
-      // 2. Deadline/end time has passed
-      const isExpired = actualTimeRemaining <= 0 || isExpiredByDeadline;
+      const actualTimeRemaining = authoritativeState.timeRemaining;
+      const isExpired = authoritativeState.isExpired;
       
       if (isExpired) {
-        console.log('⏰ Test expired (past deadline) during disconnection');
+        console.log('⏰ Test expired (authoritative timing) during disconnection', {
+          attemptId,
+          authoritativeNowMs: authoritativeState.authoritativeNowMs,
+          clientNowMs: authoritativeState.clientNowMs,
+          clockSkewMs: authoritativeState.clockSkewMs,
+          firestoreEndTimeMs: authoritativeState.firestoreEndTimeMs,
+          rtdbTimeRemaining: authoritativeState.rtdbTimeRemaining
+        });
         console.log('🔄 Returning isExpired=true - client will handle auto-submit');
         
         // DON'T auto-submit here - return expired state and let client handle it
@@ -786,7 +967,14 @@ export class AttemptManagementService {
       });
 
       console.log('🔌 Reconnected successfully. Offline time:', offlineTime, 'seconds');
-      console.log('🔌 Time remaining (deadline-aware):', actualTimeRemaining, 'seconds');
+      console.log('🔌 Time remaining (authoritative):', actualTimeRemaining, 'seconds', {
+        attemptId,
+        authoritativeNowMs: authoritativeState.authoritativeNowMs,
+        clientNowMs: authoritativeState.clientNowMs,
+        clockSkewMs: authoritativeState.clockSkewMs,
+        firestoreEndTimeMs: authoritativeState.firestoreEndTimeMs,
+        rtdbTimeRemaining: authoritativeState.rtdbTimeRemaining
+      });
       
       return {
         totalTimeAllowed: attemptData.totalTimeAllowed || 0,
@@ -812,7 +1000,8 @@ export class AttemptManagementService {
       console.log('📤 Submitting attempt:', attemptId);
 
       const db = getDatabase();
-      const now = Date.now();
+      const { authoritativeNowMs } = await this.getAuthoritativeTimeDetails();
+      const now = authoritativeNowMs;
 
       // ✅ CRITICAL: Check if already submitted to prevent duplicates
       const attemptDoc = await getDoc(doc(firestore, this.COLLECTIONS.ATTEMPTS, attemptId));
@@ -835,9 +1024,9 @@ export class AttemptManagementService {
       // Update Firestore
       await updateDoc(doc(firestore, this.COLLECTIONS.ATTEMPTS, attemptId), {
         status: isAutoSubmitted ? 'auto_submitted' : 'submitted',
-        submittedAt: Timestamp.now(),
-        lastActiveAt: Timestamp.now(),
-        updatedAt: Timestamp.now()
+        submittedAt: Timestamp.fromMillis(now),
+        lastActiveAt: Timestamp.fromMillis(now),
+        updatedAt: Timestamp.fromMillis(now)
       });
 
       // Update real-time state
@@ -860,7 +1049,8 @@ export class AttemptManagementService {
       console.log('⏸️ Pausing untimed test session:', attemptId);
       
       const db = getDatabase();
-      const now = Date.now();
+      const { authoritativeNowMs } = await this.getAuthoritativeTimeDetails();
+      const now = authoritativeNowMs;
       
       // Get current state
       const stateRef = ref(db, `${this.REALTIME_PATHS.ATTEMPTS}/${attemptId}`);
@@ -890,7 +1080,7 @@ export class AttemptManagementService {
       const newSession = {
         sessionId: `session_${Date.now()}`,
         startTime: Timestamp.fromMillis(sessionStart),
-        endTime: Timestamp.now(),
+        endTime: Timestamp.fromMillis(now),
         timeSpent: sessionTime,
         isPaused: true
       };
@@ -903,8 +1093,8 @@ export class AttemptManagementService {
         status: 'paused',
         totalTimeSpentAcrossSessions: totalTimeSpent,
         sessionHistory: [...sessionHistory, newSession],
-        lastActiveAt: Timestamp.now(),
-        updatedAt: Timestamp.now()
+        lastActiveAt: Timestamp.fromMillis(now),
+        updatedAt: Timestamp.fromMillis(now)
       });
       
       // Update realtime state
@@ -926,7 +1116,8 @@ export class AttemptManagementService {
       console.log('▶️ Resuming untimed test session:', attemptId);
       
       const db = getDatabase();
-      const now = Date.now();
+      const { authoritativeNowMs } = await this.getAuthoritativeTimeDetails();
+      const now = authoritativeNowMs;
       
       // Update realtime state
       const stateRef = ref(db, `${this.REALTIME_PATHS.ATTEMPTS}/${attemptId}`);
@@ -941,8 +1132,8 @@ export class AttemptManagementService {
       // Update Firestore
       await updateDoc(doc(firestore, this.COLLECTIONS.ATTEMPTS, attemptId), {
         status: 'in_progress',
-        lastActiveAt: Timestamp.now(),
-        updatedAt: Timestamp.now()
+        lastActiveAt: Timestamp.fromMillis(now),
+        updatedAt: Timestamp.fromMillis(now)
       });
       
       console.log('✅ Untimed session resumed');

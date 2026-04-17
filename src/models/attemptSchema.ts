@@ -8,6 +8,7 @@ export type TestAttemptStatus =
   | 'not_started'     // Attempt created but not started
   | 'in_progress'     // Currently taking the test
   | 'paused'          // Temporarily paused (offline)
+  | 'expired'         // Time has run out; pending client/background submission handling
   | 'submitted'       // Successfully submitted
   | 'auto_submitted'  // Auto-submitted due to time expiry
   | 'abandoned'       // Left incomplete (timeout)

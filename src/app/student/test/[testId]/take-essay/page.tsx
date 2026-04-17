@@ -15,6 +15,7 @@ import { ExamPDFService } from '@/services/examPDFService';
 
 // Student layout component
 const StudentLayout = ({ children }: { children: React.ReactNode }) => children;
+type ExpirySource = 'resume' | 'reconnect' | 'timer' | 'load';
 
 interface EssayTestSubmission {
   attemptId: string;
@@ -48,6 +49,7 @@ export default function TakeEssayTestPage() {
   // Timer state
   const [remainingTime, setRemainingTime] = useState<number>(0);
   const [timeExpired, setTimeExpired] = useState(false);
+  const graceModeRef = useRef(false);
 
   // Grace period state - 2 minutes for student to submit after time expires
   const [graceMode, setGraceMode] = useState(false);
@@ -63,6 +65,55 @@ export default function TakeEssayTestPage() {
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+
+  const getAuthoritativeAttemptState = async (
+    source: ExpirySource,
+    attemptIdOverride: string = attemptId
+  ) => {
+    if (!attemptIdOverride) {
+      return null;
+    }
+
+    try {
+      const { AttemptManagementService } = await import('@/apiservices/attemptManagementService');
+      return await AttemptManagementService.getAuthoritativeAttemptState(attemptIdOverride, source);
+    } catch (stateError) {
+      console.error('Failed to fetch authoritative essay attempt state:', {
+        attemptId: attemptIdOverride,
+        source,
+        error: stateError
+      });
+      return null;
+    }
+  };
+
+  const enterGraceMode = async (
+    source: ExpirySource,
+    attemptIdOverride: string = attemptId,
+    diagnostics?: Awaited<ReturnType<typeof getAuthoritativeAttemptState>>
+  ) => {
+    const authoritativeState = diagnostics ?? await getAuthoritativeAttemptState(source, attemptIdOverride);
+
+    console.log('⏰ Essay test entering grace mode:', {
+      attemptId: attemptIdOverride,
+      clientNowMs: Date.now(),
+      authoritativeNowMs: authoritativeState?.authoritativeNowMs ?? null,
+      clockSkewMs: authoritativeState?.clockSkewMs ?? null,
+      firestoreEndTimeMs: authoritativeState?.firestoreEndTimeMs ?? null,
+      rtdbTimeRemaining: authoritativeState?.rtdbTimeRemaining ?? null,
+      timeRemaining: authoritativeState?.timeRemaining ?? null,
+      expirySource: source
+    });
+
+    if (!graceModeRef.current) {
+      setGraceMode(true);
+      setGraceTimeRemaining(120);
+    }
+  };
+
+  useEffect(() => {
+    graceModeRef.current = graceMode;
+  }, [graceMode]);
 
   // Format remaining time for display
   const formatTime = (seconds: number) => {
@@ -217,19 +268,23 @@ export default function TakeEssayTestPage() {
           throw new Error('This attempt has already been submitted. Please check your results.');
         }
         
-        // Get time remaining
-        const timeCalc = await AttemptManagementService.updateAttemptTime(attemptIdFromUrl);
-        
-        if (timeCalc.isExpired) {
-          if (!graceMode) {
-            console.log('⏰ Essay test time expired, entering grace period...');
-            setGraceMode(true);
-            setGraceTimeRemaining(120);
-          }
+        const authoritativeState = await AttemptManagementService.getAuthoritativeAttemptState(attemptIdFromUrl, 'resume');
+
+        if (authoritativeState.isExpired) {
+          await enterGraceMode('resume', attemptIdFromUrl, authoritativeState);
           return;
         }
 
-        setRemainingTime(timeCalc.timeRemaining);
+        setRemainingTime(authoritativeState.timeRemaining);
+        console.log('✅ Restored essay attempt from authoritative state:', {
+          attemptId: attemptIdFromUrl,
+          timeRemaining: authoritativeState.timeRemaining,
+          authoritativeNowMs: authoritativeState.authoritativeNowMs,
+          clientNowMs: authoritativeState.clientNowMs,
+          clockSkewMs: authoritativeState.clockSkewMs,
+          firestoreEndTimeMs: authoritativeState.firestoreEndTimeMs ?? null,
+          rtdbTimeRemaining: authoritativeState.rtdbTimeRemaining ?? null
+        });
         
         // Load existing submission if any
         await loadExistingSubmission(attemptIdFromUrl);
@@ -265,7 +320,7 @@ export default function TakeEssayTestPage() {
 
   // Timer effect
   useEffect(() => {
-    if (!test || !attemptId || remainingTime <= 0) return;
+    if (!test || !attemptId || remainingTime <= 0 || graceMode) return;
     
     const interval = setInterval(async () => {
       try {
@@ -277,11 +332,7 @@ export default function TakeEssayTestPage() {
         
         if (timeCalc) {
           if (timeCalc.isExpired) {
-            if (!graceMode) {
-              console.log('⏰ Essay heartbeat: time expired, entering grace period...');
-              setGraceMode(true);
-              setGraceTimeRemaining(120);
-            }
+            await enterGraceMode('timer');
             return;
           }
           setRemainingTime(timeCalc.timeRemaining);
@@ -292,7 +343,7 @@ export default function TakeEssayTestPage() {
     }, 1000);
     
     return () => clearInterval(interval);
-  }, [test, attemptId, remainingTime]);
+  }, [test, attemptId, remainingTime, graceMode]);
 
   // Grace period countdown - 2 minutes for student to submit after time expires
   useEffect(() => {
@@ -408,6 +459,18 @@ export default function TakeEssayTestPage() {
     if (!attemptId) return;
     
     try {
+      const authoritativeState = await getAuthoritativeAttemptState('timer');
+      console.log('⏰ Auto-submitting essay test due to time expiry:', {
+        attemptId,
+        clientNowMs: Date.now(),
+        authoritativeNowMs: authoritativeState?.authoritativeNowMs ?? null,
+        clockSkewMs: authoritativeState?.clockSkewMs ?? null,
+        firestoreEndTimeMs: authoritativeState?.firestoreEndTimeMs ?? null,
+        rtdbTimeRemaining: authoritativeState?.rtdbTimeRemaining ?? null,
+        timeRemaining: authoritativeState?.timeRemaining ?? null,
+        expirySource: 'timer'
+      });
+
       const { RealtimeTestService } = await import('@/apiservices/realtimeTestService');
       const { SubmissionService } = await import('@/apiservices/submissionService');
       
