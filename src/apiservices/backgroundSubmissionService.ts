@@ -13,6 +13,65 @@ export class BackgroundSubmissionService {
   // 🛡️ Feature flags for safety
   private static ENABLE_EXTENSION_AWARENESS = process.env.ENABLE_EXTENSION_AWARENESS !== 'false'; // Default: enabled
   // REMOVED: ENABLE_ENHANCED_ACTIVITY_CHECK - no longer doing inactivity-based auto-submit
+
+  private static timestampToMs(timestamp: any): number | null {
+    if (!timestamp) return null;
+    if (typeof timestamp.toMillis === 'function') return timestamp.toMillis();
+    if (typeof timestamp.toDate === 'function') return timestamp.toDate().getTime();
+    if (typeof timestamp.seconds === 'number') return timestamp.seconds * 1000;
+    if (typeof timestamp._seconds === 'number') return timestamp._seconds * 1000;
+    if (timestamp instanceof Date) return timestamp.getTime();
+    if (typeof timestamp === 'number') return timestamp;
+    return null;
+  }
+
+  private static getEffectiveExpiryTimeMs(attempt: TestAttempt, test: Test): number | null {
+    const attemptEndTimeMs = this.timestampToMs((attempt as any).endTime);
+
+    if (test.type === 'live') {
+      const liveEndTimeMs = this.timestampToMs((test as LiveTest).actualEndTime);
+      if (attemptEndTimeMs !== null && liveEndTimeMs !== null) {
+        return Math.min(attemptEndTimeMs, liveEndTimeMs);
+      }
+      return attemptEndTimeMs ?? liveEndTimeMs;
+    }
+
+    if (test.type === 'flexible') {
+      const deadlineMs = this.timestampToMs((test as FlexibleTest).availableTo);
+      if (attemptEndTimeMs !== null && deadlineMs !== null) {
+        return Math.min(attemptEndTimeMs, deadlineMs);
+      }
+      return attemptEndTimeMs ?? deadlineMs;
+    }
+
+    return attemptEndTimeMs;
+  }
+
+  private static getAuthoritativeExpiryDecision(
+    attempt: TestAttempt,
+    test: Test,
+    nowMs: number
+  ): {
+    isExpired: boolean;
+    effectiveEndTimeMs: number | null;
+    expiryReason: 'duration_or_deadline' | 'window_closed' | 'none';
+  } {
+    const effectiveEndTimeMs = this.getEffectiveExpiryTimeMs(attempt, test);
+
+    if (effectiveEndTimeMs !== null && nowMs >= effectiveEndTimeMs) {
+      return {
+        isExpired: true,
+        effectiveEndTimeMs,
+        expiryReason: 'duration_or_deadline'
+      };
+    }
+
+    return {
+      isExpired: false,
+      effectiveEndTimeMs,
+      expiryReason: 'none'
+    };
+  }
   
   /**
    * Find and auto-submit all expired attempts
@@ -84,18 +143,10 @@ export class BackgroundSubmissionService {
   /**
    * Check if a specific attempt has expired based on test type and timing
    * 
-   * NEW APPROACH: Use SERVER-SIDE timeRemaining from Realtime DB
-   * This is the authoritative source of truth that continues counting even when:
-   * - Chromebook tabs are suspended
-   * - Students switch tabs/apps
-   * - Network drops temporarily
-   * 
-   * Students are auto-submitted when:
-   * 1. Server-calculated timeRemaining <= 0 (duration expired)
-   * 2. Test deadline has passed (flexible tests - availableTo)
-   * 3. Test end time reached (live tests - actualEndTime)
-   * 
-   * NOT submitted based on inactivity (no lastActiveAt check)
+   * NEW APPROACH: Realtime DB is only a signal.
+   * Final auto-submit decisions must be confirmed against server-side schedule data
+   * from Firestore attempt/test timestamps to avoid stale `timeRemaining = 0`
+   * auto-submitting a still-valid attempt.
    */
   private static async checkIfAttemptExpired(attempt: TestAttempt): Promise<boolean> {
     try {
@@ -114,9 +165,9 @@ export class BackgroundSubmissionService {
         }
       }
 
-      // ✅ PRIMARY CHECK: Get server-side timeRemaining from Realtime DB
-      // This is calculated by attemptManagementService.updateAttemptTime()
-      // and continues counting even when tabs are suspended
+      let realtimeTimeRemaining: number | null = null;
+
+      // Realtime DB remains useful as a signal, but not the final authority.
       try {
         const { getDatabase } = await import('firebase-admin/database');
         const rtdb = getDatabase();
@@ -127,17 +178,15 @@ export class BackgroundSubmissionService {
         if (attemptSnapshot.exists()) {
           const realtimeState = attemptSnapshot.val();
           const timeRemaining = realtimeState.timeRemaining;
-          
-          // Check if time has expired based on SERVER calculation
-          if (typeof timeRemaining === 'number' && timeRemaining <= 0) {
-            console.log(`⏰ Attempt ${attempt.id} time expired (server-side timeRemaining: ${timeRemaining})`);
-            return true;
-          }
-          
-          // If time remaining > 0, student still has time - check other conditions
-          if (typeof timeRemaining === 'number' && timeRemaining > 0) {
-            console.log(`⏱️ Attempt ${attempt.id} still has time (${Math.round(timeRemaining)}s remaining)`);
-            // Continue to check deadline/end time below
+
+          if (typeof timeRemaining === 'number') {
+            realtimeTimeRemaining = timeRemaining;
+
+            if (timeRemaining > 0) {
+              console.log(`⏱️ Attempt ${attempt.id} realtime state reports ${Math.round(timeRemaining)}s remaining`);
+            } else {
+              console.log(`⚠️ Attempt ${attempt.id} realtime state reports timeRemaining=${timeRemaining}; awaiting authoritative schedule check`);
+            }
           }
         }
       } catch (rtError) {
@@ -179,11 +228,27 @@ export class BackgroundSubmissionService {
 
       const test = { id: testDoc.id, ...testDoc.data() } as Test;
       const now = Date.now();
+      const authoritativeDecision = this.getAuthoritativeExpiryDecision(attempt, test, now);
 
-      if (test.type === 'flexible') {
-        return this.checkFlexibleTestExpiration(attempt, test as FlexibleTest, now);
-      } else if (test.type === 'live') {
-        return this.checkLiveTestExpiration(attempt, test as LiveTest, now);
+      if (!authoritativeDecision.isExpired && typeof realtimeTimeRemaining === 'number' && realtimeTimeRemaining <= 0) {
+        console.warn('🛡️ Ignoring stale realtime expiry signal because authoritative schedule says attempt is still valid:', {
+          attemptId: attempt.id,
+          nowMs: now,
+          realtimeTimeRemaining,
+          effectiveEndTimeMs: authoritativeDecision.effectiveEndTimeMs
+        });
+        return false;
+      }
+
+      if (authoritativeDecision.isExpired) {
+        console.log('⏰ Background auto-submit confirmed by authoritative schedule:', {
+          attemptId: attempt.id,
+          nowMs: now,
+          realtimeTimeRemaining,
+          effectiveEndTimeMs: authoritativeDecision.effectiveEndTimeMs,
+          expiryReason: authoritativeDecision.expiryReason
+        });
+        return true;
       }
 
       return false;
@@ -243,7 +308,13 @@ export class BackgroundSubmissionService {
    */
   private static async autoSubmitExpiredAttempt(attempt: TestAttempt): Promise<void> {
     try {
-      console.log(`🔄 Auto-submitting expired attempt: ${attempt.id}`);
+      console.log('🔄 Auto-submitting expired attempt:', {
+        attemptId: attempt.id,
+        firestoredTimeRemaining: (attempt as any).timeRemaining ?? null,
+        firestoredEndTimeMs: this.timestampToMs((attempt as any).endTime),
+        nowMs: Date.now(),
+        expirySource: 'background'
+      });
 
       // Get admin Realtime Database instance
       const adminRtdb = getAdminDatabase(firebaseAdmin.admin.app());
