@@ -54,6 +54,8 @@ export default function Input({
             bg-white dark:bg-gray-700 
             text-gray-900 dark:text-white 
             placeholder-gray-500 dark:placeholder-gray-400
+            [-webkit-text-fill-color:#111827] dark:[-webkit-text-fill-color:#ffffff]
+            caret-gray-900 dark:caret-white
             focus:outline-none focus:ring-2 focus:ring-offset-0
             disabled:opacity-50 disabled:cursor-not-allowed
             ${className}

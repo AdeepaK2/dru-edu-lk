@@ -248,7 +248,7 @@ export default function SubmitTestimonialPage() {
 
   return (
     <PageShell>
-      <div className="max-w-2xl mx-auto px-4 py-12">
+      <div className="max-w-2xl mx-auto px-4 py-12 force-light-surface">
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 border border-blue-200 px-4 py-1.5 rounded-full text-sm font-medium mb-6">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -263,7 +263,7 @@ export default function SubmitTestimonialPage() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 space-y-6">
+        <form onSubmit={handleSubmit} className="bg-white text-slate-900 rounded-2xl shadow-lg border border-gray-100 p-8 space-y-6">
           <div>
             <label className="block text-sm font-semibold text-[#01143d] mb-2">
               Overall Rating <span className="text-red-500">*</span>
@@ -383,12 +383,12 @@ export default function SubmitTestimonialPage() {
           </Field>
 
           <Field label="Profile Photo (optional)" error={fieldErrors.photo} hint="JPG, PNG, or WebP up to 5MB. Admin will decide if it is shown publicly.">
-            <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-4">
+            <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-4 text-slate-700">
               <input
                 type="file"
                 accept="image/jpeg,image/jpg,image/png,image/webp"
                 onChange={(e) => handlePhotoChange(e.target.files?.[0] || null)}
-                className="block w-full text-sm text-gray-500 file:mr-4 file:rounded-lg file:border-0 file:bg-[#0088e0] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-[#0066b3]"
+                className="block w-full text-sm text-slate-600 file:mr-4 file:rounded-lg file:border-0 file:bg-[#0088e0] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-[#0066b3]"
               />
 
               {photoPreviewUrl && (
@@ -454,8 +454,8 @@ export default function SubmitTestimonialPage() {
 }
 
 function inputCls(error?: string) {
-  return `w-full border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0088e0] transition-colors ${
-    error ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-white hover:border-gray-300'
+  return `force-light-input w-full border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0088e0] transition-colors ${
+    error ? 'border-red-400 bg-red-50 text-slate-900 placeholder:text-red-300' : 'border-gray-200 bg-white hover:border-gray-300'
   }`;
 }
 
@@ -486,7 +486,7 @@ function Field({
 
 function PageShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 text-slate-900">
       <div className="bg-gradient-to-r from-[#01143d] to-[#0088e0]">
         <Navbar />
       </div>
