@@ -23,7 +23,7 @@ export async function GET() {
         stars: d.stars,
         featured: d.featured,
         emailVerified: d.emailVerified,
-        photoUrl: d.displayPhoto ? d.photoUrl ?? undefined : undefined,
+        photoUrl: d.displayPhoto && d.photoStoragePath ? `/api/testimonials/photo/${doc.id}` : undefined,
         socialUrl: d.displaySocialLink ? d.socialUrl ?? undefined : undefined,
         submittedAt: d.submittedAt.toDate().toISOString(),
       };
