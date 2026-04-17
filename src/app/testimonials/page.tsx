@@ -13,12 +13,11 @@ type DisplayTestimonial = PublicTestimonial & {
 type RoleFilter = 'all' | 'students' | 'families';
 
 function avatarColor(name: string): string {
-  const colors = [
-    '#0088e0', '#0070c0', '#005fa3', '#1a7fc1', '#2196f3',
-    '#01143d', '#0a2147', '#1565c0', '#1976d2', '#0d47a1',
-  ];
+  const colors = ['#0088e0', '#0070c0', '#005fa3', '#1a7fc1', '#2196f3', '#01143d'];
   let hash = 0;
-  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  for (let i = 0; i < name.length; i += 1) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
   return colors[Math.abs(hash) % colors.length];
 }
 
@@ -35,23 +34,23 @@ function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' });
 }
 
-function studentMeta(t: PublicTestimonial) {
-  if (!t.studentName) return null;
-  if (t.role === 'Parent') return `Parent of ${t.studentName}`;
-  if (t.role === 'Guardian') return `Guardian of ${t.studentName}`;
-  return t.studentName;
+function studentMeta(testimonial: PublicTestimonial) {
+  if (!testimonial.studentName) return null;
+  if (testimonial.role === 'Parent') return `Parent of ${testimonial.studentName}`;
+  if (testimonial.role === 'Guardian') return `Guardian of ${testimonial.studentName}`;
+  return testimonial.studentName;
 }
 
-function matchesRoleFilter(t: DisplayTestimonial, filter: RoleFilter) {
+function matchesRoleFilter(testimonial: DisplayTestimonial, filter: RoleFilter) {
   if (filter === 'all') return true;
-  if (filter === 'students') return t.role === 'Student';
-  return t.role === 'Parent' || t.role === 'Guardian';
+  if (filter === 'students') return testimonial.role === 'Student';
+  return testimonial.role === 'Parent' || testimonial.role === 'Guardian';
 }
 
 function FacebookBadge() {
   return (
-    <span className="inline-flex items-center gap-1.5 bg-[#edf3ff] text-[#1877f2] border border-[#cfe0ff] text-xs font-semibold px-2.5 py-1 rounded-full">
-      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#cfe0ff] bg-[#edf3ff] px-2.5 py-1 text-xs font-semibold text-[#1877f2]">
+      <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
         <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073c0 6.019 4.388 11.009 10.125 11.927V15.56H7.078v-3.487h3.047V9.413c0-3.022 1.792-4.693 4.533-4.693 1.312 0 2.686.236 2.686.236v2.968h-1.514c-1.491 0-1.956.931-1.956 1.885v2.264h3.328l-.532 3.487h-2.796V24C19.612 23.082 24 18.092 24 12.073z" />
       </svg>
       From Facebook
@@ -59,7 +58,7 @@ function FacebookBadge() {
   );
 }
 
-function RoleTag({ role }: { role: string }) {
+function RoleBadge({ role }: { role: string }) {
   const labels: Record<string, string> = {
     Student: 'Student',
     Parent: 'Parent',
@@ -67,7 +66,7 @@ function RoleTag({ role }: { role: string }) {
   };
 
   return (
-    <span className="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-medium px-2.5 py-1 rounded-full">
+    <span className="inline-flex items-center rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700">
       {labels[role] ?? role}
     </span>
   );
@@ -75,8 +74,8 @@ function RoleTag({ role }: { role: string }) {
 
 function FeatureBadge() {
   return (
-    <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 border border-amber-200 text-xs font-semibold px-2.5 py-1 rounded-full">
-      <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+    <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
+      <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
         <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118l-2.8-2.034c-.783-.57-.38-1.81.588-1.81h3.462a1 1 0 00.95-.69l1.07-3.292z" />
       </svg>
       Featured
@@ -84,15 +83,13 @@ function FeatureBadge() {
   );
 }
 
-function StarRating({ rating, size = 'sm' }: { rating: number; size?: 'sm' | 'md' }) {
-  const iconSize = size === 'md' ? 'w-5 h-5' : 'w-4 h-4';
-
+function StarRating({ rating }: { rating: number }) {
   return (
     <div className="flex gap-0.5">
       {[...Array(5)].map((_, index) => (
         <svg
           key={index}
-          className={`${iconSize} ${index < rating ? 'text-yellow-400' : 'text-gray-200'}`}
+          className={`h-4 w-4 ${index < rating ? 'text-yellow-400' : 'text-gray-200'}`}
           fill="currentColor"
           viewBox="0 0 20 20"
         >
@@ -103,48 +100,34 @@ function StarRating({ rating, size = 'sm' }: { rating: number; size?: 'sm' | 'md
   );
 }
 
-function QuoteIcon() {
-  return (
-    <svg className="w-8 h-8 text-[#0088e0]/15" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
-    </svg>
-  );
-}
-
 function TestimonialCard({
   testimonial,
-  variant = 'grid',
+  highlighted = false,
 }: {
   testimonial: DisplayTestimonial;
-  variant?: 'featured' | 'grid';
+  highlighted?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const studentContext = studentMeta(testimonial);
-  const maxLength = variant === 'featured' ? 280 : 190;
-  const canExpand = testimonial.text.length > maxLength;
-  const previewText = canExpand && !expanded
-    ? `${testimonial.text.slice(0, maxLength).trimEnd()}...`
+  const context = studentMeta(testimonial);
+  const limit = highlighted ? 320 : 170;
+  const collapsible = testimonial.text.length > limit;
+  const preview = collapsible && !expanded
+    ? `${testimonial.text.slice(0, limit).trimEnd()}...`
     : testimonial.text;
 
   return (
-    <article
-      className={`group flex flex-col overflow-hidden border border-gray-100 bg-white transition-all duration-300 ${
-        variant === 'featured'
-          ? 'rounded-3xl shadow-lg hover:-translate-y-1 hover:shadow-2xl'
-          : 'rounded-2xl shadow-md hover:-translate-y-1 hover:shadow-xl'
-      }`}
-    >
-      <div className={`${variant === 'featured' ? 'p-7' : 'p-5'} flex flex-col gap-4`}>
+    <article className={`flex h-full flex-col rounded-[28px] border border-slate-100 bg-white ${highlighted ? 'shadow-lg' : 'shadow-sm'} transition-shadow hover:shadow-xl`}>
+      <div className={`${highlighted ? 'p-7' : 'p-5'} flex flex-col gap-4`}>
         <div className="flex items-start gap-4">
           {testimonial.photoUrl ? (
             <img
               src={testimonial.photoUrl}
               alt={`${testimonial.name} profile`}
-              className={`${variant === 'featured' ? 'h-16 w-16' : 'h-12 w-12'} rounded-2xl object-cover border border-gray-100 shadow-sm`}
+              className={`${highlighted ? 'h-16 w-16' : 'h-12 w-12'} rounded-2xl border border-slate-100 object-cover`}
             />
           ) : (
             <div
-              className={`${variant === 'featured' ? 'h-16 w-16 text-lg' : 'h-12 w-12 text-base'} rounded-2xl flex items-center justify-center font-bold text-white shadow-sm`}
+              className={`${highlighted ? 'h-16 w-16 text-lg' : 'h-12 w-12 text-base'} flex items-center justify-center rounded-2xl font-bold text-white`}
               style={{ backgroundColor: avatarColor(testimonial.name) }}
             >
               {initials(testimonial.name)}
@@ -154,35 +137,33 @@ function TestimonialCard({
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <h3 className={`${variant === 'featured' ? 'text-xl' : 'text-base'} font-semibold text-[#01143d] truncate`}>
+                <h3 className={`${highlighted ? 'text-xl' : 'text-base'} truncate font-semibold text-[#01143d]`}>
                   {testimonial.name}
                 </h3>
-                {studentContext && (
-                  <p className="mt-1 text-sm font-medium text-sky-700 truncate">{studentContext}</p>
-                )}
-                <p className="mt-1 text-sm text-gray-500">
+                {context && <p className="mt-1 truncate text-sm font-medium text-sky-700">{context}</p>}
+                <p className="mt-1 text-sm text-slate-500">
                   {testimonial.course} · {testimonial.year}
                 </p>
               </div>
-              <div className="flex-shrink-0">
-                <StarRating rating={testimonial.stars} size={variant === 'featured' ? 'md' : 'sm'} />
-              </div>
+              <StarRating rating={testimonial.stars} />
             </div>
 
             <div className="mt-3 flex flex-wrap gap-2">
-              <RoleTag role={testimonial.role} />
+              <RoleBadge role={testimonial.role} />
               {testimonial.featured && <FeatureBadge />}
               {testimonial.source === 'facebook' && <FacebookBadge />}
             </div>
           </div>
         </div>
 
-        <div className="rounded-2xl bg-gradient-to-br from-slate-50 to-white p-4 border border-slate-100">
-          <QuoteIcon />
-          <p className={`${variant === 'featured' ? 'mt-3 text-base leading-8' : 'mt-3 text-sm leading-7'} text-gray-600`}>
-            {previewText}
+        <div className="rounded-2xl bg-slate-50 p-4">
+          <svg className="h-7 w-7 text-[#0088e0]/15" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
+          </svg>
+          <p className={`${highlighted ? 'mt-3 text-base leading-8' : 'mt-3 text-sm leading-7'} text-slate-600`}>
+            {preview}
           </p>
-          {canExpand && (
+          {collapsible && (
             <button
               type="button"
               onClick={() => setExpanded((value) => !value)}
@@ -190,7 +171,7 @@ function TestimonialCard({
             >
               {expanded ? 'Show less' : 'Read more'}
               <svg
-                className={`w-4 h-4 transition-transform ${expanded ? 'rotate-180' : ''}`}
+                className={`h-4 w-4 transition-transform ${expanded ? 'rotate-180' : ''}`}
                 viewBox="0 0 20 20"
                 fill="currentColor"
                 aria-hidden="true"
@@ -202,25 +183,23 @@ function TestimonialCard({
         </div>
       </div>
 
-      <div className="mt-auto border-t border-gray-100 bg-gray-50/80 px-5 py-3">
-        <div className="flex flex-wrap items-center gap-2">
-          {testimonial.result && (
-            <span className="inline-flex items-center gap-1 rounded-full border border-green-200 bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700">
-              Result: {testimonial.result}
-            </span>
-          )}
-          {testimonial.socialUrl && (
-            <a
-              href={testimonial.socialUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-xs font-medium text-sky-700 hover:bg-sky-100"
-            >
-              View profile
-            </a>
-          )}
-          <span className="ml-auto text-xs text-gray-400">{formatDate(testimonial.submittedAt)}</span>
-        </div>
+      <div className="mt-auto flex flex-wrap items-center gap-2 border-t border-slate-100 bg-slate-50/70 px-5 py-3">
+        {testimonial.result && (
+          <span className="inline-flex items-center rounded-full border border-green-200 bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700">
+            Result: {testimonial.result}
+          </span>
+        )}
+        {testimonial.socialUrl && (
+          <a
+            href={testimonial.socialUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-xs font-medium text-sky-700 hover:bg-sky-100"
+          >
+            View profile
+          </a>
+        )}
+        <span className="ml-auto text-xs text-slate-400">{formatDate(testimonial.submittedAt)}</span>
       </div>
     </article>
   );
@@ -269,7 +248,7 @@ export default function TestimonialsPage() {
   );
 
   const featuredTestimonials = filteredTestimonials.filter((testimonial) => testimonial.featured);
-  const standardTestimonials = filteredTestimonials.filter((testimonial) => !testimonial.featured);
+  const otherTestimonials = filteredTestimonials.filter((testimonial) => !testimonial.featured);
   const totalCount = allTestimonials.length;
   const averageRating = totalCount
     ? (allTestimonials.reduce((sum, testimonial) => sum + testimonial.stars, 0) / totalCount).toFixed(1)
@@ -278,60 +257,52 @@ export default function TestimonialsPage() {
   const facebookCount = legacyTestimonials.length;
 
   return (
-    <div className="min-h-screen overflow-hidden bg-gradient-to-br from-[#01143d] via-[#0a2147] to-[#0088e0] relative">
-      <div className="absolute inset-0 opacity-20">
-        <div
-          className="w-full h-full"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          }}
-        />
+    <div className="min-h-screen bg-[#f6f8fc] text-slate-900">
+      <div className="border-b border-white/10 bg-[#01143d]">
+        <Navbar />
       </div>
 
-      <Navbar />
+      <main>
+        <section className="bg-gradient-to-b from-[#eef6ff] via-white to-white">
+          <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+            <div className="grid gap-10 lg:grid-cols-[1.3fr_0.7fr] lg:items-end">
+              <div className="max-w-3xl">
+                <span className="inline-flex items-center rounded-full border border-[#b8d7ff] bg-[#edf6ff] px-4 py-1.5 text-sm font-semibold text-[#0d5ea8]">
+                  Student and parent voices
+                </span>
+                <h1 className="mt-5 text-4xl font-bold tracking-tight text-[#01143d] sm:text-5xl">
+                  Testimonials That Are Easy to Read and Easy to Trust
+                </h1>
+                <p className="mt-4 max-w-2xl text-lg leading-8 text-slate-600">
+                  Browse featured stories first, then explore the full collection of student and family feedback with cleaner cards, shorter previews, and simple read-more controls.
+                </p>
+              </div>
 
-      <header className="relative px-4 pb-24 pt-20 text-center">
-        <div className="mx-auto max-w-5xl">
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/15 px-6 py-2 text-sm font-medium text-white backdrop-blur-sm">
-            Real stories from students and families
-          </span>
-          <h1 className="mt-8 text-5xl font-extrabold leading-tight text-white md:text-7xl">
-            Testimonials That
-            <span className="block bg-gradient-to-r from-[#7ed6ff] to-white bg-clip-text text-transparent">
-              Feel Human
-            </span>
-          </h1>
-          <p className="mx-auto mt-6 max-w-3xl text-lg leading-8 text-white/85 md:text-xl">
-            Explore standout success stories, parent perspectives, and longer-form student feedback in a cleaner, easier-to-read format.
-          </p>
-
-          {!loading && (
-            <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {[
-                { value: `${totalCount}+`, label: 'Stories on this page' },
-                { value: `${averageRating} / 5`, label: 'Average rating' },
-                { value: `${familyCount}+`, label: 'Parents and guardians' },
-                { value: `${facebookCount}+`, label: 'Imported from Facebook' },
-              ].map((stat) => (
-                <div key={stat.label} className="rounded-2xl border border-white/25 bg-white/15 px-6 py-5 text-left backdrop-blur-sm">
-                  <div className="text-3xl font-extrabold text-white">{stat.value}</div>
-                  <div className="mt-1 text-sm text-white/70">{stat.label}</div>
-                </div>
-              ))}
+              <div className="grid gap-3 sm:grid-cols-2">
+                {[
+                  { value: `${totalCount}+`, label: 'Stories on this page' },
+                  { value: `${averageRating} / 5`, label: 'Average rating' },
+                  { value: `${familyCount}+`, label: 'Parents and guardians' },
+                  { value: `${facebookCount}+`, label: 'From Facebook' },
+                ].map((stat) => (
+                  <div key={stat.label} className="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+                    <div className="text-3xl font-bold text-[#01143d]">{stat.value}</div>
+                    <div className="mt-1 text-sm text-slate-500">{stat.label}</div>
+                  </div>
+                ))}
+              </div>
             </div>
-          )}
-        </div>
-      </header>
+          </div>
+        </section>
 
-      <main className="relative -mt-8 rounded-t-[2rem] bg-gradient-to-b from-white to-gray-50 pb-24 pt-14">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <section className="mb-10 rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-              <div className="max-w-2xl">
-                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#0088e0]">Browse the voices</p>
-                <h2 className="mt-2 text-3xl font-bold text-[#01143d]">Featured first, then everything else</h2>
-                <p className="mt-3 text-sm leading-7 text-gray-500">
-                  Featured stories are highlighted at the top. Hardcoded testimonials stay here too, and the Facebook-sourced ones are clearly marked.
+        <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+          <div className="mb-8 rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#0088e0]">Browse</p>
+                <h2 className="mt-2 text-2xl font-bold text-[#01143d]">Featured first, then the full list</h2>
+                <p className="mt-2 text-sm leading-7 text-slate-500">
+                  Facebook-sourced testimonials are labeled. Approved testimonials from the admin flow also appear here automatically.
                 </p>
               </div>
 
@@ -348,7 +319,7 @@ export default function TestimonialsPage() {
                     className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
                       roleFilter === option.id
                         ? 'border-[#0088e0] bg-[#0088e0] text-white'
-                        : 'border-gray-200 bg-white text-gray-600 hover:border-[#0088e0] hover:text-[#0088e0]'
+                        : 'border-slate-200 bg-white text-slate-600 hover:border-[#0088e0] hover:text-[#0088e0]'
                     }`}
                   >
                     {option.label}
@@ -356,7 +327,7 @@ export default function TestimonialsPage() {
                 ))}
               </div>
             </div>
-          </section>
+          </div>
 
           {loading ? (
             <div className="flex justify-center py-20">
@@ -365,20 +336,20 @@ export default function TestimonialsPage() {
           ) : (
             <>
               {featuredTestimonials.length > 0 && (
-                <section className="mb-16">
+                <section className="mb-14">
                   <div className="mb-6 flex items-center justify-between gap-4">
                     <div>
-                      <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#0088e0]">Featured</p>
+                      <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#0088e0]">Featured</p>
                       <h2 className="mt-2 text-3xl font-bold text-[#01143d]">Standout stories</h2>
                     </div>
                     <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-500">
-                      {featuredTestimonials.length} highlighted
+                      {featuredTestimonials.length} featured
                     </span>
                   </div>
 
                   <div className="grid gap-6 lg:grid-cols-2">
                     {featuredTestimonials.map((testimonial) => (
-                      <TestimonialCard key={testimonial.id} testimonial={testimonial} variant="featured" />
+                      <TestimonialCard key={testimonial.id} testimonial={testimonial} highlighted />
                     ))}
                   </div>
                 </section>
@@ -387,22 +358,22 @@ export default function TestimonialsPage() {
               <section>
                 <div className="mb-6 flex items-center justify-between gap-4">
                   <div>
-                    <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#0088e0]">All testimonials</p>
-                    <h2 className="mt-2 text-3xl font-bold text-[#01143d]">More student and parent feedback</h2>
+                    <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#0088e0]">All testimonials</p>
+                    <h2 className="mt-2 text-3xl font-bold text-[#01143d]">More student and family feedback</h2>
                   </div>
                   <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-500">
-                    {filteredTestimonials.length} shown
+                    {filteredTestimonials.length} visible
                   </span>
                 </div>
 
                 {filteredTestimonials.length === 0 ? (
-                  <div className="rounded-3xl border border-gray-100 bg-white px-8 py-16 text-center shadow-sm">
+                  <div className="rounded-[28px] border border-slate-200 bg-white px-8 py-16 text-center shadow-sm">
                     <p className="text-lg font-semibold text-[#01143d]">No testimonials in this view yet.</p>
-                    <p className="mt-2 text-sm text-gray-500">Try another filter to see more student or parent stories.</p>
+                    <p className="mt-2 text-sm text-slate-500">Try a different filter to see more stories.</p>
                   </div>
                 ) : (
                   <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-                    {standardTestimonials.map((testimonial) => (
+                    {otherTestimonials.map((testimonial) => (
                       <TestimonialCard key={testimonial.id} testimonial={testimonial} />
                     ))}
                   </div>
@@ -411,33 +382,27 @@ export default function TestimonialsPage() {
             </>
           )}
 
-          <section className="relative mt-20 overflow-hidden rounded-[2rem] bg-gradient-to-r from-[#01143d] to-[#0088e0] p-12 text-center text-white">
-            <div className="absolute inset-0 opacity-10">
-              <div className="absolute left-4 top-4 h-20 w-20 rounded-full bg-white blur-xl animate-pulse" />
-              <div className="absolute bottom-4 right-4 h-32 w-32 rounded-full bg-white blur-2xl animate-pulse" />
-            </div>
-            <div className="relative z-10">
-              <h2 className="text-3xl font-bold md:text-4xl">Join the Dr. U Family</h2>
-              <p className="mx-auto mt-4 max-w-2xl text-lg text-white/90">
-                Build your own result story with coaching that students and families remember long after the exams are over.
-              </p>
-              <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
-                <Link
-                  href="/enroll"
-                  className="rounded-full bg-white px-8 py-3 font-semibold text-[#01143d] shadow-lg transition-all duration-300 hover:scale-105 hover:bg-gray-100"
-                >
-                  Enroll now
-                </Link>
-                <Link
-                  href="/courses"
-                  className="rounded-full border-2 border-white bg-transparent px-8 py-3 font-semibold transition-all duration-300 hover:bg-white/10"
-                >
-                  View courses
-                </Link>
-              </div>
+          <section className="mt-20 overflow-hidden rounded-[32px] bg-gradient-to-r from-[#01143d] to-[#0088e0] p-12 text-center text-white shadow-xl">
+            <h2 className="text-3xl font-bold md:text-4xl">Join the Dr. U Family</h2>
+            <p className="mx-auto mt-4 max-w-2xl text-lg text-white/90">
+              Build your own success story with coaching that students and families remember long after the exam season ends.
+            </p>
+            <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
+              <Link
+                href="/enroll"
+                className="rounded-full bg-white px-8 py-3 font-semibold text-[#01143d] shadow-lg transition-all duration-300 hover:scale-105 hover:bg-gray-100"
+              >
+                Enroll now
+              </Link>
+              <Link
+                href="/courses"
+                className="rounded-full border-2 border-white bg-transparent px-8 py-3 font-semibold transition-all duration-300 hover:bg-white/10"
+              >
+                View courses
+              </Link>
             </div>
           </section>
-        </div>
+        </section>
       </main>
 
       <Footer />
