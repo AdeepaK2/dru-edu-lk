@@ -51,7 +51,10 @@ export const testimonialUpdateSchema = z.object({
 // Schema for admin creating a token
 export const testimonialTokenCreateSchema = z.object({
   label: z.string().min(1, 'Label is required (e.g. "Sent to John Smith")'),
-  expiresAt: z.string().optional(), // ISO date string, optional
+  recipientEmail: z.preprocess(
+    emptyStringToUndefined,
+    z.string().email('Enter a valid recipient email').optional()
+  ),
 });
 
 export type TestimonialSubmitData = z.infer<typeof testimonialSubmitSchema>;
@@ -88,6 +91,7 @@ export interface TestimonialDocument {
 export interface TestimonialTokenDocument {
   id: string;
   label: string;
+  recipientEmail?: string;
   used: boolean;
   usedAt?: { toDate: () => Date };
   expiresAt?: { toDate: () => Date };

@@ -18,6 +18,7 @@ async function getTokensHandler(_request: AuthenticatedRequest) {
         id: doc.id,
         token: d.token,
         label: d.label,
+        recipientEmail: d.recipientEmail ?? null,
         used: d.used,
         usedAt: d.usedAt?.toDate().toISOString() ?? null,
         expiresAt: d.expiresAt?.toDate().toISOString() ?? null,
@@ -41,27 +42,79 @@ async function createTokenHandler(request: AuthenticatedRequest) {
 
     const token = randomUUID().replace(/-/g, '');
     const now = firebaseAdmin.admin.firestore.Timestamp.now();
+    const expiresAt = new Date();
+    expiresAt.setMonth(expiresAt.getMonth() + 1);
 
     const tokenData: Record<string, unknown> = {
       token,
       label: validated.label,
+      recipientEmail: validated.recipientEmail ?? null,
       used: false,
       createdAt: now,
       createdBy: body.createdBy || 'admin',
+      expiresAt: firebaseAdmin.admin.firestore.Timestamp.fromDate(expiresAt),
     };
-
-    if (validated.expiresAt) {
-      tokenData.expiresAt = firebaseAdmin.admin.firestore.Timestamp.fromDate(
-        new Date(validated.expiresAt)
-      );
-    }
 
     const docRef = await firebaseAdmin.db.collection('testimonialTokens').add(tokenData);
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://drueducation.com.au';
     const submissionLink = `${baseUrl}/testimonials/submit/${token}`;
 
-    return NextResponse.json({ id: docRef.id, token, submissionLink }, { status: 201 });
+    if (validated.recipientEmail) {
+      await firebaseAdmin.db.collection('mail').add({
+        to: validated.recipientEmail,
+        message: {
+          subject: 'Your Dr. U Education testimonial invite',
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
+              <div style="text-align: center; margin-bottom: 24px;">
+                <h1 style="color: #01143d; font-size: 24px; margin: 0;">Dr. U Education</h1>
+                <p style="color: #6b7280; margin: 4px 0 0;">We would love your testimonial</p>
+              </div>
+
+              <p style="color: #374151;">Hello,</p>
+
+              <p style="color: #374151;">
+                We would love to hear about your experience with Dr. U Education. Please use the secure link below to submit your testimonial.
+              </p>
+
+              <div style="text-align: center; margin: 32px 0;">
+                <a href="${submissionLink}"
+                  style="background-color: #0088e0; color: white; padding: 14px 32px; border-radius: 9999px;
+                        text-decoration: none; font-weight: 600; font-size: 16px; display: inline-block;">
+                  Submit Your Testimonial
+                </a>
+              </div>
+
+              <p style="color: #6b7280; font-size: 14px;">
+                This one-time invite link will expire on ${expiresAt.toLocaleDateString('en-AU', {
+                  day: 'numeric',
+                  month: 'short',
+                  year: 'numeric',
+                })}.
+              </p>
+
+              <p style="color: #6b7280; font-size: 14px;">
+                If the button does not work, copy and paste this link into your browser:
+                <br />
+                <a href="${submissionLink}" style="color: #0088e0; word-break: break-all;">${submissionLink}</a>
+              </p>
+            </div>
+          `,
+        },
+      });
+    }
+
+    return NextResponse.json(
+      {
+        id: docRef.id,
+        token,
+        submissionLink,
+        expiresAt: expiresAt.toISOString(),
+        recipientEmail: validated.recipientEmail ?? null,
+      },
+      { status: 201 }
+    );
   } catch (error: any) {
     console.error('Error creating token:', error);
 

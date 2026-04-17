@@ -46,6 +46,7 @@ interface Token {
   id: string;
   token: string;
   label: string;
+  recipientEmail?: string | null;
   used: boolean;
   usedAt?: string | null;
   expiresAt?: string | null;
@@ -54,6 +55,7 @@ interface Token {
 
 type Tab = 'testimonials' | 'links';
 type StatusFilter = 'all' | 'pending' | 'approved' | 'rejected';
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function formatDate(iso?: string | null) {
   if (!iso) return '—';
@@ -121,10 +123,11 @@ export default function AdminTestimonialsPage() {
   const [tokens, setTokens] = useState<Token[]>([]);
   const [tokLoading, setTokLoading] = useState(true);
   const [newLabel, setNewLabel] = useState('');
-  const [newExpiry, setNewExpiry] = useState('');
+  const [recipientEmail, setRecipientEmail] = useState('');
   const [creating, setCreating] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
+  const [generatedEmail, setGeneratedEmail] = useState<string | null>(null);
   const [pageError, setPageError] = useState<string | null>(null);
 
   const fetchTestimonials = useCallback(async () => {
@@ -181,6 +184,7 @@ export default function AdminTestimonialsPage() {
           id: snapshotDoc.id,
           token: d.token,
           label: d.label,
+          recipientEmail: d.recipientEmail ?? null,
           used: Boolean(d.used),
           usedAt: toIsoString(d.usedAt),
           expiresAt: toIsoString(d.expiresAt),
@@ -300,24 +304,86 @@ export default function AdminTestimonialsPage() {
 
     setCreating(true);
     setPageError(null);
+    setGeneratedLink(null);
+    setGeneratedEmail(null);
     try {
       const user = await getAdminUser();
       const token = crypto.randomUUID().replace(/-/g, '');
+      const inviteLink = `${window.location.origin}/testimonials/submit/${token}`;
+      const normalizedRecipientEmail = recipientEmail.trim().toLowerCase();
+      const expiresAt = new Date();
+      expiresAt.setMonth(expiresAt.getMonth() + 1);
+
+      if (normalizedRecipientEmail && !EMAIL_PATTERN.test(normalizedRecipientEmail)) {
+        throw new Error('Enter a valid email address to send the invite');
+      }
 
       await addDoc(collection(firestore, 'testimonialTokens'), {
         token,
         label: newLabel.trim(),
+        recipientEmail: normalizedRecipientEmail || null,
         used: false,
         createdAt: Timestamp.now(),
         createdBy: user.email || 'admin',
-        ...(newExpiry
-          ? { expiresAt: Timestamp.fromDate(new Date(newExpiry)) }
-          : {}),
+        expiresAt: Timestamp.fromDate(expiresAt),
       });
 
-      setGeneratedLink(`${window.location.origin}/testimonials/submit/${token}`);
+      let inviteEmailQueued = false;
+      if (normalizedRecipientEmail) {
+        try {
+          await addDoc(collection(firestore, 'mail'), {
+            to: normalizedRecipientEmail,
+            message: {
+              subject: 'Your Dr. U Education testimonial invite',
+              html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
+                  <div style="text-align: center; margin-bottom: 24px;">
+                    <h1 style="color: #01143d; font-size: 24px; margin: 0;">Dr. U Education</h1>
+                    <p style="color: #6b7280; margin: 4px 0 0;">We would love your testimonial</p>
+                  </div>
+
+                  <p style="color: #374151;">Hello,</p>
+
+                  <p style="color: #374151;">
+                    Thank you for being part of Dr. U Education. Please use the secure one-time link below to share your testimonial, rating, and optional photo.
+                  </p>
+
+                  <div style="text-align: center; margin: 32px 0;">
+                    <a href="${inviteLink}"
+                      style="background-color: #0088e0; color: white; padding: 14px 32px; border-radius: 9999px;
+                            text-decoration: none; font-weight: 600; font-size: 16px; display: inline-block;">
+                      Submit Your Testimonial
+                    </a>
+                  </div>
+
+                  <p style="color: #6b7280; font-size: 14px;">
+                    This invite link will expire on ${expiresAt.toLocaleDateString('en-AU', {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric',
+                    })}.
+                  </p>
+
+                  <p style="color: #6b7280; font-size: 14px;">
+                    If the button does not work, copy and paste this link into your browser:
+                    <br />
+                    <a href="${inviteLink}" style="color: #0088e0; word-break: break-all;">${inviteLink}</a>
+                  </p>
+                </div>
+              `,
+            },
+          });
+          inviteEmailQueued = true;
+        } catch (emailError) {
+          console.error('Failed to queue testimonial invite email:', emailError);
+          setPageError('Invite link created, but the email could not be queued. You can still copy the link below.');
+        }
+      }
+
+      setGeneratedLink(inviteLink);
+      setGeneratedEmail(inviteEmailQueued ? normalizedRecipientEmail : null);
       setNewLabel('');
-      setNewExpiry('');
+      setRecipientEmail('');
       await fetchTokens();
     } catch (error) {
       setPageError(error instanceof Error ? error.message : 'Failed to create invite link');
@@ -631,7 +697,7 @@ export default function AdminTestimonialsPage() {
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
             <h3 className="font-semibold text-[#01143d] mb-1">Generate New Invite Link</h3>
             <p className="text-gray-400 text-sm mb-4">
-              Each link is one-time use. Share it directly with the student or parent you want a testimonial from.
+              Each link is one-time use and expires automatically one month after it is created. Add an email if you want us to send it immediately.
             </p>
             <div className="flex gap-3 flex-wrap">
               <input
@@ -642,11 +708,11 @@ export default function AdminTestimonialsPage() {
                 className="flex-1 min-w-48 border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0088e0]"
               />
               <input
-                type="date"
-                value={newExpiry}
-                onChange={(e) => setNewExpiry(e.target.value)}
-                title="Optional expiry date"
-                className="border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0088e0] text-gray-500"
+                type="email"
+                value={recipientEmail}
+                onChange={(e) => setRecipientEmail(e.target.value)}
+                placeholder="Recipient email — optional"
+                className="flex-1 min-w-64 border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0088e0]"
               />
               <button
                 onClick={createToken}
@@ -660,7 +726,11 @@ export default function AdminTestimonialsPage() {
 
             {generatedLink && (
               <div className="mt-4 bg-green-50 border border-green-200 rounded-xl p-4">
-                <p className="text-green-700 text-sm font-medium mb-2">Link created! Share this with the student/parent:</p>
+                <p className="text-green-700 text-sm font-medium mb-2">
+                  {generatedEmail
+                    ? `Link created and invite queued to ${generatedEmail}.`
+                    : 'Link created. Copy and share it with the student or parent:'}
+                </p>
                 <div className="flex items-center gap-2">
                   <code className="flex-1 text-xs bg-white border border-green-200 rounded-lg px-3 py-2 text-green-800 break-all">
                     {generatedLink}
@@ -676,7 +746,15 @@ export default function AdminTestimonialsPage() {
                     {copiedId === 'new' ? <Check size={16} /> : <Copy size={16} />}
                   </button>
                 </div>
-                <button onClick={() => setGeneratedLink(null)} className="mt-2 text-xs text-green-600 underline">Dismiss</button>
+                <button
+                  onClick={() => {
+                    setGeneratedLink(null);
+                    setGeneratedEmail(null);
+                  }}
+                  className="mt-2 text-xs text-green-600 underline"
+                >
+                  Dismiss
+                </button>
               </div>
             )}
           </div>
@@ -708,6 +786,7 @@ export default function AdminTestimonialsPage() {
                       </div>
                       <p className="text-xs text-gray-400 mt-0.5">
                         Created {formatDate(tok.createdAt)}
+                        {tok.recipientEmail && ` · Sent to ${tok.recipientEmail}`}
                         {tok.usedAt && ` · Used ${formatDate(tok.usedAt)}`}
                         {tok.expiresAt && ` · Expires ${formatDate(tok.expiresAt)}`}
                       </p>
