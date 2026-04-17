@@ -50,7 +50,7 @@ export default function AboutPage() {
               <div className="flex-1 text-center md:text-left">
                 <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">Hear From Our Students & Parents</h2>
                 <p className="text-white/70 text-sm leading-relaxed">
-                  Every testimonial on our platform is personally invited, email-verified, and reviewed by our team before going live —
+                  Every testimonial on our platform is personally invited and reviewed by our team before going live —
                   so you can trust that every word is real.
                 </p>
               </div>

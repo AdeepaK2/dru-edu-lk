@@ -82,11 +82,8 @@ export interface TestimonialDocument {
   displaySocialLink: boolean;
   status: 'pending' | 'approved' | 'rejected';
   featured: boolean;
-  emailVerified: boolean;
-  emailVerificationToken: string;
   adminNotes?: string;
   submittedAt: { toDate: () => Date };
-  verifiedAt?: { toDate: () => Date };
   approvedAt?: { toDate: () => Date };
 }
 
@@ -113,7 +110,6 @@ export interface PublicTestimonial {
   text: string;
   stars: number;
   featured: boolean;
-  emailVerified: boolean;
   photoUrl?: string;
   socialUrl?: string;
   submittedAt: string; // ISO string for serialisation
