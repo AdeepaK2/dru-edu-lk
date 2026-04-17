@@ -57,8 +57,13 @@ export async function authenticateRequest(
     let profileId: string | undefined;
     let profile: any;
 
-    // Check custom claims first
-    if (decodedToken.role) {
+    // Check admin custom claim first because admin accounts in this project are
+    // provisioned with `admin: true` and may not have `role: 'admin'`.
+    if (decodedToken.admin === true) {
+      userRole = 'admin';
+      profileId = decodedToken.uid;
+      console.log('🎫 Using admin custom claim:', { uid: decodedToken.uid, email: decodedToken.email });
+    } else if (decodedToken.role) {
       userRole = decodedToken.role;
       profileId = decodedToken.profileId;
       console.log('🎫 Using custom claims:', { role: userRole, profileId });
@@ -93,54 +98,65 @@ export async function authenticateRequest(
         }
       }
     } else {
-      // Fallback: check if user exists in student or teacher collections
+      // Fallback: check if user exists in admin, student, or teacher collections
       // Students and teachers are stored with their UID as the document ID
       try {
         console.log(`🔍 Looking up profile for UID: ${decodedToken.uid}`);
-        
-        // Try to get student document by UID (document ID)
-        const studentDoc = await firebaseAdmin.firestore.getDoc('students', decodedToken.uid);
-        console.log(`👤 Student document lookup result:`, studentDoc ? 'Found' : 'Not found');
-        
-        if (studentDoc) {
-          userRole = 'student';
-          profileId = decodedToken.uid; // Use UID as profileId since it's the document ID
-          profile = { id: decodedToken.uid, ...studentDoc };
-          console.log(`✅ Student profile found:`, { profileId, name: studentDoc.name || 'Unknown' });
+
+        const adminDoc = await firebaseAdmin.firestore.getDoc('admins', decodedToken.uid);
+        console.log(`🛡️ Admin document lookup result:`, adminDoc ? 'Found' : 'Not found');
+
+        if (adminDoc) {
+          userRole = 'admin';
+          profileId = decodedToken.uid;
+          profile = { id: decodedToken.uid, ...adminDoc };
+          console.log(`✅ Admin profile found:`, { profileId, name: adminDoc.name || 'Unknown' });
         } else {
-          // Try to get teacher document by UID (document ID)
-          console.log(`👨‍🏫 Checking teacher collection for UID: ${decodedToken.uid}`);
-          const teacherDoc = await firebaseAdmin.firestore.getDoc('teachers', decodedToken.uid);
-          console.log(`👨‍🏫 Teacher document lookup result:`, teacherDoc ? 'Found' : 'Not found');
+        
+          // Try to get student document by UID (document ID)
+          const studentDoc = await firebaseAdmin.firestore.getDoc('students', decodedToken.uid);
+          console.log(`👤 Student document lookup result:`, studentDoc ? 'Found' : 'Not found');
           
-          if (teacherDoc) {
-            userRole = 'teacher';
+          if (studentDoc) {
+            userRole = 'student';
             profileId = decodedToken.uid; // Use UID as profileId since it's the document ID
-            profile = { id: decodedToken.uid, ...teacherDoc };
-            console.log(`✅ Teacher profile found:`, { profileId, name: teacherDoc.name || 'Unknown' });
+            profile = { id: decodedToken.uid, ...studentDoc };
+            console.log(`✅ Student profile found:`, { profileId, name: studentDoc.name || 'Unknown' });
           } else {
-            console.log(`❌ No profile found for UID: ${decodedToken.uid} in either students or teachers collections`);
+            // Try to get teacher document by UID (document ID)
+            console.log(`👨‍🏫 Checking teacher collection for UID: ${decodedToken.uid}`);
+            const teacherDoc = await firebaseAdmin.firestore.getDoc('teachers', decodedToken.uid);
+            console.log(`👨‍🏫 Teacher document lookup result:`, teacherDoc ? 'Found' : 'Not found');
             
-            // Let's try querying by email as a fallback
-            console.log(`🔄 Fallback: Querying students by email: ${decodedToken.email}`);
-            try {
-              const studentsQuery = await firebaseAdmin.db
-                .collection('students')
-                .where('email', '==', decodedToken.email!)
-                .limit(1)
-                .get();
+            if (teacherDoc) {
+              userRole = 'teacher';
+              profileId = decodedToken.uid; // Use UID as profileId since it's the document ID
+              profile = { id: decodedToken.uid, ...teacherDoc };
+              console.log(`✅ Teacher profile found:`, { profileId, name: teacherDoc.name || 'Unknown' });
+            } else {
+              console.log(`❌ No profile found for UID: ${decodedToken.uid} in admin, students, or teachers collections`);
               
-              if (!studentsQuery.empty) {
-                const studentDocByEmail = studentsQuery.docs[0];
-                userRole = 'student';
-                profileId = studentDocByEmail.id;
-                profile = { id: studentDocByEmail.id, ...studentDocByEmail.data() };
-                console.log(`✅ Student found by email:`, { profileId, name: profile.name || 'Unknown' });
-              } else {
-                console.log(`❌ No student found by email either: ${decodedToken.email}`);
+              // Let's try querying by email as a fallback
+              console.log(`🔄 Fallback: Querying students by email: ${decodedToken.email}`);
+              try {
+                const studentsQuery = await firebaseAdmin.db
+                  .collection('students')
+                  .where('email', '==', decodedToken.email!)
+                  .limit(1)
+                  .get();
+                
+                if (!studentsQuery.empty) {
+                  const studentDocByEmail = studentsQuery.docs[0];
+                  userRole = 'student';
+                  profileId = studentDocByEmail.id;
+                  profile = { id: studentDocByEmail.id, ...studentDocByEmail.data() };
+                  console.log(`✅ Student found by email:`, { profileId, name: profile.name || 'Unknown' });
+                } else {
+                  console.log(`❌ No student found by email either: ${decodedToken.email}`);
+                }
+              } catch (emailQueryError) {
+                console.error('❌ Error querying by email:', emailQueryError);
               }
-            } catch (emailQueryError) {
-              console.error('❌ Error querying by email:', emailQueryError);
             }
           }
         }
