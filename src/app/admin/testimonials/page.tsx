@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { Star, CheckCircle, XCircle, Link2, Trash2, Plus, Copy, Check, Shield, Award } from 'lucide-react';
-
-// ── types ─────────────────────────────────────────────────────────────────────
+import { auth } from '@/utils/firebase-client';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { Star, CheckCircle, XCircle, Link2, Trash2, Plus, Copy, Check, Shield, Award, Image as ImageIcon, Globe } from 'lucide-react';
 
 interface Testimonial {
   id: string;
@@ -12,15 +12,21 @@ interface Testimonial {
   role: string;
   course: string;
   year: string;
-  result?: string;
+  result?: string | null;
   text: string;
   stars: number;
+  photoUrl?: string | null;
+  photoStoragePath?: string | null;
+  socialUrl?: string | null;
+  displayPhoto: boolean;
+  displaySocialLink: boolean;
   status: 'pending' | 'approved' | 'rejected';
   featured: boolean;
   emailVerified: boolean;
   adminNotes?: string;
   submittedAt: string;
-  verifiedAt?: string;
+  verifiedAt?: string | null;
+  approvedAt?: string | null;
 }
 
 interface Token {
@@ -28,17 +34,15 @@ interface Token {
   token: string;
   label: string;
   used: boolean;
-  usedAt?: string;
-  expiresAt?: string;
+  usedAt?: string | null;
+  expiresAt?: string | null;
   createdAt: string;
 }
 
 type Tab = 'testimonials' | 'links';
 type StatusFilter = 'all' | 'pending' | 'approved' | 'rejected';
 
-// ── helpers ───────────────────────────────────────────────────────────────────
-
-function formatDate(iso?: string) {
+function formatDate(iso?: string | null) {
   if (!iso) return '—';
   return new Date(iso).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
 }
@@ -66,19 +70,29 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-// ── main component ────────────────────────────────────────────────────────────
+async function getAdminAuthHeaders() {
+  const user = auth.currentUser ?? await new Promise<User | null>((resolve) => {
+    const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
+      unsubscribe();
+      resolve(nextUser);
+    });
+  });
+  if (!user) throw new Error('Admin session not found');
+
+  const token = await user.getIdToken();
+  return {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json',
+  };
+}
 
 export default function AdminTestimonialsPage() {
   const [tab, setTab] = useState<Tab>('testimonials');
-
-  // testimonials state
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [tLoading, setTLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('pending');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
-
-  // tokens state
   const [tokens, setTokens] = useState<Token[]>([]);
   const [tokLoading, setTokLoading] = useState(true);
   const [newLabel, setNewLabel] = useState('');
@@ -86,14 +100,23 @@ export default function AdminTestimonialsPage() {
   const [creating, setCreating] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
-
-  // ── data fetching ──────────────────────────────────────────────────────────
+  const [pageError, setPageError] = useState<string | null>(null);
 
   const fetchTestimonials = useCallback(async () => {
     setTLoading(true);
+    setPageError(null);
     try {
-      const r = await fetch('/api/admin/testimonials');
-      if (r.ok) setTestimonials(await r.json());
+      const headers = await getAdminAuthHeaders();
+      const r = await fetch('/api/admin/testimonials', { headers });
+      const data = await r.json();
+
+      if (!r.ok) {
+        throw new Error(data.error || 'Failed to load testimonials');
+      }
+
+      setTestimonials(data);
+    } catch (error) {
+      setPageError(error instanceof Error ? error.message : 'Failed to load testimonials');
     } finally {
       setTLoading(false);
     }
@@ -101,9 +124,19 @@ export default function AdminTestimonialsPage() {
 
   const fetchTokens = useCallback(async () => {
     setTokLoading(true);
+    setPageError(null);
     try {
-      const r = await fetch('/api/admin/testimonials/tokens');
-      if (r.ok) setTokens(await r.json());
+      const headers = await getAdminAuthHeaders();
+      const r = await fetch('/api/admin/testimonials/tokens', { headers });
+      const data = await r.json();
+
+      if (!r.ok) {
+        throw new Error(data.error || 'Failed to load invite links');
+      }
+
+      setTokens(data);
+    } catch (error) {
+      setPageError(error instanceof Error ? error.message : 'Failed to load invite links');
     } finally {
       setTokLoading(false);
     }
@@ -112,20 +145,33 @@ export default function AdminTestimonialsPage() {
   useEffect(() => { fetchTestimonials(); }, [fetchTestimonials]);
   useEffect(() => { if (tab === 'links') fetchTokens(); }, [tab, fetchTokens]);
 
-  // ── actions ────────────────────────────────────────────────────────────────
+  async function patchTestimonial(id: string, payload: Record<string, unknown>) {
+    const headers = await getAdminAuthHeaders();
+    const res = await fetch('/api/admin/testimonials', {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ id, ...payload }),
+    });
 
-  async function updateStatus(id: string, status: 'approved' | 'rejected') {
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || 'Failed to update testimonial');
+    }
+
+    return data;
+  }
+
+  async function updateStatus(testimonial: Testimonial, status: 'approved' | 'rejected') {
     setActionLoading(true);
+    setPageError(null);
     try {
-      await fetch('/api/admin/testimonials', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, status }),
-      });
-      setTestimonials((prev) =>
-        prev.map((t) => (t.id === id ? { ...t, status } : t))
-      );
-      setSelectedId(null);
+      await patchTestimonial(testimonial.id, { status });
+      await fetchTestimonials();
+      if (status !== 'approved') {
+        setSelectedId(null);
+      }
+    } catch (error) {
+      setPageError(error instanceof Error ? error.message : 'Failed to update testimonial');
     } finally {
       setActionLoading(false);
     }
@@ -133,15 +179,26 @@ export default function AdminTestimonialsPage() {
 
   async function toggleFeatured(t: Testimonial) {
     setActionLoading(true);
+    setPageError(null);
     try {
-      await fetch('/api/admin/testimonials', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: t.id, status: t.status, featured: !t.featured }),
-      });
-      setTestimonials((prev) =>
-        prev.map((x) => (x.id === t.id ? { ...x, featured: !x.featured } : x))
-      );
+      await patchTestimonial(t.id, { featured: !t.featured });
+      setTestimonials((prev) => prev.map((x) => (x.id === t.id ? { ...x, featured: !x.featured } : x)));
+    } catch (error) {
+      setPageError(error instanceof Error ? error.message : 'Failed to update featured state');
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function toggleDisplaySetting(t: Testimonial, key: 'displayPhoto' | 'displaySocialLink') {
+    setActionLoading(true);
+    setPageError(null);
+    try {
+      const nextValue = !t[key];
+      await patchTestimonial(t.id, { [key]: nextValue });
+      setTestimonials((prev) => prev.map((x) => (x.id === t.id ? { ...x, [key]: nextValue } : x)));
+    } catch (error) {
+      setPageError(error instanceof Error ? error.message : 'Failed to update visibility setting');
     } finally {
       setActionLoading(false);
     }
@@ -149,31 +206,55 @@ export default function AdminTestimonialsPage() {
 
   async function deleteTestimonial(id: string) {
     if (!confirm('Delete this testimonial permanently?')) return;
-    await fetch(`/api/admin/testimonials?id=${id}`, { method: 'DELETE' });
-    setTestimonials((prev) => prev.filter((t) => t.id !== id));
-    if (selectedId === id) setSelectedId(null);
+
+    setActionLoading(true);
+    setPageError(null);
+    try {
+      const headers = await getAdminAuthHeaders();
+      const res = await fetch(`/api/admin/testimonials?id=${id}`, { method: 'DELETE', headers });
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to delete testimonial');
+      }
+
+      setTestimonials((prev) => prev.filter((t) => t.id !== id));
+      if (selectedId === id) setSelectedId(null);
+    } catch (error) {
+      setPageError(error instanceof Error ? error.message : 'Failed to delete testimonial');
+    } finally {
+      setActionLoading(false);
+    }
   }
 
   async function createToken() {
     if (!newLabel.trim()) return;
+
     setCreating(true);
+    setPageError(null);
     try {
+      const headers = await getAdminAuthHeaders();
       const res = await fetch('/api/admin/testimonials/tokens', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           label: newLabel.trim(),
           expiresAt: newExpiry || undefined,
-          createdBy: 'admin',
+          createdBy: auth.currentUser?.email || 'admin',
         }),
       });
+
       const data = await res.json();
-      if (res.ok) {
-        setGeneratedLink(data.submissionLink);
-        setNewLabel('');
-        setNewExpiry('');
-        fetchTokens();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to create invite link');
       }
+
+      setGeneratedLink(data.submissionLink);
+      setNewLabel('');
+      setNewExpiry('');
+      await fetchTokens();
+    } catch (error) {
+      setPageError(error instanceof Error ? error.message : 'Failed to create invite link');
     } finally {
       setCreating(false);
     }
@@ -181,8 +262,21 @@ export default function AdminTestimonialsPage() {
 
   async function deleteToken(id: string) {
     if (!confirm('Revoke this link? It cannot be used after this.')) return;
-    await fetch(`/api/admin/testimonials/tokens?id=${id}`, { method: 'DELETE' });
-    setTokens((prev) => prev.filter((t) => t.id !== id));
+
+    setPageError(null);
+    try {
+      const headers = await getAdminAuthHeaders();
+      const res = await fetch(`/api/admin/testimonials/tokens?id=${id}`, { method: 'DELETE', headers });
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to revoke invite link');
+      }
+
+      setTokens((prev) => prev.filter((t) => t.id !== id));
+    } catch (error) {
+      setPageError(error instanceof Error ? error.message : 'Failed to revoke invite link');
+    }
   }
 
   function copyLink(token: string, id: string) {
@@ -191,8 +285,6 @@ export default function AdminTestimonialsPage() {
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
   }
-
-  // ── derived ────────────────────────────────────────────────────────────────
 
   const filtered = statusFilter === 'all'
     ? testimonials
@@ -206,19 +298,21 @@ export default function AdminTestimonialsPage() {
     rejected: testimonials.filter((t) => t.status === 'rejected').length,
   };
 
-  // ── render ────────────────────────────────────────────────────────────────
-
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      {/* Page header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Testimonials</h1>
         <p className="text-gray-500 text-sm mt-1">
-          Manage submitted testimonials and generate invite links.
+          Manage submitted testimonials, review public profile data, and generate invite links.
         </p>
       </div>
 
-      {/* Tabs */}
+      {pageError && (
+        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {pageError}
+        </div>
+      )}
+
       <div className="flex gap-1 bg-gray-100 rounded-lg p-1 w-fit mb-6">
         {(['testimonials', 'links'] as Tab[]).map((t) => (
           <button
@@ -228,7 +322,7 @@ export default function AdminTestimonialsPage() {
               tab === t ? 'bg-white shadow text-[#01143d]' : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            {t === 'testimonials' ? `Testimonials` : 'Invite Links'}
+            {t === 'testimonials' ? 'Testimonials' : 'Invite Links'}
             {t === 'testimonials' && counts.pending > 0 && (
               <span className="ml-2 bg-yellow-100 text-yellow-700 text-xs px-1.5 py-0.5 rounded-full">
                 {counts.pending}
@@ -238,32 +332,28 @@ export default function AdminTestimonialsPage() {
         ))}
       </div>
 
-      {/* ── TESTIMONIALS TAB ── */}
       {tab === 'testimonials' && (
         <div className="flex gap-6">
-          {/* Left: list */}
           <div className="flex-1 min-w-0">
-            {/* Stats row */}
             <div className="grid grid-cols-3 gap-4 mb-4">
               {([
-                { label: 'Pending', count: counts.pending, color: 'yellow', filter: 'pending' },
-                { label: 'Approved', count: counts.approved, color: 'green', filter: 'approved' },
-                { label: 'Rejected', count: counts.rejected, color: 'red', filter: 'rejected' },
+                { label: 'Pending', count: counts.pending, colorClasses: 'ring-yellow-400 text-yellow-600', filter: 'pending' },
+                { label: 'Approved', count: counts.approved, colorClasses: 'ring-green-400 text-green-600', filter: 'approved' },
+                { label: 'Rejected', count: counts.rejected, colorClasses: 'ring-red-400 text-red-600', filter: 'rejected' },
               ] as const).map((s) => (
                 <button
                   key={s.filter}
                   onClick={() => setStatusFilter(s.filter)}
-                  className={`rounded-xl border p-4 text-left transition-all ${
-                    statusFilter === s.filter ? `ring-2 ring-${s.color}-400` : 'hover:shadow-md'
-                  } bg-white`}
+                  className={`rounded-xl border p-4 text-left transition-all bg-white ${
+                    statusFilter === s.filter ? `ring-2 ${s.colorClasses.split(' ')[0]}` : 'hover:shadow-md'
+                  }`}
                 >
-                  <div className={`text-2xl font-bold text-${s.color}-600`}>{s.count}</div>
+                  <div className={`text-2xl font-bold ${s.colorClasses.split(' ')[1]}`}>{s.count}</div>
                   <div className="text-gray-500 text-sm">{s.label}</div>
                 </button>
               ))}
             </div>
 
-            {/* Filter bar */}
             <div className="flex gap-2 mb-4">
               {(['all', 'pending', 'approved', 'rejected'] as StatusFilter[]).map((f) => (
                 <button
@@ -299,23 +389,41 @@ export default function AdminTestimonialsPage() {
                     }`}
                   >
                     <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-semibold text-[#01143d] text-sm">{t.name}</span>
-                          <StatusBadge status={t.status} />
-                          {t.emailVerified && (
-                            <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-600 border border-blue-200 text-xs px-1.5 py-0.5 rounded-full">
-                              <Shield size={10} /> Verified
-                            </span>
-                          )}
-                          {t.featured && (
-                            <span className="inline-flex items-center gap-1 bg-purple-50 text-purple-600 border border-purple-200 text-xs px-1.5 py-0.5 rounded-full">
-                              <Award size={10} /> Featured
-                            </span>
-                          )}
+                      <div className="flex items-start gap-3 flex-1 min-w-0">
+                        {t.photoUrl ? (
+                          <img
+                            src={t.photoUrl}
+                            alt={`${t.name} testimonial`}
+                            className="h-12 w-12 rounded-full object-cover border border-gray-200"
+                          />
+                        ) : (
+                          <div className="h-12 w-12 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-400">
+                            <ImageIcon size={18} />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-semibold text-[#01143d] text-sm">{t.name}</span>
+                            <StatusBadge status={t.status} />
+                            {t.emailVerified && (
+                              <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-600 border border-blue-200 text-xs px-1.5 py-0.5 rounded-full">
+                                <Shield size={10} /> Verified
+                              </span>
+                            )}
+                            {t.featured && (
+                              <span className="inline-flex items-center gap-1 bg-purple-50 text-purple-600 border border-purple-200 text-xs px-1.5 py-0.5 rounded-full">
+                                <Award size={10} /> Featured
+                              </span>
+                            )}
+                            {t.socialUrl && (
+                              <span className="inline-flex items-center gap-1 bg-sky-50 text-sky-700 border border-sky-200 text-xs px-1.5 py-0.5 rounded-full">
+                                <Globe size={10} /> Social
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-500 mt-0.5">{t.role} · {t.course} · {t.year}</p>
+                          <p className="text-sm text-gray-600 mt-1.5 line-clamp-2">{t.text}</p>
                         </div>
-                        <p className="text-xs text-gray-500 mt-0.5">{t.role} · {t.course} · {t.year}</p>
-                        <p className="text-sm text-gray-600 mt-1.5 line-clamp-2">{t.text}</p>
                       </div>
                       <div className="flex-shrink-0 text-right">
                         <StarRow n={t.stars} />
@@ -328,9 +436,8 @@ export default function AdminTestimonialsPage() {
             )}
           </div>
 
-          {/* Right: detail panel */}
           {selected && (
-            <div className="w-80 flex-shrink-0">
+            <div className="w-96 flex-shrink-0">
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sticky top-20">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-semibold text-[#01143d]">Review</h3>
@@ -349,22 +456,79 @@ export default function AdminTestimonialsPage() {
                     <span className="text-gray-400 text-xs">Rating</span>
                     <div className="mt-0.5"><StarRow n={selected.stars} /></div>
                   </div>
-                  <Row label="Email Verified" value={selected.emailVerified ? 'Yes' : 'No — pending'} />
+                  <Row label="Email Verified" value={selected.emailVerified ? `Yes · ${formatDate(selected.verifiedAt)}` : 'No — pending'} />
                   <Row label="Submitted" value={formatDate(selected.submittedAt)} />
                 </div>
+
+                {(selected.photoUrl || selected.socialUrl) && (
+                  <>
+                    <div className="border-t border-gray-100 my-4" />
+                    <div className="space-y-4">
+                      {selected.photoUrl && (
+                        <div>
+                          <p className="text-xs text-gray-400 mb-2">Submitted Photo</p>
+                          <img
+                            src={selected.photoUrl}
+                            alt={`${selected.name} submitted`}
+                            className="w-full h-48 object-cover rounded-xl border border-gray-200"
+                          />
+                          <label className="mt-3 flex items-center gap-2 text-sm text-gray-700">
+                            <input
+                              type="checkbox"
+                              checked={selected.displayPhoto}
+                              disabled={actionLoading}
+                              onChange={() => toggleDisplaySetting(selected, 'displayPhoto')}
+                              className="rounded border-gray-300 text-[#0088e0] focus:ring-[#0088e0]"
+                            />
+                            Show photo publicly
+                          </label>
+                        </div>
+                      )}
+
+                      {selected.socialUrl && (
+                        <div>
+                          <p className="text-xs text-gray-400 mb-2">Submitted Social Link</p>
+                          <a
+                            href={selected.socialUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-sm text-[#0088e0] break-all hover:underline"
+                          >
+                            {selected.socialUrl}
+                          </a>
+                          <label className="mt-3 flex items-center gap-2 text-sm text-gray-700">
+                            <input
+                              type="checkbox"
+                              checked={selected.displaySocialLink}
+                              disabled={actionLoading}
+                              onChange={() => toggleDisplaySetting(selected, 'displaySocialLink')}
+                              className="rounded border-gray-300 text-[#0088e0] focus:ring-[#0088e0]"
+                            />
+                            Show social link publicly
+                          </label>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
 
                 <div className="border-t border-gray-100 my-4" />
 
                 <p className="text-xs text-gray-500 leading-relaxed mb-4 bg-gray-50 rounded-lg p-3 italic">
-                  "{selected.text}"
+                  &quot;{selected.text}&quot;
                 </p>
 
-                {/* Actions */}
+                {!selected.emailVerified && selected.status !== 'rejected' && (
+                  <div className="mb-3 rounded-lg border border-yellow-200 bg-yellow-50 px-3 py-2 text-xs text-yellow-800">
+                    This testimonial must be email-verified before it can be approved.
+                  </div>
+                )}
+
                 <div className="space-y-2">
                   {selected.status !== 'approved' && (
                     <button
-                      onClick={() => updateStatus(selected.id, 'approved')}
-                      disabled={actionLoading}
+                      onClick={() => updateStatus(selected, 'approved')}
+                      disabled={actionLoading || !selected.emailVerified}
                       className="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white py-2.5 rounded-lg text-sm font-medium transition-colors"
                     >
                       <CheckCircle size={16} /> Approve & Publish
@@ -372,7 +536,7 @@ export default function AdminTestimonialsPage() {
                   )}
                   {selected.status !== 'rejected' && (
                     <button
-                      onClick={() => updateStatus(selected.id, 'rejected')}
+                      onClick={() => updateStatus(selected, 'rejected')}
                       disabled={actionLoading}
                       className="w-full flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 py-2.5 rounded-lg text-sm font-medium transition-colors"
                     >
@@ -390,6 +554,7 @@ export default function AdminTestimonialsPage() {
                   )}
                   <button
                     onClick={() => deleteTestimonial(selected.id)}
+                    disabled={actionLoading}
                     className="w-full flex items-center justify-center gap-2 text-gray-400 hover:text-red-500 hover:bg-red-50 border border-gray-200 hover:border-red-200 py-2.5 rounded-lg text-sm font-medium transition-colors"
                   >
                     <Trash2 size={16} /> Delete Permanently
@@ -401,10 +566,8 @@ export default function AdminTestimonialsPage() {
         </div>
       )}
 
-      {/* ── INVITE LINKS TAB ── */}
       {tab === 'links' && (
         <div className="space-y-6">
-          {/* Create new link */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
             <h3 className="font-semibold text-[#01143d] mb-1">Generate New Invite Link</h3>
             <p className="text-gray-400 text-sm mb-4">
@@ -443,7 +606,11 @@ export default function AdminTestimonialsPage() {
                     {generatedLink}
                   </code>
                   <button
-                    onClick={() => { navigator.clipboard.writeText(generatedLink); setCopiedId('new'); setTimeout(() => setCopiedId(null), 2000); }}
+                    onClick={() => {
+                      navigator.clipboard.writeText(generatedLink);
+                      setCopiedId('new');
+                      setTimeout(() => setCopiedId(null), 2000);
+                    }}
                     className="flex-shrink-0 p-2 text-green-600 hover:bg-green-100 rounded-lg transition-colors"
                   >
                     {copiedId === 'new' ? <Check size={16} /> : <Copy size={16} />}
@@ -454,7 +621,6 @@ export default function AdminTestimonialsPage() {
             )}
           </div>
 
-          {/* Link list */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="p-4 border-b border-gray-100">
               <h3 className="font-semibold text-[#01143d]">All Invite Links</h3>
@@ -471,45 +637,42 @@ export default function AdminTestimonialsPage() {
               </div>
             ) : (
               <div className="divide-y divide-gray-50">
-                {tokens.map((tok) => {
-                  const link = `${typeof window !== 'undefined' ? window.location.origin : ''}/testimonials/submit/${tok.token}`;
-                  return (
-                    <div key={tok.id} className="px-5 py-4 flex items-center gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-sm text-[#01143d] truncate">{tok.label}</span>
-                          <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${tok.used ? 'bg-gray-50 text-gray-400 border-gray-200' : 'bg-green-50 text-green-700 border-green-200'}`}>
-                            {tok.used ? 'Used' : 'Available'}
-                          </span>
-                        </div>
-                        <p className="text-xs text-gray-400 mt-0.5">
-                          Created {formatDate(tok.createdAt)}
-                          {tok.usedAt && ` · Used ${formatDate(tok.usedAt)}`}
-                          {tok.expiresAt && ` · Expires ${formatDate(tok.expiresAt)}`}
-                        </p>
+                {tokens.map((tok) => (
+                  <div key={tok.id} className="px-5 py-4 flex items-center gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm text-[#01143d] truncate">{tok.label}</span>
+                        <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${tok.used ? 'bg-gray-50 text-gray-400 border-gray-200' : 'bg-green-50 text-green-700 border-green-200'}`}>
+                          {tok.used ? 'Used' : 'Available'}
+                        </span>
                       </div>
-
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        {!tok.used && (
-                          <button
-                            onClick={() => copyLink(tok.token, tok.id)}
-                            title="Copy link"
-                            className="p-2 text-gray-400 hover:text-[#0088e0] hover:bg-blue-50 rounded-lg transition-colors"
-                          >
-                            {copiedId === tok.id ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
-                          </button>
-                        )}
-                        <button
-                          onClick={() => deleteToken(tok.id)}
-                          title="Revoke"
-                          className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        Created {formatDate(tok.createdAt)}
+                        {tok.usedAt && ` · Used ${formatDate(tok.usedAt)}`}
+                        {tok.expiresAt && ` · Expires ${formatDate(tok.expiresAt)}`}
+                      </p>
                     </div>
-                  );
-                })}
+
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      {!tok.used && (
+                        <button
+                          onClick={() => copyLink(tok.token, tok.id)}
+                          title="Copy link"
+                          className="p-2 text-gray-400 hover:text-[#0088e0] hover:bg-blue-50 rounded-lg transition-colors"
+                        >
+                          {copiedId === tok.id ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
+                        </button>
+                      )}
+                      <button
+                        onClick={() => deleteToken(tok.id)}
+                        title="Revoke"
+                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>

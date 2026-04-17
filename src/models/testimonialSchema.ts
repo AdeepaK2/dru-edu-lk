@@ -1,5 +1,12 @@
 import { z } from 'zod';
 
+export const TESTIMONIAL_PHOTO_MAX_BYTES = 5 * 1024 * 1024;
+export const TESTIMONIAL_PHOTO_ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'] as const;
+
+function emptyStringToUndefined(value: unknown) {
+  return typeof value === 'string' && value.trim() === '' ? undefined : value;
+}
+
 // Schema for submitting a testimonial via invite link
 export const testimonialSubmitSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -13,20 +20,32 @@ export const testimonialSubmitSchema = z.object({
     .min(4, 'Enter a valid year')
     .max(4, 'Enter a valid year')
     .regex(/^\d{4}$/, 'Enter a 4-digit year'),
-  result: z.string().max(200).optional(),
+  result: z.preprocess(emptyStringToUndefined, z.string().max(200).optional()),
   text: z
     .string()
     .min(20, 'Testimonial must be at least 20 characters')
     .max(1500, 'Testimonial must be under 1500 characters'),
-  stars: z.number().int().min(1).max(5),
+  stars: z.preprocess((value) => {
+    if (typeof value === 'string') return Number(value);
+    return value;
+  }, z.number().int().min(1).max(5)),
+  socialUrl: z.preprocess(
+    emptyStringToUndefined,
+    z.string().url('Enter a valid URL').refine(
+      (value) => value.startsWith('https://'),
+      'Social link must start with https://'
+    ).optional()
+  ),
   token: z.string().min(1, 'Submission token is required'),
 });
 
 // Schema for admin updating a testimonial
 export const testimonialUpdateSchema = z.object({
-  status: z.enum(['pending', 'approved', 'rejected']),
+  status: z.enum(['pending', 'approved', 'rejected']).optional(),
   featured: z.boolean().optional(),
   adminNotes: z.string().optional(),
+  displayPhoto: z.boolean().optional(),
+  displaySocialLink: z.boolean().optional(),
 });
 
 // Schema for admin creating a token
@@ -51,6 +70,11 @@ export interface TestimonialDocument {
   text: string;
   stars: number;
   tokenId: string;
+  photoUrl?: string | null;
+  photoStoragePath?: string | null;
+  socialUrl?: string | null;
+  displayPhoto: boolean;
+  displaySocialLink: boolean;
   status: 'pending' | 'approved' | 'rejected';
   featured: boolean;
   emailVerified: boolean;
@@ -83,5 +107,25 @@ export interface PublicTestimonial {
   stars: number;
   featured: boolean;
   emailVerified: boolean;
+  photoUrl?: string;
+  socialUrl?: string;
   submittedAt: string; // ISO string for serialisation
+}
+
+export function validateTestimonialPhoto(
+  file?: { size: number; type: string } | null
+): { isValid: boolean; error?: string } {
+  if (!file) {
+    return { isValid: true };
+  }
+
+  if (!TESTIMONIAL_PHOTO_ALLOWED_TYPES.includes(file.type as typeof TESTIMONIAL_PHOTO_ALLOWED_TYPES[number])) {
+    return { isValid: false, error: 'Photo must be a JPG, PNG, or WebP image' };
+  }
+
+  if (file.size > TESTIMONIAL_PHOTO_MAX_BYTES) {
+    return { isValid: false, error: 'Photo must be smaller than 5MB' };
+  }
+
+  return { isValid: true };
 }

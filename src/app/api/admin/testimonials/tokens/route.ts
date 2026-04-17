@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
 import firebaseAdmin from '@/utils/firebase-server';
 import { testimonialTokenCreateSchema } from '@/models/testimonialSchema';
+import { withAuth, AuthenticatedRequest } from '@/utils/auth-middleware';
 
 // GET all tokens
-export async function GET() {
+async function getTokensHandler(_request: AuthenticatedRequest) {
   try {
     const snapshot = await firebaseAdmin.db
       .collection('testimonialTokens')
@@ -33,7 +34,7 @@ export async function GET() {
 }
 
 // POST – create a new submission token
-export async function POST(request: NextRequest) {
+async function createTokenHandler(request: AuthenticatedRequest) {
   try {
     const body = await request.json();
     const validated = testimonialTokenCreateSchema.parse(body);
@@ -73,7 +74,7 @@ export async function POST(request: NextRequest) {
 }
 
 // DELETE – revoke a token
-export async function DELETE(request: NextRequest) {
+async function deleteTokenHandler(request: AuthenticatedRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
@@ -90,3 +91,7 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to delete token' }, { status: 500 });
   }
 }
+
+export const GET = withAuth(getTokensHandler, ['admin']);
+export const POST = withAuth(createTokenHandler, ['admin']);
+export const DELETE = withAuth(deleteTokenHandler, ['admin']);
