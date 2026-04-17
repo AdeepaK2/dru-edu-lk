@@ -1,12 +1,25 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { auth } from '@/utils/firebase-client';
+import { auth, firestore, storage } from '@/utils/firebase-client';
 import { onAuthStateChanged, User } from 'firebase/auth';
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getDocs,
+  orderBy,
+  query,
+  Timestamp,
+  updateDoc,
+} from 'firebase/firestore';
+import { deleteObject, ref } from 'firebase/storage';
 import { Star, CheckCircle, XCircle, Link2, Trash2, Plus, Copy, Check, Shield, Award, Image as ImageIcon, Globe } from 'lucide-react';
 
 interface Testimonial {
   id: string;
+  tokenId?: string | null;
   name: string;
   email: string;
   role: string;
@@ -70,20 +83,32 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-async function getAdminAuthHeaders() {
+async function getAdminUser() {
   const user = auth.currentUser ?? await new Promise<User | null>((resolve) => {
     const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
       unsubscribe();
       resolve(nextUser);
     });
   });
-  if (!user) throw new Error('Admin session not found');
 
-  const token = await user.getIdToken();
-  return {
-    'Authorization': `Bearer ${token}`,
-    'Content-Type': 'application/json',
-  };
+  if (!user) {
+    throw new Error('Admin session not found');
+  }
+
+  const tokenResult = await user.getIdTokenResult();
+  if (!tokenResult.claims.admin) {
+    throw new Error('Admin privileges are required');
+  }
+
+  return user;
+}
+
+function toIsoString(value: any): string | null {
+  if (!value) return null;
+  if (value instanceof Timestamp) return value.toDate().toISOString();
+  if (typeof value?.toDate === 'function') return value.toDate().toISOString();
+  if (value instanceof Date) return value.toISOString();
+  return null;
 }
 
 export default function AdminTestimonialsPage() {
@@ -106,13 +131,35 @@ export default function AdminTestimonialsPage() {
     setTLoading(true);
     setPageError(null);
     try {
-      const headers = await getAdminAuthHeaders();
-      const r = await fetch('/api/admin/testimonials', { headers });
-      const data = await r.json();
-
-      if (!r.ok) {
-        throw new Error(data.error || 'Failed to load testimonials');
-      }
+      await getAdminUser();
+      const snapshot = await getDocs(query(collection(firestore, 'testimonials'), orderBy('submittedAt', 'desc')));
+      const data = snapshot.docs.map((snapshotDoc) => {
+        const d = snapshotDoc.data();
+        return {
+          id: snapshotDoc.id,
+          name: d.name,
+          email: d.email,
+          role: d.role,
+          course: d.course,
+          year: d.year,
+          result: d.result ?? null,
+          text: d.text,
+          stars: d.stars,
+          tokenId: d.tokenId,
+          photoUrl: d.photoUrl ?? null,
+          photoStoragePath: d.photoStoragePath ?? null,
+          socialUrl: d.socialUrl ?? null,
+          displayPhoto: Boolean(d.displayPhoto),
+          displaySocialLink: Boolean(d.displaySocialLink),
+          status: d.status,
+          featured: Boolean(d.featured),
+          emailVerified: Boolean(d.emailVerified),
+          adminNotes: d.adminNotes,
+          submittedAt: toIsoString(d.submittedAt) || new Date().toISOString(),
+          verifiedAt: toIsoString(d.verifiedAt),
+          approvedAt: toIsoString(d.approvedAt),
+        } satisfies Testimonial;
+      });
 
       setTestimonials(data);
     } catch (error) {
@@ -126,14 +173,20 @@ export default function AdminTestimonialsPage() {
     setTokLoading(true);
     setPageError(null);
     try {
-      const headers = await getAdminAuthHeaders();
-      const r = await fetch('/api/admin/testimonials/tokens', { headers });
-      const data = await r.json();
-
-      if (!r.ok) {
-        throw new Error(data.error || 'Failed to load invite links');
-      }
-
+      await getAdminUser();
+      const snapshot = await getDocs(query(collection(firestore, 'testimonialTokens'), orderBy('createdAt', 'desc')));
+      const data = snapshot.docs.map((snapshotDoc) => {
+        const d = snapshotDoc.data();
+        return {
+          id: snapshotDoc.id,
+          token: d.token,
+          label: d.label,
+          used: Boolean(d.used),
+          usedAt: toIsoString(d.usedAt),
+          expiresAt: toIsoString(d.expiresAt),
+          createdAt: toIsoString(d.createdAt) || new Date().toISOString(),
+        } satisfies Token;
+      });
       setTokens(data);
     } catch (error) {
       setPageError(error instanceof Error ? error.message : 'Failed to load invite links');
@@ -146,19 +199,29 @@ export default function AdminTestimonialsPage() {
   useEffect(() => { if (tab === 'links') fetchTokens(); }, [tab, fetchTokens]);
 
   async function patchTestimonial(id: string, payload: Record<string, unknown>) {
-    const headers = await getAdminAuthHeaders();
-    const res = await fetch('/api/admin/testimonials', {
-      method: 'PATCH',
-      headers,
-      body: JSON.stringify({ id, ...payload }),
-    });
+    await getAdminUser();
 
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.error || 'Failed to update testimonial');
+    const testimonial = testimonials.find((item) => item.id === id);
+    if (!testimonial) {
+      throw new Error('Testimonial not found');
     }
 
-    return data;
+    if (payload.status === 'approved' && !testimonial.emailVerified) {
+      throw new Error('Only email-verified testimonials can be approved');
+    }
+
+    const updatePayload: Record<string, unknown> = {
+      ...payload,
+      updatedAt: Timestamp.now(),
+    };
+
+    if (payload.status === 'approved') {
+      updatePayload.approvedAt = Timestamp.now();
+    } else if (payload.status) {
+      updatePayload.approvedAt = null;
+    }
+
+    await updateDoc(doc(firestore, 'testimonials', id), updatePayload);
   }
 
   async function updateStatus(testimonial: Testimonial, status: 'approved' | 'rejected') {
@@ -210,13 +273,18 @@ export default function AdminTestimonialsPage() {
     setActionLoading(true);
     setPageError(null);
     try {
-      const headers = await getAdminAuthHeaders();
-      const res = await fetch(`/api/admin/testimonials?id=${id}`, { method: 'DELETE', headers });
-      const data = await res.json();
+      await getAdminUser();
+      const testimonial = testimonials.find((item) => item.id === id);
 
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to delete testimonial');
+      if (!testimonial) {
+        throw new Error('Testimonial not found');
       }
+
+      if (testimonial.photoStoragePath) {
+        await deleteObject(ref(storage, testimonial.photoStoragePath));
+      }
+
+      await deleteDoc(doc(firestore, 'testimonials', id));
 
       setTestimonials((prev) => prev.filter((t) => t.id !== id));
       if (selectedId === id) setSelectedId(null);
@@ -233,23 +301,21 @@ export default function AdminTestimonialsPage() {
     setCreating(true);
     setPageError(null);
     try {
-      const headers = await getAdminAuthHeaders();
-      const res = await fetch('/api/admin/testimonials/tokens', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          label: newLabel.trim(),
-          expiresAt: newExpiry || undefined,
-          createdBy: auth.currentUser?.email || 'admin',
-        }),
+      const user = await getAdminUser();
+      const token = crypto.randomUUID().replace(/-/g, '');
+
+      await addDoc(collection(firestore, 'testimonialTokens'), {
+        token,
+        label: newLabel.trim(),
+        used: false,
+        createdAt: Timestamp.now(),
+        createdBy: user.email || 'admin',
+        ...(newExpiry
+          ? { expiresAt: Timestamp.fromDate(new Date(newExpiry)) }
+          : {}),
       });
 
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to create invite link');
-      }
-
-      setGeneratedLink(data.submissionLink);
+      setGeneratedLink(`${window.location.origin}/testimonials/submit/${token}`);
       setNewLabel('');
       setNewExpiry('');
       await fetchTokens();
@@ -265,14 +331,8 @@ export default function AdminTestimonialsPage() {
 
     setPageError(null);
     try {
-      const headers = await getAdminAuthHeaders();
-      const res = await fetch(`/api/admin/testimonials/tokens?id=${id}`, { method: 'DELETE', headers });
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to revoke invite link');
-      }
-
+      await getAdminUser();
+      await deleteDoc(doc(firestore, 'testimonialTokens', id));
       setTokens((prev) => prev.filter((t) => t.id !== id));
     } catch (error) {
       setPageError(error instanceof Error ? error.message : 'Failed to revoke invite link');
