@@ -271,10 +271,10 @@ export default function TestimonialsPage() {
                   Student and parent voices
                 </span>
                 <h1 className="mt-5 text-4xl font-bold tracking-tight text-[#01143d] sm:text-5xl">
-                  Testimonials That Are Easy to Read and Easy to Trust
+                  What Students and Parents Say About Dr. U Education
                 </h1>
                 <p className="mt-4 max-w-2xl text-lg leading-8 text-slate-600">
-                  Browse featured stories first, then explore the full collection of student and family feedback with cleaner cards, shorter previews, and simple read-more controls.
+                  Real feedback from students and families who have worked with us across VCE, selective entry, and school-year tutoring.
                 </p>
               </div>
 
