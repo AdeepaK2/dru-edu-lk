@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import firebaseAdmin from '@/utils/firebase-server';
 import { testimonialUpdateSchema } from '@/models/testimonialSchema';
+import { withAuth, AuthenticatedRequest } from '@/utils/auth-middleware';
 
 // GET all testimonials (admin)
-export async function GET() {
+async function getTestimonialsHandler(_request: AuthenticatedRequest) {
   try {
     const snapshot = await firebaseAdmin.db
       .collection('testimonials')
@@ -23,6 +24,11 @@ export async function GET() {
         text: d.text,
         stars: d.stars,
         tokenId: d.tokenId,
+        photoUrl: d.photoUrl ?? null,
+        photoStoragePath: d.photoStoragePath ?? null,
+        socialUrl: d.socialUrl ?? null,
+        displayPhoto: Boolean(d.displayPhoto),
+        displaySocialLink: Boolean(d.displaySocialLink),
         status: d.status,
         featured: d.featured,
         emailVerified: d.emailVerified,
@@ -41,7 +47,7 @@ export async function GET() {
 }
 
 // PATCH – approve / reject / feature a testimonial
-export async function PATCH(request: NextRequest) {
+async function patchTestimonialHandler(request: AuthenticatedRequest) {
   try {
     const body = await request.json();
     const { id, ...updateData } = body;
@@ -51,6 +57,18 @@ export async function PATCH(request: NextRequest) {
     }
 
     const validated = testimonialUpdateSchema.parse(updateData);
+    if (Object.keys(validated).length === 0) {
+      return NextResponse.json({ error: 'At least one field must be updated' }, { status: 400 });
+    }
+
+    const docRef = firebaseAdmin.db.collection('testimonials').doc(id);
+    const existingDoc = await docRef.get();
+
+    if (!existingDoc.exists) {
+      return NextResponse.json({ error: 'Testimonial not found' }, { status: 404 });
+    }
+
+    const existing = existingDoc.data();
     const now = firebaseAdmin.admin.firestore.Timestamp.now();
 
     const payload: Record<string, unknown> = {
@@ -59,10 +77,18 @@ export async function PATCH(request: NextRequest) {
     };
 
     if (validated.status === 'approved') {
+      if (!existing?.emailVerified) {
+        return NextResponse.json(
+          { error: 'Only email-verified testimonials can be approved' },
+          { status: 400 }
+        );
+      }
       payload.approvedAt = now;
+    } else if (validated.status) {
+      payload.approvedAt = firebaseAdmin.admin.firestore.FieldValue.delete();
     }
 
-    await firebaseAdmin.db.collection('testimonials').doc(id).update(payload);
+    await docRef.update(payload);
 
     return NextResponse.json({ message: 'Testimonial updated', id });
   } catch (error: any) {
@@ -77,7 +103,7 @@ export async function PATCH(request: NextRequest) {
 }
 
 // DELETE a testimonial
-export async function DELETE(request: NextRequest) {
+async function deleteTestimonialHandler(request: AuthenticatedRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
@@ -86,7 +112,20 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 });
     }
 
-    await firebaseAdmin.db.collection('testimonials').doc(id).delete();
+    const docRef = firebaseAdmin.db.collection('testimonials').doc(id);
+    const snapshot = await docRef.get();
+
+    if (!snapshot.exists) {
+      return NextResponse.json({ error: 'Testimonial not found' }, { status: 404 });
+    }
+
+    const data = snapshot.data();
+
+    if (data?.photoStoragePath) {
+      await firebaseAdmin.fileStorage.deleteFile(data.photoStoragePath);
+    }
+
+    await docRef.delete();
 
     return NextResponse.json({ message: 'Testimonial deleted', id });
   } catch (error) {
@@ -94,3 +133,7 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to delete testimonial' }, { status: 500 });
   }
 }
+
+export const GET = withAuth(getTestimonialsHandler, ['admin']);
+export const PATCH = withAuth(patchTestimonialHandler, ['admin']);
+export const DELETE = withAuth(deleteTestimonialHandler, ['admin']);

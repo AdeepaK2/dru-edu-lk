@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
+import { validateTestimonialPhoto } from '@/models/testimonialSchema';
 
 type Step = 'validating' | 'invalid' | 'form' | 'submitting' | 'success' | 'error';
 
@@ -28,6 +29,8 @@ export default function SubmitTestimonialPage() {
   const [step, setStep] = useState<Step>('validating');
   const [invalidReason, setInvalidReason] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
 
   const [form, setForm] = useState({
     name: '',
@@ -39,10 +42,10 @@ export default function SubmitTestimonialPage() {
     result: '',
     text: '',
     stars: 5,
+    socialUrl: '',
   });
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  // Validate token on mount
   useEffect(() => {
     if (!token) return;
     fetch(`/api/testimonials/token/${token}`)
@@ -61,17 +64,34 @@ export default function SubmitTestimonialPage() {
       });
   }, [token]);
 
+  useEffect(() => {
+    return () => {
+      if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl);
+    };
+  }, [photoPreviewUrl]);
+
   function validate() {
     const errs: Record<string, string> = {};
     if (!form.name.trim() || form.name.trim().length < 2) errs.name = 'Please enter your full name.';
-    if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
+    if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
       errs.email = 'Please enter a valid email address.';
+    }
     if (!form.role) errs.role = 'Please select your role.';
     const course = form.course === 'Other' ? form.customCourse : form.course;
     if (!course.trim()) errs.course = 'Please specify the course or program.';
     if (!form.year) errs.year = 'Please select a year.';
-    if (!form.text.trim() || form.text.trim().length < 20)
+    if (!form.text.trim() || form.text.trim().length < 20) {
       errs.text = 'Please write at least 20 characters.';
+    }
+    if (form.socialUrl.trim() && !/^https:\/\/.+/i.test(form.socialUrl.trim())) {
+      errs.socialUrl = 'Please enter a full https:// social profile link.';
+    }
+
+    const photoValidation = validateTestimonialPhoto(photoFile);
+    if (!photoValidation.isValid) {
+      errs.photo = photoValidation.error || 'Invalid photo selected.';
+    }
+
     return errs;
   }
 
@@ -82,27 +102,32 @@ export default function SubmitTestimonialPage() {
       setFieldErrors(errs);
       return;
     }
+
     setFieldErrors({});
     setStep('submitting');
 
-    const payload = {
-      name: form.name.trim(),
-      email: form.email.trim(),
-      role: form.role,
-      course: form.course === 'Other' ? form.customCourse.trim() : form.course,
-      year: form.year,
-      result: form.result.trim() || undefined,
-      text: form.text.trim(),
-      stars: form.stars,
-      token,
-    };
+    const payload = new FormData();
+    payload.append('name', form.name.trim());
+    payload.append('email', form.email.trim());
+    payload.append('role', form.role);
+    payload.append('course', form.course === 'Other' ? form.customCourse.trim() : form.course);
+    payload.append('year', form.year);
+    payload.append('result', form.result.trim());
+    payload.append('text', form.text.trim());
+    payload.append('stars', String(form.stars));
+    payload.append('socialUrl', form.socialUrl.trim());
+    payload.append('token', token);
+
+    if (photoFile) {
+      payload.append('photo', photoFile);
+    }
 
     try {
       const res = await fetch('/api/testimonials/submit', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: payload,
       });
+
       if (res.ok) {
         setStep('success');
       } else {
@@ -121,7 +146,29 @@ export default function SubmitTestimonialPage() {
     setFieldErrors((e) => ({ ...e, [field]: '' }));
   }
 
-  // ── renders ──────────────────────────────────────────────────────────────────
+  function handlePhotoChange(file: File | null) {
+    if (photoPreviewUrl) {
+      URL.revokeObjectURL(photoPreviewUrl);
+    }
+
+    setPhotoFile(file);
+    setFieldErrors((prev) => ({ ...prev, photo: '' }));
+
+    if (!file) {
+      setPhotoPreviewUrl(null);
+      return;
+    }
+
+    const validation = validateTestimonialPhoto(file);
+    if (!validation.isValid) {
+      setFieldErrors((prev) => ({ ...prev, photo: validation.error || 'Invalid photo selected.' }));
+      setPhotoFile(null);
+      setPhotoPreviewUrl(null);
+      return;
+    }
+
+    setPhotoPreviewUrl(URL.createObjectURL(file));
+  }
 
   if (step === 'validating') {
     return (
@@ -164,7 +211,7 @@ export default function SubmitTestimonialPage() {
           </div>
           <h2 className="text-2xl font-bold text-[#01143d] mb-3">Thank You!</h2>
           <p className="text-gray-600 mb-3">
-            Your testimonial has been submitted. We've sent a verification email to <strong>{form.email}</strong>.
+            Your testimonial has been submitted. We&apos;ve sent a verification email to <strong>{form.email}</strong>.
           </p>
           <p className="text-gray-500 text-sm mb-8">
             Please click the link in that email to verify your testimonial. Once verified and approved by our team, it will appear on our website.
@@ -199,12 +246,9 @@ export default function SubmitTestimonialPage() {
     );
   }
 
-  // ── form ──────────────────────────────────────────────────────────────────
-
   return (
     <PageShell>
       <div className="max-w-2xl mx-auto px-4 py-12">
-        {/* Header */}
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 border border-blue-200 px-4 py-1.5 rounded-full text-sm font-medium mb-6">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -220,8 +264,6 @@ export default function SubmitTestimonialPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 space-y-6">
-
-          {/* Star rating – at the top so it sets the emotional tone */}
           <div>
             <label className="block text-sm font-semibold text-[#01143d] mb-2">
               Overall Rating <span className="text-red-500">*</span>
@@ -246,7 +288,6 @@ export default function SubmitTestimonialPage() {
             </div>
           </div>
 
-          {/* Name */}
           <Field label="Your Full Name" error={fieldErrors.name} required>
             <input
               type="text"
@@ -257,7 +298,6 @@ export default function SubmitTestimonialPage() {
             />
           </Field>
 
-          {/* Email */}
           <Field label="Your Email Address" error={fieldErrors.email} required hint="Used only to verify your testimonial — never published.">
             <input
               type="email"
@@ -268,7 +308,6 @@ export default function SubmitTestimonialPage() {
             />
           </Field>
 
-          {/* Role */}
           <Field label="Your Role" error={fieldErrors.role} required>
             <div className="flex gap-3 flex-wrap">
               {(['Student', 'Parent', 'Guardian'] as const).map((r) => (
@@ -289,7 +328,6 @@ export default function SubmitTestimonialPage() {
             {fieldErrors.role && <p className="text-red-500 text-xs mt-1">{fieldErrors.role}</p>}
           </Field>
 
-          {/* Course */}
           <Field label="Course / Program" error={fieldErrors.course} required>
             <select
               value={form.course}
@@ -312,7 +350,6 @@ export default function SubmitTestimonialPage() {
             )}
           </Field>
 
-          {/* Year */}
           <Field label="Year of Study / Completion" error={fieldErrors.year} required>
             <select
               value={form.year}
@@ -325,7 +362,6 @@ export default function SubmitTestimonialPage() {
             </select>
           </Field>
 
-          {/* Result (optional) */}
           <Field label="Your Result (optional)" hint="e.g. 47 in Methods, 52 in Specialist · Selective entry accepted">
             <input
               type="text"
@@ -336,7 +372,50 @@ export default function SubmitTestimonialPage() {
             />
           </Field>
 
-          {/* Testimonial text */}
+          <Field label="Social Media / Profile Link (optional)" error={fieldErrors.socialUrl} hint="Paste a public https:// Instagram, LinkedIn, Facebook, or other profile link.">
+            <input
+              type="url"
+              value={form.socialUrl}
+              onChange={(e) => set('socialUrl', e.target.value)}
+              placeholder="https://www.linkedin.com/in/your-profile"
+              className={inputCls(fieldErrors.socialUrl)}
+            />
+          </Field>
+
+          <Field label="Profile Photo (optional)" error={fieldErrors.photo} hint="JPG, PNG, or WebP up to 5MB. Admin will decide if it is shown publicly.">
+            <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-4">
+              <input
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/webp"
+                onChange={(e) => handlePhotoChange(e.target.files?.[0] || null)}
+                className="block w-full text-sm text-gray-500 file:mr-4 file:rounded-lg file:border-0 file:bg-[#0088e0] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-[#0066b3]"
+              />
+
+              {photoPreviewUrl && (
+                <div className="mt-4 flex items-start gap-4">
+                  <img
+                    src={photoPreviewUrl}
+                    alt="Selected testimonial profile preview"
+                    className="h-24 w-24 rounded-2xl object-cover border border-gray-200"
+                  />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-[#01143d]">{photoFile?.name}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {photoFile ? `${(photoFile.size / 1024 / 1024).toFixed(2)} MB` : ''}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => handlePhotoChange(null)}
+                      className="mt-3 text-sm font-medium text-red-500 hover:text-red-600"
+                    >
+                      Remove photo
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </Field>
+
           <Field label="Your Testimonial" error={fieldErrors.text} required hint={`${form.text.length}/1500 characters`}>
             <textarea
               value={form.text}
@@ -348,10 +427,9 @@ export default function SubmitTestimonialPage() {
             />
           </Field>
 
-          {/* Privacy note */}
           <p className="text-xs text-gray-400 leading-relaxed">
-            By submitting, you agree that your name, role, course details, and testimonial may be published
-            on the Dr. U Education website. Your email address will never be published.
+            By submitting, you agree that your name, role, course details, testimonial, and any approved public fields
+            may be published on the Dr. U Education website. Your email address will never be published.
             After submitting you will receive a verification email — please click the link to confirm your testimonial.
           </p>
 
@@ -374,8 +452,6 @@ export default function SubmitTestimonialPage() {
     </PageShell>
   );
 }
-
-// ── helpers ───────────────────────────────────────────────────────────────────
 
 function inputCls(error?: string) {
   return `w-full border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0088e0] transition-colors ${

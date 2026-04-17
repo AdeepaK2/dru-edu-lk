@@ -84,12 +84,20 @@ function TestimonialCard({ t }: { t: PublicTestimonial }) {
       {/* Top bar */}
       <div className="p-5 pb-3 flex items-start gap-3">
         {/* Avatar */}
-        <div
-          className="w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center font-bold text-white text-base shadow-md"
-          style={{ backgroundColor: avatarColor(t.name) }}
-        >
-          {initials(t.name)}
-        </div>
+        {t.photoUrl ? (
+          <img
+            src={t.photoUrl}
+            alt={`${t.name} profile`}
+            className="w-12 h-12 rounded-full flex-shrink-0 object-cover shadow-md border border-gray-100"
+          />
+        ) : (
+          <div
+            className="w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center font-bold text-white text-base shadow-md"
+            style={{ backgroundColor: avatarColor(t.name) }}
+          >
+            {initials(t.name)}
+          </div>
+        )}
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -123,11 +131,23 @@ function TestimonialCard({ t }: { t: PublicTestimonial }) {
 
       {/* Footer */}
       <div className="px-5 pb-4 flex items-center justify-between flex-wrap gap-2">
-        {t.result && (
-          <span className="inline-flex items-center gap-1 bg-green-50 text-green-700 border border-green-200 text-xs font-medium px-2 py-0.5 rounded-full">
-            🏆 {t.result}
-          </span>
-        )}
+        <div className="flex items-center gap-2 flex-wrap">
+          {t.result && (
+            <span className="inline-flex items-center gap-1 bg-green-50 text-green-700 border border-green-200 text-xs font-medium px-2 py-0.5 rounded-full">
+              🏆 {t.result}
+            </span>
+          )}
+          {t.socialUrl && (
+            <a
+              href={t.socialUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 bg-sky-50 text-sky-700 border border-sky-200 text-xs font-medium px-2 py-0.5 rounded-full hover:bg-sky-100 transition-colors"
+            >
+              View Profile
+            </a>
+          )}
+        </div>
         <span className="text-gray-400 text-xs ml-auto">{formatDate(t.submittedAt)}</span>
       </div>
 

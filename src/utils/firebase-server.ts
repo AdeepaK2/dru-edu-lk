@@ -1,8 +1,9 @@
 import * as admin from 'firebase-admin';
+import { randomUUID } from 'crypto';
 import { getApps, cert } from 'firebase-admin/app';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
 import { getAuth, Auth } from 'firebase-admin/auth';
-// import { getStorage, Storage } from 'firebase-admin/storage'; // Commented out until needed
+import { getStorage, Storage } from 'firebase-admin/storage';
 // import { getDatabase, Database } from 'firebase-admin/database'; // Commented out until needed
 
 // Set default timezone to Melbourne
@@ -63,7 +64,7 @@ function initializeFirebaseAdmin() {
 const adminInstance = initializeFirebaseAdmin();
 const db: Firestore = getFirestore(adminInstance.app(), process.env.FIRESTORE_DATABASE_ID || '(default)');
 const auth: Auth = getAuth();
-// const storage: Storage = getStorage(); // Commented out until we fix bucket config
+const storage: Storage = getStorage();
 // const rtdb: Database = getDatabase(); // Commented out until we need Realtime Database
 
 // Firestore helpers
@@ -144,36 +145,66 @@ const authentication = {
   }
 };
 
-// Storage helpers (commented out until bucket config is fixed)
-// const fileStorage = {
-//   bucket: storage.bucket(),
-  
-//   getFileUrl(filePath: string): string {
-//     return `https://storage.googleapis.com/${process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET}/${filePath}`;
-//   },
-  
-//   async uploadFile(filePath: string, content: Buffer, metadata?: any): Promise<void> {
-//     const file = storage.bucket().file(filePath);
-//     await file.save(content, { metadata });
-//   },
-  
-//   async getFile(filePath: string): Promise<Buffer> {
-//     const [content] = await storage.bucket().file(filePath).download();
-//     return content;
-//   },
-  
-//   async deleteFile(filePath: string): Promise<void> {
-//     await storage.bucket().file(filePath).delete();
-//   },
-  
-//   async getDownloadUrl(filePath: string): Promise<string> {
-//     const [url] = await storage.bucket().file(filePath).getSignedUrl({
-//       action: 'read',
-//       expires: Date.now() + 15 * 60 * 1000, // 15 minutes,
-//     });
-//     return url;
-//   }
-// };
+const fileStorage = {
+  bucket: storage.bucket(),
+
+  getFileUrl(filePath: string, token?: string): string {
+    const bucketName = fileStorage.bucket.name;
+
+    if (token) {
+      return `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/${encodeURIComponent(filePath)}?alt=media&token=${token}`;
+    }
+
+    return `https://storage.googleapis.com/${bucketName}/${filePath}`;
+  },
+
+  async uploadPublicFile(
+    filePath: string,
+    content: Buffer,
+    options?: {
+      contentType?: string;
+      metadata?: Record<string, string>;
+      downloadToken?: string;
+    }
+  ): Promise<{ filePath: string; url: string; downloadToken: string }> {
+    const file = fileStorage.bucket.file(filePath);
+    const downloadToken = options?.downloadToken || randomUUID();
+
+    await file.save(content, {
+      resumable: false,
+      metadata: {
+        contentType: options?.contentType,
+        metadata: {
+          ...(options?.metadata || {}),
+          firebaseStorageDownloadTokens: downloadToken,
+        },
+      },
+    });
+
+    return {
+      filePath,
+      url: fileStorage.getFileUrl(filePath, downloadToken),
+      downloadToken,
+    };
+  },
+
+  async getFile(filePath: string): Promise<Buffer> {
+    const [content] = await fileStorage.bucket.file(filePath).download();
+    return content;
+  },
+
+  async deleteFile(filePath: string): Promise<void> {
+    await fileStorage.bucket.file(filePath).delete({ ignoreNotFound: true });
+  },
+
+  async getDownloadUrl(filePath: string): Promise<string> {
+    const [url] = await fileStorage.bucket.file(filePath).getSignedUrl({
+      action: 'read',
+      expires: Date.now() + 15 * 60 * 1000,
+    });
+    return url;
+  }
+};
 
 // Realtime Database helpers (commented out until needed)
 // const realtimeDb = {
@@ -207,11 +238,11 @@ export const firebaseAdmin = {
   admin: adminInstance,
   db,
   auth,
-  // storage, // Commented out until bucket config is fixed
+  storage,
   // rtdb, // Commented out until needed
   firestore,
   authentication,
-  // fileStorage, // Commented out until bucket config is fixed
+  fileStorage,
   // realtimeDb // Commented out until needed
 };
 

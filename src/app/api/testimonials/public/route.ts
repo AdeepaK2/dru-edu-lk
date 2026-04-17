@@ -23,6 +23,8 @@ export async function GET() {
         stars: d.stars,
         featured: d.featured,
         emailVerified: d.emailVerified,
+        photoUrl: d.displayPhoto ? d.photoUrl ?? undefined : undefined,
+        socialUrl: d.displaySocialLink ? d.socialUrl ?? undefined : undefined,
         submittedAt: d.submittedAt.toDate().toISOString(),
       };
     });
