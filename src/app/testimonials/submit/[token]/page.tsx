@@ -60,7 +60,7 @@ export default function SubmitTestimonialPage() {
         }
       })
       .catch(() => {
-        setInvalidReason('Unable to verify this link. Please try again.');
+        setInvalidReason('Unable to validate this link. Please try again.');
         setStep('invalid');
       });
   }, [token]);
@@ -216,10 +216,10 @@ export default function SubmitTestimonialPage() {
           </div>
           <h2 className="text-2xl font-bold text-[#01143d] mb-3">Thank You!</h2>
           <p className="text-gray-600 mb-3">
-            Your testimonial has been submitted. We&apos;ve sent a verification email to <strong>{form.email}</strong>.
+            Your testimonial has been submitted successfully.
           </p>
           <p className="text-gray-500 text-sm mb-8">
-            Please click the link in that email to verify your testimonial. Once verified and approved by our team, it will appear on our website.
+            Our team will review it and, once approved, it will appear on our website.
           </p>
           <Link href="/testimonials" className="bg-[#0088e0] text-white px-6 py-3 rounded-full font-semibold hover:bg-[#0066b3] transition-colors">
             View Testimonials
@@ -264,7 +264,7 @@ export default function SubmitTestimonialPage() {
           <h1 className="text-3xl font-extrabold text-[#01143d] mb-3">Share Your Experience</h1>
           <p className="text-gray-500 text-sm max-w-md mx-auto">
             Your honest words help future students find the right support. This link is unique to you
-            — your testimonial will be verified and reviewed before going live.
+            — your testimonial will be reviewed before going live.
           </p>
         </div>
 
@@ -303,7 +303,7 @@ export default function SubmitTestimonialPage() {
             />
           </Field>
 
-          <Field label="Your Email Address" error={fieldErrors.email} required hint="Used only to verify your testimonial — never published.">
+          <Field label="Your Email Address" error={fieldErrors.email} required hint="Used only for contact and moderation — never published.">
             <input
               type="email"
               value={form.email}
@@ -467,7 +467,7 @@ export default function SubmitTestimonialPage() {
           <p className="text-xs text-gray-400 leading-relaxed">
             By submitting, you agree that your name, role, course details, testimonial, and any approved public fields
             may be published on the Dr. U Education website. Your email address will never be published.
-            After submitting you will receive a verification email — please click the link to confirm your testimonial.
+            After submitting, our team will review your testimonial before it is published.
           </p>
 
           <button

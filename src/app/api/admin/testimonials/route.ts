@@ -32,10 +32,8 @@ async function getTestimonialsHandler(_request: AuthenticatedRequest) {
         displaySocialLink: Boolean(d.displaySocialLink),
         status: d.status,
         featured: d.featured,
-        emailVerified: d.emailVerified,
         adminNotes: d.adminNotes,
         submittedAt: d.submittedAt?.toDate().toISOString(),
-        verifiedAt: d.verifiedAt?.toDate().toISOString() ?? null,
         approvedAt: d.approvedAt?.toDate().toISOString() ?? null,
       };
     });
@@ -69,7 +67,6 @@ async function patchTestimonialHandler(request: AuthenticatedRequest) {
       return NextResponse.json({ error: 'Testimonial not found' }, { status: 404 });
     }
 
-    const existing = existingDoc.data();
     const now = firebaseAdmin.admin.firestore.Timestamp.now();
 
     const payload: Record<string, unknown> = {
@@ -78,12 +75,6 @@ async function patchTestimonialHandler(request: AuthenticatedRequest) {
     };
 
     if (validated.status === 'approved') {
-      if (!existing?.emailVerified) {
-        return NextResponse.json(
-          { error: 'Only email-verified testimonials can be approved' },
-          { status: 400 }
-        );
-      }
       payload.approvedAt = now;
     } else if (validated.status) {
       payload.approvedAt = firebaseAdmin.admin.firestore.FieldValue.delete();

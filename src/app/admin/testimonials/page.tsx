@@ -15,7 +15,7 @@ import {
   updateDoc,
 } from 'firebase/firestore';
 import { deleteObject, ref } from 'firebase/storage';
-import { Star, CheckCircle, XCircle, Link2, Trash2, Plus, Copy, Check, Shield, Award, Image as ImageIcon, Globe } from 'lucide-react';
+import { Star, CheckCircle, XCircle, Link2, Trash2, Plus, Copy, Check, Award, Image as ImageIcon, Globe } from 'lucide-react';
 
 interface Testimonial {
   id: string;
@@ -36,10 +36,8 @@ interface Testimonial {
   displaySocialLink: boolean;
   status: 'pending' | 'approved' | 'rejected';
   featured: boolean;
-  emailVerified: boolean;
   adminNotes?: string;
   submittedAt: string;
-  verifiedAt?: string | null;
   approvedAt?: string | null;
 }
 
@@ -158,10 +156,8 @@ export default function AdminTestimonialsPage() {
           displaySocialLink: Boolean(d.displaySocialLink),
           status: d.status,
           featured: Boolean(d.featured),
-          emailVerified: Boolean(d.emailVerified),
           adminNotes: d.adminNotes,
           submittedAt: toIsoString(d.submittedAt) || new Date().toISOString(),
-          verifiedAt: toIsoString(d.verifiedAt),
           approvedAt: toIsoString(d.approvedAt),
         } satisfies Testimonial;
       });
@@ -207,18 +203,9 @@ export default function AdminTestimonialsPage() {
   async function patchTestimonial(id: string, payload: Record<string, unknown>) {
     await getAdminUser();
 
-    const testimonial = testimonials.find((item) => item.id === id);
-    if (!testimonial) {
-      throw new Error('Testimonial not found');
-    }
-
-    if (payload.status === 'approved' && !testimonial.emailVerified) {
-      throw new Error('Only email-verified testimonials can be approved');
-    }
-
-    const updatePayload: Record<string, unknown> = {
-      ...payload,
-      updatedAt: Timestamp.now(),
+      const updatePayload: Record<string, unknown> = {
+        ...payload,
+        updatedAt: Timestamp.now(),
     };
 
     if (payload.status === 'approved') {
@@ -533,11 +520,6 @@ export default function AdminTestimonialsPage() {
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="font-semibold text-[#01143d] text-sm">{t.name}</span>
                             <StatusBadge status={t.status} />
-                            {t.emailVerified && (
-                              <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-600 border border-blue-200 text-xs px-1.5 py-0.5 rounded-full">
-                                <Shield size={10} /> Verified
-                              </span>
-                            )}
                             {t.featured && (
                               <span className="inline-flex items-center gap-1 bg-purple-50 text-purple-600 border border-purple-200 text-xs px-1.5 py-0.5 rounded-full">
                                 <Award size={10} /> Featured
@@ -588,7 +570,6 @@ export default function AdminTestimonialsPage() {
                     <span className="text-gray-400 text-xs">Rating</span>
                     <div className="mt-0.5"><StarRow n={selected.stars} /></div>
                   </div>
-                  <Row label="Email Verified" value={selected.emailVerified ? `Yes · ${formatDate(selected.verifiedAt)}` : 'No — pending'} />
                   <Row label="Submitted" value={formatDate(selected.submittedAt)} />
                 </div>
 
@@ -650,17 +631,11 @@ export default function AdminTestimonialsPage() {
                   &quot;{selected.text}&quot;
                 </p>
 
-                {!selected.emailVerified && selected.status !== 'rejected' && (
-                  <div className="mb-3 rounded-lg border border-yellow-200 bg-yellow-50 px-3 py-2 text-xs text-yellow-800">
-                    This testimonial must be email-verified before it can be approved.
-                  </div>
-                )}
-
                 <div className="space-y-2">
                   {selected.status !== 'approved' && (
                     <button
                       onClick={() => updateStatus(selected, 'approved')}
-                      disabled={actionLoading || !selected.emailVerified}
+                      disabled={actionLoading}
                       className="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white py-2.5 rounded-lg text-sm font-medium transition-colors"
                     >
                       <CheckCircle size={16} /> Approve & Publish

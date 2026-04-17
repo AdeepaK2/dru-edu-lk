@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { randomUUID } from 'crypto';
 import firebaseAdmin from '@/utils/firebase-server';
 import { testimonialSubmitSchema, validateTestimonialPhoto } from '@/models/testimonialSchema';
 
@@ -71,7 +70,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const emailVerificationToken = randomUUID();
     const now = firebaseAdmin.admin.firestore.Timestamp.now();
     const docRef = firebaseAdmin.db.collection('testimonials').doc();
 
@@ -108,8 +106,6 @@ export async function POST(request: NextRequest) {
       displaySocialLink: false,
       status: 'pending',
       featured: false,
-      emailVerified: false,
-      emailVerificationToken,
       submittedAt: now,
     };
 
@@ -122,56 +118,8 @@ export async function POST(request: NextRequest) {
       usedAt: now,
     });
 
-    // Send verification email via Firebase mail extension
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://drueducation.com.au';
-    const verifyLink = `${baseUrl}/testimonials/verify/${emailVerificationToken}`;
-
-    await firebaseAdmin.db.collection('mail').add({
-      to: data.email,
-      message: {
-        subject: 'Please verify your testimonial – Dr. U Education',
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
-            <div style="text-align: center; margin-bottom: 24px;">
-              <h1 style="color: #01143d; font-size: 24px; margin: 0;">Dr. U Education</h1>
-              <p style="color: #6b7280; margin: 4px 0 0;">Thank you for your testimonial!</p>
-            </div>
-
-            <p style="color: #374151;">Hi <strong>${data.name}</strong>,</p>
-
-            <p style="color: #374151;">
-              Thank you for sharing your experience with Dr. U Education. We just need to verify
-              your email address to confirm your testimonial is authentic before it goes live on our website.
-            </p>
-
-            <div style="text-align: center; margin: 32px 0;">
-              <a href="${verifyLink}"
-                 style="background-color: #0088e0; color: white; padding: 14px 32px; border-radius: 9999px;
-                        text-decoration: none; font-weight: 600; font-size: 16px; display: inline-block;">
-                Verify My Testimonial
-              </a>
-            </div>
-
-            <p style="color: #6b7280; font-size: 14px;">
-              Once verified, your testimonial will be reviewed by our team and published on our
-              <a href="${baseUrl}/testimonials" style="color: #0088e0;">testimonials page</a>.
-            </p>
-
-            <p style="color: #6b7280; font-size: 14px;">
-              If you didn't submit a testimonial to Dr. U Education, you can safely ignore this email.
-            </p>
-
-            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
-            <p style="color: #9ca3af; font-size: 12px; text-align: center;">
-              Dr. U Education · Melbourne, Australia
-            </p>
-          </div>
-        `,
-      },
-    });
-
     return NextResponse.json(
-      { id: docRef.id, message: 'Testimonial submitted. Please check your email to verify.' },
+      { id: docRef.id, message: 'Testimonial submitted. Our team will review it before publishing.' },
       { status: 201 }
     );
   } catch (error: any) {

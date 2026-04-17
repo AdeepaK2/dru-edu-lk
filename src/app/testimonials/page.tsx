@@ -50,21 +50,6 @@ function StarRating({ rating }: { rating: number }) {
   );
 }
 
-function VerifiedBadge() {
-  return (
-    <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 border border-blue-200 text-xs font-medium px-2 py-0.5 rounded-full">
-      <svg className="w-3.5 h-3.5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-        <path
-          fillRule="evenodd"
-          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-          clipRule="evenodd"
-        />
-      </svg>
-      Email Verified
-    </span>
-  );
-}
-
 function RoleTag({ role }: { role: string }) {
   const map: Record<string, string> = {
     Student: 'Dr. U Student',
@@ -125,7 +110,6 @@ function TestimonialCard({ t }: { t: PublicTestimonial }) {
           {/* Badges */}
           <div className="flex flex-wrap gap-1.5 mt-2">
             <RoleTag role={t.role} />
-            {t.emailVerified && <VerifiedBadge />}
           </div>
         </div>
       </div>
@@ -177,18 +161,18 @@ function TestimonialCard({ t }: { t: PublicTestimonial }) {
 // ── hardcoded legacy testimonials (from About page) ───────────────────────────
 
 const legacyTestimonials: PublicTestimonial[] = [
-  { id: 'l1', name: 'Arjun Weerasinghe', role: 'Parent', course: 'Selective High School Coaching', year: '2023', text: "My daughter recently looked towards Dr. U education and from the results we were amazed. Not only does Dr. U provide extensive and meticulous strategies for the Selective High School Entrance Exam but he also crafted excellent books for both, mathematics and numerical reasoning papers. These books were great practise and revision for her as each question was particularly challenging and required problem solving skills. Again, thank you so much Dr. U for all your hard work and time that took to create these very helpful resources which assisted my daughter take the Selective High School Entrance Exam. Couldn't have done it without you! All the best!", stars: 5, featured: true, emailVerified: false, submittedAt: '2023-01-01T00:00:00Z' },
-  { id: 'l2', name: 'Shiyaamaa Fahme', role: 'Parent', course: 'Selective High School Coaching', year: '2023', text: "We were so blessed to Find Dr U Education for our Daughter's selective school coaching. Dr U is a very committed, motivated mentor with a vision. Dr U Rakhitha got the aptitude to estimate the actual capacity of the child and work in a way which suits the individual child's confidence and deliver the maximum output. More than whatsoever, what I respect the most is that, A parent can approach to him for a feedback. The BEST", stars: 5, featured: false, emailVerified: false, submittedAt: '2023-02-01T00:00:00Z' },
-  { id: 'l3', name: 'Nuwan Dammika Abeysekera', role: 'Parent', course: 'Selective Entry Preparation', year: '2023', text: "I highly recommend Dr U Education for any student who wants to excel in Maths. Dedication and commitment by Dr U Education staff is highly professional and targeted. With support of Dr Rakitha, my daughter achieved a superior grade in the exam. Thank you.", stars: 5, featured: false, emailVerified: false, submittedAt: '2023-03-01T00:00:00Z' },
-  { id: 'l4', name: 'Anuk Ranatunga', role: 'Student', course: 'VCE Maths Methods & Specialist', year: '2022', result: '48 in Methods · 53 in Specialist', text: "I am a graduate from Melbourne High School and achieved a 48 for Methods and 53 for Specialist Maths from going to Dr U. He really built discipline into me through his strict and difficult methods of teaching. It allowed me to reach a high level of mathematics hence the scores I got, I could not have done it without him.", stars: 5, featured: true, emailVerified: false, submittedAt: '2022-12-01T00:00:00Z' },
-  { id: 'l5', name: 'Saman Vidyananda', role: 'Parent', course: 'VCE Maths Methods & Specialist', year: '2023', text: "It was truly a blessing to find Dr Udugama as a tutor for our son with maths methods and specialist maths. He constantly provided feedback and was just a phone call away to discuss any issues. He guided my son with valuable advice to be on top of his studies and trained him to excel in his VCE exam.", stars: 5, featured: false, emailVerified: false, submittedAt: '2023-04-01T00:00:00Z' },
-  { id: 'l6', name: 'Shashini Kandamulla', role: 'Student', course: 'VCE Maths Methods & Specialist', year: '2023', result: '47 in Methods · 52 in Specialist', text: "Thanks to Dr.U's tutoring I was able to achieve 47 for Methods and 52 for Specialist Maths. From the start, Dr. U had a very clear plan. The significant amount of practice papers that Dr. U offered us was really helpful. Dr. U is a very dedicated tutor and he is willing to spend extra hours in order to help his students achieve their greatest potential.", stars: 5, featured: true, emailVerified: false, submittedAt: '2023-05-01T00:00:00Z' },
-  { id: 'l7', name: 'Wayne Jansen', role: 'Parent', course: 'Selective High School Coaching', year: '2023', text: "Dr U immediately got to work with Josh and started encouraging Josh to consider various strategies and also started working even on a one-on-one basis to rectify areas of weakness. Within 2 months of attending classes, we were dealing with a kid that was ultra motivated. As we celebrated an excellent outcome, we look back and give full credit to Dr U. Highly recommend the institute.", stars: 5, featured: false, emailVerified: false, submittedAt: '2023-06-01T00:00:00Z' },
-  { id: 'l8', name: 'Puneet Ram Badireddi', role: 'Student', course: 'VCE Multiple Subjects', year: '2024', text: "Highly recommend Dr U. I've been with him since 2023 and the experience helped immensely across multiple subjects. His teaching style is clear, patient and tailored to how I learn best, which has made difficult concepts much easier to grasp. Thanks to his guidance, I've gained confidence and improved my understanding significantly.", stars: 5, featured: false, emailVerified: false, submittedAt: '2024-01-01T00:00:00Z' },
-  { id: 'l9', name: 'Rivith Senaratne', role: 'Student', course: 'VCE Maths', year: '2024', text: "As a former student at Dr. U Education, I observed that classes operate with a level of academic rigor and structured methodology that is rare to find. Under his guidance, I achieved significant improvement in both subjects.", stars: 5, featured: false, emailVerified: false, submittedAt: '2024-02-01T00:00:00Z' },
-  { id: 'l10', name: 'Karthik Kalaiselvan', role: 'Student', course: 'VCE Maths', year: '2024', text: "I had the privilege of being tutored by Dr U from Year 9 through to Year 12. Dr U is far more than a tutor — he is a mentor, coach, and role model whose commitment to his students is truly extraordinary.", stars: 5, featured: true, emailVerified: false, submittedAt: '2024-03-01T00:00:00Z' },
-  { id: 'l11', name: 'Akshay Raju', role: 'Student', course: 'VCE Methods, Specialist & Chemistry', year: '2024', text: "Doctor U wasn't just a teacher to me but a father figure. He taught me Methods, Specialist and Chemistry with passion and had an innate way of explaining concepts from different viewpoints.", stars: 5, featured: false, emailVerified: false, submittedAt: '2024-04-01T00:00:00Z' },
-  { id: 'l12', name: 'Shanon Angelo', role: 'Student', course: 'VCE Specialist, Methods & Physics', year: '2024', text: "I cannot recommend Dr. U highly enough. He was my Specialist Math, Methods and Physics tutor. His expertise and comprehensive teaching approach has been transformative for my studies.", stars: 5, featured: false, emailVerified: false, submittedAt: '2024-05-01T00:00:00Z' },
+  { id: 'l1', name: 'Arjun Weerasinghe', role: 'Parent', course: 'Selective High School Coaching', year: '2023', text: "My daughter recently looked towards Dr. U education and from the results we were amazed. Not only does Dr. U provide extensive and meticulous strategies for the Selective High School Entrance Exam but he also crafted excellent books for both, mathematics and numerical reasoning papers. These books were great practise and revision for her as each question was particularly challenging and required problem solving skills. Again, thank you so much Dr. U for all your hard work and time that took to create these very helpful resources which assisted my daughter take the Selective High School Entrance Exam. Couldn't have done it without you! All the best!", stars: 5, featured: true, submittedAt: '2023-01-01T00:00:00Z' },
+  { id: 'l2', name: 'Shiyaamaa Fahme', role: 'Parent', course: 'Selective High School Coaching', year: '2023', text: "We were so blessed to Find Dr U Education for our Daughter's selective school coaching. Dr U is a very committed, motivated mentor with a vision. Dr U Rakhitha got the aptitude to estimate the actual capacity of the child and work in a way which suits the individual child's confidence and deliver the maximum output. More than whatsoever, what I respect the most is that, A parent can approach to him for a feedback. The BEST", stars: 5, featured: false, submittedAt: '2023-02-01T00:00:00Z' },
+  { id: 'l3', name: 'Nuwan Dammika Abeysekera', role: 'Parent', course: 'Selective Entry Preparation', year: '2023', text: "I highly recommend Dr U Education for any student who wants to excel in Maths. Dedication and commitment by Dr U Education staff is highly professional and targeted. With support of Dr Rakitha, my daughter achieved a superior grade in the exam. Thank you.", stars: 5, featured: false, submittedAt: '2023-03-01T00:00:00Z' },
+  { id: 'l4', name: 'Anuk Ranatunga', role: 'Student', course: 'VCE Maths Methods & Specialist', year: '2022', result: '48 in Methods · 53 in Specialist', text: "I am a graduate from Melbourne High School and achieved a 48 for Methods and 53 for Specialist Maths from going to Dr U. He really built discipline into me through his strict and difficult methods of teaching. It allowed me to reach a high level of mathematics hence the scores I got, I could not have done it without him.", stars: 5, featured: true, submittedAt: '2022-12-01T00:00:00Z' },
+  { id: 'l5', name: 'Saman Vidyananda', role: 'Parent', course: 'VCE Maths Methods & Specialist', year: '2023', text: "It was truly a blessing to find Dr Udugama as a tutor for our son with maths methods and specialist maths. He constantly provided feedback and was just a phone call away to discuss any issues. He guided my son with valuable advice to be on top of his studies and trained him to excel in his VCE exam.", stars: 5, featured: false, submittedAt: '2023-04-01T00:00:00Z' },
+  { id: 'l6', name: 'Shashini Kandamulla', role: 'Student', course: 'VCE Maths Methods & Specialist', year: '2023', result: '47 in Methods · 52 in Specialist', text: "Thanks to Dr.U's tutoring I was able to achieve 47 for Methods and 52 for Specialist Maths. From the start, Dr. U had a very clear plan. The significant amount of practice papers that Dr. U offered us was really helpful. Dr. U is a very dedicated tutor and he is willing to spend extra hours in order to help his students achieve their greatest potential.", stars: 5, featured: true, submittedAt: '2023-05-01T00:00:00Z' },
+  { id: 'l7', name: 'Wayne Jansen', role: 'Parent', course: 'Selective High School Coaching', year: '2023', text: "Dr U immediately got to work with Josh and started encouraging Josh to consider various strategies and also started working even on a one-on-one basis to rectify areas of weakness. Within 2 months of attending classes, we were dealing with a kid that was ultra motivated. As we celebrated an excellent outcome, we look back and give full credit to Dr U. Highly recommend the institute.", stars: 5, featured: false, submittedAt: '2023-06-01T00:00:00Z' },
+  { id: 'l8', name: 'Puneet Ram Badireddi', role: 'Student', course: 'VCE Multiple Subjects', year: '2024', text: "Highly recommend Dr U. I've been with him since 2023 and the experience helped immensely across multiple subjects. His teaching style is clear, patient and tailored to how I learn best, which has made difficult concepts much easier to grasp. Thanks to his guidance, I've gained confidence and improved my understanding significantly.", stars: 5, featured: false, submittedAt: '2024-01-01T00:00:00Z' },
+  { id: 'l9', name: 'Rivith Senaratne', role: 'Student', course: 'VCE Maths', year: '2024', text: "As a former student at Dr. U Education, I observed that classes operate with a level of academic rigor and structured methodology that is rare to find. Under his guidance, I achieved significant improvement in both subjects.", stars: 5, featured: false, submittedAt: '2024-02-01T00:00:00Z' },
+  { id: 'l10', name: 'Karthik Kalaiselvan', role: 'Student', course: 'VCE Maths', year: '2024', text: "I had the privilege of being tutored by Dr U from Year 9 through to Year 12. Dr U is far more than a tutor — he is a mentor, coach, and role model whose commitment to his students is truly extraordinary.", stars: 5, featured: true, submittedAt: '2024-03-01T00:00:00Z' },
+  { id: 'l11', name: 'Akshay Raju', role: 'Student', course: 'VCE Methods, Specialist & Chemistry', year: '2024', text: "Doctor U wasn't just a teacher to me but a father figure. He taught me Methods, Specialist and Chemistry with passion and had an innate way of explaining concepts from different viewpoints.", stars: 5, featured: false, submittedAt: '2024-04-01T00:00:00Z' },
+  { id: 'l12', name: 'Shanon Angelo', role: 'Student', course: 'VCE Specialist, Methods & Physics', year: '2024', text: "I cannot recommend Dr. U highly enough. He was my Specialist Math, Methods and Physics tutor. His expertise and comprehensive teaching approach has been transformative for my studies.", stars: 5, featured: false, submittedAt: '2024-05-01T00:00:00Z' },
 ];
 
 // ── main page ─────────────────────────────────────────────────────────────────
@@ -213,8 +197,6 @@ export default function TestimonialsPage() {
   // Stats
   const totalCount = all.length;
   const avgRating = (all.reduce((s, t) => s + t.stars, 0) / totalCount).toFixed(1);
-  const verifiedCount = all.filter((t) => t.emailVerified).length;
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#01143d] via-[#0a2147] to-[#0088e0] relative overflow-hidden">
       {/* Background dots */}
@@ -252,7 +234,7 @@ export default function TestimonialsPage() {
               {[
                 { value: totalCount + '+', label: 'Testimonials' },
                 { value: avgRating + ' ★', label: 'Average Rating' },
-                { value: verifiedCount > 0 ? verifiedCount + '+' : '100%', label: verifiedCount > 0 ? 'Email Verified' : 'Personally Invited' },
+                { value: '100%', label: 'Personally Invited' },
               ].map((s) => (
                 <div key={s.label} className="bg-white/15 backdrop-blur-sm border border-white/30 rounded-2xl px-8 py-4 text-center">
                   <div className="text-3xl font-extrabold text-white">{s.value}</div>
