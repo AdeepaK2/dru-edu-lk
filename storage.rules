@@ -64,10 +64,9 @@ service firebase.storage {
       allow write, delete: if request.auth != null && request.auth.token.admin == true;
     }
 
-    // Public testimonial photos are uploaded server-side and can be read publicly
+    // Testimonial photos are uploaded and served through server API routes
     match /testimonials/photos/{allPaths=**} {
-      allow read: if true;
-      allow write, delete: if request.auth != null && request.auth.token.admin == true;
+      allow read, write, delete: if request.auth != null && request.auth.token.admin == true;
     }
     
     // Allow authenticated teachers to generate and access exam PDFs

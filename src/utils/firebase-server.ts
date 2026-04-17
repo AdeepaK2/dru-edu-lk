@@ -46,10 +46,12 @@ function initializeFirebaseAdmin() {
         )}`
       };
 
+      const storageBucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET?.trim();
+
       admin.initializeApp({
         credential: cert(serviceAccount as admin.ServiceAccount),
         databaseURL: process.env.FIREBASE_DATABASE_URL || 'https://dru-edu-default-rtdb.asia-southeast1.firebasedatabase.app',
-        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+        ...(storageBucket ? { storageBucket } : {}),
       });
       console.log('Firebase Admin initialized successfully');
     } catch (error) {
@@ -145,11 +147,25 @@ const authentication = {
   }
 };
 
+function getConfiguredBucket() {
+  const configuredBucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET?.trim();
+
+  if (!configuredBucket) {
+    throw new Error(
+      'Firebase Storage bucket is not configured. Set NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET before using server-side file storage.'
+    );
+  }
+
+  return storage.bucket(configuredBucket);
+}
+
 const fileStorage = {
-  bucket: storage.bucket(),
+  get bucket() {
+    return getConfiguredBucket();
+  },
 
   getFileUrl(filePath: string, token?: string): string {
-    const bucketName = fileStorage.bucket.name;
+    const bucketName = getConfiguredBucket().name;
 
     if (token) {
       return `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/${encodeURIComponent(filePath)}?alt=media&token=${token}`;
@@ -167,7 +183,8 @@ const fileStorage = {
       downloadToken?: string;
     }
   ): Promise<{ filePath: string; url: string; downloadToken: string }> {
-    const file = fileStorage.bucket.file(filePath);
+    const bucket = getConfiguredBucket();
+    const file = bucket.file(filePath);
     const downloadToken = options?.downloadToken || randomUUID();
 
     await file.save(content, {
@@ -189,16 +206,29 @@ const fileStorage = {
   },
 
   async getFile(filePath: string): Promise<Buffer> {
-    const [content] = await fileStorage.bucket.file(filePath).download();
+    const [content] = await getConfiguredBucket().file(filePath).download();
     return content;
   },
 
+  async getFileWithMetadata(filePath: string): Promise<{ content: Buffer; contentType?: string }> {
+    const file = getConfiguredBucket().file(filePath);
+    const [[metadata], [content]] = await Promise.all([
+      file.getMetadata(),
+      file.download(),
+    ]);
+
+    return {
+      content,
+      contentType: metadata.contentType,
+    };
+  },
+
   async deleteFile(filePath: string): Promise<void> {
-    await fileStorage.bucket.file(filePath).delete({ ignoreNotFound: true });
+    await getConfiguredBucket().file(filePath).delete({ ignoreNotFound: true });
   },
 
   async getDownloadUrl(filePath: string): Promise<string> {
-    const [url] = await fileStorage.bucket.file(filePath).getSignedUrl({
+    const [url] = await getConfiguredBucket().file(filePath).getSignedUrl({
       action: 'read',
       expires: Date.now() + 15 * 60 * 1000,
     });
