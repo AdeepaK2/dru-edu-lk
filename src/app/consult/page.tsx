@@ -59,6 +59,10 @@ export default function ConsultationPage() {
     'Google Search', 'Facebook', 'Instagram', 'Friend/Family Referral',
     'School Recommendation', 'Flyer/Advertisement', 'Existing Student', 'Other'
   ];
+  const glassInputClassName =
+    'force-dark-input w-full px-4 py-3 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#0088e0]';
+  const glassSelectClassName =
+    'force-dark-input w-full px-4 py-3 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-[#0088e0]';
 
   const handleSubjectChange = (subject: string) => {
     setFormData(prev => ({
@@ -154,7 +158,7 @@ export default function ConsultationPage() {
           </div>
 
           {/* Form */}
-          <div className="bg-white/10 backdrop-blur-md rounded-3xl p-8 border border-white/20">
+          <div className="force-dark-surface bg-white/10 backdrop-blur-md rounded-3xl p-8 border border-white/20">
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Contact Information */}
               <div className="grid md:grid-cols-2 gap-6">
@@ -167,7 +171,7 @@ export default function ConsultationPage() {
                     required
                     value={formData.parentName}
                     onChange={(e) => setFormData({...formData, parentName: e.target.value})}
-                    className="w-full px-4 py-3 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#0088e0]"
+                    className={glassInputClassName}
                     placeholder="Your full name"
                   />
                 </div>
@@ -180,7 +184,7 @@ export default function ConsultationPage() {
                     required
                     value={formData.studentName}
                     onChange={(e) => setFormData({...formData, studentName: e.target.value})}
-                    className="w-full px-4 py-3 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#0088e0]"
+                    className={glassInputClassName}
                     placeholder="Student's full name"
                   />
                 </div>
@@ -196,7 +200,7 @@ export default function ConsultationPage() {
                     required
                     value={formData.email}
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    className="w-full px-4 py-3 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#0088e0]"
+                    className={glassInputClassName}
                     placeholder="your.email@example.com"
                   />
                 </div>
@@ -209,7 +213,7 @@ export default function ConsultationPage() {
                     required
                     value={formData.phone}
                     onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                    className="w-full px-4 py-3 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#0088e0]"
+                    className={glassInputClassName}
                     placeholder="04XX XXX XXX"
                   />
                 </div>
@@ -224,7 +228,7 @@ export default function ConsultationPage() {
                   required
                   value={formData.grade}
                   onChange={(e) => setFormData({...formData, grade: e.target.value})}
-                  className="w-full px-4 py-3 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-[#0088e0]"
+                  className={glassSelectClassName}
                 >
                   <option value="">Select grade/year</option>
                   {grades.map(grade => (
@@ -264,7 +268,7 @@ export default function ConsultationPage() {
                   required
                   value={formData.preferredTime}
                   onChange={(e) => setFormData({...formData, preferredTime: e.target.value})}
-                  className="w-full px-4 py-3 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-[#0088e0]"
+                  className={glassSelectClassName}
                 >
                   <option value="">Select preferred time</option>
                   {timeSlots.map(time => (
@@ -284,7 +288,7 @@ export default function ConsultationPage() {
                   rows={4}
                   value={formData.concerns}
                   onChange={(e) => setFormData({...formData, concerns: e.target.value})}
-                  className="w-full px-4 py-3 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#0088e0] resize-none"
+                  className={`${glassInputClassName} resize-none`}
                   placeholder="Tell us about your child's current academic situation, challenges, or goals..."
                 />
               </div>
@@ -297,7 +301,7 @@ export default function ConsultationPage() {
                 <select
                   value={formData.howDidYouHear}
                   onChange={(e) => setFormData({...formData, howDidYouHear: e.target.value})}
-                  className="w-full px-4 py-3 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-[#0088e0]"
+                  className={glassSelectClassName}
                 >
                   <option value="">Select an option</option>
                   {hearAboutUs.map(option => (
