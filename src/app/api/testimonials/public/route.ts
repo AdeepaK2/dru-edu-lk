@@ -16,6 +16,7 @@ export async function GET() {
         id: doc.id,
         name: d.name,
         role: d.role,
+        studentName: d.studentName,
         course: d.course,
         year: d.year,
         result: d.result,

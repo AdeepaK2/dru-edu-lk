@@ -23,6 +23,7 @@ interface Testimonial {
   name: string;
   email: string;
   role: string;
+  studentName?: string | null;
   course: string;
   year: string;
   result?: string | null;
@@ -143,6 +144,7 @@ export default function AdminTestimonialsPage() {
           name: d.name,
           email: d.email,
           role: d.role,
+          studentName: d.studentName ?? null,
           course: d.course,
           year: d.year,
           result: d.result ?? null,
@@ -547,6 +549,9 @@ export default function AdminTestimonialsPage() {
                               </span>
                             )}
                           </div>
+                          {t.studentName && (
+                            <p className="text-xs text-sky-700 mt-1">Student: {t.studentName}</p>
+                          )}
                           <p className="text-xs text-gray-500 mt-0.5">{t.role} · {t.course} · {t.year}</p>
                           <p className="text-sm text-gray-600 mt-1.5 line-clamp-2">{t.text}</p>
                         </div>
@@ -576,6 +581,7 @@ export default function AdminTestimonialsPage() {
                   <Row label="Name" value={selected.name} />
                   <Row label="Email" value={selected.email} />
                   <Row label="Role" value={selected.role} />
+                  {selected.studentName && <Row label="Student Name" value={selected.studentName} />}
                   <Row label="Course" value={`${selected.course} · ${selected.year}`} />
                   {selected.result && <Row label="Result" value={selected.result} />}
                   <div>

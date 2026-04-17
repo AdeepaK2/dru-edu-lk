@@ -36,6 +36,7 @@ export default function SubmitTestimonialPage() {
     name: '',
     email: '',
     role: '' as 'Student' | 'Parent' | 'Guardian' | '',
+    studentName: '',
     course: '',
     customCourse: '',
     year: String(CURRENT_YEAR),
@@ -77,6 +78,9 @@ export default function SubmitTestimonialPage() {
       errs.email = 'Please enter a valid email address.';
     }
     if (!form.role) errs.role = 'Please select your role.';
+    if ((form.role === 'Parent' || form.role === 'Guardian') && form.studentName.trim() && form.studentName.trim().length < 2) {
+      errs.studentName = 'Please enter the student name clearly.';
+    }
     const course = form.course === 'Other' ? form.customCourse : form.course;
     if (!course.trim()) errs.course = 'Please specify the course or program.';
     if (!form.year) errs.year = 'Please select a year.';
@@ -110,6 +114,7 @@ export default function SubmitTestimonialPage() {
     payload.append('name', form.name.trim());
     payload.append('email', form.email.trim());
     payload.append('role', form.role);
+    payload.append('studentName', form.studentName.trim());
     payload.append('course', form.course === 'Other' ? form.customCourse.trim() : form.course);
     payload.append('year', form.year);
     payload.append('result', form.result.trim());
@@ -328,6 +333,31 @@ export default function SubmitTestimonialPage() {
             {fieldErrors.role && <p className="text-red-500 text-xs mt-1">{fieldErrors.role}</p>}
           </Field>
 
+          {(form.role === 'Parent' || form.role === 'Guardian') && (
+            <div className="rounded-2xl border border-sky-100 bg-sky-50/70 p-5 space-y-4">
+              <div>
+                <h3 className="text-sm font-semibold text-[#01143d]">Student Details</h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  If you are writing on behalf of a student, you can include their name and any result details here.
+                </p>
+              </div>
+
+              <Field
+                label="Student Name (optional)"
+                error={fieldErrors.studentName}
+                hint="This helps us show who the testimonial refers to."
+              >
+                <input
+                  type="text"
+                  value={form.studentName}
+                  onChange={(e) => set('studentName', e.target.value)}
+                  placeholder="e.g. Aarav Smith"
+                  className={inputCls(fieldErrors.studentName)}
+                />
+              </Field>
+            </div>
+          )}
+
           <Field label="Course / Program" error={fieldErrors.course} required>
             <select
               value={form.course}
@@ -362,7 +392,14 @@ export default function SubmitTestimonialPage() {
             </select>
           </Field>
 
-          <Field label="Your Result (optional)" hint="e.g. 47 in Methods, 52 in Specialist · Selective entry accepted">
+          <Field
+            label={form.role === 'Parent' || form.role === 'Guardian' ? 'Student Result (optional)' : 'Your Result (optional)'}
+            hint={
+              form.role === 'Parent' || form.role === 'Guardian'
+                ? "e.g. 47 in Methods, 52 in Specialist · Selective entry accepted"
+                : 'e.g. 47 in Methods, 52 in Specialist · Selective entry accepted'
+            }
+          >
             <input
               type="text"
               value={form.result}

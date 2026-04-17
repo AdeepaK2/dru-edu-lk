@@ -78,7 +78,16 @@ function RoleTag({ role }: { role: string }) {
   );
 }
 
+function studentMeta(t: PublicTestimonial) {
+  if (!t.studentName) return null;
+  if (t.role === 'Parent') return `Parent of ${t.studentName}`;
+  if (t.role === 'Guardian') return `Guardian of ${t.studentName}`;
+  return t.studentName;
+}
+
 function TestimonialCard({ t }: { t: PublicTestimonial }) {
+  const studentContext = studentMeta(t);
+
   return (
     <div className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-shadow duration-300 border border-gray-100 flex flex-col">
       {/* Top bar */}
@@ -104,6 +113,9 @@ function TestimonialCard({ t }: { t: PublicTestimonial }) {
             <h3 className="font-semibold text-[#01143d] text-sm truncate">{t.name}</h3>
             <StarRating rating={t.stars} />
           </div>
+          {studentContext && (
+            <p className="text-xs text-sky-700 mt-1 truncate">{studentContext}</p>
+          )}
 
           {/* Role + course + year */}
           <p className="text-xs text-gray-500 mt-0.5 truncate">

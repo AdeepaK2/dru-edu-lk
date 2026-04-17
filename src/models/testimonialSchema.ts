@@ -14,6 +14,7 @@ export const testimonialSubmitSchema = z.object({
   role: z.enum(['Student', 'Parent', 'Guardian'], {
     errorMap: () => ({ message: 'Please select a valid role' }),
   }),
+  studentName: z.preprocess(emptyStringToUndefined, z.string().min(2, 'Student name must be at least 2 characters').max(120).optional()),
   course: z.string().min(1, 'Please specify the course or program'),
   year: z
     .string()
@@ -67,6 +68,7 @@ export interface TestimonialDocument {
   name: string;
   email: string;
   role: 'Student' | 'Parent' | 'Guardian';
+  studentName?: string;
   course: string;
   year: string;
   result?: string;
@@ -104,6 +106,7 @@ export interface PublicTestimonial {
   id: string;
   name: string;
   role: 'Student' | 'Parent' | 'Guardian';
+  studentName?: string;
   course: string;
   year: string;
   result?: string;

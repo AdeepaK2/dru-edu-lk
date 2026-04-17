@@ -18,6 +18,7 @@ async function getTestimonialsHandler(_request: AuthenticatedRequest) {
         name: d.name,
         email: d.email,
         role: d.role,
+        studentName: d.studentName ?? null,
         course: d.course,
         year: d.year,
         result: d.result,
