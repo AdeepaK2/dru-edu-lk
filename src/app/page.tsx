@@ -5,7 +5,6 @@ import Navbar from "@/components/Navbar";
 import { Footer, ChatBot } from "@/components/ui";
 import { useState } from "react";
 import {
-  ArrowRight,
   BarChart3,
   Briefcase,
   Calculator,
@@ -13,22 +12,10 @@ import {
   ClipboardList,
   FlaskConical,
   LineChart,
-  Mail,
-  MapPin,
-  Phone,
   Sigma,
   Target,
   Zap,
 } from "lucide-react";
-
-type ResultStudent = {
-  name: string;
-  school: string;
-  current: string;
-  results: string[];
-  highlight?: boolean;
-  rank?: string;
-};
 
 export default function Home() {
   const jsonLd = {
@@ -127,7 +114,7 @@ export default function Home() {
     },
   };
 
-  const results2024: ResultStudent[] = [
+  const results2024 = [
     {
       name: "Rivith",
       school: "Nossal High",
@@ -224,7 +211,7 @@ export default function Home() {
     },
   ];
 
-  const results2023: ResultStudent[] = [
+  const results2023 = [
     {
       name: "Thanuri",
       school: "Nossal High",
@@ -301,7 +288,7 @@ export default function Home() {
     },
   ];
 
-  const results2022: ResultStudent[] = [
+  const results2022 = [
     {
       name: "Anuk Ranathunga",
       school: "Melbourne High",
@@ -359,562 +346,656 @@ export default function Home() {
   const display2023 = show2023 ? results2023 : results2023.slice(0, 5);
   const display2022 = show2022 ? results2022 : results2022.slice(0, 5);
 
-  const approachCards = [
-    {
-      title: "Structured Academic Support",
-      subtitle: "Digital study support and homework discipline",
-      description:
-        "Students receive guided materials, targeted homework, and class support designed to strengthen understanding instead of encouraging passive revision.",
-      image: "/images/1.png",
-    },
-    {
-      title: "Regular Testing",
-      subtitle: "Progress tracked through consistent assessment",
-      description:
-        "Frequent online and physical tests help us identify weaknesses early, measure progress properly, and keep students accountable throughout the year.",
-      image: "/images/2.png",
-    },
-    {
-      title: "Hybrid Learning Access",
-      subtitle: "Video support alongside in-person classes",
-      description:
-        "Our hybrid model gives students extra flexibility while keeping the structure, standards, and continuity of a serious classroom environment.",
-      image: "/images/3.png",
-    },
-  ];
-
-  const premiumStats = [
-    { value: "2010", label: "Proven coaching track record since 2010" },
-    { value: "2", label: "Main Melbourne branches in Cranbourne and Glen Waverley" },
-    { value: "150+", label: "Reviews and testimonials referenced across the site" },
-    { value: "4.9", label: "Aggregate rating reflected in brand metadata" },
-  ];
-
-  const subjectCards = [
-    {
-      name: "VCE Math Methods",
-      icon: BarChart3,
-      tone: "from-[#123a8c] to-[#2a89e8]",
-    },
-    {
-      name: "VCE Specialist Math",
-      icon: Calculator,
-      tone: "from-[#1f4f9d] to-[#4ca8ff]",
-    },
-    {
-      name: "VCE Chemistry",
-      icon: FlaskConical,
-      tone: "from-[#0f6678] to-[#1bb5cb]",
-    },
-    {
-      name: "VCE Physics",
-      icon: Zap,
-      tone: "from-[#9a6a10] to-[#f0aa2d]",
-    },
-    {
-      name: "VCE Accounting",
-      icon: Briefcase,
-      tone: "from-[#0e5b4c] to-[#1ca789]",
-    },
-    {
-      name: "VCE General Maths",
-      icon: LineChart,
-      tone: "from-[#3f4f76] to-[#768ab7]",
-    },
-    {
-      name: "VCE Business Management",
-      icon: ClipboardList,
-      tone: "from-[#8a4316] to-[#db7c3a]",
-    },
-    {
-      name: "VCE Economics",
-      icon: CircleDollarSign,
-      tone: "from-[#8d6910] to-[#deb44a]",
-    },
-    {
-      name: "Mathematics (Y6-Y10)",
-      icon: Sigma,
-      tone: "from-[#374151] to-[#6b7280]",
-    },
-    {
-      name: "Selective School Prep",
-      icon: Target,
-      tone: "from-[#7d285d] to-[#d56ab2]",
-    },
-  ];
-
-  const yearlyResults = [
-    {
-      year: "2024",
-      title: "Top results in 2024 VCE",
-      description:
-        "A cohort filled with strong Mathematics and Science outcomes, including multiple 50+ scaled Specialist Mathematics results and high-performing university pathways.",
-      image: "/VCE2024.jpg",
-      alt: "VCE 2024 Class Photo",
-      students: display2024,
-      toggle: openCollpase2024,
-      expanded: show2024,
-      grid: "md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5",
-    },
-    {
-      year: "2023",
-      title: "Top results in 2023 VCE",
-      description:
-        "A standout year across leading schools, with exceptional scores in Specialist Mathematics, Methods, and elite ATAR pathways into Engineering, Medicine, and Law.",
-      image: "/VCE2023.jpg",
-      alt: "VCE 2023 Class Photo",
-      students: display2023,
-      toggle: openCollpase2023,
-      expanded: show2023,
-      grid: "md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5",
-    },
-    {
-      year: "2022",
-      title: "Top results in 2022 VCE",
-      description:
-        "A high-performing cohort led by outstanding Mathematics results and students progressing into competitive university pathways.",
-      image: "/VCE2022.jpg",
-      alt: "VCE 2022 Class Photo",
-      students: display2022,
-      toggle: openCollpase2022,
-      expanded: show2022,
-      grid: "md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5",
-    },
-  ];
-
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <div className="min-h-screen bg-[#f4f7fb] text-slate-900">
+      <div className="min-h-screen bg-gradient-to-br from-[#01143d] via-[#0a2147] to-[#0088e0] relative overflow-hidden">
+        {/* Background decoration */}
+        <div className="absolute inset-0 opacity-30">
+          <div
+            className="w-full h-full"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+            }}
+          ></div>
+        </div>
+
+        {/* Navigation */}
         <Navbar />
-        <main>
-          <section className="relative overflow-hidden bg-[radial-gradient(circle_at_15%_15%,_rgba(55,160,255,0.2),_transparent_26%),radial-gradient(circle_at_85%_20%,_rgba(255,255,255,0.08),_transparent_18%),linear-gradient(180deg,#02112f_0%,#081f4b_54%,#0d2c61_100%)] pt-24 pb-24 text-white">
-            <div className="absolute inset-0 opacity-20">
-              <div
-                className="h-full w-full"
-                style={{
-                  backgroundImage:
-                    'url("data:image/svg+xml,%3Csvg width=\'64\' height=\'64\' viewBox=\'0 0 64 64\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.06\'%3E%3Ccircle cx=\'32\' cy=\'32\' r=\'2\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
-                }}
-              />
-            </div>
 
-            <div className="relative mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:px-8">
-              <div className="max-w-4xl">
-                <span className="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-medium text-white/90 backdrop-blur">
-                  Melbourne&apos;s premium VCE and selective coaching environment
+        {/* Hero Section */}
+        <section className="relative pt-2 pb-8 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto text-center relative z-10">
+            <div className="mb-4 animate-fadeInUp">
+              <span className="inline-block bg-white/20 backdrop-blur-sm text-white px-6 py-2 rounded-full text-sm font-medium border border-white/30 hover:bg-white/30 transition-all duration-300 hover:scale-105">
+                🏆 Melbourne's Premier Education Centre
+              </span>
+            </div>
+            <h1 className="text-6xl md:text-8xl font-extrabold text-white mb-8 leading-tight animate-fadeInUp delay-200">
+              Master Your
+              <span className="block bg-gradient-to-r from-[#0088e0] to-[#00b4d8] bg-clip-text text-transparent animate-slideInFromLeft delay-400">
+                VCE Journey
+              </span>
+            </h1>
+            <p className="text-lg md:text-xl text-white/90 mb-12 max-w-4xl mx-auto leading-relaxed font-light animate-fadeInUp delay-600">
+              Experience personalized learning with close student monitoring,
+              frequent assessments, and expert guidance. We track your progress
+              through regular practice tests and provide tailored support -
+              proven by past results to ensure your VCE success!
+            </p>
+            <div className="flex justify-center animate-fadeInUp delay-800">
+              <Link
+                href="/enroll"
+                className="group bg-gradient-to-r from-[#0088e0] to-[#00b4d8] hover:from-[#0066b3] hover:to-[#0088e0] text-white font-semibold py-4 px-10 rounded-full transition-all duration-300 transform hover:scale-105 shadow-2xl hover:shadow-[#0088e0]/50 animate-pulse"
+                style={{ animationDuration: '3s' }}
+              >
+                <span className="flex items-center space-x-2">
+                  <span>Enroll Now</span>
+                  <svg
+                    className="w-5 h-5 transition-transform group-hover:translate-x-1 duration-300"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17 8l4 4m0 0l-4 4m4-4H3"
+                    />
+                  </svg>
                 </span>
-                <h1 className="mt-6 text-5xl font-black leading-[0.98] tracking-[-0.04em] md:text-7xl">
-                  Serious academic coaching for ambitious students
-                </h1>
-                <p className="mt-6 max-w-3xl text-lg leading-8 text-white/78 md:text-xl">
-                  Dr. U Education combines rigorous teaching, close progress
-                  monitoring, and disciplined preparation across VCE, selective
-                  entry, and school-year learning. We are built for families who
-                  want clarity, structure, and outcomes that stand up.
-                </p>
-                <div className="mt-8 flex flex-col gap-4 sm:flex-row">
-                  <Link
-                    href="/enroll"
-                    className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-8 py-4 font-semibold text-[#02112f] transition hover:bg-slate-100"
-                  >
-                    Enroll Now
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                  <Link
-                    href="/courses"
-                    className="inline-flex items-center justify-center rounded-full border border-white/20 px-8 py-4 font-semibold text-white transition hover:bg-white/10"
-                  >
-                    Explore Courses
-                  </Link>
-                </div>
-              </div>
-
-              <div className="rounded-[34px] border border-white/12 bg-white/8 p-7 shadow-[0_30px_120px_rgba(1,20,61,0.28)] backdrop-blur-md">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#9edcff]">
-                      What Families Choose
-                    </p>
-                    <h2 className="mt-4 text-3xl font-black tracking-[-0.03em] text-white">
-                      A higher standard than ordinary tutoring
-                    </h2>
-                  </div>
-                  <div className="rounded-full border border-white/12 bg-white/10 px-4 py-2 text-sm font-semibold text-white/80">
-                    Since 2010
-                  </div>
-                </div>
-
-                <div className="mt-8 grid gap-4">
-                  <div className="rounded-[24px] border border-white/10 bg-white/6 px-5 py-5">
-                    <p className="text-base leading-7 text-white/82">
-                      Close student monitoring with regular assessments, ongoing
-                      feedback, and a structured preparation rhythm.
-                    </p>
-                  </div>
-                  <div className="rounded-[24px] border border-white/10 bg-white/6 px-5 py-5">
-                    <p className="text-base leading-7 text-white/82">
-                      Premium subject focus across VCE Mathematics, Sciences,
-                      selective entry, and strong foundational learning.
-                    </p>
-                  </div>
-                  <div className="rounded-[24px] border border-white/10 bg-white/6 px-5 py-5">
-                    <p className="text-base leading-7 text-white/82">
-                      A disciplined academic culture designed for students who
-                      want to perform, not just attend extra classes.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-8 grid grid-cols-2 gap-4 border-t border-white/10 pt-6">
-                  {premiumStats.slice(0, 4).map((stat) => (
-                    <div key={stat.label} className="rounded-[20px] bg-white/5 px-4 py-4">
-                      <div className="text-3xl font-black tracking-[-0.03em] text-white">
-                        {stat.value}
-                      </div>
-                      <p className="mt-2 text-sm leading-6 text-white/64">{stat.label}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              </Link>
             </div>
-          </section>
+          </div>
 
-          <section className="-mt-12 relative z-10">
-            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-              <div className="grid gap-6 lg:grid-cols-[0.88fr_1.12fr]">
-                <div className="rounded-[34px] bg-white p-8 shadow-[0_28px_100px_rgba(15,23,42,0.08)] md:p-10">
-                  <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#0088e0]">
-                    Our Positioning
-                  </p>
-                  <h2 className="mt-3 text-3xl font-black tracking-[-0.03em] text-slate-900 md:text-4xl">
-                    Built for students aiming at competitive outcomes
-                  </h2>
-                  <p className="mt-5 text-lg leading-8 text-slate-600">
-                    We support students across VCE, selective school
-                    preparation, and school-year academics through a teaching
-                    model that values structure, consistency, and serious
-                    academic habits. The work is demanding for the right reasons,
-                    and families trust that the standards stay high.
-                  </p>
-                  <div className="mt-8 grid gap-4">
-                    <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-5 py-5 text-base leading-7 text-slate-700">
-                      Founded by Dr. Udugama Rakhitha with a long-standing focus
-                      on high-performance academic coaching in Melbourne.
-                    </div>
-                    <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-5 py-5 text-base leading-7 text-slate-700">
-                      Main teaching locations in Cranbourne and Glen Waverley,
-                      with support for families across the wider city.
-                    </div>
-                  </div>
-                </div>
+          {/* Floating elements */}
+          <div className="absolute top-20 left-10 w-20 h-20 bg-white/10 rounded-full blur-xl animate-pulse"></div>
+          <div className="absolute bottom-32 right-16 w-32 h-32 bg-[#0088e0]/20 rounded-full blur-2xl animate-bounce"></div>
+          <div className="absolute top-1/2 right-8 w-16 h-16 bg-white/5 rounded-full blur-lg animate-pulse delay-300"></div>
+        </section>
 
-                <div className="grid gap-5 md:grid-cols-3">
-                  {approachCards.map((card) => (
-                    <div
-                      key={card.title}
-                      className="overflow-hidden rounded-[30px] bg-white shadow-[0_24px_80px_rgba(15,23,42,0.07)]"
-                    >
-                      <div className="relative h-56">
-                        <Image
-                          src={card.image}
-                          alt={card.title}
-                          fill
-                          className="object-cover"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
-                        <div className="absolute bottom-0 p-5 text-white">
-                          <h3 className="text-xl font-bold">{card.title}</h3>
-                          <p className="mt-1 text-sm text-white/82">{card.subtitle}</p>
-                        </div>
-                      </div>
-                      <div className="p-6">
-                        <p className="text-base leading-7 text-slate-600">{card.description}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+        {/* Our Learning Approach Section */}
+        <section className="py-24 bg-gradient-to-br from-gray-50 to-white relative">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-20">
+              <div className="inline-block bg-gradient-to-r from-[#01143d] to-[#0088e0] bg-clip-text text-transparent text-sm font-semibold uppercase tracking-wider mb-4">
+                Our Approach
               </div>
+              <h2 className="text-5xl font-bold text-[#01143d] mb-6">
+                How We Support Your Success
+              </h2>
+              <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+                Our comprehensive learning methodology ensures every student
+                receives the support they need
+              </p>
             </div>
-          </section>
 
-          <section className="py-24">
-            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-              <div className="mb-12 max-w-3xl">
-                <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#0088e0]">
-                  Signature Standards
-                </p>
-                <h2 className="mt-3 text-4xl font-black tracking-[-0.03em] text-[#02112f] md:text-5xl">
-                  Why families take Dr. U Education seriously
-                </h2>
-                <p className="mt-4 text-lg leading-8 text-slate-600">
-                  The centre is built around clear expectations, disciplined
-                  preparation, and premium academic support that feels purposeful
-                  at every stage.
-                </p>
-              </div>
-
-              <div className="grid gap-6 md:grid-cols-3">
-                <div className="rounded-[32px] bg-[#081c43] p-8 text-white shadow-[0_28px_100px_rgba(1,20,61,0.16)]">
-                  <div className="text-sm font-semibold uppercase tracking-[0.24em] text-[#7fd0ff]">
-                    Expert Guidance
-                  </div>
-                  <p className="mt-5 text-2xl font-semibold leading-9">
-                    Strong subject depth across the subjects that matter most to
-                    competitive students.
-                  </p>
-                </div>
-                <div className="rounded-[32px] bg-white p-8 shadow-[0_24px_80px_rgba(15,23,42,0.06)]">
-                  <div className="text-sm font-semibold uppercase tracking-[0.24em] text-[#0088e0]">
-                    Proven Outcomes
-                  </div>
-                  <p className="mt-5 text-2xl font-semibold leading-9 text-slate-900">
-                    A visible track record of strong VCE results, elite pathways,
-                    and families returning with confidence.
-                  </p>
-                </div>
-                <div className="rounded-[32px] bg-[linear-gradient(180deg,#eef7ff_0%,#f8fbff_100%)] p-8 shadow-[0_24px_80px_rgba(15,23,42,0.05)]">
-                  <div className="text-sm font-semibold uppercase tracking-[0.24em] text-[#0088e0]">
-                    Personal Attention
-                  </div>
-                  <p className="mt-5 text-2xl font-semibold leading-9 text-slate-900">
-                    Close monitoring, regular testing, and real feedback instead
-                    of vague promises.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <section className="bg-[linear-gradient(180deg,#071a40_0%,#0a2351_100%)] py-24 text-white">
-            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-              <div className="mb-14 max-w-4xl">
-                <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#9edcff]">
-                  Results
-                </p>
-                <h2 className="mt-3 text-4xl font-black tracking-[-0.03em] md:text-5xl">
-                  A record of high-performing VCE cohorts
-                </h2>
-                <p className="mt-4 text-lg leading-8 text-white/74">
-                  We keep the results front and centre because families should be
-                  able to see the standard for themselves. These student outcomes
-                  reflect the level of work, structure, and preparation expected
-                  at Dr. U Education.
-                </p>
-              </div>
-
-              <div className="space-y-16">
-                {yearlyResults.map((group) => (
-                  <div key={group.year} className="rounded-[36px] border border-white/10 bg-white/6 p-6 backdrop-blur md:p-8">
-                    <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
-                      <div>
-                        <div className="inline-flex rounded-full border border-white/12 bg-white/10 px-4 py-2 text-sm font-semibold text-white/85">
-                          {group.year} cohort
-                        </div>
-                        <h3 className="mt-5 text-3xl font-black tracking-[-0.03em]">
-                          {group.title}
-                        </h3>
-                        <p className="mt-4 text-base leading-8 text-white/72">
-                          {group.description}
-                        </p>
-                        <button
-                          onClick={group.toggle}
-                          className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 font-semibold text-[#02112f] transition hover:bg-slate-100"
-                        >
-                          {group.expanded ? "Hide Details" : "Show All Results"}
-                        </button>
-                      </div>
-
-                      <div className="overflow-hidden rounded-[28px] border border-white/12">
-                        <img
-                          src={group.image}
-                          alt={group.alt}
-                          className="h-full w-full object-cover"
-                        />
-                      </div>
-                    </div>
-
-                    <div className={`mt-8 grid gap-4 ${group.grid}`}>
-                      {group.students.map((student, index) => (
-                        <div
-                          key={`${group.year}-${index}`}
-                          className={`relative rounded-[24px] border p-5 ${
-                            group.year === "2022"
-                              ? "border-[#2b8eed]/40 bg-gradient-to-br from-[#0f2d63] to-[#0c2149]"
-                              : student.highlight
-                                ? "border-[#55b3ff]/40 bg-gradient-to-br from-[#103467] to-[#0c2349]"
-                                : "border-white/10 bg-[#0c2149]"
-                          }`}
-                        >
-                          {"rank" in student && student.rank ? (
-                            <div className="absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#2b8eed] text-xs font-bold text-white">
-                              {student.rank}
-                            </div>
-                          ) : null}
-                          <h4 className="pr-10 text-base font-bold text-white">
-                            {student.name}
-                          </h4>
-                          <p className="mt-2 text-sm text-white/62">{student.school}</p>
-                          <p className="mt-1 text-sm font-semibold text-[#7fd0ff]">
-                            {student.current}
-                          </p>
-                          <div className="mt-4 space-y-2">
-                            {student.results.map((result, idx) => (
-                              <div
-                                key={idx}
-                                className={`rounded-full px-3 py-2 text-xs ${
-                                  result.includes("ATAR")
-                                    ? "bg-[#2b8eed]/20 font-semibold text-white"
-                                    : "bg-white/7 text-white/78"
-                                }`}
-                              >
-                                {result}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          <section id="subjects" className="py-24">
-            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-              <div className="mb-12 max-w-3xl">
-                <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#0088e0]">
-                  Our Subjects
-                </p>
-                <h2 className="mt-3 text-4xl font-black tracking-[-0.03em] text-[#02112f] md:text-5xl">
-                  A focused subject portfolio built around demand and outcomes
-                </h2>
-                <p className="mt-4 text-lg leading-8 text-slate-600">
-                  We focus on the subjects and pathways where serious coaching can
-                  make a measurable difference.
-                </p>
-              </div>
-
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
-                {subjectCards.map((subject) => (
-                  <div
-                    key={subject.name}
-                    className="rounded-[30px] border border-slate-200/80 bg-white p-8 shadow-[0_20px_70px_rgba(15,23,42,0.05)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_90px_rgba(15,23,42,0.08)]"
-                  >
-                    <div
-                      className={`mb-6 inline-flex h-16 w-16 items-center justify-center rounded-[18px] bg-gradient-to-br ${subject.tone} shadow-lg`}
-                    >
-                      <subject.icon className="h-8 w-8 text-white" strokeWidth={2.1} />
-                    </div>
-                    <h3 className="text-lg font-bold leading-7 text-[#02112f]">
-                      {subject.name}
+            <div className="grid md:grid-cols-3 gap-12">
+              {/* Study Materials & Homework Support */}
+              <div className="group text-center animate-fadeInUp" style={{ animationDelay: '0.2s' }}>
+                <div className="relative mb-8 overflow-hidden rounded-2xl shadow-2xl transform transition-all duration-500 hover:scale-105 hover:rotate-1">
+                  <Image
+                    src="/images/1.png"
+                    alt="Digital Study Support Materials"
+                    width={400}
+                    height={300}
+                    className="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-110"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                  <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+                    <h3 className="text-2xl font-bold mb-2">
+                      Digital Study Support
                     </h3>
+                    <p className="text-sm opacity-90">
+                      Comprehensive materials and homework guidance
+                    </p>
                   </div>
-                ))}
+                </div>
+                <div className="text-left">
+                  <h4 className="text-xl font-semibold text-[#01143d] mb-3">
+                    Study Materials & Homework
+                  </h4>
+                  <p className="text-gray-600 leading-relaxed">
+                    We provide digitally delivered study support materials and
+                    comprehensive homework assistance. In our classes, we push
+                    students to learn through interactive sessions and
+                    personalized guidance to ensure deep understanding of
+                    concepts.
+                  </p>
+                </div>
               </div>
-            </div>
-          </section>
 
-          <section id="contact" className="pb-20">
-            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-              <div className="overflow-hidden rounded-[40px] bg-[radial-gradient(circle_at_10%_20%,_rgba(255,255,255,0.12),_transparent_20%),linear-gradient(135deg,#02112f_0%,#0d2f68_56%,#0088e0_100%)] px-8 py-12 text-white shadow-[0_34px_120px_rgba(1,20,61,0.18)] md:px-12">
-                <div className="grid gap-10 lg:grid-cols-[1.02fr_0.98fr]">
-                  <div>
-                    <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#bde7ff]">
-                      Take The Next Step
+              {/* Regular Testing & Progress Monitoring */}
+              <div className="group text-center animate-fadeInUp" style={{ animationDelay: '0.4s' }}>
+                <div className="relative mb-8 overflow-hidden rounded-2xl shadow-2xl transform transition-all duration-500 hover:scale-105 hover:rotate-1">
+                  <Image
+                    src="/images/2.png"
+                    alt="Online Tests and Progress Monitoring"
+                    width={400}
+                    height={300}
+                    className="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-110"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                  <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+                    <h3 className="text-2xl font-bold mb-2">
+                      Progress Monitoring
+                    </h3>
+                    <p className="text-sm opacity-90">
+                      Regular assessments to track improvement
                     </p>
-                    <h2 className="mt-3 text-4xl font-black tracking-[-0.03em] md:text-5xl">
-                      Ready to aim higher?
-                    </h2>
-                    <p className="mt-5 max-w-2xl text-lg leading-8 text-white/82">
-                      Join a learning environment designed for students who want
-                      serious academic growth and families who value strong
-                      guidance, structure, and visible outcomes.
-                    </p>
-                    <div className="mt-8 flex flex-col gap-4 sm:flex-row">
-                      <Link
-                        href="/enroll"
-                        className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-8 py-4 font-semibold text-[#02112f] transition hover:bg-slate-100"
-                      >
-                        Enroll Now
-                        <ArrowRight className="h-4 w-4" />
-                      </Link>
-                      <a
-                        href="tel:+61478716402"
-                        className="inline-flex items-center justify-center rounded-full border border-white/20 px-8 py-4 font-semibold text-white transition hover:bg-white/10"
-                      >
-                        Call Us Today
-                      </a>
-                    </div>
                   </div>
+                </div>
+                <div className="text-left">
+                  <h4 className="text-xl font-semibold text-[#01143d] mb-3">
+                    Regular Testing & Assessment
+                  </h4>
+                  <p className="text-gray-600 leading-relaxed">
+                    We conduct online tests regularly to measure progress and
+                    identify areas for improvement. Combined with physical
+                    tests, our comprehensive assessment system ensures students
+                    are always on track to achieve their academic goals.
+                  </p>
+                </div>
+              </div>
 
-                  <div className="grid gap-4">
-                    <a
-                      href="https://maps.google.com/?q=63A+High+Street+Cranbourne"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="rounded-[26px] border border-white/10 bg-white/7 px-6 py-6 backdrop-blur transition hover:bg-white/10"
-                    >
-                      <div className="flex items-start gap-4">
-                        <MapPin className="mt-1 h-5 w-5 text-[#9edcff]" />
-                        <div>
-                          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white/58">
-                            Branches
-                          </p>
-                          <p className="mt-2 text-lg font-semibold text-white">
-                            Cranbourne and Glen Waverley
-                          </p>
-                          <p className="mt-1 text-sm leading-6 text-white/68">
-                            Serving Melbourne families with focused in-person
-                            academic coaching.
-                          </p>
-                        </div>
-                      </div>
-                    </a>
-                    <a
-                      href="tel:+61478716402"
-                      className="rounded-[26px] border border-white/10 bg-white/7 px-6 py-6 backdrop-blur transition hover:bg-white/10"
-                    >
-                      <div className="flex items-start gap-4">
-                        <Phone className="mt-1 h-5 w-5 text-[#9edcff]" />
-                        <div>
-                          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white/58">
-                            Phone
-                          </p>
-                          <p className="mt-2 text-lg font-semibold text-white">
-                            0478 716 402
-                          </p>
-                        </div>
-                      </div>
-                    </a>
-                    <a
-                      href="mailto:info@drueducation.com.au"
-                      className="rounded-[26px] border border-white/10 bg-white/7 px-6 py-6 backdrop-blur transition hover:bg-white/10"
-                    >
-                      <div className="flex items-start gap-4">
-                        <Mail className="mt-1 h-5 w-5 text-[#9edcff]" />
-                        <div>
-                          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white/58">
-                            Email
-                          </p>
-                          <p className="mt-2 text-lg font-semibold text-white">
-                            info@drueducation.com.au
-                          </p>
-                        </div>
-                      </div>
-                    </a>
+              {/* Video Classes & Additional Support */}
+              <div className="group text-center animate-fadeInUp" style={{ animationDelay: '0.6s' }}>
+                <div className="relative mb-8 overflow-hidden rounded-2xl shadow-2xl transform transition-all duration-500 hover:scale-105 hover:rotate-1">
+                  <Image
+                    src="/images/3.png"
+                    alt="Video Classes and Online Support"
+                    width={400}
+                    height={300}
+                    className="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-110"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                  <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+                    <h3 className="text-2xl font-bold mb-2">Video Learning</h3>
+                    <p className="text-sm opacity-90">
+                      Flexible online and physical classes
+                    </p>
                   </div>
+                </div>
+                <div className="text-left">
+                  <h4 className="text-xl font-semibold text-[#01143d] mb-3">
+                    Video Classes & Hybrid Learning
+                  </h4>
+                  <p className="text-gray-600 leading-relaxed">
+                    Our video classes provide additional support alongside
+                    traditional physical classes. This hybrid approach ensures
+                    students have flexible access to quality education, allowing
+                    them to learn at their own pace while maintaining structured
+                    classroom interaction.
+                  </p>
                 </div>
               </div>
             </div>
-          </section>
-        </main>
+          </div>
+        </section>
 
-        <Footer />
+        {/* Features Section */}
+        <section id="about" className="py-24 bg-white relative">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-20">
+              <div className="inline-block bg-gradient-to-r from-[#01143d] to-[#0088e0] bg-clip-text text-transparent text-sm font-semibold uppercase tracking-wider mb-4">
+                Why Choose Us
+              </div>
+              <h2 className="text-5xl font-bold text-[#01143d] mb-6">
+                Why Choose Dr. U Education?
+              </h2>
+              <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+                We provide comprehensive coaching with a proven track record of
+                student success
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-8">
+              <div className="group text-center p-8 rounded-2xl border border-gray-100 hover:border-[#0088e0]/30 hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 bg-gradient-to-br from-white to-gray-50/50 animate-fadeInUp" style={{ animationDelay: '0.1s' }}>
+                <div className="w-20 h-20 bg-gradient-to-br from-[#0088e0] to-[#00b4d8] rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 shadow-lg">
+                  <svg
+                    className="w-10 h-10 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C20.832 18.477 19.246 18 17.5 18c-1.746 0-3.332.477-4.5 1.253"
+                    />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-[#01143d] mb-4 group-hover:text-[#0088e0] transition-colors">
+                  Expert Teachers
+                </h3>
+                <p className="text-gray-600 leading-relaxed">
+                  Qualified educators with years of teaching experience and deep
+                  subject knowledge
+                </p>
+              </div>
+
+              <div className="group text-center p-8 rounded-2xl border border-gray-100 hover:border-[#0088e0]/30 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 bg-gradient-to-br from-white to-gray-50/50">
+                <div className="w-20 h-20 bg-gradient-to-br from-[#0088e0] to-[#00b4d8] rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                  <svg
+                    className="w-10 h-10 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                    />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-[#01143d] mb-4 group-hover:text-[#0088e0] transition-colors">
+                  Proven Results
+                </h3>
+                <p className="text-gray-600 leading-relaxed">
+                  Track record of high ATAR scores and successful university
+                  placements
+                </p>
+              </div>
+
+              <div className="group text-center p-8 rounded-2xl border border-gray-100 hover:border-[#0088e0]/30 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 bg-gradient-to-br from-white to-gray-50/50">
+                <div className="w-20 h-20 bg-gradient-to-br from-[#0088e0] to-[#00b4d8] rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                  <svg
+                    className="w-10 h-10 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                    />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-[#01143d] mb-4 group-hover:text-[#0088e0] transition-colors">
+                  Personalized Learning
+                </h3>
+                <p className="text-gray-600 leading-relaxed">
+                  Tailored approach to meet each student's unique learning style
+                  and needs
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* VCE Results Section */}
+        <section className="py-24 bg-gradient-to-br from-[#01143d] to-[#0a2147] relative">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-20">
+              <div className="inline-block bg-white/20 backdrop-blur-sm text-white px-6 py-2 rounded-full text-sm font-medium border border-white/30 mb-4">
+                🏆 Outstanding Results
+              </div>
+              <h2 className="text-5xl font-bold text-white mb-6">
+                TOP RESULTS IN 2024 VCE
+              </h2>
+              <p className="text-xl text-white/90 max-w-4xl mx-auto leading-relaxed">
+                Kudos to our outstanding achievers! Your remarkable
+                accomplishments have filled us with immense pride. Your
+                dedication, hard work, and pursuit of excellence have set a
+                shining example of success. Wishing you continued achievements
+                and countless rewarding experiences in the journey ahead.
+              </p>
+            </div>
+
+            {/* 2024 Class Photo */}
+            <div className="text-center mb-12">
+              <div className="relative inline-block">
+                <img
+                  src="/VCE2024.jpg"
+                  alt="VCE 2024 Class Photo"
+                  className="rounded-2xl shadow-2xl max-w-4xl w-full mx-auto border-4 border-white/20"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent rounded-2xl"></div>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-16">
+              {display2024.map((student, index) => (
+                <div
+                  key={index}
+                  className="bg-white/10 backdrop-blur-sm p-4 rounded-xl border border-white/20 hover:bg-white/15 hover:border-white/40 transition-all duration-500 transform hover:-translate-y-2 hover:shadow-xl animate-fadeInUp"
+                  style={{ animationDelay: `${index * 0.05}s` }}
+                >
+                  <div className="mb-3">
+                    <h3 className="text-sm font-bold text-white mb-1">
+                      {student.name}
+                    </h3>
+                    <p className="text-white/70 text-xs mb-1">
+                      {student.school}
+                    </p>
+                    <p className="text-[#0088e0] font-semibold text-xs">
+                      {student.current}
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    {student.results.map((result, idx) => (
+                      <div
+                        key={idx}
+                        className="text-white/80 text-xs bg-white/10 px-2 py-1 rounded"
+                      >
+                        {result}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="text-center mt-6 mb-10">
+              <button
+              onClick={openCollpase2024}
+              className="inline-flex items-center gap-2 px-6 py-2 rounded-full bg-gradient-to-r from-[#0088e0] to-[#00b4d8] text-white font-semibold shadow-lg hover:from-[#0066b3] hover:to-[#0088e0] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#0088e0] focus:ring-offset-2"
+              >
+              {show2024 ? "Hide Details" : "Show All"}
+              </button>
+            </div>
+
+            {/* 2023 Results */}
+            <div className="text-center mb-16">
+              <h3 className="text-4xl font-bold text-white mb-6">
+                TOP RESULTS IN 2023 VCE
+              </h3>
+              <p className="text-lg text-white/90 max-w-4xl mx-auto leading-relaxed mb-12">
+                Congratulations to our stellar performers! Your incredible
+                achievements have filled us with pride. Your unwavering
+                dedication, tireless efforts, and commitment to excellence have
+                paved the way for remarkable success.
+              </p>
+            </div>
+
+            {/* 2023 Class Photo */}
+            <div className="text-center mb-12">
+              <div className="relative inline-block">
+                <img
+                  src="/VCE2023.jpg"
+                  alt="VCE 2023 Class Photo"
+                  className="rounded-2xl shadow-2xl max-w-4xl w-full mx-auto border-4 border-white/20"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent rounded-2xl"></div>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-16">
+              {display2023.map((student, index) => (
+                <div
+                  key={index}
+                  className={`bg-white/10 backdrop-blur-sm p-4 rounded-xl border ${
+                    student.highlight
+                      ? "border-[#0088e0] bg-gradient-to-br from-[#0088e0]/20 to-white/10"
+                      : "border-white/20"
+                  } hover:bg-white/15 hover:border-white/40 transition-all duration-500 transform hover:-translate-y-2 hover:shadow-xl animate-fadeInUp`}
+                  style={{ animationDelay: `${index * 0.05}s` }}
+                >
+                  <div className="mb-3">
+                    <h3 className="text-sm font-bold text-white mb-1">
+                      {student.name}
+                    </h3>
+                    <p className="text-white/70 text-xs mb-1">
+                      {student.school}
+                    </p>
+                    <p className="text-[#0088e0] font-semibold text-xs">
+                      {student.current}
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    {student.results.map((result, idx) => (
+                      <div
+                        key={idx}
+                        className={`text-white/80 text-xs px-2 py-1 rounded ${
+                          result.includes("ATAR")
+                            ? "bg-[#0088e0]/30 font-semibold"
+                            : "bg-white/10"
+                        }`}
+                      >
+                        {result}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="text-center mt-6 mb-10">
+              <button
+              onClick={openCollpase2023}
+              className="inline-flex items-center gap-2 px-6 py-2 rounded-full bg-gradient-to-r from-[#0088e0] to-[#00b4d8] text-white font-semibold shadow-lg hover:from-[#0066b3] hover:to-[#0088e0] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#0088e0] focus:ring-offset-2"
+              >
+              {show2023 ? "Hide Details" : "Show All"}
+              </button>
+            </div>
+
+
+            {/* 2022 Results */}
+            <div className="text-center mb-16">
+              <h3 className="text-4xl font-bold text-white mb-6">
+                TOP 5 RESULTS IN 2022 VCE
+              </h3>
+              <p className="text-lg text-white/90 max-w-4xl mx-auto leading-relaxed mb-12">
+                To all our outstanding achievers, you have made us proud with
+                your remarkable accomplishments. Your dedication, hard work, and
+                commitment to excellence have set you on a path to great
+                success.
+              </p>
+            </div>
+
+            {/* 2022 Class Photo */}
+            <div className="text-center mb-12">
+              <div className="relative inline-block">
+                <img
+                  src="/VCE2022.jpg"
+                  alt="VCE 2022 Class Photo"
+                  className="rounded-2xl shadow-2xl max-w-4xl w-full mx-auto border-4 border-white/20"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent rounded-2xl"></div>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+              {display2022.map((student, index) => (
+                <div
+                  key={index}
+                  className="relative bg-gradient-to-br from-[#0088e0]/20 to-white/10 backdrop-blur-sm p-4 rounded-xl border border-[#0088e0]/50 hover:from-[#0088e0]/30 hover:to-white/15 hover:border-[#0088e0]/70 transition-all duration-500 transform hover:-translate-y-2 hover:shadow-xl"
+                  style={{ animationDelay: `${index * 0.1}s` }}
+                >
+                  <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-br from-[#0088e0] to-[#00b4d8] rounded-full flex items-center justify-center text-white font-bold text-xs shadow-lg">
+                    {student.rank}
+                  </div>
+                  <div className="mb-3">
+                    <h3 className="text-sm font-bold text-white mb-1">
+                      {student.name}
+                    </h3>
+                    <p className="text-white/70 text-xs mb-1">
+                      {student.school}
+                    </p>
+                    <p className="text-[#0088e0] font-semibold text-xs">
+                      {student.current}
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    {student.results.map((result, idx) => (
+                      <div
+                        key={idx}
+                        className="text-white/80 text-xs bg-white/10 px-2 py-1 rounded"
+                      >
+                        {result}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Subjects Section */}
+        <section
+          id="subjects"
+          className="py-24 bg-gradient-to-br from-gray-50 to-gray-100 relative"
+        >
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-20">
+              <div className="inline-block bg-gradient-to-r from-[#01143d] to-[#0088e0] bg-clip-text text-transparent text-sm font-semibold uppercase tracking-wider mb-4">
+                Our Subjects
+              </div>
+              <h2 className="text-5xl font-bold text-[#01143d] mb-6">
+                Subjects We Offer
+              </h2>
+              <p className="text-xl text-gray-600 leading-relaxed">
+                Comprehensive coaching across VCE subjects and selective school
+                preparation
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+              {[
+                {
+                  name: "VCE Math Methods",
+                  icon: BarChart3,
+                  color: "from-blue-500 to-cyan-500",
+                },
+                {
+                  name: "VCE Specialist Math",
+                  icon: Calculator,
+                  color: "from-purple-500 to-pink-500",
+                },
+                {
+                  name: "VCE Chemistry",
+                  icon: FlaskConical,
+                  color: "from-green-500 to-teal-500",
+                },
+                {
+                  name: "VCE Physics",
+                  icon: Zap,
+                  color: "from-yellow-500 to-orange-500",
+                },
+                {
+                  name: "VCE Accounting",
+                  icon: Briefcase,
+                  color: "from-emerald-500 to-cyan-500",
+                },
+                {
+                  name: "VCE General Maths",
+                  icon: LineChart,
+                  color: "from-indigo-500 to-blue-500",
+                },
+                {
+                  name: "VCE Business Management",
+                  icon: ClipboardList,
+                  color: "from-orange-500 to-red-500",
+                },
+                {
+                  name: "VCE Economics",
+                  icon: CircleDollarSign,
+                  color: "from-amber-500 to-yellow-500",
+                },
+                {
+                  name: "Mathematics (Y6-Y10)",
+                  icon: Sigma,
+                  color: "from-slate-500 to-gray-600",
+                },
+                {
+                  name: "Selective School Prep",
+                  icon: Target,
+                  color: "from-rose-500 to-pink-500",
+                },
+              ].map((subject, index) => (
+                <div
+                  key={index}
+                  className="group bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 border border-gray-100 hover:border-[#0088e0]/30"
+                  style={{ animationDelay: `${index * 0.05}s` }}
+                >
+                  <div
+                    className={`w-16 h-16 bg-gradient-to-br ${subject.color} rounded-xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 group-hover:rotate-12 transition-all duration-500 shadow-lg`}
+                  >
+                    <subject.icon className="w-8 h-8 text-white group-hover:scale-110 transition-transform duration-300" strokeWidth={2.2} />
+                  </div>
+                  <h3 className="text-lg font-bold text-[#01143d] text-center group-hover:text-[#0088e0] transition-colors">
+                    {subject.name}
+                  </h3>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Contact Section */}
+        <section id="contact" className="py-16 bg-[#01143d]">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 className="text-4xl font-bold text-white mb-4">
+              Ready to Excel in VCE?
+            </h2>
+            <p className="text-xl text-white/90 mb-8 max-w-3xl mx-auto">
+              Join thousands of successful students who have achieved their
+              dreams with Dr. U Education
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
+              <Link
+                href="/enroll"
+                className="bg-[#0088e0] hover:bg-[#0066b3] text-white font-semibold py-4 px-8 rounded-full transition-all duration-300 transform hover:scale-110 hover:shadow-2xl relative z-20 cursor-pointer"
+              >
+                Enroll Now
+              </Link>
+              <a
+                href="tel:+61478716402"
+                className="border-2 border-white hover:bg-white hover:text-[#01143d] text-white font-semibold py-4 px-8 rounded-full transition-all duration-300 transform hover:scale-110 hover:shadow-2xl relative z-20 cursor-pointer"
+              >
+                Call Us Today
+              </a>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-8 text-white">
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Location</h3>
+                <a
+                  href="https://maps.google.com/?q=Dr+U+Education+Melbourne+Victoria"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-white/80 hover:text-white transition-colors duration-200 relative z-20 cursor-pointer inline-block"
+                >
+                  Melbourne, Victoria
+                </a>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Phone</h3>
+                <a
+                  href="tel:+61478716402"
+                  className="text-white/80 hover:text-white transition-colors duration-200 relative z-20 cursor-pointer inline-block"
+                >
+                  0478 716 402
+                </a>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Email</h3>
+                <a
+                  href="mailto:info@drueducation.com.au"
+                  className="text-white/80 hover:text-white transition-colors duration-200 relative z-20 cursor-pointer inline-block"
+                >
+                  info@drueducation.com.au
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Footer */}
+        <div className="relative z-10">
+          <Footer />
+        </div>
+
+        {/* AI Chat Bot */}
         <ChatBot />
       </div>
     </>
