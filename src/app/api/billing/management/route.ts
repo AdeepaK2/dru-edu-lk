@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   getBillingManagementOverview,
   markFeePaidOffline,
+  sendBulkBillingPaymentLinks,
   sendBillingPaymentLink,
 } from '@/server/billing';
 
@@ -21,6 +22,57 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const action = String(body.action || '').trim();
+    if (action === 'send_bulk_payment_links') {
+      const items: Array<{
+        parentEmail: string;
+        studentId?: string;
+        feeCodes: Array<'admission_fee' | 'parent_portal_yearly'>;
+      }> = [];
+
+      if (Array.isArray(body.items)) {
+        for (const rawItem of body.items as unknown[]) {
+          const candidate = rawItem as {
+            parentEmail?: unknown;
+            studentId?: unknown;
+            feeCodes?: unknown;
+          };
+
+          const parentEmail =
+            typeof candidate.parentEmail === 'string' ? candidate.parentEmail.trim() : '';
+          const studentId =
+            typeof candidate.studentId === 'string' ? candidate.studentId : undefined;
+          const feeCodes = Array.isArray(candidate.feeCodes)
+            ? candidate.feeCodes.filter(
+                (feeCode: unknown): feeCode is 'admission_fee' | 'parent_portal_yearly' =>
+                  feeCode === 'admission_fee' || feeCode === 'parent_portal_yearly',
+              )
+            : [];
+
+          if (parentEmail && feeCodes.length > 0) {
+            items.push({ parentEmail, studentId, feeCodes });
+          }
+        }
+      }
+
+      if (items.length === 0) {
+        return NextResponse.json(
+          { success: false, error: 'At least one bulk billing item is required' },
+          { status: 400 },
+        );
+      }
+
+      const result = await sendBulkBillingPaymentLinks({
+        items,
+        origin: request.nextUrl.origin,
+      });
+
+      return NextResponse.json({
+        success: true,
+        data: result,
+        message: `Sent ${result.sent} payment links${result.failed ? `, ${result.failed} failed` : ''}.`,
+      });
+    }
+
     const parentEmail = String(body.parentEmail || '').trim();
     if (!parentEmail) {
       return NextResponse.json(
@@ -67,6 +119,22 @@ export async function POST(request: NextRequest) {
         success: true,
         data: result,
         message: `${result.feeLabel} payment link sent to ${parentEmail}`,
+      });
+    }
+
+    if (action === 'send_combined_payment_link') {
+      const studentId = typeof body.studentId === 'string' ? body.studentId : undefined;
+      const result = await sendBillingPaymentLink({
+        feeCodes: ['admission_fee', 'parent_portal_yearly'],
+        parentEmail,
+        studentId,
+        origin: request.nextUrl.origin,
+      });
+
+      return NextResponse.json({
+        success: true,
+        data: result,
+        message: `${result.feeLabel} combined payment link sent to ${parentEmail}`,
       });
     }
 

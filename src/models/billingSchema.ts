@@ -12,6 +12,7 @@ export const BILLING_COLLECTIONS = {
   PARENT_PORTAL_ENTITLEMENTS: 'parentPortalEntitlements',
   EVENTS: 'billingEvents',
   PARENT_INVITES: 'parentInvites',
+  DISCOUNTS: 'billingDiscounts',
 } as const;
 
 export type BillingInvoiceStatus =
@@ -23,6 +24,8 @@ export type BillingInvoiceStatus =
 
 export type BillingFeeCode = 'admission_fee' | 'parent_portal_yearly';
 export type BillingFeeScope = 'student' | 'parent';
+export type BillingDiscountScope = 'parent' | 'student';
+export type BillingDiscountType = 'percentage' | 'fixed';
 
 export interface BillingSettings {
   admissionFeeAmount: number;
@@ -65,6 +68,9 @@ export interface BillingLineItem {
   quantity: number;
   studentEmail?: string;
   studentName?: string;
+  originalAmount?: number;
+  discountAmount?: number;
+  appliedDiscountIds?: string[];
 }
 
 export interface BillingInvoiceDocument {
@@ -133,6 +139,24 @@ export interface ParentPortalEntitlementDocument {
   lastPaymentAt?: BillingDateValue;
   updatedAt: BillingDateValue;
   createdAt: BillingDateValue;
+}
+
+export interface BillingDiscountDocument {
+  id: string;
+  name: string;
+  scope: BillingDiscountScope;
+  type: BillingDiscountType;
+  value: number;
+  parentEmail: string;
+  parentName?: string;
+  studentId?: string;
+  studentName?: string;
+  feeCodes: BillingFeeCode[];
+  reason?: string;
+  isActive: boolean;
+  createdAt: BillingDateValue;
+  updatedAt: BillingDateValue;
+  createdBy?: string;
 }
 
 export const DEFAULT_BILLING_SETTINGS: BillingSettings = {
