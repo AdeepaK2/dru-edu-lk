@@ -821,6 +821,131 @@ async function activateParentPortalEntitlement(invoice: BillingInvoiceDocument) 
   );
 }
 
+async function recordStripeBillingPayment(
+  invoice: BillingInvoiceDocument,
+  session: Stripe.Checkout.Session,
+) {
+  const paymentIntentId =
+    typeof session.payment_intent === 'string' ? session.payment_intent : undefined;
+
+  const existingPaymentSnapshot = await firebaseAdmin.db
+    .collection(BILLING_COLLECTIONS.PAYMENTS)
+    .where('invoiceId', '==', invoice.id)
+    .where('provider', '==', 'stripe')
+    .limit(1)
+    .get();
+
+  if (!existingPaymentSnapshot.empty) {
+    const existingPaymentRef = existingPaymentSnapshot.docs[0].ref;
+    await existingPaymentRef.set(
+      {
+        status: 'succeeded',
+        amount: invoice.amountTotal,
+        currency: invoice.currency,
+        stripeCheckoutSessionId: session.id,
+        stripePaymentIntentId: paymentIntentId,
+        processedAt: nowTimestamp(),
+      },
+      { merge: true },
+    );
+    return;
+  }
+
+  await firebaseAdmin.db.collection(BILLING_COLLECTIONS.PAYMENTS).add({
+    invoiceId: invoice.id,
+    invoiceNumber: invoice.invoiceNumber,
+    provider: 'stripe',
+    status: 'succeeded',
+    amount: invoice.amountTotal,
+    currency: invoice.currency,
+    parentEmail: invoice.parentEmail,
+    stripeCheckoutSessionId: session.id,
+    stripePaymentIntentId: paymentIntentId,
+    processedAt: nowTimestamp(),
+    createdAt: nowTimestamp(),
+  });
+}
+
+async function finalizePaidBillingInvoice(
+  invoice: BillingInvoiceDocument,
+  session: Stripe.Checkout.Session,
+) {
+  const invoiceRef = firebaseAdmin.db.collection(BILLING_COLLECTIONS.INVOICES).doc(invoice.id);
+  const paymentIntentId =
+    typeof session.payment_intent === 'string' ? session.payment_intent : undefined;
+
+  await invoiceRef.set(
+    {
+      status: 'paid',
+      billingStatus: 'paid',
+      paidAt: nowTimestamp(),
+      checkoutCompletedAt: nowTimestamp(),
+      stripeCheckoutSessionId: session.id,
+      stripePaymentIntentId: paymentIntentId,
+      updatedAt: nowTimestamp(),
+    },
+    { merge: true },
+  );
+
+  await recordStripeBillingPayment(invoice, session);
+
+  if (hasBillingFee(invoice.lineItems, 'parent_portal_yearly')) {
+    await activateParentPortalEntitlement({
+      ...invoice,
+      status: 'paid',
+      stripeCheckoutSessionId: session.id,
+      stripePaymentIntentId: paymentIntentId,
+    });
+  }
+
+  if (!invoice.enrollmentRequestId) {
+    await invoiceRef.set(
+      {
+        finalization: {
+          status: 'completed',
+          completedAt: nowTimestamp(),
+        },
+        updatedAt: nowTimestamp(),
+      },
+      { merge: true },
+    );
+    return { invoiceId: invoice.id, finalizedWithoutEnrollment: true };
+  }
+
+  const request = await getEnrollmentRequest(invoice.enrollmentRequestId);
+  if (!request) {
+    throw new Error('Related enrollment request not found');
+  }
+
+  const studentId =
+    invoice.metadata.studentId || (await createStudentFromEnrollmentRequest(request));
+  await ensureStudentEnrollment(studentId, request);
+  await upsertParentInviteForStudent(request, studentId);
+
+  await firebaseAdmin.db.collection('enrollmentRequests').doc(request.id).update({
+    status: 'Approved',
+    billingStatus: 'paid',
+    billingInvoiceId: invoice.id,
+    studentId,
+    processedAt: nowTimestamp(),
+    finalizedAt: nowTimestamp(),
+    updatedAt: nowTimestamp(),
+  });
+
+  await invoiceRef.set(
+    {
+      finalization: {
+        status: 'completed',
+        completedAt: nowTimestamp(),
+      },
+      updatedAt: nowTimestamp(),
+    },
+    { merge: true },
+  );
+
+  return { invoiceId: invoice.id, studentId };
+}
+
 export async function createEnrollmentApprovalInvoice(
   enrollmentRequestId: string,
   origin?: string,
@@ -2017,75 +2142,10 @@ export async function processStripeBillingEvent(
     return { alreadyProcessed: false, invoiceId, alreadyFinalized: true };
   }
 
-  const invoiceRef = firebaseAdmin.db.collection(BILLING_COLLECTIONS.INVOICES).doc(invoiceId);
-  await invoiceRef.set(
-    {
-      status: 'paid',
-      billingStatus: 'paid',
-      paidAt: nowTimestamp(),
-      checkoutCompletedAt: nowTimestamp(),
-      stripeCheckoutSessionId: session.id,
-      stripePaymentIntentId:
-        typeof session.payment_intent === 'string'
-          ? session.payment_intent
-          : undefined,
-      updatedAt: nowTimestamp(),
-    },
-    { merge: true },
-  );
-
-  await firebaseAdmin.db.collection(BILLING_COLLECTIONS.PAYMENTS).add({
-    invoiceId,
-    invoiceNumber: invoice.invoiceNumber,
-    provider: 'stripe',
-    status: 'succeeded',
-    amount: invoice.amountTotal,
-    currency: invoice.currency,
-    parentEmail: invoice.parentEmail,
-    stripeCheckoutSessionId: session.id,
-    stripePaymentIntentId:
-      typeof session.payment_intent === 'string'
-        ? session.payment_intent
-        : undefined,
-    processedAt: nowTimestamp(),
-    createdAt: nowTimestamp(),
-  });
-
   try {
-    if (hasBillingFee(invoice.lineItems, 'parent_portal_yearly')) {
-      await activateParentPortalEntitlement(invoice);
-    }
-
-    const request = await getEnrollmentRequest(invoice.enrollmentRequestId);
-    if (!request) {
-      throw new Error('Related enrollment request not found');
-    }
-
-    const studentId =
-      invoice.metadata.studentId || (await createStudentFromEnrollmentRequest(request));
-    await ensureStudentEnrollment(studentId, request);
-    await upsertParentInviteForStudent(request, studentId);
-
-    await firebaseAdmin.db.collection('enrollmentRequests').doc(request.id).update({
-      status: 'Approved',
-      billingStatus: 'paid',
-      billingInvoiceId: invoice.id,
-      studentId,
-      processedAt: nowTimestamp(),
-      finalizedAt: nowTimestamp(),
-      updatedAt: nowTimestamp(),
-    });
-
-    await invoiceRef.set(
-      {
-        finalization: {
-          status: 'completed',
-          completedAt: nowTimestamp(),
-        },
-      },
-      { merge: true },
-    );
+    await finalizePaidBillingInvoice(invoice, session);
   } catch (error: any) {
+    const invoiceRef = firebaseAdmin.db.collection(BILLING_COLLECTIONS.INVOICES).doc(invoiceId);
     await invoiceRef.set(
       {
         finalization: {
@@ -2100,4 +2160,51 @@ export async function processStripeBillingEvent(
   }
 
   return { alreadyProcessed: false, invoiceId };
+}
+
+export async function reconcileBillingCheckoutSession(sessionId: string) {
+  if (!sessionId) {
+    throw new Error('Session id is required');
+  }
+
+  const stripe = ensureStripe();
+  const session = await stripe.checkout.sessions.retrieve(sessionId);
+  const invoiceId = session.metadata?.invoiceId;
+
+  if (!invoiceId) {
+    throw new Error('Missing invoiceId in Stripe session metadata');
+  }
+
+  const invoice = await getBillingInvoiceById(invoiceId);
+  if (!invoice) {
+    throw new Error(`Billing invoice not found for ${invoiceId}`);
+  }
+
+  if (session.payment_status !== 'paid') {
+    return {
+      invoiceId,
+      status: invoice.status,
+      paymentStatus: session.payment_status,
+      reconciled: false,
+    };
+  }
+
+  if (invoice.finalization?.status === 'completed' && invoice.status === 'paid') {
+    return {
+      invoiceId,
+      status: invoice.status,
+      paymentStatus: session.payment_status,
+      reconciled: false,
+      alreadyFinalized: true,
+    };
+  }
+
+  await finalizePaidBillingInvoice(invoice, session);
+
+  return {
+    invoiceId,
+    status: 'paid',
+    paymentStatus: session.payment_status,
+    reconciled: true,
+  };
 }
