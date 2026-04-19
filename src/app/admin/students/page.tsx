@@ -785,217 +785,8 @@ export default function StudentsManagement() {
 
   // Handle batch approval of all pending requests for a student
   const handleBatchApproveStudent = async (studentRequests: EnrollmentRequestDocument[]) => {
-    const pendingRequests = studentRequests.filter(r => r.status === 'Pending');
-    if (pendingRequests.length === 0) {
-      showError('No pending requests to approve for this student');
-      return;
-    }
-
-    setProcessingEnrollment(pendingRequests[0].student.email);
-    
-    // Track results for detailed error reporting
-    let studentId: string = '';
-    let studentCreated = false;
-    let enrollmentSuccesses = 0;
-    let enrollmentFailures: string[] = [];
-    let requestUpdateFailures: string[] = [];
-    
-    try {
-      // Check if student already exists (same logic as single approval)
-      const studentsQuery = query(
-        collection(firestore, 'students'),
-        where('email', '==', pendingRequests[0].student.email)
-      );
-      const existingStudentSnapshot = await getDocs(studentsQuery);
-      
-      if (!existingStudentSnapshot.empty) {
-        // Student exists
-        const existingStudent = existingStudentSnapshot.docs[0];
-        studentId = existingStudent.id;
-        const studentData = existingStudent.data() as StudentDocument;
-        
-        console.log('Batch approval - student already exists:', studentData.name, studentData.email);
-      } else {
-        // Create new student
-        console.log('Creating new student via API for batch approval...');
-        const firstRequest = pendingRequests[0];
-        const newStudent: Omit<Student, 'id'> = {
-          name: firstRequest.student.name,
-          email: firstRequest.student.email,
-          phone: firstRequest.student.phone,
-          dateOfBirth: firstRequest.student.dateOfBirth,
-          year: firstRequest.student.year,
-          school: firstRequest.student.school,
-          status: 'Active',
-          enrollmentDate: new Date().toISOString().split('T')[0],
-          coursesEnrolled: 0,
-          avatar: firstRequest.student.name.substring(0, 2).toUpperCase(),
-          parent: {
-            name: firstRequest.parent.name,
-            email: firstRequest.parent.email,
-            phone: firstRequest.parent.phone,
-          },
-          payment: {
-            status: 'Pending',
-            method: '',
-            lastPayment: 'N/A'
-          },
-        };
-
-        console.log('Calling API with student data:', newStudent);
-        
-        const response = await fetch('/api/student', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(newStudent),
-        });
-        
-        console.log('API response status:', response.status);
-        
-        if (!response.ok) {
-          const errorData = await response.json();
-          console.error('API error:', errorData);
-          
-          // Provide more specific error messages based on status code
-          if (response.status === 409) {
-            throw new Error(`Student with email ${newStudent.email} already exists in authentication system. Please contact support.`);
-          } else if (response.status === 400) {
-            throw new Error(`Invalid student data: ${errorData.message || errorData.error || 'Validation failed'}`);
-          } else if (response.status === 500) {
-            throw new Error(`Server error while creating student account. Please try again later. Details: ${errorData.details || errorData.error || 'Unknown error'}`);
-          } else {
-            throw new Error(errorData.message || errorData.error || `Failed to create student (HTTP ${response.status})`);
-          }
-        }
-
-        const createdStudent = await response.json();
-        console.log('Created student:', createdStudent);
-        studentId = createdStudent.id;
-        studentCreated = true;
-      }
-      
-      // Create enrollment records for each approved request - track successes and failures
-      const enrollmentResults = await Promise.allSettled(
-        pendingRequests.map(async (request) => {
-          await createStudentEnrollment({
-            studentId: studentId,
-            classId: request.classId,
-            studentName: request.student.name,
-            studentEmail: request.student.email,
-            className: request.className,
-            subject: request.subject,
-            enrolledAt: new Date(),
-            status: 'Active',
-            attendance: 0,
-            notes: request.additionalNotes || undefined,
-          });
-          return request.className;
-        })
-      );
-      
-      // Count successes and failures
-      enrollmentResults.forEach((result, index) => {
-        if (result.status === 'fulfilled') {
-          enrollmentSuccesses++;
-        } else {
-          const className = pendingRequests[index].className;
-          enrollmentFailures.push(className);
-          console.error(`Failed to create enrollment for ${className}:`, result.reason);
-        }
-      });
-      
-      // Update the student's course count based on actual enrollments
-      const enrollmentsQuery = query(
-        collection(firestore, 'studentEnrollments'),
-        where('studentId', '==', studentId),
-        where('status', '==', 'Active')
-      );
-      const enrollmentsSnapshot = await getDocs(enrollmentsQuery);
-      const activeEnrollmentsCount = enrollmentsSnapshot.size;
-      
-      // Update student's course count
-      await updateDoc(doc(firestore, 'students', studentId), {
-        coursesEnrolled: activeEnrollmentsCount,
-        updatedAt: Timestamp.now(),
-      });
-      
-      // Update enrollment requests - track individual failures
-      const requestUpdateResults = await Promise.allSettled(
-        pendingRequests.map(request =>
-          updateDoc(doc(firestore, 'enrollmentRequests', request.id), {
-            status: 'Approved',
-            processedAt: Timestamp.now(),
-            studentId: studentId,
-            updatedAt: Timestamp.now(),
-          })
-        )
-      );
-      
-      // Track request update failures
-      requestUpdateResults.forEach((result, index) => {
-        if (result.status === 'rejected') {
-          requestUpdateFailures.push(pendingRequests[index].className);
-          console.error(`Failed to update request for ${pendingRequests[index].className}:`, result.reason);
-        }
-      });
-      
-      // Refresh modal data if it's open for this student
-      if (showEnrollmentDetailModal && selectedStudentRequests.length > 0 && 
-          selectedStudentRequests[0].student.email === pendingRequests[0].student.email) {
-        refreshModalData(pendingRequests[0].student.email);
-      }
-      
-      // Refresh enrollment counts to update the main table
-      await refreshEnrollmentCounts([studentId]);
-      
-      // Show appropriate success/warning message based on results
-      const totalRequests = pendingRequests.length;
-      
-      if (enrollmentFailures.length === 0 && requestUpdateFailures.length === 0) {
-        // Complete success
-        if (studentCreated) {
-          showSuccess(`New student account created for ${pendingRequests[0].student.name} with ${totalRequests} classes enrolled and welcome email sent`);
-        } else {
-          showSuccess(`All ${totalRequests} pending enrollments approved for ${pendingRequests[0].student.name}`);
-        }
-      } else if (enrollmentSuccesses > 0) {
-        // Partial success
-        let message = `Partially completed: ${enrollmentSuccesses} of ${totalRequests} enrollments succeeded.`;
-        if (enrollmentFailures.length > 0) {
-          message += ` Failed classes: ${enrollmentFailures.join(', ')}.`;
-        }
-        if (requestUpdateFailures.length > 0) {
-          message += ` Some request updates failed.`;
-        }
-        showError(message);
-      } else {
-        // All enrollments failed
-        showError(`Failed to create any enrollments. Please try again or contact support.`);
-      }
-      
-    } catch (error: any) {
-      console.error('Error batch approving enrollments:', error);
-      
-      // Build a detailed error message
-      let errorMessage = 'Failed to batch approve enrollment requests';
-      
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      } else if (typeof error === 'string') {
-        errorMessage = error;
-      }
-      
-      // Add context about what was completed before the error
-      if (studentId && enrollmentSuccesses > 0) {
-        errorMessage += ` (${enrollmentSuccesses} enrollments were created before the error)`;
-      }
-      
-      showError(errorMessage);
-    } finally {
-      setProcessingEnrollment(null);
-    }
+    void studentRequests;
+    showError('Approve requests individually while parent portal billing is enabled.');
   };
 
   // Handle batch rejection of all pending requests for a student
@@ -1039,131 +830,43 @@ export default function StudentsManagement() {
     setProcessingEnrollment(enrollmentRequest.id);
     
     try {
-      // First, check if a student with this email already exists
-      const studentsQuery = query(
-        collection(firestore, 'students'),
-        where('email', '==', enrollmentRequest.student.email)
-      );
-      const existingStudentSnapshot = await getDocs(studentsQuery);
-      
-      let studentId: string;
-      let isNewStudent = false;
-      
-      if (!existingStudentSnapshot.empty) {
-        // Student already exists
-        const existingStudent = existingStudentSnapshot.docs[0];
-        studentId = existingStudent.id;
-        const studentData = existingStudent.data() as StudentDocument;
-        
-        console.log('Individual approval - student already exists:', studentData.name, studentData.email);
-        showSuccess(`Enrollment approved! Added to existing student record for ${studentData.name}`);
-      } else {
-        // Student doesn't exist - create new student via API
-        console.log('Creating new student via API for individual approval...');
-        isNewStudent = true;
-        const newStudent: Omit<Student, 'id'> = {
-          name: enrollmentRequest.student.name,
-          email: enrollmentRequest.student.email,
-          phone: enrollmentRequest.student.phone,
-          dateOfBirth: enrollmentRequest.student.dateOfBirth,
-          year: enrollmentRequest.student.year,
-          school: enrollmentRequest.student.school,
-          status: 'Active',
-          enrollmentDate: new Date().toISOString().split('T')[0],
-          coursesEnrolled: 0, // Will be calculated based on actual enrollments
-          avatar: enrollmentRequest.student.name.substring(0, 2).toUpperCase(),
-          parent: {
-            name: enrollmentRequest.parent.name,
-            email: enrollmentRequest.parent.email,
-            phone: enrollmentRequest.parent.phone,
-          },
-          payment: {
-            status: 'Pending',
-            method: '',
-            lastPayment: 'N/A'
-          },
-        };
+      const response = await fetch('/api/billing/enrollment-invoice', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          enrollmentRequestId: enrollmentRequest.id,
+        }),
+      });
 
-        console.log('Individual approval - calling API with student data:', newStudent);
+      const data = await response.json();
 
-        // Use the API to create student (this handles auth creation and email sending)
-        const response = await fetch('/api/student', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(newStudent),
-        });
-        
-        console.log('Individual approval - API response status:', response.status);
-        
-        if (!response.ok) {
-          const errorData = await response.json();
-          console.error('Individual approval - API error:', errorData);
-          throw new Error(errorData.error || 'Failed to create student');
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to approve enrollment request');
+      }
+
+      refreshModalData(enrollmentRequest.student.email);
+
+      if (data.data?.requiresPayment && data.data?.invoice?.paymentUrl) {
+        const paymentUrl = data.data.invoice.paymentUrl as string;
+
+        if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(paymentUrl);
         }
 
-        const createdStudent = await response.json();
-        console.log('Individual approval - created student:', createdStudent);
-        studentId = createdStudent.id;
-        
-        showSuccess(`Enrollment approved! New student account created for ${newStudent.name} and welcome email sent`);
+        if (typeof window !== 'undefined') {
+          window.open(paymentUrl, '_blank', 'noopener,noreferrer');
+        }
+
+        showSuccess('Billing invoice created. Parent payment is now required before portal access is unlocked.');
+      } else {
+        await refreshEnrollmentCounts([]);
+        showSuccess('Enrollment approved successfully without additional payment.');
       }
-      
-      // Create the actual enrollment record
-      try {
-        await createStudentEnrollment({
-          studentId: studentId,
-          classId: enrollmentRequest.classId,
-          studentName: enrollmentRequest.student.name,
-          studentEmail: enrollmentRequest.student.email,
-          className: enrollmentRequest.className,
-          subject: enrollmentRequest.subject,
-          enrolledAt: new Date(),
-          status: 'Active',
-          attendance: 0,
-          notes: enrollmentRequest.additionalNotes || undefined,
-        });
-        
-        // Update the student's course count based on actual enrollments
-        const enrollmentsQuery = query(
-          collection(firestore, 'studentEnrollments'),
-          where('studentId', '==', studentId),
-          where('status', '==', 'Active')
-        );
-        const enrollmentsSnapshot = await getDocs(enrollmentsQuery);
-        const activeEnrollmentsCount = enrollmentsSnapshot.size;
-        
-        // Update student's course count
-        await updateDoc(doc(firestore, 'students', studentId), {
-          coursesEnrolled: activeEnrollmentsCount,
-          updatedAt: Timestamp.now(),
-        });
-        
-      } catch (enrollmentError) {
-        console.error('Error creating enrollment:', enrollmentError);
-        // If enrollment creation fails but student was created, we should still mark as approved
-        // but show a warning
-        showError('Student created but failed to create enrollment record. Please manually enroll the student.');
-      }
-      
-      // Update enrollment request status
-      await updateDoc(doc(firestore, 'enrollmentRequests', enrollmentRequest.id), {
-        status: 'Approved',
-        processedAt: Timestamp.now(),
-        studentId: studentId,
-        updatedAt: Timestamp.now(),
-      });
-      
-      // Refresh the modal data to update the UI
-      refreshModalData(enrollmentRequest.student.email);
-      
-      // Refresh enrollment counts to update the main table
-      await refreshEnrollmentCounts([studentId]);
-      
     } catch (error) {
       console.error('Error approving enrollment:', error);
-      showError('Failed to approve enrollment request');
+      showError(error instanceof Error ? error.message : 'Failed to approve enrollment request');
     } finally {
       setProcessingEnrollment(null);
     }
@@ -1342,6 +1045,8 @@ export default function StudentsManagement() {
     switch (status) {
       case 'Pending':
         return <Badge variant="warning" className="bg-yellow-100 text-yellow-800">Pending</Badge>;
+      case 'Awaiting Payment':
+        return <Badge variant="warning" className="bg-blue-100 text-blue-800">Awaiting Payment</Badge>;
       case 'Approved':
         return <Badge variant="success" className="bg-green-100 text-green-800">Approved</Badge>;
       case 'Rejected':
@@ -1861,20 +1566,11 @@ export default function StudentsManagement() {
                               <Button
                                 size="sm"
                                 onClick={() => handleBatchApproveStudent(studentGroup.requests)}
-                                disabled={processingEnrollment === studentGroup.studentEmail}
+                                disabled
                                 className="bg-green-600 hover:bg-green-700 text-white"
                               >
-                                {processingEnrollment === studentGroup.studentEmail ? (
-                                  <>
-                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-1" />
-                                    Processing...
-                                  </>
-                                ) : (
-                                  <>
-                                    <CheckCircle className="w-4 h-4 mr-1" />
-                                    Approve All ({studentGroup.pendingCount})
-                                  </>
-                                )}
+                                <CheckCircle className="w-4 h-4 mr-1" />
+                                Approve Individually
                               </Button>
                               
                               <Button
@@ -2307,11 +2003,11 @@ export default function StudentsManagement() {
                 <div className="flex gap-3">
                   <Button
                     onClick={() => handleBatchApproveStudent(selectedStudentRequests)}
-                    disabled={processingEnrollment === selectedStudentRequests[0].student.email}
+                    disabled
                     className="bg-green-600 hover:bg-green-700 text-white"
                   >
                     <CheckCircle className="w-4 h-4 mr-1" />
-                    Approve All Pending
+                    Approve Individually
                   </Button>
                   
                   <Button

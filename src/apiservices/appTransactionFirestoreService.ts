@@ -31,15 +31,40 @@ export interface ParentAppTransaction {
 
 export class AppTransactionFirestoreService {
   static async getAllParentSubscriptions(): Promise<ParentAppTransaction[]> {
-    const parentsRef = collection(firestore, 'parents');
-    const q = query(parentsRef, orderBy('createdAt', 'desc'));
-    const snapshot = await getDocs(q);
+    const [parentsSnapshot, entitlementSnapshot, invoicesSnapshot] = await Promise.all([
+      getDocs(query(collection(firestore, 'parents'), orderBy('createdAt', 'desc'))),
+      getDocs(collection(firestore, 'parentPortalEntitlements')),
+      getDocs(collection(firestore, 'billingInvoices')),
+    ]);
+
+    const entitlementByEmail = new Map<string, any>();
+    entitlementSnapshot.docs.forEach((docSnap) => {
+      entitlementByEmail.set(docSnap.id, docSnap.data());
+    });
+
+    const invoicesByEmail = new Map<string, any[]>();
+    invoicesSnapshot.docs.forEach((docSnap) => {
+      const data = docSnap.data();
+      const parentEmail = String(data.parentEmail || '').toLowerCase();
+      const existing = invoicesByEmail.get(parentEmail) || [];
+      existing.push({ id: docSnap.id, ...data });
+      invoicesByEmail.set(parentEmail, existing);
+    });
 
     const results: ParentAppTransaction[] = [];
 
-    for (const docSnap of snapshot.docs) {
+    for (const docSnap of parentsSnapshot.docs) {
       const data = docSnap.data();
-      if (!data.subscription || !data.subscription.status) continue;
+      const parentEmail = String(data.email || '').toLowerCase();
+      const entitlement = entitlementByEmail.get(parentEmail);
+      const invoices = (invoicesByEmail.get(parentEmail) || []).sort((a, b) => {
+        const aTime = a.createdAt?.toMillis?.() || 0;
+        const bTime = b.createdAt?.toMillis?.() || 0;
+        return bTime - aTime;
+      });
+      const latestInvoice = invoices[0];
+
+      if (!entitlement && invoices.length === 0) continue;
 
       const linkedStudents: { id: string; name: string }[] = (data.linkedStudents || []).map(
         (s: any) => ({ id: s.id || s.studentId || '', name: s.name || s.displayName || 'Unknown' })
@@ -51,15 +76,23 @@ export class AppTransactionFirestoreService {
         parentEmail: data.email || '',
         linkedStudents,
         subscription: {
-          status: data.subscription.status,
-          platform: data.subscription.platform || 'unknown',
-          productId: data.subscription.productId || '',
-          purchaseToken: data.subscription.purchaseToken,
-          studentCount: data.subscription.studentCount || linkedStudents.length,
-          totalAmount: data.subscription.totalAmount || 0,
-          startDate: data.subscription.startDate || '',
-          expiryDate: data.subscription.expiryDate || '',
-          transactions: data.subscription.transactions || [],
+          status: entitlement?.status || (latestInvoice ? 'pending' : 'none'),
+          platform: 'web',
+          productId: 'parent_portal_fee',
+          purchaseToken: undefined,
+          studentCount: linkedStudents.length,
+          totalAmount: latestInvoice?.amountTotal || 0,
+          startDate: entitlement?.startAt?.toDate?.()?.toISOString?.() || '',
+          expiryDate: entitlement?.endAt?.toDate?.()?.toISOString?.() || '',
+          transactions: invoices.map((invoice: any) => ({
+            transactionId: invoice.invoiceNumber || invoice.id,
+            productId: 'parent_portal_fee',
+            purchaseDate: invoice.paidAt?.toDate?.()?.toISOString?.()
+              || invoice.createdAt?.toDate?.()?.toISOString?.()
+              || '',
+            amount: Number(invoice.amountTotal || 0),
+            currency: invoice.currency || 'AUD',
+          })),
         },
       });
     }
