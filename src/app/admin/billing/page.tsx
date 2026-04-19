@@ -805,7 +805,7 @@ export default function BillingSettingsPage() {
 
                 <label className="block">
                   <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">
-                    Support Email
+                    Support Email (optional)
                   </span>
                   <input
                     type="email"
@@ -822,7 +822,7 @@ export default function BillingSettingsPage() {
 
                 <label className="block">
                   <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">
-                    Support Phone
+                    Support Phone (optional)
                   </span>
                   <input
                     type="text"
@@ -851,6 +851,10 @@ export default function BillingSettingsPage() {
               >
                 {saving ? 'Saving...' : 'Save Billing Settings'}
               </button>
+
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Support email and phone are only used in invoice/help messaging. You can leave them blank.
+              </p>
             </>
           )}
         </form>

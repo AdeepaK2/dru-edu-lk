@@ -26,9 +26,18 @@ export async function POST(request: NextRequest) {
       reminderDaysBeforeDue: Array.isArray(body.reminderDaysBeforeDue)
         ? body.reminderDaysBeforeDue.map((value) => Number(value)).filter((value) => Number.isFinite(value))
         : [3, 1],
-      supportEmail: body.supportEmail?.trim() || undefined,
-      supportPhone: body.supportPhone?.trim() || undefined,
     };
+
+    const supportEmail = typeof body.supportEmail === 'string' ? body.supportEmail.trim() : '';
+    const supportPhone = typeof body.supportPhone === 'string' ? body.supportPhone.trim() : '';
+
+    if (supportEmail) {
+      settings.supportEmail = supportEmail;
+    }
+
+    if (supportPhone) {
+      settings.supportPhone = supportPhone;
+    }
 
     const saved = await saveBillingSettings(settings, 'admin-portal');
     return NextResponse.json({ success: true, data: saved });
