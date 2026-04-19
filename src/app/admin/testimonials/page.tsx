@@ -54,7 +54,10 @@ interface Token {
 
 type Tab = 'testimonials' | 'links';
 type StatusFilter = 'all' | 'pending' | 'approved' | 'rejected';
+type LinkFilter = 'all' | 'available' | 'used' | 'expired';
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const TESTIMONIALS_PAGE_SIZE = 8;
+const LINKS_PAGE_SIZE = 10;
 
 function formatDate(iso?: string | null) {
   if (!iso) return '—';
@@ -117,10 +120,15 @@ export default function AdminTestimonialsPage() {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [tLoading, setTLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('pending');
+  const [testimonialSearch, setTestimonialSearch] = useState('');
+  const [testimonialPage, setTestimonialPage] = useState(1);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [tokens, setTokens] = useState<Token[]>([]);
   const [tokLoading, setTokLoading] = useState(true);
+  const [linkFilter, setLinkFilter] = useState<LinkFilter>('all');
+  const [linkSearch, setLinkSearch] = useState('');
+  const [linkPage, setLinkPage] = useState(1);
   const [newLabel, setNewLabel] = useState('');
   const [recipientEmail, setRecipientEmail] = useState('');
   const [creating, setCreating] = useState(false);
@@ -199,6 +207,8 @@ export default function AdminTestimonialsPage() {
 
   useEffect(() => { fetchTestimonials(); }, [fetchTestimonials]);
   useEffect(() => { if (tab === 'links') fetchTokens(); }, [tab, fetchTokens]);
+  useEffect(() => { setTestimonialPage(1); }, [statusFilter, testimonialSearch]);
+  useEffect(() => { setLinkPage(1); }, [linkFilter, linkSearch]);
 
   async function patchTestimonial(id: string, payload: Record<string, unknown>) {
     await getAdminUser();
@@ -401,9 +411,76 @@ export default function AdminTestimonialsPage() {
     setTimeout(() => setCopiedId(null), 2000);
   }
 
-  const filtered = statusFilter === 'all'
-    ? testimonials
-    : testimonials.filter((t) => t.status === statusFilter);
+  const normalizedTestimonialSearch = testimonialSearch.trim().toLowerCase();
+
+  const filtered = testimonials.filter((t) => {
+    const matchesStatus = statusFilter === 'all' ? true : t.status === statusFilter;
+    if (!matchesStatus) return false;
+
+    if (!normalizedTestimonialSearch) return true;
+
+    const haystack = [
+      t.name,
+      t.email,
+      t.studentName,
+      t.role,
+      t.course,
+      t.year,
+      t.result,
+      t.text,
+      t.status,
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+
+    return haystack.includes(normalizedTestimonialSearch);
+  });
+
+  const testimonialTotalPages = Math.max(1, Math.ceil(filtered.length / TESTIMONIALS_PAGE_SIZE));
+  const safeTestimonialPage = Math.min(testimonialPage, testimonialTotalPages);
+  const testimonialStart = (safeTestimonialPage - 1) * TESTIMONIALS_PAGE_SIZE;
+  const pagedTestimonials = filtered.slice(testimonialStart, testimonialStart + TESTIMONIALS_PAGE_SIZE);
+
+  const normalizedLinkSearch = linkSearch.trim().toLowerCase();
+  const now = Date.now();
+  const filteredTokens = tokens.filter((tok) => {
+    const expiresAtMs = tok.expiresAt ? new Date(tok.expiresAt).getTime() : null;
+    const isExpired = expiresAtMs !== null && expiresAtMs < now;
+    const matchesStatus =
+      linkFilter === 'all'
+        ? true
+        : linkFilter === 'used'
+          ? tok.used
+          : linkFilter === 'available'
+            ? !tok.used && !isExpired
+            : isExpired;
+
+    if (!matchesStatus) return false;
+
+    if (!normalizedLinkSearch) return true;
+
+    const haystack = [tok.label, tok.recipientEmail, tok.token].filter(Boolean).join(' ').toLowerCase();
+    return haystack.includes(normalizedLinkSearch);
+  });
+
+  const linkCounts = {
+    available: tokens.filter((tok) => {
+      const expiresAtMs = tok.expiresAt ? new Date(tok.expiresAt).getTime() : null;
+      const isExpired = expiresAtMs !== null && expiresAtMs < now;
+      return !tok.used && !isExpired;
+    }).length,
+    used: tokens.filter((tok) => tok.used).length,
+    expired: tokens.filter((tok) => {
+      if (!tok.expiresAt) return false;
+      return new Date(tok.expiresAt).getTime() < now;
+    }).length,
+  };
+
+  const linkTotalPages = Math.max(1, Math.ceil(filteredTokens.length / LINKS_PAGE_SIZE));
+  const safeLinkPage = Math.min(linkPage, linkTotalPages);
+  const linkStart = (safeLinkPage - 1) * LINKS_PAGE_SIZE;
+  const pagedTokens = filteredTokens.slice(linkStart, linkStart + LINKS_PAGE_SIZE);
 
   const selected = testimonials.find((t) => t.id === selectedId) ?? null;
 
@@ -485,6 +562,19 @@ export default function AdminTestimonialsPage() {
               ))}
             </div>
 
+            <div className="mb-4 flex items-center gap-3">
+              <input
+                type="text"
+                value={testimonialSearch}
+                onChange={(e) => setTestimonialSearch(e.target.value)}
+                placeholder="Search by name, email, course, text..."
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0088e0]"
+              />
+              <span className="text-xs text-gray-500 whitespace-nowrap">
+                {filtered.length} result{filtered.length === 1 ? '' : 's'}
+              </span>
+            </div>
+
             {tLoading ? (
               <div className="flex justify-center py-12">
                 <div className="animate-spin w-8 h-8 border-4 border-[#0088e0] border-t-transparent rounded-full" />
@@ -495,7 +585,7 @@ export default function AdminTestimonialsPage() {
               </div>
             ) : (
               <div className="space-y-2">
-                {filtered.map((t) => (
+                {pagedTestimonials.map((t) => (
                   <div
                     key={t.id}
                     onClick={() => setSelectedId(t.id === selectedId ? null : t.id)}
@@ -545,6 +635,33 @@ export default function AdminTestimonialsPage() {
                     </div>
                   </div>
                 ))}
+
+                {filtered.length > 0 && (
+                  <div className="pt-4 flex items-center justify-between">
+                    <p className="text-xs text-gray-500">
+                      Showing {testimonialStart + 1}-{Math.min(testimonialStart + TESTIMONIALS_PAGE_SIZE, filtered.length)} of {filtered.length}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setTestimonialPage((prev) => Math.max(1, prev - 1))}
+                        disabled={safeTestimonialPage === 1}
+                        className="px-3 py-1.5 text-xs rounded-md border border-gray-200 text-gray-600 disabled:text-gray-300 disabled:border-gray-100"
+                      >
+                        Previous
+                      </button>
+                      <span className="text-xs text-gray-500">
+                        Page {safeTestimonialPage} of {testimonialTotalPages}
+                      </span>
+                      <button
+                        onClick={() => setTestimonialPage((prev) => Math.min(testimonialTotalPages, prev + 1))}
+                        disabled={safeTestimonialPage === testimonialTotalPages}
+                        className="px-3 py-1.5 text-xs rounded-md border border-gray-200 text-gray-600 disabled:text-gray-300 disabled:border-gray-100"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -743,20 +860,47 @@ export default function AdminTestimonialsPage() {
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="p-4 border-b border-gray-100">
               <h3 className="font-semibold text-[#01143d]">All Invite Links</h3>
+              <div className="mt-3 flex flex-wrap gap-2 items-center">
+                {([
+                  { label: 'All', value: 'all' },
+                  { label: `Available (${linkCounts.available})`, value: 'available' },
+                  { label: `Used (${linkCounts.used})`, value: 'used' },
+                  { label: `Expired (${linkCounts.expired})`, value: 'expired' },
+                ] as const).map((filterOption) => (
+                  <button
+                    key={filterOption.value}
+                    onClick={() => setLinkFilter(filterOption.value)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all border ${
+                      linkFilter === filterOption.value
+                        ? 'bg-[#01143d] text-white border-[#01143d]'
+                        : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+                    }`}
+                  >
+                    {filterOption.label}
+                  </button>
+                ))}
+                <input
+                  type="text"
+                  value={linkSearch}
+                  onChange={(e) => setLinkSearch(e.target.value)}
+                  placeholder="Search label, email, token..."
+                  className="min-w-64 ml-auto border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0088e0]"
+                />
+              </div>
             </div>
 
             {tokLoading ? (
               <div className="flex justify-center py-12">
                 <div className="animate-spin w-8 h-8 border-4 border-[#0088e0] border-t-transparent rounded-full" />
               </div>
-            ) : tokens.length === 0 ? (
+            ) : filteredTokens.length === 0 ? (
               <div className="p-12 text-center text-gray-400">
                 <Link2 size={32} className="mx-auto mb-3 opacity-30" />
-                No links generated yet.
+                No invite links match this filter.
               </div>
             ) : (
               <div className="divide-y divide-gray-50">
-                {tokens.map((tok) => (
+                {pagedTokens.map((tok) => (
                   <div key={tok.id} className="px-5 py-4 flex items-center gap-4">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
@@ -793,6 +937,31 @@ export default function AdminTestimonialsPage() {
                     </div>
                   </div>
                 ))}
+
+                <div className="px-5 py-4 flex items-center justify-between bg-gray-50/70">
+                  <p className="text-xs text-gray-500">
+                    Showing {linkStart + 1}-{Math.min(linkStart + LINKS_PAGE_SIZE, filteredTokens.length)} of {filteredTokens.length}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setLinkPage((prev) => Math.max(1, prev - 1))}
+                      disabled={safeLinkPage === 1}
+                      className="px-3 py-1.5 text-xs rounded-md border border-gray-200 text-gray-600 disabled:text-gray-300 disabled:border-gray-100"
+                    >
+                      Previous
+                    </button>
+                    <span className="text-xs text-gray-500">
+                      Page {safeLinkPage} of {linkTotalPages}
+                    </span>
+                    <button
+                      onClick={() => setLinkPage((prev) => Math.min(linkTotalPages, prev + 1))}
+                      disabled={safeLinkPage === linkTotalPages}
+                      className="px-3 py-1.5 text-xs rounded-md border border-gray-200 text-gray-600 disabled:text-gray-300 disabled:border-gray-100"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
           </div>

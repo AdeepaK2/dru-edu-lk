@@ -9,6 +9,7 @@ import {
   BILLING_COLLECTIONS,
   BillingInvoiceDocument,
   BillingLineItem,
+  BillingPaymentDocument,
   BillingSettings,
   BillingSettingsDocument,
   DEFAULT_BILLING_SETTINGS,
@@ -853,6 +854,464 @@ export function formatCurrency(amount: number) {
     style: 'currency',
     currency: 'AUD',
   }).format(amount);
+}
+
+type BillingManagementStudent = {
+  studentId: string;
+  studentName: string;
+  studentEmail: string;
+  year?: string;
+  school?: string;
+};
+
+export type BillingManagementAccount = {
+  parentId?: string;
+  parentName: string;
+  parentEmail: string;
+  parentPhone?: string;
+  students: BillingManagementStudent[];
+  portalStatus: 'active' | 'payment_required' | 'expired' | 'none';
+  portalPaidUntil: string | null;
+  totalOutstandingAmount: number;
+  outstandingInvoices: Array<{
+    invoiceId: string;
+    invoiceNumber: string;
+    amountTotal: number;
+    currency: string;
+    dueAt: string | null;
+    status: string;
+  }>;
+  latestPayment: {
+    invoiceId: string;
+    invoiceNumber: string;
+    amount: number;
+    paidAt: string | null;
+    provider: 'stripe' | 'manual' | 'unknown';
+  } | null;
+};
+
+async function getStudentsByParentEmail(parentEmail: string) {
+  const snapshot = await firebaseAdmin.db
+    .collection('students')
+    .where('parent.email', '==', parentEmail)
+    .get();
+
+  return snapshot.docs.map((doc) => {
+    const data = doc.data() as StudentDocument;
+    return {
+      id: doc.id,
+      name: data.name,
+      email: data.email,
+      year: data.year,
+      school: data.school,
+    };
+  });
+}
+
+export async function getBillingManagementOverview(): Promise<{
+  accounts: BillingManagementAccount[];
+  summary: {
+    totalParents: number;
+    activeParents: number;
+    lockedParents: number;
+    pendingInvoices: number;
+    overdueInvoices: number;
+  };
+}> {
+  const [parentsSnapshot, studentsSnapshot, invoicesSnapshot, entitlementsSnapshot, paymentsSnapshot] =
+    await Promise.all([
+      firebaseAdmin.db.collection('parents').get(),
+      firebaseAdmin.db.collection('students').get(),
+      firebaseAdmin.db.collection(BILLING_COLLECTIONS.INVOICES).get(),
+      firebaseAdmin.db.collection(BILLING_COLLECTIONS.PARENT_PORTAL_ENTITLEMENTS).get(),
+      firebaseAdmin.db.collection(BILLING_COLLECTIONS.PAYMENTS).get(),
+    ]);
+
+  const accounts = new Map<
+    string,
+    {
+      parentId?: string;
+      parentName: string;
+      parentEmail: string;
+      parentPhone?: string;
+      students: BillingManagementStudent[];
+      entitlement?: ParentPortalEntitlementDocument | null;
+      invoices: BillingInvoiceDocument[];
+      payments: BillingPaymentDocument[];
+    }
+  >();
+
+  const ensureAccount = (email: string) => {
+    const normalizedEmail = normalizeEmail(email);
+    let account = accounts.get(normalizedEmail);
+    if (!account) {
+      account = {
+        parentName: 'Parent',
+        parentEmail: normalizedEmail,
+        students: [],
+        invoices: [],
+        payments: [],
+      };
+      accounts.set(normalizedEmail, account);
+    }
+    return account;
+  };
+
+  parentsSnapshot.docs.forEach((doc) => {
+    const data = doc.data() as FirestoreData & {
+      email?: string;
+      name?: string;
+      displayName?: string;
+      phone?: string;
+      linkedStudents?: Array<{
+        studentId?: string;
+        id?: string;
+        studentName?: string;
+        name?: string;
+        studentEmail?: string;
+        email?: string;
+      }>;
+    };
+    const email = String(data.email || '').trim().toLowerCase();
+    if (!email) return;
+
+    const account = ensureAccount(email);
+    account.parentId = doc.id;
+    account.parentName = String(data.displayName || data.name || account.parentName);
+    account.parentPhone = String(data.phone || account.parentPhone || '');
+
+    (data.linkedStudents || []).forEach((student) => {
+      const studentId = String(student.studentId || student.id || '').trim();
+      const studentName = String(student.studentName || student.name || '').trim();
+      const studentEmail = String(student.studentEmail || student.email || '').trim().toLowerCase();
+      if (!studentId && !studentName && !studentEmail) return;
+      if (account!.students.some((item) => item.studentId === studentId || item.studentEmail === studentEmail)) {
+        return;
+      }
+      account!.students.push({
+        studentId: studentId || studentEmail,
+        studentName: studentName || 'Student',
+        studentEmail,
+      });
+    });
+  });
+
+  studentsSnapshot.docs.forEach((doc) => {
+    const data = doc.data() as StudentDocument;
+    const parentEmail = normalizeEmail(data.parent?.email || '');
+    if (!parentEmail) return;
+
+    const account = ensureAccount(parentEmail);
+    account.parentName = data.parent?.name || account.parentName;
+    account.parentPhone = data.parent?.phone || account.parentPhone;
+
+    if (!account.students.some((student) => student.studentId === doc.id || student.studentEmail === data.email)) {
+      account.students.push({
+        studentId: doc.id,
+        studentName: data.name,
+        studentEmail: normalizeEmail(data.email),
+        year: data.year,
+        school: data.school,
+      });
+    }
+  });
+
+  invoicesSnapshot.docs.forEach((doc) => {
+    const data = doc.data() as Omit<BillingInvoiceDocument, 'id'>;
+    const email = normalizeEmail(String(data.parentEmail || ''));
+    if (!email) return;
+    const account = ensureAccount(email);
+    account.invoices.push({
+      id: doc.id,
+      ...data,
+    } as BillingInvoiceDocument);
+    account.parentName = data.parentName || account.parentName;
+    account.parentPhone = data.parentPhone || account.parentPhone;
+  });
+
+  entitlementsSnapshot.docs.forEach((doc) => {
+    const email = normalizeEmail(doc.id);
+    if (!email) return;
+    const account = ensureAccount(email);
+    account.entitlement = doc.data() as ParentPortalEntitlementDocument;
+  });
+
+  paymentsSnapshot.docs.forEach((doc) => {
+    const data = doc.data() as Omit<BillingPaymentDocument, 'id'>;
+    const email = normalizeEmail(String(data.parentEmail || ''));
+    if (!email) return;
+    const account = ensureAccount(email);
+    account.payments.push({
+      id: doc.id,
+      ...data,
+    } as BillingPaymentDocument);
+  });
+
+  const now = new Date();
+  const accountList = [...accounts.values()]
+    .map((account): BillingManagementAccount => {
+      const entitlementActive = isEntitlementActive(account.entitlement || null);
+      const entitlementEndAt = toDate(account.entitlement?.endAt)?.toISOString() || null;
+      const outstandingInvoices = account.invoices
+        .filter((invoice) => invoice.status === 'pending')
+        .sort((a, b) => {
+          const aTime = toDate(a.createdAt)?.getTime() || 0;
+          const bTime = toDate(b.createdAt)?.getTime() || 0;
+          return bTime - aTime;
+        })
+        .map((invoice) => ({
+          invoiceId: invoice.id,
+          invoiceNumber: invoice.invoiceNumber,
+          amountTotal: invoice.amountTotal,
+          currency: invoice.currency,
+          dueAt: toDate(invoice.dueAt)?.toISOString() || null,
+          status: invoice.status,
+        }));
+
+      const latestPaidInvoice = account.invoices
+        .filter((invoice) => invoice.status === 'paid')
+        .sort((a, b) => {
+          const aTime = toDate(a.paidAt || a.updatedAt)?.getTime() || 0;
+          const bTime = toDate(b.paidAt || b.updatedAt)?.getTime() || 0;
+          return bTime - aTime;
+        })[0];
+
+      const latestPayment = account.payments
+        .sort((a, b) => {
+          const aTime = toDate(a.processedAt)?.getTime() || 0;
+          const bTime = toDate(b.processedAt)?.getTime() || 0;
+          return bTime - aTime;
+        })[0];
+
+      const portalStatus: BillingManagementAccount['portalStatus'] = entitlementActive
+        ? 'active'
+        : outstandingInvoices.length > 0
+          ? 'payment_required'
+          : account.entitlement
+            ? 'expired'
+            : 'none';
+
+      return {
+        parentId: account.parentId,
+        parentName: account.parentName,
+        parentEmail: account.parentEmail,
+        parentPhone: account.parentPhone,
+        students: account.students.sort((a, b) => a.studentName.localeCompare(b.studentName)),
+        portalStatus,
+        portalPaidUntil: entitlementEndAt,
+        totalOutstandingAmount: outstandingInvoices.reduce((sum, invoice) => sum + invoice.amountTotal, 0),
+        outstandingInvoices,
+        latestPayment: latestPaidInvoice || latestPayment
+          ? {
+              invoiceId: latestPaidInvoice?.id || latestPayment?.invoiceId || '',
+              invoiceNumber: latestPaidInvoice?.invoiceNumber || latestPayment?.invoiceNumber || '',
+              amount: latestPaidInvoice?.amountTotal || latestPayment?.amount || 0,
+              paidAt:
+                toDate(latestPaidInvoice?.paidAt || latestPayment?.processedAt)?.toISOString() || null,
+              provider:
+                latestPayment?.provider ||
+                (latestPaidInvoice?.stripePaymentIntentId ? 'stripe' : 'unknown'),
+            }
+          : null,
+      };
+    })
+    .sort((a, b) => a.parentName.localeCompare(b.parentName));
+
+  const pendingInvoices = accountList.reduce((sum, account) => sum + account.outstandingInvoices.length, 0);
+  const overdueInvoices = accountList.reduce(
+    (sum, account) =>
+      sum +
+      account.outstandingInvoices.filter((invoice) => {
+        const dueAt = invoice.dueAt ? new Date(invoice.dueAt) : null;
+        return Boolean(dueAt && dueAt.getTime() < now.getTime());
+      }).length,
+    0,
+  );
+
+  return {
+    accounts: accountList,
+    summary: {
+      totalParents: accountList.length,
+      activeParents: accountList.filter((account) => account.portalStatus === 'active').length,
+      lockedParents: accountList.filter((account) => account.portalStatus !== 'active').length,
+      pendingInvoices,
+      overdueInvoices,
+    },
+  };
+}
+
+export async function markParentPortalPaidOffline(
+  parentEmail: string,
+  options?: {
+    notes?: string;
+    processedBy?: string;
+  },
+) {
+  const normalizedEmail = normalizeEmail(parentEmail);
+  if (!normalizedEmail) {
+    throw new Error('Parent email is required');
+  }
+
+  const settings = await getBillingSettings();
+  if (settings.parentPortalYearlyFeeAmount <= 0) {
+    throw new Error('Parent portal yearly fee amount is not configured');
+  }
+
+  const [parent, students, existingEntitlement, pendingInvoicesSnapshot] = await Promise.all([
+    getParentByEmail(normalizedEmail),
+    getStudentsByParentEmail(normalizedEmail),
+    getParentPortalEntitlementByEmail(normalizedEmail),
+    firebaseAdmin.db
+      .collection(BILLING_COLLECTIONS.INVOICES)
+      .where('parentEmail', '==', normalizedEmail)
+      .where('status', '==', 'pending')
+      .get(),
+  ]);
+
+  const primaryStudent = students[0];
+  const parentName =
+    String(parent?.displayName || parent?.name || primaryStudent?.name || 'Parent');
+  const parentPhone =
+    String(parent?.phone || '') || undefined;
+
+  let invoiceId = '';
+  let invoiceNumber = '';
+  let amountTotal = settings.parentPortalYearlyFeeAmount;
+  const paidAt = nowTimestamp();
+
+  const parentPortalInvoice = pendingInvoicesSnapshot.docs.find((doc) => {
+    const data = doc.data() as BillingInvoiceDocument;
+    return Array.isArray(data.lineItems) && data.lineItems.some((item) => item.type === 'parent_portal_yearly');
+  });
+
+  if (parentPortalInvoice) {
+    const data = parentPortalInvoice.data() as BillingInvoiceDocument;
+    invoiceId = parentPortalInvoice.id;
+    invoiceNumber = data.invoiceNumber;
+    amountTotal = data.amountTotal;
+
+    await parentPortalInvoice.ref.set(
+      {
+        status: 'paid',
+        billingStatus: 'paid',
+        paidAt,
+        updatedAt: paidAt,
+        finalization: {
+          status: 'completed',
+          completedAt: paidAt,
+        },
+      },
+      { merge: true },
+    );
+  } else {
+    invoiceNumber = buildInvoiceNumber();
+    const invoiceToken = buildInvoiceToken();
+    const createdAt = nowTimestamp();
+    const dueAt = admin.firestore.Timestamp.fromDate(new Date());
+
+    const invoiceRef = await firebaseAdmin.db.collection(BILLING_COLLECTIONS.INVOICES).add({
+      invoiceNumber,
+      invoiceToken,
+      parentEmail: normalizedEmail,
+      parentName,
+      parentPhone,
+      studentEmail: primaryStudent?.email || '',
+      studentName: primaryStudent?.name || 'Existing student',
+      enrollmentRequestId: '',
+      classId: '',
+      className: 'Existing student access',
+      subject: 'Parent Portal',
+      centerName: 'DRU EDU',
+      currency: settings.currency,
+      status: 'paid',
+      lineItems: [
+        {
+          type: 'parent_portal_yearly',
+          label: 'Parent Portal Fee',
+          description: 'Manual admin payment for yearly DRU EDU parent portal access',
+          amount: settings.parentPortalYearlyFeeAmount,
+          quantity: 1,
+        },
+      ],
+      amountTotal,
+      dueAt,
+      paidAt,
+      checkoutCompletedAt: paidAt,
+      finalization: {
+        status: 'completed',
+        completedAt: paidAt,
+      },
+      metadata: {
+        isNewStudent: false,
+        portalFeeRequired: true,
+      },
+      createdAt,
+      updatedAt: createdAt,
+    });
+
+    invoiceId = invoiceRef.id;
+  }
+
+  await firebaseAdmin.db.collection(BILLING_COLLECTIONS.PAYMENTS).add({
+    invoiceId,
+    invoiceNumber,
+    provider: 'manual',
+    status: 'succeeded',
+    amount: amountTotal,
+    currency: settings.currency,
+    parentEmail: normalizedEmail,
+    notes: options?.notes || 'Marked paid offline by admin',
+    processedBy: options?.processedBy || 'admin',
+    processedAt: paidAt,
+    createdAt: paidAt,
+  });
+
+  await activateParentPortalEntitlement({
+    id: invoiceId,
+    invoiceNumber,
+    invoiceToken: '',
+    parentEmail: normalizedEmail,
+    parentName,
+    parentPhone,
+    studentEmail: primaryStudent?.email || '',
+    studentName: primaryStudent?.name || 'Existing student',
+    enrollmentRequestId: '',
+    classId: '',
+    className: 'Existing student access',
+    subject: 'Parent Portal',
+    centerName: 'DRU EDU',
+    currency: settings.currency,
+    status: 'paid',
+    lineItems: [
+      {
+        type: 'parent_portal_yearly',
+        label: 'Parent Portal Fee',
+        description: 'Manual admin payment for yearly DRU EDU parent portal access',
+        amount: settings.parentPortalYearlyFeeAmount,
+        quantity: 1,
+      },
+    ],
+    amountTotal,
+    dueAt: new Date().toISOString(),
+    paidAt,
+    finalization: {
+      status: 'completed',
+      completedAt: paidAt,
+    },
+    metadata: {
+      isNewStudent: false,
+      portalFeeRequired: true,
+    },
+    createdAt: paidAt,
+    updatedAt: paidAt,
+  } as BillingInvoiceDocument);
+
+  return {
+    parentEmail: normalizedEmail,
+    invoiceId,
+    invoiceNumber,
+    existingEntitlementStatus: existingEntitlement?.status || 'none',
+  };
 }
 
 export async function processStripeBillingEvent(

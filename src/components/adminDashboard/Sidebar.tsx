@@ -34,6 +34,7 @@ const menuItems = [
   { label: 'Meetings', icon: <Video size={20} />, path: '/admin/meetings' },
   { label: 'Documents', icon: <FileCheck size={20} />, path: '/admin/documents' },
   { label: 'Parent Issues', icon: <AlertCircle size={20} />, path: '/admin/parents' },
+  { label: 'Payment Management', icon: <Settings size={20} />, path: '/admin/billing' },
   { label: 'Transactions', icon: <CreditCard size={20} />, path: '/admin/transactions' },
   { label: 'Question Banks', icon: <FileQuestion size={20} />, path: '/admin/question-banks' },
   { label: 'Testimonials', icon: <Quote size={20} />, path: '/admin/testimonials' },
