@@ -50,7 +50,7 @@ export const enrollmentRequestSchema = z.object({
 
 // Enrollment request update schema for admin actions
 export const enrollmentRequestUpdateSchema = z.object({
-  status: z.enum(['Pending', 'Approved', 'Rejected']),
+  status: z.enum(['Pending', 'Awaiting Payment', 'Approved', 'Rejected', 'Cancelled']),
   adminNotes: z.string().optional(),
   processedBy: z.string().optional(),
   processedAt: z.date().optional(),
@@ -81,12 +81,17 @@ export interface EnrollmentRequest {
   additionalNotes?: string;
   preferredStartDate: string;
   agreedToTerms: boolean;
-  status: 'Pending' | 'Approved' | 'Rejected';
+  status: 'Pending' | 'Awaiting Payment' | 'Approved' | 'Rejected' | 'Cancelled';
   adminNotes?: string;
   processedBy?: string;
   processedAt?: Date;
   notificationSent?: boolean;
   notificationSentAt?: Date;
+  billingStatus?: 'pending' | 'paid' | 'failed' | 'not_required';
+  billingInvoiceId?: string;
+  billingRequiredAmount?: number;
+  approvedPendingPaymentAt?: Date;
+  finalizedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -116,12 +121,17 @@ export interface EnrollmentRequestDocument {
   additionalNotes?: string;
   preferredStartDate: string;
   agreedToTerms: boolean;
-  status: 'Pending' | 'Approved' | 'Rejected';
+  status: 'Pending' | 'Awaiting Payment' | 'Approved' | 'Rejected' | 'Cancelled';
   adminNotes?: string;
   processedBy?: string;
   processedAt?: Timestamp;
   notificationSent?: boolean;
   notificationSentAt?: Timestamp;
+  billingStatus?: 'pending' | 'paid' | 'failed' | 'not_required';
+  billingInvoiceId?: string;
+  billingRequiredAmount?: number;
+  approvedPendingPaymentAt?: Timestamp;
+  finalizedAt?: Timestamp;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
@@ -138,6 +148,8 @@ export const convertEnrollmentRequestDocument = (doc: EnrollmentRequestDocument)
     updatedAt: doc.updatedAt.toDate(),
     processedAt: doc.processedAt?.toDate(),
     notificationSentAt: doc.notificationSentAt?.toDate(),
+    approvedPendingPaymentAt: doc.approvedPendingPaymentAt?.toDate(),
+    finalizedAt: doc.finalizedAt?.toDate(),
   };
 };
 
