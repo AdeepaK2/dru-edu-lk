@@ -98,27 +98,17 @@ export default function AdminEnrollmentPage() {
     setProcessing(requestId);
     
     try {
-      const response = status === 'Approved'
-        ? await fetch('/api/billing/enrollment-invoice', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              enrollmentRequestId: requestId,
-            }),
-          })
-        : await fetch('/api/enrollment-request', {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              id: requestId,
-              status,
-              adminResponse: message,
-            }),
-          });
+      const response = await fetch('/api/enrollment-request', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: requestId,
+          status,
+          adminResponse: message,
+        }),
+      });
 
       const data = await response.json();
 
@@ -127,13 +117,7 @@ export default function AdminEnrollmentPage() {
         setShowResponseModal(false);
         setResponseMessage('');
         setSelectedRequest(null);
-        alert(
-          status === 'Approved'
-            ? data.data?.requiresPayment
-              ? 'Invoice created successfully. Parent payment is required before access is granted.'
-              : 'Enrollment approved successfully without additional payment.'
-            : 'Request updated successfully.',
-        );
+        alert(status === 'Approved' ? 'Enrollment approved successfully.' : 'Request updated successfully.');
       } else {
         alert('Failed to update request: ' + (data.error || 'Unknown error'));
       }

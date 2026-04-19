@@ -785,8 +785,51 @@ export default function StudentsManagement() {
 
   // Handle batch approval of all pending requests for a student
   const handleBatchApproveStudent = async (studentRequests: EnrollmentRequestDocument[]) => {
-    void studentRequests;
-    showError('Approve requests individually while parent portal billing is enabled.');
+    const pendingRequests = studentRequests.filter(r => r.status === 'Pending');
+    if (pendingRequests.length === 0) {
+      showError('No pending requests to approve for this student');
+      return;
+    }
+
+    setProcessingEnrollment(pendingRequests[0].student.email);
+
+    try {
+      const updatePromises = pendingRequests.map(async (request) => {
+        const response = await fetch('/api/enrollment-request', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            id: request.id,
+            status: 'Approved',
+          }),
+        });
+
+        const data = await safeJsonParse(response);
+        if (!response.ok) {
+          throw new Error(
+            data?.error || data?.message || `Failed to approve enrollment request ${request.id}`,
+          );
+        }
+      });
+
+      await Promise.all(updatePromises);
+      showSuccess(`All ${pendingRequests.length} pending enrollment requests approved`);
+
+      if (
+        showEnrollmentDetailModal &&
+        selectedStudentRequests.length > 0 &&
+        selectedStudentRequests[0].student.email === pendingRequests[0].student.email
+      ) {
+        refreshModalData(pendingRequests[0].student.email);
+      }
+    } catch (error) {
+      console.error('Error batch approving enrollments:', error);
+      showError(error instanceof Error ? error.message : 'Failed to batch approve enrollment requests');
+    } finally {
+      setProcessingEnrollment(null);
+    }
   };
 
   // Handle batch rejection of all pending requests for a student
@@ -830,40 +873,26 @@ export default function StudentsManagement() {
     setProcessingEnrollment(enrollmentRequest.id);
     
     try {
-      const response = await fetch('/api/billing/enrollment-invoice', {
-        method: 'POST',
+      const response = await fetch('/api/enrollment-request', {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          enrollmentRequestId: enrollmentRequest.id,
+          id: enrollmentRequest.id,
+          status: 'Approved',
         }),
       });
 
-      const data = await response.json();
+      const data = await safeJsonParse(response);
 
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || 'Failed to approve enrollment request');
+      if (!response.ok) {
+        throw new Error(data?.error || data?.message || 'Failed to approve enrollment request');
       }
 
       refreshModalData(enrollmentRequest.student.email);
-
-      if (data.data?.requiresPayment && data.data?.invoice?.paymentUrl) {
-        const paymentUrl = data.data.invoice.paymentUrl as string;
-
-        if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
-          await navigator.clipboard.writeText(paymentUrl);
-        }
-
-        if (typeof window !== 'undefined') {
-          window.open(paymentUrl, '_blank', 'noopener,noreferrer');
-        }
-
-        showSuccess('Billing invoice created. Parent payment is now required before portal access is unlocked.');
-      } else {
-        await refreshEnrollmentCounts([]);
-        showSuccess('Enrollment approved successfully without additional payment.');
-      }
+      await refreshEnrollmentCounts([]);
+      showSuccess('Enrollment approved successfully.');
     } catch (error) {
       console.error('Error approving enrollment:', error);
       showError(error instanceof Error ? error.message : 'Failed to approve enrollment request');
@@ -1566,11 +1595,10 @@ export default function StudentsManagement() {
                               <Button
                                 size="sm"
                                 onClick={() => handleBatchApproveStudent(studentGroup.requests)}
-                                disabled
                                 className="bg-green-600 hover:bg-green-700 text-white"
                               >
                                 <CheckCircle className="w-4 h-4 mr-1" />
-                                Approve Individually
+                                Approve All ({studentGroup.pendingCount})
                               </Button>
                               
                               <Button
@@ -2003,11 +2031,10 @@ export default function StudentsManagement() {
                 <div className="flex gap-3">
                   <Button
                     onClick={() => handleBatchApproveStudent(selectedStudentRequests)}
-                    disabled
                     className="bg-green-600 hover:bg-green-700 text-white"
                   >
                     <CheckCircle className="w-4 h-4 mr-1" />
-                    Approve Individually
+                    Approve All
                   </Button>
                   
                   <Button
