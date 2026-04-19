@@ -131,8 +131,19 @@ export async function saveBillingSettings(
     ...DEFAULT_BILLING_SETTINGS,
     ...settings,
     updatedAt: nowTimestamp(),
-    updatedBy,
   };
+
+  if (updatedBy) {
+    payload.updatedBy = updatedBy;
+  }
+
+  if (!settings.supportEmail) {
+    delete payload.supportEmail;
+  }
+
+  if (!settings.supportPhone) {
+    delete payload.supportPhone;
+  }
 
   await firebaseAdmin.db
     .collection(BILLING_COLLECTIONS.SETTINGS)
