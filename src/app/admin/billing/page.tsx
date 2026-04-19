@@ -574,7 +574,7 @@ export default function BillingSettingsPage() {
       </div>
 
       <div className="rounded-lg bg-white p-2 shadow-sm dark:bg-gray-800">
-        <div className="flex flex-wrap gap-2">
+        <div className="flex gap-2 overflow-x-auto whitespace-nowrap pb-1">
           {[
             { key: 'parent_portal', label: 'Parent Portal Fees' },
             { key: 'admission', label: 'Admission Fees' },
@@ -585,7 +585,7 @@ export default function BillingSettingsPage() {
               key={tab.key}
               type="button"
               onClick={() => setActiveTab(tab.key as BillingTab)}
-              className={`rounded-lg px-4 py-2.5 text-sm font-semibold transition ${
+              className={`shrink-0 rounded-lg px-5 py-3 text-sm font-semibold transition ${
                 activeTab === tab.key
                   ? 'bg-blue-600 text-white'
                   : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
@@ -611,25 +611,28 @@ export default function BillingSettingsPage() {
 
       {activeTab === 'parent_portal' && (
         <div className="rounded-lg bg-white p-6 shadow-sm dark:bg-gray-800">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
+          <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+            <div className="max-w-2xl">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Parent Portal Fees</h2>
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 Send Stripe payment links or mark the yearly parent portal fee paid offline for existing parent accounts.
               </p>
+              <p className="mt-2 text-sm font-medium text-gray-600 dark:text-gray-300">
+                Showing {filteredAccounts.length} parent accounts
+              </p>
             </div>
-            <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(260px,1fr)_220px_auto_auto]">
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
                 placeholder="Search parent or student"
-                className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
               />
               <select
                 value={portalStatusFilter}
                 onChange={(event) => setPortalStatusFilter(event.target.value as typeof portalStatusFilter)}
-                className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
               >
                 <option value="all">All statuses</option>
                 <option value="active">Active</option>
@@ -640,7 +643,7 @@ export default function BillingSettingsPage() {
               <button
                 type="button"
                 onClick={loadManagement}
-                className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-medium text-blue-700 hover:bg-blue-100"
+                className="rounded-lg border border-blue-200 bg-blue-50 px-5 py-3 text-sm font-medium text-blue-700 hover:bg-blue-100"
               >
                 Refresh
               </button>
@@ -654,9 +657,9 @@ export default function BillingSettingsPage() {
                   })
                 }
                 disabled={processingKey === 'bulk-portal' || form.parentPortalYearlyFeeAmount <= 0}
-                className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+                className="rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60 whitespace-nowrap"
               >
-                {processingKey === 'bulk-portal' ? 'Sending...' : 'Send All Unpaid Portal Links'}
+                {processingKey === 'bulk-portal' ? 'Sending...' : 'Send Unpaid Portal Links'}
               </button>
             </div>
           </div>
@@ -759,8 +762,8 @@ export default function BillingSettingsPage() {
                           <p className="text-gray-500 dark:text-gray-400">No portal fee payment recorded</p>
                         )}
                       </td>
-                      <td className="py-4">
-                        <div className="flex flex-col gap-2">
+                    <td className="py-4 min-w-[180px]">
+                      <div className="flex flex-col gap-2">
                           <button
                             type="button"
                             onClick={() =>
@@ -772,9 +775,9 @@ export default function BillingSettingsPage() {
                               })
                             }
                             disabled={processingKey === `send-parent-${account.parentEmail}` || form.parentPortalYearlyFeeAmount <= 0}
-                            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+                            className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
                           >
-                            {processingKey === `send-parent-${account.parentEmail}` ? 'Sending...' : 'Send Stripe Link'}
+                            {processingKey === `send-parent-${account.parentEmail}` ? 'Sending...' : 'Send Link'}
                           </button>
                           <button
                             type="button"
@@ -787,9 +790,9 @@ export default function BillingSettingsPage() {
                               })
                             }
                             disabled={processingKey === `offline-parent-${account.parentEmail}`}
-                            className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-60"
+                            className="rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-60"
                           >
-                            {processingKey === `offline-parent-${account.parentEmail}` ? 'Saving...' : 'Mark Portal Fee Paid Offline'}
+                            {processingKey === `offline-parent-${account.parentEmail}` ? 'Saving...' : 'Mark Paid Offline'}
                           </button>
                         </div>
                       </td>
@@ -804,25 +807,28 @@ export default function BillingSettingsPage() {
 
       {activeTab === 'admission' && (
         <div className="rounded-lg bg-white p-6 shadow-sm dark:bg-gray-800">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
+          <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+            <div className="max-w-2xl">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Admission Fees</h2>
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 Track admission fee status per student and handle Stripe or offline payment separately from the parent portal fee.
               </p>
+              <p className="mt-2 text-sm font-medium text-gray-600 dark:text-gray-300">
+                Showing {filteredAdmissionFees.length} students
+              </p>
             </div>
-            <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(240px,1fr)_200px_auto_auto_auto]">
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
                 placeholder="Search student or parent"
-                className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
               />
               <select
                 value={admissionStatusFilter}
                 onChange={(event) => setAdmissionStatusFilter(event.target.value as typeof admissionStatusFilter)}
-                className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
               >
                 <option value="all">All statuses</option>
                 <option value="paid">Paid</option>
@@ -832,7 +838,7 @@ export default function BillingSettingsPage() {
               <button
                 type="button"
                 onClick={loadManagement}
-                className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-medium text-blue-700 hover:bg-blue-100"
+                className="rounded-lg border border-blue-200 bg-blue-50 px-5 py-3 text-sm font-medium text-blue-700 hover:bg-blue-100"
               >
                 Refresh
               </button>
@@ -846,9 +852,9 @@ export default function BillingSettingsPage() {
                   })
                 }
                 disabled={processingKey === 'bulk-admission' || form.admissionFeeAmount <= 0}
-                className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+                className="rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60 whitespace-nowrap"
               >
-                {processingKey === 'bulk-admission' ? 'Sending...' : 'Send All Unpaid Admission Links'}
+                {processingKey === 'bulk-admission' ? 'Sending...' : 'Send Admission Links'}
               </button>
               <button
                 type="button"
@@ -864,9 +870,9 @@ export default function BillingSettingsPage() {
                   form.admissionFeeAmount <= 0 ||
                   form.parentPortalYearlyFeeAmount <= 0
                 }
-                className="rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-60"
+                className="rounded-lg bg-violet-600 px-5 py-3 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-60 whitespace-nowrap"
               >
-                {processingKey === 'bulk-combined' ? 'Sending...' : 'Send All Combined Invoices'}
+                {processingKey === 'bulk-combined' ? 'Sending...' : 'Send Combined Invoices'}
               </button>
             </div>
           </div>
@@ -959,8 +965,8 @@ export default function BillingSettingsPage() {
                           <p className="text-gray-500 dark:text-gray-400">No admission fee payment recorded</p>
                         )}
                       </td>
-                      <td className="py-4">
-                        <div className="flex flex-col gap-2">
+                    <td className="py-4 min-w-[180px]">
+                      <div className="flex flex-col gap-2">
                           <button
                             type="button"
                             onClick={() =>
@@ -973,9 +979,9 @@ export default function BillingSettingsPage() {
                               })
                             }
                             disabled={processingKey === `send-admission-${record.studentId}` || form.admissionFeeAmount <= 0}
-                            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+                            className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
                           >
-                            {processingKey === `send-admission-${record.studentId}` ? 'Sending...' : 'Send Stripe Link'}
+                            {processingKey === `send-admission-${record.studentId}` ? 'Sending...' : 'Send Link'}
                           </button>
                           {accountByParentEmail.get(record.parentEmail)?.portalStatus !== 'active' ? (
                             <button
@@ -994,9 +1000,9 @@ export default function BillingSettingsPage() {
                                 form.admissionFeeAmount <= 0 ||
                                 form.parentPortalYearlyFeeAmount <= 0
                               }
-                              className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-60"
+                              className="rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-60"
                             >
-                              {processingKey === `send-combined-${record.studentId}` ? 'Sending...' : 'Send Combined Invoice'}
+                              {processingKey === `send-combined-${record.studentId}` ? 'Sending...' : 'Send Combined'}
                             </button>
                           ) : null}
                           <button
@@ -1011,9 +1017,9 @@ export default function BillingSettingsPage() {
                               })
                             }
                             disabled={processingKey === `offline-admission-${record.studentId}`}
-                            className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-60"
+                            className="rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-60"
                           >
-                            {processingKey === `offline-admission-${record.studentId}` ? 'Saving...' : 'Mark Admission Fee Paid Offline'}
+                            {processingKey === `offline-admission-${record.studentId}` ? 'Saving...' : 'Mark Paid Offline'}
                           </button>
                         </div>
                       </td>
