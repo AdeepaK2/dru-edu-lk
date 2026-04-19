@@ -21,7 +21,8 @@ export type BillingInvoiceStatus =
   | 'void'
   | 'failed';
 
-export type BillingLineItemType = 'admission_fee' | 'parent_portal_yearly';
+export type BillingFeeCode = 'admission_fee' | 'parent_portal_yearly';
+export type BillingFeeScope = 'student' | 'parent';
 
 export interface BillingSettings {
   admissionFeeAmount: number;
@@ -38,8 +39,26 @@ export interface BillingSettingsDocument extends BillingSettings {
   updatedBy?: string;
 }
 
+export interface BillingFeeContext {
+  parentEmail?: string;
+  parentName?: string;
+  studentEmail?: string;
+  studentName?: string;
+  className?: string;
+  subject?: string;
+  centerName?: string;
+}
+
+export interface BillingFeeDefinition {
+  code: BillingFeeCode;
+  label: string;
+  scope: BillingFeeScope;
+  getAmount: (settings: BillingSettings) => number;
+  getDescription: (context: BillingFeeContext) => string;
+}
+
 export interface BillingLineItem {
-  type: BillingLineItemType;
+  type: BillingFeeCode;
   label: string;
   description: string;
   amount: number;
