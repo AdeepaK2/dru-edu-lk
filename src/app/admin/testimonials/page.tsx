@@ -490,6 +490,16 @@ export default function AdminTestimonialsPage() {
     rejected: testimonials.filter((t) => t.status === 'rejected').length,
   };
 
+  const emailSubmissionCounts = testimonials.reduce<Record<string, number>>((acc, testimonial) => {
+    const key = testimonial.email.trim().toLowerCase();
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+
+  const selectedEmailSubmissionCount = selected
+    ? emailSubmissionCounts[selected.email.trim().toLowerCase()] || 1
+    : 1;
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="mb-6">
@@ -610,6 +620,11 @@ export default function AdminTestimonialsPage() {
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="font-semibold text-[#01143d] text-sm">{t.name}</span>
                             <StatusBadge status={t.status} />
+                            {(emailSubmissionCounts[t.email.trim().toLowerCase()] || 0) > 1 && (
+                              <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 border border-amber-200 text-xs px-1.5 py-0.5 rounded-full">
+                                {emailSubmissionCounts[t.email.trim().toLowerCase()]} Submissions
+                              </span>
+                            )}
                             {t.featured && (
                               <span className="inline-flex items-center gap-1 bg-purple-50 text-purple-600 border border-purple-200 text-xs px-1.5 py-0.5 rounded-full">
                                 <Award size={10} /> Featured
@@ -679,6 +694,12 @@ export default function AdminTestimonialsPage() {
                 <div className="space-y-3 text-sm">
                   <Row label="Name" value={selected.name} />
                   <Row label="Email" value={selected.email} />
+                  {selectedEmailSubmissionCount > 1 && (
+                    <Row
+                      label="Email Submissions"
+                      value={`${selectedEmailSubmissionCount} testimonials from this email`}
+                    />
+                  )}
                   <Row label="Role" value={selected.role} />
                   {selected.studentName && <Row label="Student Name" value={selected.studentName} />}
                   <Row label="Course" value={`${selected.course} · ${selected.year}`} />
