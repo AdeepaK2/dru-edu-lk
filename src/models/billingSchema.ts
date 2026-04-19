@@ -91,13 +91,15 @@ export interface BillingPaymentDocument {
   id: string;
   invoiceId: string;
   invoiceNumber: string;
-  provider: 'stripe';
+  provider: 'stripe' | 'manual';
   status: 'succeeded' | 'failed';
   amount: number;
   currency: 'AUD';
   parentEmail: string;
   stripeCheckoutSessionId?: string;
   stripePaymentIntentId?: string;
+  notes?: string;
+  processedBy?: string;
   processedAt: BillingDateValue;
   createdAt: BillingDateValue;
 }
