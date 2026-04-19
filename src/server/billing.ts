@@ -15,6 +15,11 @@ import {
   DEFAULT_BILLING_SETTINGS,
   ParentPortalEntitlementDocument,
 } from '@/models/billingSchema';
+import {
+  buildBillingLineItem,
+  getBillingInvoiceTotal,
+  hasBillingFee,
+} from '@/server/billing-fees';
 import type { EnrollmentRequestDocument } from '@/models/enrollmentRequestSchema';
 import type { StudentDocument } from '@/models/studentSchema';
 type FirestoreData = Record<string, unknown>;
@@ -638,37 +643,22 @@ export async function createEnrollmentApprovalInvoice(
   const isNewStudent = !existingStudent;
 
   const lineItems: BillingLineItem[] = [];
+  const lineItemContext = {
+    parentEmail: normalizeEmail(request.parent.email),
+    parentName: request.parent.name,
+    studentEmail: normalizeEmail(request.student.email),
+    studentName: request.student.name,
+    className: request.className,
+    subject: request.subject,
+    centerName: request.centerName,
+  };
 
   if (isNewStudent) {
-    if (settings.admissionFeeAmount <= 0) {
-      throw new Error('Admission fee amount is not configured');
-    }
-
-    lineItems.push({
-      type: 'admission_fee',
-      label: 'Admission Fee',
-      description: `New student admission for ${request.student.name}`,
-      amount: settings.admissionFeeAmount,
-      quantity: 1,
-      studentEmail: normalizeEmail(request.student.email),
-      studentName: request.student.name,
-    });
+    lineItems.push(buildBillingLineItem('admission_fee', settings, lineItemContext));
   }
 
   if (portalFeeRequired) {
-    if (settings.parentPortalYearlyFeeAmount <= 0) {
-      throw new Error('Parent portal yearly fee amount is not configured');
-    }
-
-    lineItems.push({
-      type: 'parent_portal_yearly',
-      label: 'Parent Portal Fee',
-      description: 'Yearly DRU EDU parent portal access',
-      amount: settings.parentPortalYearlyFeeAmount,
-      quantity: 1,
-      studentEmail: normalizeEmail(request.student.email),
-      studentName: request.student.name,
-    });
+    lineItems.push(buildBillingLineItem('parent_portal_yearly', settings, lineItemContext));
   }
 
   if (lineItems.length === 0) {
@@ -684,7 +674,7 @@ export async function createEnrollmentApprovalInvoice(
   const dueAt = addDays(new Date(), settings.invoiceDueDays);
   const invoiceToken = buildInvoiceToken();
   const invoiceNumber = buildInvoiceNumber();
-  const amountTotal = lineItems.reduce((total, item) => total + item.amount * item.quantity, 0);
+  const amountTotal = getBillingInvoiceTotal(lineItems);
 
   const invoicePayload = {
     invoiceNumber,
@@ -1181,7 +1171,7 @@ export async function markParentPortalPaidOffline(
 
   const parentPortalInvoice = pendingInvoicesSnapshot.docs.find((doc) => {
     const data = doc.data() as BillingInvoiceDocument;
-    return Array.isArray(data.lineItems) && data.lineItems.some((item) => item.type === 'parent_portal_yearly');
+    return Array.isArray(data.lineItems) && hasBillingFee(data.lineItems, 'parent_portal_yearly');
   });
 
   if (parentPortalInvoice) {
@@ -1225,13 +1215,19 @@ export async function markParentPortalPaidOffline(
       currency: settings.currency,
       status: 'paid',
       lineItems: [
-        {
-          type: 'parent_portal_yearly',
-          label: 'Parent Portal Fee',
-          description: 'Manual admin payment for yearly DRU EDU parent portal access',
-          amount: settings.parentPortalYearlyFeeAmount,
-          quantity: 1,
-        },
+        buildBillingLineItem(
+          'parent_portal_yearly',
+          settings,
+          {
+            parentEmail: normalizedEmail,
+            parentName,
+            studentEmail: primaryStudent?.email || '',
+            studentName: primaryStudent?.name || 'Existing student',
+          },
+          {
+            description: 'Manual admin payment for yearly DRU EDU parent portal access',
+          },
+        ),
       ],
       amountTotal,
       dueAt,
@@ -1283,13 +1279,19 @@ export async function markParentPortalPaidOffline(
     currency: settings.currency,
     status: 'paid',
     lineItems: [
-      {
-        type: 'parent_portal_yearly',
-        label: 'Parent Portal Fee',
-        description: 'Manual admin payment for yearly DRU EDU parent portal access',
-        amount: settings.parentPortalYearlyFeeAmount,
-        quantity: 1,
-      },
+      buildBillingLineItem(
+        'parent_portal_yearly',
+        settings,
+        {
+          parentEmail: normalizedEmail,
+          parentName,
+          studentEmail: primaryStudent?.email || '',
+          studentName: primaryStudent?.name || 'Existing student',
+        },
+        {
+          description: 'Manual admin payment for yearly DRU EDU parent portal access',
+        },
+      ),
     ],
     amountTotal,
     dueAt: new Date().toISOString(),
@@ -1385,7 +1387,7 @@ export async function processStripeBillingEvent(
   });
 
   try {
-    if (invoice.lineItems.some((item) => item.type === 'parent_portal_yearly')) {
+    if (hasBillingFee(invoice.lineItems, 'parent_portal_yearly')) {
       await activateParentPortalEntitlement(invoice);
     }
 

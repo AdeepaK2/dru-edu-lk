@@ -56,20 +56,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'This link has expired' }, { status: 410 });
     }
 
-    // Check this email hasn't submitted before
-    const existingSnap = await firebaseAdmin.db
-      .collection('testimonials')
-      .where('email', '==', data.email.toLowerCase().trim())
-      .limit(1)
-      .get();
-
-    if (!existingSnap.empty) {
-      return NextResponse.json(
-        { error: 'A testimonial from this email address already exists' },
-        { status: 409 }
-      );
-    }
-
     const now = firebaseAdmin.admin.firestore.Timestamp.now();
     const docRef = firebaseAdmin.db.collection('testimonials').doc();
 
