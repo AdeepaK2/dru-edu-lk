@@ -71,7 +71,34 @@ interface AdmissionFeeRecord {
   } | null;
 }
 
-type BillingTab = 'parent_portal' | 'admission' | 'settings';
+interface BillingDiscountRecord {
+  id: string;
+  name: string;
+  scope: 'parent' | 'student';
+  type: 'percentage' | 'fixed';
+  value: number;
+  parentEmail: string;
+  parentName?: string;
+  studentId?: string;
+  studentName?: string;
+  feeCodes: Array<'admission_fee' | 'parent_portal_yearly'>;
+  reason?: string;
+  isActive: boolean;
+  createdAt?: string | null;
+}
+
+interface DiscountFormState {
+  name: string;
+  scope: 'parent' | 'student';
+  type: 'percentage' | 'fixed';
+  value: number;
+  parentEmail: string;
+  studentId: string;
+  feeCodes: Array<'admission_fee' | 'parent_portal_yearly'>;
+  reason: string;
+}
+
+type BillingTab = 'parent_portal' | 'admission' | 'discounts' | 'settings';
 
 const DEFAULT_SETTINGS: BillingSettingsState = {
   admissionFeeAmount: 0,
@@ -92,6 +119,17 @@ const DEFAULT_SUMMARY = {
   admissionPendingStudents: 0,
 };
 
+const DEFAULT_DISCOUNT_FORM: DiscountFormState = {
+  name: '',
+  scope: 'parent',
+  type: 'percentage',
+  value: 0,
+  parentEmail: '',
+  studentId: '',
+  feeCodes: ['admission_fee'],
+  reason: '',
+};
+
 export default function BillingSettingsPage() {
   const [activeTab, setActiveTab] = useState<BillingTab>('parent_portal');
   const [form, setForm] = useState<BillingSettingsState>(DEFAULT_SETTINGS);
@@ -101,10 +139,13 @@ export default function BillingSettingsPage() {
   const [managementLoading, setManagementLoading] = useState(true);
   const [accounts, setAccounts] = useState<BillingAccount[]>([]);
   const [admissionFees, setAdmissionFees] = useState<AdmissionFeeRecord[]>([]);
+  const [discounts, setDiscounts] = useState<BillingDiscountRecord[]>([]);
   const [summary, setSummary] = useState(DEFAULT_SUMMARY);
   const [searchTerm, setSearchTerm] = useState('');
   const [portalStatusFilter, setPortalStatusFilter] = useState<'all' | BillingAccount['portalStatus']>('all');
   const [admissionStatusFilter, setAdmissionStatusFilter] = useState<'all' | AdmissionFeeRecord['admissionStatus']>('all');
+  const [discountForm, setDiscountForm] = useState<DiscountFormState>(DEFAULT_DISCOUNT_FORM);
+  const [discountSaving, setDiscountSaving] = useState(false);
   const [actionMessage, setActionMessage] = useState('');
   const [actionError, setActionError] = useState('');
   const [processingKey, setProcessingKey] = useState<string | null>(null);
@@ -152,9 +193,25 @@ export default function BillingSettingsPage() {
     }
   };
 
+  const loadDiscounts = async () => {
+    try {
+      const response = await fetch('/api/billing/discounts');
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to load billing discounts');
+      }
+
+      setDiscounts(data.data || []);
+    } catch (error: any) {
+      setActionError(error.message || 'Failed to load billing discounts');
+    }
+  };
+
   useEffect(() => {
     loadSettings();
     loadManagement();
+    loadDiscounts();
   }, []);
 
   const handleSave = async (event: React.FormEvent) => {
@@ -200,7 +257,7 @@ export default function BillingSettingsPage() {
     studentId,
     processingId,
   }: {
-    action: 'mark_paid_offline' | 'send_payment_link';
+    action: 'mark_paid_offline' | 'send_payment_link' | 'send_combined_payment_link';
     feeCode: 'admission_fee' | 'parent_portal_yearly';
     parentEmail: string;
     studentId?: string;
@@ -232,6 +289,128 @@ export default function BillingSettingsPage() {
       await loadManagement();
     } catch (error: any) {
       setActionError(error.message || 'Billing action failed');
+    } finally {
+      setProcessingKey(null);
+    }
+  };
+
+  const runBulkBillingAction = async ({
+    processingId,
+    items,
+    successLabel,
+  }: {
+    processingId: string;
+    items: Array<{
+      parentEmail: string;
+      studentId?: string;
+      feeCodes: Array<'admission_fee' | 'parent_portal_yearly'>;
+    }>;
+    successLabel: string;
+  }) => {
+    try {
+      if (items.length === 0) {
+        setActionError(`No ${successLabel.toLowerCase()} records found in the current filter.`);
+        setActionMessage('');
+        return;
+      }
+
+      setProcessingKey(processingId);
+      setActionMessage('');
+      setActionError('');
+
+      const response = await fetch('/api/billing/management', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'send_bulk_payment_links',
+          items,
+          processedBy: 'admin-portal',
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Bulk billing action failed');
+      }
+
+      setActionMessage(data.message || `${successLabel} payment links sent.`);
+      await loadManagement();
+    } catch (error: any) {
+      setActionError(error.message || 'Bulk billing action failed');
+    } finally {
+      setProcessingKey(null);
+    }
+  };
+
+  const handleSaveDiscount = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    try {
+      setDiscountSaving(true);
+      setActionMessage('');
+      setActionError('');
+
+      const selectedParent = accounts.find((account) => account.parentEmail === discountForm.parentEmail);
+      const selectedStudent = admissionFees.find((student) => student.studentId === discountForm.studentId);
+
+      const response = await fetch('/api/billing/discounts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: discountForm.name,
+          scope: discountForm.scope,
+          type: discountForm.type,
+          value: discountForm.value,
+          parentEmail: discountForm.parentEmail,
+          parentName: selectedParent?.parentName,
+          studentId: discountForm.scope === 'student' ? discountForm.studentId : undefined,
+          studentName: discountForm.scope === 'student' ? selectedStudent?.studentName : undefined,
+          feeCodes: discountForm.feeCodes,
+          reason: discountForm.reason,
+          isActive: true,
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to save discount');
+      }
+
+      setDiscountForm(DEFAULT_DISCOUNT_FORM);
+      setActionMessage(data.message || 'Discount saved successfully.');
+      await loadDiscounts();
+    } catch (error: any) {
+      setActionError(error.message || 'Failed to save discount');
+    } finally {
+      setDiscountSaving(false);
+    }
+  };
+
+  const handleToggleDiscount = async (discountId: string, isActive: boolean) => {
+    try {
+      setProcessingKey(`discount-${discountId}`);
+      setActionMessage('');
+      setActionError('');
+
+      const response = await fetch('/api/billing/discounts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'toggle_active',
+          discountId,
+          isActive,
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to update discount');
+      }
+
+      setActionMessage(data.message || 'Discount updated successfully.');
+      await loadDiscounts();
+    } catch (error: any) {
+      setActionError(error.message || 'Failed to update discount');
     } finally {
       setProcessingKey(null);
     }
@@ -270,6 +449,69 @@ export default function BillingSettingsPage() {
       return matchesSearch && matchesStatus;
     });
   }, [admissionFees, searchTerm, admissionStatusFilter]);
+
+  const accountByParentEmail = useMemo(() => {
+    return new Map(accounts.map((account) => [account.parentEmail, account] as const));
+  }, [accounts]);
+
+  const selectedParentStudents = useMemo(() => {
+    if (!discountForm.parentEmail) return [];
+    return admissionFees.filter((student) => student.parentEmail === discountForm.parentEmail);
+  }, [admissionFees, discountForm.parentEmail]);
+
+  const filteredDiscounts = useMemo(() => {
+    const needle = searchTerm.trim().toLowerCase();
+    return discounts.filter((discount) => {
+      if (!needle) return true;
+      return (
+        discount.name.toLowerCase().includes(needle) ||
+        discount.parentEmail.toLowerCase().includes(needle) ||
+        (discount.parentName || '').toLowerCase().includes(needle) ||
+        (discount.studentName || '').toLowerCase().includes(needle)
+      );
+    });
+  }, [discounts, searchTerm]);
+
+  const bulkPortalItems = useMemo(
+    () =>
+      filteredAccounts
+        .filter((account) => account.portalStatus !== 'active')
+        .map((account) => ({
+          parentEmail: account.parentEmail,
+          feeCodes: ['parent_portal_yearly'] as Array<'parent_portal_yearly'>,
+        })),
+    [filteredAccounts],
+  );
+
+  const bulkAdmissionItems = useMemo(
+    () =>
+      filteredAdmissionFees
+        .filter((record) => record.admissionStatus !== 'paid')
+        .map((record) => ({
+          parentEmail: record.parentEmail,
+          studentId: record.studentId,
+          feeCodes: ['admission_fee'] as Array<'admission_fee'>,
+        })),
+    [filteredAdmissionFees],
+  );
+
+  const bulkCombinedItems = useMemo(
+    () =>
+      filteredAdmissionFees
+        .filter(
+          (record) =>
+            record.admissionStatus !== 'paid' &&
+            accountByParentEmail.get(record.parentEmail)?.portalStatus !== 'active',
+        )
+        .map((record) => ({
+          parentEmail: record.parentEmail,
+          studentId: record.studentId,
+          feeCodes: ['admission_fee', 'parent_portal_yearly'] as Array<
+            'admission_fee' | 'parent_portal_yearly'
+          >,
+        })),
+    [filteredAdmissionFees, accountByParentEmail],
+  );
 
   const formatMoney = (amount: number, currency = 'AUD') =>
     new Intl.NumberFormat('en-AU', { style: 'currency', currency }).format(amount || 0);
@@ -336,6 +578,7 @@ export default function BillingSettingsPage() {
           {[
             { key: 'parent_portal', label: 'Parent Portal Fees' },
             { key: 'admission', label: 'Admission Fees' },
+            { key: 'discounts', label: 'Discounts' },
             { key: 'settings', label: 'Payment Settings' },
           ].map((tab) => (
             <button
@@ -400,6 +643,20 @@ export default function BillingSettingsPage() {
                 className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-medium text-blue-700 hover:bg-blue-100"
               >
                 Refresh
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  runBulkBillingAction({
+                    processingId: 'bulk-portal',
+                    items: bulkPortalItems,
+                    successLabel: 'unpaid parent portal',
+                  })
+                }
+                disabled={processingKey === 'bulk-portal' || form.parentPortalYearlyFeeAmount <= 0}
+                className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+              >
+                {processingKey === 'bulk-portal' ? 'Sending...' : 'Send All Unpaid Portal Links'}
               </button>
             </div>
           </div>
@@ -579,6 +836,38 @@ export default function BillingSettingsPage() {
               >
                 Refresh
               </button>
+              <button
+                type="button"
+                onClick={() =>
+                  runBulkBillingAction({
+                    processingId: 'bulk-admission',
+                    items: bulkAdmissionItems,
+                    successLabel: 'unpaid admission',
+                  })
+                }
+                disabled={processingKey === 'bulk-admission' || form.admissionFeeAmount <= 0}
+                className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+              >
+                {processingKey === 'bulk-admission' ? 'Sending...' : 'Send All Unpaid Admission Links'}
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  runBulkBillingAction({
+                    processingId: 'bulk-combined',
+                    items: bulkCombinedItems,
+                    successLabel: 'combined unpaid',
+                  })
+                }
+                disabled={
+                  processingKey === 'bulk-combined' ||
+                  form.admissionFeeAmount <= 0 ||
+                  form.parentPortalYearlyFeeAmount <= 0
+                }
+                className="rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-60"
+              >
+                {processingKey === 'bulk-combined' ? 'Sending...' : 'Send All Combined Invoices'}
+              </button>
             </div>
           </div>
 
@@ -688,6 +977,28 @@ export default function BillingSettingsPage() {
                           >
                             {processingKey === `send-admission-${record.studentId}` ? 'Sending...' : 'Send Stripe Link'}
                           </button>
+                          {accountByParentEmail.get(record.parentEmail)?.portalStatus !== 'active' ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                runBillingAction({
+                                  action: 'send_combined_payment_link',
+                                  feeCode: 'admission_fee',
+                                  parentEmail: record.parentEmail,
+                                  studentId: record.studentId,
+                                  processingId: `send-combined-${record.studentId}`,
+                                })
+                              }
+                              disabled={
+                                processingKey === `send-combined-${record.studentId}` ||
+                                form.admissionFeeAmount <= 0 ||
+                                form.parentPortalYearlyFeeAmount <= 0
+                              }
+                              className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-60"
+                            >
+                              {processingKey === `send-combined-${record.studentId}` ? 'Sending...' : 'Send Combined Invoice'}
+                            </button>
+                          ) : null}
                           <button
                             type="button"
                             onClick={() =>
@@ -711,6 +1022,272 @@ export default function BillingSettingsPage() {
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'discounts' && (
+        <div className="space-y-6">
+          <form onSubmit={handleSaveDiscount} className="rounded-lg bg-white p-6 shadow-sm dark:bg-gray-800 space-y-6">
+            <div className="flex flex-col gap-2">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Discounts</h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Create parent-level discounts for multiple students in one family, or student-specific discounts for financial difficulty cases.
+              </p>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">Discount Name</span>
+                <input
+                  type="text"
+                  value={discountForm.name}
+                  onChange={(event) => setDiscountForm((current) => ({ ...current, name: event.target.value }))}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  placeholder="Sibling support discount"
+                />
+              </label>
+
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">Discount Scope</span>
+                <select
+                  value={discountForm.scope}
+                  onChange={(event) =>
+                    setDiscountForm((current) => ({
+                      ...current,
+                      scope: event.target.value as 'parent' | 'student',
+                      studentId: event.target.value === 'student' ? current.studentId : '',
+                    }))
+                  }
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                >
+                  <option value="parent">Parent / family discount</option>
+                  <option value="student">Specific student discount</option>
+                </select>
+              </label>
+
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">Discount Type</span>
+                <select
+                  value={discountForm.type}
+                  onChange={(event) =>
+                    setDiscountForm((current) => ({
+                      ...current,
+                      type: event.target.value as 'percentage' | 'fixed',
+                    }))
+                  }
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                >
+                  <option value="percentage">Percentage</option>
+                  <option value="fixed">Fixed amount (AUD)</option>
+                </select>
+              </label>
+
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">
+                  Value {discountForm.type === 'percentage' ? '(%)' : '(AUD)'}
+                </span>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={discountForm.value}
+                  onChange={(event) =>
+                    setDiscountForm((current) => ({
+                      ...current,
+                      value: Number(event.target.value),
+                    }))
+                  }
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                />
+              </label>
+
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">Parent Account</span>
+                <select
+                  value={discountForm.parentEmail}
+                  onChange={(event) =>
+                    setDiscountForm((current) => ({
+                      ...current,
+                      parentEmail: event.target.value,
+                      studentId: '',
+                    }))
+                  }
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                >
+                  <option value="">Select parent</option>
+                  {accounts.map((account) => (
+                    <option key={account.parentEmail} value={account.parentEmail}>
+                      {account.parentName} - {account.parentEmail}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">Student</span>
+                <select
+                  value={discountForm.studentId}
+                  onChange={(event) =>
+                    setDiscountForm((current) => ({
+                      ...current,
+                      studentId: event.target.value,
+                    }))
+                  }
+                  disabled={discountForm.scope !== 'student' || !discountForm.parentEmail}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 disabled:opacity-60 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                >
+                  <option value="">Select student</option>
+                  {selectedParentStudents.map((student) => (
+                    <option key={student.studentId} value={student.studentId}>
+                      {student.studentName} - {student.studentEmail}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-2">
+              <div>
+                <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">Apply Discount To</span>
+                <div className="flex flex-wrap gap-3">
+                  {[
+                    { code: 'admission_fee', label: 'Admission Fee' },
+                    { code: 'parent_portal_yearly', label: 'Parent Portal Fee' },
+                  ].map((fee) => (
+                    <label key={fee.code} className="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
+                      <input
+                        type="checkbox"
+                        checked={discountForm.feeCodes.includes(fee.code as 'admission_fee' | 'parent_portal_yearly')}
+                        onChange={(event) =>
+                          setDiscountForm((current) => ({
+                            ...current,
+                            feeCodes: event.target.checked
+                              ? [...current.feeCodes, fee.code as 'admission_fee' | 'parent_portal_yearly']
+                              : current.feeCodes.filter((code) => code !== fee.code),
+                          }))
+                        }
+                      />
+                      {fee.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">Reason / Notes</span>
+                <textarea
+                  value={discountForm.reason}
+                  onChange={(event) => setDiscountForm((current) => ({ ...current, reason: event.target.value }))}
+                  rows={3}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  placeholder="Financial difficulty, sibling support, retention support..."
+                />
+              </label>
+            </div>
+
+            <button
+              type="submit"
+              disabled={discountSaving}
+              className="rounded-lg bg-blue-600 px-5 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"
+            >
+              {discountSaving ? 'Saving...' : 'Save Discount'}
+            </button>
+          </form>
+
+          <div className="rounded-lg bg-white p-6 shadow-sm dark:bg-gray-800">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Active and Saved Discounts</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Parent discounts apply to all linked students in that family. Student discounts apply only to the selected student.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={loadDiscounts}
+                className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-medium text-blue-700 hover:bg-blue-100"
+              >
+                Refresh
+              </button>
+            </div>
+
+            <div className="mt-6 overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead>
+                  <tr className="text-left text-sm text-gray-500 dark:text-gray-400">
+                    <th className="py-3 pr-4 font-medium">Discount</th>
+                    <th className="py-3 pr-4 font-medium">Target</th>
+                    <th className="py-3 pr-4 font-medium">Applies To</th>
+                    <th className="py-3 pr-4 font-medium">Status</th>
+                    <th className="py-3 font-medium">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                  {filteredDiscounts.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                        No billing discounts found.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredDiscounts.map((discount) => (
+                      <tr key={discount.id} className="align-top">
+                        <td className="py-4 pr-4">
+                          <p className="font-medium text-gray-900 dark:text-white">{discount.name}</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            {discount.type === 'percentage' ? `${discount.value}%` : formatMoney(discount.value)}
+                          </p>
+                          {discount.reason ? (
+                            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{discount.reason}</p>
+                          ) : null}
+                        </td>
+                        <td className="py-4 pr-4 text-sm text-gray-700 dark:text-gray-300">
+                          <p>{discount.parentName || 'Parent'} - {discount.parentEmail}</p>
+                          {discount.scope === 'student' ? (
+                            <p className="mt-1 text-gray-500 dark:text-gray-400">
+                              Student: {discount.studentName || discount.studentId}
+                            </p>
+                          ) : (
+                            <p className="mt-1 text-gray-500 dark:text-gray-400">Family-wide discount</p>
+                          )}
+                        </td>
+                        <td className="py-4 pr-4 text-sm text-gray-700 dark:text-gray-300">
+                          {discount.feeCodes
+                            .map((feeCode) =>
+                              feeCode === 'admission_fee' ? 'Admission Fee' : 'Parent Portal Fee',
+                            )
+                            .join(', ')}
+                        </td>
+                        <td className="py-4 pr-4">
+                          <span
+                            className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
+                              discount.isActive ? 'bg-green-100 text-green-800' : 'bg-slate-100 text-slate-700'
+                            }`}
+                          >
+                            {discount.isActive ? 'Active' : 'Disabled'}
+                          </span>
+                        </td>
+                        <td className="py-4">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleDiscount(discount.id, !discount.isActive)}
+                            disabled={processingKey === `discount-${discount.id}`}
+                            className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
+                          >
+                            {processingKey === `discount-${discount.id}`
+                              ? 'Saving...'
+                              : discount.isActive
+                                ? 'Disable'
+                                : 'Enable'}
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}

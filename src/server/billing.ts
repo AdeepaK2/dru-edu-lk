@@ -7,6 +7,7 @@ import { firebaseAdmin } from '@/utils/firebase-server';
 import { sendGenericEmail, sendStudentWelcomeEmail } from '@/utils/emailService';
 import {
   BILLING_COLLECTIONS,
+  BillingDiscountDocument,
   BillingInvoiceDocument,
   BillingLineItem,
   BillingPaymentDocument,
@@ -151,6 +152,161 @@ export async function saveBillingSettings(
     .set(payload, { merge: true });
 
   return payload;
+}
+
+type BillingDiscountInput = {
+  name: string;
+  scope: 'parent' | 'student';
+  type: 'percentage' | 'fixed';
+  value: number;
+  parentEmail: string;
+  parentName?: string;
+  studentId?: string;
+  studentName?: string;
+  feeCodes: Array<'admission_fee' | 'parent_portal_yearly'>;
+  reason?: string;
+  isActive?: boolean;
+  createdBy?: string;
+};
+
+function normalizeFeeCodes(
+  feeCodes: Array<'admission_fee' | 'parent_portal_yearly'>,
+): Array<'admission_fee' | 'parent_portal_yearly'> {
+  return Array.from(new Set(feeCodes)).sort() as Array<'admission_fee' | 'parent_portal_yearly'>;
+}
+
+export async function getBillingDiscounts(): Promise<BillingDiscountDocument[]> {
+  const snapshot = await firebaseAdmin.db
+    .collection(BILLING_COLLECTIONS.DISCOUNTS)
+    .orderBy('createdAt', 'desc')
+    .get();
+
+  return snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...(doc.data() as Omit<BillingDiscountDocument, 'id'>),
+  }));
+}
+
+async function getApplicableBillingDiscounts(params: {
+  parentEmail: string;
+  studentId?: string;
+  feeCodes: Array<'admission_fee' | 'parent_portal_yearly'>;
+}) {
+  const normalizedParentEmail = normalizeEmail(params.parentEmail);
+  const discounts = await getBillingDiscounts();
+
+  return discounts.filter((discount) => {
+    if (!discount.isActive) return false;
+    if (normalizeEmail(discount.parentEmail) !== normalizedParentEmail) return false;
+    if (discount.scope === 'student' && discount.studentId !== params.studentId) return false;
+    return discount.feeCodes.some((feeCode) => params.feeCodes.includes(feeCode));
+  });
+}
+
+function applyDiscountsToLineItems(
+  lineItems: BillingLineItem[],
+  discounts: BillingDiscountDocument[],
+) {
+  return lineItems.map((lineItem) => {
+    const applicableDiscounts = discounts.filter((discount) => discount.feeCodes.includes(lineItem.type));
+    if (applicableDiscounts.length === 0) {
+      return lineItem;
+    }
+
+    const originalAmount = Number(lineItem.amount || 0);
+    let discountAmount = 0;
+
+    for (const discount of applicableDiscounts) {
+      if (discount.type === 'percentage') {
+        discountAmount += (originalAmount * Number(discount.value || 0)) / 100;
+      } else {
+        discountAmount += Number(discount.value || 0);
+      }
+    }
+
+    discountAmount = Math.min(originalAmount, Math.max(0, Number(discountAmount.toFixed(2))));
+    const finalAmount = Math.max(0, Number((originalAmount - discountAmount).toFixed(2)));
+
+    return {
+      ...lineItem,
+      amount: finalAmount,
+      originalAmount,
+      discountAmount,
+      appliedDiscountIds: applicableDiscounts.map((discount) => discount.id),
+      description:
+        discountAmount > 0
+          ? `${lineItem.description} (discount applied: ${formatCurrency(discountAmount)})`
+          : lineItem.description,
+    };
+  });
+}
+
+export async function createBillingDiscount(input: BillingDiscountInput) {
+  const parentEmail = normalizeEmail(input.parentEmail);
+  if (!parentEmail) {
+    throw new Error('Parent email is required for discounts');
+  }
+
+  if (input.scope === 'student' && !input.studentId) {
+    throw new Error('Student is required for student-specific discounts');
+  }
+
+  const feeCodes = normalizeFeeCodes(input.feeCodes);
+  if (feeCodes.length === 0) {
+    throw new Error('At least one billing fee must be selected');
+  }
+
+  if (!input.name.trim()) {
+    throw new Error('Discount name is required');
+  }
+
+  if (!Number.isFinite(input.value) || input.value <= 0) {
+    throw new Error('Discount value must be greater than zero');
+  }
+
+  if (input.type === 'percentage' && input.value > 100) {
+    throw new Error('Percentage discounts cannot exceed 100');
+  }
+
+  const payload = {
+    name: input.name.trim(),
+    scope: input.scope,
+    type: input.type,
+    value: Number(input.value),
+    parentEmail,
+    parentName: input.parentName?.trim() || undefined,
+    studentId: input.studentId || undefined,
+    studentName: input.studentName?.trim() || undefined,
+    feeCodes,
+    reason: input.reason?.trim() || undefined,
+    isActive: input.isActive !== false,
+    createdBy: input.createdBy || undefined,
+    createdAt: nowTimestamp(),
+    updatedAt: nowTimestamp(),
+  };
+
+  const created = await firebaseAdmin.db.collection(BILLING_COLLECTIONS.DISCOUNTS).add(payload);
+
+  return {
+    id: created.id,
+    ...payload,
+  } as BillingDiscountDocument;
+}
+
+export async function updateBillingDiscountStatus(discountId: string, isActive: boolean) {
+  if (!discountId) {
+    throw new Error('Discount id is required');
+  }
+
+  await firebaseAdmin.db.collection(BILLING_COLLECTIONS.DISCOUNTS).doc(discountId).set(
+    {
+      isActive,
+      updatedAt: nowTimestamp(),
+    },
+    { merge: true },
+  );
+
+  return { id: discountId, isActive };
 }
 
 export async function getBillingInvoiceByToken(token: string): Promise<BillingInvoiceDocument | null> {
@@ -713,10 +869,17 @@ export async function createEnrollmentApprovalInvoice(
     };
   }
 
+  const discounts = await getApplicableBillingDiscounts({
+    parentEmail: request.parent.email,
+    studentId: existingStudent?.id,
+    feeCodes: lineItems.map((item) => item.type),
+  });
+  const discountedLineItems = applyDiscountsToLineItems(lineItems, discounts);
+
   const dueAt = addDays(new Date(), settings.invoiceDueDays);
   const invoiceToken = buildInvoiceToken();
   const invoiceNumber = buildInvoiceNumber();
-  const amountTotal = getBillingInvoiceTotal(lineItems);
+  const amountTotal = getBillingInvoiceTotal(discountedLineItems);
 
   const invoicePayload = {
     invoiceNumber,
@@ -733,7 +896,7 @@ export async function createEnrollmentApprovalInvoice(
     centerName: request.centerName,
     currency: settings.currency,
     status: 'pending',
-    lineItems,
+    lineItems: discountedLineItems,
     amountTotal,
     dueAt: admin.firestore.Timestamp.fromDate(dueAt),
     paymentUrl: buildInvoiceUrl(invoiceToken, origin),
@@ -1312,7 +1475,13 @@ async function createBillingInvoiceRequest(params: {
   };
 
   const lineItems = params.feeCodes.map((feeCode) => buildBillingLineItem(feeCode, settings, lineItemContext));
-  const amountTotal = getBillingInvoiceTotal(lineItems);
+  const discounts = await getApplicableBillingDiscounts({
+    parentEmail: normalizedParentEmail,
+    studentId: student?.id,
+    feeCodes: params.feeCodes,
+  });
+  const discountedLineItems = applyDiscountsToLineItems(lineItems, discounts);
+  const amountTotal = getBillingInvoiceTotal(discountedLineItems);
   const dueAt = addDays(new Date(), settings.invoiceDueDays);
   const invoiceToken = buildInvoiceToken();
   const invoiceNumber = buildInvoiceNumber();
@@ -1332,7 +1501,7 @@ async function createBillingInvoiceRequest(params: {
     centerName: lineItemContext.centerName || 'DRU EDU',
     currency: settings.currency,
     status: 'pending',
-    lineItems,
+    lineItems: discountedLineItems,
     amountTotal,
     dueAt: admin.firestore.Timestamp.fromDate(dueAt),
     paymentUrl: buildInvoiceUrl(invoiceToken, params.origin),
@@ -1358,12 +1527,31 @@ async function createBillingInvoiceRequest(params: {
 }
 
 export async function sendBillingPaymentLink(params: {
-  feeCode: 'admission_fee' | 'parent_portal_yearly';
+  feeCode?: 'admission_fee' | 'parent_portal_yearly';
+  feeCodes?: Array<'admission_fee' | 'parent_portal_yearly'>;
   parentEmail: string;
   studentId?: string;
   origin?: string;
 }) {
-  const feeDefinition = getBillingFeeDefinition(params.feeCode);
+  const feeCodes = Array.from(
+    new Set(
+      (params.feeCodes && params.feeCodes.length > 0
+        ? params.feeCodes
+        : params.feeCode
+          ? [params.feeCode]
+          : []) as Array<'admission_fee' | 'parent_portal_yearly'>,
+    ),
+  );
+
+  if (feeCodes.length === 0) {
+    throw new Error('At least one billing fee is required');
+  }
+
+  if (feeCodes.includes('admission_fee') && !params.studentId) {
+    throw new Error('Student is required when sending an admission fee invoice');
+  }
+
+  const feeLabels = feeCodes.map((feeCode) => getBillingFeeDefinition(feeCode).label);
   const normalizedParentEmail = normalizeEmail(params.parentEmail);
   const student = params.studentId ? await getStudentById(params.studentId) : null;
   const existingPendingInvoices = await firebaseAdmin.db
@@ -1374,13 +1562,14 @@ export async function sendBillingPaymentLink(params: {
 
   const existingInvoiceDoc = existingPendingInvoices.docs.find((doc) => {
     const invoice = doc.data() as BillingInvoiceDocument;
-    const sameFee = hasBillingFee(invoice.lineItems, params.feeCode);
-    const singleFee = invoice.lineItems.length === 1;
+    const sameFeeSet =
+      invoice.lineItems.length === feeCodes.length &&
+      feeCodes.every((feeCode) => hasBillingFee(invoice.lineItems, feeCode));
     const sameStudent =
-      params.feeCode === 'parent_portal_yearly' ||
+      !feeCodes.includes('admission_fee') ||
       invoice.metadata?.studentId === params.studentId ||
       invoice.studentEmail === normalizeEmail(student?.email || '');
-    return sameFee && singleFee && sameStudent;
+    return sameFeeSet && sameStudent;
   });
 
   if (existingInvoiceDoc) {
@@ -1395,13 +1584,13 @@ export async function sendBillingPaymentLink(params: {
       invoiceId: invoice.id,
       invoiceNumber: invoice.invoiceNumber,
       paymentUrl: invoice.paymentUrl,
-      feeLabel: feeDefinition.label,
+      feeLabel: feeLabels.join(' + '),
       reused: true,
     };
   }
 
   const invoice = await createBillingInvoiceRequest({
-    feeCodes: [params.feeCode],
+    feeCodes,
     parentEmail: normalizedParentEmail,
     studentId: params.studentId,
     origin: params.origin,
@@ -1411,8 +1600,85 @@ export async function sendBillingPaymentLink(params: {
     invoiceId: invoice.id,
     invoiceNumber: invoice.invoiceNumber,
     paymentUrl: invoice.paymentUrl,
-    feeLabel: feeDefinition.label,
+    feeLabel: feeLabels.join(' + '),
     reused: false,
+  };
+}
+
+export async function sendBulkBillingPaymentLinks(params: {
+  items: Array<{
+    parentEmail: string;
+    studentId?: string;
+    feeCodes: Array<'admission_fee' | 'parent_portal_yearly'>;
+  }>;
+  origin?: string;
+}) {
+  const dedupedItems = Array.from(
+    new Map(
+      params.items
+        .filter((item) => item.parentEmail && Array.isArray(item.feeCodes) && item.feeCodes.length > 0)
+        .map((item) => {
+          const feeCodes = Array.from(new Set(item.feeCodes)).sort();
+          const key = `${normalizeEmail(item.parentEmail)}::${item.studentId || ''}::${feeCodes.join('+')}`;
+          return [
+            key,
+            {
+              parentEmail: normalizeEmail(item.parentEmail),
+              studentId: item.studentId,
+              feeCodes,
+            },
+          ] as const;
+        }),
+    ).values(),
+  );
+
+  const results: Array<{
+    parentEmail: string;
+    studentId?: string;
+    feeLabel?: string;
+    invoiceId?: string;
+    invoiceNumber?: string;
+    paymentUrl?: string;
+    reused?: boolean;
+    success: boolean;
+    error?: string;
+  }> = [];
+
+  for (const item of dedupedItems) {
+    try {
+      const result = await sendBillingPaymentLink({
+        feeCodes: item.feeCodes,
+        parentEmail: item.parentEmail,
+        studentId: item.studentId,
+        origin: params.origin,
+      });
+
+      results.push({
+        parentEmail: item.parentEmail,
+        studentId: item.studentId,
+        feeLabel: result.feeLabel,
+        invoiceId: result.invoiceId,
+        invoiceNumber: result.invoiceNumber,
+        paymentUrl: result.paymentUrl,
+        reused: result.reused,
+        success: true,
+      });
+    } catch (error: any) {
+      results.push({
+        parentEmail: item.parentEmail,
+        studentId: item.studentId,
+        success: false,
+        error: error?.message || 'Failed to send payment link',
+      });
+    }
+  }
+
+  return {
+    total: results.length,
+    sent: results.filter((item) => item.success).length,
+    reused: results.filter((item) => item.success && item.reused).length,
+    failed: results.filter((item) => !item.success).length,
+    results,
   };
 }
 
