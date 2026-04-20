@@ -94,6 +94,7 @@ export interface BillingInvoiceDocument {
   dueAt: BillingDateValue;
   paymentUrl?: string;
   emailSentAt?: BillingDateValue;
+  paidReceiptSentAt?: BillingDateValue;
   stripeCheckoutSessionId?: string;
   stripePaymentIntentId?: string;
   paidAt?: BillingDateValue;
