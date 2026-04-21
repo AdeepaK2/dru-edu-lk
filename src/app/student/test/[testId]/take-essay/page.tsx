@@ -17,6 +17,14 @@ import { ExamPDFService } from '@/services/examPDFService';
 const StudentLayout = ({ children }: { children: React.ReactNode }) => children;
 type ExpirySource = 'resume' | 'reconnect' | 'timer' | 'load';
 
+const canStudentAccessTest = (test: Test, studentId: string): boolean => {
+  if (test.isRetest !== true) {
+    return true;
+  }
+
+  return Array.isArray(test.allowedStudentIds) && test.allowedStudentIds.includes(studentId);
+};
+
 interface EssayTestSubmission {
   attemptId: string;
   testId: string;
@@ -248,6 +256,10 @@ export default function TakeEssayTestPage() {
         
         // Load test
         const testData = await TestService.getTestById(testId);
+        if (!canStudentAccessTest(testData, student.id)) {
+          throw new Error('You do not have access to this retake.');
+        }
+
         setTest(testData);
         
         // Filter essay questions only

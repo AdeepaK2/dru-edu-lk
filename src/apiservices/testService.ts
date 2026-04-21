@@ -48,6 +48,14 @@ export class TestService {
     NOTIFICATIONS: 'test_notifications'
   };
 
+  static canStudentAccessTest(test: Test, studentId: string): boolean {
+    if (test.isRetest !== true) {
+      return true;
+    }
+
+    return Array.isArray(test.allowedStudentIds) && test.allowedStudentIds.includes(studentId);
+  }
+
   // Create a new test
   static async createTest(testData: Omit<Test, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
     try {
@@ -540,6 +548,10 @@ export class TestService {
       const test = await this.getTest(testId);
       if (!test) throw new Error('Test not found');
 
+      if (!this.canStudentAccessTest(test, studentId)) {
+        throw new Error('You do not have access to this retake');
+      }
+
       // Update assignment status to 'started' if this is a student-based test
       if (test.assignmentType === 'student-based') {
         try {
@@ -964,15 +976,17 @@ export class TestService {
           ...doc.data()
         })) as Test[];
         
-        // Filter out student-based tests and soft-deleted tests
+        // Filter out student-based tests, soft-deleted tests, and retakes for other students
         classBasedTests = allClassTests.filter(test => {
           const isStudentBased = test.assignmentType === 'student-based';
           const isDeleted = test.isDeleted === true;
-          const shouldInclude = !isStudentBased && !isDeleted;
+          const isAllowedRetest = !studentId || this.canStudentAccessTest(test, studentId);
+          const shouldInclude = !isStudentBased && !isDeleted && isAllowedRetest;
           
           console.log(`🔍 Test ${test.title}:`, {
             assignmentType: test.assignmentType,
             isDeleted: test.isDeleted,
+            isAllowedRetest,
             shouldInclude,
             classIds: test.classIds
           });
@@ -1022,7 +1036,11 @@ export class TestService {
             })) as Test[];
             // Only add non-deleted tests that match assignment
             batchTests.forEach(test => {
-              if (assignedTestIds.includes(test.id) && test.isDeleted !== true) {
+              if (
+                assignedTestIds.includes(test.id) &&
+                test.isDeleted !== true &&
+                this.canStudentAccessTest(test, studentId)
+              ) {
                 studentSpecificTests.push(test);
               }
             });
