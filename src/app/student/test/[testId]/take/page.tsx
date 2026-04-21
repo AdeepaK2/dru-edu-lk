@@ -18,6 +18,14 @@ import { v4 as uuidv4 } from 'uuid';
 const StudentLayout = ({ children }: { children: React.ReactNode }) => children;
 type ExpirySource = 'resume' | 'reconnect' | 'timer' | 'load';
 
+const canStudentAccessTest = (test: Test, studentId: string): boolean => {
+  if (test.isRetest !== true) {
+    return true;
+  }
+
+  return Array.isArray(test.allowedStudentIds) && test.allowedStudentIds.includes(studentId);
+};
+
 export default function TestTakePage() {
   const router = useRouter();
   const params = useParams();
@@ -892,6 +900,12 @@ export default function TestTakePage() {
         }
         
         const testData = { id: testDoc.id, ...testDoc.data() } as Test;
+        if (!canStudentAccessTest(testData, student.id)) {
+          setError('You do not have access to this retake.');
+          setLoading(false);
+          return;
+        }
+
         console.log('✅ Test data loaded:', testData.title);
         console.log('🔍 Test assignment type:', testData.assignmentType);
         console.log('🔍 Test class IDs:', testData.classIds);
