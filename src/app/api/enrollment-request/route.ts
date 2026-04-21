@@ -6,6 +6,10 @@ import {
   EnrollmentRequestDocument,
   convertEnrollmentRequestDocument 
 } from '@/models/enrollmentRequestSchema';
+import {
+  createEnrollmentApprovalInvoice,
+  finalizeEnrollmentWithoutPayment,
+} from '@/server/billing';
 
 export async function POST(request: NextRequest) {
   try {
@@ -106,6 +110,83 @@ export async function PUT(request: NextRequest) {
     
     // Validate update data
     const validatedUpdateData = enrollmentRequestUpdateSchema.parse(updateData);
+
+    // Keep enrollment approval on the legacy no-payment path by default.
+    // Turn on payment-gated approvals only when explicitly enabled.
+    const paymentFlowEnabled = process.env.ENROLLMENT_APPROVAL_USE_PAYMENT_FLOW === 'true';
+
+    // Approvals always run through server-side finalization flow so Auth user creation,
+    // student document creation, enrollment creation, and welcome email stay in sync.
+    if (validatedUpdateData.status === 'Approved') {
+      const adminMetadata: Record<string, unknown> = {};
+      if (validatedUpdateData.adminNotes !== undefined) {
+        adminMetadata.adminNotes = validatedUpdateData.adminNotes;
+      }
+      if (validatedUpdateData.processedBy !== undefined) {
+        adminMetadata.processedBy = validatedUpdateData.processedBy;
+      }
+
+      if (!paymentFlowEnabled) {
+        const finalized = await finalizeEnrollmentWithoutPayment(id);
+
+        if (Object.keys(adminMetadata).length > 0) {
+          await firebaseAdmin.db.collection('enrollmentRequests').doc(id).update({
+            ...adminMetadata,
+            updatedAt: firebaseAdmin.admin.firestore.Timestamp.now(),
+          });
+        }
+
+        return NextResponse.json({
+          message: 'Enrollment approved successfully',
+          id,
+          status: 'Approved',
+          requiresPayment: false,
+          paymentFlowEnabled: false,
+          studentId: finalized.studentId,
+        });
+      }
+
+      const billingResult = await createEnrollmentApprovalInvoice(
+        id,
+        request.nextUrl.origin,
+      );
+
+      if (!billingResult.requiresPayment) {
+        const finalized = await finalizeEnrollmentWithoutPayment(id);
+
+        if (Object.keys(adminMetadata).length > 0) {
+          await firebaseAdmin.db.collection('enrollmentRequests').doc(id).update({
+            ...adminMetadata,
+            updatedAt: firebaseAdmin.admin.firestore.Timestamp.now(),
+          });
+        }
+
+        return NextResponse.json({
+          message: 'Enrollment approved successfully',
+          id,
+          status: 'Approved',
+          requiresPayment: false,
+          paymentFlowEnabled: true,
+          studentId: finalized.studentId,
+        });
+      }
+
+      if (Object.keys(adminMetadata).length > 0) {
+        await firebaseAdmin.db.collection('enrollmentRequests').doc(id).update({
+          ...adminMetadata,
+          updatedAt: firebaseAdmin.admin.firestore.Timestamp.now(),
+        });
+      }
+
+      return NextResponse.json({
+        message: 'Enrollment marked as awaiting payment',
+        id,
+        status: 'Awaiting Payment',
+        requiresPayment: true,
+        paymentFlowEnabled: true,
+        invoice: billingResult.invoice ?? null,
+      });
+    }
     
     // Add timestamp for processing
     const updatePayload: any = {
@@ -113,8 +194,8 @@ export async function PUT(request: NextRequest) {
       updatedAt: firebaseAdmin.admin.firestore.Timestamp.now(),
     };
     
-    // If status is being changed to approved/rejected, add processed timestamp
-    if (validatedUpdateData.status === 'Approved' || validatedUpdateData.status === 'Rejected') {
+    // If status is being changed to rejected, add processed timestamp
+    if (validatedUpdateData.status === 'Rejected') {
       updatePayload.processedAt = firebaseAdmin.admin.firestore.Timestamp.now();
     }
     

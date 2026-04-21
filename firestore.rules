@@ -2,9 +2,65 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow authenticated users to read/write most collections
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isTeacherOrAdmin() {
+      return isAuthenticated() &&
+        (request.auth.token.role == 'teacher' ||
+         request.auth.token.role == 'admin' ||
+         request.auth.token.admin == true);
+    }
+
+    // Tests: protect retakes so only the allowed student can read them.
+    // Non-retest tests remain readable for authenticated users to preserve current behavior.
+    match /tests/{testId} {
+      allow read: if isAuthenticated() && (
+        resource.data.isRetest != true ||
+        isTeacherOrAdmin() ||
+        (resource.data.allowedStudentIds is list && request.auth.uid in resource.data.allowedStudentIds)
+      );
+
+      // Test authoring and retake creation/approval are teacher/admin actions.
+      // Owner checks keep this safe even when custom role claims are absent.
+      allow create: if isAuthenticated() && (
+        request.resource.data.teacherId == request.auth.uid ||
+        isTeacherOrAdmin()
+      );
+
+      allow update, delete: if isAuthenticated() && (
+        resource.data.teacherId == request.auth.uid ||
+        isTeacherOrAdmin()
+      );
+    }
+
+    // Retest request visibility:
+    // - student can create and read their own request
+    // - teacher (owner) can read/update for review
+    // - admin has full access
+    match /retest_requests/{requestId} {
+      allow create: if isAuthenticated() &&
+        request.resource.data.studentId == request.auth.uid;
+
+      allow read: if isAuthenticated() && (
+        resource.data.studentId == request.auth.uid ||
+        resource.data.teacherId == request.auth.uid ||
+        isTeacherOrAdmin()
+      );
+
+      allow update, delete: if isAuthenticated() && (
+        resource.data.teacherId == request.auth.uid ||
+        isTeacherOrAdmin()
+      );
+    }
+
+    // Allow authenticated users to read/write most other collections.
+    // Explicitly excludes sensitive retest/test collections handled above.
     match /{document=**} {
-      allow read, write: if request.auth != null;
+      allow read, write: if isAuthenticated() &&
+        !document.matches('tests/.*') &&
+        !document.matches('retest_requests/.*');
     }
     
     // Specific rules for test attempts - students can only access their own attempts
