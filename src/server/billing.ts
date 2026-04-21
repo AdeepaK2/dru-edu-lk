@@ -60,6 +60,20 @@ function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
 }
 
+function isFirestoreAlreadyExistsError(error: unknown) {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+
+  const code = (error as { code?: unknown }).code;
+  if (code === 6 || code === '6' || code === 'already-exists' || code === 'ALREADY_EXISTS') {
+    return true;
+  }
+
+  const message = String((error as { message?: unknown }).message || '');
+  return /already exists/i.test(message);
+}
+
 function ensureStripe() {
   const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
   if (!stripeSecretKey) {
@@ -841,6 +855,8 @@ async function ensureStudentEnrollment(
   studentId: string,
   request: EnrollmentRequestDocument & { id: string },
 ) {
+  const enrollmentsCollection = firebaseAdmin.db.collection('studentEnrollments');
+
   const existingEnrollment = await firebaseAdmin.db
     .collection('studentEnrollments')
     .where('studentId', '==', studentId)
@@ -852,29 +868,41 @@ async function ensureStudentEnrollment(
     return existingEnrollment.docs[0].id;
   }
 
-  const enrollmentRef = await firebaseAdmin.db.collection('studentEnrollments').add({
-    studentId,
-    classId: request.classId,
-    studentName: request.student.name,
-    studentEmail: normalizeEmail(request.student.email),
-    className: request.className,
-    subject: request.subject,
-    enrolledAt: nowTimestamp(),
-    status: 'Active',
-    attendance: 0,
-    notes: request.additionalNotes || '',
-    createdAt: nowTimestamp(),
-    updatedAt: nowTimestamp(),
-  });
+  // Deterministic doc IDs avoid duplicate enrollments when approve is retried concurrently.
+  const enrollmentRef = enrollmentsCollection.doc(`${studentId}_${request.classId}`);
+  try {
+    await enrollmentRef.create({
+      studentId,
+      classId: request.classId,
+      studentName: request.student.name,
+      studentEmail: normalizeEmail(request.student.email),
+      className: request.className,
+      subject: request.subject,
+      enrolledAt: nowTimestamp(),
+      status: 'Active',
+      attendance: 0,
+      notes: request.additionalNotes || '',
+      createdAt: nowTimestamp(),
+      updatedAt: nowTimestamp(),
+    });
+  } catch (error) {
+    if (!isFirestoreAlreadyExistsError(error)) {
+      throw error;
+    }
+  }
 
-  const activeEnrollmentSnapshot = await firebaseAdmin.db
-    .collection('studentEnrollments')
+  const activeEnrollmentSnapshot = await enrollmentsCollection
     .where('studentId', '==', studentId)
     .where('status', '==', 'Active')
     .get();
+  const uniqueActiveClassCount = new Set(
+    activeEnrollmentSnapshot.docs
+      .map((doc) => (doc.data() as { classId?: string }).classId || '')
+      .filter(Boolean),
+  ).size;
 
   await firebaseAdmin.firestore.updateDoc('students', studentId, {
-    coursesEnrolled: activeEnrollmentSnapshot.size,
+    coursesEnrolled: uniqueActiveClassCount,
     payment: {
       status: 'Paid',
       method: 'stripe',
@@ -1286,6 +1314,12 @@ export async function finalizeEnrollmentWithoutPayment(
   const request = await getEnrollmentRequest(enrollmentRequestId);
   if (!request) {
     throw new Error('Enrollment request not found');
+  }
+
+  // Idempotency guard for repeated approvals on the same request.
+  const existingStudentId = (request as { studentId?: string }).studentId;
+  if (request.status === 'Approved' && existingStudentId) {
+    return { studentId: existingStudentId };
   }
 
   const studentId = await createStudentFromEnrollmentRequest(request);
