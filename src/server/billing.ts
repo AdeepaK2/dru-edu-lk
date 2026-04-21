@@ -439,37 +439,109 @@ async function sendInvoiceEmail(invoice: BillingInvoiceDocument) {
   const lineItemsHtml = invoice.lineItems
     .map(
       (item) =>
-        `<li><strong>${item.label}</strong>: ${formatCurrency(item.amount)} x ${item.quantity}</li>`,
+        `
+          <tr>
+            <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">
+              <div style="font-weight: 600; color: #0f172a;">${item.label}</div>
+              <div style="font-size: 13px; color: #64748b; margin-top: 4px;">${item.description}</div>
+            </td>
+            <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; text-align: right; white-space: nowrap; font-weight: 600; color: #0f172a;">
+              ${formatCurrency(item.amount * item.quantity)}
+            </td>
+          </tr>
+        `,
     )
     .join('');
 
-  const supportLine = process.env.SMTP_FROM_EMAIL
-    ? `<p>If you need help, reply to this email or contact ${process.env.SMTP_FROM_EMAIL}.</p>`
+  const settings = await getBillingSettings();
+  const supportEmail = settings.supportEmail || process.env.SMTP_FROM_EMAIL || '';
+  const supportPhone = settings.supportPhone || '';
+  const supportLine = supportEmail || supportPhone
+    ? `
+      <div style="margin-top: 24px; padding: 16px 18px; border-radius: 14px; background: #eff6ff; border: 1px solid #bfdbfe;">
+        <div style="font-size: 13px; font-weight: 700; color: #1d4ed8; letter-spacing: 0.03em; text-transform: uppercase;">Need help?</div>
+        <div style="margin-top: 8px; font-size: 14px; color: #334155;">
+          ${supportEmail ? `Email: <span style="font-weight: 600;">${supportEmail}</span>` : ''}
+          ${supportEmail && supportPhone ? '<br />' : ''}
+          ${supportPhone ? `Phone: <span style="font-weight: 600;">${supportPhone}</span>` : ''}
+        </div>
+      </div>
+    `
     : '';
 
   const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 680px; margin: 0 auto; color: #111827;">
-      <h1 style="color: #1d4ed8;">DRU EDU Payment Request</h1>
-      <p>Hello ${invoice.parentName || 'Parent'},</p>
-      <p>DRU EDU has generated a payment request for <strong>${feeLabels}</strong>.</p>
-      <p><strong>Invoice:</strong> ${invoice.invoiceNumber}</p>
-      <p><strong>Due date:</strong> ${dueAt ? dueAt.toLocaleDateString('en-AU') : 'As soon as possible'}</p>
-      ${invoice.studentName ? `<p><strong>Student:</strong> ${invoice.studentName}</p>` : ''}
-      <ul>${lineItemsHtml}</ul>
-      <p><strong>Total:</strong> ${formatCurrency(invoice.amountTotal)}</p>
-      <div style="margin: 28px 0;">
-        <a href="${invoice.paymentUrl}" style="background:#2563eb;color:#fff;padding:12px 24px;text-decoration:none;border-radius:8px;font-weight:bold;">
-          Pay Securely with Card
-        </a>
+    <div style="margin:0; padding:32px 16px; background:#f8fafc; font-family: Arial, Helvetica, sans-serif; color:#0f172a;">
+      <div style="max-width: 720px; margin: 0 auto; background: #ffffff; border: 1px solid #dbeafe; border-radius: 24px; overflow: hidden; box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);">
+        <div style="padding: 28px 32px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #ffffff;">
+          <div style="font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.9;">Dr U Education</div>
+          <h1 style="margin: 12px 0 0; font-size: 30px; line-height: 1.2;">Payment Request</h1>
+          <p style="margin: 10px 0 0; font-size: 15px; line-height: 1.6; color: rgba(255,255,255,0.88);">
+            This is a system-generated payment link for your DR U Education billing request.
+          </p>
+        </div>
+
+        <div style="padding: 28px 32px;">
+          <p style="margin: 0 0 16px; font-size: 16px; line-height: 1.7;">Hello ${invoice.parentName || 'Parent'},</p>
+          <p style="margin: 0 0 20px; font-size: 15px; line-height: 1.7; color: #334155;">
+            Dr U Education has generated a payment request for <strong>${feeLabels}</strong>. Please use the secure link below to complete payment.
+          </p>
+
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-bottom: 24px;">
+            <div style="padding: 16px 18px; border-radius: 16px; background: #f8fafc; border: 1px solid #e2e8f0;">
+              <div style="font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Invoice</div>
+              <div style="margin-top: 8px; font-size: 18px; font-weight: 700;">${invoice.invoiceNumber}</div>
+            </div>
+            <div style="padding: 16px 18px; border-radius: 16px; background: #f8fafc; border: 1px solid #e2e8f0;">
+              <div style="font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Due Date</div>
+              <div style="margin-top: 8px; font-size: 18px; font-weight: 700;">${dueAt ? dueAt.toLocaleDateString('en-AU') : 'As soon as possible'}</div>
+            </div>
+            ${
+              invoice.studentName
+                ? `
+                <div style="padding: 16px 18px; border-radius: 16px; background: #f8fafc; border: 1px solid #e2e8f0; grid-column: span 2;">
+                  <div style="font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Student</div>
+                  <div style="margin-top: 8px; font-size: 18px; font-weight: 700;">${invoice.studentName}</div>
+                </div>
+              `
+                : ''
+            }
+          </div>
+
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse: collapse;">
+            <tbody>${lineItemsHtml}</tbody>
+            <tfoot>
+              <tr>
+                <td style="padding-top: 18px; font-size: 15px; font-weight: 700;">Total</td>
+                <td style="padding-top: 18px; text-align: right; font-size: 24px; font-weight: 800; color: #0f172a;">
+                  ${formatCurrency(invoice.amountTotal)}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+
+          <div style="margin: 32px 0 20px; text-align: center;">
+            <a href="${invoice.paymentUrl}" style="display: inline-block; background:#2563eb; color:#fff; padding:14px 26px; text-decoration:none; border-radius:14px; font-weight:700; font-size:15px;">
+              Pay Securely with Card
+            </a>
+          </div>
+
+          <p style="margin: 0; font-size: 14px; line-height: 1.7; color: #475569;">
+            Once payment is confirmed, Dr U Education will automatically update the billing record and parent portal access.
+          </p>
+
+          ${supportLine}
+
+          <div style="margin-top: 24px; padding-top: 18px; border-top: 1px solid #e2e8f0; font-size: 12px; line-height: 1.7; color: #64748b;">
+            This is a system-generated email from Dr U Education. Please do not reply directly to this message.
+          </div>
+        </div>
       </div>
-      <p>After payment is confirmed, DRU EDU will update your billing status automatically.</p>
-      ${supportLine}
     </div>
   `;
 
   return sendGenericEmail(
     invoice.parentEmail,
-    `DRU EDU invoice ${invoice.invoiceNumber}`,
+    `Dr U Education invoice ${invoice.invoiceNumber}`,
     html,
   );
 }
@@ -481,6 +553,132 @@ async function sendInvoiceEmailAndStamp(invoice: BillingInvoiceDocument) {
     await firebaseAdmin.db.collection(BILLING_COLLECTIONS.INVOICES).doc(invoice.id).set(
       {
         emailSentAt: nowTimestamp(),
+        updatedAt: nowTimestamp(),
+      },
+      { merge: true },
+    );
+  }
+
+  return emailResult;
+}
+
+async function sendPaidInvoiceEmail(invoice: BillingInvoiceDocument) {
+  const paidAt = toDate(invoice.paidAt);
+  const lineItemsHtml = invoice.lineItems
+    .map(
+      (item) =>
+        `
+          <tr>
+            <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">
+              <div style="font-weight: 600; color: #0f172a;">${item.label}</div>
+              <div style="font-size: 13px; color: #64748b; margin-top: 4px;">${item.description}</div>
+            </td>
+            <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; text-align: right; white-space: nowrap; font-weight: 600; color: #0f172a;">
+              ${formatCurrency(item.amount * item.quantity)}
+            </td>
+          </tr>
+        `,
+    )
+    .join('');
+
+  const settings = await getBillingSettings();
+  const supportEmail = settings.supportEmail || process.env.SMTP_FROM_EMAIL || '';
+  const supportPhone = settings.supportPhone || '';
+  const supportLine = supportEmail || supportPhone
+    ? `
+      <div style="margin-top: 24px; padding: 16px 18px; border-radius: 14px; background: #eff6ff; border: 1px solid #bfdbfe;">
+        <div style="font-size: 13px; font-weight: 700; color: #1d4ed8; letter-spacing: 0.03em; text-transform: uppercase;">Need help?</div>
+        <div style="margin-top: 8px; font-size: 14px; color: #334155;">
+          ${supportEmail ? `Email: <span style="font-weight: 600;">${supportEmail}</span>` : ''}
+          ${supportEmail && supportPhone ? '<br />' : ''}
+          ${supportPhone ? `Phone: <span style="font-weight: 600;">${supportPhone}</span>` : ''}
+        </div>
+      </div>
+    `
+    : '';
+
+  const html = `
+    <div style="margin:0; padding:32px 16px; background:#f8fafc; font-family: Arial, Helvetica, sans-serif; color:#0f172a;">
+      <div style="max-width: 720px; margin: 0 auto; background: #ffffff; border: 1px solid #dbeafe; border-radius: 24px; overflow: hidden; box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);">
+        <div style="padding: 28px 32px; background: linear-gradient(135deg, #0f9d58 0%, #15803d 100%); color: #ffffff;">
+          <div style="font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.9;">Dr U Education</div>
+          <h1 style="margin: 12px 0 0; font-size: 30px; line-height: 1.2;">Payment Confirmed</h1>
+          <p style="margin: 10px 0 0; font-size: 15px; line-height: 1.6; color: rgba(255,255,255,0.88);">
+            Your invoice has been cleared successfully. Please keep this email as your payment receipt.
+          </p>
+        </div>
+
+        <div style="padding: 28px 32px;">
+          <p style="margin: 0 0 16px; font-size: 16px; line-height: 1.7;">Hello ${invoice.parentName || 'Parent'},</p>
+          <p style="margin: 0 0 20px; font-size: 15px; line-height: 1.7; color: #334155;">
+            Dr U Education has received your payment and cleared invoice <strong>${invoice.invoiceNumber}</strong>.
+          </p>
+
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-bottom: 24px;">
+            <div style="padding: 16px 18px; border-radius: 16px; background: #f8fafc; border: 1px solid #e2e8f0;">
+              <div style="font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Invoice</div>
+              <div style="margin-top: 8px; font-size: 18px; font-weight: 700;">${invoice.invoiceNumber}</div>
+            </div>
+            <div style="padding: 16px 18px; border-radius: 16px; background: #f8fafc; border: 1px solid #e2e8f0;">
+              <div style="font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Paid On</div>
+              <div style="margin-top: 8px; font-size: 18px; font-weight: 700;">${paidAt ? paidAt.toLocaleDateString('en-AU') : 'Today'}</div>
+            </div>
+            ${
+              invoice.studentName
+                ? `
+                <div style="padding: 16px 18px; border-radius: 16px; background: #f8fafc; border: 1px solid #e2e8f0; grid-column: span 2;">
+                  <div style="font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Student</div>
+                  <div style="margin-top: 8px; font-size: 18px; font-weight: 700;">${invoice.studentName}</div>
+                </div>
+              `
+                : ''
+            }
+          </div>
+
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse: collapse;">
+            <tbody>${lineItemsHtml}</tbody>
+            <tfoot>
+              <tr>
+                <td style="padding-top: 18px; font-size: 15px; font-weight: 700;">Total Paid</td>
+                <td style="padding-top: 18px; text-align: right; font-size: 24px; font-weight: 800; color: #0f172a;">
+                  ${formatCurrency(invoice.amountTotal)}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+
+          <div style="margin-top: 24px; padding: 16px 18px; border-radius: 14px; background: #f0fdf4; border: 1px solid #bbf7d0; font-size: 14px; line-height: 1.7; color: #166534;">
+            This invoice is now marked as <strong>paid</strong> in Dr U Education.
+          </div>
+
+          ${supportLine}
+
+          <div style="margin-top: 24px; padding-top: 18px; border-top: 1px solid #e2e8f0; font-size: 12px; line-height: 1.7; color: #64748b;">
+            This is a system-generated email from Dr U Education. Please do not reply directly to this message.
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  return sendGenericEmail(
+    invoice.parentEmail,
+    `Dr U Education paid invoice ${invoice.invoiceNumber}`,
+    html,
+  );
+}
+
+async function sendPaidInvoiceEmailAndStamp(invoice: BillingInvoiceDocument) {
+  if (invoice.paidReceiptSentAt) {
+    return { success: true, alreadySent: true };
+  }
+
+  const emailResult = await sendPaidInvoiceEmail(invoice);
+
+  if (emailResult.success) {
+    await firebaseAdmin.db.collection(BILLING_COLLECTIONS.INVOICES).doc(invoice.id).set(
+      {
+        paidReceiptSentAt: nowTimestamp(),
         updatedAt: nowTimestamp(),
       },
       { merge: true },
@@ -819,6 +1017,138 @@ async function activateParentPortalEntitlement(invoice: BillingInvoiceDocument) 
     },
     { merge: true },
   );
+}
+
+async function recordStripeBillingPayment(
+  invoice: BillingInvoiceDocument,
+  session: Stripe.Checkout.Session,
+) {
+  const paymentIntentId =
+    typeof session.payment_intent === 'string' ? session.payment_intent : undefined;
+
+  const existingPaymentSnapshot = await firebaseAdmin.db
+    .collection(BILLING_COLLECTIONS.PAYMENTS)
+    .where('invoiceId', '==', invoice.id)
+    .where('provider', '==', 'stripe')
+    .limit(1)
+    .get();
+
+  if (!existingPaymentSnapshot.empty) {
+    const existingPaymentRef = existingPaymentSnapshot.docs[0].ref;
+    await existingPaymentRef.set(
+      {
+        status: 'succeeded',
+        amount: invoice.amountTotal,
+        currency: invoice.currency,
+        stripeCheckoutSessionId: session.id,
+        stripePaymentIntentId: paymentIntentId,
+        processedAt: nowTimestamp(),
+      },
+      { merge: true },
+    );
+    return;
+  }
+
+  await firebaseAdmin.db.collection(BILLING_COLLECTIONS.PAYMENTS).add({
+    invoiceId: invoice.id,
+    invoiceNumber: invoice.invoiceNumber,
+    provider: 'stripe',
+    status: 'succeeded',
+    amount: invoice.amountTotal,
+    currency: invoice.currency,
+    parentEmail: invoice.parentEmail,
+    stripeCheckoutSessionId: session.id,
+    stripePaymentIntentId: paymentIntentId,
+    processedAt: nowTimestamp(),
+    createdAt: nowTimestamp(),
+  });
+}
+
+async function finalizePaidBillingInvoice(
+  invoice: BillingInvoiceDocument,
+  session: Stripe.Checkout.Session,
+) {
+  const invoiceRef = firebaseAdmin.db.collection(BILLING_COLLECTIONS.INVOICES).doc(invoice.id);
+  const paymentIntentId =
+    typeof session.payment_intent === 'string' ? session.payment_intent : undefined;
+  const paidInvoice: BillingInvoiceDocument = {
+    ...invoice,
+    status: 'paid',
+    paidAt: nowTimestamp(),
+    checkoutCompletedAt: nowTimestamp(),
+    stripeCheckoutSessionId: session.id,
+    stripePaymentIntentId: paymentIntentId,
+    updatedAt: nowTimestamp(),
+  } as BillingInvoiceDocument;
+
+  await invoiceRef.set(
+    {
+      status: paidInvoice.status,
+      billingStatus: 'paid',
+      paidAt: paidInvoice.paidAt,
+      checkoutCompletedAt: paidInvoice.checkoutCompletedAt,
+      stripeCheckoutSessionId: session.id,
+      stripePaymentIntentId: paidInvoice.stripePaymentIntentId,
+      updatedAt: paidInvoice.updatedAt,
+    },
+    { merge: true },
+  );
+
+  await recordStripeBillingPayment(invoice, session);
+
+  if (hasBillingFee(invoice.lineItems, 'parent_portal_yearly')) {
+    await activateParentPortalEntitlement(paidInvoice);
+  }
+
+  if (!invoice.enrollmentRequestId) {
+    await invoiceRef.set(
+      {
+        finalization: {
+          status: 'completed',
+          completedAt: nowTimestamp(),
+        },
+        updatedAt: nowTimestamp(),
+      },
+      { merge: true },
+    );
+    await sendPaidInvoiceEmailAndStamp(paidInvoice);
+    return { invoiceId: invoice.id, finalizedWithoutEnrollment: true };
+  }
+
+  const request = await getEnrollmentRequest(invoice.enrollmentRequestId);
+  if (!request) {
+    throw new Error('Related enrollment request not found');
+  }
+
+  const studentId =
+    invoice.metadata.studentId || (await createStudentFromEnrollmentRequest(request));
+  await ensureStudentEnrollment(studentId, request);
+  await upsertParentInviteForStudent(request, studentId);
+
+  await firebaseAdmin.db.collection('enrollmentRequests').doc(request.id).update({
+    status: 'Approved',
+    billingStatus: 'paid',
+    billingInvoiceId: invoice.id,
+    studentId,
+    processedAt: nowTimestamp(),
+    finalizedAt: nowTimestamp(),
+    updatedAt: nowTimestamp(),
+  });
+
+  await invoiceRef.set(
+    {
+      finalization: {
+        status: 'completed',
+        completedAt: nowTimestamp(),
+      },
+      updatedAt: nowTimestamp(),
+    },
+    { merge: true },
+  );
+
+  await sendPaidInvoiceEmailAndStamp(paidInvoice);
+
+  return { invoiceId: invoice.id, studentId };
 }
 
 export async function createEnrollmentApprovalInvoice(
@@ -1726,6 +2056,7 @@ export async function markFeePaidOffline(params: {
   let invoiceId = '';
   let invoiceNumber = '';
   let amountTotal = settings.admissionFeeAmount;
+  let paidInvoice: BillingInvoiceDocument | null = null;
 
   if (matchingPendingInvoice) {
     const data = matchingPendingInvoice.data() as BillingInvoiceDocument;
@@ -1746,6 +2077,17 @@ export async function markFeePaidOffline(params: {
       },
       { merge: true },
     );
+    paidInvoice = {
+      ...data,
+      id: invoiceId,
+      status: 'paid',
+      paidAt,
+      updatedAt: paidAt,
+      finalization: {
+        status: 'completed',
+        completedAt: paidAt,
+      },
+    } as BillingInvoiceDocument;
   } else {
     const invoice = await createBillingInvoiceRequest({
       feeCodes: ['admission_fee'],
@@ -1771,6 +2113,16 @@ export async function markFeePaidOffline(params: {
       },
       { merge: true },
     );
+    paidInvoice = {
+      ...invoice,
+      status: 'paid',
+      paidAt,
+      updatedAt: paidAt,
+      finalization: {
+        status: 'completed',
+        completedAt: paidAt,
+      },
+    } as BillingInvoiceDocument;
   }
 
   await firebaseAdmin.db.collection(BILLING_COLLECTIONS.PAYMENTS).add({
@@ -1786,6 +2138,10 @@ export async function markFeePaidOffline(params: {
     processedAt: paidAt,
     createdAt: paidAt,
   });
+
+  if (paidInvoice) {
+    await sendPaidInvoiceEmailAndStamp(paidInvoice);
+  }
 
   return {
     parentEmail: normalizedParentEmail,
@@ -1833,6 +2189,7 @@ export async function markParentPortalPaidOffline(
   let invoiceNumber = '';
   let amountTotal = settings.parentPortalYearlyFeeAmount;
   const paidAt = nowTimestamp();
+  let paidInvoice: BillingInvoiceDocument | null = null;
 
   const parentPortalInvoice = pendingInvoicesSnapshot.docs.find((doc) => {
     const data = doc.data() as BillingInvoiceDocument;
@@ -1858,6 +2215,17 @@ export async function markParentPortalPaidOffline(
       },
       { merge: true },
     );
+    paidInvoice = {
+      ...data,
+      id: invoiceId,
+      status: 'paid',
+      paidAt,
+      updatedAt: paidAt,
+      finalization: {
+        status: 'completed',
+        completedAt: paidAt,
+      },
+    } as BillingInvoiceDocument;
   } else {
     invoiceNumber = buildInvoiceNumber();
     const invoiceToken = buildInvoiceToken();
@@ -1911,6 +2279,52 @@ export async function markParentPortalPaidOffline(
     });
 
     invoiceId = invoiceRef.id;
+    paidInvoice = {
+      id: invoiceId,
+      invoiceNumber,
+      invoiceToken,
+      parentEmail: normalizedEmail,
+      parentName,
+      parentPhone,
+      studentEmail: primaryStudent?.email || '',
+      studentName: primaryStudent?.name || 'Existing student',
+      enrollmentRequestId: '',
+      classId: '',
+      className: 'Existing student access',
+      subject: 'Parent Portal',
+      centerName: 'DRU EDU',
+      currency: settings.currency,
+      status: 'paid',
+      lineItems: [
+        buildBillingLineItem(
+          'parent_portal_yearly',
+          settings,
+          {
+            parentEmail: normalizedEmail,
+            parentName,
+            studentEmail: primaryStudent?.email || '',
+            studentName: primaryStudent?.name || 'Existing student',
+          },
+          {
+            description: 'Manual admin payment for yearly DRU EDU parent portal access',
+          },
+        ),
+      ],
+      amountTotal,
+      dueAt,
+      paidAt,
+      checkoutCompletedAt: paidAt,
+      finalization: {
+        status: 'completed',
+        completedAt: paidAt,
+      },
+      metadata: {
+        isNewStudent: false,
+        portalFeeRequired: true,
+      },
+      createdAt,
+      updatedAt: createdAt,
+    } as BillingInvoiceDocument;
   }
 
   await firebaseAdmin.db.collection(BILLING_COLLECTIONS.PAYMENTS).add({
@@ -1927,51 +2341,58 @@ export async function markParentPortalPaidOffline(
     createdAt: paidAt,
   });
 
-  await activateParentPortalEntitlement({
-    id: invoiceId,
-    invoiceNumber,
-    invoiceToken: '',
-    parentEmail: normalizedEmail,
-    parentName,
-    parentPhone,
-    studentEmail: primaryStudent?.email || '',
-    studentName: primaryStudent?.name || 'Existing student',
-    enrollmentRequestId: '',
-    classId: '',
-    className: 'Existing student access',
-    subject: 'Parent Portal',
-    centerName: 'DRU EDU',
-    currency: settings.currency,
-    status: 'paid',
-    lineItems: [
-      buildBillingLineItem(
-        'parent_portal_yearly',
-        settings,
-        {
-          parentEmail: normalizedEmail,
-          parentName,
-          studentEmail: primaryStudent?.email || '',
-          studentName: primaryStudent?.name || 'Existing student',
+  await activateParentPortalEntitlement(
+    paidInvoice ||
+      ({
+        id: invoiceId,
+        invoiceNumber,
+        invoiceToken: '',
+        parentEmail: normalizedEmail,
+        parentName,
+        parentPhone,
+        studentEmail: primaryStudent?.email || '',
+        studentName: primaryStudent?.name || 'Existing student',
+        enrollmentRequestId: '',
+        classId: '',
+        className: 'Existing student access',
+        subject: 'Parent Portal',
+        centerName: 'DRU EDU',
+        currency: settings.currency,
+        status: 'paid',
+        lineItems: [
+          buildBillingLineItem(
+            'parent_portal_yearly',
+            settings,
+            {
+              parentEmail: normalizedEmail,
+              parentName,
+              studentEmail: primaryStudent?.email || '',
+              studentName: primaryStudent?.name || 'Existing student',
+            },
+            {
+              description: 'Manual admin payment for yearly DRU EDU parent portal access',
+            },
+          ),
+        ],
+        amountTotal,
+        dueAt: new Date().toISOString(),
+        paidAt,
+        finalization: {
+          status: 'completed',
+          completedAt: paidAt,
         },
-        {
-          description: 'Manual admin payment for yearly DRU EDU parent portal access',
+        metadata: {
+          isNewStudent: false,
+          portalFeeRequired: true,
         },
-      ),
-    ],
-    amountTotal,
-    dueAt: new Date().toISOString(),
-    paidAt,
-    finalization: {
-      status: 'completed',
-      completedAt: paidAt,
-    },
-    metadata: {
-      isNewStudent: false,
-      portalFeeRequired: true,
-    },
-    createdAt: paidAt,
-    updatedAt: paidAt,
-  } as BillingInvoiceDocument);
+        createdAt: paidAt,
+        updatedAt: paidAt,
+      } as BillingInvoiceDocument),
+  );
+
+  if (paidInvoice) {
+    await sendPaidInvoiceEmailAndStamp(paidInvoice);
+  }
 
   return {
     parentEmail: normalizedEmail,
@@ -2017,75 +2438,10 @@ export async function processStripeBillingEvent(
     return { alreadyProcessed: false, invoiceId, alreadyFinalized: true };
   }
 
-  const invoiceRef = firebaseAdmin.db.collection(BILLING_COLLECTIONS.INVOICES).doc(invoiceId);
-  await invoiceRef.set(
-    {
-      status: 'paid',
-      billingStatus: 'paid',
-      paidAt: nowTimestamp(),
-      checkoutCompletedAt: nowTimestamp(),
-      stripeCheckoutSessionId: session.id,
-      stripePaymentIntentId:
-        typeof session.payment_intent === 'string'
-          ? session.payment_intent
-          : undefined,
-      updatedAt: nowTimestamp(),
-    },
-    { merge: true },
-  );
-
-  await firebaseAdmin.db.collection(BILLING_COLLECTIONS.PAYMENTS).add({
-    invoiceId,
-    invoiceNumber: invoice.invoiceNumber,
-    provider: 'stripe',
-    status: 'succeeded',
-    amount: invoice.amountTotal,
-    currency: invoice.currency,
-    parentEmail: invoice.parentEmail,
-    stripeCheckoutSessionId: session.id,
-    stripePaymentIntentId:
-      typeof session.payment_intent === 'string'
-        ? session.payment_intent
-        : undefined,
-    processedAt: nowTimestamp(),
-    createdAt: nowTimestamp(),
-  });
-
   try {
-    if (hasBillingFee(invoice.lineItems, 'parent_portal_yearly')) {
-      await activateParentPortalEntitlement(invoice);
-    }
-
-    const request = await getEnrollmentRequest(invoice.enrollmentRequestId);
-    if (!request) {
-      throw new Error('Related enrollment request not found');
-    }
-
-    const studentId =
-      invoice.metadata.studentId || (await createStudentFromEnrollmentRequest(request));
-    await ensureStudentEnrollment(studentId, request);
-    await upsertParentInviteForStudent(request, studentId);
-
-    await firebaseAdmin.db.collection('enrollmentRequests').doc(request.id).update({
-      status: 'Approved',
-      billingStatus: 'paid',
-      billingInvoiceId: invoice.id,
-      studentId,
-      processedAt: nowTimestamp(),
-      finalizedAt: nowTimestamp(),
-      updatedAt: nowTimestamp(),
-    });
-
-    await invoiceRef.set(
-      {
-        finalization: {
-          status: 'completed',
-          completedAt: nowTimestamp(),
-        },
-      },
-      { merge: true },
-    );
+    await finalizePaidBillingInvoice(invoice, session);
   } catch (error: any) {
+    const invoiceRef = firebaseAdmin.db.collection(BILLING_COLLECTIONS.INVOICES).doc(invoiceId);
     await invoiceRef.set(
       {
         finalization: {
@@ -2100,4 +2456,51 @@ export async function processStripeBillingEvent(
   }
 
   return { alreadyProcessed: false, invoiceId };
+}
+
+export async function reconcileBillingCheckoutSession(sessionId: string) {
+  if (!sessionId) {
+    throw new Error('Session id is required');
+  }
+
+  const stripe = ensureStripe();
+  const session = await stripe.checkout.sessions.retrieve(sessionId);
+  const invoiceId = session.metadata?.invoiceId;
+
+  if (!invoiceId) {
+    throw new Error('Missing invoiceId in Stripe session metadata');
+  }
+
+  const invoice = await getBillingInvoiceById(invoiceId);
+  if (!invoice) {
+    throw new Error(`Billing invoice not found for ${invoiceId}`);
+  }
+
+  if (session.payment_status !== 'paid') {
+    return {
+      invoiceId,
+      status: invoice.status,
+      paymentStatus: session.payment_status,
+      reconciled: false,
+    };
+  }
+
+  if (invoice.finalization?.status === 'completed' && invoice.status === 'paid') {
+    return {
+      invoiceId,
+      status: invoice.status,
+      paymentStatus: session.payment_status,
+      reconciled: false,
+      alreadyFinalized: true,
+    };
+  }
+
+  await finalizePaidBillingInvoice(invoice, session);
+
+  return {
+    invoiceId,
+    status: 'paid',
+    paymentStatus: session.payment_status,
+    reconciled: true,
+  };
 }

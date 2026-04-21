@@ -12,6 +12,14 @@ import { AttemptSummary } from '@/models/attemptSchema';
 // Import student layout from other components or use a local version for now
 const StudentLayout = ({ children }: { children: React.ReactNode }) => children;
 
+const canStudentAccessTest = (test: Test, studentId: string): boolean => {
+  if (test.isRetest !== true) {
+    return true;
+  }
+
+  return Array.isArray(test.allowedStudentIds) && test.allowedStudentIds.includes(studentId);
+};
+
 export default function TestPage() {
   const router = useRouter();
   const params = useParams();
@@ -52,6 +60,12 @@ export default function TestPage() {
         }
         
         const testData = { id: testDoc.id, ...testDoc.data() } as Test;
+
+        if (!canStudentAccessTest(testData, student.id)) {
+          setError('You do not have access to this retake.');
+          setLoading(false);
+          return;
+        }
         
         console.log('🎯 Parent page - Test data loaded:', {
           id: testData.id,

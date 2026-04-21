@@ -363,6 +363,10 @@ export class AttemptManagementService {
         throw new Error('Test not found');
       }
 
+      if (!this.canStudentAccessTest(test, studentId)) {
+        throw new Error('You do not have access to this retake');
+      }
+
       // Get attempt summary to check limits and get next attempt number
       const summary = await this.getAttemptSummary(testId, studentId);
       
@@ -1473,6 +1477,14 @@ export class AttemptManagementService {
       : (test as FlexibleTest).duration || 90;
   }
 
+  private static canStudentAccessTest(test: Test, studentId?: string): boolean {
+    if (test.isRetest !== true) {
+      return true;
+    }
+
+    return !!studentId && Array.isArray(test.allowedStudentIds) && test.allowedStudentIds.includes(studentId);
+  }
+
   private static async isTestAvailable(test: Test, studentId?: string): Promise<boolean> {
     const now = Timestamp.now();
     
@@ -1482,6 +1494,11 @@ export class AttemptManagementService {
       studentId,
       currentTime: now.seconds
     });
+
+    if (!this.canStudentAccessTest(test, studentId)) {
+      console.log('❌ Student is not allowed to access this retake');
+      return false;
+    }
     
     // Check normal test availability first
     let normallyAvailable = false;
