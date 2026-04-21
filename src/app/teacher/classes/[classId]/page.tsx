@@ -1937,7 +1937,7 @@ function StudyMaterialsTab({ classId }: { classId: string }) {
                                   placeholder="File title"
                                 />
                                 {material.description && (
-                                  <div className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-wrap">
+                                  <div className="text-sm text-gray-600 dark:text-gray-400 mb-2 whitespace-pre-wrap">
                                     {material.description}
                                   </div>
                                 )}
