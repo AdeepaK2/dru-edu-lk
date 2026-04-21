@@ -508,6 +508,21 @@ export default function StudentsManagement() {
     return { pendingRequests: pending, approvedRequests: approved, rejectedRequests: rejected };
   }, [enrollmentRequests]);
 
+  const requestEmailById = useMemo(() => {
+    const map = new Map<string, string>();
+    enrollmentRequests.forEach((request) => {
+      map.set(request.id, request.student.email);
+    });
+    return map;
+  }, [enrollmentRequests]);
+
+  const isEnrollmentActionInProgress = (studentEmail: string, requestId?: string) => {
+    if (!processingEnrollment) return false;
+    if (processingEnrollment === studentEmail) return true;
+    if (requestId && processingEnrollment === requestId) return true;
+    return requestEmailById.get(processingEnrollment) === studentEmail;
+  };
+
   // Student create handler
   const handleStudentCreate = async (studentData: Omit<Student, 'id'>) => {
     setActionLoading('create');
@@ -791,7 +806,12 @@ export default function StudentsManagement() {
       return;
     }
 
-    setProcessingEnrollment(pendingRequests[0].student.email);
+    const studentEmail = pendingRequests[0].student.email;
+    if (isEnrollmentActionInProgress(studentEmail)) {
+      return;
+    }
+
+    setProcessingEnrollment(studentEmail);
 
     try {
       const updatePromises = pendingRequests.map(async (request) => {
@@ -840,7 +860,12 @@ export default function StudentsManagement() {
       return;
     }
 
-    setProcessingEnrollment(pendingRequests[0].student.email);
+    const studentEmail = pendingRequests[0].student.email;
+    if (isEnrollmentActionInProgress(studentEmail)) {
+      return;
+    }
+
+    setProcessingEnrollment(studentEmail);
     
     try {
       const updatePromises = pendingRequests.map(request =>
@@ -870,6 +895,10 @@ export default function StudentsManagement() {
 
   // Handle enrollment request approval
   const handleApproveEnrollment = async (enrollmentRequest: EnrollmentRequestDocument) => {
+    if (isEnrollmentActionInProgress(enrollmentRequest.student.email, enrollmentRequest.id)) {
+      return;
+    }
+
     setProcessingEnrollment(enrollmentRequest.id);
     
     try {
@@ -903,6 +932,10 @@ export default function StudentsManagement() {
 
   // Handle enrollment request rejection
   const handleRejectEnrollment = async (enrollmentRequest: EnrollmentRequestDocument, reason?: string) => {
+    if (isEnrollmentActionInProgress(enrollmentRequest.student.email, enrollmentRequest.id)) {
+      return;
+    }
+
     setProcessingEnrollment(enrollmentRequest.id);
     
     try {
@@ -1595,6 +1628,7 @@ export default function StudentsManagement() {
                               <Button
                                 size="sm"
                                 onClick={() => handleBatchApproveStudent(studentGroup.requests)}
+                                disabled={isEnrollmentActionInProgress(studentGroup.studentEmail)}
                                 className="bg-green-600 hover:bg-green-700 text-white"
                               >
                                 <CheckCircle className="w-4 h-4 mr-1" />
@@ -1605,7 +1639,7 @@ export default function StudentsManagement() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleBatchRejectStudent(studentGroup.requests)}
-                                disabled={processingEnrollment === studentGroup.studentEmail}
+                                disabled={isEnrollmentActionInProgress(studentGroup.studentEmail)}
                                 className="text-red-600 border-red-300 hover:bg-red-50"
                               >
                                 <XCircle className="w-4 h-4 mr-1" />
@@ -1998,7 +2032,7 @@ export default function StudentsManagement() {
                         <Button
                           size="sm"
                           onClick={() => handleApproveEnrollment(request)}
-                          disabled={processingEnrollment === request.id}
+                          disabled={isEnrollmentActionInProgress(request.student.email, request.id)}
                           className="bg-green-600 hover:bg-green-700 text-white"
                         >
                           <CheckCircle className="w-4 h-4 mr-1" />
@@ -2009,7 +2043,7 @@ export default function StudentsManagement() {
                           variant="outline"
                           size="sm"
                           onClick={() => handleRejectEnrollment(request)}
-                          disabled={processingEnrollment === request.id}
+                          disabled={isEnrollmentActionInProgress(request.student.email, request.id)}
                           className="text-red-600 border-red-300 hover:bg-red-50"
                         >
                           <XCircle className="w-4 h-4 mr-1" />
@@ -2031,6 +2065,7 @@ export default function StudentsManagement() {
                 <div className="flex gap-3">
                   <Button
                     onClick={() => handleBatchApproveStudent(selectedStudentRequests)}
+                    disabled={isEnrollmentActionInProgress(selectedStudentRequests[0].student.email)}
                     className="bg-green-600 hover:bg-green-700 text-white"
                   >
                     <CheckCircle className="w-4 h-4 mr-1" />
@@ -2040,7 +2075,7 @@ export default function StudentsManagement() {
                   <Button
                     variant="outline"
                     onClick={() => handleBatchRejectStudent(selectedStudentRequests)}
-                    disabled={processingEnrollment === selectedStudentRequests[0].student.email}
+                    disabled={isEnrollmentActionInProgress(selectedStudentRequests[0].student.email)}
                     className="text-red-600 border-red-300 hover:bg-red-50"
                   >
                     <XCircle className="w-4 h-4 mr-1" />
