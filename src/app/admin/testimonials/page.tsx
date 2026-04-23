@@ -4,7 +4,6 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { auth, firestore, storage } from '@/utils/firebase-client';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import {
-  addDoc,
   collection,
   deleteDoc,
   doc,
@@ -45,6 +44,7 @@ interface Token {
   id: string;
   token: string;
   label: string;
+  submissionLink: string;
   recipientEmail?: string | null;
   used: boolean;
   usedAt?: string | null;
@@ -105,6 +105,23 @@ async function getAdminUser() {
   }
 
   return user;
+}
+
+async function adminApiFetch(input: string, init?: RequestInit) {
+  const user = await getAdminUser();
+  const authToken = await user.getIdToken();
+  const headers = new Headers(init?.headers);
+
+  headers.set('Authorization', `Bearer ${authToken}`);
+
+  if (init?.body && !(init.body instanceof FormData) && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
+
+  return fetch(input, {
+    ...init,
+    headers,
+  });
 }
 
 function toIsoString(value: any): string | null {
@@ -182,22 +199,14 @@ export default function AdminTestimonialsPage() {
     setTokLoading(true);
     setPageError(null);
     try {
-      await getAdminUser();
-      const snapshot = await getDocs(query(collection(firestore, 'testimonialTokens'), orderBy('createdAt', 'desc')));
-      const data = snapshot.docs.map((snapshotDoc) => {
-        const d = snapshotDoc.data();
-        return {
-          id: snapshotDoc.id,
-          token: d.token,
-          label: d.label,
-          recipientEmail: d.recipientEmail ?? null,
-          used: Boolean(d.used),
-          usedAt: toIsoString(d.usedAt),
-          expiresAt: toIsoString(d.expiresAt),
-          createdAt: toIsoString(d.createdAt) || new Date().toISOString(),
-        } satisfies Token;
-      });
-      setTokens(data);
+      const res = await adminApiFetch('/api/admin/testimonials/tokens');
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to load invite links');
+      }
+
+      setTokens(data as Token[]);
     } catch (error) {
       setPageError(error instanceof Error ? error.message : 'Failed to load invite links');
     } finally {
@@ -306,81 +315,30 @@ export default function AdminTestimonialsPage() {
     setGeneratedLink(null);
     setGeneratedEmail(null);
     try {
-      const user = await getAdminUser();
-      const token = crypto.randomUUID().replace(/-/g, '');
-      const inviteLink = `${window.location.origin}/testimonials/submit/${token}`;
       const normalizedRecipientEmail = recipientEmail.trim().toLowerCase();
-      const expiresAt = new Date();
-      expiresAt.setMonth(expiresAt.getMonth() + 1);
 
       if (normalizedRecipientEmail && !EMAIL_PATTERN.test(normalizedRecipientEmail)) {
         throw new Error('Enter a valid email address to send the invite');
       }
 
-      await addDoc(collection(firestore, 'testimonialTokens'), {
-        token,
-        label: newLabel.trim(),
-        recipientEmail: normalizedRecipientEmail || null,
-        used: false,
-        createdAt: Timestamp.now(),
-        createdBy: user.email || 'admin',
-        expiresAt: Timestamp.fromDate(expiresAt),
+      const res = await adminApiFetch('/api/admin/testimonials/tokens', {
+        method: 'POST',
+        body: JSON.stringify({
+          label: newLabel.trim(),
+          recipientEmail: normalizedRecipientEmail || undefined,
+        }),
       });
+      const data = await res.json();
 
-      let inviteEmailQueued = false;
-      if (normalizedRecipientEmail) {
-        try {
-          await addDoc(collection(firestore, 'mail'), {
-            to: normalizedRecipientEmail,
-            message: {
-              subject: 'Your Dr. U Education testimonial invite',
-              html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
-                  <div style="text-align: center; margin-bottom: 24px;">
-                    <h1 style="color: #01143d; font-size: 24px; margin: 0;">Dr. U Education</h1>
-                    <p style="color: #6b7280; margin: 4px 0 0;">We would love your testimonial</p>
-                  </div>
-
-                  <p style="color: #374151;">Hello,</p>
-
-                  <p style="color: #374151;">
-                    Thank you for being part of Dr. U Education. Please use the secure one-time link below to share your testimonial, rating, and optional photo.
-                  </p>
-
-                  <div style="text-align: center; margin: 32px 0;">
-                    <a href="${inviteLink}"
-                      style="background-color: #0088e0; color: white; padding: 14px 32px; border-radius: 9999px;
-                            text-decoration: none; font-weight: 600; font-size: 16px; display: inline-block;">
-                      Submit Your Testimonial
-                    </a>
-                  </div>
-
-                  <p style="color: #6b7280; font-size: 14px;">
-                    This invite link will expire on ${expiresAt.toLocaleDateString('en-AU', {
-                      day: 'numeric',
-                      month: 'short',
-                      year: 'numeric',
-                    })}.
-                  </p>
-
-                  <p style="color: #6b7280; font-size: 14px;">
-                    If the button does not work, copy and paste this link into your browser:
-                    <br />
-                    <a href="${inviteLink}" style="color: #0088e0; word-break: break-all;">${inviteLink}</a>
-                  </p>
-                </div>
-              `,
-            },
-          });
-          inviteEmailQueued = true;
-        } catch (emailError) {
-          console.error('Failed to queue testimonial invite email:', emailError);
-          setPageError('Invite link created, but the email could not be queued. You can still copy the link below.');
-        }
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to create invite link');
       }
 
-      setGeneratedLink(inviteLink);
-      setGeneratedEmail(inviteEmailQueued ? normalizedRecipientEmail : null);
+      setGeneratedLink(data.submissionLink);
+      setGeneratedEmail(data.emailQueued ? (data.recipientEmail ?? normalizedRecipientEmail) : null);
+      if (data.warning) {
+        setPageError(data.warning);
+      }
       setNewLabel('');
       setRecipientEmail('');
       await fetchTokens();
@@ -396,17 +354,23 @@ export default function AdminTestimonialsPage() {
 
     setPageError(null);
     try {
-      await getAdminUser();
-      await deleteDoc(doc(firestore, 'testimonialTokens', id));
+      const res = await adminApiFetch(`/api/admin/testimonials/tokens?id=${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to revoke invite link');
+      }
+
       setTokens((prev) => prev.filter((t) => t.id !== id));
     } catch (error) {
       setPageError(error instanceof Error ? error.message : 'Failed to revoke invite link');
     }
   }
 
-  function copyLink(token: string, id: string) {
-    const base = window.location.origin;
-    navigator.clipboard.writeText(`${base}/testimonials/submit/${token}`);
+  function copyLink(link: string, id: string) {
+    navigator.clipboard.writeText(link);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
   }
@@ -460,7 +424,7 @@ export default function AdminTestimonialsPage() {
 
     if (!normalizedLinkSearch) return true;
 
-    const haystack = [tok.label, tok.recipientEmail, tok.token].filter(Boolean).join(' ').toLowerCase();
+    const haystack = [tok.label, tok.recipientEmail, tok.token, tok.submissionLink].filter(Boolean).join(' ').toLowerCase();
     return haystack.includes(normalizedLinkSearch);
   });
 
@@ -941,7 +905,7 @@ export default function AdminTestimonialsPage() {
                     <div className="flex items-center gap-1 flex-shrink-0">
                       {!tok.used && (
                         <button
-                          onClick={() => copyLink(tok.token, tok.id)}
+                          onClick={() => copyLink(tok.submissionLink, tok.id)}
                           title="Copy link"
                           className="p-2 text-gray-400 hover:text-[#0088e0] hover:bg-blue-50 rounded-lg transition-colors"
                         >

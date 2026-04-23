@@ -4,9 +4,19 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
-import { countWords, TESTIMONIAL_MAX_WORDS, validateTestimonialPhoto } from '@/models/testimonialSchema';
+import {
+  countWords,
+  TESTIMONIAL_MAX_WORDS,
+  TESTIMONIAL_RESULT_MAX_LENGTH,
+  TESTIMONIAL_STUDENT_NAME_MAX_LENGTH,
+  validateTestimonialPhoto,
+} from '@/models/testimonialSchema';
 
 type Step = 'validating' | 'invalid' | 'form' | 'submitting' | 'success' | 'error';
+type ValidationIssue = {
+  path?: Array<string | number>;
+  message?: string;
+};
 
 const COURSES = [
   'VCE Mathematics Methods',
@@ -81,10 +91,15 @@ export default function SubmitTestimonialPage() {
     if (!form.role) errs.role = 'Please select your role.';
     if ((form.role === 'Parent' || form.role === 'Guardian') && form.studentName.trim() && form.studentName.trim().length < 2) {
       errs.studentName = 'Please enter the student name clearly.';
+    } else if (form.studentName.trim().length > TESTIMONIAL_STUDENT_NAME_MAX_LENGTH) {
+      errs.studentName = `Student name must be ${TESTIMONIAL_STUDENT_NAME_MAX_LENGTH} characters or fewer.`;
     }
     const course = form.course === 'Other' ? form.customCourse : form.course;
     if (!course.trim()) errs.course = 'Please specify the course or program.';
     if (!form.year) errs.year = 'Please select a year.';
+    if (form.result.trim().length > TESTIMONIAL_RESULT_MAX_LENGTH) {
+      errs.result = `Please keep the result within ${TESTIMONIAL_RESULT_MAX_LENGTH} characters.`;
+    }
     if (!form.text.trim() || form.text.trim().length < 20) {
       errs.text = 'Please write at least 20 characters.';
     } else if (testimonialWordCount > TESTIMONIAL_MAX_WORDS) {
@@ -104,6 +119,8 @@ export default function SubmitTestimonialPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setErrorMsg('');
+
     const errs = validate();
     if (Object.keys(errs).length > 0) {
       setFieldErrors(errs);
@@ -140,8 +157,25 @@ export default function SubmitTestimonialPage() {
         setStep('success');
       } else {
         const data = await res.json();
+        const details = Array.isArray(data.details) ? (data.details as ValidationIssue[]) : [];
+
+        if (details.length > 0) {
+          const nextFieldErrors = details.reduce<Record<string, string>>((acc, issue) => {
+            const field = typeof issue.path?.[0] === 'string' ? issue.path[0] : null;
+            if (field && issue.message && !acc[field]) {
+              acc[field] = issue.message;
+            }
+            return acc;
+          }, {});
+
+          setFieldErrors(nextFieldErrors);
+          setErrorMsg(data.error || 'Please review the highlighted fields and try again.');
+          setStep('form');
+          return;
+        }
+
         setErrorMsg(data.error || 'Something went wrong. Please try again.');
-        setStep('error');
+        setStep(res.status >= 500 ? 'error' : 'form');
       }
     } catch {
       setErrorMsg('Network error. Please check your connection and try again.');
@@ -152,6 +186,7 @@ export default function SubmitTestimonialPage() {
   function set(field: string, value: string | number) {
     setForm((f) => ({ ...f, [field]: value }));
     setFieldErrors((e) => ({ ...e, [field]: '' }));
+    setErrorMsg('');
   }
 
   function handlePhotoChange(file: File | null) {
@@ -272,6 +307,12 @@ export default function SubmitTestimonialPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="bg-white text-slate-900 rounded-2xl shadow-lg border border-gray-100 p-8 space-y-6">
+          {errorMsg && (
+            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {errorMsg}
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-semibold text-[#01143d] mb-2">
               Overall Rating <span className="text-red-500">*</span>
@@ -354,6 +395,7 @@ export default function SubmitTestimonialPage() {
                   type="text"
                   value={form.studentName}
                   onChange={(e) => set('studentName', e.target.value)}
+                  maxLength={TESTIMONIAL_STUDENT_NAME_MAX_LENGTH}
                   placeholder="e.g. Aarav Smith"
                   className={inputCls(fieldErrors.studentName)}
                 />
@@ -397,18 +439,16 @@ export default function SubmitTestimonialPage() {
 
           <Field
             label={form.role === 'Parent' || form.role === 'Guardian' ? 'Student Result (optional)' : 'Your Result (optional)'}
-            hint={
-              form.role === 'Parent' || form.role === 'Guardian'
-                ? "e.g. 47 in Methods, 52 in Specialist · Selective entry accepted"
-                : 'e.g. 47 in Methods, 52 in Specialist · Selective entry accepted'
-            }
+            error={fieldErrors.result}
+            hint={`${form.result.length}/${TESTIMONIAL_RESULT_MAX_LENGTH} characters`}
           >
             <input
               type="text"
               value={form.result}
               onChange={(e) => set('result', e.target.value)}
+              maxLength={TESTIMONIAL_RESULT_MAX_LENGTH}
               placeholder="Share your achievement if you'd like"
-              className={inputCls()}
+              className={inputCls(fieldErrors.result)}
             />
           </Field>
 
