@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
-import { validateTestimonialPhoto } from '@/models/testimonialSchema';
+import { countWords, TESTIMONIAL_MAX_WORDS, validateTestimonialPhoto } from '@/models/testimonialSchema';
 
 type Step = 'validating' | 'invalid' | 'form' | 'submitting' | 'success' | 'error';
 
@@ -46,6 +46,7 @@ export default function SubmitTestimonialPage() {
     socialUrl: '',
   });
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const testimonialWordCount = countWords(form.text);
 
   useEffect(() => {
     if (!token) return;
@@ -86,6 +87,8 @@ export default function SubmitTestimonialPage() {
     if (!form.year) errs.year = 'Please select a year.';
     if (!form.text.trim() || form.text.trim().length < 20) {
       errs.text = 'Please write at least 20 characters.';
+    } else if (testimonialWordCount > TESTIMONIAL_MAX_WORDS) {
+      errs.text = `Please keep your testimonial within ${TESTIMONIAL_MAX_WORDS} words.`;
     }
     if (form.socialUrl.trim() && !/^https:\/\/.+/i.test(form.socialUrl.trim())) {
       errs.socialUrl = 'Please enter a full https:// social profile link.';
@@ -453,12 +456,16 @@ export default function SubmitTestimonialPage() {
             </div>
           </Field>
 
-          <Field label="Your Testimonial" error={fieldErrors.text} required hint={`${form.text.length}/1500 characters`}>
+          <Field
+            label="Your Testimonial"
+            error={fieldErrors.text}
+            required
+            hint={`${testimonialWordCount}/${TESTIMONIAL_MAX_WORDS} words`}
+          >
             <textarea
               value={form.text}
               onChange={(e) => set('text', e.target.value)}
               rows={6}
-              maxLength={1500}
               placeholder="Tell us about your experience with Dr. U Education — what made a difference for you?"
               className={`${inputCls(fieldErrors.text)} resize-none`}
             />

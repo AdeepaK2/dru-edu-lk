@@ -2,9 +2,14 @@ import { z } from 'zod';
 
 export const TESTIMONIAL_PHOTO_MAX_BYTES = 5 * 1024 * 1024;
 export const TESTIMONIAL_PHOTO_ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'] as const;
+export const TESTIMONIAL_MAX_WORDS = 3000;
 
 function emptyStringToUndefined(value: unknown) {
   return typeof value === 'string' && value.trim() === '' ? undefined : value;
+}
+
+export function countWords(value: string) {
+  return value.trim() ? value.trim().split(/\s+/).length : 0;
 }
 
 // Schema for submitting a testimonial via invite link
@@ -25,7 +30,10 @@ export const testimonialSubmitSchema = z.object({
   text: z
     .string()
     .min(20, 'Testimonial must be at least 20 characters')
-    .max(1500, 'Testimonial must be under 1500 characters'),
+    .refine(
+      (value) => countWords(value) <= TESTIMONIAL_MAX_WORDS,
+      `Testimonial must be ${TESTIMONIAL_MAX_WORDS} words or fewer`
+    ),
   stars: z.preprocess((value) => {
     if (typeof value === 'string') return Number(value);
     return value;

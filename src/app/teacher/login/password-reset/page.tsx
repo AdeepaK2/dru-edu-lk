@@ -2,8 +2,6 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { sendPasswordResetEmail } from 'firebase/auth';
-import { auth } from '@/utils/firebase-client';
 import { GraduationCap, Mail, ArrowLeft, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { Button, Input } from '@/components/ui';
 
@@ -21,23 +19,19 @@ export default function TeacherPasswordReset() {
     setSuccess(false);
 
     try {
-      await sendPasswordResetEmail(auth, email);
-      setSuccess(true);
-    } catch (error: any) {
-      console.error('Password reset error:', error);
-      switch (error.code) {
-        case 'auth/user-not-found':
-          setError('No account found with this email address.');
-          break;
-        case 'auth/invalid-email':
-          setError('Please enter a valid email address.');
-          break;
-        case 'auth/too-many-requests':
-          setError('Too many reset attempts. Please try again later.');
-          break;
-        default:
-          setError('Failed to send reset email. Please try again.');
+      const res = await fetch('/api/auth/password-reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, type: 'teacher' }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Failed to send reset email. Please try again.');
+      } else {
+        setSuccess(true);
       }
+    } catch {
+      setError('Failed to send reset email. Please try again.');
     } finally {
       setLoading(false);
     }
