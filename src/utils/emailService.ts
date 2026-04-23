@@ -393,6 +393,97 @@ export async function sendParentEmailUpdateRequiredEmail(
 }
 
 /**
+ * Send password reset email with a Firebase-generated reset link
+ */
+export async function sendPasswordResetNotification(
+  email: string,
+  resetLink: string,
+  isTeacher = false
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  const portalType = isTeacher ? 'Teacher' : 'Student';
+  const loginUrl = isTeacher ? EMAIL_CONFIG.teacherPortalUrl : EMAIL_CONFIG.studentPortalUrl;
+  const subject = `${EMAIL_CONFIG.companyName} - Password Reset Request`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Password Reset - ${EMAIL_CONFIG.companyName}</title>
+    </head>
+    <body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+      <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #16a34a 0%, #059669 100%); padding: 40px 30px; text-align: center; border-radius: 8px 8px 0 0;">
+          <h1 style="color: #ffffff; margin: 0; font-size: 26px; font-weight: 700;">
+            Password Reset Request
+          </h1>
+          <p style="color: #d1fae5; margin: 10px 0 0 0; font-size: 15px;">
+            ${EMAIL_CONFIG.companyName} ${portalType} Portal
+          </p>
+        </div>
+
+        <!-- Body -->
+        <div style="padding: 40px 30px;">
+          <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+            We received a request to reset the password for your account associated with this email address.
+          </p>
+
+          <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 30px 0;">
+            Click the button below to reset your password. This link will expire in <strong>1 hour</strong>.
+          </p>
+
+          <!-- CTA Button -->
+          <div style="text-align: center; margin: 35px 0;">
+            <a href="${resetLink}"
+               style="display: inline-block; background: linear-gradient(135deg, #16a34a 0%, #059669 100%); color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.4);">
+              Reset My Password
+            </a>
+          </div>
+
+          <!-- Fallback link -->
+          <div style="background-color: #f3f4f6; border-radius: 8px; padding: 16px 20px; margin: 25px 0;">
+            <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 13px;">
+              If the button doesn't work, copy and paste this link into your browser:
+            </p>
+            <p style="margin: 0; word-break: break-all; font-size: 12px; color: #4b5563;">
+              ${resetLink}
+            </p>
+          </div>
+
+          <!-- Security notice -->
+          <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px 20px; margin: 25px 0; border-radius: 0 8px 8px 0;">
+            <p style="margin: 0; color: #92400e; font-size: 14px;">
+              <strong>Didn't request this?</strong> You can safely ignore this email. Your password will not be changed unless you click the link above.
+            </p>
+          </div>
+
+          <p style="color: #374151; font-size: 15px; margin: 30px 0 0 0;">
+            Best regards,<br>
+            <strong style="color: #16a34a;">The ${EMAIL_CONFIG.companyName} Team</strong>
+          </p>
+        </div>
+
+        <!-- Footer -->
+        <div style="background-color: #f8fafc; padding: 20px 30px; border-top: 1px solid #e5e7eb; text-align: center;">
+          <p style="color: #9ca3af; font-size: 12px; margin: 0 0 8px 0;">
+            This is an automated message from ${EMAIL_CONFIG.companyName}. Please do not reply to this email.
+          </p>
+          <a href="${loginUrl}" style="color: #16a34a; font-size: 12px; text-decoration: none;">
+            Return to ${portalType} Login
+          </a>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return sendEmail(email, subject, html);
+}
+
+/**
  * Generic function to send any email
  */
 export async function sendGenericEmail(
