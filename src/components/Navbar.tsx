@@ -23,8 +23,12 @@ const Navbar: React.FC = () => {
   // Don't make navbar sticky on the About page
   const isAboutPage = pathname === '/about';
   
+  const navClasses = isAboutPage
+    ? 'backdrop-blur-md z-50 bg-[#061b41] border-b border-white/10 shadow-[0_12px_40px_rgba(6,27,65,0.18)]'
+    : 'backdrop-blur-md z-50 bg-white/15 border-b border-white/30 sticky top-0';
+
   return (
-    <nav className={`backdrop-blur-md z-50 bg-white/15 border-b border-white/30 ${isAboutPage ? '' : 'sticky top-0'}`}>
+    <nav className={navClasses}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
