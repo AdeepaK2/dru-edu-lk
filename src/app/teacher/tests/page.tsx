@@ -1242,6 +1242,7 @@ This action CANNOT be undone. Are you absolutely sure you want to delete this te
         ) : viewMode === 'templates' ? (
           <TestTemplatesView
             templates={templates}
+            classes={[...teacherClasses, ...coClasses]}
             onBack={() => setViewMode('overview')}
             onUseTemplate={(template) => {
               // Open NEW streamlined template modal

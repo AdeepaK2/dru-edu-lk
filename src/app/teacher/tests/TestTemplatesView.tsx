@@ -2,40 +2,128 @@ import React from 'react';
 import { 
   FileText, 
   ArrowLeft, 
-  Clock, 
   Settings,
   Calendar,
   Search,
   BookOpen,
   Trash2,
-  Download
+  Download,
+  Eye
 } from 'lucide-react';
-import { Test, TestTemplate, LiveTest, FlexibleTest } from '@/models/testSchema';
+import { TestTemplate } from '@/models/testSchema';
+import { ClassDocument } from '@/models/classSchema';
 import { generateTemplatePDF } from '@/utils/generateTemplatePDF';
+import TestTemplatePreviewModal from '@/components/modals/TestTemplatePreviewModal';
 
 interface TestTemplatesViewProps {
   templates: TestTemplate[];
+  classes?: ClassDocument[];
   onBack: () => void;
   onUseTemplate: (template: TestTemplate) => void;
   onDeleteTemplate?: (templateId: string) => void;
 }
 
-export function TestTemplatesView({ templates, onBack, onUseTemplate, onDeleteTemplate }: TestTemplatesViewProps) {
+type TimeRangeFilter = 'all' | '7' | '30' | '90' | '365';
+type SortFilter = 'newest' | 'oldest' | 'title';
+
+export function TestTemplatesView({ templates, classes = [], onBack, onUseTemplate, onDeleteTemplate }: TestTemplatesViewProps) {
   const [searchTerm, setSearchTerm] = React.useState('');
   const [downloadingId, setDownloadingId] = React.useState<string | null>(null);
-  
-  // Filter templates based on search term
-  const filteredTemplates = templates.filter(template => 
-    template.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    template.subjectName?.toLowerCase().includes(searchTerm.toLowerCase())
+  const [previewTemplate, setPreviewTemplate] = React.useState<TestTemplate | null>(null);
+  const [selectedClassId, setSelectedClassId] = React.useState('');
+  const [selectedGrade, setSelectedGrade] = React.useState('');
+  const [selectedSubjectId, setSelectedSubjectId] = React.useState('');
+  const [timeRange, setTimeRange] = React.useState<TimeRangeFilter>('all');
+  const [sortBy, setSortBy] = React.useState<SortFilter>('newest');
+
+  const uniqueGrades = React.useMemo(
+    () => Array.from(new Set(classes.map(classItem => classItem.year).filter(Boolean))).sort(),
+    [classes]
   );
 
-  const getTemplateDuration = (template: TestTemplate) => {
-    // Templates might not have duration if they are generic, 
-    // but if they were created from a test, they capture configuration
-    // We'll show question count mainly
-    return `${template.questions.length} Qs`;
+  const uniqueSubjects = React.useMemo(() => {
+    const subjects = new Map<string, string>();
+
+    classes.forEach(classItem => {
+      if (classItem.subjectId) {
+        subjects.set(classItem.subjectId, classItem.subject || classItem.subjectId);
+      }
+    });
+
+    templates.forEach(template => {
+      if (template.subjectId) {
+        subjects.set(template.subjectId, template.subjectName || template.subjectId);
+      }
+    });
+
+    return Array.from(subjects.entries())
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [classes, templates]);
+
+  const getTemplateDate = (template: TestTemplate) => {
+    const date = template.createdAt;
+
+    if (!date) return null;
+
+    try {
+      return date.toDate ? date.toDate() : new Date(date as any);
+    } catch {
+      return null;
+    }
   };
+
+  const resetFilters = () => {
+    setSearchTerm('');
+    setSelectedClassId('');
+    setSelectedGrade('');
+    setSelectedSubjectId('');
+    setTimeRange('all');
+    setSortBy('newest');
+  };
+
+  const filteredTemplates = React.useMemo(() => {
+    const selectedClass = classes.find(classItem => classItem.id === selectedClassId);
+    const rangeDays = timeRange === 'all' ? null : Number(timeRange);
+    const rangeStart = rangeDays ? new Date(Date.now() - rangeDays * 24 * 60 * 60 * 1000) : null;
+
+    return templates
+      .filter(template => {
+        const search = searchTerm.trim().toLowerCase();
+        const matchesSearch =
+          !search ||
+          template.title.toLowerCase().includes(search) ||
+          template.subjectName?.toLowerCase().includes(search);
+
+        const matchesClass = !selectedClass || template.subjectId === selectedClass.subjectId;
+        const matchesGrade =
+          !selectedGrade ||
+          classes.some(classItem => classItem.year === selectedGrade && classItem.subjectId === template.subjectId);
+        const matchesSubject = !selectedSubjectId || template.subjectId === selectedSubjectId;
+        const createdDate = getTemplateDate(template);
+        const matchesTimeRange = !rangeStart || (createdDate !== null && createdDate >= rangeStart);
+
+        return matchesSearch && matchesClass && matchesGrade && matchesSubject && matchesTimeRange;
+      })
+      .sort((a, b) => {
+        if (sortBy === 'title') {
+          return a.title.localeCompare(b.title);
+        }
+
+        const aDate = getTemplateDate(a)?.getTime() || 0;
+        const bDate = getTemplateDate(b)?.getTime() || 0;
+
+        return sortBy === 'newest' ? bDate - aDate : aDate - bDate;
+      });
+  }, [classes, searchTerm, selectedClassId, selectedGrade, selectedSubjectId, sortBy, templates, timeRange]);
+
+  const hasActiveFilters =
+    searchTerm ||
+    selectedClassId ||
+    selectedGrade ||
+    selectedSubjectId ||
+    timeRange !== 'all' ||
+    sortBy !== 'newest';
 
   const formatDate = (date: any) => {
     if (!date) return 'Unknown';
@@ -84,7 +172,7 @@ export function TestTemplatesView({ templates, onBack, onUseTemplate, onDeleteTe
       </div>
 
       {/* Search and Filters */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border border-gray-100 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border border-gray-100 dark:border-gray-700 space-y-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
           <input
@@ -94,6 +182,108 @@ export function TestTemplatesView({ templates, onBack, onUseTemplate, onDeleteTe
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-transparent dark:text-white"
           />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          <div>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+              Class
+            </label>
+            <select
+              value={selectedClassId}
+              onChange={(event) => setSelectedClassId(event.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="">All classes</option>
+              {classes.map(classItem => (
+                <option key={classItem.id} value={classItem.id}>
+                  {classItem.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+              Grade
+            </label>
+            <select
+              value={selectedGrade}
+              onChange={(event) => setSelectedGrade(event.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="">All grades</option>
+              {uniqueGrades.map(grade => (
+                <option key={grade} value={grade}>
+                  {grade}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+              Subject
+            </label>
+            <select
+              value={selectedSubjectId}
+              onChange={(event) => setSelectedSubjectId(event.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="">All subjects</option>
+              {uniqueSubjects.map(subject => (
+                <option key={subject.id} value={subject.id}>
+                  {subject.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+              Time Range
+            </label>
+            <select
+              value={timeRange}
+              onChange={(event) => setTimeRange(event.target.value as TimeRangeFilter)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="all">All time</option>
+              <option value="7">Last 7 days</option>
+              <option value="30">Last 30 days</option>
+              <option value="90">Last 90 days</option>
+              <option value="365">Last year</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+              Sort
+            </label>
+            <select
+              value={sortBy}
+              onChange={(event) => setSortBy(event.target.value as SortFilter)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="newest">Newest first</option>
+              <option value="oldest">Oldest first</option>
+              <option value="title">Title A-Z</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
+          <span className="text-gray-500 dark:text-gray-400">
+            Showing {filteredTemplates.length} of {templates.length} template{templates.length !== 1 ? 's' : ''}
+          </span>
+          {hasActiveFilters && (
+            <button
+              onClick={resetFilters}
+              className="text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium"
+            >
+              Clear filters
+            </button>
+          )}
         </div>
       </div>
 
@@ -143,17 +333,29 @@ export function TestTemplatesView({ templates, onBack, onUseTemplate, onDeleteTe
             </div>
 
             {/* Actions */}
-            <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-b-xl border-t border-gray-100 dark:border-gray-700 flex gap-3">
+            <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-b-xl border-t border-gray-100 dark:border-gray-700 flex flex-wrap gap-3">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   onUseTemplate(template);
                 }}
-                className="flex-1 flex items-center justify-center px-4 py-2 bg-white dark:bg-gray-800 border-2 border-indigo-100 dark:border-indigo-600 text-indigo-700 dark:text-indigo-300 font-medium rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:border-indigo-200 transition-colors"
+                className="flex-1 min-w-[130px] flex items-center justify-center px-4 py-2 bg-white dark:bg-gray-800 border-2 border-indigo-100 dark:border-indigo-600 text-indigo-700 dark:text-indigo-300 font-medium rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:border-indigo-200 transition-colors"
                 title="Use this template to create a new test"
               >
                 <FileText className="w-4 h-4 mr-2" />
                 Use Template
+              </button>
+
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPreviewTemplate(template);
+                }}
+                className="flex-1 min-w-[110px] flex items-center justify-center px-4 py-2 bg-white dark:bg-gray-800 border-2 border-blue-100 dark:border-blue-900/50 text-blue-600 dark:text-blue-400 font-medium rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:border-blue-200 transition-colors"
+                title="Preview questions and answers"
+              >
+                <Eye className="w-4 h-4 mr-2" />
+                Preview
               </button>
               
               <button
@@ -198,6 +400,12 @@ export function TestTemplatesView({ templates, onBack, onUseTemplate, onDeleteTe
           </div>
         )}
       </div>
+
+      <TestTemplatePreviewModal
+        isOpen={!!previewTemplate}
+        onClose={() => setPreviewTemplate(null)}
+        template={previewTemplate}
+      />
     </div>
   );
 }
