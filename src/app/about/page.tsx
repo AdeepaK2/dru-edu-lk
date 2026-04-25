@@ -6,36 +6,20 @@ import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import { Footer, ChatBot } from '@/components/ui';
 
-const credentials = [
-  'PhD in Mechanical Engineering',
-  'BSc. Eng. Hons in Mechanical Engineering',
-  'University of Moratuwa graduate',
-  'Melbourne academic coaching',
-];
-
-const focusAreas = [
-  'VCE Mathematical Methods and Specialist Mathematics',
-  'VCE Physics and Chemistry',
-  'Selective school preparation',
-  'Strong foundations for school-year students',
-];
-
-const teachingStandards = [
-  'Precise explanations that help students understand the reasoning behind difficult concepts.',
-  'Disciplined preparation for tests, exams, and competitive academic pathways.',
-  'Close academic attention in a serious classroom culture built around consistency.',
-];
-
 const branchLocations = [
   {
     name: 'Cranbourne Branch',
     address: '63A High Street, Cranbourne',
+    mapSrc:
+      'https://www.google.com/maps?q=63A%20High%20Street%2C%20Cranbourne%20VIC&output=embed',
     description:
       "A long-standing Dr. U Education location supporting families in Melbourne's south-east.",
   },
   {
     name: 'Glen Waverley Branch',
     address: '230/A Blackburn Road, Glen Waverley',
+    mapSrc:
+      'https://www.google.com/maps?q=230%2FA%20Blackburn%20Road%2C%20Glen%20Waverley%20VIC&output=embed',
     description:
       'A key teaching centre for VCE Mathematics, Sciences, and high-performing students.',
   },
@@ -58,22 +42,11 @@ export default function AboutPage() {
                 Academic leadership behind serious VCE coaching
               </h1>
               <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-200 md:text-xl">
-                Dr. U Education is led by Dr. Udugama Rakhitha, whose background in
-                mechanical engineering, doctoral research, and disciplined teaching shapes
-                a centre built for students who want structured, high-standard academic
-                support.
+                Dr. U Education is led by Dr. Udugama Rakhitha, whose PhD in
+                Engineering from the USA, doctoral research background, and disciplined
+                teaching shape a centre built for students who want structured,
+                high-standard academic support.
               </p>
-
-              <div className="mt-8 flex flex-wrap gap-3">
-                {credentials.map((item) => (
-                  <span
-                    key={item}
-                    className="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-white/90"
-                  >
-                    {item}
-                  </span>
-                ))}
-              </div>
 
               <div className="mt-10 flex flex-col gap-4 sm:flex-row">
                 <Link
@@ -110,9 +83,6 @@ export default function AboutPage() {
                       Founder
                     </p>
                     <h2 className="mt-2 text-2xl font-bold">Dr. Udugama Rakhitha</h2>
-                    <p className="mt-2 text-sm leading-6 text-slate-200">
-                      PhD, Mechanical Engineering | BSc. Eng. Hons, Mechanical Engineering
-                    </p>
                   </div>
                 </div>
               </div>
@@ -127,25 +97,22 @@ export default function AboutPage() {
                 Founder Profile
               </span>
               <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950 md:text-4xl">
-                A research-trained educator with engineering depth
+                A PhD Engineering educator with research depth
               </h2>
             </div>
 
             <div className="space-y-5 text-lg leading-8 text-slate-600">
               <p>
-                Dr. Udugama Rakhitha is a BSc. Eng. Hons Mechanical Engineering
-                graduate from the University of Moratuwa and holds a PhD in Mechanical
-                Engineering from Texas Tech University.
+                Dr. Udugama Rakhitha holds a PhD in Engineering from the USA, bringing
+                advanced doctoral research experience into the way students are taught
+                to think, reason, and solve demanding academic problems.
               </p>
               <p>
-                His doctoral research focused on interfacial wave dynamics in a
-                multiphase-drop system, reflecting the kind of analytical discipline and
-                problem-solving depth that now informs Dr. U Education's teaching model.
-              </p>
-              <p>
-                That background matters in the classroom. Students are guided to build
-                strong fundamentals, explain their reasoning clearly, and prepare for
-                demanding assessments with structure rather than guesswork.
+                This advanced research background translates directly into the
+                classroom. At Dr. U Education, students are guided to build strong
+                fundamentals, reason through problems with precision, and approach
+                VCE Mathematics, Physics, and Chemistry with the structured thinking
+                that high-stakes assessments demand - not guesswork.
               </p>
             </div>
           </div>
@@ -162,101 +129,77 @@ export default function AboutPage() {
               </h2>
               <p className="mt-4 text-lg leading-8 text-slate-600">
                 These records highlight the academic training behind the centre's
-                teaching culture: a PhD credential and dissertation research in
-                Mechanical Engineering.
+                teaching culture: a PhD credential from the USA and advanced doctoral
+                research in engineering.
               </p>
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
-              <article className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.06)]">
-                <div className="bg-slate-100 p-4">
+            <div className="space-y-6">
+              <article className="grid overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.06)] lg:grid-cols-[1.1fr_0.9fr]">
+                <div className="bg-slate-100 p-4 lg:p-6">
                   <Image
                     src="/about/degree.png"
-                    alt="Texas Tech University Doctor of Philosophy certificate for Dr. Udugama Rakhitha"
+                    alt="Doctor of Philosophy in Engineering certificate for Dr. Udugama Rakhitha"
                     width={864}
                     height={680}
                     className="h-auto w-full rounded-[14px] border border-slate-200 object-contain"
                   />
                 </div>
-                <div className="p-6">
-                  <h3 className="text-xl font-bold text-slate-950">
-                    Doctor of Philosophy in Mechanical Engineering
-                  </h3>
-                  <p className="mt-3 text-base leading-7 text-slate-600">
-                    Awarded by Texas Tech University, this PhD credential reflects Dr.
-                    U's advanced academic training in Mechanical Engineering.
+                <div className="flex flex-col justify-center p-6 lg:p-10">
+                  <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#0088e0]">
+                    Primary Credential
                   </p>
+                  <h3 className="mt-3 text-2xl font-bold text-slate-950">
+                    Doctor of Philosophy in Engineering
+                  </h3>
                 </div>
               </article>
 
               <article className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.06)]">
-                <div className="bg-slate-100 p-4">
+                <div className="border-b border-slate-200 p-6 lg:p-8">
+                  <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#0088e0]">
+                    Doctoral Research
+                  </p>
+                  <h3 className="mt-2 text-2xl font-bold text-slate-950">
+                    Interfacial Wave Dynamics of a Multiphase-Drop System
+                  </h3>
+                  <p className="mt-3 max-w-3xl text-base leading-7 text-slate-600">
+                    Dr. U's doctoral research in engineering shows the analytical and
+                    scientific foundation behind his academic approach.
+                  </p>
+                </div>
+
+                <div className="grid gap-4 bg-slate-100 p-4 md:grid-cols-2 lg:p-6">
                   <Image
                     src="/about/publication.png"
                     alt="Dissertation title page for Interfacial Wave Dynamics of a Multiphase-Drop System"
                     width={1639}
                     height={709}
-                    className="h-auto w-full rounded-[14px] border border-slate-200 object-contain"
+                    className="h-auto w-full rounded-[14px] border border-slate-200 bg-white object-contain"
+                  />
+                  <Image
+                    src="/about/publication2.png"
+                    alt="Additional doctoral research publication record for Dr. Udugama Rakhitha"
+                    width={1222}
+                    height={483}
+                    className="h-auto w-full rounded-[14px] border border-slate-200 bg-white object-contain"
+                  />
+                  <Image
+                    src="/about/publication3.png"
+                    alt="Additional doctoral research record for Dr. Udugama Rakhitha"
+                    width={982}
+                    height={402}
+                    className="h-auto w-full rounded-[14px] border border-slate-200 bg-white object-contain"
+                  />
+                  <Image
+                    src="/about/publication4.png"
+                    alt="Additional doctoral research record for Dr. Udugama Rakhitha"
+                    width={553}
+                    height={677}
+                    className="mx-auto h-auto max-h-[520px] w-full rounded-[14px] border border-slate-200 bg-white object-contain md:w-auto"
                   />
                 </div>
-                <div className="p-6">
-                  <h3 className="text-xl font-bold text-slate-950">
-                    Interfacial Wave Dynamics of a Multiphase-Drop System
-                  </h3>
-                  <p className="mt-3 text-base leading-7 text-slate-600">
-                    Dr. U's dissertation research in Mechanical Engineering shows the
-                    analytical and scientific foundation behind his academic approach.
-                  </p>
-                </div>
               </article>
-            </div>
-          </div>
-        </section>
-
-        <section className="bg-white py-20">
-          <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[1fr_0.95fr] lg:px-8">
-            <div>
-              <span className="text-sm font-semibold uppercase tracking-[0.24em] text-[#0088e0]">
-                Dr. U Education
-              </span>
-              <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950 md:text-4xl">
-                A serious coaching environment for ambitious students
-              </h2>
-              <p className="mt-5 text-lg leading-8 text-slate-600">
-                Dr. U Education was built for families who want more than casual
-                tutoring. The centre combines clear teaching, disciplined preparation,
-                and close academic guidance across demanding school and VCE pathways.
-              </p>
-
-              <div className="mt-8 grid gap-4 sm:grid-cols-2">
-                {focusAreas.map((area) => (
-                  <div
-                    key={area}
-                    className="rounded-[18px] border border-slate-200 bg-slate-50 px-5 py-4 text-base font-semibold leading-7 text-slate-800"
-                  >
-                    {area}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="rounded-[24px] bg-[#061b41] p-7 text-white shadow-[0_24px_70px_rgba(6,27,65,0.18)] md:p-8">
-              <span className="text-sm font-semibold uppercase tracking-[0.24em] text-sky-200">
-                Teaching Standards
-              </span>
-              <h3 className="mt-3 text-2xl font-bold leading-tight">
-                Structured, precise, and outcome-focused
-              </h3>
-              <div className="mt-6 space-y-4">
-                {teachingStandards.map((standard) => (
-                  <p
-                    key={standard}
-                    className="rounded-[16px] border border-white/10 bg-white/8 px-5 py-4 text-base leading-7 text-slate-200"
-                  >
-                    {standard}
-                  </p>
-                ))}
-              </div>
             </div>
           </div>
         </section>
@@ -280,17 +223,26 @@ export default function AboutPage() {
               {branchLocations.map((branch) => (
                 <article
                   key={branch.name}
-                  className="rounded-[24px] border border-slate-200 bg-white p-7 shadow-[0_22px_60px_rgba(15,23,42,0.05)]"
+                  className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_22px_60px_rgba(15,23,42,0.05)]"
                 >
-                  <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#0088e0]">
-                    {branch.name}
-                  </p>
-                  <h3 className="mt-3 text-2xl font-bold text-slate-950">
-                    {branch.address}
-                  </h3>
-                  <p className="mt-4 text-base leading-7 text-slate-600">
-                    {branch.description}
-                  </p>
+                  <div className="p-7">
+                    <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#0088e0]">
+                      {branch.name}
+                    </p>
+                    <h3 className="mt-3 text-2xl font-bold text-slate-950">
+                      {branch.address}
+                    </h3>
+                    <p className="mt-4 text-base leading-7 text-slate-600">
+                      {branch.description}
+                    </p>
+                  </div>
+                  <iframe
+                    src={branch.mapSrc}
+                    title={`${branch.name} Google Map`}
+                    className="h-72 w-full border-0"
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                  />
                 </article>
               ))}
             </div>
