@@ -13,12 +13,27 @@ import {
   Send,
 } from 'lucide-react';
 import { Button, Card, CardContent, CardHeader, CardTitle, Input, TextArea } from '@/components/ui';
-import { CAREER_POSITIONS, CareerApplicationData } from '@/models/careerSchema';
+import { CareerApplicationData, CareerPositionDocument } from '@/models/careerSchema';
 
 type CareerDocumentType = 'resume' | 'cover-letter';
 
 const MAX_DOCUMENT_SIZE_BYTES = 5 * 1024 * 1024;
 const ALLOWED_DOCUMENT_TYPES = '.pdf,.doc,.docx';
+
+function createInitialFormData(position?: CareerPositionDocument): CareerApplicationData {
+  return {
+    positionId: position?.id || '',
+    positionTitle: position?.title || '',
+    fullName: '',
+    email: '',
+    phone: '',
+    location: '',
+    experience: '',
+    availability: '',
+    resumeUrl: '',
+    coverLetterUrl: '',
+  };
+}
 
 declare global {
   interface Window {
@@ -29,22 +44,11 @@ declare global {
   }
 }
 
-const initialFormData: CareerApplicationData = {
-  positionId: CAREER_POSITIONS[0].id,
-  positionTitle: CAREER_POSITIONS[0].title,
-  fullName: '',
-  email: '',
-  phone: '',
-  location: '',
-  experience: '',
-  availability: '',
-  resumeUrl: '',
-  coverLetterUrl: '',
-};
-
 export default function CareerPage() {
   const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
-  const [formData, setFormData] = useState<CareerApplicationData>(initialFormData);
+  const [positions, setPositions] = useState<CareerPositionDocument[]>([]);
+  const [positionsLoading, setPositionsLoading] = useState(true);
+  const [formData, setFormData] = useState<CareerApplicationData>(createInitialFormData());
   const [submitting, setSubmitting] = useState(false);
   const [uploadingDocuments, setUploadingDocuments] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -57,9 +61,46 @@ export default function CareerPage() {
   const turnstileContainerRef = useRef<HTMLDivElement | null>(null);
 
   const selectedPosition = useMemo(
-    () => CAREER_POSITIONS.find((position) => position.id === formData.positionId) || CAREER_POSITIONS[0],
-    [formData.positionId]
+    () => positions.find((position) => position.id === formData.positionId) || null,
+    [positions, formData.positionId]
   );
+
+  useEffect(() => {
+    const loadPositions = async () => {
+      setPositionsLoading(true);
+
+      try {
+        const response = await fetch('/api/careers/positions', {
+          cache: 'no-store',
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to load positions');
+        }
+
+        const data = await response.json();
+        const loadedPositions = Array.isArray(data) ? (data as CareerPositionDocument[]) : [];
+        setPositions(loadedPositions);
+
+        if (loadedPositions.length > 0) {
+          setFormData((current) => {
+            if (current.positionId) {
+              return current;
+            }
+
+            return createInitialFormData(loadedPositions[0]);
+          });
+        }
+      } catch (error) {
+        console.error('Error loading career positions:', error);
+        setError('Failed to load available positions. Please refresh and try again.');
+      } finally {
+        setPositionsLoading(false);
+      }
+    };
+
+    loadPositions();
+  }, []);
 
   useEffect(() => {
     if (!turnstileSiteKey || !turnstileLoaded || !turnstileContainerRef.current || !window.turnstile || turnstileWidgetId) {
@@ -78,7 +119,9 @@ export default function CareerPage() {
 
   const updateField = (field: keyof CareerApplicationData, value: string) => {
     if (field === 'positionId') {
-      const position = CAREER_POSITIONS.find((item) => item.id === value) || CAREER_POSITIONS[0];
+      const position = positions.find((item) => item.id === value);
+      if (!position) return;
+
       setFormData((current) => ({
         ...current,
         positionId: position.id,
@@ -206,6 +249,10 @@ export default function CareerPage() {
     setError('');
 
     try {
+      if (!selectedPosition) {
+        throw new Error('No active position is currently available for applications.');
+      }
+
       if (!resumeFile) {
         throw new Error('Please upload your CV before submitting.');
       }
@@ -242,7 +289,7 @@ export default function CareerPage() {
       }
 
       setSuccess(true);
-      setFormData(initialFormData);
+      setFormData(createInitialFormData(positions[0]));
       setResumeFile(null);
       setCoverLetterFile(null);
       resetTurnstile();
@@ -318,11 +365,27 @@ export default function CareerPage() {
               </p>
             </div>
 
-            {CAREER_POSITIONS.map((position) => (
+            {positionsLoading && (
+              <Card>
+                <CardContent className="p-5">
+                  <p className="text-sm text-gray-500">Loading positions...</p>
+                </CardContent>
+              </Card>
+            )}
+
+            {!positionsLoading && positions.length === 0 && (
+              <Card>
+                <CardContent className="p-5">
+                  <p className="text-sm text-gray-600">No open positions right now. Please check back later.</p>
+                </CardContent>
+              </Card>
+            )}
+
+              {positions.map((position) => (
               <Card
                 key={position.id}
                 className={`transition-colors ${
-                  selectedPosition.id === position.id ? 'border-[#0088e0] bg-blue-50' : ''
+                    selectedPosition?.id === position.id ? 'border-[#0088e0] bg-blue-50' : ''
                 }`}
               >
                 <CardContent className="p-5">
@@ -345,12 +408,12 @@ export default function CareerPage() {
                   </div>
                   <Button
                     type="button"
-                    variant={selectedPosition.id === position.id ? 'primary' : 'outline'}
+                    variant={selectedPosition?.id === position.id ? 'primary' : 'outline'}
                     size="sm"
                     className="mt-4"
                     onClick={() => updateField('positionId', position.id)}
                   >
-                    {selectedPosition.id === position.id ? 'Selected' : 'Apply for this role'}
+                    {selectedPosition?.id === position.id ? 'Selected' : 'Apply for this role'}
                   </Button>
                 </CardContent>
               </Card>
@@ -361,7 +424,7 @@ export default function CareerPage() {
             <CardHeader>
               <CardTitle className="text-2xl text-[#01143d]">Apply Now</CardTitle>
               <p className="text-gray-600">
-                Selected role: <span className="font-semibold">{selectedPosition.title}</span>
+                Selected role: <span className="font-semibold">{selectedPosition?.title || 'No active positions'}</span>
               </p>
             </CardHeader>
             <CardContent>
@@ -380,9 +443,10 @@ export default function CareerPage() {
                     value={formData.positionId}
                     onChange={(event) => updateField('positionId', event.target.value)}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    disabled={positions.length === 0}
                     required
                   >
-                    {CAREER_POSITIONS.map((position) => (
+                    {positions.map((position) => (
                       <option key={position.id} value={position.id}>
                         {position.title}
                       </option>
@@ -485,6 +549,7 @@ export default function CareerPage() {
                   leftIcon={<Send className="w-4 h-4" />}
                   className="w-full"
                   size="lg"
+                  disabled={positions.length === 0}
                 >
                   Submit Application
                 </Button>

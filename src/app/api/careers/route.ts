@@ -9,6 +9,7 @@ import { authenticateRequest, checkRateLimit } from '@/utils/auth-middleware';
 import { verifyTurnstileToken } from '@/utils/turnstile-server';
 
 const COLLECTION = 'careerApplications';
+const POSITIONS_COLLECTION = 'careerPositions';
 const MAIL_COLLECTION = 'mail';
 const PUBLIC_POST_RATE_LIMIT = {
   maxRequests: 6,
@@ -102,10 +103,31 @@ export async function POST(request: NextRequest) {
     }
 
     const validatedData = careerApplicationSchema.parse(body);
+    const positionSnapshot = await firebaseAdmin.db
+      .collection(POSITIONS_COLLECTION)
+      .doc(validatedData.positionId)
+      .get();
+
+    if (!positionSnapshot.exists) {
+      return NextResponse.json(
+        { error: 'Selected position is no longer available.' },
+        { status: 400 }
+      );
+    }
+
+    const positionData = positionSnapshot.data()!;
+    if (positionData.isActive === false) {
+      return NextResponse.json(
+        { error: 'Selected position is currently closed.' },
+        { status: 400 }
+      );
+    }
+
     const now = firebaseAdmin.admin.firestore.Timestamp.now();
 
     const applicationData = {
       ...validatedData,
+      positionTitle: positionData.title || validatedData.positionTitle,
       resumeUrl: validatedData.resumeUrl || '',
       coverLetterUrl: validatedData.coverLetterUrl || '',
       status: 'New' as const,

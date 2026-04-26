@@ -16,6 +16,7 @@ import { Button, Card, CardContent, CardHeader, CardTitle, Input, TextArea } fro
 import {
   CareerApplicationDocument,
   CareerApplicationStatus,
+  CareerPositionDocument,
   careerApplicationStatuses,
 } from '@/models/careerSchema';
 import { auth } from '@/utils/firebase-client';
@@ -34,6 +35,13 @@ interface PaginatedCareerResponse {
   applications: CareerApplicationDocument[];
   hasMore: boolean;
   nextCursor: string | null;
+}
+
+interface PositionFormState {
+  title: string;
+  type: string;
+  location: string;
+  summary: string;
 }
 
 const statusStyles: Record<CareerApplicationStatus, string> = {
@@ -97,6 +105,7 @@ async function getAdminHeaders() {
 
 export default function AdminCareersPage() {
   const [applications, setApplications] = useState<CareerApplicationDocument[]>([]);
+  const [positions, setPositions] = useState<CareerPositionDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [actionLoading, setActionLoading] = useState('');
@@ -106,6 +115,36 @@ export default function AdminCareersPage() {
   const [composer, setComposer] = useState<ComposerState | null>(null);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
+  const [positionsLoading, setPositionsLoading] = useState(false);
+  const [positionForm, setPositionForm] = useState<PositionFormState>({
+    title: '',
+    type: '',
+    location: '',
+    summary: '',
+  });
+
+  const loadPositions = async () => {
+    setPositionsLoading(true);
+
+    try {
+      const headers = await getAdminHeaders();
+      const response = await fetch('/api/careers/positions?includeInactive=true', {
+        cache: 'no-store',
+        headers,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to load positions');
+      }
+
+      const data = await response.json();
+      setPositions(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load positions');
+    } finally {
+      setPositionsLoading(false);
+    }
+  };
 
   const loadApplications = async (append = false) => {
     if (append) {
@@ -169,7 +208,79 @@ export default function AdminCareersPage() {
 
   useEffect(() => {
     loadApplications();
+    loadPositions();
   }, []);
+
+  const createPosition = async () => {
+    if (!positionForm.title.trim() || !positionForm.type.trim() || !positionForm.location.trim() || !positionForm.summary.trim()) {
+      setError('Please complete all position fields before adding.');
+      return;
+    }
+
+    setActionLoading('position-create');
+    setError('');
+
+    try {
+      const response = await fetch('/api/careers/positions', {
+        method: 'POST',
+        headers: await getAdminHeaders(),
+        body: JSON.stringify({
+          title: positionForm.title.trim(),
+          type: positionForm.type.trim(),
+          location: positionForm.location.trim(),
+          summary: positionForm.summary.trim(),
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new Error(data?.error || 'Failed to add position');
+      }
+
+      const created = (await response.json()) as CareerPositionDocument;
+      setPositions((current) => [created, ...current]);
+      setPositionForm({
+        title: '',
+        type: '',
+        location: '',
+        summary: '',
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add position');
+    } finally {
+      setActionLoading('');
+    }
+  };
+
+  const togglePositionStatus = async (position: CareerPositionDocument) => {
+    setActionLoading(`position-toggle-${position.id}`);
+    setError('');
+
+    try {
+      const response = await fetch('/api/careers/positions', {
+        method: 'PATCH',
+        headers: await getAdminHeaders(),
+        body: JSON.stringify({
+          id: position.id,
+          isActive: !position.isActive,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new Error(data?.error || 'Failed to update position');
+      }
+
+      const updated = (await response.json()) as CareerPositionDocument;
+      setPositions((current) =>
+        current.map((item) => (item.id === updated.id ? updated : item))
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update position');
+    } finally {
+      setActionLoading('');
+    }
+  };
 
   const filteredApplications = useMemo(() => {
     const search = searchTerm.trim().toLowerCase();
@@ -286,7 +397,10 @@ export default function AdminCareersPage() {
           </div>
           <Button
             variant="outline"
-            onClick={() => loadApplications(false)}
+            onClick={() => {
+              loadApplications(false);
+              loadPositions();
+            }}
             leftIcon={<BriefcaseBusiness className="w-4 h-4" />}
           >
             Refresh
@@ -302,6 +416,90 @@ export default function AdminCareersPage() {
           </div>
         </div>
       )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Manage Open Positions</CardTitle>
+          <p className="text-sm text-gray-600 dark:text-gray-300">
+            Add new positions and control whether each role is visible on the public careers page.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Input
+              label="Position Title"
+              value={positionForm.title}
+              onChange={(event) => setPositionForm((current) => ({ ...current, title: event.target.value }))}
+              placeholder="VCE Chemistry Tutor"
+            />
+            <Input
+              label="Type"
+              value={positionForm.type}
+              onChange={(event) => setPositionForm((current) => ({ ...current, type: event.target.value }))}
+              placeholder="Part-time"
+            />
+            <Input
+              label="Location"
+              value={positionForm.location}
+              onChange={(event) => setPositionForm((current) => ({ ...current, location: event.target.value }))}
+              placeholder="Cranbourne / Online"
+            />
+            <div className="flex items-end">
+              <Button
+                onClick={createPosition}
+                isLoading={actionLoading === 'position-create'}
+                disabled={actionLoading === 'position-create'}
+                className="w-full"
+              >
+                Add Position
+              </Button>
+            </div>
+          </div>
+
+          <TextArea
+            label="Summary"
+            value={positionForm.summary}
+            onChange={(event) => setPositionForm((current) => ({ ...current, summary: event.target.value }))}
+            rows={3}
+            placeholder="Brief role summary shown to candidates"
+          />
+
+          <div className="space-y-3">
+            {positionsLoading ? (
+              <p className="text-sm text-gray-500">Loading positions...</p>
+            ) : positions.length === 0 ? (
+              <p className="text-sm text-gray-500">No positions found. Add your first position above.</p>
+            ) : (
+              positions.map((position) => (
+                <div
+                  key={position.id}
+                  className="flex flex-col gap-3 rounded-lg border border-gray-200 p-4 md:flex-row md:items-center md:justify-between"
+                >
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white">{position.title}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">{position.type} • {position.location}</p>
+                    <p className="mt-1 text-xs text-gray-500">{position.summary}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${position.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-700'}`}>
+                      {position.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => togglePositionStatus(position)}
+                      isLoading={actionLoading === `position-toggle-${position.id}`}
+                      disabled={actionLoading === `position-toggle-${position.id}`}
+                    >
+                      {position.isActive ? 'Close Role' : 'Reopen Role'}
+                    </Button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {careerApplicationStatuses.map((status) => (
