@@ -32,6 +32,7 @@ function createInitialFormData(position?: CareerPositionDocument): CareerApplica
     availability: '',
     resumeUrl: '',
     coverLetterUrl: '',
+    coverLetterText: '',
   };
 }
 
@@ -54,7 +55,6 @@ export default function CareerPage() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
   const [resumeFile, setResumeFile] = useState<File | null>(null);
-  const [coverLetterFile, setCoverLetterFile] = useState<File | null>(null);
   const [captchaToken, setCaptchaToken] = useState('');
   const [turnstileLoaded, setTurnstileLoaded] = useState(false);
   const [turnstileWidgetId, setTurnstileWidgetId] = useState<string | null>(null);
@@ -88,7 +88,11 @@ export default function CareerPage() {
               return current;
             }
 
-            return createInitialFormData(loadedPositions[0]);
+            return {
+              ...current,
+              positionId: loadedPositions[0].id,
+              positionTitle: loadedPositions[0].title,
+            };
           });
         }
       } catch (error) {
@@ -136,52 +140,35 @@ export default function CareerPage() {
     }));
   };
 
-  const validateDocument = (file: File) => {
-    const extension = file.name.split('.').pop()?.toLowerCase() || '';
-    if (!['pdf', 'doc', 'docx'].includes(extension)) {
-      return 'Only PDF, DOC, or DOCX files are allowed.';
-    }
-
-    if (file.size > MAX_DOCUMENT_SIZE_BYTES) {
-      return 'File is too large. Maximum allowed size is 5MB.';
-    }
-
-    return null;
-  };
-
-  const handleDocumentChange = (file: File | null, type: CareerDocumentType) => {
+  const handleDocumentChange = (file: File | null) => {
     if (!file) {
-      if (type === 'resume') {
-        setResumeFile(null);
-      } else {
-        setCoverLetterFile(null);
-      }
+      setResumeFile(null);
       return;
     }
 
-    const validationError = validateDocument(file);
-    if (validationError) {
-      setError(validationError);
+    const extension = file.name.split('.').pop()?.toLowerCase() || '';
+    if (!['pdf', 'doc', 'docx'].includes(extension)) {
+      setError('Only PDF, DOC, or DOCX files are allowed.');
+      return;
+    }
+
+    if (file.size > MAX_DOCUMENT_SIZE_BYTES) {
+      setError('File is too large. Maximum allowed size is 5MB.');
       return;
     }
 
     setError('');
-    if (type === 'resume') {
-      setResumeFile(file);
-      return;
-    }
-
-    setCoverLetterFile(file);
+    setResumeFile(file);
   };
 
-  const uploadCareerDocumentViaSignedUrl = async (file: File, type: CareerDocumentType): Promise<string> => {
+  const uploadCareerDocumentViaSignedUrl = async (file: File): Promise<string> => {
     const signedUrlResponse = await fetch('/api/careers/upload-url', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        documentType: type,
+        documentType: 'resume',
         fileName: file.name,
         contentType: file.type,
         size: file.size,
@@ -206,10 +193,10 @@ export default function CareerPage() {
     return signedUrlData.publicUrl;
   };
 
-  const uploadCareerDocumentViaProxy = async (file: File, type: CareerDocumentType): Promise<string> => {
+  const uploadCareerDocumentViaProxy = async (file: File): Promise<string> => {
     const uploadFormData = new FormData();
     uploadFormData.append('file', file);
-    uploadFormData.append('documentType', type);
+    uploadFormData.append('documentType', 'resume');
 
     const response = await fetch('/api/careers/upload', {
       method: 'POST',
@@ -224,12 +211,12 @@ export default function CareerPage() {
     return data.url;
   };
 
-  const uploadCareerDocument = async (file: File, type: CareerDocumentType): Promise<string> => {
+  const uploadResume = async (file: File): Promise<string> => {
     try {
-      return await uploadCareerDocumentViaSignedUrl(file, type);
+      return await uploadCareerDocumentViaSignedUrl(file);
     } catch (directUploadError) {
       console.warn('Direct upload failed, falling back to proxy upload:', directUploadError);
-      return uploadCareerDocumentViaProxy(file, type);
+      return uploadCareerDocumentViaProxy(file);
     }
   };
 
@@ -265,12 +252,8 @@ export default function CareerPage() {
 
       const submissionPayload: CareerApplicationData = {
         ...formData,
-        resumeUrl: await uploadCareerDocument(resumeFile, 'resume'),
+        resumeUrl: await uploadResume(resumeFile),
       };
-
-      if (coverLetterFile) {
-        submissionPayload.coverLetterUrl = await uploadCareerDocument(coverLetterFile, 'cover-letter');
-      }
 
       const response = await fetch('/api/careers', {
         method: 'POST',
@@ -291,7 +274,6 @@ export default function CareerPage() {
       setSuccess(true);
       setFormData(createInitialFormData(positions[0]));
       setResumeFile(null);
-      setCoverLetterFile(null);
       resetTurnstile();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to submit application');
@@ -361,7 +343,7 @@ export default function CareerPage() {
             <div>
               <h2 className="text-2xl font-bold text-gray-900 mb-2">Available Positions</h2>
               <p className="text-gray-600">
-                Choose the role that best matches your experience and upload your CV with an optional cover letter.
+                Choose the role that best matches your experience and upload your CV with a cover letter.
               </p>
             </div>
 
@@ -459,6 +441,7 @@ export default function CareerPage() {
                     label="Full Name"
                     value={formData.fullName}
                     onChange={(event) => updateField('fullName', event.target.value)}
+                    placeholder="Please fill your full name"
                     required
                   />
                   <Input
@@ -467,18 +450,21 @@ export default function CareerPage() {
                     leftIcon={<Mail className="w-4 h-4" />}
                     value={formData.email}
                     onChange={(event) => updateField('email', event.target.value)}
+                    placeholder="Please fill your email address"
                     required
                   />
                   <Input
                     label="Phone"
                     value={formData.phone}
                     onChange={(event) => updateField('phone', event.target.value)}
+                    placeholder="Please fill your phone number"
                     required
                   />
                   <Input
                     label="Suburb / Location"
                     value={formData.location}
                     onChange={(event) => updateField('location', event.target.value)}
+                    placeholder="Please fill your suburb or location"
                     required
                   />
                 </div>
@@ -487,7 +473,7 @@ export default function CareerPage() {
                   label="Experience"
                   value={formData.experience}
                   onChange={(event) => updateField('experience', event.target.value)}
-                  placeholder="Tell us about your teaching, admin, or education experience."
+                  placeholder="Please fill your relevant work or professional experience..."
                   rows={5}
                   required
                 />
@@ -496,7 +482,7 @@ export default function CareerPage() {
                   label="Availability"
                   value={formData.availability}
                   onChange={(event) => updateField('availability', event.target.value)}
-                  placeholder="For example: weekdays after 4pm, weekends, online only."
+                  placeholder="Please fill your availability (e.g., weekdays after 4pm, online only)..."
                   rows={3}
                   required
                 />
@@ -508,7 +494,7 @@ export default function CareerPage() {
                   <input
                     type="file"
                     accept={ALLOWED_DOCUMENT_TYPES}
-                    onChange={(event) => handleDocumentChange(event.target.files?.[0] || null, 'resume')}
+                    onChange={(event) => handleDocumentChange(event.target.files?.[0] || null)}
                     className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 file:mr-4 file:rounded-md file:border-0 file:bg-[#01143d] file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-[#0a245f] focus:outline-none focus:ring-2 focus:ring-primary-500"
                     required
                   />
@@ -516,19 +502,13 @@ export default function CareerPage() {
                   {resumeFile && <p className="mt-1 text-sm text-gray-600">Selected: {resumeFile.name}</p>}
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Cover Letter
-                  </label>
-                  <input
-                    type="file"
-                    accept={ALLOWED_DOCUMENT_TYPES}
-                    onChange={(event) => handleDocumentChange(event.target.files?.[0] || null, 'cover-letter')}
-                    className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 file:mr-4 file:rounded-md file:border-0 file:bg-[#0088e0] file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-[#0077c2] focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  />
-                  <p className="mt-1 text-sm text-gray-500">Optional upload. Accepted formats: PDF, DOC, DOCX (max 5MB).</p>
-                  {coverLetterFile && <p className="mt-1 text-sm text-gray-600">Selected: {coverLetterFile.name}</p>}
-                </div>
+                <TextArea
+                  label="Cover Letter"
+                  value={formData.coverLetterText}
+                  onChange={(event) => updateField('coverLetterText', event.target.value)}
+                  placeholder="Please fill your cover letter or introduction (optional)..."
+                  rows={6}
+                />
 
                 {turnstileSiteKey && (
                   <div>

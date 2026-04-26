@@ -37,6 +37,7 @@ export const careerApplicationSchema = z.object({
   availability: z.string().min(3, 'Availability is required').max(500),
   resumeUrl: z.string().url('Enter a valid resume link').optional().or(z.literal('')),
   coverLetterUrl: z.string().url('Enter a valid cover letter link').optional().or(z.literal('')),
+  coverLetterText: z.string().max(3000, 'Cover letter is too long').optional(),
 });
 
 export const careerApplicationUpdateSchema = z.object({
