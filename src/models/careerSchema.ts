@@ -33,13 +33,25 @@ export const careerApplicationStatuses = [
 
 export type CareerApplicationStatus = typeof careerApplicationStatuses[number];
 
-const positionIds = CAREER_POSITIONS.map((position) => position.id) as [
-  string,
-  ...string[]
-];
+export const careerPositionSchema = z.object({
+  title: z.string().min(2, 'Title is required').max(120),
+  type: z.string().min(2, 'Type is required').max(60),
+  location: z.string().min(2, 'Location is required').max(120),
+  summary: z.string().min(10, 'Summary is required').max(500),
+  isActive: z.boolean().optional(),
+});
+
+export const careerPositionUpdateSchema = z.object({
+  id: z.string().min(1, 'Position id is required'),
+  title: z.string().min(2).max(120).optional(),
+  type: z.string().min(2).max(60).optional(),
+  location: z.string().min(2).max(120).optional(),
+  summary: z.string().min(10).max(500).optional(),
+  isActive: z.boolean().optional(),
+});
 
 export const careerApplicationSchema = z.object({
-  positionId: z.enum(positionIds),
+  positionId: z.string().min(1, 'Position is required').max(120),
   positionTitle: z.string().min(1, 'Position title is required'),
   fullName: z.string().min(2, 'Full name is required').max(100),
   email: z.string().email('A valid email is required'),
@@ -72,6 +84,15 @@ export interface CareerApplicationDocument extends CareerApplicationData {
     message: string;
     sentAt: string;
   }>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CareerPositionData = z.infer<typeof careerPositionSchema>;
+
+export interface CareerPositionDocument extends CareerPositionData {
+  id: string;
+  isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
