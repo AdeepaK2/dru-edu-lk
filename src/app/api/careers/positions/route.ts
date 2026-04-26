@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import firebaseAdmin from '@/utils/firebase-server';
 import {
-  CAREER_POSITIONS,
   CareerPositionDocument,
   careerPositionSchema,
   careerPositionUpdateSchema,
@@ -43,35 +42,8 @@ function convertPosition(
   };
 }
 
-async function ensureDefaultPositionsIfMissing() {
-  const snapshot = await firebaseAdmin.db.collection(COLLECTION).limit(1).get();
-  if (!snapshot.empty) {
-    return;
-  }
-
-  const batch = firebaseAdmin.db.batch();
-  const now = firebaseAdmin.admin.firestore.Timestamp.now();
-
-  for (const position of CAREER_POSITIONS) {
-    const docRef = firebaseAdmin.db.collection(COLLECTION).doc(position.id);
-    batch.set(docRef, {
-      title: position.title,
-      type: position.type,
-      location: position.location,
-      summary: position.summary,
-      isActive: true,
-      createdAt: now,
-      updatedAt: now,
-    });
-  }
-
-  await batch.commit();
-}
-
 export async function GET(request: NextRequest) {
   try {
-    await ensureDefaultPositionsIfMissing();
-
     const includeInactive = request.nextUrl.searchParams.get('includeInactive') === 'true';
 
     if (includeInactive) {

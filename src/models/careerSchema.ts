@@ -1,29 +1,5 @@
 import { z } from 'zod';
 
-export const CAREER_POSITIONS = [
-  {
-    id: 'vce-maths-tutor',
-    title: 'VCE Maths Tutor',
-    type: 'Part-time',
-    location: 'Glen Waverley / Online',
-    summary: 'Support senior students with clear explanations, feedback, and exam-focused practice.',
-  },
-  {
-    id: 'english-tutor',
-    title: 'English Tutor',
-    type: 'Part-time',
-    location: 'Cranbourne / Online',
-    summary: 'Help students build stronger essay structure, language analysis, and confidence.',
-  },
-  {
-    id: 'admin-support',
-    title: 'Education Admin Support',
-    type: 'Casual',
-    location: 'Hybrid',
-    summary: 'Assist with student communication, scheduling, and day-to-day learning operations.',
-  },
-] as const;
-
 export const careerApplicationStatuses = [
   'New',
   'Shortlisted',
