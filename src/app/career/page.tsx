@@ -376,7 +376,7 @@ export default function CareerPage() {
             {!positionsLoading && positions.length === 0 && (
               <Card>
                 <CardContent className="p-5">
-                  <p className="text-sm text-gray-600">No open positions right now. Please check back later.</p>
+                  <p className="text-sm text-gray-600">No positions are open currently. Please check back later.</p>
                 </CardContent>
               </Card>
             )}
@@ -424,7 +424,7 @@ export default function CareerPage() {
             <CardHeader>
               <CardTitle className="text-2xl text-[#01143d]">Apply Now</CardTitle>
               <p className="text-gray-600">
-                Selected role: <span className="font-semibold">{selectedPosition?.title || 'No active positions'}</span>
+                Selected role: <span className="font-semibold">{selectedPosition?.title || 'No positions are open currently'}</span>
               </p>
             </CardHeader>
             <CardContent>
