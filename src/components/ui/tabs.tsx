@@ -13,6 +13,7 @@ interface TabsListProps {
 
 interface TabsTriggerProps {
   value: string;
+  className?: string;
   children: React.ReactNode;
 }
 
@@ -50,16 +51,16 @@ export function TabsList({ className = '', children }: TabsListProps) {
   );
 }
 
-export function TabsTrigger({ value, children }: TabsTriggerProps) {
+export function TabsTrigger({ value, className = '', children }: TabsTriggerProps) {
   const { activeTab, setActiveTab } = React.useContext(TabsContext);
   
   return (
     <button
-      className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+      className={`flex rounded-md px-3 py-2 text-sm font-medium transition-colors items-center justify-center ${
         activeTab === value
           ? 'bg-white text-gray-900 shadow-sm'
           : 'text-gray-600 hover:text-gray-900'
-      }`}
+      } ${className}`}
       onClick={() => setActiveTab(value)}
     >
       {children}

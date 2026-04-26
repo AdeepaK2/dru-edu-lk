@@ -11,6 +11,10 @@ import {
   UserCheck,
   X,
   XCircle,
+  Plus,
+  Users,
+  CheckCircle2,
+  Filter,
 } from 'lucide-react';
 import { Button, Card, CardContent, CardHeader, CardTitle, Input, TextArea } from '@/components/ui';
 import {
@@ -20,6 +24,8 @@ import {
   careerApplicationStatuses,
 } from '@/models/careerSchema';
 import { auth } from '@/utils/firebase-client';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 
 type EmailIntent = 'shortlist' | 'contact' | 'reject';
 
@@ -44,12 +50,13 @@ interface PositionFormState {
   summary: string;
 }
 
-const statusStyles: Record<CareerApplicationStatus, string> = {
-  New: 'bg-blue-100 text-blue-800',
-  Shortlisted: 'bg-green-100 text-green-800',
-  Contacted: 'bg-purple-100 text-purple-800',
-  Rejected: 'bg-red-100 text-red-800',
+const statusBadgeVariants: Record<CareerApplicationStatus, 'default' | 'secondary' | 'destructive' | 'warning' | 'success'> = {
+  New: 'default',
+  Shortlisted: 'success',
+  Contacted: 'warning',
+  Rejected: 'destructive',
 };
+
 const PAGE_SIZE = 25;
 
 function formatDate(value: string) {
@@ -383,259 +390,109 @@ export default function AdminCareersPage() {
     );
   }
 
-  return (
-    <div className="space-y-6">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              Careers Management
-            </h1>
-            <p className="text-gray-600 dark:text-gray-300">
-              Review applicants, shortlist candidates, and send email updates.
-            </p>
-          </div>
-          <Button
-            variant="outline"
-            onClick={() => {
-              loadApplications(false);
-              loadPositions();
-            }}
-            leftIcon={<BriefcaseBusiness className="w-4 h-4" />}
-          >
-            Refresh
-          </Button>
-        </div>
-      </div>
-
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-md p-4">
-          <div className="flex">
-            <XCircle className="h-5 w-5 text-red-400" />
-            <p className="ml-3 text-sm text-red-700">{error}</p>
-          </div>
-        </div>
-      )}
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Manage Open Positions</CardTitle>
-          <p className="text-sm text-gray-600 dark:text-gray-300">
-            Add new positions and control whether each role is visible on the public careers page.
-          </p>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid gap-4 lg:grid-cols-2">
-            <Input
-              label="Position Title"
-              value={positionForm.title}
-              onChange={(event) => setPositionForm((current) => ({ ...current, title: event.target.value }))}
-              placeholder="VCE Chemistry Tutor"
-            />
-            <Input
-              label="Type"
-              value={positionForm.type}
-              onChange={(event) => setPositionForm((current) => ({ ...current, type: event.target.value }))}
-              placeholder="Part-time"
-            />
-            <Input
-              label="Location"
-              value={positionForm.location}
-              onChange={(event) => setPositionForm((current) => ({ ...current, location: event.target.value }))}
-              placeholder="Cranbourne / Online"
-            />
-            <div className="flex items-end">
-              <Button
-                onClick={createPosition}
-                isLoading={actionLoading === 'position-create'}
-                disabled={actionLoading === 'position-create'}
-                className="w-full"
-              >
-                Add Position
-              </Button>
-            </div>
-          </div>
-
-          <TextArea
-            label="Summary"
-            value={positionForm.summary}
-            onChange={(event) => setPositionForm((current) => ({ ...current, summary: event.target.value }))}
-            rows={3}
-            placeholder="Brief role summary shown to candidates"
-          />
-
-          <div className="space-y-3">
-            {positionsLoading ? (
-              <p className="text-sm text-gray-500">Loading positions...</p>
-            ) : positions.length === 0 ? (
-              <p className="text-sm text-gray-500">No positions found. Add your first position above.</p>
-            ) : (
-              positions.map((position) => (
-                <div
-                  key={position.id}
-                  className="flex flex-col gap-3 rounded-lg border border-gray-200 p-4 md:flex-row md:items-center md:justify-between"
-                >
-                  <div>
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white">{position.title}</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">{position.type} • {position.location}</p>
-                    <p className="mt-1 text-xs text-gray-500">{position.summary}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${position.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-700'}`}>
-                      {position.isActive ? 'Active' : 'Inactive'}
-                    </span>
+  const ApplicationTable = ({ data }: { data: CareerApplicationDocument[] }) => (
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead className="bg-gray-50 dark:bg-gray-700">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Applicant
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Position
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Details
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Status
+              </th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+            {data.map((application) => (
+              <tr key={application.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 align-top">
+                <td className="px-6 py-4">
+                  <div className="text-sm font-medium text-gray-900 dark:text-white">{application.fullName}</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">{application.email}</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">{application.phone}</div>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="text-sm font-medium text-gray-900 dark:text-white">{application.positionTitle}</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">{application.location}</div>
+                  <div className="text-xs text-gray-400 mt-1">Applied {formatDate(application.createdAt)}</div>
+                </td>
+                <td className="px-6 py-4 min-w-[300px]">
+                  <p className="text-sm text-gray-700 dark:text-gray-200 line-clamp-3">{application.experience}</p>
+                  {application.coverLetterText && (
+                    <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-700/50 rounded border border-gray-100 dark:border-gray-600">
+                      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">Cover Letter:</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-4 italic">"{application.coverLetterText}"</p>
+                    </div>
+                  )}
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                    Availability: {application.availability}
+                  </p>
+                  {(application.resumeUrl || application.coverLetterUrl) && (
+                    <div className="mt-2 space-y-1">
+                      {application.resumeUrl && (
+                        <a
+                          href={application.resumeUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-sm text-blue-600 hover:border-b hover:border-blue-600 inline-block transition-all"
+                        >
+                          View CV
+                        </a>
+                      )}
+                      {application.coverLetterUrl && (
+                        <a
+                          href={application.coverLetterUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-sm text-blue-600 hover:border-b hover:border-blue-600 block transition-all"
+                        >
+                          View cover letter file
+                        </a>
+                      )}
+                    </div>
+                  )}
+                  {application.emailHistory && application.emailHistory.length > 0 && (
+                    <p className="text-xs text-gray-400 mt-2">
+                      Emails sent: {application.emailHistory.length}
+                    </p>
+                  )}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <Badge variant={statusBadgeVariants[application.status]}>
+                    {application.status}
+                  </Badge>
+                </td>
+                <td className="px-6 py-4 text-right">
+                  <div className="flex flex-wrap justify-end gap-2">
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => togglePositionStatus(position)}
-                      isLoading={actionLoading === `position-toggle-${position.id}`}
-                      disabled={actionLoading === `position-toggle-${position.id}`}
+                      onClick={() => setComposer(createComposer(application, 'shortlist'))}
+                      disabled={actionLoading === `${application.id}-email`}
+                      leftIcon={<Star className="w-4 h-4" />}
                     >
-                      {position.isActive ? 'Close Role' : 'Reopen Role'}
+                      Shortlist
                     </Button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        {careerApplicationStatuses.map((status) => (
-          <Card key={status}>
-            <CardContent className="p-5">
-              <p className="text-sm text-gray-500">{status}</p>
-              <p className="text-3xl font-bold text-gray-900 mt-2">{stats[status] || 0}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex flex-col lg:flex-row gap-4 lg:items-center lg:justify-between">
-            <div className="relative flex-1 max-w-lg">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <Input
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Search applicant, email, phone, or role"
-                className="pl-10"
-              />
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {(['All', ...careerApplicationStatuses] as Array<'All' | CareerApplicationStatus>).map((status) => (
-                <Button
-                  key={status}
-                  type="button"
-                  size="sm"
-                  variant={statusFilter === status ? 'primary' : 'outline'}
-                  onClick={() => setStatusFilter(status)}
-                >
-                  {status}
-                </Button>
-              ))}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-700">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Applicant
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Position
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Details
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {filteredApplications.map((application) => (
-                <tr key={application.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 align-top">
-                  <td className="px-6 py-4">
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">{application.fullName}</div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">{application.email}</div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">{application.phone}</div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">{application.positionTitle}</div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">{application.location}</div>
-                    <div className="text-xs text-gray-400 mt-1">Applied {formatDate(application.createdAt)}</div>
-                  </td>
-                  <td className="px-6 py-4 min-w-[300px]">
-                    <p className="text-sm text-gray-700 dark:text-gray-200 line-clamp-3">{application.experience}</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                      Availability: {application.availability}
-                    </p>
-                    {(application.resumeUrl || application.coverLetterUrl) && (
-                      <div className="mt-2 space-y-1">
-                        {application.resumeUrl && (
-                          <a
-                            href={application.resumeUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-sm text-blue-600 hover:underline inline-block"
-                          >
-                            View CV
-                          </a>
-                        )}
-                        {application.coverLetterUrl && (
-                          <a
-                            href={application.coverLetterUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-sm text-blue-600 hover:underline block"
-                          >
-                            View cover letter
-                          </a>
-                        )}
-                      </div>
-                    )}
-                    {application.emailHistory && application.emailHistory.length > 0 && (
-                      <p className="text-xs text-gray-400 mt-2">
-                        Emails sent: {application.emailHistory.length}
-                      </p>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${statusStyles[application.status]}`}>
-                      {application.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex flex-wrap justify-end gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setComposer(createComposer(application, 'shortlist'))}
-                        disabled={actionLoading === `${application.id}-email`}
-                        leftIcon={<Star className="w-4 h-4" />}
-                      >
-                        Shortlist Email
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setComposer(createComposer(application, 'contact'))}
-                        disabled={actionLoading === `${application.id}-email`}
-                        leftIcon={<Mail className="w-4 h-4" />}
-                      >
-                        Email
-                      </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setComposer(createComposer(application, 'contact'))}
+                      disabled={actionLoading === `${application.id}-email`}
+                      leftIcon={<Mail className="w-4 h-4" />}
+                    >
+                      Email
+                    </Button>
+                    {application.status !== 'Shortlisted' && (
                       <Button
                         size="sm"
                         variant="outline"
@@ -645,115 +502,350 @@ export default function AdminCareersPage() {
                       >
                         Mark
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-red-600 hover:text-red-700"
-                        onClick={() => setComposer(createComposer(application, 'reject'))}
-                        disabled={actionLoading === `${application.id}-email`}
-                        leftIcon={<X className="w-4 h-4" />}
-                      >
-                        Reject Email
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {filteredApplications.length === 0 && (
-          <div className="text-center py-12">
-            <BriefcaseBusiness className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">No applications found</h3>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              New career applications will appear here once candidates apply.
-            </p>
-          </div>
-        )}
+                    )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-red-600 hover:bg-red-50"
+                      onClick={() => setComposer(createComposer(application, 'reject'))}
+                      disabled={actionLoading === `${application.id}-email`}
+                      leftIcon={<X className="w-4 h-4" />}
+                    >
+                      Reject
+                    </Button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
-      {hasMore && (
-        <div className="flex justify-center">
+      {data.length === 0 && (
+        <div className="text-center py-12">
+          <BriefcaseBusiness className="mx-auto h-12 w-12 text-gray-400" />
+          <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">No applications found</h3>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            No applications match the current criteria.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <div className="max-w-[1600px] mx-auto p-4 md:p-6 space-y-8">
+      {/* Page Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            Careers Dashboard
+          </h1>
+          <p className="text-gray-500 dark:text-gray-400 text-lg max-w-2xl">
+            Streamline your recruitment pipeline. Manage job postings, review applicants, and connect with potential talent.
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
           <Button
             variant="outline"
-            onClick={() => loadApplications(true)}
-            isLoading={loadingMore}
-            disabled={loadingMore}
+            onClick={() => {
+              loadApplications(false);
+              loadPositions();
+            }}
+            leftIcon={<BriefcaseBusiness className="w-4 h-4" />}
+            className="bg-white"
           >
-            Load More Applications
+            Refresh Data
           </Button>
+        </div>
+      </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center gap-3 text-red-700">
+          <XCircle className="h-5 w-5 flex-shrink-0" />
+          <p className="text-sm font-medium">{error}</p>
+          <button onClick={() => setError('')} className="ml-auto">
+            <X className="h-4 w-4" />
+          </button>
         </div>
       )}
 
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+        {careerApplicationStatuses.map((status) => (
+          <Card key={status} className="border-none bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">{status}</p>
+                <div className={`p-2 rounded-lg ${
+                  status === 'Shortlisted' ? 'bg-green-50 text-green-600' :
+                  status === 'New' ? 'bg-blue-50 text-blue-600' :
+                  status === 'Contacted' ? 'bg-purple-50 text-purple-600' :
+                  'bg-red-50 text-red-600'
+                }`}>
+                  {status === 'Shortlisted' ? <Star className="w-4 h-4" /> :
+                   status === 'New' ? <Plus className="w-4 h-4" /> :
+                   status === 'Contacted' ? <Mail className="w-4 h-4" /> :
+                   <XCircle className="w-4 h-4" />}
+                </div>
+              </div>
+              <p className="text-3xl font-bold text-gray-900 dark:text-white">
+                {stats[status] || 0}
+              </p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Main Tabs Container */}
+      <Tabs defaultValue="candidates" className="w-full">
+        <TabsList className="bg-gray-100/80 p-1.5 mb-8 w-full md:w-auto flex overflow-x-auto no-scrollbar">
+          <TabsTrigger value="positions" className="gap-2 px-6">
+            <BriefcaseBusiness className="w-4 h-4" />
+            Manage Positions
+          </TabsTrigger>
+          <TabsTrigger value="candidates" className="gap-2 px-6">
+            <Users className="w-4 h-4" />
+            All Candidates
+          </TabsTrigger>
+          <TabsTrigger value="selected" className="gap-2 px-6">
+            <CheckCircle2 className="w-4 h-4" />
+            Selected / Shortlisted
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Positions Tab */}
+        <TabsContent value="positions" className="space-y-6 outline-none">
+          <Card className="border-none shadow-sm overflow-hidden">
+            <CardHeader className="bg-white border-b border-gray-100 p-6">
+              <CardTitle className="text-xl flex items-center gap-2">
+                <Plus className="w-5 h-5 text-primary-600" />
+                Add New Position
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 space-y-6">
+              <div className="grid gap-6 md:grid-cols-3">
+                <Input
+                  label="Position Title"
+                  value={positionForm.title}
+                  onChange={(e) => setPositionForm(c => ({ ...c, title: e.target.value }))}
+                  placeholder="e.g. VCE Chemistry Tutor"
+                  className="bg-gray-50/50"
+                />
+                <Input
+                  label="Job Type"
+                  value={positionForm.type}
+                  onChange={(e) => setPositionForm(c => ({ ...c, type: e.target.value }))}
+                  placeholder="e.g. Part-time / Remote"
+                  className="bg-gray-50/50"
+                />
+                <Input
+                  label="Location"
+                  value={positionForm.location}
+                  onChange={(e) => setPositionForm(c => ({ ...c, location: e.target.value }))}
+                  placeholder="e.g. Melbourne / Online"
+                  className="bg-gray-50/50"
+                />
+              </div>
+              <TextArea
+                label="Job Summary"
+                value={positionForm.summary}
+                onChange={(e) => setPositionForm(c => ({ ...c, summary: e.target.value }))}
+                rows={3}
+                placeholder="Briefly describe the role, responsibilities, and key requirements..."
+                className="bg-gray-50/50"
+              />
+              <div className="flex justify-end">
+                <Button
+                  onClick={createPosition}
+                  isLoading={actionLoading === 'position-create'}
+                  className="px-8 shadow-sm"
+                  leftIcon={<Plus className="w-4 h-4" />}
+                >
+                  Post Position
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="grid gap-4">
+            <h3 className="text-lg font-semibold text-gray-900 px-1">Active & Past Postings</h3>
+            {positionsLoading ? (
+              <div className="flex justify-center p-12">
+                <div className="w-8 h-8 border-t-2 border-primary-600 rounded-full animate-spin"></div>
+              </div>
+            ) : positions.length === 0 ? (
+              <Card className="p-12 text-center text-gray-500 border-dashed border-2">
+                No job postings found. Create your first one above.
+              </Card>
+            ) : (
+              <div className="grid gap-4">
+                {positions.map((pos) => (
+                  <Card key={pos.id} className="border-none shadow-sm hover:ring-1 hover:ring-primary-500/20 transition-all">
+                    <CardContent className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-bold text-gray-900">{pos.title}</h4>
+                          <Badge variant={pos.isActive ? 'success' : 'secondary'} className="rounded-md">
+                            {pos.isActive ? 'Live' : 'Closed'}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-gray-500 flex items-center gap-3">
+                          <span>{pos.type}</span>
+                          <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
+                          <span>{pos.location}</span>
+                        </p>
+                        <p className="text-sm text-gray-600 line-clamp-1 max-w-2xl">{pos.summary}</p>
+                      </div>
+                      <Button
+                        variant={pos.isActive ? 'outline' : 'secondary'}
+                        size="sm"
+                        onClick={() => togglePositionStatus(pos)}
+                        isLoading={actionLoading === `position-toggle-${pos.id}`}
+                        className="w-full md:w-auto"
+                      >
+                        {pos.isActive ? 'Deactivate' : 'Reactivate'}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        </TabsContent>
+
+        {/* Candidates Tab */}
+        <TabsContent value="candidates" className="space-y-6 outline-none">
+          <Card className="border-none shadow-sm">
+            <CardContent className="p-4 md:p-6">
+              <div className="flex flex-col lg:flex-row gap-4 lg:items-center justify-between">
+                <div className="relative flex-1 max-w-xl">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Search by name, email, role or location..."
+                    className="pl-10 bg-gray-50 border-none shadow-none focus:ring-1 focus:ring-primary-500"
+                  />
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex items-center gap-2 mr-2 text-sm text-gray-500">
+                    <Filter className="w-4 h-4" />
+                    <span>Filter:</span>
+                  </div>
+                  {(['All', ...careerApplicationStatuses] as Array<'All' | CareerApplicationStatus>).map((status) => (
+                    <button
+                      key={status}
+                      onClick={() => setStatusFilter(status)}
+                      className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
+                        statusFilter === status
+                          ? 'bg-primary-600 text-white shadow-sm'
+                          : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+                      }`}
+                    >
+                      {status}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <ApplicationTable data={filteredApplications} />
+
+          {hasMore && (
+            <div className="flex justify-center pt-4">
+              <Button
+                variant="outline"
+                onClick={() => loadApplications(true)}
+                isLoading={loadingMore}
+                disabled={loadingMore}
+                className="bg-white min-w-[200px]"
+              >
+                Show More Results
+              </Button>
+            </div>
+          )}
+        </TabsContent>
+
+        {/* Selected Tab */}
+        <TabsContent value="selected" className="space-y-6 outline-none">
+          <div className="flex items-center justify-between px-1">
+            <h3 className="text-xl font-semibold text-gray-900">Shortlisted Candidates</h3>
+            <Badge variant="success" className="px-3 py-1">
+              {stats['Shortlisted'] || 0} Total
+            </Badge>
+          </div>
+          <ApplicationTable
+            data={applications.filter(a => a.status === 'Shortlisted')}
+          />
+        </TabsContent>
+      </Tabs>
+
+      {/* Email Composer Modal */}
       {composer && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-2xl rounded-lg bg-white shadow-xl">
-            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <Card className="w-full max-w-2xl border-none shadow-2xl animate-in fade-in zoom-in duration-200">
+            <CardHeader className="flex flex-row items-center justify-between border-b border-gray-100 p-6">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Send Email</h2>
-                <p className="text-sm text-gray-500">
-                  To {composer.application.fullName} for {composer.application.positionTitle}
+                <CardTitle className="text-xl">Compose Email</CardTitle>
+                <p className="text-sm text-gray-500 mt-1">
+                  Recipient: <span className="font-medium text-gray-900">{composer.application.fullName}</span> • {composer.application.positionTitle}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setComposer(null)}
-                className="rounded-md p-2 text-gray-500 hover:bg-gray-100"
-                aria-label="Close email composer"
+                className="rounded-full p-2 text-gray-400 hover:bg-gray-100 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
-            </div>
+            </CardHeader>
 
-            <div className="space-y-4 p-6">
+            <CardContent className="space-y-5 p-6">
               <Input
                 label="Subject"
                 value={composer.subject}
-                onChange={(event) => setComposer({ ...composer, subject: event.target.value })}
+                onChange={(e) => setComposer({ ...composer, subject: e.target.value })}
+                className="bg-gray-50/50 outline-none"
               />
               <TextArea
-                label="Message"
+                label="Message Body"
                 value={composer.message}
-                onChange={(event) => setComposer({ ...composer, message: event.target.value })}
-                rows={10}
+                onChange={(e) => setComposer({ ...composer, message: e.target.value })}
+                rows={8}
+                className="bg-gray-50/50 outline-none resize-none"
               />
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Status after sending</label>
-                <select
-                  value={composer.status}
-                  onChange={(event) =>
-                    setComposer({
-                      ...composer,
-                      status: event.target.value as CareerApplicationStatus,
-                    })
-                  }
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                >
-                  {careerApplicationStatuses.map((status) => (
-                    <option key={status} value={status}>
-                      {status}
-                    </option>
-                  ))}
-                </select>
+              <div className="grid grid-cols-2 gap-4 items-end">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Action after sending</label>
+                  <select
+                    value={composer.status}
+                    onChange={(e) => setComposer({ ...composer, status: e.target.value as CareerApplicationStatus })}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 bg-gray-50 text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500 appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20stroke%3D%22%236B7280%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%221.5%22%20d%3D%22m6%208%204%204%204-4%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem_1.25rem] bg-[right_0.5rem_center] bg-no-repeat"
+                  >
+                    {careerApplicationStatuses.map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex gap-3">
+                  <Button variant="outline" onClick={() => setComposer(null)} className="flex-1">
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={sendEmail}
+                    isLoading={actionLoading === `${composer.application.id}-email`}
+                    leftIcon={<Send className="w-4 h-4" />}
+                    className="flex-1 shadow-sm"
+                    disabled={!composer.subject.trim() || !composer.message.trim()}
+                  >
+                    Send
+                  </Button>
+                </div>
               </div>
-            </div>
-
-            <div className="flex justify-end gap-3 border-t border-gray-200 px-6 py-4">
-              <Button variant="outline" onClick={() => setComposer(null)}>
-                Cancel
-              </Button>
-              <Button
-                onClick={sendEmail}
-                isLoading={actionLoading === `${composer.application.id}-email`}
-                leftIcon={actionLoading ? undefined : <Send className="w-4 h-4" />}
-                disabled={!composer.subject.trim() || !composer.message.trim()}
-              >
-                Send Email
-              </Button>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>

@@ -63,6 +63,7 @@ function convertApplication(
     availability: data.availability,
     resumeUrl: data.resumeUrl || '',
     coverLetterUrl: data.coverLetterUrl || '',
+    coverLetterText: data.coverLetterText || '',
     status: data.status || 'New',
     adminNotes: data.adminNotes || '',
     emailHistory: (data.emailHistory || []).map((item: any) => ({
