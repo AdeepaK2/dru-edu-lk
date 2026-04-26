@@ -89,6 +89,11 @@ export default function Footer({ variant = 'default', className = '' }: FooterPr
                   Publications
                 </Link>
               </li>
+              <li>
+                <Link href="/career" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer inline-block relative z-20 p-1">
+                  Careers
+                </Link>
+              </li>
             </ul>
           </div>
 
