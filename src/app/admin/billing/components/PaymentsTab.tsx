@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type {
   AdmissionFeeRecord,
   BillingAccount,
@@ -9,6 +10,15 @@ import type {
 } from '../types';
 
 type FeeCode = 'admission_fee' | 'parent_portal_yearly';
+type PaymentActionMode = 'send' | 'offline';
+type PaymentFeeSelection = 'portal' | 'admission' | 'both';
+
+interface PaymentActionModalState {
+  row: BillingPaymentParentRow;
+  mode: PaymentActionMode;
+  feeSelection: PaymentFeeSelection;
+  studentId: string;
+}
 
 interface PaymentsTabProps {
   rows: BillingPaymentParentRow[];
@@ -200,6 +210,388 @@ function AdmissionStatusBlock({
   );
 }
 
+function getManageableStudents(row: BillingPaymentParentRow) {
+  return row.students.filter((student) => student.canManageAdmission);
+}
+
+function getFirstUnpaidStudent(row: BillingPaymentParentRow) {
+  return getManageableStudents(row).find((student) => student.paymentStatus !== 'paid');
+}
+
+function getDefaultActionState(row: BillingPaymentParentRow): PaymentActionModalState {
+  const firstUnpaidStudent = getFirstUnpaidStudent(row);
+  const firstStudent = firstUnpaidStudent || getManageableStudents(row)[0];
+  const portalUnpaid = row.portalPaymentStatus !== 'paid';
+  const admissionUnpaid = Boolean(firstUnpaidStudent);
+
+  return {
+    row,
+    mode: 'send',
+    feeSelection: portalUnpaid && admissionUnpaid ? 'both' : portalUnpaid ? 'portal' : 'admission',
+    studentId: firstStudent?.studentId || '',
+  };
+}
+
+function PaymentActionModal({
+  admissionFeeAmount,
+  formatMoney,
+  modal,
+  onChange,
+  onClose,
+  onSubmit,
+  parentPortalYearlyFeeAmount,
+  processingKey,
+}: {
+  admissionFeeAmount: number;
+  formatMoney: (amount: number, currency?: string) => string;
+  modal: PaymentActionModalState;
+  onChange: (modal: PaymentActionModalState) => void;
+  onClose: () => void;
+  onSubmit: () => void | Promise<void>;
+  parentPortalYearlyFeeAmount: number;
+  processingKey: string | null;
+}) {
+  const { row } = modal;
+  const manageableStudents = getManageableStudents(row);
+  const selectedStudent = manageableStudents.find((student) => student.studentId === modal.studentId);
+  const isProcessing = Boolean(processingKey);
+  const needsAdmission = modal.feeSelection === 'admission' || modal.feeSelection === 'both';
+  const needsPortal = modal.feeSelection === 'portal' || modal.feeSelection === 'both';
+  const portalPaid = row.portalPaymentStatus === 'paid';
+  const admissionPaid = selectedStudent?.paymentStatus === 'paid';
+  const sendDisabled =
+    (needsPortal && parentPortalYearlyFeeAmount <= 0) ||
+    (needsAdmission && admissionFeeAmount <= 0) ||
+    (needsAdmission && !selectedStudent) ||
+    (needsPortal && portalPaid && !needsAdmission) ||
+    (needsAdmission && admissionPaid && !needsPortal) ||
+    (modal.feeSelection === 'both' && (portalPaid || admissionPaid)) ||
+    (modal.feeSelection === 'both' && portalPaid && admissionPaid);
+  const offlineDisabled =
+    (needsAdmission && !selectedStudent) ||
+    (needsPortal && portalPaid && !needsAdmission) ||
+    (needsAdmission && admissionPaid && !needsPortal) ||
+    (modal.feeSelection === 'both' && (portalPaid || admissionPaid)) ||
+    (modal.feeSelection === 'both' && portalPaid && admissionPaid);
+  const actionDisabled = isProcessing || (modal.mode === 'send' ? sendDisabled : offlineDisabled);
+
+  const setMode = (mode: PaymentActionMode) => onChange({ ...modal, mode });
+  const setFeeSelection = (feeSelection: PaymentFeeSelection) => onChange({ ...modal, feeSelection });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-6">
+      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl dark:bg-gray-800">
+        <div className="border-b border-slate-200 px-6 py-5 dark:border-gray-700">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold uppercase text-blue-600 dark:text-blue-300">Manage Payment</p>
+              <h3 className="mt-1 text-xl font-semibold text-gray-900 dark:text-white">{row.parentName}</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{row.parentEmail}</p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-semibold text-gray-600 hover:bg-slate-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-5 px-6 py-5">
+          <div>
+            <p className="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-200">Action</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => setMode('send')}
+                className={`rounded-xl border p-4 text-left ${
+                  modal.mode === 'send'
+                    ? 'border-blue-500 bg-blue-50 text-blue-900 dark:border-blue-400 dark:bg-blue-900/20 dark:text-blue-100'
+                    : 'border-slate-200 text-gray-700 hover:bg-slate-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700'
+                }`}
+              >
+                <p className="font-semibold">Send invoice link</p>
+                <p className="mt-1 text-sm opacity-80">Create or resend a Stripe payment link.</p>
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode('offline')}
+                className={`rounded-xl border p-4 text-left ${
+                  modal.mode === 'offline'
+                    ? 'border-green-500 bg-green-50 text-green-900 dark:border-green-400 dark:bg-green-900/20 dark:text-green-100'
+                    : 'border-slate-200 text-gray-700 hover:bg-slate-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700'
+                }`}
+              >
+                <p className="font-semibold">Mark paid offline</p>
+                <p className="mt-1 text-sm opacity-80">Record a bank/cash payment manually.</p>
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <p className="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-200">Fees</p>
+            <div className="grid gap-3 sm:grid-cols-3">
+              {[
+                {
+                  value: 'portal' as const,
+                  title: 'Portal',
+                  body: `Status: ${paymentStatusLabel(row.portalPaymentStatus)}`,
+                  disabled: parentPortalYearlyFeeAmount <= 0 && modal.mode === 'send',
+                },
+                {
+                  value: 'admission' as const,
+                  title: 'Admission',
+                  body: selectedStudent
+                    ? `Status: ${paymentStatusLabel(selectedStudent.paymentStatus)}`
+                    : 'Select a student',
+                  disabled: manageableStudents.length === 0 || (admissionFeeAmount <= 0 && modal.mode === 'send'),
+                },
+                {
+                  value: 'both' as const,
+                  title: 'Both',
+                  body: 'Portal and admission together',
+                  disabled:
+                    manageableStudents.length === 0 ||
+                    portalPaid ||
+                    Boolean(selectedStudent && selectedStudent.paymentStatus === 'paid') ||
+                    (modal.mode === 'send' && (admissionFeeAmount <= 0 || parentPortalYearlyFeeAmount <= 0)),
+                },
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setFeeSelection(option.value)}
+                  disabled={option.disabled}
+                  className={`rounded-xl border p-4 text-left disabled:cursor-not-allowed disabled:opacity-50 ${
+                    modal.feeSelection === option.value
+                      ? 'border-violet-500 bg-violet-50 text-violet-900 dark:border-violet-400 dark:bg-violet-900/20 dark:text-violet-100'
+                      : 'border-slate-200 text-gray-700 hover:bg-slate-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  <p className="font-semibold">{option.title}</p>
+                  <p className="mt-1 text-sm opacity-80">{option.body}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {needsAdmission ? (
+            <label className="block">
+              <span className="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-200">Student</span>
+              <select
+                value={modal.studentId}
+                onChange={(event) => onChange({ ...modal, studentId: event.target.value })}
+                className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              >
+                <option value="">Select student</option>
+                {manageableStudents.map((student) => (
+                  <option key={student.studentId} value={student.studentId}>
+                    {student.studentName} - {paymentStatusLabel(student.paymentStatus)}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
+
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-gray-700 dark:bg-gray-700/40">
+            <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">Summary</p>
+            <div className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
+              {needsPortal ? (
+                <div>
+                  <p className="text-gray-500 dark:text-gray-400">Parent portal</p>
+                  <p className="font-semibold text-gray-900 dark:text-white">
+                    {paymentStatusLabel(row.portalPaymentStatus)} - {formatMoney(row.portalOutstandingAmount)}
+                  </p>
+                </div>
+              ) : null}
+              {needsAdmission && selectedStudent ? (
+                <div>
+                  <p className="text-gray-500 dark:text-gray-400">Admission</p>
+                  <p className="font-semibold text-gray-900 dark:text-white">
+                    {selectedStudent.studentName} - {formatMoney(selectedStudent.totalOutstandingAmount)}
+                  </p>
+                </div>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg border border-slate-200 px-5 py-3 text-sm font-semibold text-gray-700 hover:bg-slate-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={onSubmit}
+              disabled={actionDisabled}
+              className={`rounded-lg px-5 py-3 text-sm font-semibold text-white disabled:opacity-60 ${
+                modal.mode === 'send' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'
+              }`}
+            >
+              {isProcessing
+                ? modal.mode === 'send'
+                  ? 'Sending...'
+                  : 'Saving...'
+                : modal.mode === 'send'
+                  ? 'Send'
+                  : 'Mark Paid'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BulkSendModal({
+  admissionFeeAmount,
+  bulkAdmissionCount,
+  bulkCombinedCount,
+  bulkPortalCount,
+  onClose,
+  onSubmit,
+  parentPortalYearlyFeeAmount,
+  processingKey,
+  selection,
+  setSelection,
+}: {
+  admissionFeeAmount: number;
+  bulkAdmissionCount: number;
+  bulkCombinedCount: number;
+  bulkPortalCount: number;
+  onClose: () => void;
+  onSubmit: () => void | Promise<void>;
+  parentPortalYearlyFeeAmount: number;
+  processingKey: string | null;
+  selection: PaymentFeeSelection;
+  setSelection: (selection: PaymentFeeSelection) => void;
+}) {
+  const selectedCount =
+    selection === 'portal' ? bulkPortalCount : selection === 'admission' ? bulkAdmissionCount : bulkCombinedCount;
+  const amountMissing =
+    (selection === 'portal' && parentPortalYearlyFeeAmount <= 0) ||
+    (selection === 'admission' && admissionFeeAmount <= 0) ||
+    (selection === 'both' && (admissionFeeAmount <= 0 || parentPortalYearlyFeeAmount <= 0));
+  const disabled = Boolean(processingKey) || selectedCount === 0 || amountMissing;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-6">
+      <div className="w-full max-w-xl rounded-2xl bg-white shadow-2xl dark:bg-gray-800">
+        <div className="border-b border-slate-200 px-6 py-5 dark:border-gray-700">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold uppercase text-blue-600 dark:text-blue-300">Bulk Send</p>
+              <h3 className="mt-1 text-xl font-semibold text-gray-900 dark:text-white">Send invoices to current filter</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Choose what to send, then confirm once.</p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-semibold text-gray-600 hover:bg-slate-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+        <div className="space-y-5 px-6 py-5">
+          <div className="grid gap-3 sm:grid-cols-3">
+            {[
+              { value: 'portal' as const, title: 'Portal', count: bulkPortalCount },
+              { value: 'admission' as const, title: 'Admission', count: bulkAdmissionCount },
+              { value: 'both' as const, title: 'Both', count: bulkCombinedCount },
+            ].map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setSelection(option.value)}
+                className={`rounded-xl border p-4 text-left ${
+                  selection === option.value
+                    ? 'border-blue-500 bg-blue-50 text-blue-900 dark:border-blue-400 dark:bg-blue-900/20 dark:text-blue-100'
+                    : 'border-slate-200 text-gray-700 hover:bg-slate-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700'
+                }`}
+              >
+                <p className="font-semibold">{option.title}</p>
+                <p className="mt-1 text-sm opacity-80">{option.count} invoices</p>
+              </button>
+            ))}
+          </div>
+          {amountMissing ? (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+              Configure the required fee amount in Payment Settings before sending.
+            </div>
+          ) : null}
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg border border-slate-200 px-5 py-3 text-sm font-semibold text-gray-700 hover:bg-slate-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={onSubmit}
+              disabled={disabled}
+              className="rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+            >
+              {processingKey ? 'Sending...' : `Send ${selectedCount} Invoice${selectedCount === 1 ? '' : 's'}`}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PaginationControls({
+  endIndex,
+  filteredCount,
+  onPageChange,
+  page,
+  pageCount,
+  startIndex,
+}: {
+  endIndex: number;
+  filteredCount: number;
+  onPageChange: (value: number) => void;
+  page: number;
+  pageCount: number;
+  startIndex: number;
+}) {
+  return (
+    <div className="flex flex-col gap-3 text-sm text-gray-600 dark:text-gray-300 md:flex-row md:items-center md:justify-between">
+      <p>
+        Showing {startIndex}-{endIndex} of {filteredCount} parents
+      </p>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => onPageChange(Math.max(1, page - 1))}
+          disabled={page <= 1 || filteredCount === 0}
+          className="rounded-lg border border-slate-200 px-4 py-2 font-medium text-gray-700 hover:bg-slate-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700"
+        >
+          Previous
+        </button>
+        <span className="px-2">
+          Page {filteredCount === 0 ? 0 : page} of {filteredCount === 0 ? 0 : pageCount}
+        </span>
+        <button
+          type="button"
+          onClick={() => onPageChange(Math.min(pageCount, page + 1))}
+          disabled={page >= pageCount || filteredCount === 0}
+          className="rounded-lg border border-slate-200 px-4 py-2 font-medium text-gray-700 hover:bg-slate-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700"
+        >
+          Next
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function PaymentsTab({
   rows,
   filteredCount,
@@ -232,6 +624,94 @@ export function PaymentsTab({
   formatMoney,
   formatDate,
 }: PaymentsTabProps) {
+  const [actionModal, setActionModal] = useState<PaymentActionModalState | null>(null);
+  const [showBulkModal, setShowBulkModal] = useState(false);
+  const [bulkSelection, setBulkSelection] = useState<PaymentFeeSelection>('both');
+
+  const handleOpenActionModal = (row: BillingPaymentParentRow) => {
+    setActionModal(getDefaultActionState(row));
+  };
+
+  const handleSubmitActionModal = async () => {
+    if (!actionModal) return;
+
+    const selectedStudent = actionModal.row.students.find((student) => student.studentId === actionModal.studentId);
+    const needsPortal = actionModal.feeSelection === 'portal' || actionModal.feeSelection === 'both';
+    const needsAdmission = actionModal.feeSelection === 'admission' || actionModal.feeSelection === 'both';
+
+    if (actionModal.mode === 'send') {
+      if (actionModal.feeSelection === 'portal') {
+        await runBillingAction({
+          action: 'send_payment_link',
+          feeCode: 'parent_portal_yearly',
+          parentEmail: actionModal.row.parentEmail,
+          processingId: `send-parent-${actionModal.row.parentEmail}`,
+        });
+      } else if (actionModal.feeSelection === 'admission' && selectedStudent) {
+        await runBillingAction({
+          action: 'send_payment_link',
+          feeCode: 'admission_fee',
+          parentEmail: actionModal.row.parentEmail,
+          studentId: selectedStudent.studentId,
+          processingId: `send-admission-${selectedStudent.studentId}`,
+        });
+      } else if (selectedStudent) {
+        await runBillingAction({
+          action: 'send_combined_payment_link',
+          feeCode: 'admission_fee',
+          parentEmail: actionModal.row.parentEmail,
+          studentId: selectedStudent.studentId,
+          processingId: `send-combined-${selectedStudent.studentId}`,
+        });
+      }
+    } else {
+      if (needsPortal) {
+        await runBillingAction({
+          action: 'mark_paid_offline',
+          feeCode: 'parent_portal_yearly',
+          parentEmail: actionModal.row.parentEmail,
+          processingId: `offline-parent-${actionModal.row.parentEmail}`,
+        });
+      }
+
+      if (needsAdmission && selectedStudent) {
+        await runBillingAction({
+          action: 'mark_paid_offline',
+          feeCode: 'admission_fee',
+          parentEmail: actionModal.row.parentEmail,
+          studentId: selectedStudent.studentId,
+          processingId: `offline-admission-${selectedStudent.studentId}`,
+        });
+      }
+    }
+
+    setActionModal(null);
+  };
+
+  const handleBulkSubmit = async () => {
+    if (bulkSelection === 'portal') {
+      await runBulkBillingAction({
+        processingId: 'bulk-portal',
+        items: bulkPortalItems,
+        successLabel: 'unpaid parent portal',
+      });
+    } else if (bulkSelection === 'admission') {
+      await runBulkBillingAction({
+        processingId: 'bulk-admission',
+        items: bulkAdmissionItems,
+        successLabel: 'unpaid admission',
+      });
+    } else {
+      await runBulkBillingAction({
+        processingId: 'bulk-combined',
+        items: bulkCombinedItems,
+        successLabel: 'combined unpaid',
+      });
+    }
+
+    setShowBulkModal(false);
+  };
+
   return (
     <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
       <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 dark:border-gray-700">
@@ -304,53 +784,17 @@ export function PaymentsTab({
           </button>
         </div>
 
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
-            onClick={() =>
-              runBulkBillingAction({
-                processingId: 'bulk-portal',
-                items: bulkPortalItems,
-                successLabel: 'unpaid parent portal',
-              })
-            }
-            disabled={processingKey === 'bulk-portal' || parentPortalYearlyFeeAmount <= 0}
-            className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+            onClick={() => setShowBulkModal(true)}
+            className="rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700"
           >
-            {processingKey === 'bulk-portal' ? 'Sending...' : 'Send Unpaid Portal Links'}
+            Bulk Send Invoices
           </button>
-          <button
-            type="button"
-            onClick={() =>
-              runBulkBillingAction({
-                processingId: 'bulk-admission',
-                items: bulkAdmissionItems,
-                successLabel: 'unpaid admission',
-              })
-            }
-            disabled={processingKey === 'bulk-admission' || admissionFeeAmount <= 0}
-            className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
-          >
-            {processingKey === 'bulk-admission' ? 'Sending...' : 'Send Unpaid Admission Links'}
-          </button>
-          <button
-            type="button"
-            onClick={() =>
-              runBulkBillingAction({
-                processingId: 'bulk-combined',
-                items: bulkCombinedItems,
-                successLabel: 'combined unpaid',
-              })
-            }
-            disabled={
-              processingKey === 'bulk-combined' ||
-              admissionFeeAmount <= 0 ||
-              parentPortalYearlyFeeAmount <= 0
-            }
-            className="rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-60"
-          >
-            {processingKey === 'bulk-combined' ? 'Sending...' : 'Send Combined Invoices'}
-          </button>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Choose portal, admission, or both in one clear step.
+          </p>
         </div>
       </div>
 
@@ -363,6 +807,17 @@ export function PaymentsTab({
               : 'Parent portal yearly fee amount is not configured. Set it in Payment Settings before sending Stripe links.'}
         </div>
       )}
+
+      <div className="mt-5">
+        <PaginationControls
+          endIndex={endIndex}
+          filteredCount={filteredCount}
+          onPageChange={onPageChange}
+          page={page}
+          pageCount={pageCount}
+          startIndex={startIndex}
+        />
+      </div>
 
       <div className="mt-6 overflow-x-auto rounded-xl border border-slate-200 dark:border-gray-700">
         <table className="w-full min-w-[1280px] divide-y divide-gray-200 dark:divide-gray-700">
@@ -389,8 +844,6 @@ export function PaymentsTab({
               </tr>
             ) : (
               rows.map((row) => {
-                const isPortalPaid = row.portalPaymentStatus === 'paid';
-
                 return (
                   <tr key={row.parentEmail} className="align-top hover:bg-slate-50/60 dark:hover:bg-gray-700/30">
                     <td className="px-4 py-4">
@@ -454,147 +907,17 @@ export function PaymentsTab({
                         )}
                       </div>
                     </td>
-                    <td className="w-[280px] px-4 py-4">
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <p className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">
-                            Parent portal
-                          </p>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              runBillingAction({
-                                action: 'send_payment_link',
-                                feeCode: 'parent_portal_yearly',
-                                parentEmail: row.parentEmail,
-                                processingId: `send-parent-${row.parentEmail}`,
-                              })
-                            }
-                            disabled={
-                              isPortalPaid ||
-                              processingKey === `send-parent-${row.parentEmail}` ||
-                              parentPortalYearlyFeeAmount <= 0
-                            }
-                            className="w-full rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
-                          >
-                            {isPortalPaid
-                              ? 'Already Active'
-                              : processingKey === `send-parent-${row.parentEmail}`
-                                ? 'Sending...'
-                                : 'Send Portal Link'}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              runBillingAction({
-                                action: 'mark_paid_offline',
-                                feeCode: 'parent_portal_yearly',
-                                parentEmail: row.parentEmail,
-                                processingId: `offline-parent-${row.parentEmail}`,
-                              })
-                            }
-                            disabled={isPortalPaid || processingKey === `offline-parent-${row.parentEmail}`}
-                            className="w-full rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-60"
-                          >
-                            {isPortalPaid
-                              ? 'Paid'
-                              : processingKey === `offline-parent-${row.parentEmail}`
-                                ? 'Saving...'
-                                : 'Mark Portal Paid'}
-                          </button>
-                        </div>
-
-                        {row.students.map((student) => {
-                          const isAdmissionPaid = student.paymentStatus === 'paid';
-                          const admissionProcessingId = `send-admission-${student.studentId}`;
-                          const combinedProcessingId = `send-combined-${student.studentId}`;
-                          const offlineProcessingId = `offline-admission-${student.studentId}`;
-                          const admissionActionsDisabled = !student.canManageAdmission;
-
-                          return (
-                            <div
-                              key={`${student.studentId || student.studentEmail}-actions`}
-                              className="space-y-2 border-t border-slate-200 pt-4 dark:border-gray-700"
-                            >
-                              <p className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">
-                                {student.studentName}
-                              </p>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  runBillingAction({
-                                    action: 'send_payment_link',
-                                    feeCode: 'admission_fee',
-                                    parentEmail: row.parentEmail,
-                                    studentId: student.studentId,
-                                    processingId: admissionProcessingId,
-                                  })
-                                }
-                                disabled={
-                                  admissionActionsDisabled ||
-                                  isAdmissionPaid ||
-                                  processingKey === admissionProcessingId ||
-                                  admissionFeeAmount <= 0
-                                }
-                                className="w-full rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
-                              >
-                                {isAdmissionPaid
-                                  ? 'Admission Paid'
-                                  : processingKey === admissionProcessingId
-                                    ? 'Sending...'
-                                    : 'Send Admission Link'}
-                              </button>
-                              {!isAdmissionPaid && !isPortalPaid ? (
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    runBillingAction({
-                                      action: 'send_combined_payment_link',
-                                      feeCode: 'admission_fee',
-                                      parentEmail: row.parentEmail,
-                                      studentId: student.studentId,
-                                      processingId: combinedProcessingId,
-                                    })
-                                  }
-                                  disabled={
-                                    admissionActionsDisabled ||
-                                    processingKey === combinedProcessingId ||
-                                    admissionFeeAmount <= 0 ||
-                                    parentPortalYearlyFeeAmount <= 0
-                                  }
-                                  className="w-full rounded-lg bg-violet-600 px-3 py-2 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-60"
-                                >
-                                  {processingKey === combinedProcessingId ? 'Sending...' : 'Send Combined'}
-                                </button>
-                              ) : null}
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  runBillingAction({
-                                    action: 'mark_paid_offline',
-                                    feeCode: 'admission_fee',
-                                    parentEmail: row.parentEmail,
-                                    studentId: student.studentId,
-                                    processingId: offlineProcessingId,
-                                  })
-                                }
-                                disabled={
-                                  admissionActionsDisabled ||
-                                  isAdmissionPaid ||
-                                  processingKey === offlineProcessingId
-                                }
-                                className="w-full rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-60"
-                              >
-                                {isAdmissionPaid
-                                  ? 'Paid'
-                                  : processingKey === offlineProcessingId
-                                    ? 'Saving...'
-                                    : 'Mark Admission Paid'}
-                              </button>
-                            </div>
-                          );
-                        })}
-                      </div>
+                    <td className="w-[180px] px-4 py-4">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenActionModal(row)}
+                        className="w-full rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 dark:bg-blue-600 dark:hover:bg-blue-700"
+                      >
+                        Manage
+                      </button>
+                      <p className="mt-2 text-xs leading-5 text-gray-500 dark:text-gray-400">
+                        Send portal, admission, both, or mark paid.
+                      </p>
                     </td>
                   </tr>
                 );
@@ -604,32 +927,44 @@ export function PaymentsTab({
         </table>
       </div>
 
-      <div className="mt-4 flex flex-col gap-3 text-sm text-gray-600 dark:text-gray-300 md:flex-row md:items-center md:justify-between">
-        <p>
-          Showing {startIndex}-{endIndex} of {filteredCount} parents
-        </p>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => onPageChange(Math.max(1, page - 1))}
-            disabled={page <= 1 || filteredCount === 0}
-            className="rounded-lg border border-slate-200 px-4 py-2 font-medium text-gray-700 hover:bg-slate-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700"
-          >
-            Previous
-          </button>
-          <span className="px-2">
-            Page {filteredCount === 0 ? 0 : page} of {filteredCount === 0 ? 0 : pageCount}
-          </span>
-          <button
-            type="button"
-            onClick={() => onPageChange(Math.min(pageCount, page + 1))}
-            disabled={page >= pageCount || filteredCount === 0}
-            className="rounded-lg border border-slate-200 px-4 py-2 font-medium text-gray-700 hover:bg-slate-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700"
-          >
-            Next
-          </button>
-        </div>
+      <div className="mt-4">
+        <PaginationControls
+          endIndex={endIndex}
+          filteredCount={filteredCount}
+          onPageChange={onPageChange}
+          page={page}
+          pageCount={pageCount}
+          startIndex={startIndex}
+        />
       </div>
+
+      {actionModal ? (
+        <PaymentActionModal
+          admissionFeeAmount={admissionFeeAmount}
+          formatMoney={formatMoney}
+          modal={actionModal}
+          onChange={setActionModal}
+          onClose={() => setActionModal(null)}
+          onSubmit={handleSubmitActionModal}
+          parentPortalYearlyFeeAmount={parentPortalYearlyFeeAmount}
+          processingKey={processingKey}
+        />
+      ) : null}
+
+      {showBulkModal ? (
+        <BulkSendModal
+          admissionFeeAmount={admissionFeeAmount}
+          bulkAdmissionCount={bulkAdmissionItems.length}
+          bulkCombinedCount={bulkCombinedItems.length}
+          bulkPortalCount={bulkPortalItems.length}
+          onClose={() => setShowBulkModal(false)}
+          onSubmit={handleBulkSubmit}
+          parentPortalYearlyFeeAmount={parentPortalYearlyFeeAmount}
+          processingKey={processingKey}
+          selection={bulkSelection}
+          setSelection={setBulkSelection}
+        />
+      ) : null}
     </div>
   );
 }
