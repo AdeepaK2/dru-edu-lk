@@ -547,6 +547,51 @@ function BulkSendModal({
   );
 }
 
+function PaginationControls({
+  endIndex,
+  filteredCount,
+  onPageChange,
+  page,
+  pageCount,
+  startIndex,
+}: {
+  endIndex: number;
+  filteredCount: number;
+  onPageChange: (value: number) => void;
+  page: number;
+  pageCount: number;
+  startIndex: number;
+}) {
+  return (
+    <div className="flex flex-col gap-3 text-sm text-gray-600 dark:text-gray-300 md:flex-row md:items-center md:justify-between">
+      <p>
+        Showing {startIndex}-{endIndex} of {filteredCount} parents
+      </p>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => onPageChange(Math.max(1, page - 1))}
+          disabled={page <= 1 || filteredCount === 0}
+          className="rounded-lg border border-slate-200 px-4 py-2 font-medium text-gray-700 hover:bg-slate-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700"
+        >
+          Previous
+        </button>
+        <span className="px-2">
+          Page {filteredCount === 0 ? 0 : page} of {filteredCount === 0 ? 0 : pageCount}
+        </span>
+        <button
+          type="button"
+          onClick={() => onPageChange(Math.min(pageCount, page + 1))}
+          disabled={page >= pageCount || filteredCount === 0}
+          className="rounded-lg border border-slate-200 px-4 py-2 font-medium text-gray-700 hover:bg-slate-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700"
+        >
+          Next
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function PaymentsTab({
   rows,
   filteredCount,
@@ -763,6 +808,17 @@ export function PaymentsTab({
         </div>
       )}
 
+      <div className="mt-5">
+        <PaginationControls
+          endIndex={endIndex}
+          filteredCount={filteredCount}
+          onPageChange={onPageChange}
+          page={page}
+          pageCount={pageCount}
+          startIndex={startIndex}
+        />
+      </div>
+
       <div className="mt-6 overflow-x-auto rounded-xl border border-slate-200 dark:border-gray-700">
         <table className="w-full min-w-[1280px] divide-y divide-gray-200 dark:divide-gray-700">
           <thead className="bg-slate-50/80 dark:bg-gray-800/70">
@@ -871,31 +927,15 @@ export function PaymentsTab({
         </table>
       </div>
 
-      <div className="mt-4 flex flex-col gap-3 text-sm text-gray-600 dark:text-gray-300 md:flex-row md:items-center md:justify-between">
-        <p>
-          Showing {startIndex}-{endIndex} of {filteredCount} parents
-        </p>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => onPageChange(Math.max(1, page - 1))}
-            disabled={page <= 1 || filteredCount === 0}
-            className="rounded-lg border border-slate-200 px-4 py-2 font-medium text-gray-700 hover:bg-slate-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700"
-          >
-            Previous
-          </button>
-          <span className="px-2">
-            Page {filteredCount === 0 ? 0 : page} of {filteredCount === 0 ? 0 : pageCount}
-          </span>
-          <button
-            type="button"
-            onClick={() => onPageChange(Math.min(pageCount, page + 1))}
-            disabled={page >= pageCount || filteredCount === 0}
-            className="rounded-lg border border-slate-200 px-4 py-2 font-medium text-gray-700 hover:bg-slate-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700"
-          >
-            Next
-          </button>
-        </div>
+      <div className="mt-4">
+        <PaginationControls
+          endIndex={endIndex}
+          filteredCount={filteredCount}
+          onPageChange={onPageChange}
+          page={page}
+          pageCount={pageCount}
+          startIndex={startIndex}
+        />
       </div>
 
       {actionModal ? (
