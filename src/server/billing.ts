@@ -404,6 +404,48 @@ async function getStudentById(studentId: string): Promise<(StudentDocument & { i
   };
 }
 
+function isAdmissionInvoiceForStudent(
+  invoice: BillingInvoiceDocument,
+  studentId: string,
+  studentEmail: string,
+) {
+  return (
+    hasBillingFee(invoice.lineItems, 'admission_fee') &&
+    (invoice.metadata?.studentId === studentId ||
+      (!!studentEmail && invoice.studentEmail === normalizeEmail(studentEmail)))
+  );
+}
+
+async function getPaidAdmissionInvoiceForStudent(params: {
+  parentEmail: string;
+  studentId: string;
+  studentEmail: string;
+}): Promise<BillingInvoiceDocument | null> {
+  const snapshot = await firebaseAdmin.db
+    .collection(BILLING_COLLECTIONS.INVOICES)
+    .where('parentEmail', '==', normalizeEmail(params.parentEmail))
+    .where('status', '==', 'paid')
+    .get();
+
+  const paidInvoiceDoc = snapshot.docs.find((doc) => {
+    const invoice = {
+      id: doc.id,
+      ...(doc.data() as Omit<BillingInvoiceDocument, 'id'>),
+    } as BillingInvoiceDocument;
+
+    return isAdmissionInvoiceForStudent(invoice, params.studentId, params.studentEmail);
+  });
+
+  if (!paidInvoiceDoc) {
+    return null;
+  }
+
+  return {
+    id: paidInvoiceDoc.id,
+    ...(paidInvoiceDoc.data() as Omit<BillingInvoiceDocument, 'id'>),
+  } as BillingInvoiceDocument;
+}
+
 async function getParentByEmail(email: string): Promise<(FirestoreData & { id: string }) | null> {
   const normalizedEmail = normalizeEmail(email);
   const snapshot = await firebaseAdmin.db
@@ -1918,6 +1960,26 @@ export async function sendBillingPaymentLink(params: {
   const feeLabels = feeCodes.map((feeCode) => getBillingFeeDefinition(feeCode).label);
   const normalizedParentEmail = normalizeEmail(params.parentEmail);
   const student = params.studentId ? await getStudentById(params.studentId) : null;
+
+  if (feeCodes.includes('parent_portal_yearly')) {
+    const entitlement = await getParentPortalEntitlementByEmail(normalizedParentEmail);
+    if (isEntitlementActive(entitlement)) {
+      throw new Error('Parent portal access is already active for this parent');
+    }
+  }
+
+  if (feeCodes.includes('admission_fee') && student && params.studentId) {
+    const paidAdmissionInvoice = await getPaidAdmissionInvoiceForStudent({
+      parentEmail: normalizedParentEmail,
+      studentId: params.studentId,
+      studentEmail: student.email,
+    });
+
+    if (paidAdmissionInvoice) {
+      throw new Error('Admission fee is already paid for this student');
+    }
+  }
+
   const existingPendingInvoices = await firebaseAdmin.db
     .collection(BILLING_COLLECTIONS.INVOICES)
     .where('parentEmail', '==', normalizedParentEmail)
@@ -2071,6 +2133,16 @@ export async function markFeePaidOffline(params: {
     throw new Error('Student not found');
   }
 
+  const paidAdmissionInvoice = await getPaidAdmissionInvoiceForStudent({
+    parentEmail: normalizedParentEmail,
+    studentId: params.studentId,
+    studentEmail: student.email,
+  });
+
+  if (paidAdmissionInvoice) {
+    throw new Error('Admission fee is already paid for this student');
+  }
+
   const pendingInvoicesSnapshot = await firebaseAdmin.db
     .collection(BILLING_COLLECTIONS.INVOICES)
     .where('parentEmail', '==', normalizedParentEmail)
@@ -2212,6 +2284,10 @@ export async function markParentPortalPaidOffline(
       .where('status', '==', 'pending')
       .get(),
   ]);
+
+  if (isEntitlementActive(existingEntitlement)) {
+    throw new Error('Parent portal access is already active for this parent');
+  }
 
   const primaryStudent = students[0];
   const parentName =

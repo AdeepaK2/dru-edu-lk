@@ -169,7 +169,11 @@ export function AdmissionTab({
                 </td>
               </tr>
             ) : (
-              filteredAdmissionFees.map((record) => (
+              filteredAdmissionFees.map((record) => {
+                const isAdmissionPaid = record.admissionStatus === 'paid';
+                const isPortalActive = accountByParentEmail.get(record.parentEmail)?.portalStatus === 'active';
+
+                return (
                 <tr key={record.studentId} className="align-top hover:bg-slate-50/60 dark:hover:bg-gray-700/30">
                   <td className="px-4 py-4">
                     <div>
@@ -240,12 +244,20 @@ export function AdmissionTab({
                             processingId: `send-admission-${record.studentId}`,
                           })
                         }
-                        disabled={processingKey === `send-admission-${record.studentId}` || admissionFeeAmount <= 0}
+                        disabled={
+                          isAdmissionPaid ||
+                          processingKey === `send-admission-${record.studentId}` ||
+                          admissionFeeAmount <= 0
+                        }
                         className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
                       >
-                        {processingKey === `send-admission-${record.studentId}` ? 'Sending...' : 'Send Link'}
+                        {isAdmissionPaid
+                          ? 'Already Paid'
+                          : processingKey === `send-admission-${record.studentId}`
+                            ? 'Sending...'
+                            : 'Send Link'}
                       </button>
-                      {accountByParentEmail.get(record.parentEmail)?.portalStatus !== 'active' ? (
+                      {!isAdmissionPaid && !isPortalActive ? (
                         <button
                           type="button"
                           onClick={() =>
@@ -278,15 +290,20 @@ export function AdmissionTab({
                             processingId: `offline-admission-${record.studentId}`,
                           })
                         }
-                        disabled={processingKey === `offline-admission-${record.studentId}`}
+                        disabled={isAdmissionPaid || processingKey === `offline-admission-${record.studentId}`}
                         className="rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-60"
                       >
-                        {processingKey === `offline-admission-${record.studentId}` ? 'Saving...' : 'Mark Paid Offline'}
+                        {isAdmissionPaid
+                          ? 'Paid'
+                          : processingKey === `offline-admission-${record.studentId}`
+                            ? 'Saving...'
+                            : 'Mark Paid Offline'}
                       </button>
                     </div>
                   </td>
                 </tr>
-              ))
+                );
+              })
             )}
           </tbody>
         </table>

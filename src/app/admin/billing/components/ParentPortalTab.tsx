@@ -142,7 +142,10 @@ export function ParentPortalTab({
                 </td>
               </tr>
             ) : (
-              filteredAccounts.map((account) => (
+              filteredAccounts.map((account) => {
+                const isPortalActive = account.portalStatus === 'active';
+
+                return (
                 <tr key={account.parentEmail} className="align-top hover:bg-slate-50/60 dark:hover:bg-gray-700/30">
                   <td className="px-4 py-4">
                     <div>
@@ -221,10 +224,18 @@ export function ParentPortalTab({
                             processingId: `send-parent-${account.parentEmail}`,
                           })
                         }
-                        disabled={processingKey === `send-parent-${account.parentEmail}` || parentPortalYearlyFeeAmount <= 0}
+                        disabled={
+                          isPortalActive ||
+                          processingKey === `send-parent-${account.parentEmail}` ||
+                          parentPortalYearlyFeeAmount <= 0
+                        }
                         className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
                       >
-                        {processingKey === `send-parent-${account.parentEmail}` ? 'Sending...' : 'Send Link'}
+                        {isPortalActive
+                          ? 'Already Active'
+                          : processingKey === `send-parent-${account.parentEmail}`
+                            ? 'Sending...'
+                            : 'Send Link'}
                       </button>
                       <button
                         type="button"
@@ -236,15 +247,20 @@ export function ParentPortalTab({
                             processingId: `offline-parent-${account.parentEmail}`,
                           })
                         }
-                        disabled={processingKey === `offline-parent-${account.parentEmail}`}
+                        disabled={isPortalActive || processingKey === `offline-parent-${account.parentEmail}`}
                         className="rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-60"
                       >
-                        {processingKey === `offline-parent-${account.parentEmail}` ? 'Saving...' : 'Mark Paid Offline'}
+                        {isPortalActive
+                          ? 'Paid'
+                          : processingKey === `offline-parent-${account.parentEmail}`
+                            ? 'Saving...'
+                            : 'Mark Paid Offline'}
                       </button>
                     </div>
                   </td>
                 </tr>
-              ))
+                );
+              })
             )}
           </tbody>
         </table>
