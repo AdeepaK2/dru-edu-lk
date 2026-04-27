@@ -170,13 +170,14 @@ export async function saveBillingSettings(
 
 type BillingDiscountInput = {
   name: string;
-  scope: 'parent' | 'student';
+  scope: 'parent' | 'student' | 'coupon';
   type: 'percentage' | 'fixed';
   value: number;
-  parentEmail: string;
+  parentEmail?: string;
   parentName?: string;
   studentId?: string;
   studentName?: string;
+  couponCode?: string;
   feeCodes: Array<'admission_fee' | 'parent_portal_yearly'>;
   reason?: string;
   isActive?: boolean;
@@ -205,16 +206,39 @@ async function getApplicableBillingDiscounts(params: {
   parentEmail: string;
   studentId?: string;
   feeCodes: Array<'admission_fee' | 'parent_portal_yearly'>;
+  discountIds?: string[];
+  couponCode?: string;
 }) {
   const normalizedParentEmail = normalizeEmail(params.parentEmail);
+  const selectedDiscountIds = new Set((params.discountIds || []).filter(Boolean));
+  const normalizedCouponCode = normalizeCouponCode(params.couponCode || '');
   const discounts = await getBillingDiscounts();
 
   return discounts.filter((discount) => {
     if (!discount.isActive) return false;
-    if (normalizeEmail(discount.parentEmail) !== normalizedParentEmail) return false;
-    if (discount.scope === 'student' && discount.studentId !== params.studentId) return false;
-    return discount.feeCodes.some((feeCode) => params.feeCodes.includes(feeCode));
+    if (!discount.feeCodes.some((feeCode) => params.feeCodes.includes(feeCode))) return false;
+
+    const isSelectedById = selectedDiscountIds.has(discount.id);
+    const isSelectedByCode =
+      normalizedCouponCode &&
+      discount.scope === 'coupon' &&
+      normalizeCouponCode(discount.couponCode || '') === normalizedCouponCode;
+
+    if (discount.scope === 'coupon') {
+      return Boolean(isSelectedById || isSelectedByCode);
+    }
+
+    if (discount.scope === 'parent') {
+      return normalizeEmail(discount.parentEmail || '') === normalizedParentEmail || isSelectedById;
+    }
+
+    if (discount.studentId !== params.studentId) return false;
+    return normalizeEmail(discount.parentEmail || '') === normalizedParentEmail || isSelectedById;
   });
+}
+
+function normalizeCouponCode(code: string) {
+  return code.trim().toUpperCase().replace(/\s+/g, '');
 }
 
 function applyDiscountsToLineItems(
@@ -255,10 +279,65 @@ function applyDiscountsToLineItems(
   });
 }
 
+function applyAdditionalDiscountsToLineItems(
+  lineItems: BillingLineItem[],
+  discounts: BillingDiscountDocument[],
+) {
+  return lineItems.map((lineItem) => {
+    const applicableDiscounts = discounts.filter(
+      (discount) =>
+        discount.feeCodes.includes(lineItem.type) &&
+        !lineItem.appliedDiscountIds?.includes(discount.id),
+    );
+    if (applicableDiscounts.length === 0) {
+      return lineItem;
+    }
+
+    const currentAmount = Number(lineItem.amount || 0);
+    let additionalDiscountAmount = 0;
+
+    for (const discount of applicableDiscounts) {
+      if (discount.type === 'percentage') {
+        additionalDiscountAmount += (currentAmount * Number(discount.value || 0)) / 100;
+      } else {
+        additionalDiscountAmount += Number(discount.value || 0);
+      }
+    }
+
+    additionalDiscountAmount = Math.min(
+      currentAmount,
+      Math.max(0, Number(additionalDiscountAmount.toFixed(2))),
+    );
+    const finalAmount = Math.max(0, Number((currentAmount - additionalDiscountAmount).toFixed(2)));
+    const totalDiscountAmount = Number(
+      (Number(lineItem.discountAmount || 0) + additionalDiscountAmount).toFixed(2),
+    );
+
+    return {
+      ...lineItem,
+      amount: finalAmount,
+      originalAmount: lineItem.originalAmount ?? lineItem.amount,
+      discountAmount: totalDiscountAmount,
+      appliedDiscountIds: Array.from(
+        new Set([...(lineItem.appliedDiscountIds || []), ...applicableDiscounts.map((discount) => discount.id)]),
+      ),
+      description:
+        additionalDiscountAmount > 0
+          ? `${lineItem.description} (extra discount applied: ${formatCurrency(additionalDiscountAmount)})`
+          : lineItem.description,
+    };
+  });
+}
+
 export async function createBillingDiscount(input: BillingDiscountInput) {
-  const parentEmail = normalizeEmail(input.parentEmail);
-  if (!parentEmail) {
+  const parentEmail = normalizeEmail(input.parentEmail || '');
+  if (input.scope !== 'coupon' && !parentEmail) {
     throw new Error('Parent email is required for discounts');
+  }
+
+  const couponCode = normalizeCouponCode(input.couponCode || '');
+  if (input.scope === 'coupon' && !couponCode) {
+    throw new Error('Coupon code is required for coupon discounts');
   }
 
   if (input.scope === 'student' && !input.studentId) {
@@ -287,10 +366,11 @@ export async function createBillingDiscount(input: BillingDiscountInput) {
     scope: input.scope,
     type: input.type,
     value: Number(input.value),
-    parentEmail,
+    parentEmail: input.scope === 'coupon' ? undefined : parentEmail,
     parentName: input.parentName?.trim() || undefined,
     studentId: input.studentId || undefined,
     studentName: input.studentName?.trim() || undefined,
+    couponCode: input.scope === 'coupon' ? couponCode : undefined,
     feeCodes,
     reason: input.reason?.trim() || undefined,
     isActive: input.isActive !== false,
@@ -1450,6 +1530,57 @@ export async function getPublicInvoiceDetails(invoiceToken: string) {
   };
 }
 
+export async function applyCouponCodeToBillingInvoice(params: {
+  invoiceToken: string;
+  couponCode: string;
+}) {
+  const invoice = await getBillingInvoiceByToken(params.invoiceToken);
+  if (!invoice) {
+    throw new Error('Invoice not found');
+  }
+
+  if (invoice.status !== 'pending') {
+    throw new Error('Coupon can only be applied to unpaid invoices');
+  }
+
+  const feeCodes = Array.from(new Set(invoice.lineItems.map((item) => item.type)));
+  const discounts = await getApplicableBillingDiscounts({
+    parentEmail: invoice.parentEmail,
+    studentId: invoice.metadata?.studentId,
+    feeCodes,
+    couponCode: params.couponCode,
+  });
+
+  if (discounts.length === 0) {
+    throw new Error('Coupon code is not valid for this invoice');
+  }
+
+  const alreadyApplied = discounts.every((discount) =>
+    invoice.lineItems.some((item) => item.appliedDiscountIds?.includes(discount.id)),
+  );
+  if (alreadyApplied) {
+    throw new Error('Coupon code is already applied to this invoice');
+  }
+
+  const lineItems = applyAdditionalDiscountsToLineItems(invoice.lineItems, discounts);
+  const amountTotal = getBillingInvoiceTotal(lineItems);
+
+  await firebaseAdmin.db.collection(BILLING_COLLECTIONS.INVOICES).doc(invoice.id).set(
+    {
+      lineItems,
+      amountTotal,
+      updatedAt: nowTimestamp(),
+    },
+    { merge: true },
+  );
+
+  return {
+    ...invoice,
+    lineItems,
+    amountTotal,
+  } as BillingInvoiceDocument;
+}
+
 export function formatCurrency(amount: number) {
   return new Intl.NumberFormat('en-AU', {
     style: 'currency',
@@ -1855,6 +1986,8 @@ async function createBillingInvoiceRequest(params: {
   parentName?: string;
   parentPhone?: string;
   studentId?: string;
+  discountIds?: string[];
+  couponCode?: string;
   origin?: string;
   sendEmail?: boolean;
 }) {
@@ -1885,6 +2018,8 @@ async function createBillingInvoiceRequest(params: {
     parentEmail: normalizedParentEmail,
     studentId: student?.id,
     feeCodes: params.feeCodes,
+    discountIds: params.discountIds,
+    couponCode: params.couponCode,
   });
   const discountedLineItems = applyDiscountsToLineItems(lineItems, discounts);
   const amountTotal = getBillingInvoiceTotal(discountedLineItems);
@@ -1937,6 +2072,8 @@ export async function sendBillingPaymentLink(params: {
   feeCodes?: Array<'admission_fee' | 'parent_portal_yearly'>;
   parentEmail: string;
   studentId?: string;
+  discountIds?: string[];
+  couponCode?: string;
   origin?: string;
 }) {
   const feeCodes = Array.from(
@@ -1988,6 +2125,12 @@ export async function sendBillingPaymentLink(params: {
 
   const existingInvoiceDoc = existingPendingInvoices.docs.find((doc) => {
     const invoice = doc.data() as BillingInvoiceDocument;
+    const requiredDiscountIds = params.discountIds || [];
+    const hasRequiredDiscounts =
+      requiredDiscountIds.length === 0 ||
+      requiredDiscountIds.every((discountId) =>
+        invoice.lineItems.some((item) => item.appliedDiscountIds?.includes(discountId)),
+      );
     const sameFeeSet =
       invoice.lineItems.length === feeCodes.length &&
       feeCodes.every((feeCode) => hasBillingFee(invoice.lineItems, feeCode));
@@ -1995,7 +2138,7 @@ export async function sendBillingPaymentLink(params: {
       !feeCodes.includes('admission_fee') ||
       invoice.metadata?.studentId === params.studentId ||
       invoice.studentEmail === normalizeEmail(student?.email || '');
-    return sameFeeSet && sameStudent;
+    return sameFeeSet && sameStudent && hasRequiredDiscounts && !params.couponCode;
   });
 
   if (existingInvoiceDoc) {
@@ -2019,6 +2162,8 @@ export async function sendBillingPaymentLink(params: {
     feeCodes,
     parentEmail: normalizedParentEmail,
     studentId: params.studentId,
+    discountIds: params.discountIds,
+    couponCode: params.couponCode,
     origin: params.origin,
   });
 

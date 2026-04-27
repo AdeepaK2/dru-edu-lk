@@ -24,7 +24,7 @@ export type BillingInvoiceStatus =
 
 export type BillingFeeCode = 'admission_fee' | 'parent_portal_yearly';
 export type BillingFeeScope = 'student' | 'parent';
-export type BillingDiscountScope = 'parent' | 'student';
+export type BillingDiscountScope = 'parent' | 'student' | 'coupon';
 export type BillingDiscountType = 'percentage' | 'fixed';
 
 export interface BillingSettings {
@@ -148,10 +148,11 @@ export interface BillingDiscountDocument {
   scope: BillingDiscountScope;
   type: BillingDiscountType;
   value: number;
-  parentEmail: string;
+  parentEmail?: string;
   parentName?: string;
   studentId?: string;
   studentName?: string;
+  couponCode?: string;
   feeCodes: BillingFeeCode[];
   reason?: string;
   isActive: boolean;

@@ -19,6 +19,8 @@ interface PublicInvoice {
     description: string;
     amount: number;
     quantity: number;
+    originalAmount?: number;
+    discountAmount?: number;
   }>;
 }
 
@@ -39,7 +41,10 @@ export default function BillingInvoicePage({
   const [invoice, setInvoice] = useState<PublicInvoice | null>(null);
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
+  const [applyingCoupon, setApplyingCoupon] = useState(false);
+  const [couponCode, setCouponCode] = useState('');
   const [error, setError] = useState('');
+  const [couponMessage, setCouponMessage] = useState('');
 
   useEffect(() => {
     if (!token) return;
@@ -107,6 +112,38 @@ export default function BillingInvoicePage({
     } catch (checkoutError: any) {
       setError(checkoutError.message || 'Failed to start checkout');
       setPaying(false);
+    }
+  };
+
+  const handleApplyCoupon = async () => {
+    if (!invoice || !couponCode.trim()) return;
+
+    try {
+      setApplyingCoupon(true);
+      setError('');
+      setCouponMessage('');
+      const response = await fetch('/api/billing/invoice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'apply_coupon',
+          invoiceToken: token,
+          couponCode,
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to apply coupon');
+      }
+
+      setInvoice(data.data);
+      setCouponCode('');
+      setCouponMessage('Coupon applied.');
+    } catch (couponError: any) {
+      setError(couponError.message || 'Failed to apply coupon');
+    } finally {
+      setApplyingCoupon(false);
     }
   };
 
@@ -216,17 +253,53 @@ export default function BillingInvoicePage({
                           className="flex items-start justify-between gap-4 px-5 py-4"
                         >
                           <div className="min-w-0">
-                            <p className="font-semibold text-slate-900">{item.label}</p>
-                            <p className="mt-1 text-sm leading-6 text-slate-500">
-                              {item.description}
+                          <p className="font-semibold text-slate-900">{item.label}</p>
+                          <p className="mt-1 text-sm leading-6 text-slate-500">
+                            {item.description}
+                          </p>
+                          {item.discountAmount && item.discountAmount > 0 ? (
+                            <p className="mt-1 text-sm font-medium text-green-700">
+                              Discount applied: {formatCurrency(item.discountAmount)}
+                            </p>
+                          ) : null}
+                        </div>
+                          <div className="shrink-0 text-right">
+                            {item.originalAmount && item.originalAmount > item.amount ? (
+                              <p className="text-sm text-slate-400 line-through">
+                                {formatCurrency(item.originalAmount * item.quantity)}
+                              </p>
+                            ) : null}
+                            <p className="text-base font-semibold text-slate-900">
+                              {formatCurrency(item.amount * item.quantity)}
                             </p>
                           </div>
-                          <p className="shrink-0 text-base font-semibold text-slate-900">
-                            {formatCurrency(item.amount * item.quantity)}
-                          </p>
                         </div>
                       ))}
                     </div>
+                    {invoice.status !== 'paid' ? (
+                      <div className="border-t border-slate-200 px-5 py-4">
+                        <div className="flex flex-col gap-3 sm:flex-row">
+                          <input
+                            type="text"
+                            value={couponCode}
+                            onChange={(event) => setCouponCode(event.target.value.toUpperCase())}
+                            placeholder="Coupon code"
+                            className="min-w-0 flex-1 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium uppercase tracking-wide text-slate-900 outline-none focus:border-blue-400"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleApplyCoupon}
+                            disabled={applyingCoupon || !couponCode.trim()}
+                            className="rounded-2xl border border-blue-200 bg-blue-50 px-5 py-3 text-sm font-semibold text-blue-700 transition hover:bg-blue-100 disabled:opacity-60"
+                          >
+                            {applyingCoupon ? 'Applying...' : 'Apply Coupon'}
+                          </button>
+                        </div>
+                        {couponMessage ? (
+                          <p className="mt-2 text-sm font-medium text-green-700">{couponMessage}</p>
+                        ) : null}
+                      </div>
+                    ) : null}
                     <div className="flex items-center justify-between rounded-b-3xl bg-slate-50 px-5 py-5">
                       <div>
                         <p className="text-sm uppercase tracking-[0.12em] text-slate-500">Total Due</p>

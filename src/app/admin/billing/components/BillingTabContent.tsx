@@ -1,6 +1,5 @@
-import { AdmissionTab } from './AdmissionTab';
 import { DiscountsTab } from './DiscountsTab';
-import { ParentPortalTab } from './ParentPortalTab';
+import { PaymentsTab } from './PaymentsTab';
 import { SettingsTab } from './SettingsTab';
 import type { BillingDashboardState } from '../hooks/useBillingDashboard';
 
@@ -9,38 +8,30 @@ interface BillingTabContentProps {
 }
 
 export function BillingTabContent({ dashboard }: BillingTabContentProps) {
-  if (dashboard.activeTab === 'parent_portal') {
+  if (dashboard.activeTab === 'payments') {
     return (
-      <ParentPortalTab
-        filteredAccounts={dashboard.filteredAccounts}
+      <PaymentsTab
+        rows={dashboard.paginatedPaymentRows}
+        filteredCount={dashboard.filteredPaymentRows.length}
+        totalCount={dashboard.paymentRows.length}
         searchTerm={dashboard.searchTerm}
         onSearchTermChange={dashboard.setSearchTerm}
         portalStatusFilter={dashboard.portalStatusFilter}
         onPortalStatusFilterChange={dashboard.setPortalStatusFilter}
+        admissionStatusFilter={dashboard.admissionStatusFilter}
+        onAdmissionStatusFilterChange={dashboard.setAdmissionStatusFilter}
+        paymentStatusFilter={dashboard.paymentStatusFilter}
+        onPaymentStatusFilterChange={dashboard.setPaymentStatusFilter}
+        page={dashboard.paymentPage}
+        pageCount={dashboard.paymentPageCount}
+        pageSize={dashboard.paymentPageSize}
+        onPageChange={dashboard.setPaymentPage}
+        onPageSizeChange={dashboard.setPaymentPageSize}
+        startIndex={dashboard.paymentStartIndex}
+        endIndex={dashboard.paymentEndIndex}
         onRefresh={dashboard.loadManagement}
         runBulkBillingAction={dashboard.runBulkBillingAction}
         bulkPortalItems={dashboard.bulkPortalItems}
-        processingKey={dashboard.processingKey}
-        parentPortalYearlyFeeAmount={dashboard.parentPortalYearlyFeeAmount}
-        managementLoading={dashboard.managementLoading}
-        runBillingAction={dashboard.runBillingAction}
-        formatMoney={dashboard.formatMoney}
-        formatDate={dashboard.formatDate}
-        getPortalStatusPill={dashboard.getPortalStatusPill}
-      />
-    );
-  }
-
-  if (dashboard.activeTab === 'admission') {
-    return (
-      <AdmissionTab
-        filteredAdmissionFees={dashboard.filteredAdmissionFees}
-        searchTerm={dashboard.searchTerm}
-        onSearchTermChange={dashboard.setSearchTerm}
-        admissionStatusFilter={dashboard.admissionStatusFilter}
-        onAdmissionStatusFilterChange={dashboard.setAdmissionStatusFilter}
-        onRefresh={dashboard.loadManagement}
-        runBulkBillingAction={dashboard.runBulkBillingAction}
         bulkAdmissionItems={dashboard.bulkAdmissionItems}
         bulkCombinedItems={dashboard.bulkCombinedItems}
         processingKey={dashboard.processingKey}
@@ -50,8 +41,6 @@ export function BillingTabContent({ dashboard }: BillingTabContentProps) {
         runBillingAction={dashboard.runBillingAction}
         formatMoney={dashboard.formatMoney}
         formatDate={dashboard.formatDate}
-        getAdmissionStatusPill={dashboard.getAdmissionStatusPill}
-        accountByParentEmail={dashboard.accountByParentEmail}
       />
     );
   }
@@ -68,6 +57,7 @@ export function BillingTabContent({ dashboard }: BillingTabContentProps) {
         filteredDiscounts={dashboard.filteredDiscounts}
         onRefreshDiscounts={dashboard.loadDiscounts}
         onToggleDiscount={dashboard.handleToggleDiscount}
+        runBillingAction={dashboard.runBillingAction}
         processingKey={dashboard.processingKey}
         formatMoney={dashboard.formatMoney}
       />

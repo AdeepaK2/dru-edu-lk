@@ -6,8 +6,7 @@ interface BillingTabsProps {
 }
 
 const TABS: Array<{ key: BillingTab; label: string }> = [
-  { key: 'parent_portal', label: 'Parent Portal Fees' },
-  { key: 'admission', label: 'Admission Fees' },
+  { key: 'payments', label: 'Payments' },
   { key: 'discounts', label: 'Discounts' },
   { key: 'settings', label: 'Payment Settings' },
 ];

@@ -112,6 +112,10 @@ export async function POST(request: NextRequest) {
         feeCode,
         parentEmail,
         studentId: typeof body.studentId === 'string' ? body.studentId : undefined,
+        discountIds: Array.isArray(body.discountIds)
+          ? body.discountIds.filter((discountId: unknown): discountId is string => typeof discountId === 'string')
+          : undefined,
+        couponCode: typeof body.couponCode === 'string' ? body.couponCode : undefined,
         origin: request.nextUrl.origin,
       });
 
@@ -128,6 +132,10 @@ export async function POST(request: NextRequest) {
         feeCodes: ['admission_fee', 'parent_portal_yearly'],
         parentEmail,
         studentId,
+        discountIds: Array.isArray(body.discountIds)
+          ? body.discountIds.filter((discountId: unknown): discountId is string => typeof discountId === 'string')
+          : undefined,
+        couponCode: typeof body.couponCode === 'string' ? body.couponCode : undefined,
         origin: request.nextUrl.origin,
       });
 
