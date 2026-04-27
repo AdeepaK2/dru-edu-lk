@@ -63,13 +63,14 @@ export interface AdmissionFeeRecord {
 export interface BillingDiscountRecord {
   id: string;
   name: string;
-  scope: 'parent' | 'student';
+  scope: 'parent' | 'student' | 'coupon';
   type: 'percentage' | 'fixed';
   value: number;
-  parentEmail: string;
+  parentEmail?: string;
   parentName?: string;
   studentId?: string;
   studentName?: string;
+  couponCode?: string;
   feeCodes: Array<'admission_fee' | 'parent_portal_yearly'>;
   reason?: string;
   isActive: boolean;
@@ -78,11 +79,12 @@ export interface BillingDiscountRecord {
 
 export interface DiscountFormState {
   name: string;
-  scope: 'parent' | 'student';
+  scope: 'parent' | 'student' | 'coupon';
   type: 'percentage' | 'fixed';
   value: number;
   parentEmail: string;
   studentId: string;
+  couponCode: string;
   feeCodes: Array<'admission_fee' | 'parent_portal_yearly'>;
   reason: string;
 }
@@ -97,4 +99,36 @@ export interface BillingSummary {
   admissionPendingStudents: number;
 }
 
-export type BillingTab = 'parent_portal' | 'admission' | 'discounts' | 'settings';
+export interface BillingPaymentStudent {
+  studentId: string;
+  studentName: string;
+  studentEmail: string;
+  year?: string;
+  school?: string;
+  canManageAdmission: boolean;
+  paymentStatus: FeePaymentStatus;
+  admissionStatus: AdmissionFeeRecord['admissionStatus'];
+  totalOutstandingAmount: number;
+  outstandingInvoices: BillingInvoiceRecord[];
+  latestPayment: BillingPaymentRecord | null;
+}
+
+export interface BillingPaymentParentRow {
+  parentId?: string;
+  parentName: string;
+  parentEmail: string;
+  parentPhone?: string;
+  portalStatus: BillingAccount['portalStatus'];
+  portalPaymentStatus: FeePaymentStatus;
+  portalPaidUntil: string | null;
+  portalOutstandingAmount: number;
+  portalOutstandingInvoices: BillingInvoiceRecord[];
+  portalLatestPayment: BillingPaymentRecord | null;
+  students: BillingPaymentStudent[];
+}
+
+export type PaymentStatusFilter = 'all' | 'any_unpaid' | 'fully_paid';
+export type FeePaymentStatus = 'paid' | 'invoice_sent' | 'unpaid';
+export type FeePaymentStatusFilter = 'all' | FeePaymentStatus;
+
+export type BillingTab = 'payments' | 'discounts' | 'settings';

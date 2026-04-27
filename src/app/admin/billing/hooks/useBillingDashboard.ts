@@ -4,10 +4,15 @@ import type {
   AdmissionFeeRecord,
   BillingAccount,
   BillingDiscountRecord,
+  BillingPaymentParentRow,
+  BillingPaymentStudent,
   BillingSettingsState,
   BillingSummary,
   BillingTab,
   DiscountFormState,
+  FeePaymentStatus,
+  FeePaymentStatusFilter,
+  PaymentStatusFilter,
 } from '../types';
 
 const DEFAULT_SETTINGS: BillingSettingsState = {
@@ -31,17 +36,18 @@ const DEFAULT_SUMMARY: BillingSummary = {
 
 const DEFAULT_DISCOUNT_FORM: DiscountFormState = {
   name: '',
-  scope: 'parent',
+  scope: 'student',
   type: 'percentage',
   value: 0,
   parentEmail: '',
   studentId: '',
+  couponCode: '',
   feeCodes: ['admission_fee'],
   reason: '',
 };
 
 export function useBillingDashboard() {
-  const [activeTab, setActiveTab] = useState<BillingTab>('parent_portal');
+  const [activeTab, setActiveTab] = useState<BillingTab>('payments');
   const [form, setForm] = useState<BillingSettingsState>(DEFAULT_SETTINGS);
   const [settingsLoading, setSettingsLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -52,8 +58,11 @@ export function useBillingDashboard() {
   const [discounts, setDiscounts] = useState<BillingDiscountRecord[]>([]);
   const [summary, setSummary] = useState(DEFAULT_SUMMARY);
   const [searchTerm, setSearchTerm] = useState('');
-  const [portalStatusFilter, setPortalStatusFilter] = useState<'all' | BillingAccount['portalStatus']>('all');
-  const [admissionStatusFilter, setAdmissionStatusFilter] = useState<'all' | AdmissionFeeRecord['admissionStatus']>('all');
+  const [portalStatusFilter, setPortalStatusFilter] = useState<FeePaymentStatusFilter>('all');
+  const [admissionStatusFilter, setAdmissionStatusFilter] = useState<FeePaymentStatusFilter>('all');
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState<PaymentStatusFilter>('all');
+  const [paymentPageSize, setPaymentPageSize] = useState(10);
+  const [paymentPage, setPaymentPage] = useState(1);
   const [discountForm, setDiscountForm] = useState<DiscountFormState>(DEFAULT_DISCOUNT_FORM);
   const [discountSaving, setDiscountSaving] = useState(false);
   const [actionMessage, setActionMessage] = useState('');
@@ -124,6 +133,10 @@ export function useBillingDashboard() {
     loadDiscounts();
   }, []);
 
+  useEffect(() => {
+    setPaymentPage(1);
+  }, [searchTerm, portalStatusFilter, admissionStatusFilter, paymentStatusFilter, paymentPageSize]);
+
   const handleSave = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -165,12 +178,16 @@ export function useBillingDashboard() {
     feeCode,
     parentEmail,
     studentId,
+    discountIds,
+    couponCode,
     processingId,
   }: {
     action: 'mark_paid_offline' | 'send_payment_link' | 'send_combined_payment_link';
     feeCode: 'admission_fee' | 'parent_portal_yearly';
     parentEmail: string;
     studentId?: string;
+    discountIds?: string[];
+    couponCode?: string;
     processingId: string;
   }) => {
     try {
@@ -186,6 +203,8 @@ export function useBillingDashboard() {
           feeCode,
           parentEmail,
           studentId,
+          discountIds,
+          couponCode,
           processedBy: 'admin-portal',
         }),
       });
@@ -271,10 +290,11 @@ export function useBillingDashboard() {
           scope: discountForm.scope,
           type: discountForm.type,
           value: discountForm.value,
-          parentEmail: discountForm.parentEmail,
-          parentName: selectedParent?.parentName,
+          parentEmail: discountForm.scope === 'coupon' ? undefined : discountForm.parentEmail,
+          parentName: discountForm.scope === 'coupon' ? undefined : selectedParent?.parentName,
           studentId: discountForm.scope === 'student' ? discountForm.studentId : undefined,
           studentName: discountForm.scope === 'student' ? selectedStudent?.studentName : undefined,
+          couponCode: discountForm.scope === 'coupon' ? discountForm.couponCode : undefined,
           feeCodes: discountForm.feeCodes,
           reason: discountForm.reason,
           isActive: true,
@@ -326,43 +346,127 @@ export function useBillingDashboard() {
     }
   };
 
-  const filteredAccounts = useMemo(() => {
+  const getPortalPaymentStatus = (account: BillingAccount): FeePaymentStatus => {
+    if (account.portalStatus === 'active') return 'paid';
+    if (account.outstandingInvoices.length > 0 || account.portalStatus === 'payment_required') {
+      return 'invoice_sent';
+    }
+    return 'unpaid';
+  };
+
+  const getAdmissionPaymentStatus = (record: AdmissionFeeRecord): FeePaymentStatus => {
+    if (record.admissionStatus === 'paid') return 'paid';
+    if (record.outstandingInvoices.length > 0 || record.admissionStatus === 'payment_required') {
+      return 'invoice_sent';
+    }
+    return 'unpaid';
+  };
+
+  const paymentRows = useMemo<BillingPaymentParentRow[]>(() => {
+    const admissionByParentEmail = new Map<string, AdmissionFeeRecord[]>();
+
+    admissionFees.forEach((record) => {
+      const parentEmail = record.parentEmail.toLowerCase();
+      const existing = admissionByParentEmail.get(parentEmail) || [];
+      existing.push(record);
+      admissionByParentEmail.set(parentEmail, existing);
+    });
+
+    return accounts.map((account) => {
+      const admissionRecords = admissionByParentEmail.get(account.parentEmail.toLowerCase()) || [];
+      const admissionStudentsByKey = new Map<string, BillingPaymentStudent>();
+
+      admissionRecords.forEach((record) => {
+        admissionStudentsByKey.set(record.studentId || record.studentEmail, {
+          studentId: record.studentId,
+          studentName: record.studentName,
+          studentEmail: record.studentEmail,
+          year: record.year,
+          school: record.school,
+          canManageAdmission: true,
+          paymentStatus: getAdmissionPaymentStatus(record),
+          admissionStatus: record.admissionStatus,
+          totalOutstandingAmount: record.totalOutstandingAmount,
+          outstandingInvoices: record.outstandingInvoices,
+          latestPayment: record.latestPayment,
+        });
+      });
+
+      account.students.forEach((student) => {
+        const key = student.studentId || student.studentEmail;
+        if (!key || admissionStudentsByKey.has(key)) return;
+
+        admissionStudentsByKey.set(key, {
+          studentId: student.studentId,
+          studentName: student.studentName,
+          studentEmail: student.studentEmail,
+          year: student.year,
+          school: student.school,
+          canManageAdmission: false,
+          paymentStatus: 'unpaid',
+          admissionStatus: 'none',
+          totalOutstandingAmount: 0,
+          outstandingInvoices: [],
+          latestPayment: null,
+        });
+      });
+
+      return {
+        parentId: account.parentId,
+        parentName: account.parentName,
+        parentEmail: account.parentEmail,
+        parentPhone: account.parentPhone,
+        portalStatus: account.portalStatus,
+        portalPaymentStatus: getPortalPaymentStatus(account),
+        portalPaidUntil: account.portalPaidUntil,
+        portalOutstandingAmount: account.totalOutstandingAmount,
+        portalOutstandingInvoices: account.outstandingInvoices,
+        portalLatestPayment: account.latestPayment,
+        students: [...admissionStudentsByKey.values()].sort((a, b) =>
+          a.studentName.localeCompare(b.studentName),
+        ),
+      };
+    });
+  }, [accounts, admissionFees]);
+
+  const filteredPaymentRows = useMemo(() => {
     const needle = searchTerm.trim().toLowerCase();
-    return accounts.filter((account) => {
-      const studentNames = account.students.map((student) => student.studentName).join(' ').toLowerCase();
-      const studentEmails = account.students.map((student) => student.studentEmail).join(' ').toLowerCase();
+
+    return paymentRows.filter((row) => {
+      const studentNames = row.students.map((student) => student.studentName).join(' ').toLowerCase();
+      const studentEmails = row.students.map((student) => student.studentEmail).join(' ').toLowerCase();
       const matchesSearch =
         !needle ||
-        account.parentName.toLowerCase().includes(needle) ||
-        account.parentEmail.toLowerCase().includes(needle) ||
+        row.parentName.toLowerCase().includes(needle) ||
+        row.parentEmail.toLowerCase().includes(needle) ||
+        (row.parentPhone || '').toLowerCase().includes(needle) ||
         studentNames.includes(needle) ||
         studentEmails.includes(needle);
 
-      const matchesStatus = portalStatusFilter === 'all' || account.portalStatus === portalStatusFilter;
-      return matchesSearch && matchesStatus;
+      const matchesPortalStatus = portalStatusFilter === 'all' || row.portalPaymentStatus === portalStatusFilter;
+      const matchesAdmissionStatus =
+        admissionStatusFilter === 'all' ||
+        row.students.some((student) => student.paymentStatus === admissionStatusFilter);
+      const isFullyPaid =
+        row.portalPaymentStatus === 'paid' &&
+        row.students.every((student) => student.paymentStatus === 'paid');
+      const matchesPaymentStatus =
+        paymentStatusFilter === 'all' ||
+        (paymentStatusFilter === 'fully_paid' && isFullyPaid) ||
+        (paymentStatusFilter === 'any_unpaid' && !isFullyPaid);
+
+      return matchesSearch && matchesPortalStatus && matchesAdmissionStatus && matchesPaymentStatus;
     });
-  }, [accounts, searchTerm, portalStatusFilter]);
+  }, [admissionStatusFilter, paymentRows, paymentStatusFilter, portalStatusFilter, searchTerm]);
 
-  const filteredAdmissionFees = useMemo(() => {
-    const needle = searchTerm.trim().toLowerCase();
-    return admissionFees.filter((record) => {
-      const matchesSearch =
-        !needle ||
-        record.studentName.toLowerCase().includes(needle) ||
-        record.studentEmail.toLowerCase().includes(needle) ||
-        record.parentName.toLowerCase().includes(needle) ||
-        record.parentEmail.toLowerCase().includes(needle);
-
-      const matchesStatus =
-        admissionStatusFilter === 'all' || record.admissionStatus === admissionStatusFilter;
-
-      return matchesSearch && matchesStatus;
-    });
-  }, [admissionFees, searchTerm, admissionStatusFilter]);
-
-  const accountByParentEmail = useMemo(() => {
-    return new Map(accounts.map((account) => [account.parentEmail, account] as const));
-  }, [accounts]);
+  const paymentPageCount = Math.max(1, Math.ceil(filteredPaymentRows.length / paymentPageSize));
+  const safePaymentPage = Math.min(paymentPage, paymentPageCount);
+  const paymentStartIndex = filteredPaymentRows.length === 0 ? 0 : (safePaymentPage - 1) * paymentPageSize + 1;
+  const paymentEndIndex = Math.min(safePaymentPage * paymentPageSize, filteredPaymentRows.length);
+  const paginatedPaymentRows = useMemo(() => {
+    const start = (safePaymentPage - 1) * paymentPageSize;
+    return filteredPaymentRows.slice(start, start + paymentPageSize);
+  }, [filteredPaymentRows, paymentPageSize, safePaymentPage]);
 
   const selectedParentStudents = useMemo(() => {
     if (!discountForm.parentEmail) return [];
@@ -375,52 +479,58 @@ export function useBillingDashboard() {
       if (!needle) return true;
       return (
         discount.name.toLowerCase().includes(needle) ||
-        discount.parentEmail.toLowerCase().includes(needle) ||
+        (discount.parentEmail || '').toLowerCase().includes(needle) ||
         (discount.parentName || '').toLowerCase().includes(needle) ||
-        (discount.studentName || '').toLowerCase().includes(needle)
+        (discount.studentName || '').toLowerCase().includes(needle) ||
+        (discount.couponCode || '').toLowerCase().includes(needle)
       );
     });
   }, [discounts, searchTerm]);
 
   const bulkPortalItems = useMemo(
     () =>
-      filteredAccounts
-        .filter((account) => account.portalStatus !== 'active')
-        .map((account) => ({
-          parentEmail: account.parentEmail,
+      filteredPaymentRows
+        .filter((row) => row.portalPaymentStatus !== 'paid')
+        .map((row) => ({
+          parentEmail: row.parentEmail,
           feeCodes: ['parent_portal_yearly'] as Array<'parent_portal_yearly'>,
         })),
-    [filteredAccounts],
+    [filteredPaymentRows],
   );
 
   const bulkAdmissionItems = useMemo(
     () =>
-      filteredAdmissionFees
-        .filter((record) => record.admissionStatus !== 'paid')
-        .map((record) => ({
-          parentEmail: record.parentEmail,
-          studentId: record.studentId,
-          feeCodes: ['admission_fee'] as Array<'admission_fee'>,
-        })),
-    [filteredAdmissionFees],
+      filteredPaymentRows
+        .flatMap((row) =>
+          row.students
+            .filter((student) => student.paymentStatus !== 'paid')
+            .filter((student) => student.canManageAdmission)
+            .map((student) => ({
+              parentEmail: row.parentEmail,
+              studentId: student.studentId,
+              feeCodes: ['admission_fee'] as Array<'admission_fee'>,
+            })),
+        ),
+    [filteredPaymentRows],
   );
 
   const bulkCombinedItems = useMemo(
     () =>
-      filteredAdmissionFees
-        .filter(
-          (record) =>
-            record.admissionStatus !== 'paid' &&
-            accountByParentEmail.get(record.parentEmail)?.portalStatus !== 'active',
-        )
-        .map((record) => ({
-          parentEmail: record.parentEmail,
-          studentId: record.studentId,
-          feeCodes: ['admission_fee', 'parent_portal_yearly'] as Array<
-            'admission_fee' | 'parent_portal_yearly'
-          >,
-        })),
-    [filteredAdmissionFees, accountByParentEmail],
+      filteredPaymentRows.flatMap((row) =>
+        row.portalPaymentStatus === 'paid'
+          ? []
+          : row.students
+              .filter((student) => student.paymentStatus !== 'paid')
+              .filter((student) => student.canManageAdmission)
+              .map((student) => ({
+                parentEmail: row.parentEmail,
+                studentId: student.studentId,
+                feeCodes: ['admission_fee', 'parent_portal_yearly'] as Array<
+                  'admission_fee' | 'parent_portal_yearly'
+                >,
+              })),
+      ),
+    [filteredPaymentRows],
   );
 
   const formatMoney = (amount: number, currency = 'AUD') =>
@@ -432,30 +542,6 @@ export function useBillingDashboard() {
     return Number.isNaN(parsed.getTime())
       ? value
       : parsed.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
-  };
-
-  const getPortalStatusPill = (status: BillingAccount['portalStatus']) => {
-    switch (status) {
-      case 'active':
-        return 'bg-green-100 text-green-800';
-      case 'payment_required':
-        return 'bg-amber-100 text-amber-800';
-      case 'expired':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-slate-100 text-slate-700';
-    }
-  };
-
-  const getAdmissionStatusPill = (status: AdmissionFeeRecord['admissionStatus']) => {
-    switch (status) {
-      case 'paid':
-        return 'bg-green-100 text-green-800';
-      case 'payment_required':
-        return 'bg-amber-100 text-amber-800';
-      default:
-        return 'bg-slate-100 text-slate-700';
-    }
   };
 
   return {
@@ -470,21 +556,26 @@ export function useBillingDashboard() {
     bulkPortalItems,
     discountForm,
     discountSaving,
-    filteredAccounts,
-    filteredAdmissionFees,
     filteredDiscounts,
+    filteredPaymentRows,
     form,
     formatDate,
     formatMoney,
-    getAdmissionStatusPill,
-    getPortalStatusPill,
     handleSave,
     handleSaveDiscount,
     handleToggleDiscount,
     loadDiscounts,
     loadManagement,
     managementLoading,
+    paginatedPaymentRows,
     parentPortalYearlyFeeAmount: form.parentPortalYearlyFeeAmount,
+    paymentEndIndex,
+    paymentPage: safePaymentPage,
+    paymentPageCount,
+    paymentPageSize,
+    paymentRows,
+    paymentStartIndex,
+    paymentStatusFilter,
     portalStatusFilter,
     processingKey,
     runBillingAction,
@@ -496,12 +587,14 @@ export function useBillingDashboard() {
     setAdmissionStatusFilter,
     setDiscountForm,
     setForm,
+    setPaymentPage,
+    setPaymentPageSize,
+    setPaymentStatusFilter,
     setPortalStatusFilter,
     setSearchTerm,
     settingsLoading,
     settingsMessage,
     summary,
-    accountByParentEmail,
   };
 }
 
