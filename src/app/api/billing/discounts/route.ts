@@ -33,16 +33,25 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    const scope =
+      body.scope === 'coupon_code'
+        ? 'coupon_code'
+        : body.scope === 'additional_student'
+        ? 'additional_student'
+        : body.scope === 'student'
+          ? 'student'
+          : 'parent';
+
     const created = await createBillingDiscount({
       name: String(body.name || ''),
-      scope: body.scope === 'coupon' ? 'coupon' : body.scope === 'student' ? 'student' : 'parent',
-      type: body.type === 'fixed' ? 'fixed' : 'percentage',
+      scope,
+      type: 'percentage',
       value: Number(body.value || 0),
-      parentEmail: typeof body.parentEmail === 'string' ? body.parentEmail : undefined,
+      couponCode: typeof body.couponCode === 'string' ? body.couponCode : undefined,
+      parentEmail: String(body.parentEmail || ''),
       parentName: typeof body.parentName === 'string' ? body.parentName : undefined,
       studentId: typeof body.studentId === 'string' ? body.studentId : undefined,
       studentName: typeof body.studentName === 'string' ? body.studentName : undefined,
-      couponCode: typeof body.couponCode === 'string' ? body.couponCode : undefined,
       feeCodes: Array.isArray(body.feeCodes)
         ? body.feeCodes.filter(
             (feeCode: unknown): feeCode is 'admission_fee' | 'parent_portal_yearly' =>

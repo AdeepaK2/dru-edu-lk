@@ -29,7 +29,6 @@ export function BillingTabContent({ dashboard }: BillingTabContentProps) {
         onPageSizeChange={dashboard.setPaymentPageSize}
         startIndex={dashboard.paymentStartIndex}
         endIndex={dashboard.paymentEndIndex}
-        onRefresh={dashboard.loadManagement}
         runBulkBillingAction={dashboard.runBulkBillingAction}
         bulkPortalItems={dashboard.bulkPortalItems}
         bulkAdmissionItems={dashboard.bulkAdmissionItems}
@@ -37,6 +36,7 @@ export function BillingTabContent({ dashboard }: BillingTabContentProps) {
         processingKey={dashboard.processingKey}
         admissionFeeAmount={dashboard.admissionFeeAmount}
         parentPortalYearlyFeeAmount={dashboard.parentPortalYearlyFeeAmount}
+        settingsLoading={dashboard.settingsLoading}
         managementLoading={dashboard.managementLoading}
         runBillingAction={dashboard.runBillingAction}
         formatMoney={dashboard.formatMoney}
@@ -50,16 +50,15 @@ export function BillingTabContent({ dashboard }: BillingTabContentProps) {
       <DiscountsTab
         discountForm={dashboard.discountForm}
         setDiscountForm={dashboard.setDiscountForm}
+        couponForm={dashboard.couponForm}
+        setCouponForm={dashboard.setCouponForm}
         onSaveDiscount={dashboard.handleSaveDiscount}
+        onSaveCoupon={dashboard.handleSaveCoupon}
         discountSaving={dashboard.discountSaving}
-        accounts={dashboard.accounts}
-        selectedParentStudents={dashboard.selectedParentStudents}
         filteredDiscounts={dashboard.filteredDiscounts}
         onRefreshDiscounts={dashboard.loadDiscounts}
         onToggleDiscount={dashboard.handleToggleDiscount}
-        runBillingAction={dashboard.runBillingAction}
         processingKey={dashboard.processingKey}
-        formatMoney={dashboard.formatMoney}
       />
     );
   }

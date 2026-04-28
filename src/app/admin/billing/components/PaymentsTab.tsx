@@ -39,7 +39,6 @@ interface PaymentsTabProps {
   onPageSizeChange: (value: number) => void;
   startIndex: number;
   endIndex: number;
-  onRefresh: () => void | Promise<void>;
   runBulkBillingAction: (args: {
     processingId: string;
     items: Array<{
@@ -66,6 +65,7 @@ interface PaymentsTabProps {
   processingKey: string | null;
   admissionFeeAmount: number;
   parentPortalYearlyFeeAmount: number;
+  settingsLoading: boolean;
   managementLoading: boolean;
   runBillingAction: (args: {
     action: 'mark_paid_offline' | 'send_payment_link' | 'send_combined_payment_link';
@@ -550,6 +550,7 @@ function BulkSendModal({
 function PaginationControls({
   endIndex,
   filteredCount,
+  loading,
   onPageChange,
   page,
   pageCount,
@@ -557,6 +558,7 @@ function PaginationControls({
 }: {
   endIndex: number;
   filteredCount: number;
+  loading?: boolean;
   onPageChange: (value: number) => void;
   page: number;
   pageCount: number;
@@ -564,31 +566,61 @@ function PaginationControls({
 }) {
   return (
     <div className="flex flex-col gap-3 text-sm text-gray-600 dark:text-gray-300 md:flex-row md:items-center md:justify-between">
-      <p>
-        Showing {startIndex}-{endIndex} of {filteredCount} parents
-      </p>
+      <p>{loading ? 'Loading parent payment records...' : `Showing ${startIndex}-${endIndex} of ${filteredCount} parents`}</p>
       <div className="flex items-center gap-2">
         <button
           type="button"
           onClick={() => onPageChange(Math.max(1, page - 1))}
-          disabled={page <= 1 || filteredCount === 0}
+          disabled={loading || page <= 1 || filteredCount === 0}
           className="rounded-lg border border-slate-200 px-4 py-2 font-medium text-gray-700 hover:bg-slate-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700"
         >
           Previous
         </button>
         <span className="px-2">
-          Page {filteredCount === 0 ? 0 : page} of {filteredCount === 0 ? 0 : pageCount}
+          {loading ? 'Loading...' : `Page ${filteredCount === 0 ? 0 : page} of ${filteredCount === 0 ? 0 : pageCount}`}
         </span>
         <button
           type="button"
           onClick={() => onPageChange(Math.min(pageCount, page + 1))}
-          disabled={page >= pageCount || filteredCount === 0}
+          disabled={loading || page >= pageCount || filteredCount === 0}
           className="rounded-lg border border-slate-200 px-4 py-2 font-medium text-gray-700 hover:bg-slate-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700"
         >
           Next
         </button>
       </div>
     </div>
+  );
+}
+
+function LoadingTableRows() {
+  return (
+    <>
+      {Array.from({ length: 5 }).map((_, index) => (
+        <tr key={index} className="animate-pulse align-top">
+          <td className="px-4 py-4">
+            <div className="h-4 w-40 rounded bg-slate-200 dark:bg-gray-700" />
+            <div className="mt-3 h-3 w-56 rounded bg-slate-100 dark:bg-gray-700/70" />
+          </td>
+          <td className="w-[280px] px-4 py-4">
+            <div className="h-6 w-32 rounded-full bg-slate-200 dark:bg-gray-700" />
+            <div className="mt-5 h-3 w-20 rounded bg-slate-100 dark:bg-gray-700/70" />
+            <div className="mt-2 h-4 w-24 rounded bg-slate-200 dark:bg-gray-700" />
+          </td>
+          <td className="min-w-[420px] px-4 py-4">
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-gray-700 dark:bg-gray-700/40">
+              <div className="h-4 w-44 rounded bg-slate-200 dark:bg-gray-600" />
+              <div className="mt-3 grid gap-3 md:grid-cols-2">
+                <div className="h-14 rounded bg-slate-100 dark:bg-gray-700" />
+                <div className="h-14 rounded bg-slate-100 dark:bg-gray-700" />
+              </div>
+            </div>
+          </td>
+          <td className="w-[180px] px-4 py-4">
+            <div className="h-10 w-full rounded-lg bg-slate-200 dark:bg-gray-700" />
+          </td>
+        </tr>
+      ))}
+    </>
   );
 }
 
@@ -611,7 +643,6 @@ export function PaymentsTab({
   onPageSizeChange,
   startIndex,
   endIndex,
-  onRefresh,
   runBulkBillingAction,
   bulkPortalItems,
   bulkAdmissionItems,
@@ -619,6 +650,7 @@ export function PaymentsTab({
   processingKey,
   admissionFeeAmount,
   parentPortalYearlyFeeAmount,
+  settingsLoading,
   managementLoading,
   runBillingAction,
   formatMoney,
@@ -721,16 +753,17 @@ export function PaymentsTab({
             Review parent portal and student admission fee status together, then send Stripe links or mark payments offline.
           </p>
           <p className="mt-3 inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm font-medium text-slate-700 dark:border-gray-600 dark:bg-gray-700/60 dark:text-gray-200">
-            Showing {filteredCount} of {totalCount} parents
+            {managementLoading ? 'Loading parents...' : `Showing ${filteredCount} of ${totalCount} parents`}
           </p>
         </div>
 
-        <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-[minmax(260px,1fr)_180px_180px_170px_120px_auto]">
+        <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-[minmax(260px,1fr)_180px_180px_170px_120px]">
           <input
             type="text"
             value={searchTerm}
             onChange={(event) => onSearchTermChange(event.target.value)}
             placeholder="Search parent or student"
+            disabled={managementLoading}
             className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
           />
           <select
@@ -738,6 +771,7 @@ export function PaymentsTab({
             onChange={(event) =>
               onPortalStatusFilterChange(event.target.value as FeePaymentStatusFilter)
             }
+            disabled={managementLoading}
             className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
           >
             <option value="all">All portal statuses</option>
@@ -750,6 +784,7 @@ export function PaymentsTab({
             onChange={(event) =>
               onAdmissionStatusFilterChange(event.target.value as FeePaymentStatusFilter)
             }
+            disabled={managementLoading}
             className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
           >
             <option value="all">All admission statuses</option>
@@ -760,6 +795,7 @@ export function PaymentsTab({
           <select
             value={paymentStatusFilter}
             onChange={(event) => onPaymentStatusFilterChange(event.target.value as PaymentStatusFilter)}
+            disabled={managementLoading}
             className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
           >
             <option value="all">All payments</option>
@@ -769,25 +805,20 @@ export function PaymentsTab({
           <select
             value={pageSize}
             onChange={(event) => onPageSizeChange(Number(event.target.value))}
+            disabled={managementLoading}
             className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
           >
             <option value={10}>10 / page</option>
             <option value={25}>25 / page</option>
             <option value={50}>50 / page</option>
           </select>
-          <button
-            type="button"
-            onClick={onRefresh}
-            className="rounded-lg border border-blue-200 bg-blue-50 px-5 py-3 text-sm font-medium text-blue-700 hover:bg-blue-100"
-          >
-            Refresh
-          </button>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
             onClick={() => setShowBulkModal(true)}
+            disabled={managementLoading}
             className="rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700"
           >
             Bulk Send Invoices
@@ -798,7 +829,11 @@ export function PaymentsTab({
         </div>
       </div>
 
-      {(admissionFeeAmount <= 0 || parentPortalYearlyFeeAmount <= 0) && (
+      {settingsLoading ? (
+        <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+          Loading payment settings...
+        </div>
+      ) : (admissionFeeAmount <= 0 || parentPortalYearlyFeeAmount <= 0) && (
         <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
           {admissionFeeAmount <= 0 && parentPortalYearlyFeeAmount <= 0
             ? 'Admission and parent portal yearly fee amounts are not configured. Set them in Payment Settings before sending Stripe links.'
@@ -812,6 +847,7 @@ export function PaymentsTab({
         <PaginationControls
           endIndex={endIndex}
           filteredCount={filteredCount}
+          loading={managementLoading}
           onPageChange={onPageChange}
           page={page}
           pageCount={pageCount}
@@ -831,11 +867,7 @@ export function PaymentsTab({
           </thead>
           <tbody className="divide-y divide-gray-100 bg-white dark:divide-gray-800 dark:bg-gray-800">
             {managementLoading ? (
-              <tr>
-                <td colSpan={4} className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
-                  Loading payment data...
-                </td>
-              </tr>
+              <LoadingTableRows />
             ) : rows.length === 0 ? (
               <tr>
                 <td colSpan={4} className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
@@ -931,6 +963,7 @@ export function PaymentsTab({
         <PaginationControls
           endIndex={endIndex}
           filteredCount={filteredCount}
+          loading={managementLoading}
           onPageChange={onPageChange}
           page={page}
           pageCount={pageCount}

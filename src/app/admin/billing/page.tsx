@@ -13,7 +13,7 @@ export default function BillingSettingsPage() {
   return (
     <div className="space-y-6 pb-6">
       <BillingPageHeader />
-      <BillingSummaryCards summary={dashboard.summary} />
+      <BillingSummaryCards summary={dashboard.summary} loading={dashboard.managementLoading} />
       <BillingTabs activeTab={dashboard.activeTab} onTabChange={dashboard.setActiveTab} />
       <BillingActionBanner actionMessage={dashboard.actionMessage} actionError={dashboard.actionError} />
       <BillingTabContent dashboard={dashboard} />
