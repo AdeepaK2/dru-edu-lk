@@ -63,7 +63,7 @@ export interface AdmissionFeeRecord {
 export interface BillingDiscountRecord {
   id: string;
   name: string;
-  scope: 'parent' | 'student' | 'coupon';
+  scope: 'parent' | 'student' | 'additional_student' | 'coupon_code';
   type: 'percentage' | 'fixed';
   value: number;
   parentEmail?: string;
@@ -79,11 +79,8 @@ export interface BillingDiscountRecord {
 
 export interface DiscountFormState {
   name: string;
-  scope: 'parent' | 'student' | 'coupon';
-  type: 'percentage' | 'fixed';
+  scope: 'additional_student' | 'coupon_code';
   value: number;
-  parentEmail: string;
-  studentId: string;
   couponCode: string;
   feeCodes: Array<'admission_fee' | 'parent_portal_yearly'>;
   reason: string;

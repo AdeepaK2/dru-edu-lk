@@ -35,14 +35,20 @@ const DEFAULT_SUMMARY: BillingSummary = {
 };
 
 const DEFAULT_DISCOUNT_FORM: DiscountFormState = {
-  name: '',
-  scope: 'student',
-  type: 'percentage',
+  name: 'Additional student discount',
+  scope: 'additional_student',
   value: 0,
-  parentEmail: '',
-  studentId: '',
   couponCode: '',
   feeCodes: ['admission_fee'],
+  reason: '',
+};
+
+const DEFAULT_COUPON_FORM: DiscountFormState = {
+  name: 'Coupon code',
+  scope: 'coupon_code',
+  value: 0,
+  couponCode: '',
+  feeCodes: ['admission_fee', 'parent_portal_yearly'],
   reason: '',
 };
 
@@ -64,6 +70,7 @@ export function useBillingDashboard() {
   const [paymentPageSize, setPaymentPageSize] = useState(10);
   const [paymentPage, setPaymentPage] = useState(1);
   const [discountForm, setDiscountForm] = useState<DiscountFormState>(DEFAULT_DISCOUNT_FORM);
+  const [couponForm, setCouponForm] = useState<DiscountFormState>(DEFAULT_COUPON_FORM);
   const [discountSaving, setDiscountSaving] = useState(false);
   const [actionMessage, setActionMessage] = useState('');
   const [actionError, setActionError] = useState('');
@@ -279,22 +286,15 @@ export function useBillingDashboard() {
       setActionMessage('');
       setActionError('');
 
-      const selectedParent = accounts.find((account) => account.parentEmail === discountForm.parentEmail);
-      const selectedStudent = admissionFees.find((student) => student.studentId === discountForm.studentId);
-
       const response = await fetch('/api/billing/discounts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: discountForm.name,
           scope: discountForm.scope,
-          type: discountForm.type,
+          type: 'percentage',
           value: discountForm.value,
-          parentEmail: discountForm.scope === 'coupon' ? undefined : discountForm.parentEmail,
-          parentName: discountForm.scope === 'coupon' ? undefined : selectedParent?.parentName,
-          studentId: discountForm.scope === 'student' ? discountForm.studentId : undefined,
-          studentName: discountForm.scope === 'student' ? selectedStudent?.studentName : undefined,
-          couponCode: discountForm.scope === 'coupon' ? discountForm.couponCode : undefined,
+          couponCode: discountForm.couponCode,
           feeCodes: discountForm.feeCodes,
           reason: discountForm.reason,
           isActive: true,
@@ -311,6 +311,44 @@ export function useBillingDashboard() {
       await loadDiscounts();
     } catch (error: any) {
       setActionError(error.message || 'Failed to save discount');
+    } finally {
+      setDiscountSaving(false);
+    }
+  };
+
+  const handleSaveCoupon = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    try {
+      setDiscountSaving(true);
+      setActionMessage('');
+      setActionError('');
+
+      const response = await fetch('/api/billing/discounts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: couponForm.name,
+          scope: 'coupon_code',
+          type: 'percentage',
+          value: couponForm.value,
+          couponCode: couponForm.couponCode,
+          feeCodes: couponForm.feeCodes,
+          reason: couponForm.reason,
+          isActive: true,
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to save coupon code');
+      }
+
+      setCouponForm(DEFAULT_COUPON_FORM);
+      setActionMessage(data.message || 'Coupon code saved successfully.');
+      await loadDiscounts();
+    } catch (error: any) {
+      setActionError(error.message || 'Failed to save coupon code');
     } finally {
       setDiscountSaving(false);
     }
@@ -468,11 +506,6 @@ export function useBillingDashboard() {
     return filteredPaymentRows.slice(start, start + paymentPageSize);
   }, [filteredPaymentRows, paymentPageSize, safePaymentPage]);
 
-  const selectedParentStudents = useMemo(() => {
-    if (!discountForm.parentEmail) return [];
-    return admissionFees.filter((student) => student.parentEmail === discountForm.parentEmail);
-  }, [admissionFees, discountForm.parentEmail]);
-
   const filteredDiscounts = useMemo(() => {
     const needle = searchTerm.trim().toLowerCase();
     return discounts.filter((discount) => {
@@ -554,6 +587,7 @@ export function useBillingDashboard() {
     bulkAdmissionItems,
     bulkCombinedItems,
     bulkPortalItems,
+    couponForm,
     discountForm,
     discountSaving,
     filteredDiscounts,
@@ -562,6 +596,7 @@ export function useBillingDashboard() {
     formatDate,
     formatMoney,
     handleSave,
+    handleSaveCoupon,
     handleSaveDiscount,
     handleToggleDiscount,
     loadDiscounts,
@@ -582,9 +617,9 @@ export function useBillingDashboard() {
     runBulkBillingAction,
     saving,
     searchTerm,
-    selectedParentStudents,
     setActiveTab,
     setAdmissionStatusFilter,
+    setCouponForm,
     setDiscountForm,
     setForm,
     setPaymentPage,

@@ -170,7 +170,7 @@ export async function saveBillingSettings(
 
 type BillingDiscountInput = {
   name: string;
-  scope: 'parent' | 'student' | 'coupon';
+  scope: 'parent' | 'student' | 'additional_student' | 'coupon_code';
   type: 'percentage' | 'fixed';
   value: number;
   parentEmail?: string;
@@ -190,6 +190,10 @@ function normalizeFeeCodes(
   return Array.from(new Set(feeCodes)).sort() as Array<'admission_fee' | 'parent_portal_yearly'>;
 }
 
+function normalizeCouponCode(code: string) {
+  return code.trim().toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 24);
+}
+
 export async function getBillingDiscounts(): Promise<BillingDiscountDocument[]> {
   const snapshot = await firebaseAdmin.db
     .collection(BILLING_COLLECTIONS.DISCOUNTS)
@@ -205,6 +209,7 @@ export async function getBillingDiscounts(): Promise<BillingDiscountDocument[]> 
 async function getApplicableBillingDiscounts(params: {
   parentEmail: string;
   studentId?: string;
+  studentEmail?: string;
   feeCodes: Array<'admission_fee' | 'parent_portal_yearly'>;
   discountIds?: string[];
   couponCode?: string;
@@ -213,6 +218,19 @@ async function getApplicableBillingDiscounts(params: {
   const selectedDiscountIds = new Set((params.discountIds || []).filter(Boolean));
   const normalizedCouponCode = normalizeCouponCode(params.couponCode || '');
   const discounts = await getBillingDiscounts();
+  const needsAdditionalStudentCheck = discounts.some(
+    (discount) =>
+      discount.isActive &&
+      discount.scope === 'additional_student' &&
+      discount.feeCodes.some((feeCode) => params.feeCodes.includes(feeCode)),
+  );
+  const additionalStudentEligible = needsAdditionalStudentCheck
+    ? await isAdditionalStudentDiscountEligible({
+        parentEmail: normalizedParentEmail,
+        studentId: params.studentId,
+        studentEmail: params.studentEmail,
+      })
+    : false;
 
   return discounts.filter((discount) => {
     if (!discount.isActive) return false;
@@ -221,11 +239,15 @@ async function getApplicableBillingDiscounts(params: {
     const isSelectedById = selectedDiscountIds.has(discount.id);
     const isSelectedByCode =
       normalizedCouponCode &&
-      discount.scope === 'coupon' &&
+      discount.scope === 'coupon_code' &&
       normalizeCouponCode(discount.couponCode || '') === normalizedCouponCode;
 
-    if (discount.scope === 'coupon') {
+    if (discount.scope === 'coupon_code') {
       return Boolean(isSelectedById || isSelectedByCode);
+    }
+
+    if (discount.scope === 'additional_student') {
+      return additionalStudentEligible || isSelectedById;
     }
 
     if (discount.scope === 'parent') {
@@ -237,8 +259,51 @@ async function getApplicableBillingDiscounts(params: {
   });
 }
 
-function normalizeCouponCode(code: string) {
-  return code.trim().toUpperCase().replace(/\s+/g, '');
+async function isAdditionalStudentDiscountEligible(params: {
+  parentEmail: string;
+  studentId?: string;
+  studentEmail?: string;
+}) {
+  const normalizedParentEmail = normalizeEmail(params.parentEmail);
+  if (!normalizedParentEmail) return false;
+
+  const [studentsSnapshot, requestsSnapshot] = await Promise.all([
+    firebaseAdmin.db
+      .collection('students')
+      .where('parent.email', '==', normalizedParentEmail)
+      .get(),
+    firebaseAdmin.db
+      .collection('enrollmentRequests')
+      .where('parent.email', '==', normalizedParentEmail)
+      .get(),
+  ]);
+
+  const familyStudents = new Set<string>();
+
+  studentsSnapshot.docs.forEach((doc) => {
+    const data = doc.data() as { email?: string };
+    familyStudents.add(normalizeEmail(data.email || doc.id));
+  });
+
+  requestsSnapshot.docs.forEach((doc) => {
+    const data = doc.data() as {
+      status?: string;
+      student?: {
+        email?: string;
+      };
+    };
+    if (data.status === 'Rejected' || data.status === 'Cancelled') return;
+    const studentEmail = normalizeEmail(data.student?.email || doc.id);
+    familyStudents.add(studentEmail);
+  });
+
+  if (params.studentEmail) {
+    familyStudents.add(normalizeEmail(params.studentEmail));
+  } else if (params.studentId) {
+    familyStudents.add(params.studentId);
+  }
+
+  return familyStudents.size > 1;
 }
 
 function applyDiscountsToLineItems(
@@ -331,22 +396,23 @@ function applyAdditionalDiscountsToLineItems(
 
 export async function createBillingDiscount(input: BillingDiscountInput) {
   const parentEmail = normalizeEmail(input.parentEmail || '');
-  if (input.scope !== 'coupon' && !parentEmail) {
+  if (input.scope !== 'additional_student' && input.scope !== 'coupon_code' && !parentEmail) {
     throw new Error('Parent email is required for discounts');
-  }
-
-  const couponCode = normalizeCouponCode(input.couponCode || '');
-  if (input.scope === 'coupon' && !couponCode) {
-    throw new Error('Coupon code is required for coupon discounts');
   }
 
   if (input.scope === 'student' && !input.studentId) {
     throw new Error('Student is required for student-specific discounts');
   }
 
-  const feeCodes = normalizeFeeCodes(input.feeCodes);
+  const feeCodes =
+    input.scope === 'additional_student' ? ['admission_fee'] : normalizeFeeCodes(input.feeCodes);
   if (feeCodes.length === 0) {
     throw new Error('At least one billing fee must be selected');
+  }
+
+  const couponCode = input.scope === 'coupon_code' ? normalizeCouponCode(input.couponCode || '') : '';
+  if (input.scope === 'coupon_code' && !couponCode) {
+    throw new Error('Coupon code is required');
   }
 
   if (!input.name.trim()) {
@@ -357,20 +423,20 @@ export async function createBillingDiscount(input: BillingDiscountInput) {
     throw new Error('Discount value must be greater than zero');
   }
 
-  if (input.type === 'percentage' && input.value > 100) {
+  if (input.value > 100) {
     throw new Error('Percentage discounts cannot exceed 100');
   }
 
   const payload = {
     name: input.name.trim(),
     scope: input.scope,
-    type: input.type,
+    type: 'percentage' as const,
     value: Number(input.value),
-    parentEmail: input.scope === 'coupon' ? undefined : parentEmail,
+    couponCode: couponCode || undefined,
+    parentEmail: input.scope === 'additional_student' || input.scope === 'coupon_code' ? '' : parentEmail,
     parentName: input.parentName?.trim() || undefined,
     studentId: input.studentId || undefined,
     studentName: input.studentName?.trim() || undefined,
-    couponCode: input.scope === 'coupon' ? couponCode : undefined,
     feeCodes,
     reason: input.reason?.trim() || undefined,
     isActive: input.isActive !== false,
@@ -378,6 +444,57 @@ export async function createBillingDiscount(input: BillingDiscountInput) {
     createdAt: nowTimestamp(),
     updatedAt: nowTimestamp(),
   };
+
+  if (input.scope === 'additional_student') {
+    const existingSnapshot = await firebaseAdmin.db
+      .collection(BILLING_COLLECTIONS.DISCOUNTS)
+      .where('scope', '==', 'additional_student')
+      .limit(1)
+      .get();
+
+    if (!existingSnapshot.empty) {
+      const existingDoc = existingSnapshot.docs[0];
+      const existingData = existingDoc.data() as Partial<BillingDiscountDocument>;
+      const updatePayload = {
+        ...payload,
+        createdAt: existingData.createdAt || payload.createdAt,
+        updatedAt: nowTimestamp(),
+      };
+
+      await existingDoc.ref.set(updatePayload, { merge: true });
+
+      return {
+        id: existingDoc.id,
+        ...updatePayload,
+      } as BillingDiscountDocument;
+    }
+  }
+
+  if (input.scope === 'coupon_code') {
+    const existingSnapshot = await firebaseAdmin.db
+      .collection(BILLING_COLLECTIONS.DISCOUNTS)
+      .where('scope', '==', 'coupon_code')
+      .where('couponCode', '==', couponCode)
+      .limit(1)
+      .get();
+
+    if (!existingSnapshot.empty) {
+      const existingDoc = existingSnapshot.docs[0];
+      const existingData = existingDoc.data() as Partial<BillingDiscountDocument>;
+      const updatePayload = {
+        ...payload,
+        createdAt: existingData.createdAt || payload.createdAt,
+        updatedAt: nowTimestamp(),
+      };
+
+      await existingDoc.ref.set(updatePayload, { merge: true });
+
+      return {
+        id: existingDoc.id,
+        ...updatePayload,
+      } as BillingDiscountDocument;
+    }
+  }
 
   const created = await firebaseAdmin.db.collection(BILLING_COLLECTIONS.DISCOUNTS).add(payload);
 
@@ -1352,6 +1469,7 @@ export async function createEnrollmentApprovalInvoice(
   const discounts = await getApplicableBillingDiscounts({
     parentEmail: request.parent.email,
     studentId: existingStudent?.id,
+    studentEmail: request.student.email,
     feeCodes: lineItems.map((item) => item.type),
   });
   const discountedLineItems = applyDiscountsToLineItems(lineItems, discounts);
@@ -2017,6 +2135,7 @@ async function createBillingInvoiceRequest(params: {
   const discounts = await getApplicableBillingDiscounts({
     parentEmail: normalizedParentEmail,
     studentId: student?.id,
+    studentEmail: student?.email,
     feeCodes: params.feeCodes,
     discountIds: params.discountIds,
     couponCode: params.couponCode,

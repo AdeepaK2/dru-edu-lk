@@ -2,19 +2,22 @@ import { BillingSummary } from '../types';
 
 interface BillingSummaryCardsProps {
   summary: BillingSummary;
+  loading?: boolean;
 }
 
-export function BillingSummaryCards({ summary }: BillingSummaryCardsProps) {
+export function BillingSummaryCards({ summary, loading = false }: BillingSummaryCardsProps) {
+  const cards = [
+    { label: 'Parents', value: summary.totalParents, tone: 'slate' },
+    { label: 'Portal Active', value: summary.activeParents, tone: 'green' },
+    { label: 'Portal Locked', value: summary.lockedParents, tone: 'amber' },
+    { label: 'Pending Invoices', value: summary.pendingInvoices, tone: 'red' },
+    { label: 'Admission Paid', value: summary.admissionPaidStudents, tone: 'green' },
+    { label: 'Admission Pending', value: summary.admissionPendingStudents, tone: 'amber' },
+  ];
+
   return (
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
-      {[
-        { label: 'Parents', value: summary.totalParents, tone: 'slate' },
-        { label: 'Portal Active', value: summary.activeParents, tone: 'green' },
-        { label: 'Portal Locked', value: summary.lockedParents, tone: 'amber' },
-        { label: 'Pending Invoices', value: summary.pendingInvoices, tone: 'red' },
-        { label: 'Admission Paid', value: summary.admissionPaidStudents, tone: 'green' },
-        { label: 'Admission Pending', value: summary.admissionPendingStudents, tone: 'amber' },
-      ].map((item) => (
+      {cards.map((item) => (
         <div
           key={item.label}
           className={`rounded-xl border p-4 shadow-sm transition-colors dark:bg-gray-800 ${
@@ -28,7 +31,11 @@ export function BillingSummaryCards({ summary }: BillingSummaryCardsProps) {
           }`}
         >
           <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">{item.label}</p>
-          <p className="mt-2 text-3xl font-semibold leading-none text-gray-900 dark:text-white">{item.value}</p>
+          {loading ? (
+            <div className="mt-3 h-8 w-16 animate-pulse rounded-md bg-slate-200 dark:bg-gray-700" />
+          ) : (
+            <p className="mt-2 text-3xl font-semibold leading-none text-gray-900 dark:text-white">{item.value}</p>
+          )}
         </div>
       ))}
     </div>
