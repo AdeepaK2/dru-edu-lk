@@ -291,11 +291,10 @@ export function useBillingDashboard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: discountForm.name,
-          scope: discountForm.scope,
+          scope: 'additional_student',
           type: 'percentage',
           value: discountForm.value,
-          couponCode: discountForm.couponCode,
-          feeCodes: discountForm.feeCodes,
+          feeCodes: ['admission_fee'],
           reason: discountForm.reason,
           isActive: true,
         }),
@@ -320,6 +319,15 @@ export function useBillingDashboard() {
     event.preventDefault();
 
     try {
+      const couponCode = couponForm.couponCode.trim().toUpperCase();
+      if (!couponCode) {
+        throw new Error('Enter or generate a coupon code before saving.');
+      }
+
+      if (couponForm.feeCodes.length === 0) {
+        throw new Error('Select at least one fee for this coupon.');
+      }
+
       setDiscountSaving(true);
       setActionMessage('');
       setActionError('');
@@ -332,7 +340,7 @@ export function useBillingDashboard() {
           scope: 'coupon_code',
           type: 'percentage',
           value: couponForm.value,
-          couponCode: couponForm.couponCode,
+          couponCode,
           feeCodes: couponForm.feeCodes,
           reason: couponForm.reason,
           isActive: true,

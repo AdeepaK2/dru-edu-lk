@@ -194,6 +194,10 @@ function normalizeCouponCode(code: string) {
   return code.trim().toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 24);
 }
 
+function withoutUndefined<T extends FirestoreData>(data: T) {
+  return Object.fromEntries(Object.entries(data).filter(([, value]) => value !== undefined)) as T;
+}
+
 export async function getBillingDiscounts(): Promise<BillingDiscountDocument[]> {
   const snapshot = await firebaseAdmin.db
     .collection(BILLING_COLLECTIONS.DISCOUNTS)
@@ -427,7 +431,7 @@ export async function createBillingDiscount(input: BillingDiscountInput) {
     throw new Error('Percentage discounts cannot exceed 100');
   }
 
-  const payload = {
+  const payload = withoutUndefined({
     name: input.name.trim(),
     scope: input.scope,
     type: 'percentage' as const,
@@ -443,7 +447,7 @@ export async function createBillingDiscount(input: BillingDiscountInput) {
     createdBy: input.createdBy || undefined,
     createdAt: nowTimestamp(),
     updatedAt: nowTimestamp(),
-  };
+  });
 
   if (input.scope === 'additional_student') {
     const existingSnapshot = await firebaseAdmin.db
