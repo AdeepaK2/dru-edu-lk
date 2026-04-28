@@ -806,15 +806,17 @@ async function sendInvoiceEmail(invoice: BillingInvoiceDocument) {
 async function sendInvoiceEmailAndStamp(invoice: BillingInvoiceDocument) {
   const emailResult = await sendInvoiceEmail(invoice);
 
-  if (emailResult.success) {
-    await firebaseAdmin.db.collection(BILLING_COLLECTIONS.INVOICES).doc(invoice.id).set(
-      {
-        emailSentAt: nowTimestamp(),
-        updatedAt: nowTimestamp(),
-      },
-      { merge: true },
-    );
+  if (!emailResult.success) {
+    throw new Error(`Payment link email could not be sent: ${emailResult.error || 'Unknown email error'}`);
   }
+
+  await firebaseAdmin.db.collection(BILLING_COLLECTIONS.INVOICES).doc(invoice.id).set(
+    {
+      emailSentAt: nowTimestamp(),
+      updatedAt: nowTimestamp(),
+    },
+    { merge: true },
+  );
 
   return emailResult;
 }

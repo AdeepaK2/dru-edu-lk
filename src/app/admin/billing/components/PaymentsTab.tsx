@@ -59,7 +59,7 @@ interface PaymentsTabProps {
   }>;
   bulkCombinedItems: Array<{
     parentEmail: string;
-    studentId: string;
+    studentId?: string;
     feeCodes: FeeCode[];
   }>;
   processingKey: string | null;
@@ -221,13 +221,19 @@ function getFirstUnpaidStudent(row: BillingPaymentParentRow) {
 function getDefaultActionState(row: BillingPaymentParentRow): PaymentActionModalState {
   const firstUnpaidStudent = getFirstUnpaidStudent(row);
   const firstStudent = firstUnpaidStudent || getManageableStudents(row)[0];
+  const unpaidStudentCount = getManageableStudents(row).filter((student) => student.paymentStatus !== 'paid').length;
   const portalUnpaid = row.portalPaymentStatus !== 'paid';
   const admissionUnpaid = Boolean(firstUnpaidStudent);
 
   return {
     row,
     mode: 'send',
-    feeSelection: portalUnpaid && admissionUnpaid ? 'both' : portalUnpaid ? 'portal' : 'admission',
+    feeSelection:
+      portalUnpaid && admissionUnpaid && unpaidStudentCount === 1
+        ? 'both'
+        : portalUnpaid
+          ? 'portal'
+          : 'admission',
     studentId: firstStudent?.studentId || '',
   };
 }
@@ -253,7 +259,9 @@ function PaymentActionModal({
 }) {
   const { row } = modal;
   const manageableStudents = getManageableStudents(row);
+  const unpaidManageableStudents = manageableStudents.filter((student) => student.paymentStatus !== 'paid');
   const selectedStudent = manageableStudents.find((student) => student.studentId === modal.studentId);
+  const showCombinedOption = unpaidManageableStudents.length === 1;
   const isProcessing = Boolean(processingKey);
   const needsAdmission = modal.feeSelection === 'admission' || modal.feeSelection === 'both';
   const needsPortal = modal.feeSelection === 'portal' || modal.feeSelection === 'both';
@@ -276,11 +284,12 @@ function PaymentActionModal({
   const actionDisabled = isProcessing || (modal.mode === 'send' ? sendDisabled : offlineDisabled);
 
   const setMode = (mode: PaymentActionMode) => onChange({ ...modal, mode });
-  const setFeeSelection = (feeSelection: PaymentFeeSelection) => onChange({ ...modal, feeSelection });
+  const setFeeSelection = (feeSelection: PaymentFeeSelection, studentId = modal.studentId) =>
+    onChange({ ...modal, feeSelection, studentId });
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-6">
-      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl dark:bg-gray-800">
+      <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl bg-white shadow-2xl dark:bg-gray-800">
         <div className="border-b border-slate-200 px-6 py-5 dark:border-gray-700">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -331,68 +340,66 @@ function PaymentActionModal({
 
           <div>
             <p className="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-200">Fees</p>
-            <div className="grid gap-3 sm:grid-cols-3">
-              {[
-                {
-                  value: 'portal' as const,
-                  title: 'Portal',
-                  body: `Status: ${paymentStatusLabel(row.portalPaymentStatus)}`,
-                  disabled: parentPortalYearlyFeeAmount <= 0 && modal.mode === 'send',
-                },
-                {
-                  value: 'admission' as const,
-                  title: 'Admission',
-                  body: selectedStudent
-                    ? `Status: ${paymentStatusLabel(selectedStudent.paymentStatus)}`
-                    : 'Select a student',
-                  disabled: manageableStudents.length === 0 || (admissionFeeAmount <= 0 && modal.mode === 'send'),
-                },
-                {
-                  value: 'both' as const,
-                  title: 'Both',
-                  body: 'Portal and admission together',
-                  disabled:
-                    manageableStudents.length === 0 ||
-                    portalPaid ||
-                    Boolean(selectedStudent && selectedStudent.paymentStatus === 'paid') ||
-                    (modal.mode === 'send' && (admissionFeeAmount <= 0 || parentPortalYearlyFeeAmount <= 0)),
-                },
-              ].map((option) => (
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              <button
+                type="button"
+                onClick={() => setFeeSelection('portal')}
+                disabled={parentPortalYearlyFeeAmount <= 0 && modal.mode === 'send'}
+                className={`rounded-xl border p-4 text-left disabled:cursor-not-allowed disabled:opacity-50 ${
+                  modal.feeSelection === 'portal'
+                    ? 'border-violet-500 bg-violet-50 text-violet-900 dark:border-violet-400 dark:bg-violet-900/20 dark:text-violet-100'
+                    : 'border-slate-200 text-gray-700 hover:bg-slate-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700'
+                }`}
+              >
+                <p className="font-semibold">Portal</p>
+                <p className="mt-1 text-sm opacity-80">Status: {paymentStatusLabel(row.portalPaymentStatus)}</p>
+              </button>
+
+              {manageableStudents.map((student) => {
+                const isSelected = modal.feeSelection === 'admission' && modal.studentId === student.studentId;
+                const isDisabled = student.paymentStatus === 'paid' || (admissionFeeAmount <= 0 && modal.mode === 'send');
+
+                return (
+                  <button
+                    key={student.studentId}
+                    type="button"
+                    onClick={() => setFeeSelection('admission', student.studentId)}
+                    disabled={isDisabled}
+                    className={`rounded-xl border p-4 text-left disabled:cursor-not-allowed disabled:opacity-50 ${
+                      isSelected
+                        ? 'border-violet-500 bg-violet-50 text-violet-900 dark:border-violet-400 dark:bg-violet-900/20 dark:text-violet-100'
+                        : 'border-slate-200 text-gray-700 hover:bg-slate-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    <p className="font-semibold">Admission - {student.studentName}</p>
+                    <p className="mt-1 text-sm opacity-80">Status: {paymentStatusLabel(student.paymentStatus)}</p>
+                    {student.year || student.school ? (
+                      <p className="mt-1 text-xs opacity-70">{[student.year, student.school].filter(Boolean).join(' - ')}</p>
+                    ) : null}
+                  </button>
+                );
+              })}
+
+              {showCombinedOption ? (
                 <button
-                  key={option.value}
                   type="button"
-                  onClick={() => setFeeSelection(option.value)}
-                  disabled={option.disabled}
+                  onClick={() => setFeeSelection('both', unpaidManageableStudents[0].studentId)}
+                  disabled={
+                    portalPaid ||
+                    (modal.mode === 'send' && (admissionFeeAmount <= 0 || parentPortalYearlyFeeAmount <= 0))
+                  }
                   className={`rounded-xl border p-4 text-left disabled:cursor-not-allowed disabled:opacity-50 ${
-                    modal.feeSelection === option.value
+                    modal.feeSelection === 'both'
                       ? 'border-violet-500 bg-violet-50 text-violet-900 dark:border-violet-400 dark:bg-violet-900/20 dark:text-violet-100'
                       : 'border-slate-200 text-gray-700 hover:bg-slate-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700'
                   }`}
                 >
-                  <p className="font-semibold">{option.title}</p>
-                  <p className="mt-1 text-sm opacity-80">{option.body}</p>
+                  <p className="font-semibold">Portal + {unpaidManageableStudents[0].studentName}</p>
+                  <p className="mt-1 text-sm opacity-80">Combined invoice</p>
                 </button>
-              ))}
+              ) : null}
             </div>
           </div>
-
-          {needsAdmission ? (
-            <label className="block">
-              <span className="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-200">Student</span>
-              <select
-                value={modal.studentId}
-                onChange={(event) => onChange({ ...modal, studentId: event.target.value })}
-                className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-              >
-                <option value="">Select student</option>
-                {manageableStudents.map((student) => (
-                  <option key={student.studentId} value={student.studentId}>
-                    {student.studentName} - {paymentStatusLabel(student.paymentStatus)}
-                  </option>
-                ))}
-              </select>
-            </label>
-          ) : null}
 
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-gray-700 dark:bg-gray-700/40">
             <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">Summary</p>
