@@ -52,6 +52,12 @@ const DEFAULT_COUPON_FORM: DiscountFormState = {
   reason: '',
 };
 
+type BulkBillingItem = {
+  parentEmail: string;
+  studentId?: string;
+  feeCodes: Array<'admission_fee' | 'parent_portal_yearly'>;
+};
+
 export function useBillingDashboard() {
   const [activeTab, setActiveTab] = useState<BillingTab>('payments');
   const [form, setForm] = useState<BillingSettingsState>(DEFAULT_SETTINGS);
@@ -555,22 +561,42 @@ export function useBillingDashboard() {
     [filteredPaymentRows],
   );
 
-  const bulkCombinedItems = useMemo(
+  const bulkCombinedItems = useMemo<BulkBillingItem[]>(
     () =>
-      filteredPaymentRows.flatMap((row) =>
-        row.portalPaymentStatus === 'paid'
-          ? []
-          : row.students
-              .filter((student) => student.paymentStatus !== 'paid')
-              .filter((student) => student.canManageAdmission)
-              .map((student) => ({
-                parentEmail: row.parentEmail,
-                studentId: student.studentId,
-                feeCodes: ['admission_fee', 'parent_portal_yearly'] as Array<
-                  'admission_fee' | 'parent_portal_yearly'
-                >,
-              })),
-      ),
+      filteredPaymentRows.flatMap<BulkBillingItem>((row) => {
+        const portalUnpaid = row.portalPaymentStatus !== 'paid';
+        const unpaidAdmissionStudents = row.students
+          .filter((student) => student.paymentStatus !== 'paid')
+          .filter((student) => student.canManageAdmission);
+
+        if (portalUnpaid && unpaidAdmissionStudents.length === 1) {
+          return [
+            {
+              parentEmail: row.parentEmail,
+              studentId: unpaidAdmissionStudents[0].studentId,
+              feeCodes: ['admission_fee', 'parent_portal_yearly'] as Array<
+                'admission_fee' | 'parent_portal_yearly'
+              >,
+            },
+          ];
+        }
+
+        return [
+          ...(portalUnpaid
+            ? [
+                {
+                  parentEmail: row.parentEmail,
+                  feeCodes: ['parent_portal_yearly'] as Array<'parent_portal_yearly'>,
+                },
+              ]
+            : []),
+          ...unpaidAdmissionStudents.map((student) => ({
+            parentEmail: row.parentEmail,
+            studentId: student.studentId,
+            feeCodes: ['admission_fee'] as Array<'admission_fee'>,
+          })),
+        ];
+      }),
     [filteredPaymentRows],
   );
 
