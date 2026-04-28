@@ -61,7 +61,7 @@ export function DiscountsTab({
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-6 xl:grid-cols-2">
+      <div className="space-y-6">
         <form
           onSubmit={onSaveDiscount}
           className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800"
