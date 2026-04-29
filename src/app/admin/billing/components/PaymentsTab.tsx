@@ -1,8 +1,11 @@
 import { useState } from 'react';
+import { CheckCircle2, Clock3, XCircle } from 'lucide-react';
 import type {
   AdmissionFeeRecord,
   BillingAccount,
+  BillingInvoiceRecord,
   BillingPaymentParentRow,
+  BillingPaymentRecord,
   BillingPaymentStudent,
   FeePaymentStatus,
   FeePaymentStatusFilter,
@@ -12,12 +15,17 @@ import type {
 type FeeCode = 'admission_fee' | 'parent_portal_yearly';
 type PaymentActionMode = 'send' | 'offline';
 type PaymentFeeSelection = 'portal' | 'admission' | 'both';
+type SelectedBillingItem = {
+  parentEmail: string;
+  studentId?: string;
+  feeCodes: FeeCode[];
+};
 
 interface PaymentActionModalState {
   row: BillingPaymentParentRow;
   mode: PaymentActionMode;
-  feeSelection: PaymentFeeSelection;
-  studentId: string;
+  selectedPortal: boolean;
+  selectedStudentIds: string[];
 }
 
 interface PaymentsTabProps {
@@ -47,7 +55,7 @@ interface PaymentsTabProps {
       feeCodes: FeeCode[];
     }>;
     successLabel: string;
-  }) => void | Promise<void>;
+  }) => boolean | Promise<boolean>;
   bulkPortalItems: Array<{
     parentEmail: string;
     feeCodes: Array<'parent_portal_yearly'>;
@@ -73,7 +81,7 @@ interface PaymentsTabProps {
     parentEmail: string;
     studentId?: string;
     processingId: string;
-  }) => void | Promise<void>;
+  }) => boolean | Promise<boolean>;
   formatMoney: (amount: number, currency?: string) => string;
   formatDate: (value?: string | null) => string;
 }
@@ -89,15 +97,21 @@ function paymentStatusLabel(status: FeePaymentStatus) {
   }
 }
 
-function getPaymentStatusPill(status: FeePaymentStatus) {
+function getFeeStatusTone(status: FeePaymentStatus) {
   switch (status) {
     case 'paid':
-      return 'bg-green-100 text-green-800';
+      return 'border-green-200 bg-green-50 text-green-800 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-200';
     case 'invoice_sent':
-      return 'bg-blue-100 text-blue-800';
+      return 'border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-900/60 dark:bg-blue-950/30 dark:text-blue-200';
     default:
-      return 'bg-amber-100 text-amber-800';
+      return 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200';
   }
+}
+
+function FeeStatusIcon({ status }: { status: FeePaymentStatus }) {
+  if (status === 'paid') return <CheckCircle2 className="h-4 w-4" />;
+  if (status === 'invoice_sent') return <Clock3 className="h-4 w-4" />;
+  return <XCircle className="h-4 w-4" />;
 }
 
 function InvoiceList({
@@ -135,7 +149,7 @@ function PaymentSummary({
   emptyLabel: string;
   formatDate: (value?: string | null) => string;
   formatMoney: (amount: number, currency?: string) => string;
-  payment: BillingPaymentParentRow['portalLatestPayment'];
+  payment: BillingPaymentRecord | null;
 }) {
   if (!payment) {
     return <p className="text-xs text-gray-500 dark:text-gray-400">{emptyLabel}</p>;
@@ -152,59 +166,162 @@ function PaymentSummary({
   );
 }
 
-function AdmissionStatusBlock({
+function FeeStatusPanel({
+  amount,
+  emptyInvoiceLabel,
+  emptyPaymentLabel,
   formatDate,
   formatMoney,
-  student,
+  invoices,
+  label,
+  payment,
+  status,
+  supportingText,
 }: {
+  amount: number;
+  emptyInvoiceLabel: string;
+  emptyPaymentLabel: string;
   formatDate: (value?: string | null) => string;
   formatMoney: (amount: number, currency?: string) => string;
-  student: BillingPaymentStudent;
+  invoices: BillingInvoiceRecord[];
+  label: string;
+  payment: BillingPaymentRecord | null;
+  status: FeePaymentStatus;
+  supportingText?: string;
 }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-gray-700 dark:bg-gray-700/40">
+    <div className="rounded-lg border border-slate-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-800">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="font-medium text-gray-900 dark:text-white">{student.studentName}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">{student.studentEmail || 'No student email'}</p>
-          {student.year || student.school ? (
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              {[student.year, student.school].filter(Boolean).join(' - ')}
-            </p>
-          ) : null}
+          <p className="text-sm font-semibold text-gray-900 dark:text-white">{label}</p>
+          {supportingText ? <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{supportingText}</p> : null}
         </div>
         <span
-          className={`inline-flex w-fit rounded-full px-2.5 py-1 text-xs font-semibold ${getPaymentStatusPill(
-            student.paymentStatus,
+          className={`inline-flex w-fit items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${getFeeStatusTone(
+            status,
           )}`}
         >
-          Admission {paymentStatusLabel(student.paymentStatus)}
+          <FeeStatusIcon status={status} />
+          {paymentStatusLabel(status)}
         </span>
       </div>
+
       <div className="mt-3 grid gap-3 md:grid-cols-2">
         <div>
           <p className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Outstanding</p>
-          <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
-            {formatMoney(student.totalOutstandingAmount)}
-          </p>
+          <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{formatMoney(amount)}</p>
           <InvoiceList
-            emptyLabel={student.canManageAdmission ? 'No unpaid admission invoices' : 'No admission record found'}
+            emptyLabel={emptyInvoiceLabel}
             formatDate={formatDate}
             formatMoney={formatMoney}
-            invoices={student.outstandingInvoices}
+            invoices={invoices}
           />
         </div>
         <div>
           <p className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Latest payment</p>
           <div className="mt-1">
             <PaymentSummary
-              emptyLabel="No admission payment recorded"
+              emptyLabel={emptyPaymentLabel}
               formatDate={formatDate}
               formatMoney={formatMoney}
-              payment={student.latestPayment}
+              payment={payment}
             />
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function StudentFeeStatusBlock({
+  formatDate,
+  formatMoney,
+  portalLatestPayment,
+  portalOutstandingAmount,
+  portalOutstandingInvoices,
+  portalPaidUntil,
+  portalPaymentStatus,
+  student,
+}: {
+  formatDate: (value?: string | null) => string;
+  formatMoney: (amount: number, currency?: string) => string;
+  portalLatestPayment: BillingPaymentRecord | null;
+  portalOutstandingAmount: number;
+  portalOutstandingInvoices: BillingInvoiceRecord[];
+  portalPaidUntil: string | null;
+  portalPaymentStatus: FeePaymentStatus;
+  student: BillingPaymentStudent;
+}) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-gray-700 dark:bg-gray-700/40">
+      <div>
+        <p className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Student</p>
+        <p className="mt-1 font-medium text-gray-900 dark:text-white">{student.studentName}</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400">{student.studentEmail || 'No student email'}</p>
+        {student.year || student.school ? (
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            {[student.year, student.school].filter(Boolean).join(' - ')}
+          </p>
+        ) : null}
+      </div>
+
+      <div className="mt-3 grid gap-3 xl:grid-cols-2">
+        <FeeStatusPanel
+          amount={portalOutstandingAmount}
+          emptyInvoiceLabel="No unpaid portal invoices"
+          emptyPaymentLabel="No portal payment recorded"
+          formatDate={formatDate}
+          formatMoney={formatMoney}
+          invoices={portalOutstandingInvoices}
+          label="Parent Portal Fee"
+          payment={portalLatestPayment}
+          status={portalPaymentStatus}
+          supportingText={`Paid until ${formatDate(portalPaidUntil)}`}
+        />
+        <FeeStatusPanel
+          amount={student.totalOutstandingAmount}
+          emptyInvoiceLabel={student.canManageAdmission ? 'No unpaid admission invoices' : 'No admission record found'}
+          emptyPaymentLabel="No admission payment recorded"
+          formatDate={formatDate}
+          formatMoney={formatMoney}
+          invoices={student.outstandingInvoices}
+          label="Admission Fee"
+          payment={student.latestPayment}
+          status={student.paymentStatus}
+        />
+      </div>
+    </div>
+  );
+}
+
+function ParentPortalOnlyBlock({
+  formatDate,
+  formatMoney,
+  row,
+}: {
+  formatDate: (value?: string | null) => string;
+  formatMoney: (amount: number, currency?: string) => string;
+  row: BillingPaymentParentRow;
+}) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-gray-700 dark:bg-gray-700/40">
+      <div>
+        <p className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Parent account</p>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">No linked students found</p>
+      </div>
+      <div className="mt-3">
+        <FeeStatusPanel
+          amount={row.portalOutstandingAmount}
+          emptyInvoiceLabel="No unpaid portal invoices"
+          emptyPaymentLabel="No portal payment recorded"
+          formatDate={formatDate}
+          formatMoney={formatMoney}
+          invoices={row.portalOutstandingInvoices}
+          label="Parent Portal Fee"
+          payment={row.portalLatestPayment}
+          status={row.portalPaymentStatus}
+          supportingText={`Paid until ${formatDate(row.portalPaidUntil)}`}
+        />
       </div>
     </div>
   );
@@ -214,27 +331,17 @@ function getManageableStudents(row: BillingPaymentParentRow) {
   return row.students.filter((student) => student.canManageAdmission);
 }
 
-function getFirstUnpaidStudent(row: BillingPaymentParentRow) {
-  return getManageableStudents(row).find((student) => student.paymentStatus !== 'paid');
-}
-
 function getDefaultActionState(row: BillingPaymentParentRow): PaymentActionModalState {
-  const firstUnpaidStudent = getFirstUnpaidStudent(row);
-  const firstStudent = firstUnpaidStudent || getManageableStudents(row)[0];
-  const unpaidStudentCount = getManageableStudents(row).filter((student) => student.paymentStatus !== 'paid').length;
-  const portalUnpaid = row.portalPaymentStatus !== 'paid';
-  const admissionUnpaid = Boolean(firstUnpaidStudent);
+  const selectedStudentIds = getManageableStudents(row)
+    .filter((student) => student.paymentStatus !== 'paid')
+    .map((student) => student.studentId)
+    .filter(Boolean);
 
   return {
     row,
     mode: 'send',
-    feeSelection:
-      portalUnpaid && admissionUnpaid && unpaidStudentCount === 1
-        ? 'both'
-        : portalUnpaid
-          ? 'portal'
-          : 'admission',
-    studentId: firstStudent?.studentId || '',
+    selectedPortal: row.portalPaymentStatus !== 'paid',
+    selectedStudentIds,
   };
 }
 
@@ -259,33 +366,45 @@ function PaymentActionModal({
 }) {
   const { row } = modal;
   const manageableStudents = getManageableStudents(row);
-  const unpaidManageableStudents = manageableStudents.filter((student) => student.paymentStatus !== 'paid');
-  const selectedStudent = manageableStudents.find((student) => student.studentId === modal.studentId);
-  const showCombinedOption = unpaidManageableStudents.length === 1;
+  const selectedStudents = manageableStudents.filter((student) => modal.selectedStudentIds.includes(student.studentId));
   const isProcessing = Boolean(processingKey);
-  const needsAdmission = modal.feeSelection === 'admission' || modal.feeSelection === 'both';
-  const needsPortal = modal.feeSelection === 'portal' || modal.feeSelection === 'both';
-  const portalPaid = row.portalPaymentStatus === 'paid';
-  const admissionPaid = selectedStudent?.paymentStatus === 'paid';
+  const portalAmount = row.portalOutstandingAmount || parentPortalYearlyFeeAmount;
+  const getAdmissionAmount = (student: BillingPaymentStudent) => student.totalOutstandingAmount || admissionFeeAmount;
+  const cartTotal =
+    (modal.selectedPortal ? portalAmount : 0) +
+    selectedStudents.reduce((sum, student) => sum + getAdmissionAmount(student), 0);
+  const selectedCount = (modal.selectedPortal ? 1 : 0) + selectedStudents.length;
+  const portalDisabled =
+    row.portalPaymentStatus === 'paid' || (modal.mode === 'send' && parentPortalYearlyFeeAmount <= 0);
+  const admissionAmountMissing = modal.mode === 'send' && admissionFeeAmount <= 0;
   const sendDisabled =
-    (needsPortal && parentPortalYearlyFeeAmount <= 0) ||
-    (needsAdmission && admissionFeeAmount <= 0) ||
-    (needsAdmission && !selectedStudent) ||
-    (needsPortal && portalPaid && !needsAdmission) ||
-    (needsAdmission && admissionPaid && !needsPortal) ||
-    (modal.feeSelection === 'both' && (portalPaid || admissionPaid)) ||
-    (modal.feeSelection === 'both' && portalPaid && admissionPaid);
+    selectedCount === 0 ||
+    (modal.selectedPortal && parentPortalYearlyFeeAmount <= 0) ||
+    (modal.selectedStudentIds.length > 0 && admissionFeeAmount <= 0);
   const offlineDisabled =
-    (needsAdmission && !selectedStudent) ||
-    (needsPortal && portalPaid && !needsAdmission) ||
-    (needsAdmission && admissionPaid && !needsPortal) ||
-    (modal.feeSelection === 'both' && (portalPaid || admissionPaid)) ||
-    (modal.feeSelection === 'both' && portalPaid && admissionPaid);
+    selectedCount === 0 ||
+    (modal.selectedPortal && row.portalPaymentStatus === 'paid') ||
+    selectedStudents.some((student) => student.paymentStatus === 'paid');
   const actionDisabled = isProcessing || (modal.mode === 'send' ? sendDisabled : offlineDisabled);
 
   const setMode = (mode: PaymentActionMode) => onChange({ ...modal, mode });
-  const setFeeSelection = (feeSelection: PaymentFeeSelection, studentId = modal.studentId) =>
-    onChange({ ...modal, feeSelection, studentId });
+  const togglePortal = () => {
+    if (portalDisabled) return;
+    onChange({ ...modal, selectedPortal: !modal.selectedPortal });
+  };
+  const toggleStudent = (student: BillingPaymentStudent) => {
+    if (student.paymentStatus === 'paid' || admissionAmountMissing) return;
+    const selectedStudentIds = modal.selectedStudentIds.includes(student.studentId)
+      ? modal.selectedStudentIds.filter((studentId) => studentId !== student.studentId)
+      : [...modal.selectedStudentIds, student.studentId];
+    onChange({ ...modal, selectedStudentIds });
+  };
+  const invoicePlan =
+    modal.mode === 'offline'
+      ? `${selectedCount} selected fee${selectedCount === 1 ? '' : 's'}`
+      : modal.selectedPortal && selectedStudents.length === 1
+        ? '1 combined invoice email'
+        : `${selectedCount} invoice email${selectedCount === 1 ? '' : 's'}`;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-6">
@@ -338,115 +457,173 @@ function PaymentActionModal({
             </div>
           </div>
 
-          <div>
-            <p className="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-200">Fees</p>
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">Choose fees</p>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  Select the parent portal fee once, then select the admission fee for each student that should be included.
+                </p>
+              </div>
+
               <button
                 type="button"
-                onClick={() => setFeeSelection('portal')}
-                disabled={parentPortalYearlyFeeAmount <= 0 && modal.mode === 'send'}
-                className={`rounded-xl border p-4 text-left disabled:cursor-not-allowed disabled:opacity-50 ${
-                  modal.feeSelection === 'portal'
-                    ? 'border-violet-500 bg-violet-50 text-violet-900 dark:border-violet-400 dark:bg-violet-900/20 dark:text-violet-100'
+                onClick={togglePortal}
+                disabled={portalDisabled}
+                className={`w-full rounded-xl border p-4 text-left disabled:cursor-not-allowed disabled:opacity-50 ${
+                  modal.selectedPortal
+                    ? 'border-blue-500 bg-blue-50 text-blue-900 dark:border-blue-400 dark:bg-blue-900/20 dark:text-blue-100'
                     : 'border-slate-200 text-gray-700 hover:bg-slate-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700'
                 }`}
               >
-                <p className="font-semibold">Portal</p>
-                <p className="mt-1 text-sm opacity-80">Status: {paymentStatusLabel(row.portalPaymentStatus)}</p>
+                <div className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    checked={modal.selectedPortal}
+                    disabled={portalDisabled}
+                    onClick={(event) => event.stopPropagation()}
+                    onChange={togglePortal}
+                    className="mt-1 h-4 w-4"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <p className="font-semibold">Parent Portal Fee</p>
+                        <p className="mt-1 text-sm opacity-80">Family-level portal access for this parent account.</p>
+                      </div>
+                      <span
+                        className={`inline-flex w-fit items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${getFeeStatusTone(
+                          row.portalPaymentStatus,
+                        )}`}
+                      >
+                        <FeeStatusIcon status={row.portalPaymentStatus} />
+                        {paymentStatusLabel(row.portalPaymentStatus)}
+                      </span>
+                    </div>
+                    <p className="mt-3 text-sm font-semibold">{formatMoney(portalAmount)}</p>
+                  </div>
+                </div>
               </button>
 
-              {manageableStudents.map((student) => {
-                const isSelected = modal.feeSelection === 'admission' && modal.studentId === student.studentId;
-                const isDisabled = student.paymentStatus === 'paid' || (admissionFeeAmount <= 0 && modal.mode === 'send');
+              <div className="space-y-3">
+                {manageableStudents.map((student) => {
+                  const isSelected = modal.selectedStudentIds.includes(student.studentId);
+                  const isDisabled = student.paymentStatus === 'paid' || admissionAmountMissing;
 
-                return (
+                  return (
+                    <button
+                      key={student.studentId}
+                      type="button"
+                      onClick={() => toggleStudent(student)}
+                      disabled={isDisabled}
+                      className={`w-full rounded-xl border p-4 text-left disabled:cursor-not-allowed disabled:opacity-50 ${
+                        isSelected
+                          ? 'border-blue-500 bg-blue-50 text-blue-900 dark:border-blue-400 dark:bg-blue-900/20 dark:text-blue-100'
+                          : 'border-slate-200 text-gray-700 hover:bg-slate-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          disabled={isDisabled}
+                          onClick={(event) => event.stopPropagation()}
+                          onChange={() => toggleStudent(student)}
+                          className="mt-1 h-4 w-4"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                            <div>
+                              <p className="font-semibold">Admission Fee - {student.studentName}</p>
+                              <p className="mt-1 text-sm opacity-80">{student.studentEmail || 'No student email'}</p>
+                              {student.year || student.school ? (
+                                <p className="mt-1 text-xs opacity-70">
+                                  {[student.year, student.school].filter(Boolean).join(' - ')}
+                                </p>
+                              ) : null}
+                            </div>
+                            <span
+                              className={`inline-flex w-fit items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${getFeeStatusTone(
+                                student.paymentStatus,
+                              )}`}
+                            >
+                              <FeeStatusIcon status={student.paymentStatus} />
+                              {paymentStatusLabel(student.paymentStatus)}
+                            </span>
+                          </div>
+                          <p className="mt-3 text-sm font-semibold">{formatMoney(getAdmissionAmount(student))}</p>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-gray-700 dark:bg-gray-700/40">
+              <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">Cart</p>
+              <div className="mt-3 space-y-2 text-sm">
+                {modal.selectedPortal ? (
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-white">Parent Portal Fee</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{paymentStatusLabel(row.portalPaymentStatus)}</p>
+                    </div>
+                    <p className="font-semibold text-gray-900 dark:text-white">{formatMoney(portalAmount)}</p>
+                  </div>
+                ) : null}
+                {selectedStudents.map((student) => (
+                  <div key={student.studentId} className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-white">Admission Fee</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{student.studentName}</p>
+                    </div>
+                    <p className="font-semibold text-gray-900 dark:text-white">{formatMoney(getAdmissionAmount(student))}</p>
+                  </div>
+                ))}
+                {selectedCount === 0 ? (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Select at least one fee to continue.</p>
+                ) : null}
+              </div>
+
+              <div className="mt-4 border-t border-slate-200 pt-4 dark:border-gray-700">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">Estimated total</p>
+                  <p className="text-lg font-bold text-gray-900 dark:text-white">{formatMoney(cartTotal)}</p>
+                </div>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{invoicePlan}</p>
+                {sendDisabled && modal.mode === 'send' && selectedCount > 0 ? (
+                  <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                    Configure the selected fee amount in Payment Settings before sending.
+                  </p>
+                ) : null}
+                <div className="mt-5 flex flex-col-reverse gap-3">
                   <button
-                    key={student.studentId}
                     type="button"
-                    onClick={() => setFeeSelection('admission', student.studentId)}
-                    disabled={isDisabled}
-                    className={`rounded-xl border p-4 text-left disabled:cursor-not-allowed disabled:opacity-50 ${
-                      isSelected
-                        ? 'border-violet-500 bg-violet-50 text-violet-900 dark:border-violet-400 dark:bg-violet-900/20 dark:text-violet-100'
-                        : 'border-slate-200 text-gray-700 hover:bg-slate-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700'
+                    onClick={onClose}
+                    className="rounded-lg border border-slate-200 px-5 py-3 text-sm font-semibold text-gray-700 hover:bg-slate-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onSubmit}
+                    disabled={actionDisabled}
+                    className={`rounded-lg px-5 py-3 text-sm font-semibold text-white disabled:opacity-60 ${
+                      modal.mode === 'send' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'
                     }`}
                   >
-                    <p className="font-semibold">Admission - {student.studentName}</p>
-                    <p className="mt-1 text-sm opacity-80">Status: {paymentStatusLabel(student.paymentStatus)}</p>
-                    {student.year || student.school ? (
-                      <p className="mt-1 text-xs opacity-70">{[student.year, student.school].filter(Boolean).join(' - ')}</p>
-                    ) : null}
+                    {isProcessing
+                      ? modal.mode === 'send'
+                        ? 'Sending...'
+                        : 'Saving...'
+                      : modal.mode === 'send'
+                        ? 'Finalize & Send Invoice'
+                        : 'Mark Selected Paid'}
                   </button>
-                );
-              })}
-
-              {showCombinedOption ? (
-                <button
-                  type="button"
-                  onClick={() => setFeeSelection('both', unpaidManageableStudents[0].studentId)}
-                  disabled={
-                    portalPaid ||
-                    (modal.mode === 'send' && (admissionFeeAmount <= 0 || parentPortalYearlyFeeAmount <= 0))
-                  }
-                  className={`rounded-xl border p-4 text-left disabled:cursor-not-allowed disabled:opacity-50 ${
-                    modal.feeSelection === 'both'
-                      ? 'border-violet-500 bg-violet-50 text-violet-900 dark:border-violet-400 dark:bg-violet-900/20 dark:text-violet-100'
-                      : 'border-slate-200 text-gray-700 hover:bg-slate-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700'
-                  }`}
-                >
-                  <p className="font-semibold">Portal + {unpaidManageableStudents[0].studentName}</p>
-                  <p className="mt-1 text-sm opacity-80">Combined invoice</p>
-                </button>
-              ) : null}
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-gray-700 dark:bg-gray-700/40">
-            <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">Summary</p>
-            <div className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
-              {needsPortal ? (
-                <div>
-                  <p className="text-gray-500 dark:text-gray-400">Parent portal</p>
-                  <p className="font-semibold text-gray-900 dark:text-white">
-                    {paymentStatusLabel(row.portalPaymentStatus)} - {formatMoney(row.portalOutstandingAmount)}
-                  </p>
                 </div>
-              ) : null}
-              {needsAdmission && selectedStudent ? (
-                <div>
-                  <p className="text-gray-500 dark:text-gray-400">Admission</p>
-                  <p className="font-semibold text-gray-900 dark:text-white">
-                    {selectedStudent.studentName} - {formatMoney(selectedStudent.totalOutstandingAmount)}
-                  </p>
-                </div>
-              ) : null}
+              </div>
             </div>
-          </div>
-
-          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-lg border border-slate-200 px-5 py-3 text-sm font-semibold text-gray-700 hover:bg-slate-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={onSubmit}
-              disabled={actionDisabled}
-              className={`rounded-lg px-5 py-3 text-sm font-semibold text-white disabled:opacity-60 ${
-                modal.mode === 'send' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'
-              }`}
-            >
-              {isProcessing
-                ? modal.mode === 'send'
-                  ? 'Sending...'
-                  : 'Saving...'
-                : modal.mode === 'send'
-                  ? 'Send'
-                  : 'Mark Paid'}
-            </button>
           </div>
         </div>
       </div>
@@ -608,12 +785,7 @@ function LoadingTableRows() {
             <div className="h-4 w-40 rounded bg-slate-200 dark:bg-gray-700" />
             <div className="mt-3 h-3 w-56 rounded bg-slate-100 dark:bg-gray-700/70" />
           </td>
-          <td className="w-[280px] px-4 py-4">
-            <div className="h-6 w-32 rounded-full bg-slate-200 dark:bg-gray-700" />
-            <div className="mt-5 h-3 w-20 rounded bg-slate-100 dark:bg-gray-700/70" />
-            <div className="mt-2 h-4 w-24 rounded bg-slate-200 dark:bg-gray-700" />
-          </td>
-          <td className="min-w-[420px] px-4 py-4">
+          <td className="min-w-[680px] px-4 py-4">
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-gray-700 dark:bg-gray-700/40">
               <div className="h-4 w-44 rounded bg-slate-200 dark:bg-gray-600" />
               <div className="mt-3 grid gap-3 md:grid-cols-2">
@@ -674,53 +846,81 @@ export function PaymentsTab({
   const handleSubmitActionModal = async () => {
     if (!actionModal) return;
 
-    const selectedStudent = actionModal.row.students.find((student) => student.studentId === actionModal.studentId);
-    const needsPortal = actionModal.feeSelection === 'portal' || actionModal.feeSelection === 'both';
-    const needsAdmission = actionModal.feeSelection === 'admission' || actionModal.feeSelection === 'both';
+    const selectedStudents = actionModal.row.students.filter((student) =>
+      actionModal.selectedStudentIds.includes(student.studentId),
+    );
 
     if (actionModal.mode === 'send') {
-      if (actionModal.feeSelection === 'portal') {
-        await runBillingAction({
+      if (actionModal.selectedPortal && selectedStudents.length === 1) {
+        const completed = await runBillingAction({
+          action: 'send_combined_payment_link',
+          feeCode: 'admission_fee',
+          parentEmail: actionModal.row.parentEmail,
+          studentId: selectedStudents[0].studentId,
+          processingId: `send-combined-${selectedStudents[0].studentId}`,
+        });
+        if (!completed) return;
+      } else if (actionModal.selectedPortal && selectedStudents.length === 0) {
+        const completed = await runBillingAction({
           action: 'send_payment_link',
           feeCode: 'parent_portal_yearly',
           parentEmail: actionModal.row.parentEmail,
           processingId: `send-parent-${actionModal.row.parentEmail}`,
         });
-      } else if (actionModal.feeSelection === 'admission' && selectedStudent) {
-        await runBillingAction({
+        if (!completed) return;
+      } else if (!actionModal.selectedPortal && selectedStudents.length === 1) {
+        const completed = await runBillingAction({
           action: 'send_payment_link',
           feeCode: 'admission_fee',
           parentEmail: actionModal.row.parentEmail,
-          studentId: selectedStudent.studentId,
-          processingId: `send-admission-${selectedStudent.studentId}`,
+          studentId: selectedStudents[0].studentId,
+          processingId: `send-admission-${selectedStudents[0].studentId}`,
         });
-      } else if (selectedStudent) {
-        await runBillingAction({
-          action: 'send_combined_payment_link',
-          feeCode: 'admission_fee',
-          parentEmail: actionModal.row.parentEmail,
-          studentId: selectedStudent.studentId,
-          processingId: `send-combined-${selectedStudent.studentId}`,
+        if (!completed) return;
+      } else {
+        const items: SelectedBillingItem[] = [
+          ...(actionModal.selectedPortal
+            ? [
+                {
+                  parentEmail: actionModal.row.parentEmail,
+                  feeCodes: ['parent_portal_yearly'] as FeeCode[],
+                },
+              ]
+            : []),
+          ...selectedStudents.map((student) => ({
+            parentEmail: actionModal.row.parentEmail,
+            studentId: student.studentId,
+            feeCodes: ['admission_fee'] as FeeCode[],
+          })),
+        ];
+
+        const completed = await runBulkBillingAction({
+          processingId: `cart-${actionModal.row.parentEmail}`,
+          items,
+          successLabel: 'selected payment',
         });
+        if (!completed) return;
       }
     } else {
-      if (needsPortal) {
-        await runBillingAction({
+      if (actionModal.selectedPortal) {
+        const completed = await runBillingAction({
           action: 'mark_paid_offline',
           feeCode: 'parent_portal_yearly',
           parentEmail: actionModal.row.parentEmail,
           processingId: `offline-parent-${actionModal.row.parentEmail}`,
         });
+        if (!completed) return;
       }
 
-      if (needsAdmission && selectedStudent) {
-        await runBillingAction({
+      for (const student of selectedStudents) {
+        const completed = await runBillingAction({
           action: 'mark_paid_offline',
           feeCode: 'admission_fee',
           parentEmail: actionModal.row.parentEmail,
-          studentId: selectedStudent.studentId,
-          processingId: `offline-admission-${selectedStudent.studentId}`,
+          studentId: student.studentId,
+          processingId: `offline-admission-${student.studentId}`,
         });
+        if (!completed) return;
       }
     }
 
@@ -863,12 +1063,11 @@ export function PaymentsTab({
       </div>
 
       <div className="mt-6 overflow-x-auto rounded-xl border border-slate-200 dark:border-gray-700">
-        <table className="w-full min-w-[1280px] divide-y divide-gray-200 dark:divide-gray-700">
+        <table className="w-full min-w-[1180px] divide-y divide-gray-200 dark:divide-gray-700">
           <thead className="bg-slate-50/80 dark:bg-gray-800/70">
             <tr className="text-left text-sm text-gray-500 dark:text-gray-400">
               <th className="px-4 py-3.5 font-medium">Parent</th>
-              <th className="px-4 py-3.5 font-medium">Portal Fee</th>
-              <th className="px-4 py-3.5 font-medium">Admission Fees</th>
+              <th className="px-4 py-3.5 font-medium">Students & Fees</th>
               <th className="px-4 py-3.5 font-medium">Actions</th>
             </tr>
           </thead>
@@ -877,7 +1076,7 @@ export function PaymentsTab({
               <LoadingTableRows />
             ) : rows.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                <td colSpan={3} className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
                   No parent payment records found.
                 </td>
               </tr>
@@ -894,55 +1093,24 @@ export function PaymentsTab({
                         ) : null}
                       </div>
                     </td>
-                    <td className="w-[280px] px-4 py-4">
-                      <span
-                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${getPaymentStatusPill(
-                          row.portalPaymentStatus,
-                        )}`}
-                      >
-                        Parent portal {paymentStatusLabel(row.portalPaymentStatus)}
-                      </span>
-                      <p className="mt-3 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">
-                        Paid until
-                      </p>
-                      <p className="text-sm text-gray-700 dark:text-gray-300">{formatDate(row.portalPaidUntil)}</p>
-                      <p className="mt-3 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">
-                        Outstanding
-                      </p>
-                      <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
-                        {formatMoney(row.portalOutstandingAmount)}
-                      </p>
-                      <InvoiceList
-                        emptyLabel="No unpaid portal invoices"
-                        formatDate={formatDate}
-                        formatMoney={formatMoney}
-                        invoices={row.portalOutstandingInvoices}
-                      />
-                      <p className="mt-3 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">
-                        Latest payment
-                      </p>
-                      <div className="mt-1">
-                        <PaymentSummary
-                          emptyLabel="No portal payment recorded"
-                          formatDate={formatDate}
-                          formatMoney={formatMoney}
-                          payment={row.portalLatestPayment}
-                        />
-                      </div>
-                    </td>
-                    <td className="min-w-[420px] px-4 py-4">
+                    <td className="min-w-[680px] px-4 py-4">
                       <div className="space-y-3">
                         {row.students.length > 0 ? (
                           row.students.map((student) => (
-                            <AdmissionStatusBlock
+                            <StudentFeeStatusBlock
                               key={student.studentId || student.studentEmail}
                               formatDate={formatDate}
                               formatMoney={formatMoney}
+                              portalLatestPayment={row.portalLatestPayment}
+                              portalOutstandingAmount={row.portalOutstandingAmount}
+                              portalOutstandingInvoices={row.portalOutstandingInvoices}
+                              portalPaidUntil={row.portalPaidUntil}
+                              portalPaymentStatus={row.portalPaymentStatus}
                               student={student}
                             />
                           ))
                         ) : (
-                          <p className="text-sm text-gray-500 dark:text-gray-400">No linked students found</p>
+                          <ParentPortalOnlyBlock formatDate={formatDate} formatMoney={formatMoney} row={row} />
                         )}
                       </div>
                     </td>

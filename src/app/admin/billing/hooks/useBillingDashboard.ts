@@ -229,8 +229,10 @@ export function useBillingDashboard() {
 
       setActionMessage(data.message || 'Billing action completed successfully.');
       await loadManagement();
+      return true;
     } catch (error: any) {
       setActionError(error.message || 'Billing action failed');
+      return false;
     } finally {
       setProcessingKey(null);
     }
@@ -253,7 +255,7 @@ export function useBillingDashboard() {
       if (items.length === 0) {
         setActionError(`No ${successLabel.toLowerCase()} records found in the current filter.`);
         setActionMessage('');
-        return;
+        return false;
       }
 
       setProcessingKey(processingId);
@@ -277,8 +279,10 @@ export function useBillingDashboard() {
 
       setActionMessage(data.message || `${successLabel} payment links sent.`);
       await loadManagement();
+      return true;
     } catch (error: any) {
       setActionError(error.message || 'Bulk billing action failed');
+      return false;
     } finally {
       setProcessingKey(null);
     }
