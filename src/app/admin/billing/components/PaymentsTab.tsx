@@ -15,11 +15,6 @@ import type {
 type FeeCode = 'admission_fee' | 'parent_portal_yearly';
 type PaymentActionMode = 'send' | 'offline';
 type PaymentFeeSelection = 'portal' | 'admission' | 'both';
-type SelectedBillingItem = {
-  parentEmail: string;
-  studentId?: string;
-  feeCodes: FeeCode[];
-};
 
 interface PaymentActionModalState {
   row: BillingPaymentParentRow;
@@ -55,6 +50,14 @@ interface PaymentsTabProps {
       feeCodes: FeeCode[];
     }>;
     successLabel: string;
+  }) => boolean | Promise<boolean>;
+  runCartBillingAction: (args: {
+    parentEmail: string;
+    items: Array<{
+      studentId?: string;
+      feeCodes: FeeCode[];
+    }>;
+    processingId: string;
   }) => boolean | Promise<boolean>;
   bulkPortalItems: Array<{
     parentEmail: string;
@@ -399,12 +402,28 @@ function PaymentActionModal({
       : [...modal.selectedStudentIds, student.studentId];
     onChange({ ...modal, selectedStudentIds });
   };
+  const selectableStudentIds = manageableStudents
+    .filter((student) => student.paymentStatus !== 'paid')
+    .filter(() => !admissionAmountMissing)
+    .map((student) => student.studentId);
+  const selectAllAvailable = () => {
+    onChange({
+      ...modal,
+      selectedPortal: !portalDisabled,
+      selectedStudentIds: selectableStudentIds,
+    });
+  };
+  const clearSelection = () => {
+    onChange({
+      ...modal,
+      selectedPortal: false,
+      selectedStudentIds: [],
+    });
+  };
   const invoicePlan =
-    modal.mode === 'offline'
-      ? `${selectedCount} selected fee${selectedCount === 1 ? '' : 's'}`
-      : modal.selectedPortal && selectedStudents.length === 1
-        ? '1 combined invoice email'
-        : `${selectedCount} invoice email${selectedCount === 1 ? '' : 's'}`;
+    modal.mode === 'send'
+      ? `${selectedCount} selected payment${selectedCount === 1 ? '' : 's'} in 1 invoice email`
+      : `${selectedCount} selected fee${selectedCount === 1 ? '' : 's'}`;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-6">
@@ -460,10 +479,30 @@ function PaymentActionModal({
           <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
             <div className="space-y-4">
               <div>
-                <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">Choose fees</p>
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                  Select the parent portal fee once, then select the admission fee for each student that should be included.
-                </p>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">Choose fees</p>
+                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                      Select any mix of portal and student admission fees to send as one cart invoice.
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 gap-2">
+                    <button
+                      type="button"
+                      onClick={selectAllAvailable}
+                      className="rounded-lg border border-blue-200 px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50 dark:border-blue-900/60 dark:text-blue-200 dark:hover:bg-blue-950/30"
+                    >
+                      Select all unpaid
+                    </button>
+                    <button
+                      type="button"
+                      onClick={clearSelection}
+                      className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-gray-600 hover:bg-slate-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
               </div>
 
               <button
@@ -823,6 +862,7 @@ export function PaymentsTab({
   startIndex,
   endIndex,
   runBulkBillingAction,
+  runCartBillingAction,
   bulkPortalItems,
   bulkAdmissionItems,
   bulkCombinedItems,
@@ -851,56 +891,26 @@ export function PaymentsTab({
     );
 
     if (actionModal.mode === 'send') {
-      if (actionModal.selectedPortal && selectedStudents.length === 1) {
-        const completed = await runBillingAction({
-          action: 'send_combined_payment_link',
-          feeCode: 'admission_fee',
-          parentEmail: actionModal.row.parentEmail,
-          studentId: selectedStudents[0].studentId,
-          processingId: `send-combined-${selectedStudents[0].studentId}`,
-        });
-        if (!completed) return;
-      } else if (actionModal.selectedPortal && selectedStudents.length === 0) {
-        const completed = await runBillingAction({
-          action: 'send_payment_link',
-          feeCode: 'parent_portal_yearly',
-          parentEmail: actionModal.row.parentEmail,
-          processingId: `send-parent-${actionModal.row.parentEmail}`,
-        });
-        if (!completed) return;
-      } else if (!actionModal.selectedPortal && selectedStudents.length === 1) {
-        const completed = await runBillingAction({
-          action: 'send_payment_link',
-          feeCode: 'admission_fee',
-          parentEmail: actionModal.row.parentEmail,
-          studentId: selectedStudents[0].studentId,
-          processingId: `send-admission-${selectedStudents[0].studentId}`,
-        });
-        if (!completed) return;
-      } else {
-        const items: SelectedBillingItem[] = [
-          ...(actionModal.selectedPortal
-            ? [
-                {
-                  parentEmail: actionModal.row.parentEmail,
-                  feeCodes: ['parent_portal_yearly'] as FeeCode[],
-                },
-              ]
-            : []),
-          ...selectedStudents.map((student) => ({
-            parentEmail: actionModal.row.parentEmail,
-            studentId: student.studentId,
-            feeCodes: ['admission_fee'] as FeeCode[],
-          })),
-        ];
+      const items = [
+        ...(actionModal.selectedPortal
+          ? [
+              {
+                feeCodes: ['parent_portal_yearly'] as FeeCode[],
+              },
+            ]
+          : []),
+        ...selectedStudents.map((student) => ({
+          studentId: student.studentId,
+          feeCodes: ['admission_fee'] as FeeCode[],
+        })),
+      ];
 
-        const completed = await runBulkBillingAction({
-          processingId: `cart-${actionModal.row.parentEmail}`,
-          items,
-          successLabel: 'selected payment',
-        });
-        if (!completed) return;
-      }
+      const completed = await runCartBillingAction({
+        parentEmail: actionModal.row.parentEmail,
+        items,
+        processingId: `cart-${actionModal.row.parentEmail}`,
+      });
+      if (!completed) return;
     } else {
       if (actionModal.selectedPortal) {
         const completed = await runBillingAction({

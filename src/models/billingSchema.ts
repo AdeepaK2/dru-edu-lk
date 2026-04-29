@@ -66,6 +66,7 @@ export interface BillingLineItem {
   description: string;
   amount: number;
   quantity: number;
+  studentId?: string;
   studentEmail?: string;
   studentName?: string;
   originalAmount?: number;

@@ -288,6 +288,56 @@ export function useBillingDashboard() {
     }
   };
 
+  const runCartBillingAction = async ({
+    parentEmail,
+    items,
+    processingId,
+  }: {
+    parentEmail: string;
+    items: Array<{
+      studentId?: string;
+      feeCodes: Array<'admission_fee' | 'parent_portal_yearly'>;
+    }>;
+    processingId: string;
+  }) => {
+    try {
+      if (items.length === 0) {
+        setActionError('Select at least one fee before sending the cart invoice.');
+        setActionMessage('');
+        return false;
+      }
+
+      setProcessingKey(processingId);
+      setActionMessage('');
+      setActionError('');
+
+      const response = await fetch('/api/billing/management', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'send_cart_payment_link',
+          parentEmail,
+          items,
+          processedBy: 'admin-portal',
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Cart billing action failed');
+      }
+
+      setActionMessage(data.message || 'Cart invoice sent successfully.');
+      await loadManagement();
+      return true;
+    } catch (error: any) {
+      setActionError(error.message || 'Cart billing action failed');
+      return false;
+    } finally {
+      setProcessingKey(null);
+    }
+  };
+
   const handleSaveDiscount = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -653,6 +703,7 @@ export function useBillingDashboard() {
     processingKey,
     runBillingAction,
     runBulkBillingAction,
+    runCartBillingAction,
     saving,
     searchTerm,
     setActiveTab,

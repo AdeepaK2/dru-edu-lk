@@ -3,6 +3,7 @@ import {
   getBillingManagementOverview,
   markFeePaidOffline,
   sendBulkBillingPaymentLinks,
+  sendBillingPaymentCartLink,
   sendBillingPaymentLink,
 } from '@/server/billing';
 
@@ -70,6 +71,65 @@ export async function POST(request: NextRequest) {
         success: true,
         data: result,
         message: `Sent ${result.sent} payment links${result.failed ? `, ${result.failed} failed` : ''}.`,
+      });
+    }
+
+    if (action === 'send_cart_payment_link') {
+      const parentEmail = String(body.parentEmail || '').trim();
+      if (!parentEmail) {
+        return NextResponse.json(
+          { success: false, error: 'parentEmail is required' },
+          { status: 400 },
+        );
+      }
+
+      const items: Array<{
+        studentId?: string;
+        feeCodes: Array<'admission_fee' | 'parent_portal_yearly'>;
+      }> = [];
+
+      if (Array.isArray(body.items)) {
+        for (const rawItem of body.items as unknown[]) {
+          const candidate = rawItem as {
+            studentId?: unknown;
+            feeCodes?: unknown;
+          };
+          const studentId =
+            typeof candidate.studentId === 'string' ? candidate.studentId : undefined;
+          const feeCodes = Array.isArray(candidate.feeCodes)
+            ? candidate.feeCodes.filter(
+                (feeCode: unknown): feeCode is 'admission_fee' | 'parent_portal_yearly' =>
+                  feeCode === 'admission_fee' || feeCode === 'parent_portal_yearly',
+              )
+            : [];
+
+          if (feeCodes.length > 0) {
+            items.push({ studentId, feeCodes });
+          }
+        }
+      }
+
+      if (items.length === 0) {
+        return NextResponse.json(
+          { success: false, error: 'At least one cart item is required' },
+          { status: 400 },
+        );
+      }
+
+      const result = await sendBillingPaymentCartLink({
+        parentEmail,
+        items,
+        discountIds: Array.isArray(body.discountIds)
+          ? body.discountIds.filter((discountId: unknown): discountId is string => typeof discountId === 'string')
+          : undefined,
+        couponCode: typeof body.couponCode === 'string' ? body.couponCode : undefined,
+        origin: request.nextUrl.origin,
+      });
+
+      return NextResponse.json({
+        success: true,
+        data: result,
+        message: `${result.itemCount} selected payment${result.itemCount === 1 ? '' : 's'} invoice sent to ${parentEmail}`,
       });
     }
 
