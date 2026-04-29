@@ -610,10 +610,17 @@ function isAdmissionInvoiceForStudent(
   studentId: string,
   studentEmail: string,
 ) {
+  const normalizedStudentEmail = normalizeEmail(studentEmail);
   return (
     hasBillingFee(invoice.lineItems, 'admission_fee') &&
     (invoice.metadata?.studentId === studentId ||
-      (!!studentEmail && invoice.studentEmail === normalizeEmail(studentEmail)))
+      (!!normalizedStudentEmail && invoice.studentEmail === normalizedStudentEmail) ||
+      invoice.lineItems.some(
+        (item) =>
+          item.type === 'admission_fee' &&
+          (item.studentId === studentId ||
+            (!!normalizedStudentEmail && normalizeEmail(item.studentEmail || '') === normalizedStudentEmail)),
+      ))
   );
 }
 
@@ -2027,23 +2034,24 @@ export async function getBillingManagementOverview(): Promise<{
           id: invoiceDoc.id,
           ...(invoiceDoc.data() as Omit<BillingInvoiceDocument, 'id'>),
         }))
-        .filter(
-          (invoice) =>
-            invoice.studentEmail === studentEmail &&
-            hasBillingFee(invoice.lineItems, 'admission_fee'),
-        );
+        .filter((invoice) => isAdmissionInvoiceForStudent(invoice, doc.id, studentEmail));
 
       const outstandingInvoices = admissionInvoices
         .filter((invoice) => invoice.status === 'pending')
         .sort((a, b) => (toDate(b.createdAt)?.getTime() || 0) - (toDate(a.createdAt)?.getTime() || 0))
-        .map((invoice) => ({
-          invoiceId: invoice.id,
-          invoiceNumber: invoice.invoiceNumber,
-          amountTotal: invoice.amountTotal,
-          currency: invoice.currency,
-          dueAt: toDate(invoice.dueAt)?.toISOString() || null,
-          status: invoice.status,
-        }));
+        .map((invoice) => {
+          const lineTotal = getAdmissionLineItemsForStudent(invoice, doc.id, studentEmail)
+            .reduce((sum, item) => sum + Number(item.amount || 0) * Number(item.quantity || 1), 0);
+
+          return {
+            invoiceId: invoice.id,
+            invoiceNumber: invoice.invoiceNumber,
+            amountTotal: lineTotal || invoice.amountTotal,
+            currency: invoice.currency,
+            dueAt: toDate(invoice.dueAt)?.toISOString() || null,
+            status: invoice.status,
+          };
+        });
 
       const latestPaidInvoice = admissionInvoices
         .filter((invoice) => invoice.status === 'paid')
@@ -2190,6 +2198,271 @@ async function createBillingInvoiceRequest(params: {
   }
 
   return invoice;
+}
+
+type BillingCartItem = {
+  feeCodes: Array<'admission_fee' | 'parent_portal_yearly'>;
+  studentId?: string;
+};
+
+function getAdmissionLineItemsForStudent(
+  invoice: BillingInvoiceDocument,
+  studentId: string,
+  studentEmail: string,
+) {
+  const normalizedStudentEmail = normalizeEmail(studentEmail);
+  return invoice.lineItems.filter(
+    (item) =>
+      item.type === 'admission_fee' &&
+      (item.studentId === studentId ||
+        (!!normalizedStudentEmail && normalizeEmail(item.studentEmail || '') === normalizedStudentEmail) ||
+        invoice.metadata?.studentId === studentId ||
+        (!!normalizedStudentEmail && invoice.studentEmail === normalizedStudentEmail)),
+  );
+}
+
+function getBillingCartKeys(invoice: BillingInvoiceDocument) {
+  const keys = new Set<string>();
+
+  invoice.lineItems.forEach((item) => {
+    if (item.type === 'parent_portal_yearly') {
+      keys.add('parent_portal_yearly');
+      return;
+    }
+
+    if (item.type === 'admission_fee') {
+      const studentKey =
+        item.studentId ||
+        invoice.metadata?.studentId ||
+        normalizeEmail(item.studentEmail || '') ||
+        normalizeEmail(invoice.studentEmail || '');
+      if (studentKey) {
+        keys.add(`admission_fee:${studentKey}`);
+      }
+    }
+  });
+
+  return keys;
+}
+
+function sameBillingCart(invoice: BillingInvoiceDocument, expectedKeys: Set<string>) {
+  const invoiceKeys = getBillingCartKeys(invoice);
+  if (invoiceKeys.size !== expectedKeys.size) return false;
+  return Array.from(expectedKeys).every((key) => invoiceKeys.has(key));
+}
+
+export async function sendBillingPaymentCartLink(params: {
+  parentEmail: string;
+  items: BillingCartItem[];
+  discountIds?: string[];
+  couponCode?: string;
+  origin?: string;
+}) {
+  const normalizedParentEmail = normalizeEmail(params.parentEmail);
+  const normalizedItems = params.items
+    .filter((item) => Array.isArray(item.feeCodes) && item.feeCodes.length > 0)
+    .map((item) => ({
+      studentId: item.studentId,
+      feeCodes: Array.from(new Set(item.feeCodes)),
+    }));
+
+  const wantsPortal = normalizedItems.some((item) => item.feeCodes.includes('parent_portal_yearly'));
+  const admissionStudentIds = Array.from(
+    new Set(
+      normalizedItems
+        .filter((item) => item.feeCodes.includes('admission_fee'))
+        .map((item) => item.studentId)
+        .filter((studentId): studentId is string => Boolean(studentId)),
+    ),
+  );
+
+  if (!wantsPortal && admissionStudentIds.length === 0) {
+    throw new Error('Select at least one fee for the cart invoice');
+  }
+
+  const settings = await getBillingSettings();
+  const parent = await getParentByEmail(normalizedParentEmail);
+  const students = await Promise.all(admissionStudentIds.map((studentId) => getStudentById(studentId)));
+  const missingStudent = admissionStudentIds.find((studentId, index) => !students[index]);
+  if (missingStudent) {
+    throw new Error(`Student not found for ${missingStudent}`);
+  }
+
+  const typedStudents = students.filter(Boolean) as Array<StudentDocument & { id: string }>;
+  const wrongParentStudent = typedStudents.find(
+    (student) => normalizeEmail(student.parent.email) !== normalizedParentEmail,
+  );
+  if (wrongParentStudent) {
+    throw new Error(`${wrongParentStudent.name} does not belong to this parent`);
+  }
+
+  if (wantsPortal) {
+    const entitlement = await getParentPortalEntitlementByEmail(normalizedParentEmail);
+    if (isEntitlementActive(entitlement)) {
+      throw new Error('Parent portal access is already active for this parent');
+    }
+  }
+
+  for (const student of typedStudents) {
+    const paidAdmissionInvoice = await getPaidAdmissionInvoiceForStudent({
+      parentEmail: normalizedParentEmail,
+      studentId: student.id,
+      studentEmail: student.email,
+    });
+
+    if (paidAdmissionInvoice) {
+      throw new Error(`Admission fee is already paid for ${student.name}`);
+    }
+  }
+
+  const parentName = String(
+    parent?.displayName || parent?.name || typedStudents[0]?.parent.name || 'Parent',
+  );
+  const parentPhone = String(parent?.phone || typedStudents[0]?.parent.phone || '');
+  const lineItems: BillingLineItem[] = [];
+
+  if (wantsPortal) {
+    lineItems.push(
+      buildBillingLineItem(
+        'parent_portal_yearly',
+        settings,
+        {
+          parentEmail: normalizedParentEmail,
+          parentName,
+          studentEmail: typedStudents[0]?.email ? normalizeEmail(typedStudents[0].email) : '',
+          studentName: typedStudents[0]?.name || 'Current student',
+          className: 'Existing student access',
+          subject: 'Parent Portal',
+          centerName: 'DRU EDU',
+        },
+      ),
+    );
+  }
+
+  for (const student of typedStudents) {
+    const lineItem = buildBillingLineItem(
+      'admission_fee',
+      settings,
+      {
+        parentEmail: normalizedParentEmail,
+        parentName,
+        studentEmail: normalizeEmail(student.email),
+        studentName: student.name,
+        className: 'Existing student access',
+        subject: 'Admission',
+        centerName: 'DRU EDU',
+      },
+    );
+    lineItems.push({
+      ...lineItem,
+      studentId: student.id,
+    });
+  }
+
+  const discountedLineItems = (
+    await Promise.all(
+      lineItems.map(async (lineItem) => {
+        const student = lineItem.studentId
+          ? typedStudents.find((candidate) => candidate.id === lineItem.studentId)
+          : undefined;
+        const discounts = await getApplicableBillingDiscounts({
+          parentEmail: normalizedParentEmail,
+          studentId: student?.id,
+          studentEmail: student?.email,
+          feeCodes: [lineItem.type],
+          discountIds: params.discountIds,
+          couponCode: params.couponCode,
+        });
+        return applyDiscountsToLineItems([lineItem], discounts)[0];
+      }),
+    )
+  ).filter(Boolean);
+
+  const expectedKeys = new Set<string>();
+  if (wantsPortal) expectedKeys.add('parent_portal_yearly');
+  typedStudents.forEach((student) => expectedKeys.add(`admission_fee:${student.id}`));
+
+  const existingPendingInvoices = await firebaseAdmin.db
+    .collection(BILLING_COLLECTIONS.INVOICES)
+    .where('parentEmail', '==', normalizedParentEmail)
+    .where('status', '==', 'pending')
+    .get();
+
+  const existingInvoiceDoc = existingPendingInvoices.docs.find((doc) => {
+    const invoice = {
+      id: doc.id,
+      ...(doc.data() as Omit<BillingInvoiceDocument, 'id'>),
+    } as BillingInvoiceDocument;
+    return sameBillingCart(invoice, expectedKeys) && !params.couponCode && !(params.discountIds || []).length;
+  });
+
+  if (existingInvoiceDoc) {
+    const invoice = {
+      id: existingInvoiceDoc.id,
+      ...(existingInvoiceDoc.data() as Omit<BillingInvoiceDocument, 'id'>),
+    } as BillingInvoiceDocument;
+    await sendInvoiceEmailAndStamp(invoice);
+
+    return {
+      invoiceId: invoice.id,
+      invoiceNumber: invoice.invoiceNumber,
+      paymentUrl: invoice.paymentUrl,
+      feeLabel: 'Cart invoice',
+      reused: true,
+      itemCount: expectedKeys.size,
+    };
+  }
+
+  const dueAt = addDays(new Date(), settings.invoiceDueDays);
+  const invoiceToken = buildInvoiceToken();
+  const invoiceNumber = buildInvoiceNumber();
+  const amountTotal = getBillingInvoiceTotal(discountedLineItems);
+  const primaryStudent = typedStudents[0];
+
+  const invoicePayload = {
+    invoiceNumber,
+    invoiceToken,
+    parentEmail: normalizedParentEmail,
+    parentName,
+    parentPhone: parentPhone || undefined,
+    studentEmail: primaryStudent?.email ? normalizeEmail(primaryStudent.email) : '',
+    studentName: primaryStudent?.name || 'Multiple students',
+    enrollmentRequestId: '',
+    classId: '',
+    className: 'Existing student access',
+    subject: 'Billing',
+    centerName: 'DRU EDU',
+    currency: settings.currency,
+    status: 'pending',
+    lineItems: discountedLineItems,
+    amountTotal,
+    dueAt: admin.firestore.Timestamp.fromDate(dueAt),
+    paymentUrl: buildInvoiceUrl(invoiceToken, params.origin),
+    finalization: {
+      status: 'pending',
+    },
+    metadata: {
+      isNewStudent: false,
+      portalFeeRequired: wantsPortal,
+      studentId: primaryStudent?.id,
+      studentIds: typedStudents.map((student) => student.id),
+    },
+    createdAt: nowTimestamp(),
+    updatedAt: nowTimestamp(),
+  };
+
+  const invoiceRef = await firebaseAdmin.db.collection(BILLING_COLLECTIONS.INVOICES).add(invoicePayload);
+  const invoice = { id: invoiceRef.id, ...invoicePayload } as BillingInvoiceDocument;
+  await sendInvoiceEmailAndStamp(invoice);
+
+  return {
+    invoiceId: invoice.id,
+    invoiceNumber: invoice.invoiceNumber,
+    paymentUrl: invoice.paymentUrl,
+    feeLabel: 'Cart invoice',
+    reused: false,
+    itemCount: expectedKeys.size,
+  };
 }
 
 export async function sendBillingPaymentLink(params: {

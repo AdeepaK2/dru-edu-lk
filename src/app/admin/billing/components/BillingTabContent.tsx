@@ -30,6 +30,7 @@ export function BillingTabContent({ dashboard }: BillingTabContentProps) {
         startIndex={dashboard.paymentStartIndex}
         endIndex={dashboard.paymentEndIndex}
         runBulkBillingAction={dashboard.runBulkBillingAction}
+        runCartBillingAction={dashboard.runCartBillingAction}
         bulkPortalItems={dashboard.bulkPortalItems}
         bulkAdmissionItems={dashboard.bulkAdmissionItems}
         bulkCombinedItems={dashboard.bulkCombinedItems}
