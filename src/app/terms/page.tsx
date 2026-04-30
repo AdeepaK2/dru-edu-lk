@@ -47,8 +47,8 @@ export default function TermsOfService() {
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">Contact Information</h2>
             <p className="text-gray-700">
               For questions regarding these terms, please contact us at 
-              <a href="mailto:legal@drueducation.com" className="text-primary-600 hover:text-primary-700">
-                legal@drueducation.com
+              <a href="mailto:info@drueducation.com" className="text-primary-600 hover:text-primary-700">
+                info@drueducation.com
               </a>
             </p>
           </section>

@@ -70,7 +70,7 @@ export default function Home() {
     },
     priceRange: "$$",
     telephone: "+61-3-XXXX-XXXX",
-    email: "info@drueducation.com.au",
+    email: "info@drueducation.com",
     hasOfferCatalog: {
       "@type": "OfferCatalog",
       name: "VCE and Selective School Courses",
@@ -980,10 +980,10 @@ export default function Home() {
               <div>
                 <h3 className="text-lg font-semibold mb-2">Email</h3>
                 <a
-                  href="mailto:info@drueducation.com.au"
+                  href="mailto:info@drueducation.com"
                   className="text-white/80 hover:text-white transition-colors duration-200 relative z-20 cursor-pointer inline-block"
                 >
-                  info@drueducation.com.au
+                  info@drueducation.com
                 </a>
               </div>
             </div>
