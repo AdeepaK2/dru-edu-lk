@@ -138,8 +138,8 @@ export default function PrivacyPolicy() {
             <p className="text-gray-700">
               We retain your personal information for as long as your account is active or as needed
               to provide our Services. If you wish to delete your account, you may contact us at{" "}
-              <a href="mailto:dev@drueducation.com" className="text-primary-600 hover:text-primary-700">
-                dev@drueducation.com
+              <a href="mailto:info@drueducation.com" className="text-primary-600 hover:text-primary-700">
+                info@drueducation.com
               </a>{" "}
               and we will delete your personal data within a reasonable timeframe, except where we
               are required to retain it for legal or legitimate business purposes under Australian law.
@@ -154,8 +154,8 @@ export default function PrivacyPolicy() {
               We do not allow children to create accounts independently. All student data is accessible
               to their linked parent or guardian. If you believe personal information has been collected
               from a child without appropriate parental involvement, please contact us immediately at{" "}
-              <a href="mailto:dev@drueducation.com" className="text-primary-600 hover:text-primary-700">
-                dev@drueducation.com
+              <a href="mailto:info@drueducation.com" className="text-primary-600 hover:text-primary-700">
+                info@drueducation.com
               </a>.
             </p>
           </section>
@@ -209,8 +209,8 @@ export default function PrivacyPolicy() {
               </p>
               <p>
                 <strong>Email:</strong>{" "}
-                <a href="mailto:dev@drueducation.com" className="text-primary-600 hover:text-primary-700">
-                  dev@drueducation.com
+                <a href="mailto:info@drueducation.com" className="text-primary-600 hover:text-primary-700">
+                  info@drueducation.com
                 </a>
               </p>
               <p><strong>Phone:</strong> 0478 716 402</p>

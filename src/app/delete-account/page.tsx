@@ -26,8 +26,8 @@ export default function DeleteAccount() {
             </p>
             <p className="text-gray-700 mb-4">
               To request account deletion, please email us at{" "}
-              <a href="mailto:support@drueducation.com.au" className="text-primary-600 hover:text-primary-700">
-                support@drueducation.com.au
+              <a href="mailto:info@drueducation.com" className="text-primary-600 hover:text-primary-700">
+                info@drueducation.com
               </a>{" "}
               with the subject line <strong>&quot;Account Deletion Request&quot;</strong> and include:
             </p>
@@ -69,8 +69,8 @@ export default function DeleteAccount() {
             <p className="text-gray-700">
               If you would like to delete specific data without deleting your entire account (such as
               chat history, profile photo, or test records), please contact us at{" "}
-              <a href="mailto:support@drueducation.com.au" className="text-primary-600 hover:text-primary-700">
-                support@drueducation.com.au
+              <a href="mailto:info@drueducation.com" className="text-primary-600 hover:text-primary-700">
+                info@drueducation.com
               </a>{" "}
               and specify which data you would like removed. We will process your request within 30 days.
             </p>
@@ -80,8 +80,8 @@ export default function DeleteAccount() {
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">Contact Us</h2>
             <p className="text-gray-700">
               For any questions regarding account or data deletion, please contact:{" "}
-              <a href="mailto:support@drueducation.com.au" className="text-primary-600 hover:text-primary-700">
-                support@drueducation.com.au
+              <a href="mailto:info@drueducation.com" className="text-primary-600 hover:text-primary-700">
+                info@drueducation.com
               </a>
             </p>
           </section>
