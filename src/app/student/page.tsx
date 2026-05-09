@@ -20,14 +20,11 @@ import {
 import { Button } from '@/components/ui';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 // Theme feature removed: default neutral theme
-// Theme feature removed
-const THEMES = {} as any;
 import Link from 'next/link';
 
 export default function StudentDashboard() {
   const { student } = useStudentAuth();
   const theme = 'default';
-  const themeConfig = THEMES[theme] || {};
 
   // State for real data
   const [dashboardStats, setDashboardStats] = useState({

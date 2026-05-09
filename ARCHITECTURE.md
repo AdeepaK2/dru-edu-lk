@@ -178,14 +178,9 @@ dru-edu/
 - WhatsApp (GreenAPI)
 - Document reminders (automated)
 
-### Themes
-8 themes: Default, Ben10, Tinkerbell, CricketVerse, Australian, BounceWorld, Avengers, Ponyville
-
----
-
 ## State Management
 
-- **React Context:** ThemeContext, SidebarContext
+- **React Context:** SidebarContext
 - **SWR** for client-side data fetching with caching
 - **Zod** for data validation (models directory)
 - **Custom Hooks:** useStudentAuth, useTeacherAuth, useAdminCache, useFastAnalytics
