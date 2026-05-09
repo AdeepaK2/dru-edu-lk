@@ -17,7 +17,7 @@ import {
   Info
 } from 'lucide-react';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
-import { useTheme } from '@/contexts/ThemeContext';
+// Theme feature removed: default neutral theme
 import { Button } from '@/components/ui';
 import { RetestRequestService } from '@/apiservices/retestRequestService';
 import { Test, FlexibleTest, LiveTest } from '@/models/testSchema';
@@ -34,7 +34,7 @@ interface RetakeWithComparison {
 export default function StudentRetakes() {
   const { student, loading: authLoading } = useStudentAuth();
   const router = useRouter();
-  const { theme } = useTheme();
+  const theme = 'default';
 
   const [retakes, setRetakes] = useState<RetakeWithComparison[]>([]);
   const [loading, setLoading] = useState(true);

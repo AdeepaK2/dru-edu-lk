@@ -15,7 +15,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
-import { useTheme } from '@/contexts/ThemeContext';
+// Theme feature removed: default neutral theme
 import { TimeSlotService, MeetingBookingService } from '@/apiservices/meetingFireStoreServices';
 import { TeacherFirestoreService } from '@/apiservices/teacherFirestoreService';
 import { ClassFirestoreService } from '@/apiservices/classFirestoreService';
@@ -75,7 +75,7 @@ interface BookedMeeting {
 
 export default function StudentMeetingPage() {
   const { student, loading: authLoading } = useStudentAuth();
-  const { theme } = useTheme();
+  const theme = 'default';
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
   const [bookedMeetings, setBookedMeetings] = useState<BookedMeeting[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);

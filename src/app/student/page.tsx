@@ -19,14 +19,15 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
-import { useTheme } from '@/contexts/ThemeContext';
-import { THEMES } from '@/utils/themeConfig';
+// Theme feature removed: default neutral theme
+// Theme feature removed
+const THEMES = {} as any;
 import Link from 'next/link';
 
 export default function StudentDashboard() {
   const { student } = useStudentAuth();
-  const { theme } = useTheme();
-  const themeConfig = THEMES[theme];
+  const theme = 'default';
+  const themeConfig = THEMES[theme] || {};
 
   // State for real data
   const [dashboardStats, setDashboardStats] = useState({

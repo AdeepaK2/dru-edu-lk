@@ -9,8 +9,7 @@ import Button from '@/components/ui/Button';
 import { updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 import { doc, updateDoc } from 'firebase/firestore';
 import { firestore, auth } from '@/utils/firebase-client';
-import { useTheme, type ThemeType } from '@/contexts/ThemeContext';
-import { THEMES } from '@/utils/themeConfig';
+// Theme feature removed: neutral default theme only
 
 interface StudentProfileData {
   name: string;
@@ -523,9 +522,10 @@ export default function StudentSettingsPage() {
   // Message state for success/error notifications
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
-  // Theme state
-  const { theme, setTheme } = useTheme();
-  const [selectedTheme, setSelectedTheme] = useState<ThemeType>(theme);
+  // Theme state removed; use neutral default
+  const theme = 'default';
+  const setTheme = (_: any) => {};
+  const [selectedTheme, setSelectedTheme] = useState<any>(theme);
   const [showCricketVersePopup, setShowCricketVersePopup] = useState(false);
 
   // Clear message after 5 seconds
@@ -573,10 +573,7 @@ export default function StudentSettingsPage() {
     }
   }, [student, selectedTheme, theme]);
 
-  // Initialize theme state
-  useEffect(() => {
-    setSelectedTheme(theme);
-  }, [theme]);
+  // Theme is fixed to default; no initialization needed
 
   const handleAvatarSelect = async (avatarId: string) => {
     setSelectedAvatar(avatarId);

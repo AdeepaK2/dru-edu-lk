@@ -10,7 +10,7 @@ import {
   GraduationCap
 } from 'lucide-react';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
-import { useTheme } from '@/contexts/ThemeContext';
+// Theme feature removed: default neutral theme
 import Link from 'next/link';
 
 // Import services and types
@@ -21,7 +21,7 @@ import { getEnrollmentsByStudent } from '@/services/studentEnrollmentService';
 
 export default function StudentVideos() {
   const { student } = useStudentAuth();
-  const { theme } = useTheme();
+  const theme = 'default';
   const [studentClasses, setStudentClasses] = useState<any[]>([]);
   const [individualVideos, setIndividualVideos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);

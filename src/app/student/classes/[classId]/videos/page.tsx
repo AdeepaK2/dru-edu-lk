@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { Button, Input } from '@/components/ui';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
-import { useTheme } from '@/contexts/ThemeContext';
+// Theme feature removed: default neutral theme
 import Link from 'next/link';
 
 // Import services and types
@@ -54,7 +54,7 @@ export default function ClassVideos({ params }: ClassVideoProps) {
   const { classId } = use(params);
   
   const { student } = useStudentAuth();
-  const { theme } = useTheme();
+  const theme = 'default';
   const [classInfo, setClassInfo] = useState<any>(null);
   const [videos, setVideos] = useState<ClassVideoData[]>([]);
   const [studentPurchases, setStudentPurchases] = useState<VideoPurchaseDocument[]>([]);

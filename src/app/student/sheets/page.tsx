@@ -16,7 +16,7 @@ import { StudentEnrollmentFirestoreService } from '@/apiservices/studentEnrollme
 import { ClassFirestoreService } from '@/apiservices/classFirestoreService';
 import { firestore } from '@/utils/firebase-client';
 import { collection, query, where, getDocs } from 'firebase/firestore';
-import { useTheme } from '@/contexts/ThemeContext';
+// Theme feature removed: default neutral theme
 
 interface ClassWithSheets {
   id: string;
@@ -42,7 +42,7 @@ interface StudentSheet {
 export default function StudentSheetsPage() {
   const router = useRouter();
   const { user, student, loading: authLoading } = useStudentAuth();
-  const { theme } = useTheme();
+  const theme = 'default';
   
   const [classes, setClasses] = useState<ClassWithSheets[]>([]);
   const [loading, setLoading] = useState(true);

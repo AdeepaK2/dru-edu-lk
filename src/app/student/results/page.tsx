@@ -19,7 +19,7 @@ import {
   Clock
 } from 'lucide-react';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
-import { useTheme } from '@/contexts/ThemeContext';
+// Theme feature removed: default neutral theme
 import { Button, Input } from '@/components/ui';
 import Link from 'next/link';
 
@@ -71,7 +71,7 @@ interface DifficultyAnalysis {
 
 export default function StudentResults() {
   const { student } = useStudentAuth();
-  const { theme } = useTheme();
+  const theme = 'default';
   const [studentClasses, setStudentClasses] = useState<ClassProgress[]>([]);
   const [selectedClass, setSelectedClass] = useState<string | null>(null);
   const [testResults, setTestResults] = useState<TestResult[]>([]);

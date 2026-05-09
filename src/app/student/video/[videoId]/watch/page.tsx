@@ -19,7 +19,7 @@ import {
 import { Button } from '@/components/ui';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { useRouter } from 'next/navigation';
-import { useTheme } from '@/contexts/ThemeContext';
+// Theme feature removed: default neutral theme
 
 // Import services and types
 import { VideoFirestoreService } from '@/apiservices/videoFirestoreService';
@@ -37,7 +37,7 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
   const { videoId } = use(params);
   const { student } = useStudentAuth();
   const router = useRouter();
-  const { theme } = useTheme();
+  const theme = 'default';
   const [video, setVideo] = useState<VideoDocument | null>(null);
   const [purchase, setPurchase] = useState<VideoPurchaseDocument | null>(null);
   const [loading, setLoading] = useState(true);

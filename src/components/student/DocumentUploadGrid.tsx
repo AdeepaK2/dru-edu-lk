@@ -20,7 +20,7 @@ import {
 import { DocumentInfo, DocumentType } from '@/models/studentSchema';
 import Button from '@/components/ui/Button';
 import DocumentPreviewModal from './DocumentPreviewModal';
-import { useTheme } from '@/contexts/ThemeContext';
+// Theme feature removed: default neutral theme
 
 interface DocumentUploadGridProps {
   documents: DocumentInfo[];
@@ -119,7 +119,7 @@ export default function DocumentUploadGrid({
   loading = false,
   disabled = false
 }: DocumentUploadGridProps) {
-  const { theme } = useTheme();
+  const theme = 'default';
   const [uploadState, setUploadState] = useState<UploadState>({});
   const [dragOver, setDragOver] = useState<DocumentType | null>(null);
   const [previewDocument, setPreviewDocument] = useState<DocumentInfo | null>(null);

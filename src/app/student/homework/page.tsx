@@ -20,7 +20,7 @@ import {
   BookOpen
 } from 'lucide-react';
 import HomeworkSubmissionModal from '@/components/student/HomeworkSubmissionModal';
-import { useTheme } from '@/contexts/ThemeContext';
+// Theme feature removed: default neutral theme
 
 interface HomeworkItem {
   material: StudyMaterialDocument;
@@ -33,7 +33,7 @@ interface HomeworkItem {
 
 export default function StudentHomeworkPage() {
   const { student } = useStudentAuth();
-  const { theme } = useTheme();
+    const theme = 'default';
   const [loading, setLoading] = useState(true);
   const [homeworks, setHomeworks] = useState<HomeworkItem[]>([]);
   const [filteredHomeworks, setFilteredHomeworks] = useState<HomeworkItem[]>([]);

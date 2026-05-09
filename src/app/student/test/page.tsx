@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Clock, Calendar, AlertCircle, FileText, CheckCircle, Play, ArrowRight, BookOpen, Filter, Info, ChevronDown, ChevronRight, ChevronUp, Users, Plus, CalendarDays, RefreshCw } from 'lucide-react';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
-import { useTheme } from '@/contexts/ThemeContext';
+// Theme feature removed: default neutral theme
 import { Button, Input, Select } from '@/components/ui';
 import { StudentTestAssignmentService } from '@/apiservices/studentTestAssignmentService';
 import { TestService } from '@/apiservices/testService';
@@ -22,7 +22,7 @@ const StudentLayout = ({ children }: { children: React.ReactNode }) => children;
 export default function StudentTests() {
   const { student, loading: authLoading } = useStudentAuth();
   const router = useRouter();
-  const { theme } = useTheme();
+  const theme = 'default';
   
   // States
   const [tests, setTests] = useState<Test[]>([]);

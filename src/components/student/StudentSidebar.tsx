@@ -28,7 +28,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui';
 import { TestService } from '@/apiservices/testService';
 import { getEnrollmentsByStudent } from '@/services/studentEnrollmentService';
-import { useTheme } from '@/contexts/ThemeContext';
+// Theme feature removed: default neutral theme
 
 interface SidebarItem {
   id: string;
@@ -157,7 +157,7 @@ interface StudentSidebarProps {
 export default function StudentSidebar({ student, isOpen, onToggle }: StudentSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { theme } = useTheme();
+  const theme = 'default';
   const [upcomingQuizCount, setUpcomingQuizCount] = useState(0);
   const [avatarKey, setAvatarKey] = useState(0); // Force re-render key
 

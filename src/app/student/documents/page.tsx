@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Shield, Check, FileCheck } from 'lucide-react';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
-import { useTheme } from '@/contexts/ThemeContext';
+// Theme feature removed: default neutral theme
 import { DocumentInfo, DocumentType } from '@/models/studentSchema';
 import { StudentDocumentService } from '@/apiservices/studentDocumentService';
 import DocumentUploadGrid from '@/components/student/DocumentUploadGrid';
@@ -20,7 +20,7 @@ interface DocumentStates {
 
 export default function StudentDocumentsPage() {
   const { student, loading: authLoading, refreshStudent } = useStudentAuth();
-  const { theme } = useTheme();
+  const theme = 'default';
 
   // Loading states
   const [loading, setLoading] = useState<LoadingState>({

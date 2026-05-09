@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { BookOpen, Users, Clock, Award, Search, Filter, ExternalLink, MessageSquare } from 'lucide-react';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
-import { useTheme } from '@/contexts/ThemeContext';
+// Theme feature removed: default neutral theme
 import { getEnrollmentsByStudent } from '@/services/studentEnrollmentService';
 import { StudentEnrollment } from '@/models/studentEnrollmentSchema';
 import { ClassFirestoreService } from '@/apiservices/classFirestoreService';
@@ -23,7 +23,7 @@ interface EnrollmentWithClassData extends StudentEnrollment {
 
 export default function StudentClassesPage() {
   const { student, loading: authLoading } = useStudentAuth();
-  const { theme } = useTheme();
+  const theme = 'default';
   const [enrollments, setEnrollments] = useState<EnrollmentWithClassData[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');

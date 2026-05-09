@@ -16,7 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Button from '@/components/ui/Button';
 import { Badge } from '@/components/ui/badge';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
-import { useTheme } from '@/contexts/ThemeContext';
+// Theme feature removed: default neutral theme
 import { ClassFirestoreService } from '@/apiservices/classFirestoreService';
 import { firestore } from '@/utils/firebase-client';
 import { collection, query, where, getDocs } from 'firebase/firestore';
@@ -55,7 +55,7 @@ export default function ClassSheetsPage() {
   const params = useParams();
   const classId = params.classId as string;
   const { user, student, loading: authLoading } = useStudentAuth();
-  const { theme } = useTheme();
+  const theme = 'default';
   
   const [className, setClassName] = useState<string>('');
   const [classSheets, setClassSheets] = useState<ClassSheetData[]>([]);
