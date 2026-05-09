@@ -1,58 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminFirestore } from '@/utils/firebase-admin';
-import { DocumentType } from '@/models/studentSchema';
-
-// Green API configuration
-const GREEN_API_URL = process.env.GREEN_API;
-const MEDIA_API_URL = process.env.MEDIA_API;
-const GREEN_ID = process.env.GREEN_ID;
-const GREEN_API_TOKEN = process.env.GREEN_API_TOKEN;
-
-// Format phone number for WhatsApp (Australian numbers) - copied from WhatsApp API
-function formatPhoneForWhatsApp(phone: string): string {
-  // Remove all non-numeric characters
-  let cleanNumber = phone.replace(/\D/g, '');
-  
-  // Handle Australian numbers
-  if (cleanNumber.startsWith('61')) {
-    // Already has country code
-    return `${cleanNumber}@c.us`;
-  } else if (cleanNumber.startsWith('0')) {
-    // Remove leading 0 and add Australian country code
-    return `61${cleanNumber.substring(1)}@c.us`;
-  } else if (cleanNumber.length === 9) {
-    // Assume it's a mobile without country code or leading 0
-    return `61${cleanNumber}@c.us`;
-  }
-  
-  // Default: assume it has country code already
-  return `${cleanNumber}@c.us`;
-}
-
-// Send text message via Green API - copied from WhatsApp API
-async function sendWhatsAppMessage(chatId: string, message: string): Promise<{idMessage: string; statusMessage: string}> {
-  const url = `${GREEN_API_URL}/waInstance${GREEN_ID}/sendMessage/${GREEN_API_TOKEN}`;
-  
-  const payload = {
-    chatId,
-    message
-  };
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload)
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Green API error: ${response.status} - ${errorText}`);
-  }
-
-  return await response.json();
-}
+import { sendRawWhatsAppMessage, formatPhoneForWhatsApp } from '@/utils/whatsappServerUtils';
+import { getStudentsWithMissingDocuments } from '@/server/documentReminderService';
 
 // Helper function to generate WhatsApp message for document reminder
 function generateDocumentReminderMessage(
@@ -148,56 +96,21 @@ async function sendDocumentRemindersViaWhatsApp(
           isUrgent
         );
 
-        // Prepare WhatsApp API request
-        const whatsappRequest = {
-          recipients: [{
-            phone: student.parent!.phone,
-            name: student.parent!.name,
-            type: 'parent' as const,
-            studentName: student.name
-          }],
-          message: message,
-          teacherName: 'DRU Education',
-          className: 'Document Management'
+        // Send directly via Green API (no internal HTTP round-trip)
+        const chatId = formatPhoneForWhatsApp(student.parent!.phone);
+        const messageWithHeader = `🎓 Message from *DRU Education*:\n\n${message}`;
+        const result = await sendRawWhatsAppMessage(chatId, messageWithHeader);
+
+        console.log(`✅ WhatsApp sent to ${student.parent!.name} for ${student.name}: ${result.idMessage}`);
+        return {
+          studentId: student.id,
+          studentName: student.name,
+          parentName: student.parent!.name,
+          parentPhone: student.parent!.phone,
+          success: true,
+          messageId: result.idMessage,
+          missingDocsCount: student.missingDocuments.length
         };
-
-        // Send via existing WhatsApp API (internal server call)
-        const baseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'http://localhost:3000';
-        const whatsappUrl = baseUrl.startsWith('http') ? `${baseUrl}/api/whatsapp` : `https://${baseUrl}/api/whatsapp`;
-        
-        const response = await fetch(whatsappUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(whatsappRequest)
-        });
-
-        if (!response.ok) {
-          throw new Error(`WhatsApp API error: ${response.status}`);
-        }
-
-        const result = await response.json();
-        
-        if (result.success && result.results && result.results.length > 0) {
-          const messageResult = result.results[0];
-          if (messageResult.success) {
-            console.log(`✅ WhatsApp sent to ${student.parent!.name} for ${student.name}: ${messageResult.messageId}`);
-            return {
-              studentId: student.id,
-              studentName: student.name,
-              parentName: student.parent!.name,
-              parentPhone: student.parent!.phone,
-              success: true,
-              messageId: messageResult.messageId,
-              missingDocsCount: student.missingDocuments.length
-            };
-          } else {
-            throw new Error(messageResult.error || 'Unknown WhatsApp error');
-          }
-        } else {
-          throw new Error(result.error || 'Failed to send WhatsApp message');
-        }
 
       } catch (error) {
         console.error(`❌ Failed WhatsApp to ${student.parent?.name} for ${student.name}:`, error);
@@ -257,88 +170,6 @@ async function sendDocumentRemindersViaWhatsApp(
     failed,
     results
   };
-}
-
-// Helper function to get students with missing documents using Firebase Admin
-async function getStudentsWithMissingDocuments() {
-  try {
-    console.log('Fetching students from Firestore using Admin SDK...');
-    
-    // Get all students from Firestore
-    const studentsSnapshot = await adminFirestore.collection('students').get();
-    console.log(`Found ${studentsSnapshot.docs.length} students in database`);
-    
-    const requiredDocuments = [
-      {
-        type: DocumentType.CLASS_POLICY,
-        name: 'Class Policy Agreement',
-        url: 'https://drive.google.com/file/d/1YHJxvAfTVMqRJ5YQeD5fFZdXkt81vSr1/view?usp=sharing'
-      },
-      {
-        type: DocumentType.PARENT_NOTICE,
-        name: 'Parent/Guardian Notice', 
-        url: 'https://drive.google.com/file/d/1j_LO0jWJ2-4WRYBZwMwp0eRnFMqOVM-F/view?usp=sharing'
-      },
-      {
-        type: DocumentType.PHOTO_CONSENT,
-        name: 'Photo Consent Form',
-        url: 'https://drive.google.com/file/d/1example-photo-consent/view?usp=sharing'
-      }
-    ];
-    
-    const studentsWithMissingDocs: Array<{
-      id: string;
-      name: string;
-      email: string;
-      parent: { name: string; phone: string } | null;
-      missingDocuments: Array<{ type: string; name: string; url: string }>;
-    }> = [];
-    
-    studentsSnapshot.docs.forEach(doc => {
-      const studentData = doc.data();
-      const studentId = doc.id;
-      
-      // Only process active students
-      if (studentData.status !== 'Active') {
-        return;
-      }
-      
-      const submittedDocuments = studentData.documents || [];
-      const submittedTypes = submittedDocuments
-        .filter((doc: any) => doc.status === 'Verified' || doc.status === 'Pending')
-        .map((doc: any) => doc.type);
-      
-      // Find missing documents
-      const missingDocuments = requiredDocuments.filter(
-        reqDoc => !submittedTypes.includes(reqDoc.type)
-      );
-      
-      // Only include students with missing documents
-      if (missingDocuments.length > 0) {
-        studentsWithMissingDocs.push({
-          id: studentId,
-          name: studentData.name || 'Unknown Student',
-          email: studentData.email || '',
-          parent: studentData.parent ? {
-            name: studentData.parent.name || 'Parent/Guardian',
-            phone: studentData.parent.phone || studentData.parent.phoneNumber || ''
-          } : null,
-          missingDocuments: missingDocuments.map(doc => ({
-            type: doc.type,
-            name: doc.name,
-            url: doc.url
-          }))
-        });
-      }
-    });
-    
-    console.log(`Found ${studentsWithMissingDocs.length} students with missing documents`);
-    return studentsWithMissingDocs;
-    
-  } catch (error) {
-    console.error('Error fetching students with missing documents:', error);
-    throw error;
-  }
 }
 
 // POST - Send document reminder emails to students who haven't submitted documents

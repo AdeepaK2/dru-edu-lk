@@ -1,42 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
-import { getFirestore, Timestamp } from 'firebase-admin/firestore';
-import { 
+import { Timestamp } from 'firebase-admin/firestore';
+import { adminFirestore as db } from '@/utils/firebase-admin';
+import {
   CreatePublicationOrder,
   PublicationOrder,
   generateOrderId,
   calculateOrderTotals,
   validateOrderForm
 } from '@/models/publicationOrderSchema';
-
-// Server-side mail document interface (Firebase Mail Extension format)
-interface ServerMailDocument {
-  to: string;
-  message: {
-    subject: string;
-    html: string;
-  };
-  createdAt?: Timestamp;
-  processed?: boolean;
-  processedAt?: Timestamp;
-  error?: string;
-}
-
-// Initialize Firebase Admin (if not already initialized)
-if (!getApps().length) {
-  const serviceAccount = {
-    projectId: process.env.FIREBASE_PROJECT_ID,
-    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-    privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-  };
-
-  initializeApp({
-    credential: cert(serviceAccount),
-    projectId: process.env.FIREBASE_PROJECT_ID,
-  });
-}
-
-const db = getFirestore();
+import type { ServerMailDocument } from '@/types/api';
 
 export async function POST(request: NextRequest) {
   try {

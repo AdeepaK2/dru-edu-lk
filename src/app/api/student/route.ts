@@ -6,28 +6,8 @@ import { Timestamp } from 'firebase-admin/firestore';
 import * as admin from 'firebase-admin';
 import { cacheUtils } from '@/utils/cache';
 import { sendStudentWelcomeEmail } from '@/utils/emailService';
-
-// Function to generate random password
-function generateRandomPassword(length: number = 8): string {
-  const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
-  let password = '';
-  
-  // Ensure at least one character from each type
-  password += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[Math.floor(Math.random() * 26)]; // Uppercase
-  password += 'abcdefghijklmnopqrstuvwxyz'[Math.floor(Math.random() * 26)]; // Lowercase
-  password += '0123456789'[Math.floor(Math.random() * 10)]; // Number
-  password += '!@#$%^&*'[Math.floor(Math.random() * 8)]; // Special character
-  
-  // Fill the rest with random characters
-  for (let i = 4; i < length; i++) {
-    password += charset[Math.floor(Math.random() * charset.length)];
-  }
-  
-  // Shuffle the password
-  return password.split('').sort(() => Math.random() - 0.5).join('');
-}
-
-// Welcome email is now handled by centralized emailService using Nodemailer SMTP
+import { generateRandomPassword } from '@/utils/passwordUtils';
+import { generateAvatarInitials } from '@/utils/avatarUtils';
 
 // POST - Create a new student
 export async function POST(req: NextRequest) {
@@ -86,14 +66,7 @@ export async function POST(req: NextRequest) {
     // Generate random password for the student
     const generatedPassword = generateRandomPassword(10);
     
-    // Generate avatar initials
-    const initials = studentData.name
-      .split(' ')
-      .filter(Boolean)
-      .map(n => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
+    const initials = generateAvatarInitials(studentData.name);
 
     let userRecord: admin.auth.UserRecord;
 
@@ -431,13 +404,7 @@ export async function PATCH(req: NextRequest) {
     
     // Update avatar if name changed
     if (updateData.name) {
-      const initials = updateData.name
-        .split(' ')
-        .filter(Boolean)
-        .map(n => n[0])
-        .join('')
-        .toUpperCase()
-        .slice(0, 2);
+      const initials = generateAvatarInitials(updateData.name);
       firestoreUpdateData.avatar = initials;
     }
     

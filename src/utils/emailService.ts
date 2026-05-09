@@ -15,6 +15,8 @@
  */
 
 import nodemailer from 'nodemailer';
+import { DOCUMENT_URLS } from '@/utils/documentUrls';
+import { DocumentType } from '@/models/studentSchema';
 
 // Email configuration
 const EMAIL_CONFIG = {
@@ -22,10 +24,10 @@ const EMAIL_CONFIG = {
   studentPortalUrl: 'https://www.drueducation.com.au/student/login',
   teacherPortalUrl: 'https://www.drueducation.com.au/teacher/login',
   settingsUrl: 'https://www.drueducation.com.au/student/settings',
-  // Document links
-  classPolicyUrl: 'https://drive.google.com/file/d/1YHJxvAfTVMqRJ5YQeD5fFZdXkt81vSr1/view?usp=sharing',
-  parentGuardianUrl: 'https://drive.google.com/file/d/1j_LO0jWJ2-4WRYBZwMwp0eRnFMqOVM-F/view?usp=sharing',
-  photoConsentUrl: 'https://drive.google.com/file/d/1qD9nYtOnbHs_AImrAaEU5NTPalXwea6F/view?usp=sharing',
+  // Document links — canonical source is src/utils/documentUrls.ts
+  classPolicyUrl: DOCUMENT_URLS[DocumentType.CLASS_POLICY],
+  parentGuardianUrl: DOCUMENT_URLS[DocumentType.PARENT_NOTICE],
+  photoConsentUrl: DOCUMENT_URLS[DocumentType.PHOTO_CONSENT],
 };
 
 // Create nodemailer transporter

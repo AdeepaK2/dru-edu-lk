@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
+import {
+  formatPhoneForWhatsApp,
+  sendRawWhatsAppMessage,
+  type GreenApiResponse,
+} from '@/utils/whatsappServerUtils';
 
-// Green API configuration
+// Green API configuration (file upload uses MEDIA_API — kept local to this route)
 const GREEN_API_URL = process.env.GREEN_API;
 const MEDIA_API_URL = process.env.MEDIA_API;
 const GREEN_ID = process.env.GREEN_ID;
 const GREEN_API_TOKEN = process.env.GREEN_API_TOKEN;
 
-// Validate environment variables
 if (!GREEN_API_URL || !MEDIA_API_URL || !GREEN_ID || !GREEN_API_TOKEN) {
   console.error('Missing Green API environment variables');
 }
@@ -55,52 +59,6 @@ function formatWhatsAppMessage(
   const header = `🎓 You have received a message from *${teacherName}* from *DRU Education*${studentInfo} for class *${className}*\n\n`;
   
   return header + originalMessage;
-}
-
-// Format phone number for WhatsApp (Australian numbers)
-function formatPhoneForWhatsApp(phone: string): string {
-  // Remove all non-numeric characters
-  let cleanNumber = phone.replace(/\D/g, '');
-  
-  // Handle Australian numbers
-  if (cleanNumber.startsWith('61')) {
-    // Already has country code
-    return `${cleanNumber}@c.us`;
-  } else if (cleanNumber.startsWith('0')) {
-    // Remove leading 0 and add Australian country code
-    return `61${cleanNumber.substring(1)}@c.us`;
-  } else if (cleanNumber.length === 9) {
-    // Assume it's a mobile without country code or leading 0
-    return `61${cleanNumber}@c.us`;
-  }
-  
-  // Default: assume it has country code already
-  return `${cleanNumber}@c.us`;
-}
-
-// Send text message via Green API
-async function sendWhatsAppMessage(chatId: string, message: string): Promise<GreenApiResponse> {
-  const url = `${GREEN_API_URL}/waInstance${GREEN_ID}/sendMessage/${GREEN_API_TOKEN}`;
-  
-  const payload = {
-    chatId,
-    message
-  };
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload)
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Green API error: ${response.status} - ${errorText}`);
-  }
-
-  return await response.json();
 }
 
 // Upload file to Green API storage
@@ -241,7 +199,7 @@ export async function POST(request: NextRequest) {
           result = await sendWhatsAppFile(chatId, uploadedFileUrl, file.name, formattedMessage);
         } else if (formattedMessage) {
           // Send formatted text message
-          result = await sendWhatsAppMessage(chatId, formattedMessage);
+          result = await sendRawWhatsAppMessage(chatId, formattedMessage);
         } else {
           throw new Error('No content to send');
         }

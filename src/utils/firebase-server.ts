@@ -70,6 +70,9 @@ const storage: Storage = getStorage();
 // const rtdb: Database = getDatabase(); // Commented out until we need Realtime Database
 
 // Firestore helpers
+// Convention: use these helpers for single-document get/set/update/delete operations.
+// Use `db` directly (firebaseAdmin.db) for batch writes, transactions, or complex queries
+// (e.g. orderBy, where, limit) where the helper wrappers don't apply.
 const firestore = {
   // Collection references
   collections: {
@@ -275,5 +278,11 @@ export const firebaseAdmin = {
   fileStorage,
   // realtimeDb // Commented out until needed
 };
+
+// Named exports for compatibility with routes that use firebase-admin.ts conventions.
+// Prefer using the firebaseAdmin object (above) for new code.
+// Use db directly for batch/transaction/complex queries; use firestore helpers for single-doc ops.
+export const adminFirestore = db;
+export const adminAuth = auth;
 
 export default firebaseAdmin;

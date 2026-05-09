@@ -5,6 +5,8 @@ import Stripe from 'stripe';
 import { randomBytes } from 'crypto';
 import { firebaseAdmin } from '@/utils/firebase-server';
 import { sendGenericEmail, sendStudentWelcomeEmail } from '@/utils/emailService';
+import { generateRandomPassword } from '@/utils/passwordUtils';
+import { generateAvatarInitials } from '@/utils/avatarUtils';
 import {
   BILLING_COLLECTIONS,
   BillingDiscountDocument,
@@ -981,22 +983,6 @@ async function sendParentInviteEmail(
   );
 }
 
-function generateRandomPassword(length = 10) {
-  const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
-  let password = 'A';
-  password += 'a';
-  password += '1';
-  password += '!';
-
-  for (let i = 4; i < length; i += 1) {
-    password += charset[Math.floor(Math.random() * charset.length)];
-  }
-
-  return password
-    .split('')
-    .sort(() => Math.random() - 0.5)
-    .join('');
-}
 
 async function generateStudentNumber() {
   const counterRef = firebaseAdmin.db.collection('counters').doc('studentNumber');
@@ -1031,13 +1017,7 @@ async function createStudentFromEnrollmentRequest(
   }
 
   const generatedPassword = generateRandomPassword();
-  const initials = request.student.name
-    .split(' ')
-    .filter(Boolean)
-    .map((part) => part[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
+  const initials = generateAvatarInitials(request.student.name);
 
   let userRecord: admin.auth.UserRecord;
   try {

@@ -1,3 +1,14 @@
+/**
+ * Client-side mail service — Firestore trigger email (asynchronous delivery).
+ *
+ * This service writes documents to the Firestore "mail" collection, which is
+ * picked up by the Firebase Mail Extension to send emails asynchronously.
+ * Use it for homework/test notifications and class updates triggered from the UI.
+ *
+ * For server-side transactional emails (welcome, password reset) that need
+ * immediate synchronous delivery, use src/utils/emailService.ts instead.
+ */
+
 import {
   collection,
   addDoc,
@@ -6,7 +17,6 @@ import {
 import { firestore } from '@/utils/firebase-client';
 import { MailDocument, MeetingEmailData } from '@/models/mailSchema';
 
-// Mail service for creating email documents in Firestore
 export class MailService {
   private static readonly MAIL_COLLECTION = 'mail';
 
@@ -1236,22 +1246,17 @@ Your  Trusted  Guide for VCE Success</p>
           );
           
           emailPromises.push(
-            this.createMailDocument(studentEmail)
-              .then(mailId => ({ 
-                success: true, 
-                recipient: student.studentEmail, 
-                type: 'student',
-                mailId 
-              }))
-              .catch(error => ({ 
-                success: false, 
-                recipient: student.studentEmail, 
-                type: 'student',
-                error: error.message 
-              }))
+            (async () => {
+              try {
+                const mailId = await this.createMailDocument(studentEmail);
+                return { success: true, recipient: student.studentEmail, type: 'student', mailId };
+              } catch (error: any) {
+                return { success: false, recipient: student.studentEmail, type: 'student', error: error.message };
+              }
+            })()
           );
         }
-        
+
         // Email to parent (if they have an email)
         if (student.parent?.email) {
           const parentEmail = this.generateClassCancellationEmail(
@@ -1266,28 +1271,23 @@ Your  Trusted  Guide for VCE Success</p>
             cancellationReason,
             true // isParent = true
           );
-          
+
           emailPromises.push(
-            this.createMailDocument(parentEmail)
-              .then(mailId => ({ 
-                success: true, 
-                recipient: student.parent.email, 
-                type: 'parent',
-                mailId 
-              }))
-              .catch(error => ({ 
-                success: false, 
-                recipient: student.parent.email, 
-                type: 'parent',
-                error: error.message 
-              }))
+            (async () => {
+              try {
+                const mailId = await this.createMailDocument(parentEmail);
+                return { success: true, recipient: student.parent.email, type: 'parent', mailId };
+              } catch (error: any) {
+                return { success: false, recipient: student.parent.email, type: 'parent', error: error.message };
+              }
+            })()
           );
         }
       }
 
       // Execute all email sends
       const results = await Promise.all(emailPromises);
-      
+
       const successful = results.filter(r => r.success).length;
       const failed = results.filter(r => !r.success).length;
 
@@ -1347,24 +1347,19 @@ Your  Trusted  Guide for VCE Success</p>
             notes,
             false // isParent = false
           );
-          
+
           emailPromises.push(
-            this.createMailDocument(studentEmail)
-              .then(mailId => ({ 
-                success: true, 
-                recipient: student.studentEmail, 
-                type: 'student',
-                mailId 
-              }))
-              .catch(error => ({ 
-                success: false, 
-                recipient: student.studentEmail, 
-                type: 'student',
-                error: error.message 
-              }))
+            (async () => {
+              try {
+                const mailId = await this.createMailDocument(studentEmail);
+                return { success: true, recipient: student.studentEmail, type: 'student', mailId };
+              } catch (error: any) {
+                return { success: false, recipient: student.studentEmail, type: 'student', error: error.message };
+              }
+            })()
           );
         }
-        
+
         // Email to parent (if they have an email)
         if (student.parent?.email) {
           const parentEmail = this.generateNewClassScheduleEmail(
@@ -1383,28 +1378,23 @@ Your  Trusted  Guide for VCE Success</p>
             notes,
             true // isParent = true
           );
-          
+
           emailPromises.push(
-            this.createMailDocument(parentEmail)
-              .then(mailId => ({ 
-                success: true, 
-                recipient: student.parent.email, 
-                type: 'parent',
-                mailId 
-              }))
-              .catch(error => ({ 
-                success: false, 
-                recipient: student.parent.email, 
-                type: 'parent',
-                error: error.message 
-              }))
+            (async () => {
+              try {
+                const mailId = await this.createMailDocument(parentEmail);
+                return { success: true, recipient: student.parent.email, type: 'parent', mailId };
+              } catch (error: any) {
+                return { success: false, recipient: student.parent.email, type: 'parent', error: error.message };
+              }
+            })()
           );
         }
       }
 
       // Execute all email sends
       const results = await Promise.all(emailPromises);
-      
+
       const successful = results.filter(r => r.success).length;
       const failed = results.filter(r => !r.success).length;
 

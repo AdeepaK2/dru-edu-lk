@@ -1,26 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import firebaseAdmin from '@/utils/firebase-server';
 import { sendStudentWelcomeEmail } from '@/utils/emailService';
-
-// Function to generate random password
-function generateRandomPassword(length: number = 8): string {
-  const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
-  let password = '';
-  
-  // Ensure at least one character from each type
-  password += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[Math.floor(Math.random() * 26)]; // Uppercase
-  password += 'abcdefghijklmnopqrstuvwxyz'[Math.floor(Math.random() * 26)]; // Lowercase
-  password += '0123456789'[Math.floor(Math.random() * 10)]; // Number
-  password += '!@#$%^&*'[Math.floor(Math.random() * 8)]; // Special character
-  
-  // Fill the rest with random characters
-  for (let i = 4; i < length; i++) {
-    password += charset[Math.floor(Math.random() * charset.length)];
-  }
-  
-  // Shuffle the password
-  return password.split('').sort(() => Math.random() - 0.5).join('');
-}
+import { generateRandomPassword } from '@/utils/passwordUtils';
 
 export async function POST(req: NextRequest) {
   try {
