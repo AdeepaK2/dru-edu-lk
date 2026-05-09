@@ -24,7 +24,10 @@ try {
 
     adminApp = initializeApp({
       credential: cert(serviceAccount as any),
-      databaseURL: "https://dru-edu-default-rtdb.asia-southeast1.firebasedatabase.app",
+      databaseURL:
+        process.env.FIREBASE_REALTIME_DATABASE_URL ||
+        process.env.FIREBASE_DATABASE_URL ||
+        "https://dru-edu-default-rtdb.asia-southeast1.firebasedatabase.app",
     });
   } else {
     adminApp = getApps()[0];

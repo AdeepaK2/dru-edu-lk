@@ -7,16 +7,21 @@ import { getDatabase } from 'firebase/database';
 
 const MELBOURNE_TIMEZONE = 'Australia/Melbourne';
 
+const normalizeStorageBucket = (bucket?: string) => bucket?.trim().replace(/^gs:\/\//, '');
+
 // Firebase configuration using environment variables
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  storageBucket: normalizeStorageBucket(process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET),
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
-  databaseURL: "https://dru-edu-default-rtdb.asia-southeast1.firebasedatabase.app",
+  databaseURL:
+    process.env.NEXT_PUBLIC_FIREBASE_REALTIME_DATABASE_URL ||
+    process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL ||
+    "https://dru-edu-default-rtdb.asia-southeast1.firebasedatabase.app",
 };
 
 // Initialize Firebase only if there are no apps already initialized

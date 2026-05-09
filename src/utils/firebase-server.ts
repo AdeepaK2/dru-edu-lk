@@ -46,11 +46,14 @@ function initializeFirebaseAdmin() {
         )}`
       };
 
-      const storageBucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET?.trim();
+      const storageBucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET?.trim().replace(/^gs:\/\//, '');
 
       admin.initializeApp({
         credential: cert(serviceAccount as admin.ServiceAccount),
-        databaseURL: process.env.FIREBASE_DATABASE_URL || 'https://dru-edu-default-rtdb.asia-southeast1.firebasedatabase.app',
+        databaseURL:
+          process.env.FIREBASE_REALTIME_DATABASE_URL ||
+          process.env.FIREBASE_DATABASE_URL ||
+          'https://dru-edu-default-rtdb.asia-southeast1.firebasedatabase.app',
         ...(storageBucket ? { storageBucket } : {}),
       });
       console.log('Firebase Admin initialized successfully');
@@ -151,7 +154,7 @@ const authentication = {
 };
 
 function getConfiguredBucket() {
-  const configuredBucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET?.trim();
+  const configuredBucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET?.trim().replace(/^gs:\/\//, '');
 
   if (!configuredBucket) {
     throw new Error(
