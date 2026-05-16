@@ -75,7 +75,7 @@ interface BookedMeeting {
 
 export default function StudentMeetingPage() {
   const { student, loading: authLoading } = useStudentAuth();
-  const theme = 'default';
+  const theme = 'default' as string;
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
   const [bookedMeetings, setBookedMeetings] = useState<BookedMeeting[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);

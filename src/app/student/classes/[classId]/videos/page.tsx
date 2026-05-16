@@ -42,6 +42,7 @@ interface ClassVideoData extends VideoDisplayData {
 }
 
 type TabType = 'class' | 'purchased' | 'study';
+type StudentTheme = 'default' | 'ben10' | 'tinkerbell' | 'cricketverse' | 'cricketverse-australian' | 'bounceworld' | 'avengers' | 'ponyville';
 
 interface FilterState {
   searchTerm: string;
@@ -54,7 +55,7 @@ export default function ClassVideos({ params }: ClassVideoProps) {
   const { classId } = use(params);
   
   const { student } = useStudentAuth();
-  const theme = 'default';
+  const theme = 'default' as StudentTheme;
   const [classInfo, setClassInfo] = useState<any>(null);
   const [videos, setVideos] = useState<ClassVideoData[]>([]);
   const [studentPurchases, setStudentPurchases] = useState<VideoPurchaseDocument[]>([]);
@@ -725,7 +726,7 @@ export default function ClassVideos({ params }: ClassVideoProps) {
 interface ClassVideoCardProps {
   video: ClassVideoData;
   onAccess: (video: ClassVideoData) => void;
-  theme: 'default' | 'ben10' | 'tinkerbell' | 'cricketverse' | 'cricketverse-australian' | 'bounceworld' | 'avengers' | 'ponyville';
+  theme: StudentTheme;
 }
 
 const ClassVideoCard: React.FC<ClassVideoCardProps> = ({ video, onAccess, theme }) => {

@@ -32,11 +32,6 @@ interface WhatsAppMessageRequest {
   };
 }
 
-interface GreenApiResponse {
-  idMessage: string;
-  statusMessage: string;
-}
-
 // Format WhatsApp message with header
 function formatWhatsAppMessage(
   originalMessage: string, 

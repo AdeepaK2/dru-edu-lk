@@ -22,7 +22,7 @@ const StudentLayout = ({ children }: { children: React.ReactNode }) => children;
 export default function StudentTests() {
   const { student, loading: authLoading } = useStudentAuth();
   const router = useRouter();
-  const theme = 'default';
+  const theme = 'default' as string;
   
   // States
   const [tests, setTests] = useState<Test[]>([]);

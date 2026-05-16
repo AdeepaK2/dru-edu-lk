@@ -1,30 +1,8 @@
 import type { Metadata } from "next";
-import { Inter, Poppins, Merriweather } from "next/font/google";
 import "./globals.css";
 import { ToastProvider } from "@/components/ui";
 import { TimezoneProvider } from "@/components/TimezoneProvider";
 import { Analytics } from "@vercel/analytics/next"
-
-// Configure fonts with subsets
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
-
-const poppins = Poppins({
-  weight: ["400", "500", "600", "700"],
-  subsets: ["latin"],
-  variable: "--font-poppins",
-  display: "swap",
-});
-
-const merriweather = Merriweather({
-  weight: ["300", "400", "700"],
-  subsets: ["latin"],
-  variable: "--font-merriweather",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: {
@@ -211,7 +189,7 @@ export default function RootLayout({
   };
 
   return (
-    <html lang="en" className={`${inter.variable} ${poppins.variable} ${merriweather.variable}`}>
+    <html lang="en">
       <head>
         <script
           type="application/ld+json"

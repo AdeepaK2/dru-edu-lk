@@ -37,7 +37,7 @@ export default function VideoWatchPage({ params }: VideoWatchPageProps) {
   const { videoId } = use(params);
   const { student } = useStudentAuth();
   const router = useRouter();
-  const theme = 'default';
+  const theme = 'default' as string;
   const [video, setVideo] = useState<VideoDocument | null>(null);
   const [purchase, setPurchase] = useState<VideoPurchaseDocument | null>(null);
   const [loading, setLoading] = useState(true);

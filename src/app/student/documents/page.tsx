@@ -20,7 +20,7 @@ interface DocumentStates {
 
 export default function StudentDocumentsPage() {
   const { student, loading: authLoading, refreshStudent } = useStudentAuth();
-  const theme = 'default';
+  const theme = 'default' as string;
 
   // Loading states
   const [loading, setLoading] = useState<LoadingState>({

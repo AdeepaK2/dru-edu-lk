@@ -119,7 +119,7 @@ export default function DocumentUploadGrid({
   loading = false,
   disabled = false
 }: DocumentUploadGridProps) {
-  const theme = 'default';
+  const theme = 'default' as string;
   const [uploadState, setUploadState] = useState<UploadState>({});
   const [dragOver, setDragOver] = useState<DocumentType | null>(null);
   const [previewDocument, setPreviewDocument] = useState<DocumentInfo | null>(null);

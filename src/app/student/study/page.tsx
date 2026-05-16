@@ -79,7 +79,7 @@ export default function StudentStudyPage() {
   const router = useRouter();
   const { student, loading } = useStudentAuth();
   const { setHideSidebar } = useSidebar();
-  const theme = 'default';
+  const theme = 'default' as string;
   const [classes, setClasses] = useState<ClassWithProgress[]>([]);
   const [selectedClass, setSelectedClass] = useState<string | null>(null);
   const [materials, setMaterials] = useState<StudyMaterial[]>([]);

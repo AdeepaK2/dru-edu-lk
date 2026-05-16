@@ -42,7 +42,7 @@ interface StudentSheet {
 export default function StudentSheetsPage() {
   const router = useRouter();
   const { user, student, loading: authLoading } = useStudentAuth();
-  const theme = 'default';
+  const theme = 'default' as string;
   
   const [classes, setClasses] = useState<ClassWithSheets[]>([]);
   const [loading, setLoading] = useState(true);

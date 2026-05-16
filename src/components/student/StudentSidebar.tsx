@@ -157,7 +157,7 @@ interface StudentSidebarProps {
 export default function StudentSidebar({ student, isOpen, onToggle }: StudentSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const theme = 'default';
+  const theme = 'default' as string;
   const [upcomingQuizCount, setUpcomingQuizCount] = useState(0);
   const [avatarKey, setAvatarKey] = useState(0); // Force re-render key
 

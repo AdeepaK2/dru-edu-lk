@@ -24,7 +24,7 @@ import Link from 'next/link';
 
 export default function StudentDashboard() {
   const { student } = useStudentAuth();
-  const theme = 'default';
+  const theme = 'default' as string;
 
   // State for real data
   const [dashboardStats, setDashboardStats] = useState({

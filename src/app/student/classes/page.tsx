@@ -23,7 +23,7 @@ interface EnrollmentWithClassData extends StudentEnrollment {
 
 export default function StudentClassesPage() {
   const { student, loading: authLoading } = useStudentAuth();
-  const theme = 'default';
+  const theme = 'default' as string;
   const [enrollments, setEnrollments] = useState<EnrollmentWithClassData[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');

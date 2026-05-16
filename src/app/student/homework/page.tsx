@@ -31,9 +31,11 @@ interface HomeworkItem {
   dueDate?: Date;
 }
 
+type StudentTheme = 'default' | 'ben10' | 'tinkerbell' | 'cricketverse' | 'cricketverse-australian' | 'bounceworld' | 'avengers' | 'ponyville';
+
 export default function StudentHomeworkPage() {
   const { student } = useStudentAuth();
-    const theme = 'default';
+  const theme = 'default' as StudentTheme;
   const [loading, setLoading] = useState(true);
   const [homeworks, setHomeworks] = useState<HomeworkItem[]>([]);
   const [filteredHomeworks, setFilteredHomeworks] = useState<HomeworkItem[]>([]);

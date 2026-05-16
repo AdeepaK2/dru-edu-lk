@@ -19,9 +19,11 @@ import { TeacherFirestoreService } from '@/apiservices/teacherFirestoreService';
 import { VideoFirestoreService } from '@/apiservices/videoFirestoreService';
 import { getEnrollmentsByStudent } from '@/services/studentEnrollmentService';
 
+type StudentTheme = 'default' | 'ben10' | 'tinkerbell' | 'cricketverse' | 'cricketverse-australian' | 'bounceworld' | 'avengers' | 'ponyville';
+
 export default function StudentVideos() {
   const { student } = useStudentAuth();
-  const theme = 'default';
+  const theme = 'default' as StudentTheme;
   const [studentClasses, setStudentClasses] = useState<any[]>([]);
   const [individualVideos, setIndividualVideos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -462,7 +464,7 @@ export default function StudentVideos() {
 // Class Card Component
 interface ClassCardProps {
   classInfo: any;
-  theme: 'default' | 'ben10' | 'tinkerbell' | 'cricketverse' | 'cricketverse-australian' | 'bounceworld' | 'avengers' | 'ponyville';
+  theme: StudentTheme;
 }
 
 const ClassCard: React.FC<ClassCardProps> = ({ classInfo, theme }) => {

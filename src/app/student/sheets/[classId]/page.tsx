@@ -55,7 +55,7 @@ export default function ClassSheetsPage() {
   const params = useParams();
   const classId = params.classId as string;
   const { user, student, loading: authLoading } = useStudentAuth();
-  const theme = 'default';
+  const theme = 'default' as string;
   
   const [className, setClassName] = useState<string>('');
   const [classSheets, setClassSheets] = useState<ClassSheetData[]>([]);

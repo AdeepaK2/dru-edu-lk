@@ -34,7 +34,7 @@ interface RetakeWithComparison {
 export default function StudentRetakes() {
   const { student, loading: authLoading } = useStudentAuth();
   const router = useRouter();
-  const theme = 'default';
+  const theme = 'default' as string;
 
   const [retakes, setRetakes] = useState<RetakeWithComparison[]>([]);
   const [loading, setLoading] = useState(true);

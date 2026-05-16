@@ -71,7 +71,7 @@ interface DifficultyAnalysis {
 
 export default function StudentResults() {
   const { student } = useStudentAuth();
-  const theme = 'default';
+  const theme = 'default' as string;
   const [studentClasses, setStudentClasses] = useState<ClassProgress[]>([]);
   const [selectedClass, setSelectedClass] = useState<string | null>(null);
   const [testResults, setTestResults] = useState<TestResult[]>([]);
